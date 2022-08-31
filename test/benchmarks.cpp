@@ -1789,6 +1789,297 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
     });
 }
 
+void inject_1qb_u3_noise(QInterfacePtr qReg, bitLenInt qubit, real1_f distance)
+{
+    distance = 2 * PI_R1 * distance * qReg->Rand();
+    distance *= distance;
+    real1_f th = qReg->Rand();
+    real1_f ph = qReg->Rand();
+    real1_f lm = qReg->Rand();
+    real1_f nrm = th * th + ph * ph + lm * lm;
+    th = distance * th / nrm;
+    ph = distance * ph / nrm;
+    lm = distance * lm / nrm;
+    // Displace the qubit by the distance in a unitary manner:
+    qReg->U(qubit, th, ph, lm);
+}
+
+TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
+{
+    real1_f noiseParam = ONE_R1 / 5;
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
+        noiseParam = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
+    }
+#endif
+
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    std::cout << "(noise parameter: " << noiseParam << ")";
+
+    const int DimCount1Qb = 4;
+    const int GateCountMultiQb = 4;
+
+    // bitLenInt maxShardQubits = -1;
+    // if (getenv("QRACK_MAX_PAGING_QB")) {
+    //     maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    // }
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        int d;
+        bitLenInt i;
+        real1_f gateRand;
+        bitLenInt b1, b2, b3 = 0;
+        bool is3Qubit;
+        int row, col;
+        int tempRow, tempCol;
+        bitLenInt gate, tempGate;
+
+        // The test runs 2 bit gates according to a tiling sequence.
+        // The 1 bit indicates +/- column offset.
+        // The 2 bit indicates +/- row offset.
+        // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to
+        // the paper.
+        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+
+        // We factor the qubit count into two integers, as close to a perfect square as we can.
+        int colLen = std::sqrt(n);
+        while (((n / colLen) * colLen) != n) {
+            colLen--;
+        }
+        int rowLen = n / colLen;
+
+        // qReg->SetReactiveSeparate(n > maxShardQubits);
+        qReg->SetReactiveSeparate(true);
+
+        for (d = 0; d < benchmarkDepth; d++) {
+            for (i = 0; i < n; i++) {
+                // "Phase" transforms:
+                gateRand = DimCount1Qb * qReg->Rand();
+                if (gateRand < ONE_R1) {
+                    qReg->H(i);
+                } else if (gateRand < (2 * ONE_R1)) {
+                    gateRand = 2 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->S(i);
+                    } else {
+                        qReg->IS(i);
+                    }
+                } else if (gateRand < (3 * ONE_R1)) {
+                    gateRand = 2 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->H(i);
+                        qReg->S(i);
+                    } else {
+                        qReg->IS(i);
+                        qReg->H(i);
+                    }
+                }
+                // else - identity
+
+                // "Position transforms:
+
+                // Continuous Z root gates option:
+                gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
+                qReg->Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)gateRand), i);
+
+                // Discrete Z root gates option:
+                /*
+                gateRand = 8 * qReg->Rand();
+                if (gateRand < ONE_R1) {
+                    // Z^(1/4)
+                    qReg->T(i);
+                } else if (gateRand < (2 * ONE_R1)) {
+                    // Z^(1/2)
+                    qReg->S(i);
+                } else if (gateRand < (3 * ONE_R1)) {
+                    // Z^(3/4)
+                    qReg->Z(i);
+                    qReg->IT(i);
+                } else if (gateRand < (4 * ONE_R1)) {
+                    // Z
+                    qReg->Z(i);
+                } else if (gateRand < (5 * ONE_R1)) {
+                    // Z^(-3/4)
+                    qReg->Z(i);
+                    qReg->T(i);
+                } else if (gateRand < (6 * ONE_R1)) {
+                    // Z^(-1/2)
+                    qReg->IS(i);
+                } else if (gateRand < (7 * ONE_R1)) {
+                    // Z^(-1/4)
+                    qReg->IT(i);
+                }
+                // else - identity
+                */
+            }
+
+            gate = gateSequence.front();
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+
+            std::vector<bitLenInt> usedBits;
+
+            for (row = 1; row < rowLen; row += 2) {
+                for (col = 0; col < colLen; col++) {
+                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                    // In this test, the boundaries of the rectangle have no couplers.
+                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                    // awkwardly.)
+
+                    b1 = row * colLen + col;
+
+                    if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
+                        continue;
+                    }
+
+                    tempRow = row;
+                    tempCol = col;
+
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
+
+                    b2 = tempRow * colLen + tempCol;
+
+                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                        (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                        continue;
+                    }
+
+                    usedBits.push_back(b1);
+                    usedBits.push_back(b2);
+
+                    // Try to pack 3-qubit gates as "greedily" as we can:
+                    tempGate = 0U;
+                    do {
+                        tempRow = row;
+                        tempCol = col;
+
+                        tempRow += ((tempGate & 2U) ? 1 : -1);
+                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+
+                        b3 = tempRow * colLen + tempCol;
+
+                        ++tempGate;
+                    } while ((tempGate < 4) &&
+                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                            (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+
+                    is3Qubit = (tempGate < 4) && ((qReg->Rand() * 2) >= ONE_R1);
+                    if (is3Qubit) {
+                        usedBits.push_back(b3);
+                    }
+
+                    if ((qReg->Rand() * 2) >= ONE_R1) {
+                        std::swap(b1, b2);
+                    }
+                    if (is3Qubit) {
+                        if ((qReg->Rand() * 2) >= ONE_R1) {
+                            std::swap(b1, b3);
+                        }
+                        if ((qReg->Rand() * 2) >= ONE_R1) {
+                            std::swap(b2, b3);
+                        }
+                    }
+
+                    gateRand = GateCountMultiQb * qReg->Rand();
+
+                    if (is3Qubit) {
+                        if (gateRand < (3 * ONE_R1)) {
+                            inject_1qb_u3_noise(qReg, b1, noiseParam);
+                            inject_1qb_u3_noise(qReg, b2, noiseParam);
+                            inject_1qb_u3_noise(qReg, b3, noiseParam);
+                        }
+
+                        if ((gateRand < (3 * ONE_R1)) && ((8 * qReg->Rand()) < ONE_R1)) {
+                            const bitLenInt controls[1U] = { b1 };
+                            qReg->CSwap(controls, 1U, b2, b3);
+                            continue;
+                        }
+
+                        if (gateRand < ONE_R1) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCNOT(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCNOT(b1, b2, b3);
+                            }
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCY(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCY(b1, b2, b3);
+                            }
+                        } else if (gateRand < (3 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCZ(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCZ(b1, b2, b3);
+                            }
+                        }
+                        // else - identity
+
+                        // std::cout << "(b1, b2, b3) = (" << (int)b1 << ", " << (int)b2 << ", " << (int)b3 << ")"
+                        //           << std::endl;
+                    } else {
+                        if ((gateRand < (3 * ONE_R1)) && ((4 * qReg->Rand()) < ONE_R1)) {
+                            // In 3 CNOT(a,b) sequence, for example, 1/4 of sequences on average are equivalent to SWAP.
+                            qReg->Swap(b1, b2);
+                            continue;
+                        }
+
+                        if (gateRand < (3 * ONE_R1)) {
+                            inject_1qb_u3_noise(qReg, b1, noiseParam);
+                            inject_1qb_u3_noise(qReg, b2, noiseParam);
+                        }
+
+                        if (gateRand < ONE_R1) {
+                            gateRand = 4 * qReg->Rand();
+                            if (gateRand < (3 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CNOT(b1, b2);
+                                } else {
+                                    qReg->AntiCNOT(b1, b2);
+                                }
+                            } else {
+                                qReg->Swap(b1, b2);
+                            }
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            gateRand = 4 * qReg->Rand();
+                            if (gateRand < (3 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CY(b1, b2);
+                                } else {
+                                    qReg->AntiCY(b1, b2);
+                                }
+                            } else {
+                                qReg->Swap(b1, b2);
+                            }
+                        } else if (gateRand < (3 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CZ(b1, b2);
+                            } else {
+                                qReg->AntiCZ(b1, b2);
+                            }
+                        }
+                        // else - identity
+
+                        // std::cout << "(b1, b2) = (" << (int)b1 << ", " << (int)b2 << ")" << std::endl;
+                    }
+                }
+            }
+        }
+
+        qReg->MAll();
+    });
+}
+
 TEST_CASE("test_dense_cc_nn", "[supreme]")
 {
     // Try with environment variable
@@ -1956,6 +2247,228 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
                             qReg->Swap(b1, b2);
                             continue;
                         }
+
+                        if (gateRand < ONE_R1) {
+                            gateRand = 4 * qReg->Rand();
+                            if (gateRand < (3 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CNOT(b1, b2);
+                                } else {
+                                    qReg->AntiCNOT(b1, b2);
+                                }
+                            } else {
+                                qReg->Swap(b1, b2);
+                            }
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            gateRand = 4 * qReg->Rand();
+                            if (gateRand < (3 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CY(b1, b2);
+                                } else {
+                                    qReg->AntiCY(b1, b2);
+                                }
+                            } else {
+                                qReg->Swap(b1, b2);
+                            }
+                        } else {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CZ(b1, b2);
+                            } else {
+                                qReg->AntiCZ(b1, b2);
+                            }
+                        }
+
+                        // std::cout << "(b1, b2) = (" << (int)b1 << ", " << (int)b2 << ")" << std::endl;
+                    }
+                }
+            }
+        }
+
+        qReg->MAll();
+    });
+}
+
+TEST_CASE("test_noisy_dense_cc_nn", "[supreme]")
+{
+    real1_f noiseParam = ONE_R1 / 5;
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
+        noiseParam = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
+    }
+#endif
+
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    std::cout << "(noise parameter: " << noiseParam << ")";
+
+    const int GateCountMultiQb = 3;
+
+    // bitLenInt maxShardQubits = -1;
+    // if (getenv("QRACK_MAX_PAGING_QB")) {
+    //     maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    // }
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        int d;
+        bitLenInt i;
+        real1_f gateRand;
+        bitLenInt b1, b2, b3 = 0;
+        bool is3Qubit;
+        int row, col;
+        int tempRow, tempCol;
+        bitLenInt gate, tempGate;
+
+        // The test runs 2 bit gates according to a tiling sequence.
+        // The 1 bit indicates +/- column offset.
+        // The 2 bit indicates +/- row offset.
+        // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to
+        // the paper.
+        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+
+        // We factor the qubit count into two integers, as close to a perfect square as we can.
+        int colLen = std::sqrt(n);
+        while (((n / colLen) * colLen) != n) {
+            colLen--;
+        }
+        int rowLen = n / colLen;
+
+        // qReg->SetReactiveSeparate(n > maxShardQubits);
+        qReg->SetReactiveSeparate(true);
+
+        for (d = 0; d < benchmarkDepth; d++) {
+            for (i = 0; i < n; i++) {
+                // Random general 3-parameter unitary gate via Euler angles
+                gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
+                qReg->Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->H(i);
+                gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
+                qReg->Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->S(i);
+                gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
+                qReg->Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->IS(i);
+                qReg->H(i);
+            }
+
+            gate = gateSequence.front();
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+
+            std::vector<bitLenInt> usedBits;
+
+            for (row = 1; row < rowLen; row += 2) {
+                for (col = 0; col < colLen; col++) {
+                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                    // In this test, the boundaries of the rectangle have no couplers.
+                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                    // awkwardly.)
+
+                    b1 = row * colLen + col;
+
+                    if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
+                        continue;
+                    }
+
+                    tempRow = row;
+                    tempCol = col;
+
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
+
+                    b2 = tempRow * colLen + tempCol;
+
+                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                        (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                        continue;
+                    }
+
+                    usedBits.push_back(b1);
+                    usedBits.push_back(b2);
+
+                    // Try to pack 3-qubit gates as "greedily" as we can:
+                    tempGate = 0U;
+                    do {
+                        tempRow = row;
+                        tempCol = col;
+
+                        tempRow += ((tempGate & 2U) ? 1 : -1);
+                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+
+                        b3 = tempRow * colLen + tempCol;
+
+                        ++tempGate;
+                    } while ((tempGate < 4) &&
+                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                            (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+
+                    is3Qubit = (tempGate < 4) && ((qReg->Rand() * 2) >= ONE_R1);
+                    if (is3Qubit) {
+                        usedBits.push_back(b3);
+                    }
+
+                    if ((qReg->Rand() * 2) >= ONE_R1) {
+                        std::swap(b1, b2);
+                    }
+                    if (is3Qubit) {
+                        if ((qReg->Rand() * 2) >= ONE_R1) {
+                            std::swap(b1, b3);
+                        }
+                        if ((qReg->Rand() * 2) >= ONE_R1) {
+                            std::swap(b2, b3);
+                        }
+                    }
+
+                    gateRand = GateCountMultiQb * qReg->Rand();
+
+                    if (is3Qubit) {
+                        inject_1qb_u3_noise(qReg, b1, noiseParam);
+                        inject_1qb_u3_noise(qReg, b2, noiseParam);
+                        inject_1qb_u3_noise(qReg, b3, noiseParam);
+
+                        if ((8 * qReg->Rand()) < ONE_R1) {
+                            const bitLenInt controls[1U] = { b1 };
+                            qReg->CSwap(controls, 1U, b2, b3);
+                            continue;
+                        }
+
+                        if (gateRand < ONE_R1) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCNOT(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCNOT(b1, b2, b3);
+                            }
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCY(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCY(b1, b2, b3);
+                            }
+                        } else {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCZ(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCZ(b1, b2, b3);
+                            }
+                        }
+
+                        // std::cout << "(b1, b2, b3) = (" << (int)b1 << ", " << (int)b2 << ", " << (int)b3 << ")"
+                        //           << std::endl;
+                    } else {
+                        if ((4 * qReg->Rand()) < ONE_R1) {
+                            // In 3 CNOT(a,b) sequence, for example, 1/4 of sequences on average are equivalent to SWAP.
+                            qReg->Swap(b1, b2);
+                            continue;
+                        }
+
+                        inject_1qb_u3_noise(qReg, b1, noiseParam);
+                        inject_1qb_u3_noise(qReg, b2, noiseParam);
 
                         if (gateRand < ONE_R1) {
                             gateRand = 4 * qReg->Rand();
@@ -2721,21 +3234,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
     });
 }
 
-void inject_1qb_u3_noise(QInterfacePtr qReg, bitLenInt qubit, real1_f distance)
-{
-    distance = 2 * PI_R1 * distance * qReg->Rand();
-    distance *= distance;
-    real1_f th = qReg->Rand();
-    real1_f ph = qReg->Rand();
-    real1_f lm = qReg->Rand();
-    real1_f nrm = th * th + ph * ph + lm * lm;
-    th = distance * th / nrm;
-    ph = distance * ph / nrm;
-    lm = distance * lm / nrm;
-    // Displace the qubit by the distance in a unitary manner:
-    qReg->U(qubit, th, ph, lm);
-}
-
 TEST_CASE("test_noisy_sycamore", "[supreme]")
 {
     real1_f noiseParam = ONE_R1 / 5;
@@ -2746,6 +3244,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 #endif
 
     std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    std::cout << "(noise parameter: " << noiseParam << ")" << std::endl;
     std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit.";
 
     // This is an attempt to simulate the circuit argued to establish quantum supremacy.
