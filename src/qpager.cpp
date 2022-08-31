@@ -166,6 +166,9 @@ void QPager::Init()
                     if (ids[i - 1U] == -2) {
                         ids[i - 1U] = devID;
                     }
+                    if (ids[i - 1U] == -1) {
+                        ids[i - 1U] = (int)OCLEngine::Instance().GetDefaultDeviceID();
+                    }
                 }
                 for (unsigned i = 0U; i < maxI; ++i) {
                     for (unsigned j = 0U; j < ids.size(); ++j) {
