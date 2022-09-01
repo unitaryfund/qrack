@@ -164,7 +164,7 @@ void QPager::Init()
 #if ENABLE_OPENCL
                         deviceIDs.back() = (int)OCLEngine::Instance().GetDefaultDeviceID();
 #else
-                        deviceIDS.back() = 0;
+                        deviceIDs.back() = 0;
 #endif
                     }
                     continue;
