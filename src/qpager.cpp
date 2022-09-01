@@ -158,7 +158,7 @@ void QPager::Init()
                 if (tokens.size() == 1U) {
                     deviceIDs.push_back(stoi(term));
                     if (deviceIDs.back() == -2) {
-                        deviceIDs.back() = devID;
+                        deviceIDs.back() = (int)devID;
                     }
                     if (deviceIDs.back() == -1) {
 #if ENABLE_OPENCL
@@ -174,7 +174,7 @@ void QPager::Init()
                 for (unsigned i = 1U; i < tokens.size(); ++i) {
                     ids[i - 1U] = stoi(tokens[i]);
                     if (ids[i - 1U] == -2) {
-                        ids[i - 1U] = devID;
+                        ids[i - 1U] = (int)devID;
                     }
                     if (ids[i - 1U] == -1) {
 #if ENABLE_OPENCL
