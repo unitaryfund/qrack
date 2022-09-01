@@ -161,7 +161,11 @@ void QPager::Init()
                         deviceIDs.back() = devID;
                     }
                     if (deviceIDs.back() == -1) {
+#if ENABLE_OPENCL
                         deviceIDs.back() = (int)OCLEngine::Instance().GetDefaultDeviceID();
+#else
+                        deviceIDS.back() = 0;
+#endif
                     }
                     continue;
                 }
@@ -173,7 +177,11 @@ void QPager::Init()
                         ids[i - 1U] = devID;
                     }
                     if (ids[i - 1U] == -1) {
+#if ENABLE_OPENCL
                         ids[i - 1U] = (int)OCLEngine::Instance().GetDefaultDeviceID();
+#else
+                        ids[i - 1U] = 0
+#endif
                     }
                 }
                 for (unsigned i = 0U; i < maxI; ++i) {
