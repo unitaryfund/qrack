@@ -180,7 +180,7 @@ void QPager::Init()
 #if ENABLE_OPENCL
                         ids[i - 1U] = (int)OCLEngine::Instance().GetDefaultDeviceID();
 #else
-                        ids[i - 1U] = 0
+                        ids[i - 1U] = 0;
 #endif
                     }
                 }
