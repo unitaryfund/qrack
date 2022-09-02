@@ -3150,16 +3150,13 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     // For all subsequent iterations after the first, we eliminate the choice of the same gate applied
                     // on the immediately previous iteration.
 
-                    do {
-                        gateRand = 3 * qReg->Rand();
-                        if (gateRand < ONE_R1) {
-                            gateChoice = 0;
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateChoice = 1;
-                        } else {
-                            gateChoice = 2;
-                        }
-                    } while (gateChoice == lastSingleBitGates[i]);
+                    gateChoice = (int)(2 * qReg->Rand());
+                    if (gateChoice >= 2) {
+                        gateChoice = 1;
+                    }
+                    if (gateChoice >= lastSingleBitGates[i]) {
+                        ++gateChoice;
+                    }
 
                     if (gateChoice == 0) {
                         qReg->SqrtX(i);
@@ -3319,16 +3316,13 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     // For all subsequent iterations after the first, we eliminate the choice of the same gate applied
                     // on the immediately previous iteration.
 
-                    do {
-                        gateRand = 3 * qReg->Rand();
-                        if (gateRand < ONE_R1) {
-                            gateChoice = 0;
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateChoice = 1;
-                        } else {
-                            gateChoice = 2;
-                        }
-                    } while (gateChoice == lastSingleBitGates[i]);
+                    gateChoice = (int)(2 * qReg->Rand());
+                    if (gateChoice >= 2) {
+                        gateChoice = 1;
+                    }
+                    if (gateChoice >= lastSingleBitGates[i]) {
+                        ++gateChoice;
+                    }
 
                     if (gateChoice == 0) {
                         qReg->SqrtX(i);
