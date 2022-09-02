@@ -3066,6 +3066,9 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
+const complex sqrtwMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), -pow(complex(ZERO_R1, SQRT1_2_R1), ONE_R1 / 2),
+    pow(complex(ZERO_R1, -SQRT1_2_R1), ONE_R1 / 2), complex(SQRT1_2_R1, ZERO_R1) };
+
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
@@ -3141,9 +3144,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         qReg->SqrtY(i);
                         lastSingleBitGates.push_back(1);
                     } else {
-                        // "Square root of W" appears to be equivalent to T.SqrtX.IT, looking at the definition in the
-                        // supplemental materials.
-                        qReg->SqrtXConjT(i);
+                        qReg->Mtrx(sqrtwMtrx, i);
                         lastSingleBitGates.push_back(2);
                     }
                 } else {
@@ -3170,9 +3171,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         qReg->SqrtY(i);
                         lastSingleBitGates[i] = 1;
                     } else {
-                        // "Square root of W" appears to be equivalent to T.SqrtX.IT, looking at the definition in the
-                        // supplemental materials.
-                        qReg->SqrtXConjT(i);
+                        qReg->Mtrx(sqrtwMtrx, i);
                         lastSingleBitGates[i] = 2;
                     }
                 }
@@ -3317,9 +3316,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                         qReg->SqrtY(i);
                         lastSingleBitGates.push_back(1);
                     } else {
-                        // "Square root of W" appears to be equivalent to T.SqrtX.IT, looking at the definition in the
-                        // supplemental materials.
-                        qReg->SqrtXConjT(i);
+                        qReg->Mtrx(sqrtwMtrx, i);
                         lastSingleBitGates.push_back(2);
                     }
                 } else {
@@ -3346,9 +3343,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                         qReg->SqrtY(i);
                         lastSingleBitGates[i] = 1;
                     } else {
-                        // "Square root of W" appears to be equivalent to T.SqrtX.IT, looking at the definition in the
-                        // supplemental materials.
-                        qReg->SqrtXConjT(i);
+                        qReg->Mtrx(sqrtwMtrx, i);
                         lastSingleBitGates[i] = 2;
                     }
                 }
