@@ -72,12 +72,12 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
 #if ENABLE_ENV_VARS
-        const bool isBdt = !devList.size() && !getenv("QRACK_QPAGER_DEVICES");
+        const bool isBdt = !devList.size() && getenv("QRACK_QBDT_DEFAULT_OPT_IN") && !getenv("QRACK_QPAGER_DEVICES");
 #else
         const bool isBdt = !devList.size();
 #endif
         if (isBdt) {
-            engineTypes.push_back(QINTERFACE_BDT);
+            engineTypes[0] = QINTERFACE_BDT;
         }
     }
 #endif
