@@ -3126,8 +3126,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     continue;
                 }
 
-                gateRand = qReg->Rand();
-
                 // Each individual bit has one of these 3 gates applied at random.
                 // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants
                 // are handled as general single bit gates.
@@ -3137,10 +3135,11 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 if (d == 0) {
                     // For the first iteration, we can pick any gate.
 
-                    if (gateRand < (ONE_R1 / 3)) {
+                    gateRand = 3 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
                         qReg->SqrtX(i);
                         lastSingleBitGates.push_back(0);
-                    } else if (gateRand < (2 * ONE_R1 / 3)) {
+                    } else if (gateRand < (2 * ONE_R1)) {
                         qReg->SqrtY(i);
                         lastSingleBitGates.push_back(1);
                     } else {
@@ -3151,18 +3150,16 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     // For all subsequent iterations after the first, we eliminate the choice of the same gate applied
                     // on the immediately previous iteration.
 
-                    std::set<int> gateChoices = { 0, 1, 2 };
-                    gateChoiceIterator = gateChoices.begin();
-                    std::advance(gateChoiceIterator, lastSingleBitGates[i]);
-                    gateChoices.erase(gateChoiceIterator);
-
-                    gateChoiceIterator = gateChoices.begin();
-                    gateRand = (int)(gateRand * 2);
-                    if (gateRand > 1) {
-                        gateRand--;
-                    }
-                    std::advance(gateChoiceIterator, (int)(gateRand * 2));
-                    gateChoice = *gateChoiceIterator;
+                    do {
+                        gateRand = 3 * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            gateChoice = 0;
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            gateChoice = 1;
+                        } else {
+                            gateChoice = 2;
+                        }
+                    } while (gateChoice == lastSingleBitGates[i]);
 
                     if (gateChoice == 0) {
                         qReg->SqrtX(i);
@@ -3298,8 +3295,6 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     continue;
                 }
 
-                gateRand = qReg->Rand();
-
                 // Each individual bit has one of these 3 gates applied at random.
                 // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants
                 // are handled as general single bit gates.
@@ -3309,10 +3304,11 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                 if (d == 0) {
                     // For the first iteration, we can pick any gate.
 
-                    if (gateRand < (ONE_R1 / 3)) {
+                    gateRand = 3 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
                         qReg->SqrtX(i);
                         lastSingleBitGates.push_back(0);
-                    } else if (gateRand < (2 * ONE_R1 / 3)) {
+                    } else if (gateRand < (2 * ONE_R1)) {
                         qReg->SqrtY(i);
                         lastSingleBitGates.push_back(1);
                     } else {
@@ -3323,18 +3319,16 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     // For all subsequent iterations after the first, we eliminate the choice of the same gate applied
                     // on the immediately previous iteration.
 
-                    std::set<int> gateChoices = { 0, 1, 2 };
-                    gateChoiceIterator = gateChoices.begin();
-                    std::advance(gateChoiceIterator, lastSingleBitGates[i]);
-                    gateChoices.erase(gateChoiceIterator);
-
-                    gateChoiceIterator = gateChoices.begin();
-                    gateRand = (int)(gateRand * 2);
-                    if (gateRand > 1) {
-                        gateRand--;
-                    }
-                    std::advance(gateChoiceIterator, (int)(gateRand * 2));
-                    gateChoice = *gateChoiceIterator;
+                    do {
+                        gateRand = 3 * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            gateChoice = 0;
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            gateChoice = 1;
+                        } else {
+                            gateChoice = 2;
+                        }
+                    } while (gateChoice == lastSingleBitGates[i]);
 
                     if (gateChoice == 0) {
                         qReg->SqrtX(i);
