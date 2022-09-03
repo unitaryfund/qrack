@@ -1162,7 +1162,7 @@ void QPager::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 }
 #endif
 
-void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
+void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse)
 {
     const bitLenInt qpp = qubitsPerPage();
     qubit1 -= qpp;
@@ -1188,12 +1188,17 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
             continue;
         }
 
-        qPages[j + qubit1Pow]->Phase(I_CMPLX, I_CMPLX, 0U);
-        qPages[j + qubit2Pow]->Phase(I_CMPLX, I_CMPLX, 0U);
+        if (isInverse) {
+            qPages[j + qubit1Pow]->Phase(-I_CMPLX, -I_CMPLX, 0U);
+            qPages[j + qubit2Pow]->Phase(-I_CMPLX, -I_CMPLX, 0U);
+        } else {
+            qPages[j + qubit1Pow]->Phase(I_CMPLX, I_CMPLX, 0U);
+            qPages[j + qubit2Pow]->Phase(I_CMPLX, I_CMPLX, 0U);
+        }
     }
 }
 
-void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
+void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse)
 {
     if (qubit1 > qubit2) {
         std::swap(qubit1, qubit2);
@@ -1224,8 +1229,13 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
         }
 
         if (isIPhaseFac) {
-            engine1->ISwap(qubit1, sqi);
-            engine2->ISwap(qubit1, sqi);
+            if (isInverse) {
+                engine1->IISwap(qubit1, sqi);
+                engine2->IISwap(qubit1, sqi);
+            } else {
+                engine1->ISwap(qubit1, sqi);
+                engine2->ISwap(qubit1, sqi);
+            }
         } else {
             engine1->Swap(qubit1, sqi);
             engine2->Swap(qubit1, sqi);
@@ -1245,12 +1255,12 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
     const bool isQubit2Meta = qubit2 >= baseQubitsPerPage;
     if (isQubit1Meta && isQubit2Meta) {
         SeparateEngines();
-        MetaSwap(qubit1, qubit2, false);
+        MetaSwap(qubit1, qubit2, false, false);
         return;
     }
     if (isQubit1Meta || isQubit2Meta) {
         SeparateEngines();
-        SemiMetaSwap(qubit1, qubit2, false);
+        SemiMetaSwap(qubit1, qubit2, false, false);
         return;
     }
 
@@ -1268,12 +1278,12 @@ void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
     const bool isQubit2Meta = qubit2 >= baseQubitsPerPage;
     if (isQubit1Meta && isQubit2Meta) {
         SeparateEngines();
-        MetaSwap(qubit1, qubit2, true);
+        MetaSwap(qubit1, qubit2, true, isInverse);
         return;
     }
     if (isQubit1Meta || isQubit2Meta) {
         SeparateEngines();
-        SemiMetaSwap(qubit1, qubit2, true);
+        SemiMetaSwap(qubit1, qubit2, true, isInverse);
         return;
     }
 
