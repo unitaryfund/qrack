@@ -100,7 +100,7 @@ void QInterface::CIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real
 }
 
 /// Controlled "Azimuth, Inclination"
-void QInterface::ACAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination)
+void QInterface::AntiCAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination)
 {
     const real1 cosineA = (real1)cos(azimuth);
     const real1 sineA = (real1)sin(azimuth);
@@ -112,7 +112,7 @@ void QInterface::ACAI(bitLenInt control, bitLenInt target, real1_f azimuth, real
 }
 
 /// Controlled inverse "Azimuth, Inclination"
-void QInterface::ACIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination)
+void QInterface::AntiCIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination)
 {
     const real1 cosineA = (real1)cos(azimuth);
     const real1 sineA = (real1)sin(azimuth);
