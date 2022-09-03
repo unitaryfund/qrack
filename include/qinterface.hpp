@@ -74,11 +74,6 @@ enum QInterfaceEngine {
     QINTERFACE_BDT,
 
     /**
-     * Create a QMaskFusion, coalescing Pauli gates.
-     */
-    QINTERFACE_MASK_FUSION,
-
-    /**
      * Create a QStabilizer, limited to Clifford/Pauli operations, but efficient.
      */
     QINTERFACE_STABILIZER,

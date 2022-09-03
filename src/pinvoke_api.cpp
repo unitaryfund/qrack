@@ -428,10 +428,6 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
-    if (zxf) {
-        simulatorType.push_back(QINTERFACE_MASK_FUSION);
-    }
-
     if (bdt) {
         simulatorType.push_back(QINTERFACE_BDT);
     }

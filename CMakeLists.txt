@@ -30,7 +30,6 @@ add_library (qrack STATIC
     src/qpager.cpp
     src/qstabilizer.cpp
     src/qstabilizerhybrid.cpp
-    src/qmaskfusion.cpp
     )
 
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
@@ -84,14 +83,6 @@ if (NOT ENABLE_EMIT_LLVM)
         )
 
     target_link_libraries (benchmarks ${QRACK_LIBS})
-
-    # Declare the accuracy executable
-    add_executable (accuracy
-        test/accuracy_main.cpp
-        test/accuracy.cpp
-        )
-
-    target_link_libraries (accuracy ${QRACK_LIBS})
 
     # Declare the OCL precompilation executable
     add_executable (qrack_cl_precompile
@@ -249,7 +240,6 @@ install (FILES
     include/qneuron.hpp
     include/qpager.hpp
     include/qhybrid.hpp
-    include/qmaskfusion.hpp
     include/qstabilizer.hpp
     include/qstabilizerhybrid.hpp
     include/qbdt.hpp

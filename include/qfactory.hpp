@@ -13,7 +13,6 @@
 #pragma once
 
 #include "qengine_cpu.hpp"
-#include "qmaskfusion.hpp"
 #include "qpager.hpp"
 #include "qstabilizerhybrid.hpp"
 
@@ -50,8 +49,6 @@ QInterfacePtr CreateQuantumInterface(
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
-    case QINTERFACE_MASK_FUSION:
-        return std::make_shared<QMaskFusion>(engines, args...);
     case QINTERFACE_STABILIZER_HYBRID:
         return std::make_shared<QStabilizerHybrid>(engines, args...);
     case QINTERFACE_QUNIT:
@@ -86,8 +83,6 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
-    case QINTERFACE_MASK_FUSION:
-        return std::make_shared<QMaskFusion>(engines, args...);
     case QINTERFACE_STABILIZER_HYBRID:
         return std::make_shared<QStabilizerHybrid>(engines, args...);
     case QINTERFACE_QUNIT:
@@ -120,8 +115,6 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QPager>(args...);
     case QINTERFACE_STABILIZER_HYBRID:
         return std::make_shared<QStabilizerHybrid>(args...);
-    case QINTERFACE_MASK_FUSION:
-        return std::make_shared<QMaskFusion>(args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(args...);
 #if ENABLE_OPENCL
@@ -156,11 +149,6 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
             return std::make_shared<QPager>(engines, args...);
         }
         return std::make_shared<QPager>(args...);
-    case QINTERFACE_MASK_FUSION:
-        if (engines.size()) {
-            return std::make_shared<QMaskFusion>(engines, args...);
-        }
-        return std::make_shared<QMaskFusion>(args...);
     case QINTERFACE_STABILIZER_HYBRID:
         if (engines.size()) {
             return std::make_shared<QStabilizerHybrid>(engines, args...);
@@ -208,10 +196,6 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
 
     if (pg && !sh && simulatorType.size()) {
         simulatorType.push_back(QINTERFACE_QPAGER);
-    }
-
-    if (zxf) {
-        simulatorType.push_back(QINTERFACE_MASK_FUSION);
     }
 
     if (bdt) {
