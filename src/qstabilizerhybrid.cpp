@@ -35,7 +35,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , useHostRam(useHostMem)
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
@@ -69,20 +69,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     maxQubitPlusAncillaCount = maxPageQubits + 2U;
 #endif
 
-#if ENABLE_OPENCL
-    if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
-#if ENABLE_ENV_VARS
-        const bool isBdt = !devList.size() && getenv("QRACK_QBDT_DEFAULT_OPT_IN") && !getenv("QRACK_QPAGER_DEVICES");
-#else
-        const bool isBdt = !devList.size();
-#endif
-        if (isBdt) {
-            engineTypes[0] = QINTERFACE_BDT;
-        }
-    }
-#endif
-
-    amplitudeFloor = REAL1_EPSILON;
     stabilizer = MakeStabilizer(initState);
 }
 

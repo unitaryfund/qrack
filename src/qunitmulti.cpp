@@ -52,25 +52,17 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     }
 
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
+    defaultDeviceID = (deviceID < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)deviceID;
 
+    const size_t devCount = devList.size() ? devList.size() : deviceContext.size();
+    for (size_t i = 0; i < devCount; ++i) {
+        DeviceInfo deviceInfo;
+        deviceInfo.id =
+            devList.size() ? ((devList[0U] < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)devList[i]) : i;
+        deviceList.push_back(deviceInfo);
+    }
     if (!devList.size()) {
-        defaultDeviceID = (deviceID < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)deviceID;
-
-        for (size_t i = 0U; i < deviceContext.size(); ++i) {
-            DeviceInfo deviceInfo;
-            deviceInfo.id = i;
-            deviceList.push_back(deviceInfo);
-        }
-
         std::swap(deviceList[0U], deviceList[defaultDeviceID]);
-    } else {
-        defaultDeviceID = (devList[0U] < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)devList[0U];
-
-        for (size_t i = 0; i < devList.size(); ++i) {
-            DeviceInfo deviceInfo;
-            deviceInfo.id = (devList[0U] < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)devList[i];
-            deviceList.push_back(deviceInfo);
-        }
     }
 
     for (size_t i = 0U; i < deviceList.size(); ++i) {
