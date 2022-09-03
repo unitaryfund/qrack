@@ -377,11 +377,11 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
 
         engine1->ShuffleBuffers(engine2);
 
-        if (!isSqiCtrl || isAnti) {
+        if (!isSqiCtrl || !isAnti) {
             fn(engine1, sqi);
         }
 
-        if (!isSqiCtrl || !isAnti) {
+        if (!isSqiCtrl || isAnti) {
             fn(engine2, sqi);
         }
 
