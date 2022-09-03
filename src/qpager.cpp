@@ -1222,8 +1222,13 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, 
 
         if (qubit1 == sqi) {
             if (isIPhaseFac) {
-                engine1->Phase(ZERO_CMPLX, I_CMPLX, sqi);
-                engine2->Phase(I_CMPLX, ZERO_CMPLX, sqi);
+                if (isInverse) {
+                    engine1->Phase(ONE_CMPLX, -I_CMPLX, sqi);
+                    engine2->Phase(-I_CMPLX, ONE_CMPLX, sqi);
+                } else {
+                    engine1->Phase(ONE_CMPLX, I_CMPLX, sqi);
+                    engine2->Phase(I_CMPLX, ONE_CMPLX, sqi);
+                }
             }
             return;
         }
