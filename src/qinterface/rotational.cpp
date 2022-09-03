@@ -99,6 +99,32 @@ void QInterface::CIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real
     MCMtrx(controls, 1U, invMtrx, target);
 }
 
+/// Controlled "Azimuth, Inclination"
+void QInterface::ACAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination)
+{
+    const real1 cosineA = (real1)cos(azimuth);
+    const real1 sineA = (real1)sin(azimuth);
+    const real1 cosineI = (real1)cos(inclination / 2);
+    const real1 sineI = (real1)sin(inclination / 2);
+    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
+    const bitLenInt controls[1] = { control };
+    MACMtrx(controls, 1U, mtrx, target);
+}
+
+/// Controlled inverse "Azimuth, Inclination"
+void QInterface::ACIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination)
+{
+    const real1 cosineA = (real1)cos(azimuth);
+    const real1 sineA = (real1)sin(azimuth);
+    const real1 cosineI = (real1)cos(inclination / 2);
+    const real1 sineI = (real1)sin(inclination / 2);
+    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
+    const bitLenInt controls[1] = { control };
+    complex invMtrx[4];
+    inv2x2(mtrx, invMtrx);
+    MACMtrx(controls, 1U, invMtrx, target);
+}
+
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
 /// "k" of the control bits.
 void QInterface::UniformlyControlledRY(

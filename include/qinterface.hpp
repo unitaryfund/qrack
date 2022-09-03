@@ -719,12 +719,28 @@ public:
     virtual void CAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination);
 
     /**
+     * (Anti-)Controlled "Azimuth, Inclination" (RY-RZ)
+     *
+     * If the control bit is reset, this gate sets the azimuth and inclination from Z-X-Y basis probability
+     * measurements.
+     */
+    virtual void ACAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination);
+
+    /**
      * Controlled inverse "Azimuth, Inclination" (RY-RZ)
      *
      * (Inverse of...) If the control bit is set, this gate sets the azimuth and inclination from Z-X-Y basis
      * probability measurements.
      */
     virtual void CIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination);
+
+    /**
+     * (Anti-)Controlled inverse "Azimuth, Inclination" (RY-RZ)
+     *
+     * (Inverse of...) If the control bit is reset, this gate sets the azimuth and inclination from Z-X-Y basis
+     * probability measurements.
+     */
+    virtual void ACIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination);
 
     /**
      * Controlled general unitary gate

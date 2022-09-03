@@ -838,17 +838,15 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     const real1_f azimuth = atan2(y, x);
     unit->CIAI(mapped1, mapped2, azimuth, inclination);
 
-    unit->X(mapped1);
-
-    z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
-    unit->CH(shard1.mapped, shard2.mapped);
-    x = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
-    unit->CS(shard1.mapped, shard2.mapped);
-    y = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
-    unit->MCMtrx(controls, 1U, mtrx, mapped2);
+    z = ONE_R1_F - 2 * unit->ACProb(mapped1, mapped2);
+    unit->AntiCH(shard1.mapped, shard2.mapped);
+    x = ONE_R1_F - 2 * unit->ACProb(mapped1, mapped2);
+    unit->AntiCS(shard1.mapped, shard2.mapped);
+    y = ONE_R1_F - 2 * unit->ACProb(mapped1, mapped2);
+    unit->MACMtrx(controls, 1U, mtrx, mapped2);
     const real1_f inclinationAnti = atan2(sqrt(x * x + y * y), z);
     const real1_f azimuthAnti = atan2(y, z);
-    unit->CIAI(mapped1, mapped2, azimuthAnti, inclinationAnti);
+    unit->ACIAI(mapped1, mapped2, azimuthAnti, inclinationAnti);
 
     shard1.MakeDirty();
     shard2.MakeDirty();
@@ -856,8 +854,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     const bool isShard1Sep = TrySeparate(qubit1);
     const bool isShard2Sep = TrySeparate(qubit2);
 
-    CAI(qubit1, qubit2, azimuthAnti, inclinationAnti);
-    X(qubit1);
+    ACAI(qubit1, qubit2, azimuthAnti, inclinationAnti);
     CAI(qubit1, qubit2, azimuth, inclination);
 
     return isShard1Sep && isShard2Sep;
