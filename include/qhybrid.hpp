@@ -281,6 +281,9 @@ public:
     void XMask(bitCapInt mask) { engine->XMask(mask); }
     void PhaseParity(real1_f radians, bitCapInt mask) { engine->PhaseParity(radians, mask); }
 
+    real1_f CProb(bitLenInt control, bitLenInt target) { return engine->CProb(control, target); }
+    real1_f ACProb(bitLenInt control, bitLenInt target) { return engine->ACProb(control, target); }
+
     void UniformParityRZ(bitCapInt mask, real1_f angle) { engine->UniformParityRZ(mask, angle); }
     void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
     {

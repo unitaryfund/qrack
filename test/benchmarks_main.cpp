@@ -340,12 +340,6 @@ int main(int argc, char* argv[])
             testSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
-
-        if (num_failed == 0 && hybrid) {
-            session.config().stream() << "############ QPager -> QEngine -> Hybrid ############" << std::endl;
-            testSubEngineType = QINTERFACE_HYBRID;
-            num_failed = session.run();
-        }
 #endif
     }
 
