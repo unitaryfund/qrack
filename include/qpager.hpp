@@ -91,10 +91,6 @@ protected:
 
     void GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
-#if ENABLE_OPENCL
-    size_t GetRequiredSpace(bitCapIntOcl pageQubits);
-#endif
-
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -319,6 +315,7 @@ public:
     {
         ApplyEitherControlledSingleBit(true, controls, controlLen, target, mtrx);
     }
+
     void UniformParityRZ(bitCapInt mask, real1_f angle);
     void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
 
