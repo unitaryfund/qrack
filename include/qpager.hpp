@@ -95,8 +95,6 @@ protected:
     size_t GetRequiredSpace(bitCapIntOcl pageQubits);
 #endif
 
-    real1_f EitherCProb(bitLenInt control, bitLenInt target, bool isAnti);
-
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -327,9 +325,6 @@ public:
     void XMask(bitCapInt mask);
     void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
     void PhaseParity(real1_f radians, bitCapInt mask);
-
-    real1_f CProb(bitLenInt control, bitLenInt target) { return EitherCProb(control, target, false); }
-    real1_f ACProb(bitLenInt control, bitLenInt target) { return EitherCProb(control, target, true); }
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
     bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true)
