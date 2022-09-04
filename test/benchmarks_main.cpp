@@ -171,6 +171,10 @@ int main(int argc, char* argv[])
         session.config().stream() << "QRACK_QPAGER_DEVICES_HOST_POINTER: "
                                   << std::string(getenv("QRACK_QPAGER_DEVICES_HOST_POINTER")) << std::endl;
     }
+    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
+        session.config().stream() << "QRACK_QUNIT_SEPARABILITY_THRESHOLD: "
+                                  << std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) << std::endl;
+    }
 #endif
 
     if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager && !qunit_multi_qpager) {
