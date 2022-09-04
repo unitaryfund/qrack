@@ -137,6 +137,7 @@ void QPager::Init()
         minPageQubits = pStridePow + 1U;
 #endif
 
+        minPageQubits = (segmentGlobalQb < minPageQubits) ? (minPageQubits - segmentGlobalQb) : 1U;
         thresholdQubitsPerPage = minPageQubits;
     }
 
