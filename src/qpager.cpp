@@ -630,7 +630,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
     qpp -= dest->qubitsPerPage();
 
     const bitLenInt length = dest->qubitCount;
-    const bitLenInt pqc = pagedQubitCount() - length;
+    const bitLenInt pqc = pagedQubitCount() - dest->pagedQubitCount();
     ROR(pqc, qpp, pqc + length);
 
     const bitCapIntOcl maxJ = ((bitCapIntOcl)dest->qPages.size() - 1U);
@@ -639,10 +639,10 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         QEnginePtr engine = qPages[i];
         for (bitCapIntOcl j = 0U; j < maxJ; ++j) {
             nQPages.push_back(std::dynamic_pointer_cast<QEngine>(engine->Clone()));
-            nQPages.back()->Decompose(0U, dest->qPages[j]);
+            nQPages.back()->Decompose(qpp, dest->qPages[j]);
         }
         nQPages.push_back(engine);
-        nQPages.back()->Decompose(0U, dest->qPages[maxJ]);
+        nQPages.back()->Decompose(qpp, dest->qPages[maxJ]);
     }
 
     qPages = nQPages;
@@ -663,7 +663,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
     ROR(pqc, qpp, pqc + length);
 
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-        qPages[i]->Dispose(0U, length);
+        qPages[i]->Dispose(qpp, length);
     }
 
     SetQubitCount(qubitCount - length);
@@ -681,7 +681,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     ROR(pqc, qpp, pqc + length);
 
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-        qPages[i]->Dispose(0U, length, disposedPerm);
+        qPages[i]->Dispose(qpp, length, disposedPerm);
     }
 
     SetQubitCount(qubitCount - length);
