@@ -630,7 +630,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
     qpp -= dest->qubitsPerPage();
 
     const bitLenInt length = dest->qubitCount;
-    const bitLenInt pqc = qubitCount - qpp;
+    const bitLenInt pqc = pagedQubitCount() - length;
     ROR(pqc, qpp, pqc + length);
 
     const bitCapIntOcl maxJ = ((bitCapIntOcl)dest->qPages.size() - 1U);
