@@ -625,6 +625,14 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         return;
     }
 
+    const bitLenInt end = qubitCount - dest->qubitCount;
+    if (start != end) {
+        ROL(end - start, 0, qubitCount);
+        Decompose(end, dest);
+        ROR(end - start, 0, qubitCount);
+        return;
+    }
+
     bitLenInt qpp = qubitsPerPage();
     dest->SeparateEngines(qpp, true);
     qpp -= dest->qubitsPerPage();
@@ -658,6 +666,14 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
         return;
     }
 
+    const bitLenInt end = qubitCount - length;
+    if (start != end) {
+        ROL(end - start, 0, qubitCount);
+        Dispose(end, length);
+        ROR(end - start, 0, qubitCount);
+        return;
+    }
+
     const bitLenInt qpp = qubitsPerPage() - length;
     const bitLenInt pqc = pagedQubitCount() - length;
     ROR(pqc, qpp, pqc + length);
@@ -673,6 +689,14 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
 void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
     if (!length) {
+        return;
+    }
+
+    const bitLenInt end = qubitCount - length;
+    if (start != end) {
+        ROL(end - start, 0, qubitCount);
+        Dispose(end, length, disposedPerm);
+        ROR(end - start, 0, qubitCount);
         return;
     }
 
