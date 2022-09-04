@@ -420,12 +420,12 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
 
     bool isSpecial, isInvert;
     complex top, bottom;
-    if (!isIntraCtrled && !isSqiCtrl && IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
+    if (!isIntraCtrled && IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         isSpecial = true;
         isInvert = false;
         top = mtrx[0U];
         bottom = mtrx[3U];
-    } else if (!isIntraCtrled && !isSqiCtrl && IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
+    } else if (!isIntraCtrled && IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         isSpecial = true;
         isInvert = true;
         top = mtrx[1U];
@@ -456,10 +456,10 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
         QEnginePtr engine2 = qPages[j + targetPow];
 
         if (isSpecial) {
-            if (!IS_NORM_0(ONE_CMPLX - top)) {
+            if ((!isSqiCtrl || !anti) && !IS_NORM_0(ONE_CMPLX - top)) {
                 engine1->Phase(top, top, 0U);
             }
-            if (!IS_NORM_0(ONE_CMPLX - bottom)) {
+            if ((!isSqiCtrl || anti) && !IS_NORM_0(ONE_CMPLX - bottom)) {
                 engine2->Phase(bottom, bottom, 0U);
             }
 
@@ -467,10 +467,10 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
         }
 
         engine1->ShuffleBuffers(engine2);
-        if (!isSqiCtrl || anti) {
+        if (!isSqiCtrl || !anti) {
             fn(engine1, sqi);
         }
-        if (!isSqiCtrl || !anti) {
+        if (!isSqiCtrl || anti) {
             fn(engine2, sqi);
         }
         engine1->ShuffleBuffers(engine2);
