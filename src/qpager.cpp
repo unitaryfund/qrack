@@ -568,18 +568,60 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
         return qubitCount;
     }
 
-    if ((qubitCount + toCopy->qubitCount) > maxQubits) {
+    const bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
+    if (nQubitCount > maxQubits) {
         throw std::invalid_argument(
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
-    CombineEngines();
-    toCopy->CombineEngines();
-    const bitLenInt result = qPages[0U]->Compose(toCopy->qPages[0U]);
-    SetQubitCount(qubitCount - toCopy->qubitCount);
-    SeparateEngines();
+    if (nQubitCount <= thresholdQubitsPerPage) {
+        CombineEngines();
+        toCopy->CombineEngines();
+        return qPages[0U]->Compose(toCopy->qPages[0U]);
+    }
 
-    return result;
+    const bitCapIntOcl nPagePow = pow2Ocl(thresholdQubitsPerPage);
+    const bitCapIntOcl pagePow = pageMaxQPower();
+    bitCapIntOcl nOffset = 0U;
+    QEnginePtr bigEngine = qPages[0U]->CloneEmpty();
+    bigEngine->SetQubitCount(thresholdQubitsPerPage);
+    std::vector<QEnginePtr> nQPages = { bigEngine };
+    for (bitCapIntOcl i = 0U; i < toCopy->maxQPowerOcl; ++i) {
+        const complex amp = toCopy->GetAmplitude(i);
+        if (IS_NORM_0(amp)) {
+            nOffset += maxQPowerOcl;
+            while (nOffset >= nPagePow) {
+                nOffset -= nPagePow;
+                bigEngine = bigEngine->CloneEmpty();
+                nQPages.push_back(bigEngine);
+            }
+            continue;
+        }
+        const real1_f nrmAmp = ONE_R1 / norm(amp);
+        const real1_f argAmp = std::arg(amp);
+
+        for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
+            if (!qPages[j]->IsZeroAmplitude()) {
+                QEnginePtr littleEngine = std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone());
+                littleEngine->NormalizeState(nrmAmp, REAL1_DEFAULT_ARG, argAmp);
+                bigEngine->SetAmplitudePage(littleEngine, 0U, nOffset, pagePow);
+            }
+
+            nOffset += pagePow;
+            if (nOffset >= nPagePow) {
+                nOffset -= nPagePow;
+                bigEngine = bigEngine->CloneEmpty();
+                nQPages.push_back(bigEngine);
+            }
+        }
+    }
+    nQPages.pop_back();
+    qPages = nQPages;
+
+    bitLenInt toRet = qubitCount;
+    SetQubitCount(nQubitCount);
+
+    return toRet;
 }
 
 QInterfacePtr QPager::Decompose(bitLenInt start, bitLenInt length)
