@@ -3066,8 +3066,10 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-const complex sqrtwMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), -pow(complex(ZERO_R1, SQRT1_2_R1), ONE_R1 / 2),
-    pow(complex(ZERO_R1, -SQRT1_2_R1), ONE_R1 / 2), complex(SQRT1_2_R1, ZERO_R1) };
+const complex sqrtwMtrx[4] = { complex((real1)SQRT1_2_R1, (real1)ZERO_R1),
+    -pow(complex((real1)ZERO_R1, (real1)SQRT1_2_R1), (real1)(ONE_R1 / 2)),
+    pow(complex((real1)ZERO_R1, (real1)(-SQRT1_2_R1)), (real1)(ONE_R1 / 2)),
+    complex((real1)SQRT1_2_R1, (real1)ZERO_R1) };
 
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
