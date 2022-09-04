@@ -6522,6 +6522,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_33", "[mirror]")
     REQUIRE(qftReg->MAll() == 2);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_34", "[mirror]")
+{
+    qftReg = MakeEngine(2);
+    qftReg->SetPermutation(1);
+
+    qftReg->H(0);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 1);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();

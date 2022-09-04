@@ -10,6 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "qengine_cpu.hpp"
 #include "qengine_opencl.hpp"
 
 #include <algorithm>
@@ -715,6 +716,13 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
 {
     CHECK_ZERO_SKIP();
 
+    if (maxQPowerOcl < nrmGroupSize) {
+        spoofOcl([&](QEngineCPUPtr copyPtr) {
+            copyPtr->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
+        });
+        return;
+    }
+
     const bool skipNorm = !doNormalize || (abs(ONE_R1 - runningNorm) <= FP_NORM_EPSILON);
     const bool isXGate = skipNorm && (special == SPECIAL_2X2::PAULIX);
     const bool isZGate = skipNorm && (special == SPECIAL_2X2::PAULIZ);
@@ -1126,6 +1134,10 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex n
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
+    if (maxQPowerOcl < nrmGroupSize) {
+        spoofOcl([&](QEngineCPUPtr copyPtr) { copyPtr->ApplyM(qPower, result, nrm); });
+        return;
+    }
     bitCapIntOcl powerTest = result ? (bitCapIntOcl)qPower : 0U;
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), (bitCapIntOcl)qPower,
@@ -1136,6 +1148,11 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 
 void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 {
+    if (maxQPowerOcl < nrmGroupSize) {
+        spoofOcl([&](QEngineCPUPtr copyPtr) { copyPtr->ApplyM(mask, result, nrm); });
+        return;
+    }
+
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, (bitCapIntOcl)result, 0U, 0U, 0U, 0U,
         0U, 0U, 0U };
 
@@ -1563,12 +1580,12 @@ real1_f QEngineOCL::Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs)
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1_f QEngineOCL::Prob(bitLenInt qubit)
 {
-    if (qubitCount == 1) {
-        return ProbAll(1);
-    }
-
     if (!stateBuffer) {
         return ZERO_R1_F;
+    }
+
+    if (maxQPowerOcl < nrmGroupSize) {
+        return spoofOclResult([&](QEngineCPUPtr copyPtr) { return copyPtr->Prob(qubit); });
     }
 
     const bitCapIntOcl qPower = pow2Ocl(qubit);

@@ -220,6 +220,10 @@ public:
     real1_f SumSqrDiff(QInterfacePtr toCompare) { return SumSqrDiff(std::dynamic_pointer_cast<QEngineCPU>(toCompare)); }
     real1_f SumSqrDiff(QEngineCPUPtr toCompare);
     QInterfacePtr Clone();
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    using QEngine::ApplyM;
+    void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     /** @} */
 
@@ -245,11 +249,7 @@ protected:
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
-        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
-    using QEngine::ApplyM;
-    void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
 #if ENABLE_ALU
     void INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
