@@ -270,30 +270,6 @@ protected:
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
     }
 
-    void spoofOcl(std::function<void(QEngineCPUPtr)> oclCall)
-    {
-        QEngineCPUPtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
-        LockSync(CL_MAP_READ | CL_MAP_WRITE);
-        copyPtr->SetQuantumState(stateVec.get());
-        oclCall(copyPtr);
-        copyPtr->GetQuantumState(stateVec.get());
-        UnlockSync();
-    }
-
-    real1_f spoofOclResult(std::function<real1_f(QEngineCPUPtr)> oclCall)
-    {
-        QEngineCPUPtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
-        LockSync(CL_MAP_READ | CL_MAP_WRITE);
-        copyPtr->SetQuantumState(stateVec.get());
-        real1_f result = oclCall(copyPtr);
-        copyPtr->GetQuantumState(stateVec.get());
-        UnlockSync();
-
-        return result;
-    }
-
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
     /// design of the QEngine.
