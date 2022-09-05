@@ -1281,29 +1281,6 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, 
     }
 }
 
-void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    const bool isQubit1Meta = qubit1 >= baseQubitsPerPage;
-    const bool isQubit2Meta = qubit2 >= baseQubitsPerPage;
-    if (isQubit1Meta && isQubit2Meta) {
-        SeparateEngines();
-        MetaSwap(qubit1, qubit2, false, false);
-        return;
-    }
-    if (isQubit1Meta || isQubit2Meta) {
-        SeparateEngines();
-        SemiMetaSwap(qubit1, qubit2, false, false);
-        return;
-    }
-
-    for (size_t i = 0U; i < qPages.size(); ++i) {
-        qPages[i]->Swap(qubit1, qubit2);
-    }
-}
 void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 {
     if (qubit1 == qubit2) {

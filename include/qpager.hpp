@@ -365,7 +365,6 @@ public:
     void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 #endif
 
-    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     void ISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, false); }
     void IISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, true); }
     void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
