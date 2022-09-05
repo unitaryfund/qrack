@@ -365,7 +365,7 @@ void QStabilizerHybrid::SwitchToEngine()
     ancillaCount = 0;
 }
 
-bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
+bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool willDestroy)
 {
     if (!toCopy->qubitCount) {
         return qubitCount;
@@ -381,12 +381,13 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
     bitLenInt toRet;
     if (engine) {
         toCopy->SwitchToEngine();
-        toRet = engine->Compose(toCopy->engine);
+        toRet = willDestroy ? engine->ComposeNoClone(toCopy->engine) : engine->Compose(toCopy->engine);
     } else if (toCopy->engine) {
         SwitchToEngine();
-        toRet = engine->Compose(toCopy->engine);
+        toRet = willDestroy ? engine->ComposeNoClone(toCopy->engine) : engine->Compose(toCopy->engine);
     } else {
-        toRet = stabilizer->Compose(toCopy->stabilizer, qubitCount);
+        toRet = willDestroy ? stabilizer->ComposeNoClone(toCopy->stabilizer)
+                            : stabilizer->Compose(toCopy->stabilizer, qubitCount);
         ancillaCount += toCopy->ancillaCount;
     }
 

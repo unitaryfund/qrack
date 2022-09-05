@@ -290,6 +290,7 @@ public:
     bitLenInt Compose(QPagerPtr toCopy) { return ComposeEither(toCopy, false); }
     bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QPager>(toCopy)); }
     bitLenInt ComposeNoClone(QPagerPtr toCopy) { return ComposeEither(toCopy, true); }
+    bitLenInt ComposeNoClone(QInterfacePtr toCopy) { return ComposeNoClone(std::dynamic_pointer_cast<QPager>(toCopy)); }
     bitLenInt ComposeEither(QPagerPtr toCopy, bool willDestroy);
     void Decompose(bitLenInt start, QInterfacePtr dest) { Decompose(start, std::dynamic_pointer_cast<QPager>(dest)); }
     void Decompose(bitLenInt start, QPagerPtr dest);

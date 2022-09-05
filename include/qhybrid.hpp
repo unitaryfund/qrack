@@ -190,6 +190,16 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy), start);
     }
+    bitLenInt ComposeNoClone(QHybridPtr toCopy)
+    {
+        SetQubitCount(qubitCount + toCopy->qubitCount);
+        toCopy->SwitchModes(isGpu, isPager);
+        return engine->ComposeNoClone(toCopy->engine);
+    }
+    bitLenInt ComposeNoClone(QInterfacePtr toCopy)
+    {
+        return ComposeNoClone(std::dynamic_pointer_cast<QHybrid>(toCopy));
+    }
     using QEngine::Decompose;
     void Decompose(bitLenInt start, QInterfacePtr dest) { Decompose(start, std::dynamic_pointer_cast<QHybrid>(dest)); }
     bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)

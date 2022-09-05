@@ -310,7 +310,7 @@ public:
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(toCopy, qubitCount); }
-    virtual bitLenInt ComposeNoClone(QInterfacePtr toCopy) { return Compose(toCopy, qubitCount); }
+    virtual bitLenInt ComposeNoClone(QInterfacePtr toCopy) { return Compose(toCopy); }
     virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start);
 

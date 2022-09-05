@@ -204,13 +204,19 @@ public:
     bool isBinaryDecisionTree() { return engine && engine->isBinaryDecisionTree(); };
 
     using QInterface::Compose;
-    bitLenInt Compose(QStabilizerHybridPtr toCopy);
+    bitLenInt Compose(QStabilizerHybridPtr toCopy) { return ComposeEither(toCopy, false); };
     bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QStabilizerHybrid>(toCopy)); }
     bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start);
     bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
         return Compose(std::dynamic_pointer_cast<QStabilizerHybrid>(toCopy), start);
     }
+    bitLenInt ComposeNoClone(QStabilizerHybridPtr toCopy) { return ComposeEither(toCopy, true); };
+    bitLenInt ComposeNoClone(QInterfacePtr toCopy)
+    {
+        return ComposeNoClone(std::dynamic_pointer_cast<QStabilizerHybrid>(toCopy));
+    }
+    bitLenInt ComposeEither(QStabilizerHybridPtr toCopy, bool willDestroy);
     void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         Decompose(start, std::dynamic_pointer_cast<QStabilizerHybrid>(dest));
