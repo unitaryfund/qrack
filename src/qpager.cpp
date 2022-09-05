@@ -562,7 +562,7 @@ void QPager::CombineAndOpControlled(
     CombineAndOp(fn, bits);
 }
 
-bitLenInt QPager::Compose(QPagerPtr toCopy)
+bitLenInt QPager::Compose(bool willDestroy, QPagerPtr toCopy)
 {
     const bitLenInt toRet = qubitCount;
     if (!toCopy->qubitCount) {
@@ -582,7 +582,7 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
     }
 
     if (qubitCount < toCopy->qubitCount) {
-        QPagerPtr toCopyClone = std::dynamic_pointer_cast<QPager>(toCopy->Clone());
+        QPagerPtr toCopyClone = willDestroy ? toCopy : std::dynamic_pointer_cast<QPager>(toCopy->Clone());
         toCopyClone->Compose(shared_from_this(), 0U);
         qPages = toCopyClone->qPages;
         SetQubitCount(qubitCount + toCopy->qubitCount);

@@ -432,7 +432,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
         // Work odd unit into collapse sequence:
         if (units.size() & 1U) {
             QInterfacePtr consumed = units[1U];
-            bitLenInt offset = unit1->Compose(consumed);
+            bitLenInt offset = unit1->Compose(true, consumed);
             units.erase(units.begin() + 1U);
 
             for (auto&& shard : shards) {
@@ -451,7 +451,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             QInterfacePtr retained = units[i];
             QInterfacePtr consumed = units[i + 1U];
             nUnits.push_back(retained);
-            offsets[consumed] = retained->Compose(consumed);
+            offsets[consumed] = retained->Compose(true, consumed);
             offsetPartners[consumed] = retained;
         }
 
