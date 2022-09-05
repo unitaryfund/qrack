@@ -287,8 +287,8 @@ public:
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     using QEngine::Compose;
-    bitLenInt Compose(bool willDestroy, QPagerPtr toCopy);
-    bitLenInt Compose(bool willDestroy, QInterfacePtr toCopy) { return Compose(willDestroy, std::dynamic_pointer_cast<QPager>(toCopy)); }
+    bitLenInt Compose(QPagerPtr toCopy);
+    bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QPager>(toCopy)); }
     void Decompose(bitLenInt start, QInterfacePtr dest) { Decompose(start, std::dynamic_pointer_cast<QPager>(dest)); }
     void Decompose(bitLenInt start, QPagerPtr dest);
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
