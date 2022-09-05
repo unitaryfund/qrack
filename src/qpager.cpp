@@ -646,18 +646,59 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 
 void QPager::Dispose(bitLenInt start, bitLenInt length)
 {
-    CombineEngines();
-    qPages[0U]->Dispose(start, length);
+    if (qubitCount <= thresholdQubitsPerPage) {
+        CombineEngines();
+        return qPages[0U]->Dispose(start, length);
+    }
+
+    const bitLenInt end = qubitCount - length;
+    if (start != end) {
+        ROL(end - start, 0, qubitCount);
+        Dispose(end, length);
+        ROR(end - start, 0, qubitCount);
+        return;
+    }
+
+    CombineEngines(end + 1U);
+    SeparateEngines(end + 1U, true);
+
+    std::vector<QEnginePtr> nQPages;
+    bitCapIntOcl i = 0U;
+    while ((i < qPages.size()) && !nQPages.size()) {
+        qPages[i]->UpdateRunningNorm();
+        if (qPages[i]->IsZeroAmplitude()) {
+            ++i;
+            continue;
+        }
+        qPages[i]->NormalizeState();
+        nQPages = std::vector<QEnginePtr>(1U, qPages[i]);
+    }
+    qPages = nQPages;
     SetQubitCount(qubitCount - length);
-    SeparateEngines();
 }
 
 void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
-    CombineEngines();
-    qPages[0U]->Dispose(start, length, disposedPerm);
+    if (qubitCount <= thresholdQubitsPerPage) {
+        CombineEngines();
+        return qPages[0U]->Dispose(start, length, disposedPerm);
+    }
+
+    const bitLenInt end = qubitCount - length;
+    if (start != end) {
+        ROL(end - start, 0, qubitCount);
+        Dispose(end, length, disposedPerm);
+        ROR(end - start, 0, qubitCount);
+        return;
+    }
+
+    CombineEngines(end + 1U);
+    SeparateEngines(end + 1U, true);
+
+    qPages = std::vector<QEnginePtr>(1U, qPages[(bitCapIntOcl)disposedPerm]);
+    qPages[0U]->UpdateRunningNorm();
+    qPages[0U]->NormalizeState();
     SetQubitCount(qubitCount - length);
-    SeparateEngines();
 }
 
 bitLenInt QPager::Allocate(bitLenInt start, bitLenInt length)
