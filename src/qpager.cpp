@@ -674,6 +674,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
         nQPages = std::vector<QEnginePtr>(1U, qPages[i]);
     }
     qPages = nQPages;
+
     SetQubitCount(qubitCount - length);
 }
 
@@ -692,12 +693,26 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
         return;
     }
 
-    CombineEngines(end + 1U);
     SeparateEngines(end + 1U, true);
 
-    qPages = std::vector<QEnginePtr>(1U, qPages[(bitCapIntOcl)disposedPerm]);
-    qPages[0U]->UpdateRunningNorm();
-    qPages[0U]->NormalizeState();
+    const bitLenInt pageDiff = (end + 1U) - qubitsPerPage();
+    const bitCapIntOcl diffPow = pow2Ocl(pageDiff);
+    const bitCapIntOcl dP = ((bitCapIntOcl)disposedPerm) << pageDiff;
+
+    std::vector<QEnginePtr> nQPages;
+    for (bitCapIntOcl i = 0U; i < diffPow; ++i) {
+        nQPages.push_back(qPages[dP + i]);
+        nQPages.back()->UpdateRunningNorm();
+    }
+    real1_f nrm = ZERO_R1;
+    for (bitCapIntOcl i = 0U; i < diffPow; ++i) {
+        nrm += nQPages[i]->GetRunningNorm();
+    }
+    for (bitCapIntOcl i = 0U; i < diffPow; ++i) {
+        nQPages[i]->NormalizeState(nrm);
+    }
+    qPages = nQPages;
+
     SetQubitCount(qubitCount - length);
 }
 
