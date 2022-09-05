@@ -76,7 +76,6 @@ protected:
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse);
-    void SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse);
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
@@ -365,6 +364,7 @@ public:
     void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 #endif
 
+    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     void ISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, false); }
     void IISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, true); }
     void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
