@@ -591,12 +591,21 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
 
     const bitCapIntOcl nPagePow = pow2Ocl(thresholdQubitsPerPage);
     const bitCapIntOcl pagePow = pageMaxQPower();
+    const bitCapIntOcl oPagePow = toCopy->pageMaxQPower();
+    const bitCapIntOcl tcqpp = toCopy->qubitsPerPage();
     bitCapIntOcl nOffset = 0U;
+    bitCapIntOcl oOffset = 0U;
     QEnginePtr bigEngine = qPages[0U]->CloneEmpty();
     bigEngine->SetQubitCount(thresholdQubitsPerPage);
     std::vector<QEnginePtr> nQPages = { bigEngine };
     for (bitCapIntOcl i = 0U; i < toCopy->maxQPowerOcl; ++i) {
         const complex amp = toCopy->GetAmplitude(i);
+
+        if (willDestroy && (i == oOffset)) {
+            oOffset += oPagePow;
+            toCopy->qPages[i >> tcqpp] = NULL;
+        }
+
         if (IS_NORM_0(amp)) {
             nOffset += maxQPowerOcl;
             while (nOffset >= nPagePow) {
