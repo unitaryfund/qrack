@@ -606,7 +606,6 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
         }
 
         const complex amp = toCopy->GetAmplitude(i);
-
         if (IS_NORM_0(amp)) {
             nOffset += maxQPowerOcl;
             while (nOffset >= nPagePow) {
@@ -616,14 +615,17 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
             }
             continue;
         }
-        const real1_f nrmAmp = ONE_R1 / norm(amp);
-        const real1_f argAmp = std::arg(amp);
 
         for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
             if (!qPages[j]->IsZeroAmplitude()) {
                 QEnginePtr littleEngine = std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone());
-                littleEngine->NormalizeState(nrmAmp, REAL1_DEFAULT_ARG, argAmp);
-                bigEngine->SetAmplitudePage(littleEngine, 0U, nOffset, pagePow);
+                littleEngine->Phase(amp, amp, 0U);
+                if (pagePow == nPagePow) {
+                   bigEngine = littleEngine;
+                   nQPages.back() = littleEngine;
+                } else {
+                    bigEngine->SetAmplitudePage(littleEngine, 0U, nOffset, pagePow);
+                }
             }
 
             nOffset += pagePow;
