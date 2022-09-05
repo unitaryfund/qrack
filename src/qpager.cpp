@@ -595,9 +595,8 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
     const bitCapIntOcl tcqpp = toCopy->qubitsPerPage();
     bitCapIntOcl nOffset = 0U;
     bitCapIntOcl oOffset = oPagePow;
-    QEnginePtr bigEngine = qPages[0U]->CloneEmpty();
-    bigEngine->SetQubitCount(thresholdQubitsPerPage);
-    std::vector<QEnginePtr> nQPages = { bigEngine };
+    std::vector<QEnginePtr> nQPages = { qPages[0U]->CloneEmpty() };
+    nQPages.back()->SetQubitCount(thresholdQubitsPerPage);
     for (bitCapIntOcl i = 0U; i < toCopy->maxQPowerOcl; ++i) {
         if (willDestroy && (i == oOffset)) {
             oOffset -= oPagePow;
@@ -610,8 +609,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
             nOffset += maxQPowerOcl;
             while (nOffset >= nPagePow) {
                 nOffset -= nPagePow;
-                bigEngine = bigEngine->CloneEmpty();
-                nQPages.push_back(bigEngine);
+                nQPages.push_back(nQPages.back()->CloneEmpty());
             }
             continue;
         }
@@ -621,18 +619,16 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
                 QEnginePtr littleEngine = std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone());
                 littleEngine->Phase(amp, amp, 0U);
                 if (pagePow == nPagePow) {
-                   bigEngine = littleEngine;
-                   nQPages.back() = littleEngine;
+                    nQPages.back() = littleEngine;
                 } else {
-                    bigEngine->SetAmplitudePage(littleEngine, 0U, nOffset, pagePow);
+                    nQPages.back()->SetAmplitudePage(littleEngine, 0U, nOffset, pagePow);
                 }
             }
 
             nOffset += pagePow;
             if (nOffset >= nPagePow) {
                 nOffset -= nPagePow;
-                bigEngine = bigEngine->CloneEmpty();
-                nQPages.push_back(bigEngine);
+                nQPages.push_back(nQPages.back()->CloneEmpty());
             }
         }
     }
