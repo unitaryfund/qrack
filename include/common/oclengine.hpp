@@ -188,16 +188,19 @@ private:
     const size_t maxWorkGroupSize = device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
     const size_t maxAlloc = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     const size_t globalSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+    size_t globalLimit;
     size_t preferredSizeMultiple;
     size_t preferredConcurrency;
 
 public:
-    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int64_t dev_id, int64_t cntxt_id)
+    OCLDeviceContext(
+        cl::Platform& p, cl::Device& d, cl::Context& c, int64_t dev_id, int64_t cntxt_id, int64_t maxAlloc = -1)
         : platform(p)
         , device(d)
         , context(c)
         , context_id(cntxt_id)
         , device_id(dev_id)
+        , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * globalSize) >> 2U))
         , preferredSizeMultiple(0U)
         , preferredConcurrency(0U)
     {
@@ -282,6 +285,7 @@ public:
     size_t GetMaxWorkGroupSize() { return maxWorkGroupSize; }
     size_t GetMaxAlloc() { return maxAlloc; }
     size_t GetGlobalSize() { return globalSize; }
+    size_t GetGlobalAllocLimit() { return globalLimit; }
 
     friend class OCLEngine;
 };
@@ -341,7 +345,8 @@ public:
     /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
     /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
     /// SetDeviceContextPtrVector().
-    static InitOClResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+    static InitOClResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*",
+        std::vector<int64_t> maxAllocVec = { -1 });
 
     /// Get a pointer one of the available OpenCL contexts, by its index in the list of all contexts.
     DeviceContextPtr GetDeviceContextPtr(const int64_t& dev = -1);
@@ -358,7 +363,6 @@ public:
     size_t GetDefaultDeviceID() { return default_device_context->device_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
-    size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
 
     size_t GetActiveAllocSize(const int64_t& dev)
     {
@@ -410,7 +414,7 @@ private:
     static const std::string binary_file_ext;
 
     std::vector<size_t> activeAllocSizes;
-    size_t maxActiveAllocSize;
+    std::vector<int64_t> maxActiveAllocSizes;
     std::mutex allocMutex;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;

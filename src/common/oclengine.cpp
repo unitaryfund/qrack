@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <iostream>
 #include <memory>
+#include <regex>
 
 #if UINTPOW < 4
 #include "qheader_uint8cl.hpp"
@@ -274,9 +275,9 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     fclose(clBinFile);
 }
 
-InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
+InitOClResult OCLEngine::InitOCL(
+    bool buildFromSource, bool saveBinaries, std::string home, std::vector<int64_t> maxAllocVec)
 {
-
     if (home == "*") {
         home = GetDefaultBinaryPath();
     }
@@ -343,8 +344,8 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
             plat_id = device_platform_id[i];
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
-        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
-            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1U], i, plat_id);
+        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i],
+            all_contexts[all_contexts.size() - 1U], i, plat_id, maxAllocVec[i % maxAllocVec.size()]);
 
         std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;
         std::replace(fileName.begin(), fileName.end(), ' ', '_');
@@ -404,13 +405,47 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 }
 
 OCLEngine::OCLEngine()
-    : maxActiveAllocSize(-1)
+    : maxActiveAllocSizes(1U, -1)
 {
     if (getenv("QRACK_MAX_ALLOC_MB")) {
-        maxActiveAllocSize = 1024U * 1024U * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));
+        std::string devListStr = std::string(getenv("QRACK_MAX_ALLOC_MB"));
+        maxActiveAllocSizes.clear();
+        if (devListStr.compare("")) {
+            std::stringstream devListStr_stream(devListStr);
+            // See
+            // https://stackoverflow.com/questions/7621727/split-a-string-into-words-by-multiple-delimiters#answer-58164098
+            std::regex re("[.]");
+            while (devListStr_stream.good()) {
+                std::string term;
+                getline(devListStr_stream, term, ',');
+                // the '-1' is what makes the regex split (-1 := what was not matched)
+                std::sregex_token_iterator first{ term.begin(), term.end(), re, -1 }, last;
+                std::vector<std::string> tokens{ first, last };
+                if (tokens.size() == 1U) {
+                    maxActiveAllocSizes.push_back(stoi(term));
+                    if (maxActiveAllocSizes.back() >= 0) {
+                        maxActiveAllocSizes.back() = maxActiveAllocSizes.back() << 20U;
+                    }
+                    continue;
+                }
+                const unsigned maxI = stoi(tokens[0U]);
+                std::vector<int64_t> limits(tokens.size() - 1U);
+                for (unsigned i = 1U; i < tokens.size(); ++i) {
+                    limits[i - 1U] = stoi(tokens[i]);
+                }
+                for (unsigned i = 0U; i < maxI; ++i) {
+                    for (unsigned j = 0U; j < limits.size(); ++j) {
+                        maxActiveAllocSizes.push_back(limits[j]);
+                        if (maxActiveAllocSizes.back() >= 0) {
+                            maxActiveAllocSizes.back() = maxActiveAllocSizes.back() << 20U;
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    InitOClResult initResult = InitOCL(false);
+    InitOClResult initResult = InitOCL(false, false, "*", maxActiveAllocSizes);
     SetDeviceContextPtrVector(initResult.all_dev_contexts, initResult.default_dev_context);
     activeAllocSizes = std::vector<size_t>(initResult.all_dev_contexts.size());
 }

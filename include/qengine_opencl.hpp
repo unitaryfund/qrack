@@ -492,7 +492,7 @@ protected:
     void AddAlloc(size_t size)
     {
         size_t currentAlloc = OCLEngine::Instance().AddToActiveAllocSize(deviceID, size);
-        if (currentAlloc > OCLEngine::Instance().GetMaxActiveAllocSize()) {
+        if (device_context && (currentAlloc > device_context->GetGlobalAllocLimit())) {
             OCLEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
             throw bad_alloc("VRAM limits exceeded in QEngineOCL::AddAlloc()");
         }
