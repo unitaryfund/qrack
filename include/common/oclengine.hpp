@@ -200,7 +200,11 @@ public:
         , context(c)
         , context_id(cntxt_id)
         , device_id(dev_id)
+#if ENABLE_OCL_MEM_GUARDS
         , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * globalSize) >> 2U))
+#else
+        , globalLimit((maxAlloc >= 0) ? maxAlloc : -1)
+#endif
         , preferredSizeMultiple(0U)
         , preferredConcurrency(0U)
     {
