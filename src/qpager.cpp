@@ -592,7 +592,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
     const bitCapIntOcl oPagePow = toCopy->pageMaxQPower();
     const bitCapIntOcl tcqpp = toCopy->qubitsPerPage();
     bitCapIntOcl oOffset = oPagePow;
-    std::vector<QEnginePtr> nQPages = { qPages[0U]->CloneEmpty() };
+    std::vector<QEnginePtr> nQPages;
     for (bitCapIntOcl i = 0U; i < toCopy->maxQPowerOcl; ++i) {
         if (willDestroy && (i == oOffset)) {
             oOffset -= oPagePow;
@@ -603,14 +603,14 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
         const complex amp = toCopy->GetAmplitude(i);
         if (IS_NORM_0(amp)) {
             for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
-                nQPages.push_back(nQPages.back()->CloneEmpty());
+                nQPages.push_back(qPages[j]->CloneEmpty());
             }
             continue;
         }
 
         for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
             if (qPages[j]->IsZeroAmplitude()) {
-                nQPages.push_back(nQPages.back()->CloneEmpty());
+                nQPages.push_back(qPages[j]->CloneEmpty());
             } else {
                 nQPages.push_back(std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone()));
                 nQPages.back()->Phase(amp, amp, 0U);
