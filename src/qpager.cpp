@@ -589,14 +589,10 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
         return toRet;
     }
 
-    const bitCapIntOcl nPagePow = pow2Ocl(thresholdQubitsPerPage);
-    const bitCapIntOcl pagePow = pageMaxQPower();
     const bitCapIntOcl oPagePow = toCopy->pageMaxQPower();
     const bitCapIntOcl tcqpp = toCopy->qubitsPerPage();
-    bitCapIntOcl nOffset = 0U;
     bitCapIntOcl oOffset = oPagePow;
     std::vector<QEnginePtr> nQPages = { qPages[0U]->CloneEmpty() };
-    nQPages.back()->SetQubitCount(thresholdQubitsPerPage);
     for (bitCapIntOcl i = 0U; i < toCopy->maxQPowerOcl; ++i) {
         if (willDestroy && (i == oOffset)) {
             oOffset -= oPagePow;
@@ -606,36 +602,26 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
 
         const complex amp = toCopy->GetAmplitude(i);
         if (IS_NORM_0(amp)) {
-            nOffset += maxQPowerOcl;
-            while (nOffset >= nPagePow) {
-                nOffset -= nPagePow;
+            for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
                 nQPages.push_back(nQPages.back()->CloneEmpty());
             }
             continue;
         }
 
         for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
-            if (!qPages[j]->IsZeroAmplitude()) {
-                QEnginePtr littleEngine = std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone());
-                littleEngine->Phase(amp, amp, 0U);
-                if (pagePow == nPagePow) {
-                    nQPages.back() = littleEngine;
-                } else {
-                    nQPages.back()->SetAmplitudePage(littleEngine, 0U, nOffset, pagePow);
-                }
-            }
-
-            nOffset += pagePow;
-            if (nOffset >= nPagePow) {
-                nOffset -= nPagePow;
+            if (qPages[j]->IsZeroAmplitude()) {
                 nQPages.push_back(nQPages.back()->CloneEmpty());
+            } else {
+                nQPages.push_back(std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone()));
+                nQPages.back()->Phase(amp, amp, 0U);
             }
         }
     }
-    nQPages.pop_back();
     qPages = nQPages;
 
     SetQubitCount(nQubitCount);
+
+    CombineEngines(thresholdQubitsPerPage);
 
     return toRet;
 }
