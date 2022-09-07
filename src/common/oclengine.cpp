@@ -16,6 +16,7 @@
 #include <iostream>
 #include <memory>
 #include <regex>
+#include <sstream>
 
 #if UINTPOW < 4
 #include "qheader_uint8cl.hpp"
