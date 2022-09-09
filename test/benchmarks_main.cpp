@@ -75,6 +75,7 @@ int main(int argc, char* argv[])
     bool stabilizer = false;
     bool stabilizer_qpager = false;
     bool stabilizer_bdt = false;
+    bool stabilizer_cpu = false;
 
     std::string devListStr;
 
@@ -96,8 +97,8 @@ int main(int argc, char* argv[])
         Opt(qunit_multi_qpager)["--layer-qunit-multi-qpager"]("Enable QUnitMulti with QPager implementation tests") |
         Opt(stabilizer_qpager)["--proc-stabilizer-qpager"](
             "Enable QStabilizerHybrid over QPager implementation tests") |
-        Opt(stabilizer_bdt)["--proc-stabilizer-bdt"](
-            "Enable QStabilizerHybrid over QBinaryDecisionTree implementation tests") |
+        Opt(stabilizer_bdt)["--proc-stabilizer-bdt"]("Enable QStabilizerHybrid over QBdt implementation tests") |
+        Opt(stabilizer_cpu)["--proc-stabilizer-cpu"]("Enable QStabilizerHybrid over QEngineCPU implementation tests") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl)["--proc-opencl"]("Single (parallel) processor OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
@@ -186,7 +187,7 @@ int main(int argc, char* argv[])
         // qunit_multi_qpager = true;
     }
 
-    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt) {
+    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt && !stabilizer_cpu) {
         cpu = true;
         opencl = true;
         hybrid = true;
@@ -194,6 +195,7 @@ int main(int argc, char* argv[])
         // bdt = true;
         // stabilizer_qpager = true;
         // stabilizer_bdt = true;
+        // stabilizer_cpu = true;
     }
 
     if (devListStr.compare("") != 0) {
@@ -386,6 +388,14 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && hybrid) {
             session.config().stream() << "############ QUnit -> QHybrid ############" << std::endl;
             testSubEngineType = QINTERFACE_HYBRID;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_cpu) {
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QEngineCPU ############"
+                                      << std::endl;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
 
