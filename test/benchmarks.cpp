@@ -3303,6 +3303,14 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         continue;
                     }
 
+                    if (d == (benchmarkDepth - 1)) {
+                        // For the last layer of couplers, the immediately next operation is measurement, and the phase
+                        // effects make no observable difference.
+                        qReg->Swap(b1, b2);
+
+                        continue;
+                    }
+
                     qReg->TrySeparate(b1, b2);
 
                     // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
