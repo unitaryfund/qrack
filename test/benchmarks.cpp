@@ -742,7 +742,7 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
                     // "1/6 of CZ" is read to indicate the 6th root.
                     controls[0] = b1;
                     qReg->MCPhase(controls, 1U, ONE_CMPLX, sixthRoot, b2);
-                    // Note that these gates are both symmetric under exchange of "b1" and "b2".
+                    // Note that these couplers are also symmetric under exchange of "b1" and "b2".
 
                     // See https://arxiv.org/abs/1802.06952.
                     // After each and every coupler, we effectively branch into four permutation state projection
