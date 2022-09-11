@@ -5721,9 +5721,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_20", "[mirror]")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_21", "[mirror]")
 {
-    std::cout << "xfail (test_mirror_circuit_21)" << std::endl;
-    return;
-
     qftReg = MakeEngine(6);
     qftReg->SetPermutation(34);
 

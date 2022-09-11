@@ -386,8 +386,7 @@ bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool wil
         SwitchToEngine();
         toRet = willDestroy ? engine->ComposeNoClone(toCopy->engine) : engine->Compose(toCopy->engine);
     } else {
-        toRet = willDestroy ? stabilizer->ComposeNoClone(toCopy->stabilizer)
-                            : stabilizer->Compose(toCopy->stabilizer, qubitCount);
+        toRet = stabilizer->Compose(toCopy->stabilizer, qubitCount);
         ancillaCount += toCopy->ancillaCount;
     }
 
