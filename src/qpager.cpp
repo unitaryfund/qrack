@@ -605,19 +605,22 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
 
         if (IS_NORM_0(amp)) {
             for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
-                nQPages[i * qPages.size() + j] = qPages[j]->CloneEmpty();
+                const bitCapIntOcl page = i * qPages.size() + j;
+                nQPages[page] = qPages[j]->CloneEmpty();
+                nQPages[page]->SetDevice(GetPageDevice(page));
             }
             continue;
         }
 
         for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
-            QEnginePtr& nQPage = nQPages[i * qPages.size() + j];
+            const bitCapIntOcl page = i * qPages.size() + j;
             if (qPages[j]->IsZeroAmplitude()) {
-                nQPage = qPages[j]->CloneEmpty();
+                nQPages[page] = qPages[j]->CloneEmpty();
             } else {
-                nQPage = std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone());
-                nQPage->Phase(amp, amp, 0U);
+                nQPages[page] = std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone());
+                nQPages[page]->Phase(amp, amp, 0U);
             }
+            nQPages[page]->SetDevice(GetPageDevice(page));
         }
     }
     qPages = nQPages;
