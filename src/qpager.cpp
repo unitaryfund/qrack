@@ -589,6 +589,8 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
         return toRet;
     }
 
+    const bitCapIntOcl nPagePow = pow2Ocl(thresholdQubitsPerPage);
+    const bitCapIntOcl pmqp = pageMaxQPower();
     const bitCapIntOcl oPagePow = toCopy->pageMaxQPower();
     const bitCapIntOcl tcqpp = toCopy->qubitsPerPage();
     const bitCapIntOcl maxI = toCopy->maxQPowerOcl;
@@ -607,7 +609,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
             for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
                 const bitCapIntOcl page = i * qPages.size() + j;
                 nQPages[page] = qPages[j]->CloneEmpty();
-                nQPages[page]->SetDevice(GetPageDevice(page));
+                nQPages[page]->SetDevice(GetPageDevice((pmqp * page) / nPagePow));
             }
             continue;
         }
@@ -620,7 +622,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
                 nQPages[page] = std::dynamic_pointer_cast<QEngine>(qPages[j]->Clone());
                 nQPages[page]->Phase(amp, amp, 0U);
             }
-            nQPages[page]->SetDevice(GetPageDevice(page));
+            nQPages[page]->SetDevice(GetPageDevice((pmqp * page) / nPagePow));
         }
     }
     qPages = nQPages;
