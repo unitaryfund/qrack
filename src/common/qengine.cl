@@ -121,20 +121,20 @@ inline cmplx conj(const cmplx cmp)
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                                                             \
     stateVec[i | OFFSET2_ARG] = mulRes.hi;
 
-#define SUM_LOCAL(part)                                                                                                    \
+#define SUM_LOCAL(part)                                                                                                \
     const bitCapIntOcl locID = get_local_id(0);                                                                        \
     const bitCapIntOcl locNthreads = get_local_size(0);                                                                \
-    lBuffer[locID] = part;                                                                                \
+    lBuffer[locID] = part;                                                                                             \
                                                                                                                        \
     for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {                                     \
         barrier(CLK_LOCAL_MEM_FENCE);                                                                                  \
         if (locID < lcv) {                                                                                             \
-            lBuffer[locID] += lBuffer[locID + lcv];                                                            \
+            lBuffer[locID] += lBuffer[locID + lcv];                                                                    \
         }                                                                                                              \
     }                                                                                                                  \
                                                                                                                        \
     if (locID == 0U) {                                                                                                 \
-        sumBuffer[get_group_id(0)] = lBuffer[0];                                                             \
+        sumBuffer[get_group_id(0)] = lBuffer[0];                                                                       \
     }
 
 void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr,
@@ -268,7 +268,7 @@ void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
     const bitCapIntOcl otherMask = bitCapIntOclPtr[2];
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl otherRes = lcv & otherMask;
         bitCapIntOcl setInt = lcv & mask;
         bitCapIntOcl resetInt = setInt ^ mask;
 
@@ -279,7 +279,7 @@ void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
         setInt |= otherRes;
         resetInt |= otherRes;
 
-        cmplx Y0 = stateVec[resetInt];
+        const cmplx Y0 = stateVec[resetInt];
         stateVec[resetInt] = stateVec[setInt];
         stateVec[setInt] = Y0;
     }
@@ -296,7 +296,6 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     const cmplx iPhaseFac = cmplxPtr[1];
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        bitCapIntOcl otherRes = lcv & otherMask;
         bitCapIntOcl setInt = lcv & mask;
 
         bitCapIntOcl v = setInt;
@@ -305,7 +304,7 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
         }
         v &= 1U;
 
-        setInt |= otherRes;
+        setInt |= lcv & otherMask;
 
         stateVec[setInt] = zmul(v ? phaseFac : iPhaseFac, stateVec[setInt]);
     }
@@ -579,7 +578,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
     }
 
     for (bitCapIntOcl lcv = ID; lcv < partPower; lcv += Nthreads) {
-        bitCapIntOcl j = lcv << start;
+        const bitCapIntOcl j = lcv << start;
 
         real1 partProb = ZERO_R1;
 
@@ -643,7 +642,7 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     }
 
     for (bitCapIntOcl lcv = ID; lcv < partPower; lcv += Nthreads) {
-        bitCapIntOcl j = lcv << start;
+        const bitCapIntOcl j = lcv << start;
 
         real1 firstAngle = initAngle;
 
@@ -1000,7 +999,7 @@ void kernel applym(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         const bitCapIntOcl iLow = lcv & qMask;
-        bitCapIntOcl i = iLow | ((lcv ^ iLow) << ONE_BCI);
+        const bitCapIntOcl i = iLow | ((lcv ^ iLow) << ONE_BCI);
 
         stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
         stateVec[i | discardPower] = (cmplx)(ZERO_R1, ZERO_R1);
@@ -1036,7 +1035,7 @@ void kernel shufflebuffers(global cmplx* stateVec1, global cmplx* stateVec2, con
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl halfMaxI = bitCapIntOclPtr[0];
     for (bitCapIntOcl lcv = ID; lcv < halfMaxI; lcv += Nthreads) {
-        cmplx amp0 = stateVec1[lcv + halfMaxI];
+        const cmplx amp0 = stateVec1[lcv + halfMaxI];
         stateVec1[lcv + halfMaxI] = stateVec2[lcv];
         stateVec2[lcv] = amp0;
     }
