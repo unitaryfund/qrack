@@ -99,22 +99,6 @@ inline cmplx conj(const cmplx cmp)
     stateVec[i] = zmul(topRight, stateVec[i | OFFSET2_ARG]);                                                           \
     stateVec[i | OFFSET2_ARG] = zmul(bottomLeft, Y0);
 
-#define SUM_2X2()                                                                                                      \
-    const bitCapIntOcl locID = get_local_id(0);                                                                        \
-    const bitCapIntOcl locNthreads = get_local_size(0);                                                                \
-    lProbBuffer[locID] = partNrm;                                                                                      \
-                                                                                                                       \
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {                                     \
-        barrier(CLK_LOCAL_MEM_FENCE);                                                                                  \
-        if (locID < lcv) {                                                                                             \
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];                                                            \
-        }                                                                                                              \
-    }                                                                                                                  \
-                                                                                                                       \
-    if (locID == 0U) {                                                                                                 \
-        nrmParts[get_group_id(0)] = lProbBuffer[0];                                                                    \
-    }
-
 #define NORM_BODY_2X2()                                                                                                \
     cmplx2 mulRes = (cmplx2)(stateVec[i | OFFSET1_ARG], stateVec[i | OFFSET2_ARG]);                                    \
                                                                                                                        \
@@ -137,107 +121,123 @@ inline cmplx conj(const cmplx cmp)
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                                                             \
     stateVec[i | OFFSET2_ARG] = mulRes.hi;
 
+#define SUM_LOCAL(part)                                                                                                    \
+    const bitCapIntOcl locID = get_local_id(0);                                                                        \
+    const bitCapIntOcl locNthreads = get_local_size(0);                                                                \
+    lBuffer[locID] = part;                                                                                \
+                                                                                                                       \
+    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {                                     \
+        barrier(CLK_LOCAL_MEM_FENCE);                                                                                  \
+        if (locID < lcv) {                                                                                             \
+            lBuffer[locID] += lBuffer[locID + lcv];                                                            \
+        }                                                                                                              \
+    }                                                                                                                  \
+                                                                                                                       \
+    if (locID == 0U) {                                                                                                 \
+        sumBuffer[get_group_id(0)] = lBuffer[0];                                                             \
+    }
+
 void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr,
     constant bitCapIntOcl* qPowersSorted)
 {
-    PREP_2X2();
+    PREP_2X2()
 
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_GEN();
-        APPLY_AND_OUT();
+        PUSH_APART_GEN()
+        APPLY_AND_OUT()
     }
 }
 
 void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
-    PREP_2X2();
+    PREP_2X2()
 
     const bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_1();
-        APPLY_AND_OUT();
+        PUSH_APART_1()
+        APPLY_AND_OUT()
     }
 }
 
 void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
-    PREP_2X2();
+    PREP_2X2()
 
     const bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
     const bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
 
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_2();
-        APPLY_AND_OUT();
+        PUSH_APART_2()
+        APPLY_AND_OUT()
     }
 }
 
 void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr,
     constant bitCapIntOcl* qPowersSorted)
 {
-    PREP_2X2_WIDE();
+    PREP_2X2_WIDE()
 
     const bitCapIntOcl lcv = ID;
 
-    PUSH_APART_GEN();
-    APPLY_AND_OUT();
+    PUSH_APART_GEN()
+    APPLY_AND_OUT()
 }
 
 void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
-    PREP_2X2_WIDE();
+    PREP_2X2_WIDE()
 
     const bitCapIntOcl qMask = bitCapIntOclPtr[2];
     const bitCapIntOcl lcv = ID;
 
-    PUSH_APART_1();
-    APPLY_AND_OUT();
+    PUSH_APART_1()
+    APPLY_AND_OUT()
 }
 
 void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
-    PREP_2X2_WIDE();
+    PREP_2X2_WIDE()
 
     const bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
     const bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
     const bitCapIntOcl lcv = ID;
 
-    PUSH_APART_2();
-    APPLY_AND_OUT();
+    PUSH_APART_2()
+    APPLY_AND_OUT()
 }
 
 void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr,
-    global real1* nrmParts, local real1* lProbBuffer)
+    global real1* sumBuffer, local real1* lBuffer)
 {
-    PREP_2X2();
-    PREP_2X2_NORM();
+    PREP_2X2()
+    PREP_2X2_NORM()
 
     const bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
     real1 partNrm = ZERO_R1;
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_1();
-        NORM_BODY_2X2();
+        PUSH_APART_1()
+        NORM_BODY_2X2()
     }
 
-    SUM_2X2();
+    SUM_LOCAL(partNrm)
 }
 
 void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr,
-    constant bitCapIntOcl* bitCapIntOclPtr, global real1* nrmParts, local real1* lProbBuffer)
+    constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer, local real1* lBuffer)
 {
-    PREP_2X2_WIDE();
-    PREP_2X2_NORM();
+    PREP_2X2_WIDE()
+    PREP_2X2_NORM()
 
     const bitCapIntOcl qMask = bitCapIntOclPtr[2];
     const bitCapIntOcl lcv = ID;
 
     real1 partNrm = ZERO_R1;
-    PUSH_APART_1();
-    NORM_BODY_2X2();
+    PUSH_APART_1()
+    NORM_BODY_2X2()
 
-    SUM_2X2();
+    SUM_LOCAL(partNrm)
 }
 
 void kernel xsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
@@ -246,8 +246,8 @@ void kernel xsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     const bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_1();
-        APPLY_X();
+        PUSH_APART_1()
+        APPLY_X()
     }
 }
 
@@ -255,8 +255,8 @@ void kernel xsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 {
     const bitCapIntOcl qMask = bitCapIntOclPtr[2];
     const bitCapIntOcl lcv = ID;
-    PUSH_APART_1();
-    APPLY_X();
+    PUSH_APART_1()
+    APPLY_X()
 }
 
 void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
@@ -317,8 +317,8 @@ void kernel zsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     const bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_1();
-        APPLY_Z();
+        PUSH_APART_1()
+        APPLY_Z()
     }
 }
 
@@ -326,8 +326,8 @@ void kernel zsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 {
     const bitCapIntOcl qMask = bitCapIntOclPtr[2];
     const bitCapIntOcl lcv = ID;
-    PUSH_APART_1();
-    APPLY_Z();
+    PUSH_APART_1()
+    APPLY_Z()
 }
 
 void kernel phasesingle(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
@@ -338,8 +338,8 @@ void kernel phasesingle(global cmplx* stateVec, constant cmplx* cmplxPtr, consta
     const cmplx bottomRight = cmplxPtr[3];
 
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_1();
-        APPLY_PHASE();
+        PUSH_APART_1()
+        APPLY_PHASE()
     }
 }
 
@@ -350,8 +350,8 @@ void kernel phasesinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, co
     const cmplx bottomRight = cmplxPtr[3];
 
     const bitCapIntOcl lcv = ID;
-    PUSH_APART_1();
-    APPLY_PHASE();
+    PUSH_APART_1()
+    APPLY_PHASE()
 }
 
 void kernel invertsingle(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
@@ -362,8 +362,8 @@ void kernel invertsingle(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     const cmplx bottomLeft = cmplxPtr[2];
 
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_1();
-        APPLY_INVERT();
+        PUSH_APART_1()
+        APPLY_INVERT()
     }
 }
 
@@ -374,14 +374,14 @@ void kernel invertsinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, c
     const cmplx bottomLeft = cmplxPtr[2];
 
     const bitCapIntOcl lcv = ID;
-    PUSH_APART_1();
-    APPLY_INVERT();
+    PUSH_APART_1()
+    APPLY_INVERT()
 }
 
 
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
-    constant bitCapIntOcl* qPowers, global cmplx4* mtrxs, constant real1* nrmIn, global real1* nrmParts,
-    local real1* lProbBuffer)
+    constant bitCapIntOcl* qPowers, global cmplx4* mtrxs, constant real1* nrmIn, global real1* sumBuffer,
+    local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -425,20 +425,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
         stateVec[i | targetPower] = qubit.hi;
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lProbBuffer[locID] = partNrm;
-
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        nrmParts[get_group_id(0)] = lProbBuffer[0];
-    }
+    SUM_LOCAL(partNrm)
 }
 
 void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
@@ -695,8 +682,8 @@ void kernel dispose(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     }
 }
 
-void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
-    local real1* lProbBuffer)
+void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+    local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
@@ -713,24 +700,11 @@ void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
         oneChancePart += dot(amp, amp);
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lProbBuffer[locID] = oneChancePart;
-
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
-    }
+    SUM_LOCAL(oneChancePart)
 }
 
-void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
-    local real1* lProbBuffer)
+void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+    local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
@@ -756,24 +730,11 @@ void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
         oneChancePart += dot(amp, amp);
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lProbBuffer[locID] = oneChancePart;
-
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
-    }
+    SUM_LOCAL(oneChancePart)
 }
 
-void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
-    local real1* lProbBuffer)
+void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+    local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
@@ -792,23 +753,10 @@ void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
         oneChancePart += dot(amp, amp);
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lProbBuffer[locID] = oneChancePart;
-
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
-    }
+    SUM_LOCAL(oneChancePart)
 }
 
-void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer)
+void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
@@ -827,12 +775,12 @@ void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
             cmplx amp = stateVec[i | perm];
             oneChancePart += dot(amp, amp);
         }
-        oneChanceBuffer[lcv1] = oneChancePart;
+        sumBuffer[lcv1] = oneChancePart;
     }
 }
 
-void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
-    constant bitCapIntOcl* qPowers, local real1* lProbBuffer)
+void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+    constant bitCapIntOcl* qPowers, local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
@@ -857,23 +805,10 @@ void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
         oneChancePart += dot(amp, amp);
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lProbBuffer[locID] = oneChancePart;
-
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
-    }
+    SUM_LOCAL(oneChancePart)
 }
 
-void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
+void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
     constant bitCapIntOcl* qPowersMask, constant bitCapIntOcl* qPowersSkip)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
@@ -907,12 +842,12 @@ void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
             cmplx amp = stateVec[i | perm];
             oneChancePart += dot(amp, amp);
         }
-        oneChanceBuffer[lcv1] = oneChancePart;
+        sumBuffer[lcv1] = oneChancePart;
     }
 }
 
-void kernel probparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
-    local real1* lProbBuffer)
+void kernel probparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+    local real1* lBuffer)
 {
 
     const bitCapIntOcl Nthreads = get_global_size(0);
@@ -936,24 +871,11 @@ void kernel probparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
         }
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lProbBuffer[locID] = oneChancePart;
-
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
-    }
+    SUM_LOCAL(oneChancePart)
 }
 
-void kernel forcemparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
-    local real1* lProbBuffer)
+void kernel forcemparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+    local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
@@ -979,24 +901,11 @@ void kernel forcemparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIn
         }
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lProbBuffer[locID] = oneChancePart;
-
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
-    }
+    SUM_LOCAL(oneChancePart)
 }
 
-void kernel expperm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant bitCapIntOcl* bitPowers, global real1* expBuffer,
-    local real1* lExpBuffer)
+void kernel expperm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant bitCapIntOcl* bitPowers, global real1* sumBuffer,
+    local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -1015,20 +924,7 @@ void kernel expperm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
         expectation += (offset + retIndex) * dot(amp, amp);
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lExpBuffer[locID] = expectation;
-
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lExpBuffer[locID] += lExpBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        expBuffer[get_group_id(0)] = lExpBuffer[0];
-    }
+    SUM_LOCAL(expectation)
 }
 
 void kernel nrmlze(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* args_ptr)
@@ -1061,7 +957,7 @@ void kernel nrmlzewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
 }
 
 void kernel updatenorm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* args_ptr,
-    global real1* norm_ptr, local real1* lProbBuffer)
+    global real1* sumBuffer, local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -1077,19 +973,7 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
         partNrm += nrm;
     }
 
-    const bitCapIntOcl locID = get_local_id(0);
-    const bitCapIntOcl locNthreads = get_local_size(0);
-    lProbBuffer[locID] = partNrm;
-    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        }
-    }
-
-    if (locID == 0U) {
-        norm_ptr[get_group_id(0)] = lProbBuffer[0];
-    }
+    SUM_LOCAL(partNrm)
 }
 
 void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr,
