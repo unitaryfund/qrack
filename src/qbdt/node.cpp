@@ -383,14 +383,12 @@ void QBdtNode::Apply2x2(const complex* mtrx, bitLenInt depth)
         return;
     }
 
-    Branch();
     QBdtNodeInterfacePtr& b0 = branches[0U];
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         b0->scale *= mtrx[0U];
         b1->scale *= mtrx[3U];
-        Prune();
 
         return;
     }
@@ -399,11 +397,34 @@ void QBdtNode::Apply2x2(const complex* mtrx, bitLenInt depth)
         b0.swap(b1);
         b0->scale *= mtrx[1U];
         b1->scale *= mtrx[2U];
-        Prune();
 
         return;
     }
 
+    if (!b0 || !b1 || (b0.get() == b1.get())) {
+        const complex Y0 = b0->scale;
+        b0->scale = Y0 * mtrx[0U] * b1->scale * mtrx[1U];
+        b1->scale = Y0 * mtrx[2U] * b1->scale * mtrx[3U];
+
+        const bool isB0Null = IS_NORM_0(b0->scale);
+        const bool isB1Null = IS_NORM_0(b1->scale);
+        if (!b0 && !isB0Null) {
+            b0 = b1;
+        } else if (!b1 && !isB1Null) {
+            b1 = b0;
+        }
+
+        if (isB0Null) {
+            b0 = NULL;
+        }
+        if (isB1Null) {
+            b1 = NULL;
+        }
+
+        return;
+    }
+
+    Branch();
     PushStateVector(mtrx, b0, b1, depth);
     Prune(depth);
 }
