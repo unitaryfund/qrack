@@ -578,6 +578,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
     if (nQubitCount <= thresholdQubitsPerPage) {
         CombineEngines();
         toCopy->CombineEngines();
+        SetQubitCount(nQubitCount);
         return qPages[0U]->Compose(toCopy->qPages[0U]);
     }
 
