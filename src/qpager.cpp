@@ -595,9 +595,9 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
     const bitCapIntOcl pmqp = pageMaxQPower();
     const bitCapIntOcl oPagePow = toCopy->pageMaxQPower();
     const bitCapIntOcl tcqpp = toCopy->qubitsPerPage();
-    const bitCapIntOcl maxI = toCopy->maxQPowerOcl;
+    const bitCapIntOcl maxI = toCopy->maxQPowerOcl - ONE_BCI;
     bitCapIntOcl oOffset = oPagePow;
-    std::vector<QEnginePtr> nQPages(maxI * qPages.size());
+    std::vector<QEnginePtr> nQPages((maxI + ONE_BCI) * qPages.size());
     for (bitCapIntOcl i = 0U; i < maxI; ++i) {
         if (willDestroy && (i == oOffset)) {
             oOffset -= oPagePow;
@@ -622,6 +622,28 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
                 nQPages[page]->CopyStateVec(qPages[j]);
                 nQPages[page]->Phase(amp, amp, 0U);
             }
+        }
+    }
+
+    const complex amp = toCopy->GetAmplitude(maxI);
+    if (willDestroy) {
+        toCopy->qPages.back() = NULL;
+    }
+    if (IS_NORM_0(amp)) {
+        for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
+            const bitCapIntOcl page = maxI * qPages.size() + j;
+            nQPages[page] = MakeEngine(qpp, (pmqp * page) / nPagePow);
+            qPages[j] = NULL;
+        }
+    } else {
+        for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
+            const bitCapIntOcl page = maxI * qPages.size() + j;
+            nQPages[page] = MakeEngine(qpp, (pmqp * page) / nPagePow);
+            if (!qPages[j]->IsZeroAmplitude()) {
+                nQPages[page]->CopyStateVec(qPages[j]);
+                nQPages[page]->Phase(amp, amp, 0U);
+            }
+            qPages[j] = NULL;
         }
     }
     qPages = nQPages;
