@@ -1439,8 +1439,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     const size_t nStateVecSize = maxQPowerOcl * sizeof(complex);
 
-    clFinish();
-
     if (!useHostRam && stateVec && ((OclMemDenom * nStateVecSize) <= device_context->GetGlobalSize())) {
         FreeStateVec();
     }
