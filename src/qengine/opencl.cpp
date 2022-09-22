@@ -140,7 +140,7 @@ void QEngineOCL::CopyStateVec(QEnginePtr src)
 void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
     if (!stateBuffer) {
-        std::fill(pagePtr, pagePtr + (bitCapIntOcl)length, ZERO_CMPLX);
+        std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
         return;
     }
 
@@ -230,8 +230,6 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0U, engineOcl->maxQPowerOcl);
     }
 
-    engineOcl->clFinish();
-
     const bitCapIntOcl halfMaxQPower = (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI);
 
     if (device_context->context_id != engineOcl->device_context->context_id) {
@@ -256,6 +254,7 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeArgsEvent);
     writeArgsEvent.wait();
 
+    engineOcl->clFinish();
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
     engineOcl->wait_refs.emplace_back(device_context->wait_events);
@@ -1385,9 +1384,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     SetQubitCount(nLength);
 
     // If we Decompose, calculate the state of the bit system removed.
-    if (!destination) {
-        clFinish();
-    } else {
+    if (destination) {
         bciArgs[0] = partPower;
 
         destination->clFinish();
