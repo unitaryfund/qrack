@@ -120,9 +120,6 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
 
     if (depth) {
         --depth;
-        if (!branches[0U]) {
-            return NULL;
-        }
 
         QBdtNodeInterfacePtr toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size);
         QBdtNodeInterfacePtr toRet2 =
@@ -131,12 +128,15 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
         return (norm(branches[0U]->scale) > norm(branches[1U]->scale)) ? toRet1 : toRet2;
     }
 
-    if (!size) {
-        return NULL;
-    }
-
     QBdtNodeInterfacePtr toRet = ShallowClone();
     toRet->scale /= abs(toRet->scale);
+
+    if (!size) {
+        branches[0U] = NULL;
+        branches[1U] = NULL;
+
+        return toRet;
+    }
 
     QBdtNodeInterfacePtr temp = toRet->RemoveSeparableAtDepth(size, 0);
 
