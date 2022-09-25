@@ -274,25 +274,34 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
         return;
     }
 
-    if (!b0 || !b1 || (b0.get() == b1.get())) {
+    const bool wasB0Null = IS_NORM_0(b0->scale);
+    const bool wasB1Null = IS_NORM_0(b1->scale);
+    if (wasB0Null || wasB1Null ||
+        ((b0->branches[0U].get() == b1->branches[0U].get()) && (b0->branches[0U].get() == b1->branches[0U].get()))) {
+        Branch();
+
         const complex Y0 = b0->scale;
         b0->scale = Y0 * mtrxCol1.c[0U] * b1->scale * mtrxCol2.c[0U];
         b1->scale = Y0 * mtrxCol1.c[1U] * b1->scale * mtrxCol2.c[1U];
 
         const bool isB0Null = IS_NORM_0(b0->scale);
         const bool isB1Null = IS_NORM_0(b1->scale);
-        if (!b0 && !isB0Null) {
+        if (wasB0Null && !isB0Null) {
             b0 = b1;
-        } else if (!b1 && !isB1Null) {
+        } else if (wasB1Null && !isB1Null) {
             b1 = b0;
         }
 
         if (isB0Null) {
-            b0 = NULL;
+            b0->branches[0U] = NULL;
+            b0->branches[1U] = NULL;
         }
         if (isB1Null) {
-            b1 = NULL;
+            b1->branches[0U] = NULL;
+            b1->branches[1U] = NULL;
         }
+
+        Prune();
 
         return;
     }
