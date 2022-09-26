@@ -881,7 +881,9 @@ void QStabilizerHybrid::MACInvert(
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
     if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
-        SwitchToEngine();
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        return clone->Prob(qubit);
     }
 
     if (engine) {
