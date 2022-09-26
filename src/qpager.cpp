@@ -76,6 +76,14 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
 
 void QPager::Init()
 {
+    if (!engines.size()) {
+#if ENABLE_OPENCL
+        engines.push_back(OCLEngine::Instance().GetDeviceCount() ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+#else
+        engines.push_back(QINTERFACE_CPU);
+#endif
+    }
+
     if ((engines[0U] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
         if (!OCLEngine::Instance().GetDeviceCount()) {

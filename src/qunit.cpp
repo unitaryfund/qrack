@@ -76,6 +76,10 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , deviceIDs(devList)
     , engines(eng)
 {
+    if (!engines.size()) {
+        engines.push_back(QINTERFACE_STABILIZER_HYBRID);
+    }
+
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
