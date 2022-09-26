@@ -133,7 +133,7 @@ protected:
         nQubits->SetQubitCount(length, 0U);
         nQubits->SetPermutation(0U);
         root->InsertAtDepth(nQubits->root, oBdtQubitCount, length);
-        SetQubitCount(qubitCount + length, aqb);
+        SetQubitCount(qubitCount + length, attachedQubitCount);
         ROR(length, oBdtQubitCount, qubitCount);
         Dispose(qubitCount - length, length);
     }
