@@ -142,7 +142,10 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
         return std::make_shared<QStabilizer>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
-        return std::make_shared<QBdt>(engines, args...);
+        if (engines.size()) {
+            return std::make_shared<QBdt>(engines, args...);
+        }
+        return std::make_shared<QBdt>(args...);
 #endif
     case QINTERFACE_QPAGER:
         if (engines.size()) {
