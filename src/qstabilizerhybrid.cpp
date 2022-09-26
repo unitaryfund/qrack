@@ -321,7 +321,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
 
     if (engine) {
         // Clone and set engine directly.
-        c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
+        c->engine = engine->Clone();
         c->stabilizer = NULL;
         return c;
     }
