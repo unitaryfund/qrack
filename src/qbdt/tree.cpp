@@ -62,6 +62,9 @@ void QBdt::Init()
 #endif
 
     bitLenInt engineLevel = 0U;
+    if (!engines.size()) {
+        engines.push_back(QINTERFACE_OPTIMAL_BASE);
+    }
     QInterfaceEngine rootEngine = engines[0U];
     while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL) &&
         (rootEngine != QINTERFACE_HYBRID)) {

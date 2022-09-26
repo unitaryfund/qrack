@@ -12,7 +12,6 @@
 #pragma once
 
 #include "mpsshard.hpp"
-#include "qbdt.hpp"
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
