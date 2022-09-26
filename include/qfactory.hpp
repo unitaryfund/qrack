@@ -45,7 +45,7 @@ QInterfacePtr CreateQuantumInterface(
         return std::make_shared<QStabilizer>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
-        return std::make_shared<QBdt>(args...);
+        return std::make_shared<QBdt>(engines, args...);
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
@@ -79,7 +79,7 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
         return std::make_shared<QStabilizer>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
-        return std::make_shared<QBdt>(args...);
+        return std::make_shared<QBdt>(engines, args...);
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
@@ -142,7 +142,7 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
         return std::make_shared<QStabilizer>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
-        return std::make_shared<QBdt>(args...);
+        return std::make_shared<QBdt>(engines, args...);
 #endif
     case QINTERFACE_QPAGER:
         if (engines.size()) {
