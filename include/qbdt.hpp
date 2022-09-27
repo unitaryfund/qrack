@@ -128,8 +128,9 @@ protected:
 
         const bitLenInt length = attachedQubitCount - aqb;
         const bitLenInt oBdtQubitCount = bdtQubitCount;
-        QBdtPtr nQubits = std::make_shared<QBdt>(length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-            false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+        QBdtPtr nQubits =
+            std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+                -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
         nQubits->SetQubitCount(length, 0U);
         nQubits->SetPermutation(0U);
         root->InsertAtDepth(nQubits->root, oBdtQubitCount, length);
