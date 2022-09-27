@@ -135,7 +135,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
     if (attachedQubitCount) {
         const size_t bit = SelectBit(initState, maxQubit);
-        leaf->branches[bit] = MakeQEngineNode(phaseFac, attachedQubitCount, initState);
+        leaf->branches[bit] = MakeQEngineNode(ONE_CMPLX, attachedQubitCount, initState);
         leaf->branches[bit ^ 1U] = std::make_shared<QBdtQEngineNode>();
     }
 }
