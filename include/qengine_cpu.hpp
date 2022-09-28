@@ -229,7 +229,6 @@ protected:
     StateVectorPtr AllocStateVec(bitCapIntOcl elemCount);
     void ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
 
-    typedef std::function<void(void)> DispatchFn;
     void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD

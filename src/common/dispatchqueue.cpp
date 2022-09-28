@@ -23,7 +23,7 @@ DispatchQueue::~DispatchQueue()
         return;
     }
 
-    std::queue<fp_t> empty;
+    std::queue<DispatchFn> empty;
     std::swap(q_, empty);
     quit_ = true;
 
@@ -56,14 +56,14 @@ void DispatchQueue::dump()
         return;
     }
 
-    std::queue<fp_t> empty;
+    std::queue<DispatchFn> empty;
     std::swap(q_, empty);
     isFinished_ = true;
     lock.unlock();
     cvFinished_.notify_all();
 }
 
-void DispatchQueue::dispatch(const fp_t& op)
+void DispatchQueue::dispatch(const DispatchFn& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
 

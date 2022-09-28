@@ -30,9 +30,9 @@
 
 namespace Qrack {
 
-class DispatchQueue {
-    typedef std::function<void(void)> fp_t;
+typedef std::function<void(void)> DispatchFn;
 
+class DispatchQueue {
 public:
     DispatchQueue()
         : quit_(false)
@@ -44,9 +44,7 @@ public:
     ~DispatchQueue();
 
     // dispatch and copy
-    void dispatch(const fp_t& op);
-    // dispatch and move
-    void dispatch(fp_t&& op);
+    void dispatch(const DispatchFn& op);
     // finish queue
     void finish();
     // dump queue
@@ -63,7 +61,7 @@ public:
 private:
     std::mutex lock_;
     std::future<void> thread_;
-    std::queue<fp_t> q_;
+    std::queue<DispatchFn> q_;
     std::condition_variable cv_;
     std::condition_variable cvFinished_;
     bool quit_;
