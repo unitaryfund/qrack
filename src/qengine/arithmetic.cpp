@@ -22,6 +22,10 @@ namespace Qrack {
 /// "Circular shift left" - shift bits left, and carry last bits.
 void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    if (((start + length) > qubitCount) || ((start + length) < start)) {
+        throw std::domain_error("QEngineCPU::ROL range is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     if (!length) {
@@ -129,6 +133,10 @@ void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// Add integer (without sign)
 void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::INC range is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     if (!length) {
@@ -177,6 +185,16 @@ void QEngineCPU::CINC(
         return;
     }
 
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::CINC range is out-of-bounds!");
+    }
+
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (controls[i] >= qubitCount) {
+            throw std::domain_error("QEngineCPU::CINC control is out-of-bounds!");
+        }
+    }
+
     if (!length) {
         return;
     }
@@ -219,6 +237,14 @@ void QEngineCPU::CINC(
 /// Add integer (without sign, with carry)
 void QEngineCPU::INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::INCDECC range is out-of-bounds!");
+    }
+
+    if (carryIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::INCDECC carryIndex is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     if (!length) {
@@ -267,6 +293,14 @@ void QEngineCPU::INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length
  */
 void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::INCS range is out-of-bounds!");
+    }
+
+    if (overflowIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::INCS overflowIndex is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     if (!length) {
@@ -321,6 +355,14 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
 
 void QEngineCPU::INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::INCDECSC range is out-of-bounds!");
+    }
+
+    if (carryIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::INCDECSC carryIndex is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     if (!length) {
@@ -370,6 +412,18 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt lengt
 void QEngineCPU::INCDECSC(
     bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::INCDECSC range is out-of-bounds!");
+    }
+
+    if (carryIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::INCDECSC carryIndex is out-of-bounds!");
+    }
+
+    if (overflowIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::INCDECSC overflowIndex is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     if (!length) {
@@ -420,6 +474,14 @@ void QEngineCPU::INCDECSC(
 void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
     const bitLenInt& carryStart, const bitLenInt& length)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::MULDIV range is out-of-bounds!");
+    }
+
+    if (((carryStart + length) > qubitCount) || ((carryStart + length) < carryStart)) {
+        throw std::domain_error("QEngineCPU::MULDIV range is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     const bitCapIntOcl toMulOcl = (bitCapIntOcl)toMul;
@@ -478,6 +540,20 @@ void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
 void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
     const bitLenInt& carryStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt controlLen)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::CMULDIV range is out-of-bounds!");
+    }
+
+    if (((carryStart + length) > qubitCount) || ((carryStart + length) < carryStart)) {
+        throw std::domain_error("QEngineCPU::CMULDIV range is out-of-bounds!");
+    }
+
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (controls[i] >= qubitCount) {
+            throw std::domain_error("QEngineCPU::CMULDIV control is out-of-bounds!");
+        }
+    }
+
     CHECK_ZERO_SKIP();
 
     const bitCapIntOcl toMulOcl = (bitCapIntOcl)toMul;
@@ -578,6 +654,14 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart,
     const bitLenInt& outStart, const bitLenInt& length, const bool& inverse)
 {
+    if (((inStart + length) > qubitCount) || ((inStart + length) < inStart)) {
+        throw std::domain_error("QEngineCPU::ModNOut range is out-of-bounds!");
+    }
+
+    if (((outStart + length) > qubitCount) || ((outStart + length) < outStart)) {
+        throw std::domain_error("QEngineCPU::ModNOut range is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     const bitCapIntOcl modNOcl = (bitCapIntOcl)modN;
@@ -645,6 +729,20 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     const bitLenInt& outStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen,
     const bool& inverse)
 {
+    if (((inStart + length) > qubitCount) || ((inStart + length) < inStart)) {
+        throw std::domain_error("QEngineCPU::ModNOut range is out-of-bounds!");
+    }
+
+    if (((outStart + length) > qubitCount) || ((outStart + length) < outStart)) {
+        throw std::domain_error("QEngineCPU::ModNOut range is out-of-bounds!");
+    }
+
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (controls[i] >= qubitCount) {
+            throw std::domain_error("QEngineCPU::ModNOut control is out-of-bounds!");
+        }
+    }
+
     CHECK_ZERO_SKIP();
 
     const bitCapIntOcl modNOcl = (bitCapIntOcl)modN;
@@ -746,6 +844,10 @@ void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
 /// Add BCD integer (without sign)
 void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::INC range is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     if (!length) {
@@ -818,6 +920,14 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 /// Add BCD integer (without sign, with carry)
 void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
+    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
+        throw std::domain_error("QEngineCPU::INCDECBCDC range is out-of-bounds!");
+    }
+
+    if (carryIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::INCDECBCDC carryIndex is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     if (!length) {
@@ -906,6 +1016,14 @@ void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt len
 bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, const unsigned char* values, bool resetValue)
 {
+    if (((indexStart + indexLength) > qubitCount) || ((indexStart + indexLength) < indexStart)) {
+        throw std::domain_error("QEngineCPU::IndexedLDA range is out-of-bounds!");
+    }
+
+    if (((valueStart + valueLength) > qubitCount) || ((valueStart + valueLength) < valueStart)) {
+        throw std::domain_error("QEngineCPU::IndexedLDA range is out-of-bounds!");
+    }
+
     if (!stateVec) {
         return 0U;
     }
@@ -973,6 +1091,18 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
 {
+    if (((indexStart + indexLength) > qubitCount) || ((indexStart + indexLength) < indexStart)) {
+        throw std::domain_error("QEngineCPU::IndexedADC range is out-of-bounds!");
+    }
+
+    if (((valueStart + valueLength) > qubitCount) || ((valueStart + valueLength) < valueStart)) {
+        throw std::domain_error("QEngineCPU::IndexedADC range is out-of-bounds!");
+    }
+
+    if (carryIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::IndexedADC carryIndex is out-of-bounds!");
+    }
+
     if (!stateVec) {
         return 0U;
     }
@@ -1083,6 +1213,18 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
 {
+    if (((indexStart + indexLength) > qubitCount) || ((indexStart + indexLength) < indexStart)) {
+        throw std::domain_error("QEngineCPU::IndexedSBC range is out-of-bounds!");
+    }
+
+    if (((valueStart + valueLength) > qubitCount) || ((valueStart + valueLength) < valueStart)) {
+        throw std::domain_error("QEngineCPU::IndexedSBC range is out-of-bounds!");
+    }
+
+    if (carryIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::IndexedSBC carryIndex is out-of-bounds!");
+    }
+
     if (!stateVec) {
         return 0U;
     }
@@ -1196,6 +1338,10 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 /// Transform a length of qubit register via lookup through a hash table.
 void QEngineCPU::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
+    if (((start + length) > qubitCount) || ((start + length) < start)) {
+        throw std::domain_error("QEngineCPU::Hash range is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     const bitLenInt bytes = (length + 7U) / 8U;
@@ -1237,6 +1383,22 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, const unsigned char* va
 
 void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
+    if (inputBit1 >= qubitCount) {
+        throw std::domain_error("QEngineCPU::FullAdd inputBit1 is out-of-bounds!");
+    }
+
+    if (inputBit2 >= qubitCount) {
+        throw std::domain_error("QEngineCPU::FullAdd inputBit2 is out-of-bounds!");
+    }
+
+    if (carryInSumOut >= qubitCount) {
+        throw std::domain_error("QEngineCPU::FullAdd carryInSumOut is out-of-bounds!");
+    }
+
+    if (carryOut >= qubitCount) {
+        throw std::domain_error("QEngineCPU::FullAdd carryOut is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     const bitCapIntOcl input1Mask = pow2Ocl(inputBit1);
@@ -1305,6 +1467,22 @@ void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
 
 void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
+    if (inputBit1 >= qubitCount) {
+        throw std::domain_error("QEngineCPU::IFullAdd inputBit1 is out-of-bounds!");
+    }
+
+    if (inputBit2 >= qubitCount) {
+        throw std::domain_error("QEngineCPU::IFullAdd inputBit2 is out-of-bounds!");
+    }
+
+    if (carryInSumOut >= qubitCount) {
+        throw std::domain_error("QEngineCPU::IFullAdd carryInSumOut is out-of-bounds!");
+    }
+
+    if (carryOut >= qubitCount) {
+        throw std::domain_error("QEngineCPU::IFullAdd carryOut is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     const bitCapIntOcl input1Mask = pow2Ocl(inputBit1);
@@ -1374,6 +1552,14 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
 void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    if (((start + length) > qubitCount) || ((start + length) < start)) {
+        throw std::domain_error("QEngineCPU::CPhaseFlipIfLess range is out-of-bounds!");
+    }
+
+    if (flagIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::CPhaseFlipIfLess flagIndex is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     Dispatch(maxQPower, [this, greaterPerm, start, length, flagIndex] {
@@ -1391,6 +1577,10 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 /// This is an expedient for an adaptive Grover's search for a function's global minimum.
 void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
+    if (((start + length) > qubitCount) || ((start + length) < start)) {
+        throw std::domain_error("QEngineCPU::CPhaseFlipIfLess range is out-of-bounds!");
+    }
+
     CHECK_ZERO_SKIP();
 
     Dispatch(maxQPower, [this, greaterPerm, start, length] {
