@@ -235,15 +235,15 @@ bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
     return false;
 }
 
-bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount)
+bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers)
 {
-    if (!skipPowersCount) {
+    if (!skipPowers.size()) {
         return perm;
     }
 
     bitCapInt iHigh = perm;
     bitCapInt i = 0U;
-    for (bitCapIntOcl p = 0U; p < skipPowersCount; ++p) {
+    for (bitCapIntOcl p = 0U; p < skipPowers.size(); ++p) {
         bitCapInt iLow = iHigh & (skipPowers[p] - ONE_BCI);
         i |= iLow;
         iHigh = (iHigh ^ iLow) << ONE_BCI;
