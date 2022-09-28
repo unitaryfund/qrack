@@ -1008,6 +1008,16 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
         return;
     }
 
+    if (qubitIndex >= qubitCount) {
+        throw std::domain_error("QEngineOCL::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
+    }
+
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (controls[i] >= qubitCount) {
+            throw std::domain_error("QEngineOCL::UniformlyControlledSingleBit control is out-of-bounds!");
+        }
+    }
+
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1095,6 +1105,12 @@ void QEngineOCL::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLe
 {
     if (!controlLen) {
         return UniformParityRZ(mask, angle);
+    }
+
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (controls[i] >= qubitCount) {
+            throw std::domain_error("QEngineOCL::CUniformParityRZ control is out-of-bounds!");
+        }
     }
 
     CHECK_ZERO_SKIP();

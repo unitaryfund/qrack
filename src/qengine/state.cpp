@@ -773,6 +773,16 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
         return;
     }
 
+    if (qubitIndex >= qubitCount) {
+        throw std::domain_error("QEngineCPU::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
+    }
+
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (controls[i] >= qubitCount) {
+            throw std::domain_error("QEngineCPU::UniformlyControlledSingleBit control is out-of-bounds!");
+        }
+    }
+
     const bitCapIntOcl targetPower = pow2Ocl(qubitIndex);
 
     const real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
@@ -870,6 +880,12 @@ void QEngineCPU::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlL
 {
     if (!controlLen) {
         return UniformParityRZ(mask, angle);
+    }
+
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (cControls[i] >= qubitCount) {
+            throw std::domain_error("QEngineCPU::CUniformParityRZ control is out-of-bounds!");
+        }
     }
 
     CHECK_ZERO_SKIP();
