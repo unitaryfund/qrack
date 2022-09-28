@@ -204,6 +204,9 @@ public:
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp)
     {
+        if (perm >= maxQPower) {
+            throw std::domain_error("QBdt::SetAmplitude argument out-of-bounds!");
+        }
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
     }
 

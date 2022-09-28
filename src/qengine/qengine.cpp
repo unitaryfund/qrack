@@ -73,6 +73,10 @@ real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt 
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
+    if (qubit >= qubitCount) {
+        throw std::domain_error("QEngine::ForceM qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (doNormalize) {
         NormalizeState();
     }
@@ -104,6 +108,13 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 /// Measure permutation state of a register
 bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply)
 {
+    for (bitLenInt i = 0U; i < length; ++i) {
+        if (bits[i] >= qubitCount) {
+            throw std::domain_error(
+                "QEngine::ForceM qubit index parameter array values must be within allocated qubit bounds!");
+        }
+    }
+
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
         if (values == NULL) {
@@ -532,6 +543,10 @@ void QEngine::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray)
 /// Measure permutation state of a register
 bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
+    if (((start + length) > qubitCount) || ((start + length) < start)) {
+        throw std::domain_error("QEngine::ForceMReg range is out-of-bounds!");
+    }
+
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
         if (ForceM(start, ((bitCapIntOcl)result) & ONE_BCI, doForce, doApply)) {

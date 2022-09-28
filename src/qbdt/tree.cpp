@@ -313,6 +313,10 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
 
 complex QBdt::GetAmplitude(bitCapInt perm)
 {
+    if (perm >= maxQPower) {
+        throw std::domain_error("QBdt::GetAmplitude argument out-of-bounds!");
+    }
+
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
@@ -332,6 +336,10 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
+    if (start > qubitCount) {
+        throw std::domain_error("QBdt::Compose start index is out-of-bounds!");
+    }
+
     if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount)) {
         const bitLenInt diff = (attachedQubitCount + toCopy->attachedQubitCount) - maxPageQubits;
         ResetStateVector((diff < qubitCount) ? (qubitCount - diff) : 0U);
@@ -390,6 +398,10 @@ QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
+    if (((start + length) > qubitCount) || ((start + length) < start)) {
+        throw std::domain_error("QBdt::DecomposeDispose range is out-of-bounds!");
+    }
+
     if (start && bdtQubitCount && attachedQubitCount) {
         ROR(start, 0U, qubitCount);
         DecomposeDispose(0U, length, dest);
@@ -415,6 +427,10 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
 bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
 {
+    if (((start + length) > qubitCount) || ((start + length) < start)) {
+        throw std::domain_error("QStabilizer::DecomposeDispose range is out-of-bounds!");
+    }
+
     if (!length) {
         return start;
     }
@@ -427,6 +443,10 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
 
 real1_f QBdt::Prob(bitLenInt qubit)
 {
+    if (qubit >= qubitCount) {
+        throw std::domain_error("QBdt::Prob qubit index parameter must be within allocated qubit bounds!");
+    }
+
     const bool isKet = (qubit >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : qubit;
     const bitCapInt qPower = pow2(maxQubit);
@@ -487,6 +507,10 @@ real1_f QBdt::ProbAll(bitCapInt perm)
 
 bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
+    if (qubit >= qubitCount) {
+        throw std::domain_error("QBdt::Prob qubit index parameter must be within allocated qubit bounds!");
+    }
+
     const real1_f oneChance = Prob(qubit);
     if (oneChance >= ONE_R1) {
         result = true;
@@ -593,6 +617,10 @@ bitCapInt QBdt::MAll()
 
 void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::domain_error("QBdt::ApplySingle target parameter must be within allocated qubit bounds!");
+    }
+
     if (!bdtQubitCount) {
         NODE_TO_QENGINE(root)->Mtrx(mtrx, target);
         return;
@@ -648,6 +676,17 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 void QBdt::ApplyControlledSingle(
     const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti)
 {
+    if (target >= qubitCount) {
+        throw std::domain_error("QBdt::ApplyControlledSingle target parameter must be within allocated qubit bounds!");
+    }
+
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (controls[i] >= qubitCount) {
+            throw std::domain_error(
+                "QBdt::ApplyControlledSingle parameter controls array values must be within allocated qubit bounds!");
+        }
+    }
+
     if (!bdtQubitCount) {
         if (isAnti) {
             NODE_TO_QENGINE(root)->MACMtrx(controls, controlLen, mtrx, target);

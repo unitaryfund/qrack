@@ -119,6 +119,10 @@ void QEngineOCL::ZeroAmplitudes()
 
 void QEngineOCL::CopyStateVec(QEnginePtr src)
 {
+    if (qubitCount != src->GetQubitCount()) {
+        throw std::domain_error("QEngineOCL::CopyStateVec argument size differs from this!");
+    }
+
     if (src->IsZeroAmplitude()) {
         ZeroAmplitudes();
         return;
@@ -139,6 +143,10 @@ void QEngineOCL::CopyStateVec(QEnginePtr src)
 
 void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
+    if (((offset + length) > maxQPowerOcl) || ((offset + length) < offset)) {
+        throw std::domain_error("QEngineOCL::GetAmplitudePage range is out-of-bounds!");
+    }
+
     if (!stateBuffer) {
         std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
         return;
@@ -150,6 +158,10 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
 
 void QEngineOCL::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
+    if (((offset + length) > maxQPowerOcl) || ((offset + length) < offset)) {
+        throw std::domain_error("QEngineOCL::SetAmplitudePage range is out-of-bounds!");
+    }
+
     if (!stateBuffer) {
         ReinitBuffer();
         if (length != maxQPowerOcl) {
@@ -166,7 +178,16 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, b
 void QEngineOCL::SetAmplitudePage(
     QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
 {
+    if (((dstOffset + length) > maxQPowerOcl) || ((dstOffset + length) < dstOffset)) {
+        throw std::domain_error("QEngineOCL::SetAmplitudePage source range is out-of-bounds!");
+    }
+
     QEngineOCLPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineOCL>(pageEnginePtr);
+
+    if (((srcOffset + length) > pageEngineOclPtr->maxQPowerOcl) || ((srcOffset + length) < srcOffset)) {
+        throw std::domain_error("QEngineOCL::SetAmplitudePage source range is out-of-bounds!");
+    }
+
     BufferPtr oStateBuffer = pageEngineOclPtr->stateBuffer;
 
     if (!stateBuffer && !oStateBuffer) {
@@ -214,6 +235,10 @@ void QEngineOCL::SetAmplitudePage(
 
 void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 {
+    if (qubitCount != engine->GetQubitCount()) {
+        throw std::domain_error("QEngineOCL::ShuffleBuffers argument size differs from this!");
+    }
+
     QEngineOCLPtr engineOcl = std::dynamic_pointer_cast<QEngineOCL>(engine);
 
     if (!stateBuffer && !(engineOcl->stateBuffer)) {
@@ -713,6 +738,18 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
 {
     CHECK_ZERO_SKIP();
+
+    if ((offset1 >= maxQPowerOcl) || (offset2 >= maxQPowerOcl)) {
+        throw std::domain_error(
+            "QEngineOCL::Apply2x2 offset1 and offset2 parameters must be within allocated qubit bounds!");
+    }
+
+    for (bitLenInt i = 0U; i < bitCount; ++i) {
+        if (qPowersSorted[i] >= maxQPowerOcl) {
+            throw std::domain_error(
+                "QEngineOCL::Apply2x2 parameter qPowersSorted array values must be within allocated qubit bounds!");
+        }
+    }
 
     const bool skipNorm = !doNormalize || (abs(ONE_R1 - runningNorm) <= FP_NORM_EPSILON);
     const bool isXGate = skipNorm && (special == SPECIAL_2X2::PAULIX);
@@ -1271,6 +1308,10 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
 
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
 {
+    if (start > qubitCount) {
+        throw std::domain_error("QEngineOCL::Compose start index is out-of-bounds!");
+    }
+
     const bitLenInt result = start;
 
     const bitLenInt oQubitCount = toCopy->qubitCount;
@@ -1290,6 +1331,10 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
 void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
 {
     // "Dispose" is basically the same as decompose, except "Dispose" throws the removed bits away.
+
+    if (((start + length) > qubitCount) || ((start + length) < start)) {
+        throw std::domain_error("QEngineOCL::DecomposeDispose range is out-of-bounds!");
+    }
 
     if (!length) {
         return;
@@ -2687,8 +2732,12 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
     UpdateRunningNorm();
 }
 
-complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
+complex QEngineOCL::GetAmplitude(bitCapInt perm)
 {
+    if (perm >= maxQPower) {
+        throw std::domain_error("QEngineOCL::GetAmplitude argument out-of-bounds!");
+    }
+
     // WARNING: Does not normalize!
     if (!stateBuffer) {
         return ZERO_CMPLX;
@@ -2696,13 +2745,17 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 
     complex amp;
     EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * (bitCapIntOcl)fullRegister, sizeof(complex), &amp);
+    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), &amp);
 
     return amp;
 }
 
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 {
+    if (perm >= maxQPower) {
+        throw std::domain_error("QEngineOCL::SetAmplitude argument out-of-bounds!");
+    }
+
     if (!stateBuffer && !norm(amp)) {
         return;
     }

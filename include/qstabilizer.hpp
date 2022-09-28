@@ -83,8 +83,14 @@ protected:
 #endif
     }
 
-    void ParFor(StabilizerParallelFunc fn)
+    void ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits)
     {
+        for (size_t i = 0U; i < qubits.size(); ++i) {
+            if (qubits[i] >= qubitCount) {
+                throw std::domain_error("QStabilizer gate qubit indices are out-of-bounds!");
+            }
+        }
+
         Dispatch([this, fn] {
             const bitLenInt maxLcv = qubitCount << 1U;
             for (bitLenInt i = 0; i < maxLcv; ++i) {
