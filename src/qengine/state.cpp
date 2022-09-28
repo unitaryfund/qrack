@@ -1377,6 +1377,11 @@ real1_f QEngineCPU::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenI
         return Prob(target);
     }
 
+    if (target >= qubitCount) {
+        throw std::domain_error(
+            "QEngineOCL::CtrlOrAntiProb target index parameter must be within allocated qubit bounds!");
+    }
+
     const bitCapIntOcl qControlPower = pow2Ocl(control);
     const bitCapIntOcl qControlMask = controlState ? qControlPower : 0U;
     const bitCapIntOcl qPower = pow2Ocl(target);

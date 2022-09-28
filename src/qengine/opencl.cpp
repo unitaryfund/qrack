@@ -1603,6 +1603,10 @@ real1_f QEngineOCL::Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs)
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1_f QEngineOCL::Prob(bitLenInt qubit)
 {
+    if (qubit >= qubitCount) {
+        throw std::domain_error("QEngineOCL::Prob qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (qubitCount == 1) {
         return ProbAll(1);
     }
@@ -1633,6 +1637,11 @@ real1_f QEngineOCL::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenI
     }
     if ((ONE_R1 - controlProb) <= FP_NORM_EPSILON) {
         return Prob(target);
+    }
+
+    if (target >= qubitCount) {
+        throw std::domain_error(
+            "QEngineOCL::CtrlOrAntiProb target index parameter must be within allocated qubit bounds!");
     }
 
     const bitCapIntOcl qPower = pow2Ocl(target);
