@@ -83,8 +83,8 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
 void QEngineCPU::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
-    if (((offset + length) > maxQPowerOcl) || ((offset + length) < offset)) {
-        throw std::domain_error("QEngineCPU::GetAmplitudePage range is out-of-bounds!");
+    if (isBadPermRange(offset, length, maxQPowerOcl)) {
+        throw std::invalid_argument("QEngineCPU::GetAmplitudePage range is out-of-bounds!");
     }
 
     Finish();
@@ -97,8 +97,8 @@ void QEngineCPU::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
 }
 void QEngineCPU::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
-    if (((offset + length) > maxQPowerOcl) || ((offset + length) < offset)) {
-        throw std::domain_error("QEngineCPU::SetAmplitudePage range is out-of-bounds!");
+    if (isBadPermRange(offset, length, maxQPowerOcl)) {
+        throw std::invalid_argument("QEngineCPU::SetAmplitudePage range is out-of-bounds!");
     }
 
     if (!stateVec) {
@@ -115,14 +115,14 @@ void QEngineCPU::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, b
 void QEngineCPU::SetAmplitudePage(
     QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
 {
-    if (((dstOffset + length) > maxQPowerOcl) || ((dstOffset + length) < dstOffset)) {
-        throw std::domain_error("QEngineCPU::SetAmplitudePage source range is out-of-bounds!");
+    if (isBadPermRange(dstOffset, length, maxQPowerOcl)) {
+        throw std::invalid_argument("QEngineCPU::SetAmplitudePage source range is out-of-bounds!");
     }
 
     QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
 
-    if (((srcOffset + length) > pageEngineCpuPtr->maxQPowerOcl) || ((srcOffset + length) < srcOffset)) {
-        throw std::domain_error("QEngineCPU::SetAmplitudePage source range is out-of-bounds!");
+    if (isBadPermRange(srcOffset, length, maxQPowerOcl)) {
+        throw std::invalid_argument("QEngineCPU::SetAmplitudePage source range is out-of-bounds!");
     }
 
     StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
@@ -151,7 +151,7 @@ void QEngineCPU::SetAmplitudePage(
 void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
 {
     if (qubitCount != engine->GetQubitCount()) {
-        throw std::domain_error("QEngineCPU::ShuffleBuffers argument size differs from this!");
+        throw std::invalid_argument("QEngineCPU::ShuffleBuffers argument size differs from this!");
     }
 
     QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
@@ -181,7 +181,7 @@ void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
 void QEngineCPU::CopyStateVec(QEnginePtr src)
 {
     if (qubitCount != src->GetQubitCount()) {
-        throw std::domain_error("QEngineCPU::CopyStateVec argument size differs from this!");
+        throw std::invalid_argument("QEngineCPU::CopyStateVec argument size differs from this!");
     }
 
     if (src->IsZeroAmplitude()) {
@@ -209,7 +209,7 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
     if (perm >= maxQPower) {
-        throw std::domain_error("QEngineCPU::GetAmplitude argument out-of-bounds!");
+        throw std::invalid_argument("QEngineCPU::GetAmplitude argument out-of-bounds!");
     }
 
     // WARNING: Does not normalize!
@@ -225,7 +225,7 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
 void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 {
     if (perm >= maxQPower) {
-        throw std::domain_error("QEngineCPU::SetAmplitude argument out-of-bounds!");
+        throw std::invalid_argument("QEngineCPU::SetAmplitude argument out-of-bounds!");
     }
 
     // WARNING: Does not normalize!
@@ -362,13 +362,13 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     CHECK_ZERO_SKIP();
 
     if ((offset1 >= maxQPowerOcl) || (offset2 >= maxQPowerOcl)) {
-        throw std::domain_error(
+        throw std::invalid_argument(
             "QEngineCPU::Apply2x2 offset1 and offset2 parameters must be within allocated qubit bounds!");
     }
 
     for (bitLenInt i = 0U; i < bitCount; ++i) {
         if (qPowsSorted[i] >= maxQPowerOcl) {
-            throw std::domain_error(
+            throw std::invalid_argument(
                 "QEngineCPU::Apply2x2 parameter qPowsSorted array values must be within allocated qubit bounds!");
         }
     }
@@ -543,13 +543,13 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     CHECK_ZERO_SKIP();
 
     if ((offset1 >= maxQPowerOcl) || (offset2 >= maxQPowerOcl)) {
-        throw std::domain_error(
+        throw std::invalid_argument(
             "QEngineCPU::Apply2x2 offset1 and offset2 parameters must be within allocated qubit bounds!");
     }
 
     for (bitLenInt i = 0U; i < bitCount; ++i) {
         if (qPowsSorted[i] >= maxQPowerOcl) {
-            throw std::domain_error(
+            throw std::invalid_argument(
                 "QEngineCPU::Apply2x2 parameter qPowsSorted array values must be within allocated qubit bounds!");
         }
     }
@@ -774,14 +774,11 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     }
 
     if (qubitIndex >= qubitCount) {
-        throw std::domain_error("QEngineCPU::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineCPU::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
     }
 
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        if (controls[i] >= qubitCount) {
-            throw std::domain_error("QEngineCPU::UniformlyControlledSingleBit control is out-of-bounds!");
-        }
-    }
+    ThrowIfQbIdArrayIsBad(
+        controls, controlLen, qubitCount, "QEngineCPU::UniformlyControlledSingleBit control is out-of-bounds!");
 
     const bitCapIntOcl targetPower = pow2Ocl(qubitIndex);
 
@@ -882,11 +879,7 @@ void QEngineCPU::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlL
         return UniformParityRZ(mask, angle);
     }
 
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        if (cControls[i] >= qubitCount) {
-            throw std::domain_error("QEngineCPU::CUniformParityRZ control is out-of-bounds!");
-        }
-    }
+    ThrowIfQbIdArrayIsBad(cControls, controlLen, qubitCount, "QEngineCPU::CUniformParityRZ control is out-of-bounds!");
 
     CHECK_ZERO_SKIP();
 
@@ -1008,7 +1001,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
     if (start > qubitCount) {
-        throw std::domain_error("QEngineCPU::Compose start index is out-of-bounds!");
+        throw std::invalid_argument("QEngineCPU::Compose start index is out-of-bounds!");
     }
 
     if (!qubitCount) {
@@ -1130,8 +1123,8 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
  */
 void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineCPU::DecomposeDispose range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineCPU::DecomposeDispose range is out-of-bounds!");
     }
 
     if (!length) {
@@ -1280,8 +1273,8 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(s
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineCPU::Dispose range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineCPU::Dispose range is out-of-bounds!");
     }
 
     if (!length) {
@@ -1338,7 +1331,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 real1_f QEngineCPU::Prob(bitLenInt qubit)
 {
     if (qubit >= qubitCount) {
-        throw std::domain_error("QEngineCPU::Prob qubit index parameter must be within allocated qubit bounds!");
+        throw std::invalid_argument("QEngineCPU::Prob qubit index parameter must be within allocated qubit bounds!");
     }
 
     if (doNormalize) {
@@ -1394,7 +1387,7 @@ real1_f QEngineCPU::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenI
     }
 
     if (target >= qubitCount) {
-        throw std::domain_error(
+        throw std::invalid_argument(
             "QEngineOCL::CtrlOrAntiProb target index parameter must be within allocated qubit bounds!");
     }
 
