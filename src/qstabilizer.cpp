@@ -790,7 +790,7 @@ void QStabilizer::Y(bitLenInt t)
 bool QStabilizer::IsSeparableZ(const bitLenInt& t)
 {
     if (t >= qubitCount) {
-        throw std::domain_error("QStabilizer::IsSeparableZ qubit index is out-of-bounds!");
+        throw std::invalid_argument("QStabilizer::IsSeparableZ qubit index is out-of-bounds!");
     }
 
     Finish();
@@ -861,7 +861,7 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
 bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 {
     if (t >= qubitCount) {
-        throw std::domain_error("QStabilizer::ForceM qubit index is out-of-bounds!");
+        throw std::invalid_argument("QStabilizer::ForceM qubit index is out-of-bounds!");
     }
 
     if (doForce && !doApply) {
@@ -953,7 +953,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 {
     if (start > qubitCount) {
-        throw std::domain_error("QStabilizer::Compose start index is out-of-bounds!");
+        throw std::invalid_argument("QStabilizer::Compose start index is out-of-bounds!");
     }
 
     // We simply insert the (elsewhere initialized and valid) "toCopy" stabilizers and destabilizers in corresponding
@@ -1013,8 +1013,8 @@ QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
 
 bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QStabilizer::CanDecomposeDispose range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QStabilizer::CanDecomposeDispose range is out-of-bounds!");
     }
 
     if (qubitCount == 1U) {
@@ -1065,8 +1065,8 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
 void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr dest)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QStabilizer::DecomposeDispose range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QStabilizer::DecomposeDispose range is out-of-bounds!");
     }
 
     if (!length) {

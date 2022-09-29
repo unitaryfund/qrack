@@ -120,7 +120,7 @@ void QEngineOCL::ZeroAmplitudes()
 void QEngineOCL::CopyStateVec(QEnginePtr src)
 {
     if (qubitCount != src->GetQubitCount()) {
-        throw std::domain_error("QEngineOCL::CopyStateVec argument size differs from this!");
+        throw std::invalid_argument("QEngineOCL::CopyStateVec argument size differs from this!");
     }
 
     if (src->IsZeroAmplitude()) {
@@ -143,8 +143,8 @@ void QEngineOCL::CopyStateVec(QEnginePtr src)
 
 void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
-    if (((offset + length) > maxQPowerOcl) || ((offset + length) < offset)) {
-        throw std::domain_error("QEngineOCL::GetAmplitudePage range is out-of-bounds!");
+    if (isBadPermRange(offset, length, maxQPowerOcl)) {
+        throw std::invalid_argument("QEngineOCL::GetAmplitudePage range is out-of-bounds!");
     }
 
     if (!stateBuffer) {
@@ -158,8 +158,8 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
 
 void QEngineOCL::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
-    if (((offset + length) > maxQPowerOcl) || ((offset + length) < offset)) {
-        throw std::domain_error("QEngineOCL::SetAmplitudePage range is out-of-bounds!");
+    if (isBadPermRange(offset, length, maxQPowerOcl)) {
+        throw std::invalid_argument("QEngineOCL::SetAmplitudePage range is out-of-bounds!");
     }
 
     if (!stateBuffer) {
@@ -178,14 +178,14 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, b
 void QEngineOCL::SetAmplitudePage(
     QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
 {
-    if (((dstOffset + length) > maxQPowerOcl) || ((dstOffset + length) < dstOffset)) {
-        throw std::domain_error("QEngineOCL::SetAmplitudePage source range is out-of-bounds!");
+    if (isBadPermRange(dstOffset, length, maxQPowerOcl)) {
+        throw std::invalid_argument("QEngineOCL::SetAmplitudePage source range is out-of-bounds!");
     }
 
     QEngineOCLPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineOCL>(pageEnginePtr);
 
-    if (((srcOffset + length) > pageEngineOclPtr->maxQPowerOcl) || ((srcOffset + length) < srcOffset)) {
-        throw std::domain_error("QEngineOCL::SetAmplitudePage source range is out-of-bounds!");
+    if (isBadPermRange(srcOffset, length, maxQPowerOcl)) {
+        throw std::invalid_argument("QEngineOCL::SetAmplitudePage source range is out-of-bounds!");
     }
 
     BufferPtr oStateBuffer = pageEngineOclPtr->stateBuffer;
@@ -236,7 +236,7 @@ void QEngineOCL::SetAmplitudePage(
 void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 {
     if (qubitCount != engine->GetQubitCount()) {
-        throw std::domain_error("QEngineOCL::ShuffleBuffers argument size differs from this!");
+        throw std::invalid_argument("QEngineOCL::ShuffleBuffers argument size differs from this!");
     }
 
     QEngineOCLPtr engineOcl = std::dynamic_pointer_cast<QEngineOCL>(engine);
@@ -740,13 +740,13 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     CHECK_ZERO_SKIP();
 
     if ((offset1 >= maxQPowerOcl) || (offset2 >= maxQPowerOcl)) {
-        throw std::domain_error(
+        throw std::invalid_argument(
             "QEngineOCL::Apply2x2 offset1 and offset2 parameters must be within allocated qubit bounds!");
     }
 
     for (bitLenInt i = 0U; i < bitCount; ++i) {
         if (qPowersSorted[i] >= maxQPowerOcl) {
-            throw std::domain_error(
+            throw std::invalid_argument(
                 "QEngineOCL::Apply2x2 parameter qPowersSorted array values must be within allocated qubit bounds!");
         }
     }
@@ -1009,14 +1009,11 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     }
 
     if (qubitIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
     }
 
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        if (controls[i] >= qubitCount) {
-            throw std::domain_error("QEngineOCL::UniformlyControlledSingleBit control is out-of-bounds!");
-        }
-    }
+    ThrowIfQbIdArrayIsBad(
+        controls, controlLen, qubitCount, "QEngineOCL::UniformlyControlledSingleBit control is out-of-bounds!");
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec = ResetWaitEvents();
@@ -1107,11 +1104,7 @@ void QEngineOCL::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLe
         return UniformParityRZ(mask, angle);
     }
 
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        if (controls[i] >= qubitCount) {
-            throw std::domain_error("QEngineOCL::CUniformParityRZ control is out-of-bounds!");
-        }
-    }
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount, "QEngineOCL::CUniformParityRZ control is out-of-bounds!");
 
     CHECK_ZERO_SKIP();
 
@@ -1325,7 +1318,7 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
 {
     if (start > qubitCount) {
-        throw std::domain_error("QEngineOCL::Compose start index is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::Compose start index is out-of-bounds!");
     }
 
     const bitLenInt result = start;
@@ -1348,8 +1341,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 {
     // "Dispose" is basically the same as decompose, except "Dispose" throws the removed bits away.
 
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::DecomposeDispose range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::DecomposeDispose range is out-of-bounds!");
     }
 
     if (!length) {
@@ -1620,7 +1613,7 @@ real1_f QEngineOCL::Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs)
 real1_f QEngineOCL::Prob(bitLenInt qubit)
 {
     if (qubit >= qubitCount) {
-        throw std::domain_error("QEngineOCL::Prob qubit index parameter must be within allocated qubit bounds!");
+        throw std::invalid_argument("QEngineOCL::Prob qubit index parameter must be within allocated qubit bounds!");
     }
 
     if (qubitCount == 1) {
@@ -1656,7 +1649,7 @@ real1_f QEngineOCL::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenI
     }
 
     if (target >= qubitCount) {
-        throw std::domain_error(
+        throw std::invalid_argument(
             "QEngineOCL::CtrlOrAntiProb target index parameter must be within allocated qubit bounds!");
     }
 
@@ -2031,8 +2024,8 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[
 
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::ROx range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::ROx range is out-of-bounds!");
     }
 
     if (!length) {
@@ -2060,8 +2053,8 @@ void QEngineOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length) { ROx(O
 /// Add or Subtract integer (without sign or carry)
 void QEngineOCL::INT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::INT range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::INT range is out-of-bounds!");
     }
 
     if (!length) {
@@ -2087,15 +2080,11 @@ void QEngineOCL::INT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLe
 void QEngineOCL::CINT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, const bitLenInt* controls,
     bitLenInt controlLen)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::CINT range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::CINT range is out-of-bounds!");
     }
 
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        if (controls[i] >= qubitCount) {
-            throw std::domain_error("QEngineOCL::CINT control is out-of-bounds!");
-        }
-    }
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount, "QEngineOCL::CINT control is out-of-bounds!");
 
     if (!length) {
         return;
@@ -2145,12 +2134,12 @@ void QEngineOCL::CINC(
 /// Add or Subtract integer (without sign, with carry)
 void QEngineOCL::INTC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::INTC range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::INTC range is out-of-bounds!");
     }
 
     if (carryIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::INTC carryIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::INTC carryIndex is out-of-bounds!");
     }
 
     if (!length) {
@@ -2182,12 +2171,12 @@ void QEngineOCL::INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length
 /// Add or Subtract integer (with overflow, without carry)
 void QEngineOCL::INTS(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::INTS range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::INTS range is out-of-bounds!");
     }
 
     if (overflowIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::INTS overflowIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::INTS overflowIndex is out-of-bounds!");
     }
 
     if (!length) {
@@ -2220,16 +2209,16 @@ void QEngineOCL::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLen
 void QEngineOCL::INTSC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex,
     bitLenInt carryIndex)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::INTSC range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::INTSC range is out-of-bounds!");
     }
 
     if (overflowIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::INTSC overflowIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::INTSC overflowIndex is out-of-bounds!");
     }
 
     if (carryIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::INTSC carryIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::INTSC carryIndex is out-of-bounds!");
     }
 
     if (!length) {
@@ -2263,12 +2252,12 @@ void QEngineOCL::INCDECSC(
 /// Add or Subtract integer (with sign, with carry)
 void QEngineOCL::INTSC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::INTSC range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::INTSC range is out-of-bounds!");
     }
 
     if (carryIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::INTSC carryIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::INTSC carryIndex is out-of-bounds!");
     }
 
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
@@ -2291,8 +2280,8 @@ void QEngineOCL::INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bi
 /// Add or Subtract integer (BCD)
 void QEngineOCL::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::INTBCD range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::INTBCD range is out-of-bounds!");
     }
 
     if (!length) {
@@ -2327,12 +2316,12 @@ void QEngineOCL::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 /// Add or Subtract integer (BCD, with carry)
 void QEngineOCL::INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::INTBCDC range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::INTBCDC range is out-of-bounds!");
     }
 
     if (carryIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::INTBCDC carryIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::INTBCDC carryIndex is out-of-bounds!");
     }
 
     if (!length) {
@@ -2589,12 +2578,12 @@ void QEngineOCL::xMULx(OCLAPI api_call, const bitCapIntOcl* bciArgs, BufferPtr c
 
 void QEngineOCL::MULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
-        throw std::domain_error("QEngineOCL::MULx range is out-of-bounds!");
+    if (isBadBitRange(inOutStart, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::MULx range is out-of-bounds!");
     }
 
-    if (((carryStart + length) > qubitCount) || ((carryStart + length) < carryStart)) {
-        throw std::domain_error("QEngineOCL::MULx range is out-of-bounds!");
+    if (isBadBitRange(carryStart, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::MULx range is out-of-bounds!");
     }
 
     const bitCapIntOcl lowMask = pow2MaskOcl(length);
@@ -2611,12 +2600,12 @@ void QEngineOCL::MULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart,
 void QEngineOCL::MULModx(
     OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    if (((inStart + length) > qubitCount) || ((inStart + length) < inStart)) {
-        throw std::domain_error("QEngineOCL::MULModx range is out-of-bounds!");
+    if (isBadBitRange(inStart, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::MULModx range is out-of-bounds!");
     }
 
-    if (((outStart + length) > qubitCount) || ((outStart + length) < outStart)) {
-        throw std::domain_error("QEngineOCL::MULModx range is out-of-bounds!");
+    if (isBadBitRange(outStart, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::MULModx range is out-of-bounds!");
     }
 
     if (!toMod) {
@@ -2638,19 +2627,15 @@ void QEngineOCL::MULModx(
 void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt carryStart,
     bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
-    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
-        throw std::domain_error("QEngineOCL::CMULx range is out-of-bounds!");
+    if (isBadBitRange(inOutStart, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::CMULx range is out-of-bounds!");
     }
 
-    if (((carryStart + length) > qubitCount) || ((carryStart + length) < carryStart)) {
-        throw std::domain_error("QEngineOCL::CMULx range is out-of-bounds!");
+    if (isBadBitRange(carryStart, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::CMULx range is out-of-bounds!");
     }
 
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        if (controls[i] >= qubitCount) {
-            throw std::domain_error("QEngineOCL::CMULx control is out-of-bounds!");
-        }
-    }
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount, "QEngineOCL::CMULx control is out-of-bounds!");
 
     const bitCapIntOcl lowMask = pow2MaskOcl(length);
     const bitCapIntOcl inOutMask = lowMask << inOutStart;
@@ -2685,19 +2670,15 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart
 void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN, bitLenInt inOutStart,
     bitLenInt carryStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
-    if (((inOutStart + length) > qubitCount) || ((inOutStart + length) < inOutStart)) {
-        throw std::domain_error("QEngineOCL::CMULModx range is out-of-bounds!");
+    if (isBadBitRange(inOutStart, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::CMULModx range is out-of-bounds!");
     }
 
-    if (((carryStart + length) > qubitCount) || ((carryStart + length) < carryStart)) {
-        throw std::domain_error("QEngineOCL::CMULModx range is out-of-bounds!");
+    if (isBadBitRange(carryStart, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::CMULModx range is out-of-bounds!");
     }
 
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        if (controls[i] >= qubitCount) {
-            throw std::domain_error("QEngineOCL::CMULModx control is out-of-bounds!");
-        }
-    }
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount, "QEngineOCL::CMULModx control is out-of-bounds!");
 
     const bitCapIntOcl lowMask = pow2MaskOcl(length);
     const bitCapIntOcl inOutMask = lowMask << inOutStart;
@@ -2732,12 +2713,12 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
 bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, const unsigned char* values, bool resetValue)
 {
-    if (((indexStart + indexLength) > qubitCount) || ((indexStart + indexLength) < indexStart)) {
-        throw std::domain_error("QEngineOCL::IndexedLDA range is out-of-bounds!");
+    if (isBadBitRange(indexStart, indexLength, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::IndexedLDA range is out-of-bounds!");
     }
 
-    if (((valueStart + valueLength) > qubitCount) || ((valueStart + valueLength) < valueStart)) {
-        throw std::domain_error("QEngineOCL::IndexedLDA range is out-of-bounds!");
+    if (isBadBitRange(valueStart, valueLength, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::IndexedLDA range is out-of-bounds!");
     }
 
     if (!stateBuffer) {
@@ -2766,16 +2747,16 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapIntOcl QEngineOCL::OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
 {
-    if (((indexStart + indexLength) > qubitCount) || ((indexStart + indexLength) < indexStart)) {
-        throw std::domain_error("QEngineOCL::OpIndexed range is out-of-bounds!");
+    if (isBadBitRange(indexStart, indexLength, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::OpIndexed range is out-of-bounds!");
     }
 
-    if (((valueStart + valueLength) > qubitCount) || ((valueStart + valueLength) < valueStart)) {
-        throw std::domain_error("QEngineOCL::OpIndexed range is out-of-bounds!");
+    if (isBadBitRange(valueStart, valueLength, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::OpIndexed range is out-of-bounds!");
     }
 
     if (carryIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::OpIndexed carryIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::OpIndexed carryIndex is out-of-bounds!");
     }
 
     if (!stateBuffer) {
@@ -2857,12 +2838,12 @@ void QEngineOCL::PhaseFlipX(OCLAPI api_call, const bitCapIntOcl* bciArgs)
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::CPhaseFlipIfLess range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::CPhaseFlipIfLess range is out-of-bounds!");
     }
 
     if (flagIndex >= qubitCount) {
-        throw std::domain_error("QEngineOCL::CPhaseFlipIfLess flagIndex is out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::CPhaseFlipIfLess flagIndex is out-of-bounds!");
     }
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), bitRegMaskOcl(start, length),
@@ -2873,8 +2854,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 
 void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
-    if (((start + length) > qubitCount) || ((start + length) < start)) {
-        throw std::domain_error("QEngineOCL::PhaseFlipIfLess range is out-of-bounds!");
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QEngineOCL::PhaseFlipIfLess range is out-of-bounds!");
     }
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), bitRegMaskOcl(start, length),
@@ -2902,7 +2883,7 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
 complex QEngineOCL::GetAmplitude(bitCapInt perm)
 {
     if (perm >= maxQPower) {
-        throw std::domain_error("QEngineOCL::GetAmplitude argument out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::GetAmplitude argument out-of-bounds!");
     }
 
     // WARNING: Does not normalize!
@@ -2920,7 +2901,7 @@ complex QEngineOCL::GetAmplitude(bitCapInt perm)
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 {
     if (perm >= maxQPower) {
-        throw std::domain_error("QEngineOCL::SetAmplitude argument out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::SetAmplitude argument out-of-bounds!");
     }
 
     if (!stateBuffer && !norm(amp)) {
