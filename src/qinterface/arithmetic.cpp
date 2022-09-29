@@ -110,7 +110,7 @@ void QInterface::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
 
 /** Add integer (without sign, with controls) */
 void QInterface::CINC(
-    bitCapInt toAdd, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         INC(toAdd, start, length);
@@ -156,7 +156,7 @@ void QInterface::CINC(
 
 /// Subtract integer (without sign, with controls)
 void QInterface::CDEC(
-    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     CINC(invToSub, inOutStart, length, controls, controlLen);
@@ -256,7 +256,7 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
  * Controlled multiplication modulo N by integer, (out of place)
  */
 void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt const* controls, bitLenInt controlLen)
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
@@ -293,7 +293,7 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
  * Inverse of controlled multiplication modulo N by integer, (out of place)
  */
 void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt const* controls, bitLenInt controlLen)
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
@@ -354,7 +354,7 @@ void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 }
 
 /// Quantum analog of classical "Full Adder" gate
-void QInterface::CFullAdd(const bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+void QInterface::CFullAdd(bitLenInt const* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
     bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
@@ -380,7 +380,7 @@ void QInterface::CFullAdd(const bitLenInt* controlBits, bitLenInt controlLen, bi
 }
 
 /// Inverse of FullAdd
-void QInterface::CIFullAdd(const bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+void QInterface::CIFullAdd(bitLenInt const* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
     bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
@@ -449,7 +449,7 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
     IFullAdd(input1, input2, carry, output);
 }
 
-void QInterface::CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+void QInterface::CADC(bitLenInt const* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
     bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (!length) {
@@ -471,7 +471,7 @@ void QInterface::CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt
     CFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);
 }
 
-void QInterface::CIADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+void QInterface::CIADC(bitLenInt const* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
     bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (!length) {

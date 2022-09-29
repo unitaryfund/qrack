@@ -72,23 +72,23 @@ protected:
     void SingleBitGate(bitLenInt target, Qubit1Fn fn, bool isSqiCtrl = false, bool isAnti = false);
     template <typename Qubit1Fn>
     void MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
-        const complex* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
+        complex const* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse);
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
-    void CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, const bitLenInt* controls, bitLenInt controlLen);
+    void CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, bitLenInt const* controls, bitLenInt controlLen);
 
     void ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target);
     void ApplyEitherControlledSingleBit(
-        bool anti, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx);
+        bool anti, bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, complex const* mtrx);
     void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
     void Init();
 
-    void GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
+    void GetSetAmplitudePage(complex* pagePtr, complex const* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
@@ -179,7 +179,7 @@ public:
     {
         GetSetAmplitudePage(pagePtr, NULL, offset, length);
     }
-    void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
         GetSetAmplitudePage(NULL, pagePtr, offset, length);
     }
@@ -238,7 +238,7 @@ public:
         CombineEngines();
         return qPages[0U]->GetExpectation(valueStart, valueLength);
     }
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         CombineEngines();
@@ -265,7 +265,7 @@ public:
         return ZERO_R1_F;
     }
 
-    void SetQuantumState(const complex* inputState);
+    void SetQuantumState(complex const* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm)
@@ -300,7 +300,7 @@ public:
     using QEngine::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
-    void Mtrx(const complex* mtrx, bitLenInt target);
+    void Mtrx(complex const* mtrx, bitLenInt target);
     void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);
@@ -309,17 +309,17 @@ public:
     {
         ApplySingleEither(true, topRight, bottomLeft, qubitIndex);
     }
-    void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+    void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(false, controls, controlLen, target, mtrx);
     }
-    void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+    void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(true, controls, controlLen, target, mtrx);
     }
 
     void UniformParityRZ(bitCapInt mask, real1_f angle);
-    void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
+    void CUniformParityRZ(bitLenInt const* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
 
     void XMask(bitCapInt mask);
     void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
@@ -344,16 +344,16 @@ public:
     void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt const* controls,
         bitLenInt controlLen);
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt const* controls,
         bitLenInt controlLen);
     void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen);
+        bitLenInt const* controls, bitLenInt controlLen);
     void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen);
+        bitLenInt const* controls, bitLenInt controlLen);
     void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen);
+        bitLenInt const* controls, bitLenInt controlLen);
 
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         const unsigned char* values, bool resetValue = true);
@@ -395,7 +395,7 @@ public:
         CombineEngines();
         return qPages[0U]->ForceMParity(mask, result, doForce);
     }
-    real1_f ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset = 0);
+    real1_f ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, bitCapInt offset = 0);
 
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void NormalizeState(

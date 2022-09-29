@@ -148,7 +148,7 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 }
 
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
-void QInterface::QFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparate)
+void QInterface::QFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparate)
 {
     if (!length) {
         return;
@@ -168,7 +168,7 @@ void QInterface::QFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparat
 }
 
 /// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
-void QInterface::IQFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparate)
+void QInterface::IQFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparate)
 {
     if (!length) {
         return;
@@ -221,7 +221,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
 }
 
 /// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply)
+bitCapInt QInterface::ForceM(bitLenInt const* bits, bitLenInt length, bool const* values, bool doApply)
 {
     bitCapInt result = 0U;
 
@@ -345,7 +345,7 @@ void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
     }
 }
 
-void QInterface::ProbBitsAll(const bitLenInt* bits, bitLenInt length, real1* probsArray)
+void QInterface::ProbBitsAll(bitLenInt const* bits, bitLenInt length, real1* probsArray)
 {
     if (length == qubitCount) {
         bool isOrdered = true;
@@ -378,7 +378,7 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, bitLenInt length, real1* pro
     }
 }
 
-real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset)
+real1_f QInterface::ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, bitCapInt offset)
 {
     if (length == 1U) {
         return Prob(bits[0]);
@@ -402,7 +402,7 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, 
 }
 
 std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
-    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
+    bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots)
 {
     if (!shots) {
         return std::map<bitCapInt, int>();
@@ -428,7 +428,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
 }
 
 void QInterface::MultiShotMeasureMask(
-    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray)
+    bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray)
 {
     if (!shots) {
         return;

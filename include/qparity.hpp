@@ -48,6 +48,6 @@ public:
      * If the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
      * Otherwise, do nothing if any control is not set.
      */
-    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle) = 0;
+    virtual void CUniformParityRZ(bitLenInt const* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle) = 0;
 };
 } // namespace Qrack

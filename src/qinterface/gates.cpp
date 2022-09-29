@@ -358,8 +358,8 @@ void QInterface::AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targ
         controls, 1, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
 }
 
-void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
+void QInterface::UniformlyControlledSingleBit(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+    complex const* mtrxs, bitCapInt const* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
 {
     for (bitLenInt bit_pos = 0U; bit_pos < controlLen; ++bit_pos) {
         X(controls[bit_pos]);
@@ -533,7 +533,7 @@ void QInterface::ISqrtSwap(bitLenInt q1, bitLenInt q2)
     CNOT(q1, q2);
 }
 
-void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::CSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
     if (!controlLen) {
         Swap(q1, q2);
@@ -557,7 +557,7 @@ void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenIn
     MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
 }
 
-void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::AntiCSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
     for (bitLenInt i = 0U; i < controlLen; ++i) {
@@ -569,7 +569,7 @@ void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitL
     XMask(m);
 }
 
-void QInterface::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
     if (!controlLen) {
         SqrtSwap(q1, q2);
@@ -619,7 +619,7 @@ void QInterface::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitL
     MCMtrx(lControls.get(), controlLen, s, q2);
 }
 
-void QInterface::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
     if (q1 == q2) {
         return;
@@ -664,7 +664,7 @@ void QInterface::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bit
     MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
 }
 
-void QInterface::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::AntiCSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
     for (bitLenInt i = 0U; i < controlLen; ++i) {
@@ -676,7 +676,7 @@ void QInterface::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, 
     XMask(m);
 }
 
-void QInterface::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::AntiCISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
     for (bitLenInt i = 0U; i < controlLen; ++i) {
