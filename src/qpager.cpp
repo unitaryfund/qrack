@@ -627,7 +627,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
             const bitCapIntOcl page = i * qPages.size() + j;
             nQPages[page] = MakeEngine(qpp, (pmqp * page) / nPagePow);
             if (!qPages[j]->IsZeroAmplitude()) {
-                nQPages[page]->CopyStateVec(qPages[j]);
+                nQPages[page]->SetAmplitudePage(qPages[j], 0U, 0U, (bitCapIntOcl)nQPages[page]->GetMaxQPower());
                 nQPages[page]->Phase(amp, amp, 0U);
             }
         }
@@ -648,7 +648,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
             const bitCapIntOcl page = maxI * qPages.size() + j;
             nQPages[page] = MakeEngine(qpp, (pmqp * page) / nPagePow);
             if (!qPages[j]->IsZeroAmplitude()) {
-                nQPages[page]->CopyStateVec(qPages[j]);
+                nQPages[page]->SetAmplitudePage(qPages[j], 0U, 0U, (bitCapIntOcl)nQPages[page]->GetMaxQPower());
                 nQPages[page]->Phase(amp, amp, 0U);
             }
             qPages[j] = NULL;
