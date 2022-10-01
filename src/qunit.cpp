@@ -2909,7 +2909,7 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, const bitLe
         return;
     }
 
-    INT(toMod, start, length, 0xFF, false, controlVec);
+    INT(toMod, start, length, (bitLenInt)(-1), false, controlVec);
 }
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -2962,13 +2962,13 @@ void QUnit::INCxx(
 /// Check if overflow arithmetic can be optimized
 bool QUnit::INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex)
 {
-    return INTSCOptimize(toMod, start, length, isAdd, 0xFF, overflowIndex);
+    return INTSCOptimize(toMod, start, length, isAdd, (bitLenInt)(-1), overflowIndex);
 }
 
 /// Check if carry arithmetic can be optimized
 bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex)
 {
-    return INTSCOptimize(toMod, start, length, isAdd, carryIndex, 0xFF);
+    return INTSCOptimize(toMod, start, length, isAdd, carryIndex, (bitLenInt)(-1));
 }
 
 /// Check if arithmetic with both carry and overflow can be optimized
@@ -2979,7 +2979,7 @@ bool QUnit::INTSCOptimize(
         return false;
     }
 
-    const bool carry = (carryIndex < 0xFF);
+    const bool carry = (carryIndex != (bitLenInt)(-1));
     const bool carryIn = carry && M(carryIndex);
     if (carry && (carryIn == isAdd)) {
         ++toMod;
@@ -2993,10 +2993,10 @@ bool QUnit::INTSCOptimize(
     bool isOverflow;
     bitCapInt outInt;
     if (isAdd) {
-        isOverflow = (overflowIndex < 0xFF) && isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        isOverflow = (overflowIndex != (bitLenInt)(-1)) && isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
         outInt = inOutInt + toMod;
     } else {
-        isOverflow = (overflowIndex < 0xFF) && isOverflowSub(inOutInt, inInt, signMask, lengthPower);
+        isOverflow = (overflowIndex != (bitLenInt)(-1)) && isOverflowSub(inOutInt, inInt, signMask, lengthPower);
         outInt = (inOutInt + lengthPower) - toMod;
     }
 
@@ -3024,7 +3024,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         throw std::invalid_argument("QUnit::INT range is out-of-bounds!");
     }
 
-    if (carryIndex >= qubitCount) {
+    if (hasCarry && carryIndex >= qubitCount) {
         throw std::invalid_argument("QUnit::INT carryIndex parameter must be within allocated qubit bounds!");
     }
 
@@ -3202,7 +3202,10 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     }
 }
 
-void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length) { INT(toMod, start, length, 0xFF, false); }
+void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
+{
+    INT(toMod, start, length, (bitLenInt)(-1), false);
+}
 
 /// Add integer (without sign, with carry)
 void QUnit::INCC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
@@ -3239,7 +3242,7 @@ void QUnit::INTS(
         throw std::invalid_argument("QUnit::INT overflowIndex parameter must be within allocated qubit bounds!");
     }
 
-    if (carryIndex >= qubitCount) {
+    if (hasCarry && carryIndex >= qubitCount) {
         throw std::invalid_argument("QUnit::INT carryIndex parameter must be within allocated qubit bounds!");
     }
 
@@ -3286,7 +3289,7 @@ void QUnit::INTS(
 
 void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    INTS(toMod, start, length, overflowIndex, 0xFF, false);
+    INTS(toMod, start, length, overflowIndex, (bitLenInt)(-1), false);
 }
 
 void QUnit::INCDECSC(
