@@ -380,6 +380,9 @@ void QInterface::ProbBitsAll(bitLenInt const* bits, bitLenInt length, real1* pro
 
 real1_f QInterface::ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, bitCapInt offset)
 {
+    ThrowIfQbIdArrayIsBad(bits, length, qubitCount,
+        "QInterface::ExpectationBitsAll parameter controls array values must be within allocated qubit bounds!");
+
     if (length == 1U) {
         return Prob(bits[0]);
     }
@@ -411,6 +414,9 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
     std::transform(qPowers, qPowers + qPowerCount, bitMap.get(), log2);
 
+    ThrowIfQbIdArrayIsBad(bitMap.get(), qPowerCount, qubitCount,
+        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
+
     const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
     std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
     ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
@@ -436,6 +442,9 @@ void QInterface::MultiShotMeasureMask(
 
     std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
     std::transform(qPowers, qPowers + qPowerCount, bitMap.get(), log2);
+
+    ThrowIfQbIdArrayIsBad(bitMap.get(), qPowerCount, qubitCount,
+        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
 
     const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
     std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);

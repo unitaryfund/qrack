@@ -427,10 +427,6 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
 bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
 {
-    if (isBadBitRange(start, length, qubitCount)) {
-        throw std::invalid_argument("QStabilizer::DecomposeDispose range is out-of-bounds!");
-    }
-
     if (!length) {
         return start;
     }
