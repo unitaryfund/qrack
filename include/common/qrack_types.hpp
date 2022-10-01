@@ -268,11 +268,11 @@ inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& lengt
 inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
 inline bool isBadBitRange(const bitLenInt& start, const bitLenInt& length, const bitLenInt& qubitCount)
 {
-    return ((start + length) > qubitCount) || ((start + length) < start);
+    return ((start + length) > qubitCount) || ((bitLenInt)(start + length) < start);
 }
 inline bool isBadPermRange(const bitCapIntOcl& start, const bitCapIntOcl& length, const bitCapIntOcl& maxQPowerOcl)
 {
-    return ((start + length) > maxQPowerOcl) || ((start + length) < start);
+    return ((start + length) > maxQPowerOcl) || ((bitCapIntOcl)(start + length) < start);
 }
 inline void ThrowIfQbIdArrayIsBad(
     bitLenInt const* controls, const bitLenInt controlLen, const bitLenInt& qubitCount, std::string message)
