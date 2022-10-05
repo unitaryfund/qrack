@@ -12,15 +12,21 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+#include "config.h"
+
 #include <cfloat>
+#include <cmath>
 #include <complex>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <random>
 
-#include "config.h"
-
-#if UINTPOW < 5
+#if UINTPOW < 4
+#define ONE_BCI ((uint8_t)1U)
+#define bitCapIntOcl uint8_t
+#elif UINTPOW < 5
 #define ONE_BCI ((uint16_t)1U)
 #define bitCapIntOcl uint16_t
 #elif UINTPOW < 6
@@ -56,17 +62,17 @@
 #define bitCapInt __uint128_t
 #endif
 #else
-#define bitsInCap (8U * (1U << QBCAPPOW))
+#define bitsInCap (8U * (((bitLenInt)1U) << QBCAPPOW))
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt                                                                                                      \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1 << QBCAPPOW, 1 << QBCAPPOW,                 \
+    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << QBCAPPOW, 1ULL << QBCAPPOW,           \
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
 #endif
 
-#define bitsInByte 8
+#define bitsInByte 8U
 #define qrack_rand_gen std::mt19937_64
 #define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>
-#define QRACK_ALIGN_SIZE 64
+#define QRACK_ALIGN_SIZE 64U
 
 #if ENABLE_CUDA
 #include <cuda_runtime.h>
@@ -106,30 +112,32 @@ namespace Qrack {
 typedef std::complex<__fp16> complex;
 typedef __fp16 real1;
 typedef float real1_f;
+typedef float real1_s;
 #define ZERO_R1 0.0f
+#define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
+#define ONE_R1_F 1.0f
 #define PI_R1 ((real1_f)M_PI)
 #define SQRT2_R1 ((real1_f)M_SQRT2)
 #define SQRT1_2_R1 ((real1_f)M_SQRT2)
 #define REAL1_DEFAULT_ARG -999.0f
 // Half of the amplitude of 16 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2e-17f
-// Minimum representable difference from 1
-#define FP_NORM_EPSILON 0.0009765625f
 #else
 typedef std::complex<half_float::half> complex;
 typedef half_float::half real1;
 typedef float real1_f;
+typedef float real1_s;
 #define ZERO_R1 ((real1)0.0f)
+#define ZERO_R1_F 0.0f
 #define ONE_R1 ((real1)1.0f)
+#define ONE_R1_F 1.0f
 #define PI_R1 ((real1)M_PI)
 #define SQRT2_R1 ((real1)M_SQRT2)
 #define SQRT1_2_R1 ((real1)M_SQRT1_2)
 #define REAL1_DEFAULT_ARG ((real1)-999.0f)
 // Half of the amplitude of 16 maximally superposed qubits in any permutation
 #define REAL1_EPSILON ((real1)2e-17f)
-// Minimum representable difference from 1
-#define FP_NORM_EPSILON ((real1)0.0009765625f)
 #endif
 } // namespace Qrack
 #elif FPPOW < 6
@@ -137,32 +145,54 @@ namespace Qrack {
 typedef std::complex<float> complex;
 typedef float real1;
 typedef float real1_f;
+typedef float real1_s;
 #define ZERO_R1 0.0f
+#define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
+#define ONE_R1_F 1.0f
 #define PI_R1 ((real1_f)M_PI)
 #define SQRT2_R1 ((real1_f)M_SQRT2)
 #define SQRT1_2_R1 ((real1_f)M_SQRT1_2)
 #define REAL1_DEFAULT_ARG -999.0f
 // Half of the amplitude of 32 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2e-33f
-// Minimum representable difference from 1
-#define FP_NORM_EPSILON 1.192092896e-07f
 } // namespace Qrack
-#else
+#elif FPPOW < 7
 namespace Qrack {
 typedef std::complex<double> complex;
 typedef double real1;
 typedef double real1_f;
+typedef double real1_s;
 #define ZERO_R1 0.0
+#define ZERO_R1_F 0.0
 #define ONE_R1 1.0
+#define ONE_R1_F 1.0
 #define PI_R1 M_PI
 #define SQRT2_R1 M_SQRT2
 #define SQRT1_2_R1 M_SQRT1_2
 #define REAL1_DEFAULT_ARG -999.0
 // Half of the amplitude of 64 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2e-65
+} // namespace Qrack
+#else
+#include <boost/multiprecision/float128.hpp>
+#include <quadmath.h>
+namespace Qrack {
+typedef std::complex<boost::multiprecision::float128> complex;
+typedef boost::multiprecision::float128 real1;
+typedef boost::multiprecision::float128 real1_f;
+typedef double real1_s;
+#define ZERO_R1 ((real1)0.0)
+#define ZERO_R1_F 0.0
+#define ONE_R1 ((real1)1.0)
+#define ONE_R1_F 1.0
+#define PI_R1 ((real1)M_PI)
+#define SQRT2_R1 ((real1)M_SQRT2)
+#define SQRT1_2_R1 ((real1)M_SQRT1_2)
+#define REAL1_DEFAULT_ARG -999.0
+// Half of the amplitude of 64 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 2e-129
 // Minimum representable difference from 1
-#define FP_NORM_EPSILON 2.2204460492503131e-16
 } // namespace Qrack
 #endif
 
@@ -170,14 +200,17 @@ typedef double real1_f;
 #define ZERO_CMPLX complex(ZERO_R1, ZERO_R1)
 #define I_CMPLX complex(ZERO_R1, ONE_R1)
 #define CMPLX_DEFAULT_ARG complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG)
-#define TRYDECOMPOSE_EPSILON (8 * FP_NORM_EPSILON)
+#define FP_NORM_EPSILON std::numeric_limits<real1>::epsilon()
+#define FP_NORM_EPSILON_F ((real1_f)FP_NORM_EPSILON)
+#define TRYDECOMPOSE_EPSILON ((real1_f)(8 * FP_NORM_EPSILON))
 
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
 
 /** Called once per value between begin and end. */
-typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc;
-typedef std::function<bitCapInt(const bitCapInt, const int cpu)> IncrementFunc;
+typedef std::function<void(const bitCapIntOcl&, const unsigned& cpu)> ParallelFunc;
+typedef std::function<bitCapIntOcl(const bitCapIntOcl&, const unsigned& cpu)> IncrementFunc;
+typedef std::function<bitCapInt(const bitCapInt&, const unsigned& cpu)> BdtFunc;
 
 class StateVector;
 class StateVectorArray;
@@ -193,35 +226,107 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 // This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
 class StateVector {
 protected:
-    bitCapInt capacity;
+    bitCapIntOcl capacity;
 
 public:
     bool isReadLocked;
 
-    StateVector(bitCapInt cap)
+    StateVector(bitCapIntOcl cap)
         : capacity(cap)
         , isReadLocked(true)
     {
     }
-    virtual complex read(const bitCapInt& i) = 0;
-    virtual void write(const bitCapInt& i, const complex& c) = 0;
+    virtual complex read(const bitCapIntOcl& i) = 0;
+    virtual void write(const bitCapIntOcl& i, const complex& c) = 0;
     /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
     /// tensor slicing.)
-    virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
+    virtual void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2) = 0;
     virtual void clear() = 0;
-    virtual void copy_in(const complex* inArray) = 0;
-    virtual void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
-    virtual void copy_in(
-        StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
+    virtual void copy_in(complex const* inArray) = 0;
+    virtual void copy_in(complex const* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
+    virtual void copy_in(StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset,
+        const bitCapIntOcl length) = 0;
     virtual void copy_out(complex* outArray) = 0;
-    virtual void copy_out(complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void copy_out(complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
     virtual void copy(StateVectorPtr toCopy) = 0;
     virtual void shuffle(StateVectorPtr svp) = 0;
     virtual void get_probs(real1* outArray) = 0;
     virtual bool is_sparse() = 0;
 };
 
-void mul2x2(complex* left, complex* right, complex* out);
-void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
-void log2x2(complex* matrix2x2, complex* outMatrix2x2);
+inline bitCapInt pow2(const bitLenInt& p) { return (bitCapInt)ONE_BCI << p; }
+inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)ONE_BCI << p; }
+inline bitCapInt pow2Mask(const bitLenInt& p) { return ((bitCapInt)ONE_BCI << p) - ONE_BCI; }
+inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return ((bitCapIntOcl)ONE_BCI << p) - ONE_BCI; }
+inline bitLenInt log2(bitCapInt n)
+{
+#if __GNUC__ && QBCAPPOW < 7
+// Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
+#if QBCAPPOW < 6
+    return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
+#else
+    return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
+#endif
+#else
+    bitLenInt pow = 0U;
+    bitCapInt p = n >> ONE_BCI;
+    while (p) {
+        p >>= ONE_BCI;
+        ++pow;
+    }
+    return pow;
+#endif
+}
+inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source)
+{
+    return ((bitCapInt)ONE_BCI << bit) & source;
+}
+inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source)
+{
+    return ((bitCapIntOcl)ONE_BCI << bit) & source;
+}
+inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
+{
+    return (((bitCapInt)ONE_BCI << length) - ONE_BCI) << start;
+}
+inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& length)
+{
+    return (((bitCapIntOcl)ONE_BCI << length) - ONE_BCI) << start;
+}
+// Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
+inline bool isBadBitRange(const bitLenInt& start, const bitLenInt& length, const bitLenInt& qubitCount)
+{
+    return ((start + length) > qubitCount) || ((bitLenInt)(start + length) < start);
+}
+inline bool isBadPermRange(const bitCapIntOcl& start, const bitCapIntOcl& length, const bitCapIntOcl& maxQPowerOcl)
+{
+    return ((start + length) > maxQPowerOcl) || ((bitCapIntOcl)(start + length) < start);
+}
+inline void ThrowIfQbIdArrayIsBad(
+    bitLenInt const* controls, const bitLenInt controlLen, const bitLenInt& qubitCount, std::string message)
+{
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
+        if (controls[i] >= qubitCount) {
+            throw std::invalid_argument(message);
+        }
+    }
+}
+
+// These are utility functions defined in qinterface/protected.cpp:
+unsigned char* cl_alloc(size_t ucharCount);
+void cl_free(void* toFree);
+void mul2x2(complex const* left, complex const* right, complex* out);
+void exp2x2(complex const* matrix2x2, complex* outMatrix2x2);
+void log2x2(complex const* matrix2x2, complex* outMatrix2x2);
+void inv2x2(complex const* matrix2x2, complex* outMatrix2x2);
+bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
+bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
+bitCapInt pushApartBits(const bitCapInt& perm, bitCapInt const* skipPowers, const bitLenInt skipPowersCount);
+bitCapInt intPow(bitCapInt base, bitCapInt power);
+bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
+#if QBCAPPOW == 7U
+std::ostream& operator<<(std::ostream& os, bitCapInt b);
+std::istream& operator>>(std::istream& is, bitCapInt& b);
+#endif
 } // namespace Qrack

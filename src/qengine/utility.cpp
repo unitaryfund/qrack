@@ -10,35 +10,62 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qfactory.hpp"
+#include "qengine_cpu.hpp"
 
 namespace Qrack {
 
 QInterfacePtr QEngineCPU::Clone()
 {
-    Finish();
-
-    QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
-        CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-            false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
-    if (stateVec) {
-        clone->stateVec->copy(stateVec);
-    } else {
-        clone->ZeroAmplitudes();
+    if (!stateVec) {
+        return CloneEmpty();
     }
+
+    QEngineCPUPtr clone =
+        std::make_shared<QEngineCPU>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+
+    Finish();
+    clone->Finish();
+    clone->runningNorm = runningNorm;
+    clone->stateVec->copy(stateVec);
+
     return clone;
+}
+
+QEnginePtr QEngineCPU::CloneEmpty()
+{
+    QEngineCPUPtr clone = std::make_shared<QEngineCPU>(0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+        false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+
+    clone->SetQubitCount(qubitCount);
+
+    return clone;
+}
+
+bitLenInt QEngineCPU::Allocate(bitLenInt start, bitLenInt length)
+{
+    if (start > qubitCount) {
+        throw std::invalid_argument("QEngineCPU::Allocate argument is out-of-bounds!");
+    }
+
+    if (!length) {
+        return start;
+    }
+
+    QEngineCPUPtr nQubits =
+        std::make_shared<QEngineCPU>(length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+    return Compose(nQubits, start);
 }
 
 real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 {
+    const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     real1 average = ZERO_R1;
-    real1 prob;
     real1 totProb = ZERO_R1;
-    bitCapIntOcl i, outputInt;
-    bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(stateVec->read(i));
+    for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
+        bitCapIntOcl outputInt = (i & outputMask) >> valueStart;
+        real1 prob = norm(stateVec->read(i));
         totProb += prob;
         average += prob * outputInt;
     }
@@ -46,7 +73,7 @@ real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
         average /= totProb;
     }
 
-    return average;
+    return (real1_f)average;
 }
 
 } // namespace Qrack

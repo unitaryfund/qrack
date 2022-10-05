@@ -12,10 +12,7 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "common/oclengine.hpp"
-#include "common/parallel_for.hpp"
 #include "qengine_opencl.hpp"
 #include "qinterface.hpp"
 #include "qunit.hpp"
@@ -24,15 +21,15 @@ namespace Qrack {
 
 struct QEngineInfo {
     QInterfacePtr unit;
-    bitLenInt deviceIndex;
+    size_t deviceIndex;
 
     QEngineInfo()
         : unit(NULL)
-        , deviceIndex(0)
+        , deviceIndex(0U)
     {
     }
 
-    QEngineInfo(QInterfacePtr u, bitLenInt devIndex)
+    QEngineInfo(QInterfacePtr u, size_t devIndex)
         : unit(u)
         , deviceIndex(devIndex)
     {
@@ -51,7 +48,7 @@ struct QEngineInfo {
 };
 
 struct DeviceInfo {
-    int id;
+    size_t id;
     bitCapInt maxSize;
 
     bool operator<(const DeviceInfo& other) const { return maxSize < other.maxSize; }
@@ -61,53 +58,84 @@ struct DeviceInfo {
 class QUnitMulti;
 typedef std::shared_ptr<QUnitMulti> QUnitMultiPtr;
 
-class QUnitMulti : public QUnit, public ParallelFor {
+class QUnitMulti : public QUnit {
 
 protected:
-    int defaultDeviceID;
+    bool isRedistributing;
+    bool isQEngineOCL;
+    size_t defaultDeviceID;
     std::vector<DeviceInfo> deviceList;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
 public:
-    QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
+    QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
-        bool randomGlobalPhase = true, bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
-        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
+        bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceID = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
+        bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
-        real1_f separation_thresh = FP_NORM_EPSILON)
-        : QUnitMulti({ QINTERFACE_OPTIMAL_G0_CHILD }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
+        bool useHostMem = false, int64_t deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
+        real1_f separation_thresh = FP_NORM_EPSILON_F)
+        : QUnitMulti({ QINTERFACE_STABILIZER_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceID, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
               separation_thresh)
     {
     }
 
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    virtual QInterfacePtr Clone()
     {
-        return false;
-    }
+        // TODO: Copy buffers instead of flushing?
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            RevertBasis2Qb(i);
+        }
 
-    virtual QInterfacePtr Clone();
+        QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, 0U, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+            deviceIDs, thresholdQubits, separabilityThreshold);
+
+        copyPtr->SetReactiveSeparate(isReactiveSeparate);
+
+        return CloneBody(copyPtr);
+    }
 
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();
 
-    virtual bool SeparateBit(bool value, bitLenInt qubit);
+    virtual bool SeparateBit(bool value, bitLenInt qubit)
+    {
+        const bool toRet = QUnit::SeparateBit(value, qubit);
+        RedistributeQEngines();
+
+        return toRet;
+    }
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     {
         Detach(start, length, std::dynamic_pointer_cast<QUnitMulti>(dest));
     }
-    virtual void Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest);
+    virtual void Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
+    {
+        if (!length) {
+            return;
+        }
 
-    virtual void RedistributeQEngines();
+        QUnit::Detach(start, length, dest);
+        RedistributeQEngines();
+    }
 
     virtual QInterfacePtr EntangleInCurrentBasis(
-        std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
+        std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
+    {
+        QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
+        RedistributeQEngines();
+
+        return toRet;
+    }
+
+    virtual void RedistributeQEngines();
 };
 } // namespace Qrack

@@ -9,12 +9,12 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <iostream> // For cout
-
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 // "qneuron.hpp" defines the QNeuron class.
 #include "qneuron.hpp"
+
+#include <iostream> // For cout
 
 using namespace Qrack;
 
@@ -44,7 +44,7 @@ int main()
         std::cout << "Epoch " << (perm + 1U) << " out of " << ControlPower << std::endl;
         qReg->SetPermutation(perm);
         isPowerOf2 = ((perm != 0) && ((perm & (perm - 1U)) == 0));
-        qPerceptron->LearnPermutation(isPowerOf2, eta);
+        qPerceptron->LearnPermutation(isPowerOf2, (real1_f)eta);
     }
 
     std::cout << "Should be close to 1 for powers of two, and close to 0 for all else..." << std::endl;
@@ -64,7 +64,7 @@ int main()
     qReg->Compose(qReg2);
     qReg->SetPermutation(1U << (ControlCount + 1));
     qReg->H(ControlCount + 1, ControlLog);
-    qReg->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
+    std::dynamic_pointer_cast<QAlu>(qReg)->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
     qReg->H(ControlCount + 1, ControlLog);
     qReg->Dispose(ControlCount + 1, ControlLog);
 

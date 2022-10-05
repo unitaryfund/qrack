@@ -10,12 +10,12 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <iostream> // For cout
-
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 // "qneuron.hpp" defines the QNeuron class.
 #include "qneuron.hpp"
+
+#include <iostream> // For cout
 
 using namespace Qrack;
 
@@ -52,7 +52,7 @@ int main()
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qReg->SetPermutation(perm);
             bit = (comp & pow2(i)) != 0;
-            outputLayer[i]->LearnPermutation(bit, eta);
+            outputLayer[i]->LearnPermutation(bit, (real1_f)eta);
         }
     }
 

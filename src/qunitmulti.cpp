@@ -11,60 +11,76 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qunitmulti.hpp"
-#include "common/oclengine.hpp"
 #include "qfactory.hpp"
 
 namespace Qrack {
 
 QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
-    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
-    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceID,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QUnit(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
           useSparseStateVec, norm_thresh, devList, qubitThreshold, sep_thresh)
+    , isQEngineOCL(false)
 {
-    std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
+#if ENABLE_ENV_VARS
+    isRedistributing = (bool)getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE");
+#else
+    isRedistributing = false;
+#endif
 
-    if (devList.size() == 0) {
-        defaultDeviceID = (deviceID == -1) ? OCLEngine::Instance()->GetDefaultDeviceID() : deviceID;
-
-        for (size_t i = 0; i < deviceContext.size(); i++) {
-            DeviceInfo deviceInfo;
-            deviceInfo.id = i;
-            deviceList.push_back(deviceInfo);
+    for (size_t i = 0U; i < engines.size(); i++) {
+        if ((engines[i] == QINTERFACE_CPU) || (engines[i] == QINTERFACE_HYBRID)) {
+            break;
         }
+        if (engines[i] == QINTERFACE_OPENCL) {
+            isQEngineOCL = true;
+            break;
+        }
+    }
+    if (engines.back() == QINTERFACE_QPAGER) {
+        isQEngineOCL = true;
+    }
 
-        std::swap(deviceList[0], deviceList[defaultDeviceID]);
+    if (qubitThreshold) {
+        thresholdQubits = qubitThreshold;
     } else {
-        defaultDeviceID = devList[0];
-
-        for (size_t i = 0; i < devList.size(); i++) {
-            DeviceInfo deviceInfo;
-            deviceInfo.id = devList[i];
-            deviceList.push_back(deviceInfo);
-        }
+        const bitLenInt gpuQubits =
+            log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
+        thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
-    for (size_t i = 0; i < deviceList.size(); i++) {
-        deviceList[i].maxSize = deviceContext[deviceList[i].id]->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
+    defaultDeviceID = (deviceID < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)deviceID;
+
+    const size_t devCount = devList.size() ? devList.size() : deviceContext.size();
+    for (size_t i = 0; i < devCount; ++i) {
+        DeviceInfo deviceInfo;
+        deviceInfo.id =
+            devList.size() ? ((devList[0U] < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)devList[i]) : i;
+        deviceList.push_back(deviceInfo);
+    }
+    if (!devList.size()) {
+        std::swap(deviceList[0U], deviceList[defaultDeviceID]);
     }
 
-    if (devList.size() == 0) {
-        std::sort(deviceList.begin() + 1, deviceList.end(), std::greater<DeviceInfo>());
+    for (size_t i = 0U; i < deviceList.size(); ++i) {
+        deviceList[i].maxSize = deviceContext[deviceList[i].id]->GetMaxAlloc();
     }
 
-    devID = 0;
+    if (!devList.size()) {
+        std::sort(deviceList.begin() + 1U, deviceList.end(), std::greater<DeviceInfo>());
+    }
 }
 
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    bitLenInt deviceId = defaultDeviceID;
-    uint64_t sz = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
-    uint64_t tSz;
+    size_t deviceId = defaultDeviceID;
+    uint64_t sz = OCLEngine::Instance().GetActiveAllocSize(deviceId);
 
-    for (size_t i = 0U; i < deviceList.size(); i++) {
-        tSz = OCLEngine::Instance()->GetActiveAllocSize(deviceList[i].id);
+    for (size_t i = 0U; i < deviceList.size(); ++i) {
+        uint64_t tSz = OCLEngine::Instance().GetActiveAllocSize(deviceList[i].id);
         if (sz > tSz) {
             sz = tSz;
             deviceId = deviceList[i].id;
@@ -73,7 +89,7 @@ QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
     QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{},
+        randGlobalPhase, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int64_t>{},
         thresholdQubits, separabilityThreshold);
 
     return toRet;
@@ -84,14 +100,15 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
     // Get shard sizes and devices
     std::vector<QInterfacePtr> qips;
     std::vector<QEngineInfo> qinfos;
-    int deviceIndex;
 
     for (auto&& shard : shards) {
         if (shard.unit && (std::find(qips.begin(), qips.end(), shard.unit) == qips.end())) {
             qips.push_back(shard.unit);
-            deviceIndex = std::distance(deviceList.begin(),
-                std::find_if(deviceList.begin(), deviceList.end(),
-                    [&](DeviceInfo di) { return di.id == shard.unit->GetDeviceID(); }));
+            const size_t deviceIndex = std::distance(
+                deviceList.begin(), std::find_if(deviceList.begin(), deviceList.end(), [&](DeviceInfo di) {
+                    return di.id == (shard.unit->GetDevice() < 0) ? OCLEngine::Instance().GetDefaultDeviceID()
+                                                                  : (size_t)shard.unit->GetDevice();
+                }));
             qinfos.push_back(QEngineInfo(shard.unit, deviceIndex));
         }
     }
@@ -105,50 +122,41 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
 void QUnitMulti::RedistributeQEngines()
 {
     // Only redistribute if the env var flag is set and NOT a null string.
-    if (!getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE") || strcmp(getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE"), "")) {
-        return;
-    }
-
     // No need to redistribute, if there is only 1 device
-    if (deviceList.size() == 1) {
+    if (deviceList.size() <= 1U) {
         return;
     }
 
     // Get shard sizes and devices
     std::vector<QEngineInfo> qinfos = GetQInfos();
 
-    std::vector<bitCapInt> devSizes(deviceList.size());
-    std::fill(devSizes.begin(), devSizes.end(), 0U);
-    bitCapInt sz;
-    bitLenInt deviceID, devIndex;
-    size_t i, j;
+    std::vector<bitCapInt> devSizes(deviceList.size(), 0U);
 
-    for (i = 0; i < qinfos.size(); i++) {
-        // If the engine adds negligible load, we can let any given unit keep its
-        // residency on this device.
-        // In fact, single qubit units will be handled entirely by the CPU, anyway.
-        // So will QHybrid "shards" that are below the GPU transition threshold.
-        if (!(qinfos[i].unit) || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
-            (qinfos[i].unit->GetQubitCount() < thresholdQubits)) {
+    for (size_t i = 0U; i < qinfos.size(); ++i) {
+        // We want to proactively set OpenCL devices for the event they cross threshold.
+        if (!isRedistributing &&
+            !((qinfos[i].unit->GetMaxQPower() <= 2U) ||
+                (!isQEngineOCL && (qinfos[i].unit->GetQubitCount() < thresholdQubits)) ||
+                qinfos[i].unit->isClifford())) {
             continue;
         }
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
-        deviceID = qinfos[i].unit->GetDeviceID();
-        devIndex = qinfos[i].deviceIndex;
-        sz = devSizes[devIndex];
+        int64_t deviceID = qinfos[i].unit->GetDevice();
+        int64_t devIndex = qinfos[i].deviceIndex;
+        bitCapInt sz = devSizes[devIndex];
 
         // If the original device has 0 determined load, don't switch the unit.
-        if (sz > 0) {
+        if (sz) {
             // If the default OpenCL device has equal load to the least, we prefer the default.
-            if (devSizes[0] < sz) {
-                deviceID = deviceList[0].id;
-                devIndex = 0;
-                sz = devSizes[0];
+            if (devSizes[0U] < sz) {
+                deviceID = deviceList[0U].id;
+                devIndex = 0U;
+                sz = devSizes[0U];
             }
 
             // Find the device with the lowest load.
-            for (j = 0; j < deviceList.size(); j++) {
+            for (size_t j = 0U; j < deviceList.size(); ++j) {
                 if ((devSizes[j] < sz) && ((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize)) {
                     deviceID = deviceList[j].id;
                     devIndex = j;
@@ -164,87 +172,4 @@ void QUnitMulti::RedistributeQEngines()
         devSizes[devIndex] += qinfos[i].unit->GetMaxQPower();
     }
 }
-
-void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
-{
-    QUnit::Detach(start, length, dest);
-    RedistributeQEngines();
-}
-
-QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
-    std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
-{
-    for (auto bit = first; bit < last; bit++) {
-        EndEmulation(**bit);
-    }
-
-    QInterfacePtr unit1 = shards[**first].unit;
-
-    bool isAlreadyEntangled = true;
-    // If already fully entangled, just return unit1.
-    for (auto bit = first + 1; bit < last; bit++) {
-        QInterfacePtr unit = shards[**bit].unit;
-        if (unit1 != unit) {
-            isAlreadyEntangled = false;
-            break;
-        }
-    }
-
-    if (isAlreadyEntangled) {
-        return unit1;
-    }
-
-    // This does nothing if the first unit is the default device:
-    if (deviceList[0].id != unit1->GetDeviceID()) {
-        // Check if size exceeds single device capacity:
-        bitLenInt qubitCount = 0;
-        std::map<QInterfacePtr, bool> found;
-
-        for (auto bit = first; bit < last; bit++) {
-            QInterfacePtr unit = shards[**bit].unit;
-            if (found.find(unit) == found.end()) {
-                found[unit] = true;
-                qubitCount += unit->GetQubitCount();
-            }
-        }
-
-        // If device capacity is exceeded, put on default device:
-        if (pow2(qubitCount) > unit1->GetMaxSize()) {
-            unit1->SetDevice(deviceList[0].id);
-        }
-    }
-
-    QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
-    RedistributeQEngines();
-
-    return toRet;
-}
-
-bool QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
-{
-    bool isClifford = shards[qubit].unit->isClifford();
-    bool toRet = QUnit::SeparateBit(value, qubit);
-    if (!isClifford && toRet) {
-        RedistributeQEngines();
-    }
-    return toRet;
-}
-
-QInterfacePtr QUnitMulti::Clone()
-{
-    // TODO: Copy buffers instead of flushing?
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        RevertBasis2Qb(i);
-    }
-
-    QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        deviceIDs, thresholdQubits, separabilityThreshold);
-
-    Finish();
-    copyPtr->Finish();
-
-    return CloneBody(copyPtr);
-}
-
 } // namespace Qrack

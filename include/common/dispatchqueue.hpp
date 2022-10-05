@@ -14,27 +14,37 @@
 
 #pragma once
 
+#include "config.h"
+
+#if !ENABLE_PTHREAD || !ENABLE_QUNIT_CPU_PARALLEL
+#error PTHREAD or QUNIT_CPU_PARALLEL has not been enabled
+#endif
+
+#define _USE_MATH_DEFINES
+
 #include <condition_variable>
-#include <cstdint>
 #include <functional>
 #include <future>
 #include <mutex>
 #include <queue>
-#include <vector>
 
 namespace Qrack {
 
-class DispatchQueue {
-    typedef std::function<void(void)> fp_t;
+typedef std::function<void(void)> DispatchFn;
 
+class DispatchQueue {
 public:
-    DispatchQueue();
+    DispatchQueue()
+        : quit_(false)
+        , isFinished_(true)
+        , isStarted_(false)
+    {
+        // Intentionally left blank.
+    }
     ~DispatchQueue();
 
     // dispatch and copy
-    void dispatch(const fp_t& op);
-    // dispatch and move
-    void dispatch(fp_t&& op);
+    void dispatch(const DispatchFn& op);
     // finish queue
     void finish();
     // dump queue
@@ -51,7 +61,7 @@ public:
 private:
     std::mutex lock_;
     std::future<void> thread_;
-    std::queue<fp_t> q_;
+    std::queue<DispatchFn> q_;
     std::condition_variable cv_;
     std::condition_variable cvFinished_;
     bool quit_;

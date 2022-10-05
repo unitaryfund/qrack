@@ -9,12 +9,12 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
+#include "qfactory.hpp"
+
 #include <algorithm> // std::random_shuffle
 #include <cstddef> // size_t
 #include <iostream> // std::cout
-
-// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
-#include "qfactory.hpp"
 
 using namespace Qrack;
 
@@ -23,9 +23,9 @@ void StatePrep(QInterfacePtr qReg)
     // "Alice" has a qubit to teleport.
 
     // (To test consistency, comment out this U() gate.)
-    real1_f theta = 2 * PI_R1 * qReg->Rand();
-    real1_f phi = 2 * PI_R1 * qReg->Rand();
-    real1_f lambda = 2 * PI_R1 * qReg->Rand();
+    real1_f theta = (real1_f)(2 * PI_R1 * qReg->Rand());
+    real1_f phi = (real1_f)(2 * PI_R1 * qReg->Rand());
+    real1_f lambda = (real1_f)(2 * PI_R1 * qReg->Rand());
     qReg->U(0, theta, phi, lambda);
     std::cout << "Alice is sending: U(theta=" << theta << ", phi=" << phi << ", lambda=" << lambda << ")" << std::endl;
 

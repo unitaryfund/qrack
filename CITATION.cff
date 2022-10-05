@@ -1,0 +1,18 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: vm6502q/qrack
+message: >-
+  Daniel Strano considers Benn Bollay to be a
+  coauthor, among the Qrack contributors.
+type: software
+authors:
+  - given-names: Daniel
+    family-names: Strano
+    email: stranoj@gmail.com
+    affiliation: Unitary Fund
+    orcid: 'https://orcid.org/0000-0002-5087-3585'
+  - given-names: Benn
+    family-names: Bollay
+    email: benn.bollay@gmail.com

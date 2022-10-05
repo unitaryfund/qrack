@@ -11,15 +11,14 @@
 // for details.
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include "common/qrack_types.hpp"
+
+#include <vector>
 
 struct _QrackTimeEvolveOpHeader {
     unsigned target;
     unsigned controlLen;
-    unsigned controls[32];
+    unsigned controls[32U];
 };
 
 namespace Qrack {
@@ -30,17 +29,17 @@ namespace Qrack {
 struct HamiltonianOp {
     bitLenInt targetBit;
     BitOp matrix;
-    bitLenInt* controls;
+    std::unique_ptr<bitLenInt[]> controls;
     bitLenInt controlLen;
     bool anti;
-    bool* toggles;
+    std::unique_ptr<bool[]> toggles;
     bool uniform;
 
     HamiltonianOp()
-        : targetBit(0)
+        : targetBit(0U)
         , matrix(NULL)
         , controls(NULL)
-        , controlLen(0)
+        , controlLen(0U)
         , anti(false)
         , toggles(NULL)
         , uniform(false)
@@ -51,7 +50,7 @@ struct HamiltonianOp {
         : targetBit(target)
         , matrix(mtrx)
         , controls(NULL)
-        , controlLen(0)
+        , controlLen(0U)
         , anti(false)
         , toggles(NULL)
         , uniform(false)
@@ -68,22 +67,11 @@ struct HamiltonianOp {
         , toggles(NULL)
         , uniform(false)
     {
-        std::copy(ctrls, ctrls + ctrlLen, controls);
+        std::copy(ctrls, ctrls + ctrlLen, controls.get());
 
         if (ctrlToggles) {
-            toggles = new bool[ctrlLen];
-            std::copy(ctrlToggles, ctrlToggles + ctrlLen, toggles);
-        }
-    }
-
-    ~HamiltonianOp()
-    {
-        if (controls) {
-            delete[] controls;
-        }
-
-        if (toggles) {
-            delete[] toggles;
+            toggles = std::unique_ptr<bool[]>(new bool[ctrlLen]);
+            std::copy(ctrlToggles, ctrlToggles + ctrlLen, toggles.get());
         }
     }
 };
@@ -101,17 +89,17 @@ struct UniformHamiltonianOp : HamiltonianOp {
         targetBit = (bitLenInt)(teoh.target);
 
         controlLen = (bitLenInt)teoh.controlLen;
-        controls = new bitLenInt[controlLen];
-        for (bitLenInt i = 0; i < controlLen; i++) {
+        controls = std::unique_ptr<bitLenInt[]>(new bitLenInt[controlLen]);
+        for (bitLenInt i = 0U; i < controlLen; ++i) {
             controls[i] = (bitLenInt)teoh.controls[i];
         }
 
         uniform = true;
 
-        bitCapIntOcl mtrxTermCount = (ONE_BCI << (bitCapIntOcl)controlLen) * 4U;
+        bitCapIntOcl mtrxTermCount = ((bitCapIntOcl)ONE_BCI << controlLen) * 4U;
         BitOp m(new complex[mtrxTermCount], std::default_delete<complex[]>());
         matrix = std::move(m);
-        for (bitCapIntOcl i = 0; i < mtrxTermCount; i++) {
+        for (bitCapIntOcl i = 0U; i < mtrxTermCount; ++i) {
             matrix.get()[i] = complex((real1)mtrx[i * 2U], (real1)mtrx[(i * 2U) + 1U]);
         }
     }

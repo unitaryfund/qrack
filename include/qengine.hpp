@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -12,9 +12,12 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "qinterface.hpp"
+#include "qparity.hpp"
+
+#if ENABLE_ALU
+#include "qalu.hpp"
+#endif
 
 namespace Qrack {
 
@@ -24,16 +27,19 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 /**
  * Abstract QEngine implementation, for all "Schroedinger method" engines
  */
-class QEngine : public QInterface {
+#if ENABLE_ALU
+class QEngine : public QAlu, public QParity, public QInterface {
+#else
+class QEngine : public QParity, public QInterface {
+#endif
 protected:
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     real1 runningNorm;
+    bitCapIntOcl maxQPowerOcl;
 
-    bool IsPhase(const complex* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
-
-    bool IsInvert(const complex* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
+    bool IsIdentity(complex const* mtrx, bool isControlled);
 
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
@@ -41,6 +47,7 @@ public:
         : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1)
+        , maxQPowerOcl(pow2Ocl(qBitCount))
     {
         if (qBitCount > (sizeof(bitCapIntOcl) * bitsInByte)) {
             throw std::invalid_argument(
@@ -48,70 +55,142 @@ public:
         }
     };
 
+    /** Default constructor, primarily for protected internal use */
     QEngine()
+        : useHostRam(false)
+        , runningNorm(ONE_R1)
+        , maxQPowerOcl(0U)
     {
         // Intentionally left blank
     }
 
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        QInterface::SetQubitCount(qb);
+        maxQPowerOcl = (bitCapIntOcl)maxQPower;
+    }
+
+    /** Get in-flight renormalization factor */
     virtual real1_f GetRunningNorm()
     {
         Finish();
-        return runningNorm;
+        return (real1_f)runningNorm;
     }
 
+    /** Set all amplitudes to 0, and optionally temporarily deallocate state vector RAM */
     virtual void ZeroAmplitudes() = 0;
-
+    /** Exactly copy the state vector of a different QEngine instance */
     virtual void CopyStateVec(QEnginePtr src) = 0;
-
+    /** Returns "true" only if amplitudes are all totally 0 */
     virtual bool IsZeroAmplitude() = 0;
-
-    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
-    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
+    /** Copy a "page" of amplitudes from this QEngine's internal state, into `pagePtr`. */
+    virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length) = 0;
+    /** Copy a "page" of amplitudes from `pagePtr` into this QEngine's internal state. */
+    virtual void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length) = 0;
+    /** Copy a "page" of amplitudes from another QEngine, pointed to by `pageEnginePtr`, into this QEngine's internal
+     * state. */
     virtual void SetAmplitudePage(
-        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
+        QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length) = 0;
     /** Swap the high half of this engine with the low half of another. This is necessary for gates which cross
      * sub-engine  boundaries. */
     virtual void ShuffleBuffers(QEnginePtr engine) = 0;
+    /** Clone this QEngine's settings, with a zeroed state vector */
+    virtual QEnginePtr CloneEmpty() = 0;
 
-    virtual void QueueSetDoNormalize(const bool& doNorm) = 0;
-    virtual void QueueSetRunningNorm(const real1_f& runningNrm) = 0;
+    /** Add an operation to the (OpenCL) queue, to set the value of `doNormalize`, which controls whether to
+     * automatically normalize the state. */
+    virtual void QueueSetDoNormalize(bool doNorm) = 0;
+    /** Add an operation to the (OpenCL) queue, to set the value of `runningNorm`, which is the normalization constant
+     * for the next normalization operation. */
+    virtual void QueueSetRunningNorm(real1_f runningNrm) = 0;
 
-    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
+    virtual void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
-    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
+    virtual bitCapInt ForceM(bitLenInt const* bits, bitLenInt length, bool const* values, bool doApply = true);
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm)
     {
-        bitCapInt powerTest = result ? qPower : 0;
+        bitCapInt powerTest = result ? qPower : 0U;
         ApplyM(qPower, powerTest, nrm);
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubit);
-    virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
-    virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
-    virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void CISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void Mtrx(complex const* mtrx, bitLenInt qubit);
+    virtual void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target);
+    virtual void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target);
+    virtual void CSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+
+#if ENABLE_ALU
+    using QInterface::M;
+    virtual bool M(bitLenInt q) { return QInterface::M(q); }
+    using QInterface::X;
+    virtual void X(bitLenInt q) { QInterface::X(q); }
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::INCC(toAdd, start, length, carryIndex);
+    }
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::DECC(toSub, start, length, carryIndex);
+    }
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        QInterface::INCS(toAdd, start, length, overflowIndex);
+    }
+    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        QInterface::DECS(toSub, start, length, overflowIndex);
+    }
+    virtual void CINC(
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
+    {
+        QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
+    }
+    virtual void CDEC(
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
+    {
+        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
+    }
+    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::INCDECC(toAdd, start, length, carryIndex);
+    }
+    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    {
+        QInterface::MULModNOut(toMul, modN, inStart, outStart, length);
+    }
+    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    {
+        QInterface::IMULModNOut(toMul, modN, inStart, outStart, length);
+    }
+    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        bitLenInt const* controls, bitLenInt controlLen)
+    {
+        QInterface::CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+    }
+    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        bitLenInt const* controls, bitLenInt controlLen)
+    {
+        QInterface::CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+    }
+#endif
 
     using QInterface::Swap;
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::ISwap;
     virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
+    using QInterface::IISwap;
+    virtual void IISwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::SqrtSwap;
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::ISqrtSwap;
@@ -119,59 +198,24 @@ public:
     using QInterface::FSim;
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
-    virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
-    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
+    virtual real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target);
+    virtual real1_f CProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(true, control, target); }
+    virtual real1_f ACProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(false, control, target); }
+    virtual real1_f ProbAll(bitCapInt fullRegister);
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation) = 0;
+    virtual void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
+    virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation) = 0;
 
-    virtual void INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
-    virtual void DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
-    virtual void INCSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
-    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
-#if ENABLE_BCD
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-#endif
-
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
-
-    // TODO: Assess whether it's acceptable for these to be public on QEngine
-    // protected:
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
 
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+        bitCapIntOcl const* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
     virtual void ApplyControlled2x2(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, complex const* mtrx);
     virtual void ApplyAntiControlled2x2(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, complex const* mtrx);
 
-    virtual void FreeStateVec(complex* sv = NULL) = 0;
-
-    /**
-     * Common driver method behind INCC and DECC
-     */
-    virtual void INCDECC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
-    /**
-     * Common driver method behind INCSC and DECSC (without overflow flag)
-     */
-    virtual void INCDECSC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
-    /**
-     * Common driver method behind INCSC and DECSC (with overflow flag)
-     */
-    virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
-        const bitLenInt& overflowIndex, const bitLenInt& carryIndex) = 0;
-#if ENABLE_BCD
-    /**
-     * Common driver method behind INCSC and DECSC (without overflow flag)
-     */
-    virtual void INCDECBCDC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
-#endif
+    using QInterface::Decompose;
+    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
 };
 } // namespace Qrack

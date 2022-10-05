@@ -12,10 +12,10 @@
 
 #pragma once
 
-#if ENABLE_RNDFILE
-#include <future>
-#include <string>
-#include <vector>
+#include "qrack_types.hpp"
+
+#if ENABLE_DEVRAND
+#include <sys/random.h>
 #endif
 
 #if ENABLE_RDRAND
@@ -27,37 +27,132 @@
 #include <immintrin.h>
 #endif
 
-#include "qrack_types.hpp"
-
 namespace Qrack {
 
-bool getRdRand(unsigned int* pv);
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
+// See https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
+class RandFile {
+public:
+    static RandFile& getInstance()
+    {
+        static RandFile instance;
+        return instance;
+    }
+
+    unsigned NextRaw()
+    {
+        size_t fSize = 0;
+        unsigned v;
+        while (fSize < 1) {
+            fSize = fread(&v, sizeof(unsigned), 1, dataFile);
+            if (fSize < 1) {
+                _readNextRandDataFile();
+            }
+        }
+
+        return v;
+    }
+
+private:
+    RandFile() { _readNextRandDataFile(); }
+    ~RandFile()
+    {
+        if (dataFile) {
+            fclose(dataFile);
+        }
+    }
+
+    size_t fileOffset;
+    FILE* dataFile;
+    void _readNextRandDataFile();
+
+public:
+    RandFile(RandFile const&) = delete;
+    void operator=(RandFile const&) = delete;
+};
+#endif
 
 class RdRandom {
-public:
-#if ENABLE_RNDFILE
-    RdRandom()
-        : didInit(false)
-        , isPageTwo(false)
-        , data1()
-        , data2()
-        , dataOffset(0)
-        , fileOffset(0)
+private:
+    bool getRdRand(unsigned* pv)
     {
+#if ENABLE_RDRAND || ENABLE_DEVRAND
+        const int max_rdrand_tries = 10;
+        for (int i = 0; i < max_rdrand_tries; ++i) {
+#if ENABLE_DEVRAND
+            if (sizeof(unsigned) == getrandom(reinterpret_cast<char*>(pv), sizeof(unsigned), 0))
+#else
+            if (_rdrand32_step(pv))
+#endif
+                return true;
+        }
+#endif
+        return false;
+    }
+
+public:
+    bool SupportsRDRAND()
+    {
+#if ENABLE_RDRAND
+        const unsigned flag_RDRAND = (1 << 30);
+
+#if _MSC_VER
+        int ex[4];
+        __cpuid(ex, 1);
+
+        return ((ex[2] & flag_RDRAND) == flag_RDRAND);
+#else
+        unsigned eax, ebx, ecx, edx;
+        ecx = 0;
+        __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+
+        return ((ecx & flag_RDRAND) == flag_RDRAND);
+#endif
+
+#else
+        return false;
+#endif
+    }
+
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
+    unsigned NextRaw() { return RandFile::getInstance().NextRaw(); }
+#else
+    unsigned NextRaw()
+    {
+        unsigned v;
+        if (!getRdRand(&v)) {
+            throw std::runtime_error("Random number generator failed up to retry limit.");
+        }
+
+        return v;
     }
 #endif
-    bool SupportsRDRAND();
-    real1_f Next();
 
-#if ENABLE_RNDFILE
-private:
-    bool didInit = false;
-    bool isPageTwo;
-    std::vector<char> data1;
-    std::vector<char> data2;
-    std::future<void> readFuture;
-    size_t dataOffset;
-    size_t fileOffset;
+    real1_f Next()
+    {
+        unsigned v = NextRaw();
+
+        real1_f res = ZERO_R1_F;
+        real1_f part = ONE_R1_F;
+        for (unsigned i = 0U; i < 32U; ++i) {
+            part /= 2;
+            if ((v >> i) & 1U) {
+                res += part;
+            }
+        }
+
+#if FPPOW > 5
+        v = NextRaw();
+
+        for (unsigned i = 0U; i < 32U; ++i) {
+            part /= 2;
+            if ((v >> i) & 1U) {
+                res += part;
+            }
+        }
 #endif
+
+        return res;
+    }
 };
 } // namespace Qrack

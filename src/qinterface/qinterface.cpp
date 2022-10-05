@@ -12,20 +12,490 @@
 
 #include "qinterface.hpp"
 
+#include <algorithm>
+#include <random>
+#include <thread>
+
+#if SEED_DEVRAND
+#include <sys/random.h>
+#endif
+
 namespace Qrack {
+
+QInterface::QInterface(
+    bitLenInt n, qrack_rand_gen_ptr rgp, bool doNorm, bool useHardwareRNG, bool randomGlobalPhase, real1_f norm_thresh)
+    : doNormalize(doNorm)
+    , randGlobalPhase(randomGlobalPhase)
+    , useRDRAND(useHardwareRNG)
+    , qubitCount(n)
+    , amplitudeFloor(norm_thresh)
+    , maxQPower(pow2(qubitCount))
+    , rand_distribution(ZERO_R1_F, ONE_R1_F)
+    , hardware_rand_generator(NULL)
+{
+#if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
+    useHardwareRNG = false;
+#endif
+
+    if (useHardwareRNG) {
+        hardware_rand_generator = std::make_shared<RdRandom>();
+#if !ENABLE_RNDFILE && !ENABLE_DEVRAND
+        useRDRAND = hardware_rand_generator->SupportsRDRAND();
+        if (!useRDRAND) {
+            hardware_rand_generator = NULL;
+        }
+#endif
+    }
+
+    if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
+        rand_generator = std::make_shared<qrack_rand_gen>();
+#if SEED_DEVRAND
+        // The original author of this code block (Daniel Strano) is NOT a cryptography expert. However, here's the
+        // author's justification for preferring /dev/random used to seed Mersenne twister, in this case. We state
+        // firstly, our use case is probably more dependent on good statistical randomness than CSPRNG security.
+        // Casually, we can list a few reasons our design:
+        //
+        // * (As a total guess, if clock manipulation isn't a completely obvious problem,) either of /dev/random or
+        // /dev/urandom is probably both statistically and cryptographically preferable to the system clock, as a
+        // one-time seed.
+        //
+        // * We need VERY LITTLE entropy for this seeding, even though its repeated a few times depending on the
+        // simulation method stack. Tests of 30+ qubits don't run out of random numbers, this way, and there's no
+        // detectable slow-down in Qrack.
+        //
+        // * The blocking behavior of /dev/random (specifically on startup) is GOOD for us, here. We WANT Qrack to block
+        // until the entropy pool is ready on virtual machine and container images that start a Qrack-based application
+        // on boot. (We're not crypotgraphers; we're quantum computer simulator developers and users.)
+        //
+        // * (I have a very basic appreciation for the REFUTATION to historical confusion over the quantity of "entropy"
+        // in the device pools, but...) If our purpose is PHYSICAL REALISM of quantum computer simulation, rather than
+        // cryptography, then we probably should have a tiny preference for higher "true" entropy. Although, even as a
+        // developer in the quantum computing field, I must say that there might be no provable empirical difference
+        // between "true quantum randomness" and "perfect statistical (whether pseudo-)randomness" as ontological
+        // categories, now might there?
+
+        const int max_rdrand_tries = 10;
+        int i;
+        for (i = 0; i < max_rdrand_tries; ++i) {
+            if (sizeof(randomSeed) == getrandom(reinterpret_cast<char*>(&randomSeed), sizeof(randomSeed), GRND_RANDOM))
+                break;
+        }
+        if (i == max_rdrand_tries) {
+            throw std::runtime_error("Failed to seed RNG!");
+        }
+#else
+        randomSeed = (uint32_t)std::time(0);
+#endif
+        SetRandomSeed(randomSeed);
+    } else {
+        rand_generator = rgp;
+    }
+
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
+}
+
+/// Set to a specific permutation of all qubits
+void QInterface::SetPermutation(bitCapInt perm, complex ignored)
+{
+    const bitCapInt measured = MAll();
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        if (((perm ^ measured) >> i) & ONE_BCI) {
+            X(i);
+        }
+    }
+}
+
+/// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
+void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
+{
+    if (!length) {
+        return;
+    }
+
+    const bitLenInt end = start + (length - 1U);
+    for (bitLenInt i = 0U; i < length; ++i) {
+        const bitLenInt hBit = end - i;
+        for (bitLenInt j = 0U; j < i; ++j) {
+            bitLenInt c = hBit;
+            bitLenInt t = hBit + 1U + j;
+            CPhaseRootN(j + 2U, c, t);
+            if (trySeparate) {
+                TrySeparate(c, t);
+            }
+        }
+        H(hBit);
+    }
+}
+
+/// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
+void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
+{
+    if (!length) {
+        return;
+    }
+
+    for (bitLenInt i = 0U; i < length; ++i) {
+        for (bitLenInt j = 0U; j < i; ++j) {
+            const bitLenInt c = (start + i) - (j + 1U);
+            const bitLenInt t = start + i;
+            CIPhaseRootN(j + 2U, c, t);
+            if (trySeparate) {
+                TrySeparate(c, t);
+            }
+        }
+        H(start + i);
+    }
+}
+
+/// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
+void QInterface::QFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparate)
+{
+    if (!length) {
+        return;
+    }
+
+    const bitLenInt end = (length - 1U);
+    for (bitLenInt i = 0U; i < length; ++i) {
+        H(qubits[end - i]);
+        for (bitLenInt j = 0U; j < (bitLenInt)((length - 1U) - i); ++j) {
+            CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
+        }
+
+        if (trySeparate) {
+            TrySeparate(qubits[end - i]);
+        }
+    }
+}
+
+/// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
+void QInterface::IQFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparate)
+{
+    if (!length) {
+        return;
+    }
+
+    for (bitLenInt i = 0U; i < length; ++i) {
+        for (bitLenInt j = 0U; j < i; ++j) {
+            CIPhaseRootN(j + 2U, qubits[i - (j + 1U)], qubits[i]);
+        }
+        H(qubits[i]);
+
+        if (trySeparate) {
+            TrySeparate(qubits[i]);
+        }
+    }
+}
+
+/// Set register bits to given permutation
+void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
+{
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        SetBit(start, (bool)(value & 1));
+        return;
+    }
+
+    if (!start && (length == qubitCount)) {
+        SetPermutation(value);
+        return;
+    }
+
+    const bitCapInt regVal = MReg(start, length);
+    for (bitLenInt i = 0U; i < length; ++i) {
+        const bool bitVal = (bitCapIntOcl)bitSlice(i, regVal);
+        if (bitVal == !bitSlice(i, value)) {
+            X(start + i);
+        }
+    }
+}
+
+/// Bit-wise apply measurement gate to a register
+bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
+{
+    bitCapInt res = 0U;
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
+        const bitCapInt power = pow2(bit);
+        res |= ForceM(start + bit, (bool)(power & result), doForce, doApply) ? power : 0U;
+    }
+    return res;
+}
+
+/// Bit-wise apply measurement gate to a register
+bitCapInt QInterface::ForceM(bitLenInt const* bits, bitLenInt length, bool const* values, bool doApply)
+{
+    bitCapInt result = 0U;
+
+    if (values) {
+        for (bitLenInt bit = 0U; bit < length; ++bit) {
+            result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0U;
+        }
+        return result;
+    }
+
+    if (doApply) {
+        for (bitLenInt bit = 0U; bit < length; ++bit) {
+            result |= M(bits[bit]) ? pow2(bits[bit]) : 0U;
+        }
+        return result;
+    }
+
+    std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[length]);
+    std::transform(bits, bits + length, qPowers.get(), pow2);
+    result = MultiShotMeasureMask(qPowers.get(), length, 1).begin()->first;
+
+    return result;
+}
+
+/// Returns probability of permutation of the register
+real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+{
+    const bitCapIntOcl startMask = pow2Ocl(start) - ONE_BCI;
+    const bitCapIntOcl maxLcv = ((bitCapIntOcl)maxQPower) >> length;
+    const bitCapIntOcl p = (bitCapIntOcl)permutation;
+    real1 prob = ZERO_R1;
+    for (bitCapIntOcl lcv = 0U; lcv < maxLcv; ++lcv) {
+        bitCapIntOcl i = lcv & startMask;
+        i |= ((lcv ^ i) | p) << length;
+        prob += ProbAll(i);
+    }
+
+    return (real1_f)prob;
+}
+
+/// Returns probability of permutation of the mask
+real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
+{
+    real1 prob = ZERO_R1;
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+        if ((lcv & mask) == permutation) {
+            prob += ProbAll(lcv);
+        }
+    }
+
+    return (real1_f)prob;
+}
+
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
+void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return;
+    }
+
+    shift %= length;
+    if (!shift) {
+        return;
+    }
+
+    const bitLenInt end = start + length;
+    Reverse(start, end);
+    Reverse(start, start + shift);
+    Reverse(start + shift, end);
+}
+
+/// "Circular shift right" - shift bits right, and carry first bits.
+void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
+
+bitLenInt QInterface::Compose(QInterfacePtr toCopy, bitLenInt start)
+{
+    if (start == qubitCount) {
+        return Compose(toCopy);
+    }
+
+    const bitLenInt origSize = qubitCount;
+    ROL(origSize - start, 0, qubitCount);
+    const bitLenInt result = Compose(toCopy);
+    ROR(origSize - start, 0, qubitCount);
+
+    return result;
+}
+
+std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr> toCopy)
+{
+    std::map<QInterfacePtr, bitLenInt> ret;
+
+    for (auto&& q : toCopy) {
+        ret[q] = Compose(q);
+    }
+
+    return ret;
+}
+
+void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
+{
+    bitCapInt v = mask; // count the number of bits set in v
+    bitLenInt length;
+    std::vector<bitCapInt> bitPowers;
+    for (length = 0U; v; ++length) {
+        bitCapInt oldV = v;
+        v &= v - ONE_BCI; // clear the least significant bit set
+        bitPowers.push_back((v ^ oldV) & oldV);
+    }
+
+    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
+
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+        bitCapIntOcl retIndex = 0U;
+        for (bitLenInt p = 0U; p < length; ++p) {
+            if (lcv & bitPowers[p]) {
+                retIndex |= pow2Ocl(p);
+            }
+        }
+        probsArray[retIndex] += ProbAll(lcv);
+    }
+}
+
+void QInterface::ProbBitsAll(bitLenInt const* bits, bitLenInt length, real1* probsArray)
+{
+    if (length == qubitCount) {
+        bool isOrdered = true;
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            if (bits[i] != i) {
+                isOrdered = false;
+                break;
+            }
+        }
+
+        if (isOrdered) {
+            GetProbs(probsArray);
+            return;
+        }
+    }
+
+    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
+
+    std::vector<bitCapInt> bitPowers(length);
+    std::transform(bits, bits + length, bitPowers.begin(), pow2);
+
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+        bitCapIntOcl retIndex = 0U;
+        for (bitLenInt p = 0U; p < length; ++p) {
+            if (lcv & bitPowers[p]) {
+                retIndex |= pow2Ocl(p);
+            }
+        }
+        probsArray[retIndex] += ProbAll(lcv);
+    }
+}
+
+real1_f QInterface::ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, bitCapInt offset)
+{
+    ThrowIfQbIdArrayIsBad(bits, length, qubitCount,
+        "QInterface::ExpectationBitsAll parameter controls array values must be within allocated qubit bounds!");
+
+    if (length == 1U) {
+        return Prob(bits[0]);
+    }
+
+    std::vector<bitCapInt> bitPowers(length);
+    std::transform(bits, bits + length, bitPowers.begin(), pow2);
+
+    real1_f expectation = 0;
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+        bitCapInt retIndex = 0U;
+        for (bitLenInt p = 0U; p < length; ++p) {
+            if (lcv & bitPowers[p]) {
+                retIndex |= pow2(p);
+            }
+        }
+        expectation += (bitCapIntOcl)(offset + retIndex) * ProbAll(lcv);
+    }
+
+    return expectation;
+}
+
+std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
+    bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots)
+{
+    if (!shots) {
+        return std::map<bitCapInt, int>();
+    }
+
+    std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
+    std::transform(qPowers, qPowers + qPowerCount, bitMap.get(), log2);
+
+    ThrowIfQbIdArrayIsBad(bitMap.get(), qPowerCount, qubitCount,
+        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
+
+    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
+    std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
+    ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
+    std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::map<bitCapInt, int> results;
+    for (unsigned int shot = 0U; shot < shots; ++shot) {
+        ++(results[dist(gen)]);
+    }
+
+    return results;
+}
+
+void QInterface::MultiShotMeasureMask(
+    bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray)
+{
+    if (!shots) {
+        return;
+    }
+
+    std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
+    std::transform(qPowers, qPowers + qPowerCount, bitMap.get(), log2);
+
+    ThrowIfQbIdArrayIsBad(bitMap.get(), qPowerCount, qubitCount,
+        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
+
+    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
+    std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
+    ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
+    std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)dist(gen); });
+}
+
+bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)
+{
+    Finish();
+
+    const bool tempDoNorm = doNormalize;
+    doNormalize = false;
+    QInterfacePtr unitCopy = Clone();
+    doNormalize = tempDoNorm;
+
+    unitCopy->Decompose(start, dest);
+    unitCopy->Compose(dest, start);
+
+    const bool didSeparate = ApproxCompare(unitCopy, error_tol);
+
+    if (didSeparate) {
+        // The subsystem is separable.
+        Dispose(start, dest->GetQubitCount());
+    }
+
+    return didSeparate;
+}
 
 #define REG_GATE_1(gate)                                                                                               \
     void QInterface::gate(bitLenInt start, bitLenInt length)                                                           \
     {                                                                                                                  \
-        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(start + bit);                                                                                         \
         }                                                                                                              \
     }
 
+/// Apply Hadamard gate to each bit in "length," starting from bit index "start"
+REG_GATE_1(H);
+
+#if ENABLE_REG_GATES
+
 #define REG_GATE_2(gate)                                                                                               \
     void QInterface::gate(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)                                        \
     {                                                                                                                  \
-        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(qubit1 + bit, qubit2 + bit);                                                                          \
         }                                                                                                              \
     }
@@ -33,7 +503,7 @@ namespace Qrack {
 #define REG_GATE_3(gate)                                                                                               \
     void QInterface::gate(bitLenInt qubit1, bitLenInt qubit2, bitLenInt qubit3, bitLenInt length)                      \
     {                                                                                                                  \
-        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(qubit1 + bit, qubit2 + bit, qubit3 + bit);                                                            \
         }                                                                                                              \
     }
@@ -41,7 +511,7 @@ namespace Qrack {
 #define REG_GATE_3B(gate)                                                                                              \
     void QInterface::gate(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)    \
     {                                                                                                                  \
-        for (bitLenInt i = 0; i < length; i++) {                                                                       \
+        for (bitLenInt i = 0U; i < length; ++i) {                                                                      \
             gate(qInputStart + i, (bitCapIntOcl)bitSlice(i, classicalInput), outputStart + i);                         \
         }                                                                                                              \
     }
@@ -49,7 +519,7 @@ namespace Qrack {
 #define REG_GATE_1R(gate)                                                                                              \
     void QInterface::gate(real1_f radians, bitLenInt start, bitLenInt length)                                          \
     {                                                                                                                  \
-        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(radians, start + bit);                                                                                \
         }                                                                                                              \
     }
@@ -57,7 +527,7 @@ namespace Qrack {
 #define REG_GATE_1D(gate)                                                                                              \
     void QInterface::gate(int numerator, int denominator, bitLenInt start, bitLenInt length)                           \
     {                                                                                                                  \
-        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(numerator, denominator, start + bit);                                                                 \
         }                                                                                                              \
     }
@@ -65,49 +535,43 @@ namespace Qrack {
 #define REG_GATE_C1_1(gate)                                                                                            \
     void QInterface::gate(bitLenInt control, bitLenInt target, bitLenInt length)                                       \
     {                                                                                                                  \
-        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(control + bit, target + bit); });                      \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
+            gate(control + bit, target + bit);                                                                         \
+        }                                                                                                              \
     }
 
 #define REG_GATE_C2_1(gate)                                                                                            \
     void QInterface::gate(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)                  \
     {                                                                                                                  \
-        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(control1 + bit, control2 + bit, target + bit); });     \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
+            gate(control1 + bit, control2 + bit, target + bit);                                                        \
+        }                                                                                                              \
     }
 
 #define REG_GATE_C1_1R(gate)                                                                                           \
     void QInterface::gate(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length)                      \
     {                                                                                                                  \
-        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(radians, control + bit, target + bit); });             \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
+            gate(radians, control + bit, target + bit);                                                                \
+        }                                                                                                              \
     }
 
 #define REG_GATE_C1_1D(gate)                                                                                           \
     void QInterface::gate(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)       \
     {                                                                                                                  \
-        ControlledLoopFixture(                                                                                         \
-            length, [&](bitLenInt bit) { gate(numerator, denominator, control + bit, target + bit); });                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
+            gate(numerator, denominator, control + bit, target + bit);                                                 \
+        }                                                                                                              \
     }
-
-inline real1_f dyadAngle(int numerator, int denomPower) { return (-M_PI * numerator * 2) / pow(2, denomPower); };
-
-template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt length, GateFunc gate)
-{
-    // For length-wise application of controlled gates, there's no point in having normalization on, up to the last
-    // gate. Application of a controlled gate updates the "running norm". The running norm is corrected on the
-    // application of a gate that isn't controlled. We just want one running norm update, for the last gate.
-    bool wasNormOn = doNormalize;
-    doNormalize = false;
-    for (bitLenInt bit = 0; bit < (length - 1); bit++) {
-        gate(bit);
-    }
-    doNormalize = wasNormOn;
-    gate(length - 1);
-}
 
 /// Bit-wise apply swap to two registers
 REG_GATE_2(Swap);
 
 /// Bit-wise apply iswap to two registers
 REG_GATE_2(ISwap);
+
+/// Bit-wise apply inverse iswap to two registers
+REG_GATE_2(IISwap);
 
 /// Bit-wise apply square root of swap to two registers
 REG_GATE_2(SqrtSwap);
@@ -117,7 +581,7 @@ REG_GATE_2(ISqrtSwap);
 
 void QInterface::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         FSim(theta, phi, qubit1 + bit, qubit2 + bit);
     }
 }
@@ -170,23 +634,11 @@ REG_GATE_1(T);
 /// Apply inverse T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
 REG_GATE_1(IT);
 
-/// Apply X ("not") gate to each bit in "length," starting from bit index "start"
-REG_GATE_1(X);
-
 /// Apply square root of X gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(SqrtX);
 
 /// Apply inverse square root of X gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(ISqrtX);
-
-/// Apply phased square root of X gate to each bit in "length," starting from bit index "start"
-REG_GATE_1(SqrtXConjT);
-
-/// Apply inverse phased square root of X gate to each bit in "length," starting from bit index "start"
-REG_GATE_1(ISqrtXConjT);
-
-/// Apply Hadamard gate to each bit in "length," starting from bit index "start"
-REG_GATE_1(H);
 
 /// Apply Y-basis transformation gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(SH);
@@ -266,17 +718,75 @@ REG_GATE_3B(CLNOR);
 /// output
 REG_GATE_3B(CLXNOR);
 
-///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
-REG_GATE_1R(RT);
+/// Apply "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
+void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
+        PhaseRootN(n, start + bit);
+    }
+}
+
+/// Apply inverse "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
+void QInterface::IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
+        IPhaseRootN(n, start + bit);
+    }
+}
+
+/// Apply controlled "PhaseRootN" gate to each bit
+void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    if (!n) {
+        return;
+    }
+    if (n == 1) {
+        CZ(control, target, length);
+        return;
+    }
+
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
+        CPhaseRootN(n, control + bit, target + bit);
+    }
+}
+
+/// Apply controlled IT gate to each bit
+void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    if (!n) {
+        return;
+    }
+    if (n == 1) {
+        CZ(control, target, length);
+        return;
+    }
+
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
+        CIPhaseRootN(n, control + bit, target + bit);
+    }
+}
+/// Apply general unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda)
+{
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
+        U(start + bit, theta, phi, lambda);
+    }
+}
+
+/// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
+{
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
+        U2(start + bit, phi, lambda);
+    }
+}
+#endif
+
+#if ENABLE_ROT_API
+inline real1_f dyadAngle(int numerator, int denomPower) { return (-M_PI * numerator * 2) / pow(2, denomPower); };
 
 /// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
 void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit) { RT(dyadAngle(numerator, denomPower), qubit); }
-
-/// Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
-REG_GATE_1D(RTDyad);
-
-/// Bitwise (identity) exponentiation gate - Applies exponentiation of the identity operator
-REG_GATE_1R(Exp);
 
 /// Dyadic fraction (identity) exponentiation gate - Applies exponentiation of the identity operator
 void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -284,23 +794,11 @@ void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
     Exp(dyadAngle(numerator, denomPower), qubit);
 }
 
-/// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
-REG_GATE_1D(ExpDyad);
-
-/// Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
-REG_GATE_1R(ExpX);
-
 /// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
 void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
 {
     ExpX(dyadAngle(numerator, denomPower), qubit);
 }
-
-/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
-REG_GATE_1D(ExpXDyad);
-
-/// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
-REG_GATE_1R(ExpY);
 
 /// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
 void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -308,52 +806,20 @@ void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
     ExpY(dyadAngle(numerator, denomPower), qubit);
 }
 
-/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
-REG_GATE_1D(ExpYDyad);
-
 /// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
 void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
 {
     ExpZ(dyadAngle(numerator, denomPower), qubit);
 }
 
-/**
- * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
- */
-REG_GATE_1R(ExpZ);
-
-/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
-REG_GATE_1D(ExpZDyad);
-
-/// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
-REG_GATE_1R(RX);
-
 /// Dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
 void QInterface::RXDyad(int numerator, int denomPower, bitLenInt qubit) { RX(dyadAngle(numerator, denomPower), qubit); }
-
-/// Dyadic fraction x axis rotation gate - Rotates around Pauli x
-REG_GATE_1D(RXDyad);
-
-/// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
-REG_GATE_1R(RY);
 
 /// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
 void QInterface::RYDyad(int numerator, int denomPower, bitLenInt qubit) { RY(dyadAngle(numerator, denomPower), qubit); }
 
-/// Dyadic fraction y axis rotation gate - Rotates each bit around Pauli y axis.
-REG_GATE_1D(RYDyad);
-
-/// z axis rotation gate - Rotates each bit around Pauli z axis
-REG_GATE_1R(RZ);
-
 /// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
 void QInterface::RZDyad(int numerator, int denomPower, bitLenInt qubit) { RZ(dyadAngle(numerator, denomPower), qubit); }
-
-/// Dyadic fraction z axis rotation gate - Rotates each bit around Pauli y axis.
-REG_GATE_1D(RZDyad)
-
-/// Controlled "phase shift gate"
-REG_GATE_C1_1R(CRT);
 
 /// Controlled dyadic "phase shift gate" - if control bit is true, rotates target bit as e^(i*(M_PI * numerator) /
 /// 2^denomPower) around |1> state
@@ -362,17 +828,81 @@ void QInterface::CRTDyad(int numerator, int denomPower, bitLenInt control, bitLe
     CRT(dyadAngle(numerator, denomPower), control, target);
 }
 
-/// Controlled dyadic fraction "phase shift gate"
-REG_GATE_C1_1D(CRTDyad);
-
-/// Controlled x axis rotation
-REG_GATE_C1_1R(CRX);
-
 /// Controlled dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
 void QInterface::CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
 {
     CRX(dyadAngle(numerator, denomPower), control, target);
 }
+
+/// Controlled dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
+void QInterface::CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRY(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction z axis rotation gate - Rotates around Pauli z axis.
+void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRZ(dyadAngle(numerator, denomPower), control, target);
+}
+
+#if ENABLE_REG_GATES
+///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
+REG_GATE_1R(RT);
+
+/// Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
+REG_GATE_1D(RTDyad);
+
+/// Bitwise (identity) exponentiation gate - Applies exponentiation of the identity operator
+REG_GATE_1R(Exp);
+
+/// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
+REG_GATE_1D(ExpDyad);
+
+/// Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+REG_GATE_1R(ExpX);
+
+/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
+REG_GATE_1D(ExpXDyad);
+
+/// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+REG_GATE_1R(ExpY);
+
+/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
+REG_GATE_1D(ExpYDyad);
+
+/// Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+REG_GATE_1R(ExpZ);
+
+/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
+REG_GATE_1D(ExpZDyad);
+
+/// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
+REG_GATE_1R(RX);
+
+/// Dyadic fraction x axis rotation gate - Rotates around Pauli x
+REG_GATE_1D(RXDyad);
+
+/// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
+REG_GATE_1R(RY);
+
+/// Dyadic fraction y axis rotation gate - Rotates each bit around Pauli y axis.
+REG_GATE_1D(RYDyad);
+
+/// z axis rotation gate - Rotates each bit around Pauli z axis
+REG_GATE_1R(RZ);
+
+/// Dyadic fraction z axis rotation gate - Rotates each bit around Pauli y axis.
+REG_GATE_1D(RZDyad)
+
+/// Controlled "phase shift gate"
+REG_GATE_C1_1R(CRT);
+
+/// Controlled dyadic fraction "phase shift gate"
+REG_GATE_C1_1D(CRTDyad);
+
+/// Controlled x axis rotation
+REG_GATE_C1_1R(CRX);
 
 /// Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as
 /// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
@@ -381,12 +911,6 @@ REG_GATE_C1_1D(CRXDyad);
 /// Controlled y axis rotation
 REG_GATE_C1_1R(CRY);
 
-/// Controlled dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
-void QInterface::CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRY(dyadAngle(numerator, denomPower), control, target);
-}
-
 /// Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as
 /// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 REG_GATE_C1_1D(CRYDyad);
@@ -394,460 +918,10 @@ REG_GATE_C1_1D(CRYDyad);
 /// Controlled z axis rotation
 REG_GATE_C1_1R(CRZ);
 
-/// Controlled dyadic fraction z axis rotation gate - Rotates around Pauli z axis.
-void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRZ(dyadAngle(numerator, denomPower), control, target);
-}
-
 /// Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as
 /// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
 REG_GATE_C1_1D(CRZDyad);
+#endif
 
-/// Apply "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
-void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        PhaseRootN(n, start + bit);
-    }
-}
-
-/// Apply inverse "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
-void QInterface::IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        IPhaseRootN(n, start + bit);
-    }
-}
-
-/// Apply controlled "PhaseRootN" gate to each bit
-void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    if (n == 0) {
-        return;
-    }
-    if (n == 1) {
-        CZ(control, target, length);
-        return;
-    }
-
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CPhaseRootN(n, control + bit, target + bit); });
-}
-
-/// Apply controlled IT gate to each bit
-void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    if (n == 0) {
-        return;
-    }
-    if (n == 1) {
-        CZ(control, target, length);
-        return;
-    }
-
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CIPhaseRootN(n, control + bit, target + bit); });
-}
-
-/// Arithmetic shift left, with last 2 bits as sign and carry
-void QInterface::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            Swap(end - 1, end - 2);
-            ROL(shift, start, length);
-            SetReg(start, shift, 0);
-            Swap(end - 1, end - 2);
-        }
-    }
-}
-
-/// Arithmetic shift right, with last 2 bits as sign and carry
-void QInterface::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            Swap(end - 1, end - 2);
-            ROR(shift, start, length);
-            SetReg(end - shift - 1, shift, 0);
-            Swap(end - 1, end - 2);
-        }
-    }
-}
-
-/// Logical shift left, filling the extra bits with |0>
-void QInterface::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if ((length > 0) && (shift > 0)) {
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            ROL(shift, start, length);
-            SetReg(start, shift, 0);
-        }
-    }
-}
-
-/// Logical shift right, filling the extra bits with |0>
-void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if ((length > 0) && (shift > 0)) {
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            SetReg(start, shift, 0);
-            ROR(shift, start, length);
-        }
-    }
-}
-
-/// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
-void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
-{
-    if (length == 0) {
-        return;
-    }
-
-    bitLenInt end = start + (length - 1U);
-    bitLenInt i, j, hBit;
-    bitLenInt c, t;
-    for (i = 0; i < length; i++) {
-        hBit = end - i;
-        for (j = 0; j < i; j++) {
-            c = hBit;
-            t = hBit + 1U + j;
-            CPhaseRootN(j + 2U, c, t);
-            if (trySeparate) {
-                TrySeparate(c, t);
-            }
-        }
-        H(hBit);
-    }
-}
-
-/// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
-void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
-{
-    if (length == 0) {
-        return;
-    }
-
-    bitLenInt i, j;
-    bitLenInt c, t;
-    for (i = 0; i < length; i++) {
-        for (j = 0; j < i; j++) {
-            c = (start + i) - (j + 1U);
-            t = start + i;
-            CIPhaseRootN(j + 2U, c, t);
-            if (trySeparate) {
-                TrySeparate(c, t);
-            }
-        }
-        H(start + i);
-    }
-}
-
-/// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
-void QInterface::QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
-{
-    if (length == 0) {
-        return;
-    }
-
-    bitLenInt end = (length - 1U);
-    bitLenInt i, j;
-    for (i = 0; i < length; i++) {
-        H(qubits[end - i]);
-        for (j = 0; j < (bitLenInt)((length - 1U) - i); j++) {
-            CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
-        }
-
-        if (trySeparate) {
-            TrySeparate(qubits[end - i]);
-        }
-    }
-}
-
-/// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
-void QInterface::IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
-{
-    if (length == 0) {
-        return;
-    }
-
-    bitLenInt i, j;
-    for (i = 0; i < length; i++) {
-        for (j = 0; j < i; j++) {
-            CIPhaseRootN(j + 2U, qubits[i - (j + 1U)], qubits[i]);
-        }
-        H(qubits[i]);
-
-        if (trySeparate) {
-            TrySeparate(qubits[i]);
-        }
-    }
-}
-
-/// Set register bits to given permutation
-void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
-{
-    // First, single bit operations are better optimized for this special case:
-    if (length == 1) {
-        SetBit(start, (value == 1));
-    } else if ((start == 0) && (length == qubitCount)) {
-        SetPermutation(value);
-    } else {
-        bool bitVal;
-        bitCapInt regVal = MReg(start, length);
-        for (bitLenInt i = 0; i < length; i++) {
-            bitVal = (bitCapIntOcl)bitSlice(i, regVal);
-            if ((bitVal && !bitSlice(i, value)) || (!bitVal && bitSlice(i, value)))
-                X(start + i);
-        }
-    }
-}
-
-/// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
-{
-    bitCapInt res = 0;
-    bitCapInt power;
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        power = pow2(bit);
-        res |= ForceM(start + bit, (bool)(power & result), doForce, doApply) ? power : 0;
-    }
-    return res;
-}
-
-/// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply)
-{
-    bitCapInt result = 0;
-    if (values == NULL) {
-        if (doApply) {
-            for (bitLenInt bit = 0; bit < length; bit++) {
-                result |= M(bits[bit]) ? pow2(bits[bit]) : 0;
-            }
-        } else {
-            std::vector<bitCapInt> qPowers(length);
-            for (bitLenInt bit = 0; bit < length; bit++) {
-                qPowers[bit] = pow2(bits[bit]);
-            }
-            result = MultiShotMeasureMask(&(qPowers[0]), qPowers.size(), 1).begin()->first;
-        }
-    } else {
-        for (bitLenInt bit = 0; bit < length; bit++) {
-            result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0;
-        }
-    }
-    return result;
-}
-
-/// Returns probability of permutation of the register
-real1_f QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
-{
-    real1 prob = ONE_R1;
-    for (bitLenInt i = 0; i < length; i++) {
-        if ((permutation >> i) & ONE_BCI) {
-            prob *= Prob(start + i);
-        } else {
-            prob *= (ONE_R1 - Prob(start + i));
-        }
-    }
-    return prob;
-}
-
-/// Returns probability of permutation of the mask
-real1_f QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
-{
-    real1 prob = ZERO_R1;
-    for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
-        if ((lcv & mask) == permutation) {
-            prob += ProbAll(lcv);
-        }
-    }
-
-    return prob;
-}
-
-/// "Circular shift right" - (Uses swap-based algorithm for speed)
-void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    shift %= length;
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        Reverse(start, end);
-        Reverse(start, start + shift);
-        Reverse(start + shift, end);
-    }
-}
-
-/// "Circular shift right" - shift bits right, and carry first bits.
-void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
-
-std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr> toCopy)
-{
-    std::map<QInterfacePtr, bitLenInt> ret;
-
-    for (auto&& q : toCopy) {
-        ret[q] = Compose(q);
-    }
-
-    return ret;
-}
-
-void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
-{
-    bitCapInt v = mask; // count the number of bits set in v
-    bitCapInt oldV;
-    bitLenInt length;
-    std::vector<bitCapInt> bitPowers;
-    for (length = 0; v; length++) {
-        oldV = v;
-        v &= v - ONE_BCI; // clear the least significant bit set
-        bitPowers.push_back((v ^ oldV) & oldV);
-    }
-
-    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
-
-    bitCapIntOcl retIndex;
-    bitLenInt p;
-    for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
-        retIndex = 0;
-        for (p = 0; p < length; p++) {
-            if (lcv & bitPowers[p]) {
-                retIndex |= pow2Ocl(p);
-            }
-        }
-        probsArray[retIndex] += ProbAll(lcv);
-    }
-}
-
-void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray)
-{
-    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
-
-    bitLenInt p;
-    std::vector<bitCapInt> bitPowers(length);
-    for (p = 0; p < length; p++) {
-        bitPowers[p] = pow2(bits[p]);
-    }
-
-    bitCapIntOcl retIndex;
-    for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
-        retIndex = 0;
-        for (p = 0; p < length; p++) {
-            if (lcv & bitPowers[p]) {
-                retIndex |= pow2Ocl(p);
-            }
-        }
-        probsArray[retIndex] += ProbAll(lcv);
-    }
-}
-
-real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset)
-{
-    if (length == 1U) {
-        return Prob(bits[0]);
-    }
-
-    bitLenInt p;
-    std::vector<bitCapInt> bitPowers(length);
-    for (p = 0; p < length; p++) {
-        bitPowers[p] = pow2(bits[p]);
-    }
-
-    real1_f expectation = 0;
-    bitCapInt retIndex;
-    for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
-        retIndex = 0;
-        for (p = 0; p < length; p++) {
-            if (lcv & bitPowers[p]) {
-                retIndex |= pow2(p);
-            }
-        }
-        expectation += (bitCapIntOcl)(offset + retIndex) * ProbAll(lcv);
-    }
-
-    return expectation;
-}
-
-std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
-    const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
-{
-    bitLenInt i;
-    bitCapIntOcl j;
-
-    std::vector<bitCapInt> maskMap(qPowerCount);
-    for (i = 0; i < qPowerCount; i++) {
-        maskMap[i] = qPowers[i];
-    }
-
-    std::unique_ptr<real1[]> allProbsArray(new real1[(bitCapIntOcl)maxQPower]);
-    GetProbs(allProbsArray.get());
-
-    bitCapInt maskMaxQPower = pow2(qPowerCount);
-    bitCapIntOcl maskPerm;
-    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]());
-    for (j = 0; j < maxQPower; j++) {
-        maskPerm = 0;
-        for (i = 0; i < qPowerCount; i++) {
-            if (j & maskMap[i]) {
-                maskPerm |= pow2Ocl(i);
-            }
-        }
-        maskProbsArray.get()[maskPerm] += allProbsArray.get()[j];
-    }
-
-    allProbsArray.reset();
-
-    bitCapInt lastPerm = maskMaxQPower - 1U;
-    real1 maskProb, cumulativeProb;
-    std::map<bitCapInt, int> results;
-    for (unsigned int shot = 0; shot < shots; shot++) {
-        maskProb = Rand();
-        cumulativeProb = ZERO_R1;
-        for (j = 0; j < maskMaxQPower; j++) {
-            cumulativeProb += maskProbsArray.get()[j];
-            if ((maskProb <= cumulativeProb) || (j == lastPerm)) {
-                if (results.find(j) == results.end()) {
-                    results[j] = 1;
-                } else {
-                    results[j]++;
-                }
-                break;
-            }
-        }
-    }
-
-    return results;
-}
-
-bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)
-{
-    Finish();
-
-    bool tempDoNorm = doNormalize;
-    doNormalize = false;
-    QInterfacePtr unitCopy = Clone();
-    doNormalize = tempDoNorm;
-
-    unitCopy->Decompose(start, dest);
-    unitCopy->Compose(dest, start);
-
-    bool didSeparate = ApproxCompare(unitCopy, error_tol);
-
-    if (didSeparate) {
-        // The subsystem is separable.
-        Dispose(start, dest->GetQubitCount());
-    }
-
-    return didSeparate;
-}
-
+#endif
 } // namespace Qrack

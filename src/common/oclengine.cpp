@@ -10,13 +10,17 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "oclengine.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <memory>
+#include <regex>
+#include <sstream>
 
-#include "oclengine.hpp"
-
-#if UINTPOW < 5
+#if UINTPOW < 4
+#include "qheader_uint8cl.hpp"
+#elif UINTPOW < 5
 #include "qheader_uint16cl.hpp"
 #elif UINTPOW < 6
 #include "qheader_uint32cl.hpp"
@@ -28,14 +32,19 @@
 #include "qheader_halfcl.hpp"
 #elif FPPOW < 6
 #include "qheader_floatcl.hpp"
-#else
+#elif FPPOW < 7
 #include "qheader_doublecl.hpp"
+#else
+#include "qheader_quadcl.hpp"
 #endif
 
 #include "qenginecl.hpp"
 
+#if ENABLE_ALU
+#include "qheader_alucl.hpp"
 #if ENABLE_BCD
 #include "qheader_bcdcl.hpp"
+#endif
 #endif
 
 namespace Qrack {
@@ -43,7 +52,7 @@ namespace Qrack {
 /// "Qrack::OCLEngine" manages the single OpenCL context
 
 // Public singleton methods to get pointers to various methods
-DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
+DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t& dev)
 {
     if ((dev >= GetDeviceCount()) || (dev < -1)) {
         throw "Invalid OpenCL device selection";
@@ -86,6 +95,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_DISPOSEPROB, "disposeprob"),
     OCLKernelHandle(OCL_API_DISPOSE, "dispose"),
     OCLKernelHandle(OCL_API_PROB, "prob"),
+    OCLKernelHandle(OCL_API_CPROB, "cprob"),
     OCLKernelHandle(OCL_API_PROBREG, "probreg"),
     OCLKernelHandle(OCL_API_PROBREGALL, "probregall"),
     OCLKernelHandle(OCL_API_PROBMASK, "probmask"),
@@ -94,6 +104,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_FORCEMPARITY, "forcemparity"),
     OCLKernelHandle(OCL_API_EXPPERM, "expperm"),
     OCLKernelHandle(OCL_API_ROL, "rol"),
+#if ENABLE_ALU
     OCLKernelHandle(OCL_API_INC, "inc"),
     OCLKernelHandle(OCL_API_CINC, "cinc"),
     OCLKernelHandle(OCL_API_INCDECC, "incdecc"),
@@ -104,18 +115,6 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_INCBCD, "incbcd"),
     OCLKernelHandle(OCL_API_INCDECBCDC, "incdecbcdc"),
 #endif
-    OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
-    OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
-    OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),
-    OCLKernelHandle(OCL_API_HASH, "hash"),
-    OCLKernelHandle(OCL_API_APPROXCOMPARE, "approxcompare"),
-    OCLKernelHandle(OCL_API_NORMALIZE, "nrmlze"),
-    OCLKernelHandle(OCL_API_NORMALIZE_WIDE, "nrmlzewide"),
-    OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
-    OCLKernelHandle(OCL_API_APPLYM, "applym"),
-    OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
-    OCLKernelHandle(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless"),
-    OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"),
     OCLKernelHandle(OCL_API_MUL, "mul"),
     OCLKernelHandle(OCL_API_DIV, "div"),
     OCLKernelHandle(OCL_API_MULMODN_OUT, "mulmodnout"),
@@ -128,6 +127,19 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
     OCLKernelHandle(OCL_API_IFULLADD, "ifulladd"),
+    OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
+    OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
+    OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),
+    OCLKernelHandle(OCL_API_HASH, "hash"),
+    OCLKernelHandle(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless"),
+    OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"),
+#endif
+    OCLKernelHandle(OCL_API_APPROXCOMPARE, "approxcompare"),
+    OCLKernelHandle(OCL_API_NORMALIZE, "nrmlze"),
+    OCLKernelHandle(OCL_API_NORMALIZE_WIDE, "nrmlzewide"),
+    OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
+    OCLKernelHandle(OCL_API_APPLYM, "applym"),
+    OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
     OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer"),
     OCLKernelHandle(OCL_API_SHUFFLEBUFFERS, "shufflebuffers")
 };
@@ -147,11 +159,7 @@ void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, Dev
 
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
 
-OCLEngine::OCLEngine(OCLEngine const&) {}
-OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
-
-cl::Program OCLEngine::MakeProgram(
-    bool buildFromSource, cl::Program::Sources sources, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
+cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
 {
     FILE* clBinFile;
     cl::Program program;
@@ -162,11 +170,9 @@ cl::Program OCLEngine::MakeProgram(
         if (fstat(fileno(clBinFile), &statSize)) {
             std::cout << "Binary error: Invalid file fstat result. (Falling back to JIT.)" << std::endl;
         } else {
-            unsigned long lSize = statSize.st_size;
-            unsigned long lSizeResult;
-
+            size_t lSize = statSize.st_size;
             std::vector<unsigned char> buffer(lSize);
-            lSizeResult = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
+            size_t lSizeResult = fread(&buffer[0U], sizeof(unsigned char), lSize, clBinFile);
             fclose(clBinFile);
 
             if (lSizeResult != lSize) {
@@ -177,13 +183,13 @@ cl::Program OCLEngine::MakeProgram(
 
 #if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
-                { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
+                { std::pair<const void*, size_t>(&buffer[0U], buffer.size()) }, &binaryStatus, &buildError);
 #else
             program = cl::Program(devCntxt->context, { devCntxt->device }, { buffer }, &binaryStatus, &buildError);
 #endif
 
-            if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
-                std::cout << "Binary error: " << buildError << ", " << binaryStatus[0] << " (Falling back to JIT.)"
+            if ((buildError != CL_SUCCESS) || (binaryStatus[0U] != CL_SUCCESS)) {
+                std::cout << "Binary error: " << buildError << ", " << binaryStatus[0U] << " (Falling back to JIT.)"
                           << std::endl;
             } else {
                 std::cout << "Loaded binary from: " << path << std::endl;
@@ -192,10 +198,42 @@ cl::Program OCLEngine::MakeProgram(
     }
 
     // If, either, there are no cached binaries, or binary loading failed, then fall back to JIT.
-    if (buildError != CL_SUCCESS) {
-        program = cl::Program(devCntxt->context, sources);
-        std::cout << "Built JIT." << std::endl;
+    if (buildError == CL_SUCCESS) {
+        return program;
     }
+
+    cl::Program::Sources sources;
+#if UINTPOW < 4
+    sources.push_back({ (const char*)qheader_uint8_cl, (long unsigned int)qheader_uint8_cl_len });
+#elif UINTPOW < 5
+    sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
+#elif UINTPOW < 6
+    sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
+#endif
+
+#if FPPOW < 5
+    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
+#elif FPPOW < 6
+    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
+#elif FPPOW < 7
+    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_quad_cl, (long unsigned int)qheader_quad_cl_len });
+#endif
+
+    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
+
+#if ENABLE_ALU
+    sources.push_back({ (const char*)qheader_alu_cl, (long unsigned int)qheader_alu_cl_len });
+#if ENABLE_BCD
+    sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
+#endif
+#endif
+
+    program = cl::Program(devCntxt->context, sources);
+    std::cout << "Building JIT." << std::endl;
 
     return program;
 }
@@ -203,11 +241,11 @@ cl::Program OCLEngine::MakeProgram(
 void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fileName)
 {
     std::vector<size_t> clBinSizes = program.getInfo<CL_PROGRAM_BINARY_SIZES>();
-    size_t clBinSize = 0;
-    int clBinIndex = 0;
+    size_t clBinSize = 0U;
+    int64_t clBinIndex = 0;
 
-    for (unsigned int i = 0; i < clBinSizes.size(); i++) {
-        if (clBinSizes[i] > 0) {
+    for (size_t i = 0U; i < clBinSizes.size(); ++i) {
+        if (clBinSizes[i]) {
             clBinSize = clBinSizes[i];
             clBinIndex = i;
             break;
@@ -233,24 +271,22 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
 #else
     std::vector<std::vector<unsigned char>> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
     std::vector<unsigned char> clBinary = clBinaries[clBinIndex];
-    fwrite(&clBinary[0], clBinSize, sizeof(unsigned char), clBinFile);
+    fwrite(&clBinary[0U], clBinSize, sizeof(unsigned char), clBinFile);
 #endif
     fclose(clBinFile);
 }
 
-void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
+InitOClResult OCLEngine::InitOCL(
+    bool buildFromSource, bool saveBinaries, std::string home, std::vector<int64_t> maxAllocVec)
 {
-
     if (home == "*") {
         home = GetDefaultBinaryPath();
     }
-
-    int i;
     // get all platforms (drivers), e.g. NVIDIA
 
     std::vector<cl::Platform> all_platforms;
     std::vector<cl::Device> all_devices;
-    std::vector<int> device_platform_id;
+    std::vector<int64_t> device_platform_id;
     cl::Platform default_platform;
     cl::Device default_device;
     std::vector<DeviceContextPtr> all_dev_contexts;
@@ -258,18 +294,18 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     cl::Platform::get(&all_platforms);
 
-    if (all_platforms.size() == 0) {
+    if (!all_platforms.size()) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
-        return;
+        return InitOClResult();
     }
 
     // get all devices
     std::vector<cl::Platform> devPlatVec;
     std::vector<std::vector<cl::Device>> all_platforms_devices;
-    for (size_t i = 0; i < all_platforms.size(); i++) {
+    for (size_t i = 0U; i < all_platforms.size(); ++i) {
         all_platforms_devices.push_back(std::vector<cl::Device>());
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &(all_platforms_devices[i]));
-        for (size_t j = 0; j < all_platforms_devices[i].size(); j++) {
+        for (size_t j = 0U; j < all_platforms_devices[i].size(); ++j) {
             // VirtualCL seems to break if the assignment constructor of cl::Platform is used here from the original
             // list. Assigning the object from a new query is always fine, though. (They carry the same underlying
             // platform IDs.)
@@ -280,15 +316,14 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         }
         all_devices.insert(all_devices.end(), all_platforms_devices[i].begin(), all_platforms_devices[i].end());
     }
-    if (all_devices.size() == 0) {
+    if (!all_devices.size()) {
         std::cout << " No devices found. Check OpenCL installation!\n";
-        return;
+        return InitOClResult();
     }
 
-    int deviceCount = all_devices.size();
-
-    // prefer the last device because that's usually a GPU or accelerator; device[0] is usually the CPU
-    int dev = deviceCount - 1;
+    int64_t deviceCount = all_devices.size();
+    // prefer the last device because that's usually a GPU or accelerator; device[0U] is usually the CPU
+    int64_t dev = deviceCount - 1;
     if (getenv("QRACK_OCL_DEFAULT_DEVICE")) {
         dev = std::stoi(std::string(getenv("QRACK_OCL_DEFAULT_DEVICE")));
         if ((dev < 0) || (dev > (deviceCount - 1))) {
@@ -300,52 +335,28 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     }
 
     // create the programs that we want to execute on the devices
-    cl::Program::Sources sources;
-
-#if UINTPOW < 5
-    sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
-#elif UINTPOW < 6
-    sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
-#else
-    sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
-#endif
-
-#if FPPOW < 5
-    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
-#elif FPPOW < 6
-    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
-#else
-    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
-#endif
-
-    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
-
-#if ENABLE_BCD
-    sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
-#endif
-
-    int plat_id = -1;
+    int64_t plat_id = -1;
     std::vector<cl::Context> all_contexts;
     std::vector<std::string> all_filenames;
-    for (int i = 0; i < deviceCount; i++) {
+    for (int64_t i = 0; i < deviceCount; ++i) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
         if (device_platform_id[i] != plat_id) {
             plat_id = device_platform_id[i];
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
-        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
-            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], i, plat_id);
+        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i],
+            all_contexts[all_contexts.size() - 1U], i, plat_id, maxAllocVec[i % maxAllocVec.size()]);
 
         std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;
         std::replace(fileName.begin(), fileName.end(), ' ', '_');
         std::string clBinName = home + fileName;
 
         std::cout << "Device #" << i << ", ";
-        cl::Program program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
+        cl::Program program = MakeProgram(buildFromSource, clBinName, devCntxt);
 
         cl_int buildError =
-            program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math -Werror");
+            program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math");
         if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": " << buildError << ", "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
@@ -355,9 +366,9 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
             // use the first device. If the default is the first device, and we can't compile for it, then we don't
             // have any devices that can compile at all, and the environment needs to be fixed by the user.
             if (i == dev) {
-                default_dev_context = all_dev_contexts[0];
-                default_platform = all_platforms[0];
-                default_device = all_devices[0];
+                default_dev_context = all_dev_contexts[0U];
+                default_platform = all_platforms[0U];
+                default_device = all_devices[0U];
             }
 
             continue;
@@ -365,7 +376,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
         all_dev_contexts.push_back(devCntxt);
 
-        for (unsigned int j = 0; j < kernelHandles.size(); j++) {
+        for (unsigned int j = 0U; j < kernelHandles.size(); ++j) {
             all_dev_contexts[i]->calls[kernelHandles[j].oclapi] =
                 cl::Kernel(program, kernelHandles[j].kernelname.c_str());
             all_dev_contexts[i]->mutexes.emplace(kernelHandles[j].oclapi, new std::mutex);
@@ -384,35 +395,60 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         }
     }
 
-    if (!m_pInstance) {
-        m_pInstance = new OCLEngine();
-    }
-    m_pInstance->SetDeviceContextPtrVector(all_dev_contexts, default_dev_context);
-    m_pInstance->activeAllocSizes = std::vector<size_t>(all_dev_contexts.size());
-
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
-    std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
-    for (i = 0; i < deviceCount; i++) {
+    std::cout << "Default device: #" << dev << ", " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
+    for (int64_t i = 0; i < deviceCount; ++i) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
+
+    return InitOClResult(all_dev_contexts, default_dev_context);
 }
 
 OCLEngine::OCLEngine()
-    : maxActiveAllocSize(-1)
+    : maxActiveAllocSizes(1U, -1)
 {
     if (getenv("QRACK_MAX_ALLOC_MB")) {
-        maxActiveAllocSize = 1024 * 1024 * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));
+        std::string devListStr = std::string(getenv("QRACK_MAX_ALLOC_MB"));
+        maxActiveAllocSizes.clear();
+        if (devListStr.compare("")) {
+            std::stringstream devListStr_stream(devListStr);
+            // See
+            // https://stackoverflow.com/questions/7621727/split-a-string-into-words-by-multiple-delimiters#answer-58164098
+            std::regex re("[.]");
+            while (devListStr_stream.good()) {
+                std::string term;
+                getline(devListStr_stream, term, ',');
+                // the '-1' is what makes the regex split (-1 := what was not matched)
+                std::sregex_token_iterator first{ term.begin(), term.end(), re, -1 }, last;
+                std::vector<std::string> tokens{ first, last };
+                if (tokens.size() == 1U) {
+                    maxActiveAllocSizes.push_back(stoi(term));
+                    if (maxActiveAllocSizes.back() >= 0) {
+                        maxActiveAllocSizes.back() = maxActiveAllocSizes.back() << 20U;
+                    }
+                    continue;
+                }
+                const unsigned maxI = stoi(tokens[0U]);
+                std::vector<int64_t> limits(tokens.size() - 1U);
+                for (unsigned i = 1U; i < tokens.size(); ++i) {
+                    limits[i - 1U] = stoi(tokens[i]);
+                }
+                for (unsigned i = 0U; i < maxI; ++i) {
+                    for (unsigned j = 0U; j < limits.size(); ++j) {
+                        maxActiveAllocSizes.push_back(limits[j]);
+                        if (maxActiveAllocSizes.back() >= 0) {
+                            maxActiveAllocSizes.back() = maxActiveAllocSizes.back() << 20U;
+                        }
+                    }
+                }
+            }
+        }
     }
-}
-OCLEngine* OCLEngine::m_pInstance = NULL;
-OCLEngine* OCLEngine::Instance()
-{
-    if (!m_pInstance) {
-        m_pInstance = new OCLEngine();
-        InitOCL(false);
-    }
-    return m_pInstance;
+
+    InitOClResult initResult = InitOCL(false, false, "*", maxActiveAllocSizes);
+    SetDeviceContextPtrVector(initResult.all_dev_contexts, initResult.default_dev_context);
+    activeAllocSizes = std::vector<size_t>(initResult.all_dev_contexts.size());
 }
 
 } // namespace Qrack

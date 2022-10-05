@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -9,70 +9,25 @@
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
+
 #pragma once
 
-#define _USE_MATH_DEFINES
+#include "common/parallel_for.hpp"
+#include "common/rdrandwrapper.hpp"
+#include "hamiltonian.hpp"
 
-#include <ctime>
 #include <map>
-#include <math.h>
-#include <memory>
 #include <vector>
 
 #if ENABLE_UINT128
 #include <ostream>
 #endif
 
-#include "common/qrack_types.hpp"
-#include "common/rdrandwrapper.hpp"
-#include "hamiltonian.hpp"
-
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
 #define IS_OPPOSITE(c1, c2) (IS_NORM_0((c1) + (c2)))
 
 namespace Qrack {
-
-// These are utility functions defined in qinterface/protected.cpp:
-unsigned char* cl_alloc(size_t ucharCount);
-void cl_free(void* toFree);
-void mul2x2(complex* left, complex* right, complex* out);
-void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
-void log2x2(complex* matrix2x2, complex* outMatrix2x2);
-bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
-bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
-bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
-bitCapInt intPow(bitCapInt base, bitCapInt power);
-bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
-#if ENABLE_UINT128
-std::ostream& operator<<(std::ostream& left, __uint128_t right);
-#endif
-inline bitCapInt pow2(const bitLenInt& p) { return ONE_BCI << p; }
-inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return ONE_BCI << p; }
-inline bitCapInt pow2Mask(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
-inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
-inline bitLenInt log2(bitCapInt n)
-{
-    bitLenInt pow = 0;
-    bitCapInt p = n >> ONE_BCI;
-    while (p != 0) {
-        p >>= ONE_BCI;
-        pow++;
-    }
-    return pow;
-}
-inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (ONE_BCI << bit) & source; }
-inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source) { return (ONE_BCI << bit) & source; }
-inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
-{
-    return ((ONE_BCI << length) - ONE_BCI) << start;
-}
-inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& length)
-{
-    return ((ONE_BCI << length) - ONE_BCI) << start;
-}
-// Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const bitCapInt& x) { return ((x != 0U) && !(x & (x - ONE_BCI))); }
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
@@ -114,9 +69,14 @@ enum QInterfaceEngine {
     QINTERFACE_HYBRID,
 
     /**
-     * Create a QMaskFusion, coalescing Pauli gates.
+     * Create a QBinaryDecisionTree, (CPU-based).
      */
-    QINTERFACE_MASK_FUSION,
+    QINTERFACE_BDT,
+
+    /**
+     * Create a QStabilizer, limited to Clifford/Pauli operations, but efficient.
+     */
+    QINTERFACE_STABILIZER,
 
     /**
      * Create a QStabilizerHybrid, switching between a QStabilizer and a QHybrid as efficient.
@@ -146,31 +106,16 @@ enum QInterfaceEngine {
 #if ENABLE_OPENCL
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_QPAGER,
 
-    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_MASK_FUSION,
-
+#if FPPOW > 4
     QINTERFACE_OPTIMAL_BASE = QINTERFACE_HYBRID,
+#else
+    QINTERFACE_OPTIMAL_BASE = QINTERFACE_OPENCL,
+#endif
 
-    QINTERFACE_OPTIMAL_G0_CHILD = QINTERFACE_STABILIZER_HYBRID,
-
-    QINTERFACE_OPTIMAL_G1_CHILD = QINTERFACE_QPAGER,
-
-    QINTERFACE_OPTIMAL_G2_CHILD = QINTERFACE_MASK_FUSION,
-
-    QINTERFACE_OPTIMAL_G3_CHILD = QINTERFACE_HYBRID,
 #else
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_CPU,
 
-    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_MASK_FUSION,
-
     QINTERFACE_OPTIMAL_BASE = QINTERFACE_CPU,
-
-    QINTERFACE_OPTIMAL_G0_CHILD = QINTERFACE_STABILIZER_HYBRID,
-
-    QINTERFACE_OPTIMAL_G1_CHILD = QINTERFACE_MASK_FUSION,
-
-    QINTERFACE_OPTIMAL_G2_CHILD = QINTERFACE_CPU,
-
-    QINTERFACE_OPTIMAL_G3_CHILD = QINTERFACE_CPU,
 #endif
 
     QINTERFACE_OPTIMAL = QINTERFACE_QUNIT,
@@ -187,17 +132,18 @@ enum QInterfaceEngine {
  *
  * See README.md for an overview of the algorithms Qrack employs.
  */
-class QInterface {
+class QInterface : public ParallelFor {
 protected:
-    bitLenInt qubitCount;
-    bitCapInt maxQPower;
-    uint32_t randomSeed;
-    qrack_rand_gen_ptr rand_generator;
-    std::uniform_real_distribution<real1_f> rand_distribution;
-    std::shared_ptr<RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;
+    bool useRDRAND;
+    bitLenInt qubitCount;
+    uint32_t randomSeed;
     real1 amplitudeFloor;
+    bitCapInt maxQPower;
+    qrack_rand_gen_ptr rand_generator;
+    std::uniform_real_distribution<real1_s> rand_distribution;
+    std::shared_ptr<RdRandom> hardware_rand_generator;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -207,80 +153,56 @@ protected:
 
     // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
     // you need a safe pointer to norm(), try this:
-    static inline real1_f normHelper(complex c) { return norm(c); }
+    static inline real1_f normHelper(complex c) { return (real1_f)norm(c); }
 
     static inline real1_f clampProb(real1_f toClamp)
     {
-        if (toClamp < ZERO_R1) {
-            toClamp = ZERO_R1;
+        if (toClamp < ZERO_R1_F) {
+            toClamp = ZERO_R1_F;
         }
-        if (toClamp > ONE_R1) {
-            toClamp = ONE_R1;
+        if (toClamp > ONE_R1_F) {
+            toClamp = ONE_R1_F;
         }
         return toClamp;
     }
 
-    template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
-
-    void FreeAligned(void* toFree)
-    {
-        if (toFree) {
-#if defined(_WIN32)
-            _aligned_free(toFree);
-#else
-            free(toFree);
-#endif
-        }
-        toFree = NULL;
-    }
-
-    bool IsIdentity(const complex* mtrx, const bool isControlled);
-
     complex GetNonunitaryPhase()
     {
         if (randGlobalPhase) {
-            real1_f angle = Rand() * 2 * PI_R1;
+            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
             return complex((real1)cos(angle), (real1)sin(angle));
         } else {
             return ONE_CMPLX;
         }
     }
 
-public:
-    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON)
-        : rand_distribution(0.0, 1.0)
-        , hardware_rand_generator(NULL)
-        , doNormalize(doNorm)
-        , randGlobalPhase(randomGlobalPhase)
-        , amplitudeFloor(norm_thresh)
+    template <typename Fn> void MACWrapper(bitLenInt const* controls, bitLenInt controlLen, Fn fn)
     {
-        qubitCount = n;
-        maxQPower = pow2(qubitCount);
-
-#if !ENABLE_RDRAND
-        useHardwareRNG = false;
-#endif
-
-        if (useHardwareRNG) {
-            hardware_rand_generator = std::make_shared<RdRandom>();
-#if !ENABLE_RNDFILE
-            if (!(hardware_rand_generator->SupportsRDRAND())) {
-                hardware_rand_generator = NULL;
-            }
-#endif
+        bitCapInt xMask = 0U;
+        for (bitLenInt i = 0U; i < controlLen; ++i) {
+            xMask |= pow2(controls[i]);
         }
 
-        if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
-            rand_generator = std::make_shared<qrack_rand_gen>();
-            randomSeed = (uint32_t)std::time(0);
-            SetRandomSeed(randomSeed);
-        } else {
-            rand_generator = rgp;
-        }
+        XMask(xMask);
+        fn(controls, controlLen);
+        XMask(xMask);
     }
 
+public:
+    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
+        bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON);
+
+    /** Default constructor, primarily for protected internal use */
     QInterface()
+        : doNormalize(false)
+        , randGlobalPhase(true)
+        , useRDRAND(true)
+        , qubitCount(0U)
+        , randomSeed(0)
+        , amplitudeFloor(REAL1_EPSILON)
+        , maxQPower(1U)
+        , rand_distribution(0.0, 1.0)
+        , hardware_rand_generator(NULL)
     {
         // Intentionally left blank
     }
@@ -290,7 +212,7 @@ public:
         // Virtual destructor for inheritance
     }
 
-    virtual void SetRandomSeed(uint32_t seed)
+    void SetRandomSeed(uint32_t seed)
     {
         if (rand_generator != NULL) {
             rand_generator->seed(seed);
@@ -298,13 +220,15 @@ public:
     }
 
     /** Set the number of threads in parallel for loops, per component QEngine */
-    virtual void SetConcurrency(uint32_t threadsPerEngine) {}
+    virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
     /** Get the count of bits in this register */
-    bitLenInt GetQubitCount() { return qubitCount; }
+    virtual bitLenInt GetQubitCount() { return qubitCount; }
 
-    /** Get the maximum number of basis states, namely \f$ n^2 \f$ for \f$ n \f$ qubits*/
-    bitCapInt GetMaxQPower() { return maxQPower; }
+    /** Get the maximum number of basis states, namely \f$ 2^n \f$ for \f$ n \f$ qubits*/
+    virtual bitCapInt GetMaxQPower() { return maxQPower; }
+
+    virtual bool GetIsArbitraryGlobalPhase() { return randGlobalPhase; }
 
     /** Generate a random real number between 0 and 1 */
     real1_f Rand()
@@ -320,7 +244,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void SetQuantumState(const complex* inputState) = 0;
+    virtual void SetQuantumState(complex const* inputState) = 0;
 
     /** Get the pure quantum state representation
      *
@@ -346,8 +270,8 @@ public:
      */
     virtual void SetAmplitude(bitCapInt perm, complex amp) = 0;
 
-    /** Set to a specific permutation */
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG) = 0;
+    /** Set to a specific permutation of all qubits */
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     /**
      * Combine another QInterface with this one, after the last bit index of
@@ -386,8 +310,9 @@ public:
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(toCopy, qubitCount); }
+    virtual bitLenInt ComposeNoClone(QInterfacePtr toCopy) { return Compose(toCopy); }
     virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start) = 0;
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start);
 
     /**
      * Minimally decompose a set of contiguous bits from the separably composed unit,
@@ -427,6 +352,11 @@ public:
      * than</i> the subsystem can be measured.
      */
     virtual void Decompose(bitLenInt start, QInterfacePtr dest) = 0;
+
+    /**
+     * Schmidt decompose a length of qubits.
+     */
+    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length) = 0;
 
     /**
      * Minimally decompose a set of contiguous bits from the separably composed unit,
@@ -473,6 +403,16 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) = 0;
 
     /**
+     * Allocate new "length" count of |0> state qubits at end of qubit index position
+     */
+    virtual bitLenInt Allocate(bitLenInt length) { return Allocate(qubitCount, length); }
+
+    /**
+     * Allocate new "length" count of |0> state qubits at specified qubit index start position
+     */
+    virtual bitLenInt Allocate(bitLenInt start, bitLenInt length) = 0;
+
+    /**
      * \defgroup BasicGates Basic quantum gate primitives
      *@{
      */
@@ -480,55 +420,102 @@ public:
     /**
      * Apply an arbitrary single bit unitary transformation.
      */
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex) = 0;
+    virtual void Mtrx(complex const* mtrx, bitLenInt qubitIndex) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
      */
-    virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+    virtual void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
      */
-    virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
+    {
+        if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
+            MACPhase(controls, controlLen, mtrx[0U], mtrx[3U], target);
+        } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
+            MACInvert(controls, controlLen, mtrx[1U], mtrx[2U], target);
+        } else {
+            MACWrapper(controls, controlLen,
+                [this, mtrx, target](bitLenInt const* lc, bitLenInt lcLen) { MCMtrx(lc, lcLen, mtrx, target); });
+        }
+    }
 
     /**
      * Apply a single bit transformation that only effects phase.
      */
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+    {
+        if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft)) && IS_NORM_0(topLeft - bottomRight)) {
+            return;
+        }
+
+        const complex mtrx[4U] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        Mtrx(mtrx, qubitIndex);
+    }
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase.
      */
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+    {
+        const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        Mtrx(mtrx, qubitIndex);
+    }
 
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary control bits.
      */
-    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight);
+    virtual void MCPhase(
+        bitLenInt const* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    {
+        if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
+            return;
+        }
+
+        const complex mtrx[4U] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        MCMtrx(controls, controlLen, mtrx, target);
+    }
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary control
      * bits.
      */
-    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft);
+    virtual void MCInvert(
+        bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    {
+        const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        MCMtrx(controls, controlLen, mtrx, target);
+    }
 
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary (anti-)control bits.
      */
-    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight);
+    virtual void MACPhase(
+        bitLenInt const* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    {
+        if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
+            return;
+        }
+
+        MACWrapper(controls, controlLen, [this, topLeft, bottomRight, target](bitLenInt const* lc, bitLenInt lcLen) {
+            MCPhase(lc, lcLen, topLeft, bottomRight, target);
+        });
+    }
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
      * (anti-)control bits.
      */
-    virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft);
+    virtual void MACInvert(
+        bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    {
+        MACWrapper(controls, controlLen, [this, topRight, bottomLeft, target](bitLenInt const* lc, bitLenInt lcLen) {
+            MCInvert(lc, lcLen, topRight, bottomLeft, target);
+        });
+    }
+
     /**
      * Apply a "uniformly controlled" arbitrary single bit unitary transformation. (See
      * https://arxiv.org/abs/quant-ph/0312218)
@@ -544,13 +531,12 @@ public:
      */
 
     virtual void UniformlyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex, complex const* mtrxs)
     {
         UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs, NULL, 0, 0);
     }
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-        const bitCapInt& mtrxSkipValueMask);
+    virtual void UniformlyControlledSingleBit(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+        complex const* mtrxs, bitCapInt const* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
 
     /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
@@ -572,38 +558,32 @@ public:
     /**
      * Apply a swap with arbitrary control bits.
      */
-    virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void CSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply a swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void AntiCSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply a square root of swap with arbitrary control bits.
      */
-    virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply a square root of swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void AntiCSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply an inverse square root of swap with arbitrary control bits.
      */
-    virtual void CISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply an inverse square root of swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void AntiCISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Doubly-controlled NOT gate
@@ -706,7 +686,7 @@ public:
      *
      * Applies a gate guaranteed to be unitary, from two angles, as commonly defined.
      */
-    virtual void U2(bitLenInt target, real1_f phi, real1_f lambda) { U(target, M_PI / 2, phi, lambda); }
+    virtual void U2(bitLenInt target, real1_f phi, real1_f lambda) { U(target, (real1_f)(M_PI / 2), phi, lambda); }
 
     /**
      * Inverse 2-parameter unitary gate
@@ -715,8 +695,53 @@ public:
      */
     virtual void IU2(bitLenInt target, real1_f phi, real1_f lambda)
     {
-        U(target, M_PI / 2, -lambda - PI_R1, -phi + PI_R1);
+        U(target, (real1_f)(M_PI / 2), (real1_f)(-lambda - PI_R1), (real1_f)(-phi + PI_R1));
     }
+
+    /**
+     * "Azimuth, Inclination" (RY-RZ)
+     *
+     * Sets the azimuth and inclination from Z-X-Y basis probability measurements.
+     */
+    virtual void AI(bitLenInt target, real1_f azimuth, real1_f inclination);
+
+    /**
+     * Invert "Azimuth, Inclination" (RY-RZ)
+     *
+     * (Inverse of) sets the azimuth and inclination from Z-X-Y basis probability measurements.
+     */
+    virtual void IAI(bitLenInt target, real1_f azimuth, real1_f inclination);
+
+    /**
+     * Controlled "Azimuth, Inclination" (RY-RZ)
+     *
+     * If the control bit is set, this gate sets the azimuth and inclination from Z-X-Y basis probability measurements.
+     */
+    virtual void CAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination);
+
+    /**
+     * (Anti-)Controlled "Azimuth, Inclination" (RY-RZ)
+     *
+     * If the control bit is reset, this gate sets the azimuth and inclination from Z-X-Y basis probability
+     * measurements.
+     */
+    virtual void AntiCAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination);
+
+    /**
+     * Controlled inverse "Azimuth, Inclination" (RY-RZ)
+     *
+     * (Inverse of...) If the control bit is set, this gate sets the azimuth and inclination from Z-X-Y basis
+     * probability measurements.
+     */
+    virtual void CIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination);
+
+    /**
+     * (Anti-)Controlled inverse "Azimuth, Inclination" (RY-RZ)
+     *
+     * (Inverse of...) If the control bit is reset, this gate sets the azimuth and inclination from Z-X-Y basis
+     * probability measurements.
+     */
+    virtual void AntiCIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1_f inclination);
 
     /**
      * Controlled general unitary gate
@@ -726,7 +751,7 @@ public:
      * values).
      */
     virtual void CU(
-        bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
 
     /**
      * (Anti-)Controlled general unitary gate
@@ -736,7 +761,7 @@ public:
      * expectation values).
      */
     virtual void AntiCU(
-        bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
 
     /**
      * Hadamard gate
@@ -823,19 +848,6 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) = 0;
 
     /**
-     * Act as if is a measurement of parity of the masked set of qubits was applied, except force the (usually random)
-     * result
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true) = 0;
-
-    /**
-     * Measure (and collapse) parity of the masked set of qubits
-     */
-    virtual bool MParity(const bitCapInt& mask) { return ForceMParity(mask, false, false); }
-
-    /**
      * S gate
      *
      * Applies a 1/4 phase rotation to the qubit at "qubitIndex."
@@ -876,6 +888,13 @@ public:
      * Applies an inverse 1/(2^N) phase rotation to the qubit at "qubitIndex."
      */
     virtual void IPhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+
+    /**
+     * Parity phase gate
+     *
+     * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
+     */
+    virtual void PhaseParity(real1_f radians, bitCapInt mask);
 
     /**
      * X gate
@@ -927,13 +946,6 @@ public:
     virtual void ZMask(bitCapInt mask);
 
     /**
-     * Parity phase gate
-     *
-     * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
-     */
-    virtual void PhaseParity(real1 radians, bitCapInt mask);
-
-    /**
      * Square root of X gate
      *
      * Applies the square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
@@ -948,20 +960,6 @@ public:
      * "X" operator is equivalent to a logical "NOT."
      */
     virtual void ISqrtX(bitLenInt qubitIndex);
-
-    /**
-     * Phased square root of X gate
-     *
-     * Applies T.SqrtX.IT to the qubit at "qubitIndex."
-     */
-    virtual void SqrtXConjT(bitLenInt qubitIndex);
-
-    /**
-     * Inverse phased square root of X gate
-     *
-     * Applies IT.ISqrtX.T to the qubit at "qubitIndex."
-     */
-    virtual void ISqrtXConjT(bitLenInt qubitIndex);
 
     /**
      * Square root of Y gate
@@ -1169,154 +1167,13 @@ public:
     /** @} */
 
     /**
-     * \defgroup RotGates Rotational gates:
+     * \defgroup RotGates Rotational gates
      *
      * NOTE: Dyadic operation angle sign is reversed from radian rotation
      * operators and lacks a division by a factor of two.
      *
      * @{
      */
-
-    /**
-     * Phase shift gate
-     *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
-     */
-    virtual void RT(real1_f radians, bitLenInt qubitIndex);
-
-    /**
-     * Dyadic fraction phase shift gate
-     *
-     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around |1>
-     * state.
-     */
-    virtual void RTDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * X axis rotation gate
-     *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
-     */
-    virtual void RX(real1_f radians, bitLenInt qubitIndex);
-
-    /**
-     * Dyadic fraction X axis rotation gate
-     *
-     * Rotates \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ on Pauli x axis.
-     */
-    virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * (Identity) Exponentiation gate
-     *
-     * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
-     */
-    virtual void Exp(real1_f radians, bitLenInt qubitIndex);
-
-    /**
-     *  Imaginary exponentiation of arbitrary 2x2 gate
-     *
-     * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
-     */
-    virtual void Exp(
-        bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
-
-    /**
-     * Dyadic fraction (identity) exponentiation gate
-     *
-     * Applies \f$ \exp\left(-i * \pi * numerator * I / 2^{denomPower}\right) \f$, exponentiation of the identity
-     * operator
-     */
-    virtual void ExpDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * Pauli X exponentiation gate
-     *
-     * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
-     */
-    virtual void ExpX(real1_f radians, bitLenInt qubitIndex);
-
-    /**
-     * Dyadic fraction Pauli X exponentiation gate
-     *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
-     * operator
-     */
-    virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * Pauli Y exponentiation gate
-     *
-     * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
-     */
-    virtual void ExpY(real1_f radians, bitLenInt qubitIndex);
-
-    /**
-     * Dyadic fraction Pauli Y exponentiation gate
-     *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
-     * operator
-     */
-    virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * Pauli Z exponentiation gate
-     *
-     * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
-     */
-    virtual void ExpZ(real1_f radians, bitLenInt qubitIndex);
-
-    /**
-     * Dyadic fraction Pauli Z exponentiation gate
-     *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
-     * operator
-     */
-    virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * Controlled X axis rotation gate
-     *
-     * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
-     */
-    virtual void CRX(real1_f radians, bitLenInt control, bitLenInt target);
-
-    /**
-     * Controlled dyadic fraction X axis rotation gate
-     *
-     * If "control" is 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli x axis.
-     */
-    virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
-
-    /**
-     * Y axis rotation gate
-     *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
-     */
-    virtual void RY(real1_f radians, bitLenInt qubitIndex);
-
-    /**
-     * Dyadic fraction Y axis rotation gate
-     *
-     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y axis.
-     */
-    virtual void RYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * Controlled Y axis rotation gate
-     *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
-     * Pauli Y axis.
-     */
-    virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
-
-    /**
-     * Controlled dyadic fraction y axis rotation gate
-     *
-     * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y
-     * axis.
-     */
-    virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
      * Apply a "uniformly controlled" rotation of a bit around the Pauli Y axis. (See
@@ -1329,7 +1186,7 @@ public:
      * bits, there are therefore 2^k real components in "angles."
      */
     virtual void UniformlyControlledRY(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex, real1 const* angles);
 
     /**
      * Apply a "uniformly controlled" rotation of a bit around the Pauli Z axis. (See
@@ -1342,24 +1199,28 @@ public:
      * bits, there are therefore 2^k real components in "angles."
      */
     virtual void UniformlyControlledRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex, real1 const* angles);
 
     /**
-     * If the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If the target qubit set parity
-     * is even, this applies the conjugate, e^{-i angle}.
+     * Phase shift gate
+     *
+     * Rotates as \f$ e^{-i \theta/2} \f$ around |1> state
      */
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
-    {
-        CUniformParityRZ(NULL, 0, mask, angle);
-    }
+    virtual void RT(real1_f radians, bitLenInt qubitIndex);
 
     /**
-     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If
-     * the controls are set and the target qubit set parity is even, this applies the conjugate, e^{-i angle}.
-     * Otherwise, do nothing if any control is not set.
+     * X axis rotation gate
+     *
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli X axis
      */
-    virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle) = 0;
+    virtual void RX(real1_f radians, bitLenInt qubitIndex);
+
+    /**
+     * Y axis rotation gate
+     *
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli y axis.
+     */
+    virtual void RY(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Z axis rotation gate
@@ -1369,24 +1230,145 @@ public:
     virtual void RZ(real1_f radians, bitLenInt qubitIndex);
 
     /**
-     * Dyadic fraction Z axis rotation gate
-     *
-     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z axis.
-     */
-    virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
      * Controlled Z axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
      * Pauli Zaxis.
      */
     virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
+     * Controlled Y axis rotation gate
+     *
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
+     * Pauli Y axis.
+     */
+    virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
+
+#if ENABLE_ROT_API
+    /**
+     * Dyadic fraction phase shift gate
+     *
+     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around |1>
+     * state.
+     */
+    virtual void RTDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Dyadic fraction X axis rotation gate
+     *
+     * Rotates \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ on Pauli x axis.
+     */
+    virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * (Identity) Exponentiation gate
+     *
+     * Applies \f$ e^{-i \theta*I} \f$, exponentiation of the identity operator
+     */
+    virtual void Exp(real1_f radians, bitLenInt qubitIndex);
+
+    /**
+     *  Imaginary exponentiation of arbitrary 2x2 gate
+     *
+     * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
+     */
+    virtual void Exp(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit, complex const* matrix2x2,
+        bool antiCtrled = false);
+
+    /**
+     * Dyadic fraction (identity) exponentiation gate
+     *
+     * Applies \f$ \exp\left(-i \pi numerator I / 2^{denomPower}\right) \f$, exponentiation of the identity
+     * operator
+     */
+    virtual void ExpDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i \theta \sigma_x} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpX(real1_f radians, bitLenInt qubitIndex);
+
+    /**
+     * Dyadic fraction Pauli X exponentiation gate
+     *
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
+     * operator
+     */
+    virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i \theta \sigma_y} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpY(real1_f radians, bitLenInt qubitIndex);
+
+    /**
+     * Dyadic fraction Pauli Y exponentiation gate
+     *
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
+     * operator
+     */
+    virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i \theta \sigma_z} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZ(real1_f radians, bitLenInt qubitIndex);
+
+    /**
+     * Dyadic fraction Pauli Z exponentiation gate
+     *
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
+     * operator
+     */
+    virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Controlled X axis rotation gate
+     *
+     * If "control" is 1, rotates as \f$ e^{-i \theta/2} \f$ on Pauli x axis.
+     */
+    virtual void CRX(real1_f radians, bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled dyadic fraction X axis rotation gate
+     *
+     * If "control" is 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli x axis.
+     */
+    virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
+
+    /**
+     * Dyadic fraction Y axis rotation gate
+     *
+     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y axis.
+     */
+    virtual void RYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Controlled dyadic fraction y axis rotation gate
+     *
+     * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y
+     * axis.
+     */
+    virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
+
+    /**
+     * Dyadic fraction Z axis rotation gate
+     *
+     * Rotates as \f$ \exp\left(i \pi numerator / 2^{denomPower}\right) \f$ around Pauli Z axis.
+     */
+    virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
      * Controlled dyadic fraction Z axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z
+     * If "control" is set to 1, rotates as \f$ \exp\left(i \pi numerator / 2^{denomPower}\right) \f$ around Pauli Z
      * axis.
      */
     virtual void CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
@@ -1394,7 +1376,7 @@ public:
     /**
      * Controlled "phase shift gate"
      *
-     * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
+     * If control bit is set to 1, rotates target bit as \f$ e^{-i \theta/2}
      * \f$ around |1> state.
      */
 
@@ -1407,6 +1389,7 @@ public:
      * around |1> state.
      */
     virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
+#endif
 
     /** @} */
 
@@ -1419,14 +1402,19 @@ public:
      * @{
      */
 
+    /** Bitwise Hadamard */
+    virtual void H(bitLenInt start, bitLenInt length);
+
+    /** Bitwise Pauli X (or logical "NOT") operator */
+    virtual void X(bitLenInt start, bitLenInt length) { XMask(bitRegMask(start, length)); }
+
+#if ENABLE_REG_GATES
+
     /** Bitwise general unitary */
     virtual void U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda);
 
     /** Bitwise 2-parameter unitary */
     virtual void U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda);
-
-    /** Bitwise Hadamard */
-    virtual void H(bitLenInt start, bitLenInt length);
 
     /** Bitwise Y-basis transformation gate */
     virtual void SH(bitLenInt start, bitLenInt length);
@@ -1455,9 +1443,6 @@ public:
     /** Bitwise inverse "PhaseRootN" operator (1/(2^N) phase rotation) */
     virtual void IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length);
 
-    /** Bitwise Pauli X (or logical "NOT") operator */
-    virtual void X(bitLenInt start, bitLenInt length);
-
     /** Bitwise Pauli Y operator */
     virtual void Y(bitLenInt start, bitLenInt length);
 
@@ -1466,12 +1451,6 @@ public:
 
     /** Bitwise inverse square root of Pauli X operator */
     virtual void ISqrtX(bitLenInt start, bitLenInt length);
-
-    /** Bitwise phased square root of Pauli X operator */
-    virtual void SqrtXConjT(bitLenInt start, bitLenInt length);
-
-    /** Bitwise inverse phased square root of Pauli X operator */
-    virtual void ISqrtXConjT(bitLenInt start, bitLenInt length);
 
     /** Bitwise square root of Pauli Y operator */
     virtual void SqrtY(bitLenInt start, bitLenInt length);
@@ -1517,6 +1496,24 @@ public:
 
     /** Bitwise doubly "anti-"controlled-Z */
     virtual void AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise swap */
+    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise ISwap */
+    virtual void ISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise IISwap */
+    virtual void IISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise square root of swap */
+    virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise inverse square root of swap */
+    virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise "fSim" */
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /**
      * Bitwise "AND"
@@ -1564,10 +1561,11 @@ public:
     /** Classical bitwise "XNOR" */
     virtual void CLXNOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
+#if ENABLE_ROT_API
     /**
      * Bitwise phase shift gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
+     * Rotates as \f$ e^{-i \theta/2} \f$ around |1> state
      */
     virtual void RT(real1_f radians, bitLenInt start, bitLenInt length);
 
@@ -1582,7 +1580,7 @@ public:
     /**
      * Bitwise X axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli X axis
      */
     virtual void RX(real1_f radians, bitLenInt start, bitLenInt length);
 
@@ -1596,7 +1594,7 @@ public:
     /**
      * Bitwise controlled X axis rotation gate
      *
-     * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
+     * If "control" is 1, rotates as \f$ e^{-i \theta/2} \f$ on Pauli x axis.
      */
     virtual void CRX(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
@@ -1610,7 +1608,7 @@ public:
     /**
      * Bitwise Y axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli y axis.
      */
     virtual void RY(real1_f radians, bitLenInt start, bitLenInt length);
 
@@ -1625,7 +1623,7 @@ public:
     /**
      * Bitwise controlled Y axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
      * Pauli Y axis.
      */
     virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
@@ -1641,7 +1639,7 @@ public:
     /**
      * Bitwise Z axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli Z axis.
      */
     virtual void RZ(real1_f radians, bitLenInt start, bitLenInt length);
 
@@ -1655,7 +1653,7 @@ public:
     /**
      * Bitwise controlled Z axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
      * Pauli Zaxis.
      */
     virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
@@ -1671,7 +1669,7 @@ public:
     /**
      * Bitwise controlled "phase shift gate"
      *
-     * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
+     * If control bit is set to 1, rotates target bit as \f$ e^{-i \theta/2}
      * \f$ around |1> state.
      */
     virtual void CRT(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
@@ -1687,14 +1685,14 @@ public:
     /**
      * Bitwise (identity) exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+     * Applies \f$ e^{-i \theta*I} \f$, exponentiation of the identity operator
      */
     virtual void Exp(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction (identity) exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * I / 2^{denomPower}\right) \f$, exponentiation of the identity
+     * Applies \f$ \exp\left(-i \pi numerator I / 2^{denomPower}\right) \f$, exponentiation of the identity
      * operator
      */
     virtual void ExpDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
@@ -1702,14 +1700,14 @@ public:
     /**
      * Bitwise Pauli X exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+     * Applies \f$ e^{-i \theta \sigma_x} \f$, exponentiation of the Pauli X operator
      */
     virtual void ExpX(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli X exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
      * operator
      */
     virtual void ExpXDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
@@ -1717,14 +1715,14 @@ public:
     /**
      * Bitwise Pauli Y exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+     * Applies \f$ e^{-i \theta \sigma_y} \f$, exponentiation of the Pauli Y operator
      */
     virtual void ExpY(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli Y exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
      * operator
      */
     virtual void ExpYDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
@@ -1732,17 +1730,18 @@ public:
     /**
      * Bitwise Pauli Z exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+     * Applies \f$ e^{-i \theta \sigma_z} \f$, exponentiation of the Pauli Z operator
      */
     virtual void ExpZ(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli Z exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
      * operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+#endif
 
     /**
      * Bitwise controlled H gate
@@ -1801,6 +1800,7 @@ public:
     virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /** @} */
+#endif
 
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
@@ -1808,6 +1808,13 @@ public:
      * @{
      */
 
+    /** Circular shift left - shift bits left, and carry last bits. */
+    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
+
+    /** Circular shift right - shift bits right, and carry first bits. */
+    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+
+#if ENABLE_ALU
     /** Arithmetic shift left, with last 2 bits as sign and carry */
     virtual void ASL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
@@ -1820,103 +1827,48 @@ public:
     /** Logical shift right, filling the extra bits with |0> */
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
-    /** Circular shift left - shift bits left, and carry last bits. */
-    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
+    /** Common driver method behind INCC and DECC */
+    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
-    /** Circular shift right - shift bits right, and carry first bits. */
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+    /** Add integer (without sign, with carry) */
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
+    /** Subtract classical integer (without sign, with carry) */
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Add integer (without sign) */
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign, with controls) */
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen) = 0;
-
-    /** Add integer (without sign, with carry) */
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen);
 
     /** Add a classical integer to the register, with sign and without carry. */
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
-
-    /** Add a classical integer to the register, with sign and with carry. */
-    virtual void INCSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) = 0;
-
-    /** Add a classical integer to the register, with sign and with (phase-based) carry. */
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /** Subtract classical integer (without sign) */
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
     /** Subtract classical integer (without sign, with controls) */
     virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
-
-    /** Subtract classical integer (without sign, with carry) */
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen);
 
     /** Subtract a classical integer from the register, with sign and without carry. */
     virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
-    /** Subtract a classical integer from the register, with sign and with carry. */
-    virtual void DECSC(
-        bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) = 0;
-
-    /** Subtract a classical integer from the register, with sign and with carry. */
-    virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
-
-#if ENABLE_BCD
-    /** Add classical BCD integer (without sign) */
-    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
-
-    /** Add classical BCD integer (without sign, with carry) */
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
-
-    /** Subtract BCD integer (without sign) */
-    virtual void DECBCD(bitCapInt toSub, bitLenInt start, bitLenInt length);
-
-    /** Subtract BCD integer (without sign, with carry) */
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
-#endif
-
-    /** Multiply by integer */
-    virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
-
-    /** Divide by integer */
-    virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
-
     /** Multiplication modulo N by integer, (out of place) */
-    virtual void MULModNOut(
-        bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
 
-    /** Inverse: multiplication modulo N by integer, (out of place) */
-    virtual void IMULModNOut(
-        bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
-
-    /** Raise a classical base to a quantum power, modulo N, (out of place) */
-    virtual void POWModNOut(
-        bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
-
-    /** Controlled multiplication by integer */
-    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
-
-    /** Controlled division by power of integer */
-    virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
+    /** Inverse of multiplication modulo N by integer, (out of place) */
+    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
 
     /** Controlled multiplication modulo N by integer, (out of place) */
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
+        bitLenInt const* controls, bitLenInt controlLen);
 
-    /** Inverse: controlled multiplication modulo N by integer, (out of place) */
+    /** Inverse of controlled multiplication modulo N by integer, (out of place) */
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
-
-    /** Controlled, raise a classical base to a quantum power, modulo N, (out of place) */
-    virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
+        bitLenInt const* controls, bitLenInt controlLen);
 
     /**
      * Quantum analog of classical "Full Adder" gate
@@ -1937,7 +1889,7 @@ public:
      *
      * (Assumes the outputBit is in the 0 state)
      */
-    virtual void CFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+    virtual void CFullAdd(bitLenInt const* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
         bitLenInt carryInSumOut, bitLenInt carryOut);
 
     /**
@@ -1945,7 +1897,7 @@ public:
      *
      * (Can be thought of as "subtraction," but with a register convention that the same inputs invert CFullAdd.)
      */
-    virtual void CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+    virtual void CIFullAdd(bitLenInt const* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
         bitLenInt carryInSumOut, bitLenInt carryOut);
 
     /**
@@ -1967,16 +1919,17 @@ public:
      *
      * (Assumes the output register is in the 0 state)
      */
-    virtual void CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-        bitLenInt length, bitLenInt carry);
+    virtual void CADC(bitLenInt const* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+        bitLenInt output, bitLenInt length, bitLenInt carry);
 
     /**
      * Inverse of CADC
      *
      * (Can be thought of as "subtraction," but with a register convention that the same inputs invert CADC.)
      */
-    virtual void CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-        bitLenInt length, bitLenInt carry);
+    virtual void CIADC(bitLenInt const* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+        bitLenInt output, bitLenInt length, bitLenInt carry);
+#endif
 
     /** @} */
 
@@ -2000,7 +1953,7 @@ public:
      * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
      * Otherwise, turning it on will probably take longer.
      */
-    virtual void QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
+    virtual void QFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparate = false);
 
     /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register.
      *
@@ -2016,16 +1969,10 @@ public:
      * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
      * Otherwise, turning it on will probably take longer.
      */
-    virtual void IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
+    virtual void IQFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparate = false);
 
     /** Reverse the phase of the state where the register equals zero. */
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
-
-    /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
-
-    /** This is an expedient for an adaptive Grover's search for a function's global minimum. */
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length) = 0;
 
     /** Phase flip always - equivalent to Z X Z X on any bit in the QInterface */
     virtual void PhaseFlip();
@@ -2048,175 +1995,36 @@ public:
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length) { return ForceM(bits, length, NULL); }
+    virtual bitCapInt M(bitLenInt const* bits, bitLenInt length) { return ForceM(bits, length, NULL); }
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
-
-    /**
-     * Set 8 bit register bits by a superposed index-offset-based read from
-     * classical memory
-     *
-     * "inputStart" is the start index of 8 qubits that act as an index into
-     * the 256 byte "values" array. The "outputStart" bits are first cleared,
-     * then the separable |input, 00000000> permutation state is mapped to
-     * |input, values[input]>, with "values[input]" placed in the "outputStart"
-     * register. FOR BEST EFFICIENCY, the "values" array should be allocated aligned to a 64-byte boundary. (See the
-     * unit tests suite code for an example of how to align the allocation.)
-     *
-     * While a QInterface represents an interacting set of qubit-based
-     * registers, or a virtual quantum chip, the registers need to interact in
-     * some way with (classical or quantum) RAM. IndexedLDA is a RAM access
-     * method similar to the X addressing mode of the MOS 6502 chip, if the X
-     * register can be in a state of coherent superposition when it loads from
-     * RAM.
-     *
-     * The physical motivation for this addressing mode can be explained as
-     * follows: say that we have a superconducting quantum interface device
-     * (SQUID) based chip. SQUIDs have already been demonstrated passing
-     * coherently superposed electrical currents. In a sufficiently
-     * quantum-mechanically isolated qubit chip with a classical cache, with
-     * both classical RAM and registers likely cryogenically isolated from the
-     * environment, SQUIDs could (hopefully) pass coherently superposed
-     * electrical currents into the classical RAM cache to load values into a
-     * qubit register. The state loaded would be a superposition of the values
-     * of all RAM to which coherently superposed electrical currents were
-     * passed.
-     *
-     * In qubit system similar to the MOS 6502, say we have qubit-based
-     * "accumulator" and "X index" registers, and say that we start with a
-     * superposed X index register. In (classical) X addressing mode, the X
-     * index register value acts an offset into RAM from a specified starting
-     * address. The X addressing mode of a LoaD Accumulator (LDA) instruction,
-     * by the physical mechanism described above, should load the accumulator
-     * in quantum parallel with the values of every different address of RAM
-     * pointed to in superposition by the X index register. The superposed
-     * values in the accumulator are entangled with those in the X index
-     * register, by way of whatever values the classical RAM pointed to by X
-     * held at the time of the load. (If the RAM at index "36" held an unsigned
-     * char value of "27," then the value "36" in the X index register becomes
-     * entangled with the value "27" in the accumulator, and so on in quantum
-     * parallel for all superposed values of the X index register, at once.) If
-     * the X index register or accumulator are then measured, the two registers
-     * will both always collapse into a random but valid key-value pair of X
-     * index offset and value at that classical RAM address.
-     *
-     * Note that a "superposed store operation in classical RAM" is not
-     * possible by analagous reasoning. Classical RAM would become entangled
-     * with both the accumulator and the X register. When the state of the
-     * registers was collapsed, we would find that only one "store" operation
-     * to a single memory address had actually been carried out, consistent
-     * with the address offset in the collapsed X register and the byte value
-     * in the collapsed accumulator. It would not be possible by this model to
-     * write in quantum parallel to more than one address of classical memory
-     * at a time.
-     */
-    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values, bool resetValue = true) = 0;
-
-    /**
-     * Add to entangled 8 bit register state with a superposed
-     * index-offset-based read from classical memory
-     *
-     * "inputStart" is the start index of 8 qubits that act as an index into
-     * the 256 byte "values" array. The "outputStart" bits would usually
-     * already be entangled with the "inputStart" bits via a IndexedLDA()
-     * operation. With the "inputStart" bits being a "key" and the
-     * "outputStart" bits being a value, the permutation state |key, value> is
-     * mapped to |key, value + values[key]>. This is similar to classical
-     * parallel addition of two arrays.  However, when either of the registers
-     * are measured, both registers will collapse into one random VALID
-     * key-value pair, with any addition or subtraction done to the "value."
-     * See IndexedLDA() for context.
-     *
-     * FOR BEST EFFICIENCY, the "values" array should be allocated aligned to a 64-byte boundary. (See the unit tests
-     * suite code for an example of how to align the allocation.)
-     *
-     * While a QInterface represents an interacting set of qubit-based
-     * registers, or a virtual quantum chip, the registers need to interact in
-     * some way with (classical or quantum) RAM. IndexedLDA is a RAM access
-     * method similar to the X addressing mode of the MOS 6502 chip, if the X
-     * register can be in a state of coherent superposition when it loads from
-     * RAM. "IndexedADC" and "IndexedSBC" perform add and subtract
-     * (with carry) operations on a state usually initially prepared with
-     * IndexedLDA().
-     */
-    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
-
-    /**
-     * Subtract from an entangled 8 bit register state with a superposed
-     * index-offset-based read from classical memory
-     *
-     * "inputStart" is the start index of 8 qubits that act as an index into
-     * the 256 byte "values" array. The "outputStart" bits would usually
-     * already be entangled with the "inputStart" bits via a IndexedLDA()
-     * operation.  With the "inputStart" bits being a "key" and the
-     * "outputStart" bits being a value, the permutation state |key, value> is
-     * mapped to |key, value - values[key]>. This is similar to classical
-     * parallel addition of two arrays.  However, when either of the registers
-     * are measured, both registers will collapse into one random VALID
-     * key-value pair, with any addition or subtraction done to the "value."
-     * See QInterface::IndexedLDA for context.
-     *
-     * FOR BEST EFFICIENCY, the "values" array should be allocated aligned to a 64-byte boundary. (See the unit tests
-     * suite code for an example of how to align the allocation.)
-     *
-     * While a QInterface represents an interacting set of qubit-based
-     * registers, or a virtual quantum chip, the registers need to interact in
-     * some way with (classical or quantum) RAM. IndexedLDA is a RAM access
-     * method similar to the X addressing mode of the MOS 6502 chip, if the X
-     * register can be in a state of coherent superposition when it loads from
-     * RAM. "IndexedADC" and "IndexedSBC" perform add and subtract
-     * (with carry) operations on a state usually initially prepared with
-     * IndexedLDA().
-     */
-    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
-
-    /** Transform a length of qubit register via lookup through a hash table. The hash table must be a one-to-one
-     * function, otherwise the behavior of this method is undefined. The value array definition convention is the same
-     * as IndexedLDA(). Essentially, this is an IndexedLDA() operation that replaces the index register with the value
-     * register, but the lookup table must therefore be one-to-one, for this operation to be unitary, as required. */
-    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values) = 0;
+    virtual bitCapInt ForceM(bitLenInt const* bits, bitLenInt length, bool const* values, bool doApply = true);
 
     /** Swap values of two bits in register */
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
-
-    /** Bitwise swap */
-    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Swap values of two bits in register, and apply phase factor of i if bits are different */
-    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    /** Bitwise swap */
-    virtual void ISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    /** Inverse ISwap - Swap values of two bits in register, and apply phase factor of -i if bits are different */
+    virtual void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Square root of Swap gate */
-    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
-
-    /** Bitwise square root of swap */
-    virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Inverse square root of Swap gate */
-    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
-
-    /** Bitwise inverse square root of swap */
-    virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** The 2-qubit "fSim" gate, (useful in the simulation of particles with fermionic statistics) */
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
-    /** Bitwise "fSim" */
-    virtual void FSim(real1_f theta, real1_f phi, bitLenInt start1, bitLenInt start2, bitLenInt length);
-
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
     {
-        while ((last > 0) && first < (last - 1)) {
+        while ((last > 0U) && first < (last - 1U)) {
             last--;
             Swap(first, last);
-            first++;
+            ++first;
         }
     }
 
@@ -2234,20 +2042,46 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f Prob(bitLenInt qubitIndex) = 0;
+    /**
+     * Direct measure of bit probability to be in |1> state, if control bit is |1>.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f CProb(bitLenInt control, bitLenInt target)
+    {
+        AntiCNOT(control, target);
+        real1_f prob = Prob(target);
+        AntiCNOT(control, target);
+
+        return prob;
+    }
+    /**
+     * Direct measure of bit probability to be in |1> state, if control bit is |0>.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ACProb(bitLenInt control, bitLenInt target)
+    {
+        CNOT(control, target);
+        real1_f prob = Prob(target);
+        CNOT(control, target);
+
+        return prob;
+    }
 
     /**
      * Direct measure of full permutation probability
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbAll(bitCapInt fullRegister) = 0;
+    virtual real1_f ProbAll(bitCapInt fullRegister) { return clampProb((real1_f)norm(GetAmplitude(fullRegister))); }
 
     /**
      * Direct measure of register permutation probability
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
 
     /**
      * Direct measure of masked permutation probability
@@ -2258,7 +2092,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
 
     /**
      * Direct measure of masked permutation probability
@@ -2268,7 +2102,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
+    virtual void ProbMaskAll(bitCapInt mask, real1* probsArray);
 
     /**
      * Direct measure of listed permutation probability
@@ -2278,7 +2112,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray);
+    virtual void ProbBitsAll(bitLenInt const* bits, bitLenInt length, real1* probsArray);
 
     /**
      * Get permutation expectation value of bits
@@ -2288,16 +2122,13 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
-
-    /** Overall probability of any odd permutation of the masked set of bits */
-    virtual real1_f ProbParity(const bitCapInt& mask) = 0;
+    virtual real1_f ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, bitCapInt offset = 0);
 
     /**
      * Statistical measure of masked permutation probability
      *
      * "qPowers" contains powers of 2^n, each representing QInterface bit "n." The order of these values defines a mask
-     * for the result bitCapInt, of 2^0 ~ qPowers[0] to 2^(qPowerCount - 1) ~ qPowers[qPowerCount - 1], in contiguous
+     * for the result bitCapInt, of 2^0 ~ qPowers[0U] to 2^(qPowerCount - 1) ~ qPowers[qPowerCount - 1], in contiguous
      * ascending order. "shots" specifies the number of samples to take as if totally re-preparing the pre-measurement
      * state. This method returns a dictionary with keys, which are the (masked-order) measurement results, and values,
      * which are the number of "shots" that produced that particular measurement result. This method does not "collapse"
@@ -2308,7 +2139,16 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
-        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots);
+        bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots);
+    /**
+     * Statistical measure of masked permutation probability (returned as array)
+     *
+     * Same `Qrack::MultiShotMeasureMask()`, except the shots are returned as an array.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void MultiShotMeasureMask(
+        bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray);
 
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state
@@ -2350,32 +2190,50 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,
      * timely return values. QEngines and other layers will always internally "Finish" when necessary for correct return
      * values. This is primarily for debugging and benchmarking.
      */
-    virtual void Finish(){};
+    virtual void Finish() {}
 
     /**
      * Returns "false" if asynchronous work is still running, and "true" if all previously dispatched asynchronous work
      * is done.
      */
-    virtual bool isFinished() { return true; };
+    virtual bool isFinished() { return true; }
+
+    /**
+     * If asynchronous work is still running, let the simulator know that it can be aborted. Note that this method is
+     * typically used internally where appropriate, such that user code typically does not call Dump().
+     */
+    virtual void Dump() {}
+
+    /**
+     * Returns "true" if current state representation is definitely a binary decision tree, "false" if it is definitely
+     * not, or "true" if it cannot be determined.
+     */
+    virtual bool isBinaryDecisionTree() { return false; }
 
     /**
      * Returns "true" if current state is identifiably within the Clifford set, or "false" if it is not or cannot be
      * determined.
      */
-    virtual bool isClifford() { return false; };
+    virtual bool isClifford() { return false; }
 
     /**
      * Returns "true" if current qubit state is identifiably within the Clifford set, or "false" if it is not or cannot
      * be determined.
      */
-    virtual bool isClifford(const bitLenInt& qubit) { return false; };
+    virtual bool isClifford(bitLenInt qubit) { return false; }
+
+    /**
+     * Returns "true" if current simulation is OpenCL-based.
+     */
+    virtual bool isOpenCL() { return false; }
 
     /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
@@ -2390,7 +2248,7 @@ public:
      * for simulation optimization purposes. This is not a truly quantum computational operation, but it also does not
      * lead to nonphysical effects.
      */
-    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol) { return false; }
+    virtual bool TrySeparate(bitLenInt const* qubits, bitLenInt length, real1_f error_tol) { return false; }
     /**
      *  Single-qubit TrySeparate()
      */
@@ -2400,13 +2258,37 @@ public:
      */
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
     /**
-     *  Set Reactive separation (on by default if available)
+     *  Set reactive separation option (on by default if available)
+     *
+     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to
+     * more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly
+     * helps.
      */
-    virtual void SetReactiveSeparate(const bool& isAggSep) {}
+    virtual void SetReactiveSeparate(bool isAggSep) {}
     /**
-     *  Get Reactive separation
+     *  Get reactive separation option
+     *
+     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to
+     * more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly
+     * helps.
      */
     virtual bool GetReactiveSeparate() { return false; }
+    /**
+     *  Set the option to use T-injection gadgets (off by default)
+     *
+     *  If T-injection gadgets are available, as in Qrack::QStabilizerHybrid, then turning this option on attempts to
+     * simulate Clifford+T with polynomial resource gadgets. It can either hurt or help performance, though it commonly
+     * helps.
+     */
+    virtual void SetTInjection(bool useGadget) {}
+    /**
+     *  Get the option to use T-injection gadgets
+     *
+     *  If T-injection gadgets are available, as in Qrack::QStabilizerHybrid, then turning this option on attempts to
+     * simulate Clifford+T with polynomial resource gadgets. It can either hurt or help performance, though it commonly
+     * helps.
+     */
+    virtual bool GetTInjection() { return false; }
 
     /**
      *  Clone this QInterface
@@ -2416,17 +2298,52 @@ public:
     /**
      *  Set the device index, if more than one device is available.
      */
-    virtual void SetDevice(const int& dID, const bool& forceReInit = false) {}
+    virtual void SetDevice(int64_t dID) = 0;
 
     /**
      *  Get the device index. ("-1" is default).
      */
-    virtual int GetDeviceID() { return -1; }
+    virtual int64_t GetDevice() { return -1; }
 
     /**
      *  Get maximum number of amplitudes that can be allocated on current device.
      */
     bitCapIntOcl GetMaxSize() { return pow2Ocl(sizeof(bitCapInt) * 8); };
+
+    /**
+     *  Get phase of lowest permutation nonzero amplitude.
+     */
+    virtual real1_f FirstNonzeroPhase()
+    {
+        complex amp;
+        bitCapInt perm = 0U;
+        do {
+            amp = GetAmplitude(perm);
+            ++perm;
+        } while ((norm(amp) <= (REAL1_EPSILON * REAL1_EPSILON)) && (perm < maxQPower));
+
+        return (real1_f)std::arg(amp);
+    }
+
+    /**
+     *  Simulate a local qubit depolarizing noise channel, under a stochastic "weak simulation condition." Under "weak"
+     * condition, sampling and exact state queries are not accurate, but sampling can be achieved via repeated full
+     * execution of a noisy circuit, for each hardware-realistic measurement sample.
+     */
+    virtual void DepolarizingChannelWeak1Qb(bitLenInt qubit, real1_f lambda);
+
+    /**
+     *  Simulate a local qubit depolarizing noise channel, under a "strong simulation condition." "Strong" condition
+     * supports measurement sampling and direct queries of state, but the expression of state is in terms of one
+     * retained ancillary qubit per applied noise channel. condition, sampling and exact state queries are not accurate,
+     * but sampling can be achieved via repeated full execution of a noisy circuit, for each hardware-realistic
+     * measurement sample.
+     *
+     * This method returns a newly-allocated qubit ancilla index which must be retained to maintain "strong" simulation.
+     * Note that "strong" ancilla can be measured at any time and discarded, but this makes the simulation condition
+     * "weak".
+     */
+    virtual bitLenInt DepolarizingChannelStrong1Qb(bitLenInt qubit, real1_f lambda);
 
     /** @} */
 };

@@ -9,15 +9,16 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
+#include "qfactory.hpp"
+
+#include <chrono>
 #include <cmath>
 #include <iomanip> // For setw
 #include <iostream> // For cout
 #include <random>
 #include <stdlib.h>
 #include <time.h>
-
-// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
-#include "qfactory.hpp"
 
 using namespace Qrack;
 
@@ -53,7 +54,7 @@ real1_f calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* 
 
     (*numerator) = approxNumer;
     (*denominator) = approxDenom;
-    return ((real1)approxNumer) / (bitCapIntOcl)approxDenom;
+    return ((real1_f)approxNumer) / (bitCapIntOcl)approxDenom;
 }
 
 int main()
@@ -64,7 +65,10 @@ int main()
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
-    bitLenInt qubitCount = ceil(log2(toFactor));
+    const double clockFactor = 1.0 / 1000.0; // Report in ms
+    auto iterClock = std::chrono::high_resolution_clock::now();
+
+    bitLenInt qubitCount = ceil(Qrack::log2(toFactor));
 
     // Choose a base at random:
     std::random_device rand_dev;
@@ -75,21 +79,30 @@ int main()
     bitCapInt testFactor = gcd(toFactor, base);
     if (testFactor != 1) {
         std::cout << "Chose non- relative prime: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
+        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - iterClock);
+        std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
         return 0;
     }
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, qubitCount * 2, 0);
+    QAluPtr qAlu = std::dynamic_pointer_cast<QAlu>(qReg);
+    // TODO: This shouldn't be necessary:
+    qReg->Finish();
 
     // This is the period-finding subroutine of Shor's algorithm.
     qReg->H(0, qubitCount);
-    qReg->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
+    qAlu->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
     qReg->IQFT(0, qubitCount);
 
-    bitCapInt y = qReg->MReg(0, qubitCount);
+    bitCapInt y = qReg->MAll() & (pow2(qubitCount) - ONE_BCI);
     if (y == 0) {
         std::cout << "Failed: y = 0 in period estimation subroutine." << std::endl;
+        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - iterClock);
+        std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
         return 0;
     }
     bitCapInt qubitPower = 1U << qubitCount;
@@ -124,7 +137,7 @@ int main()
     bitCapIntOcl res1 = f1;
     bitCapIntOcl res2 = f2;
     if (((f1 * f2) != toFactor) && ((f1 * f2) > 1) &&
-        (((int)((ONE_R1 * toFactor) / (f1 * f2)) * f1 * f2) == toFactor)) {
+        (((uint64_t)((ONE_R1 * toFactor) / (f1 * f2)) * f1 * f2) == toFactor)) {
         res1 = f1 * f2;
         res2 = toFactor / (f1 * f2);
     }
@@ -133,6 +146,9 @@ int main()
     } else {
         std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
     }
+    auto tClock =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
+    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
 
     return 0;
 }

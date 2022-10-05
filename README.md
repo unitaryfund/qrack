@@ -2,7 +2,7 @@
 
 
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3842287.svg)](https://doi.org/10.5281/zenodo.3842287) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing) [![Total alerts](https://img.shields.io/lgtm/alerts/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/context:cpp)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5812507.svg)](https://doi.org/10.5281/zenodo.5812507) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing) [![Total alerts](https://img.shields.io/lgtm/alerts/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/context:cpp)
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
@@ -44,7 +44,7 @@ Live version of the documentation, including API reference, can be obtained at: 
 
 Qrack has a community home at the Advanced Computing Topics server on Discord, at: https://discordapp.com/invite/Gj3CHDy
 
-For help getting started with contributing, see our [CONTRIBUTING.md](https://github.com/vm6502q/qrack/blob/doc_resources/CONTRIBUTING.md).
+For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## test/tests.cpp
 
@@ -88,6 +88,34 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
 
+## WebAssembly (WASM) builds
+
+By nature of its pure C++11 design, Qrack happens to offer excellent compatibility with Emscripten ("WebAssembly") projects. See [the qrack.net repository](https://github.com/vm6502q/qrack.net) for an example and [qrack.net](https://qrack.net) for a live demo. OpenCL GPU operation is not yet available for WASM builds. While CPU multithreading might be possible in WASM, it is advisable that `pthread` usage and linking is disabled for most conventional Web applications, with `-DENABLE_PTHREAD=OFF` in CMake:
+
+```sh
+emcmake cmake -DENABLE_RDRAND=OFF -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DUINTPOW=5 ..
+```
+
+`-DUINTPOW=5` is optional, but WASM RAM limitations currently preclude >=32 qubits of potentially entangled state vector, so 64 bit ket addressing is not necessary. However, `-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
+
+## Compiling to C from WASM
+
+Arbitrary Qrack executables will not all necessarily link, at this time. However, `wasm2c` can generate C code from Qrack executables and modules, and *some* will successfully link.
+
+For example, generate a `.c` module and a `.h` header from your build/examples directory:
+
+```sh
+wasm2c teleport.wasm -o teleport.c
+```
+
+Compile and link it from `wabt`, (though the command below assumes that `wabt` is already in your path).
+
+```sh
+cc -o teleport -Iwabt/wasm2c/ teleport.c wabt/wasm2c/wasm-rt-impl.c -lm
+```
+
+We apologize for providing an example that will not quite work. However, with `emcc` or `cc`, this is the general idea. Once the generated `.c` and `.h` file are syntactically valid, via modification of your original Qrack C++ program, then static linkage must be specified with `-l`, assuming appropriate libraries for static linkage are actually available. (Emscripten is under active development, and we thank its maintainers.)
+
 ## Performing code coverage
 
 ```sh
@@ -106,25 +134,39 @@ OpenCL device(s) can be specified by index in `Qrack::QInterface` subclass const
 ## Enable OpenCL device redistribution
 Setting the environment variable `QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE` to any value except a null string enables reactive load redistribution or balancing, in `QUnitMulti`. Otherwise, `QUnitMulti` only tries to balance load as opportunity arises when new separable `QEngineShard` instances are created.
 
+## Tune OpenCL preferred concurrency
+Preferred concurrency has a tunable offset with default value of `3`, with the environment variable setting `export QRACK_GPU_OFFSET_QB=[m]` for some (positive or negative) integer `m`. For each integer increment of `m`, the preferred concurrency is multiplied by 2. (Preferred concurrency is calculated as `pow2(ceil(log2(([GPU processing element count] * [preferred group size for the single qubit gate kernel, usually warp size])))) << QRACK_GPU_OFFSET_QB`.)
+
 ## QPager distributed simulation options
 `QPager` attempts to smartly allocate low qubit widths for maximum performance. For wider qubit simulations, based on `clinfo`, you can segment your maximum OpenCL accelerator state vector page allocation into global qubits with the environment variable `QRACK_SEGMENT_GLOBAL_QB=n`, where n is an integer >=0. The default n is 0, meaning that maximum allocation segment of your GPU RAM is a single page. (For 1 global qubit, one segment would have 2 pages, akin to 2 single amplitudes, therefore one "global qubit," or 4 pages for n=2, because 2^2=4, etc., by exponent.)
 
-`QRACK_DEVICE_GLOBAL_QB=n`, alternatively, lets the user also choose the performance "hint" for preferred global qubits per device. By default, n=2, for 2 global qubits or equivalently 4 pages per device. Despite the "hint," `QPager` will allocate fewer pages per OpenCL device for small-enough widths, to keep processing elements better occupied. Also, `QPager` will allocate more qubits than the hint, per device, if the maximum allocation segment is exceeded as specified by `QRACK_SEGMENT_GLOBAL_QB`.
+To set a maximum on how many qubits can be allocated on a single `QPager` instance, use the environment variable `QRACK_MAX_PAGING_QB`, for example, `export QRACK_MAX_PAGING_QB=30` to cause `QPager` to throw an exception that can be caught if it is asked to allocate 31 or more qubits. 
 
-If using `QPager` under the `QUnit` layer, then the environment variable `QRACK_QUNIT_PAGING_THRESHOLD` is the number of qubits in overall width at which `QUnit` will use paging, 21 qubits by default. `QRACK_MAX_PAGING_QB` sets a maximum qubit allocation *only* for instances of `QPager`, allowing `QUnit` simulations to more gracefully attempt greater than "Schrödinger method" simulation maximum widths, while other OpenCL types have automatic memory guards.
+To set the `QPager` device ID list, use the `QRACK_QPAGER_DEVICES` environment variable. This variable should contain an ordered list of Qrack OpenCL device IDs that should be automatically used in all `QPager` instances. Note that device IDs may be included multiple times in this list in order to achieve a simple form of load balancing. For example, since NVIDIA GPUs typically have 4 maximum allocation segments, a device list like `1,1,1,1,0,0,0,0` will allocate the first 4 maximum allocation segments on device `1` first, such that device `1` will be (roughly) 100% utilized before including any segments on device `0`. This list can also be written `4.1,4.0`, which means that 4 segments of `1` should be repeated before 4 segments of `0` are repeated. To repeat a pattern of multiple IDs, follow the multiplier with multiple `.` characters separating every ID in the pattern, like `4.1.0,4.2` for 4 repetitions of `1,0` followed by 4 repetitions of `2`. If device IDs are exhausted in the device list, `QPager` will automatically cycle the list as many times as it needs, to attempt higher segment count allocation.
+
+There are two special device IDs that can be specified in these lists: `-1` is global Qrack default device. `-2` indicates that `QInterface`-local constructor-specified device ID should be used. (For example, a device list argument of just `-2` will indicate that distribution choices should defer to those of `QUnitMulti`, if in use.)
+
+`QRACK_QPAGER_DEVICES_HOST_POINTER` corresponds to each device ID in `QRACK_QPAGER_DEVICES`, per sequential item in that other variable, (with the same syntax and list wrapping behavior). If the value of this is `0` for a page, that page attempts OpenCL _device_ RAM allocation; if the value is `1` for a page, that page attempts OpenCL _host_ RAM allocation. `0` value, device RAM, is suggested for GPUs; `1` value, host RAM, is suggested for CPUs and APUs (which use general host RAM, anyway). By default, all devices attempt on-device RAM allocation, if this environment variable is not specified.
+
+## QBdt options and opt-in for QBdt in default optimal layer stack
+When using "optimal" values from the layer type enum or command line options, Qrack simulators intelligently construct their optimization layer stack. `QBdt` ("quantum binary decision tree") happens to be able to serve an analogous role to `QPager` for single OpenCL devices with multiple max allocation segments, (typically in 4 segments). By default, `QBdt` is preferred. To prefer `QPager` in optimal stack as an alternative to single-device `QBdt`, set the environment variable `QRACK_QPAGER_DEVICES`. To specify that default device choices should be used, including as would work with `QUnitMulti`, set `QRACK_QPAGER_DEVICES=-2`, (as `-2` device ID represents the `QInterface`-local choice).
+
+`QBdt` automatically prefers the same number of "global qubits" as `QPager`, which is typically at least 2 qubits, to accommodate 4 maximum allocation segments on a single device. Depending on your application, `QBdt` might be most effective with more global qubits than this." To add more qubits relative to max single page width, set the environment variable `QRACK_SEGMENT_QBDT_QB` to the number of additional global qubits. Its default value is 5, which adds 5 global qubits to the 2 required for single device paging. If the default is too high to engage the GPU with `QHybrid`, it will be automatically lessened to the point of automatically engaging the GPU. If the requested number of global qubits exceeds the maximum number of qubits in a single page, all qubits will be global.
 
 ## Build and environment options for CPU engines
-`QEngineCPU` and `QHybrid` batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. (The default is n=9, which is approximately optimal on many typical PCs.) This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used.
+`QEngineCPU` and `QHybrid` batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used. (The default is meant to work well across different typical consumer systems, but it might benefit from system-tailored tuning via the environment variable.)
 
 `-DENABLE_QUNIT_CPU_PARALLEL=OFF` disables asynchronous dispatch of `QStabilizerHybrid` and low width `QEngineCPU`/`QHybrid` gates with `std::future`. This option is on by default. Typically, `QUnit` stays safely under maximum thread count limits, but situations arise where async CPU simulation causes `QUnit` to dispatch too many CPU threads for the operating system. This build option can also reduce overall thread usage when Qrack user code operates in a multi-threaded or multi-shell environment. (Linux thread count limits might be smaller than Windows.)
 
 ## Maximum allocation guard
-Set the maximum allowed allocation (in MB) for the global OpenCL pool with `QRACK_MAX_ALLOC_MB`. This includes (VRAM) state vectors and auxiliary buffers larger than approximately `sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl)`. This should also include out-of-place single duplication of any state vector. This does **not** include non-OpenCL general heap or stack allocation.
+Set the maximum allowed allocation (in MB) for the global OpenCL pool with `QRACK_MAX_ALLOC_MB`. Per OpenCL device, this sets each maximum allocation limit with the same syntax as `QRACK_QPAGER_DEVICES`. (Succesive entries in the list are MB limits numbered according to Qrack's device IDs print-out on launch.) By default, each device is capped at 3/4 of its available global memory, for stability in common use cases. This includes (VRAM) state vectors and auxiliary buffers larger than approximately `sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl)`. This should also include out-of-place single duplication of any state vector. This does **not** include non-OpenCL general heap or stack allocation.
 
-Note that this controls total direct Qrack OpenCL buffer allocation, not total Qrack library allocation. Total OpenCL buffer allocation is **not** fully indicative of total library allocation. In practice, experimentally observed total system allocation can be **less** than directly tracked OpenCL allocation amounts, and we therefore suggest **not** setting an environment allocation limit redundant with expectations for total available system RAM.
+`QRACK_MAX_PAGING_QB` and `QRACK_MAX_CPU_QB` environment variables set a maximum on how many qubits can be allocated on a single `QPager` or `QEngineCPU` instance, respectively. This qubit limit is for maximum single `QPager` or `QEngineCPU` allocation, whereas `QUnit` and `QUnitMulti` might allocate _more_ qubits than this as separable subsystems, requiring that no individual separable subsystem exceeds the qubit limit environment variables. (`QEngineOCL` limits are automatically maximal according to a query Qrack makes of maximum allocation segment on a given OpenCL device.)
+
+Note that this controls total direct Qrack OpenCL buffer allocation, not total Qrack library allocation. Total OpenCL buffer allocation is **not** fully indicative of total library allocation.
 
 ## Approximation options
-`QUnit` can optionally round qubit subsystems proactively or on-demand to the nearest Pauli and Bell basis eigenstates according to the `QRACK_QUNIT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]` environment variable, with a value between `0.0` and `0.5`. If a probability check under Pauli or Bell basis rotation brings a single qubit probability within parameter range of any X/Y/Z basis eigenstate, (distance from closer of 0.0 or 1.0,) then the subsystem will be rounded to that state. If the environment variable is set high enough that poles overlap, (greater than `(1-1/sqrt(2))/2`, approximately `0.1464466`,) then `QUnit` will cycle through X/Y/Z Pauli bases to find the best match to a mixed or pure state.
+`QUnit` can optionally round qubit subsystems proactively or on-demand to the nearest single or double qubit eigenstate with the `QRACK_QUNIT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]` environment variable, with a value between `0.0` and `0.5`. When trying to find separable subsystems, Qrack will start by making 3-axis (independent or conditional) probability measurements. Based on the probability measurements, under the assumption that the state _is_ separable, an inverse state preparation to |0> procedure is fixed. If inverse state preparation would bring any single qubit probability within parameter range of a |0> eigenstate, then the subsystem will be rounded to that state, normalized, and then "uncomputed" with the corresponding (forward) state preparation, effectively "hyperpolarizing" one and two qubit separable substates by replacing entanglement with local qubit Bloch sphere extent. (If 3-axis probability is _not_ within rounding range, nothing is done directly to the substate.)
 
 ## Vectorization optimization
 
@@ -133,12 +175,22 @@ $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
 Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
-## On-Chip Hardware Random Number Generation
+## Random number generation options (on-chip by default)
 
 ```sh
 $ cmake -DENABLE_RDRAND=OFF ..
 ```
 Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
+
+```sh
+$ cmake [-DENABLE_RDRAND=OFF] -DENABLE_DEVRAND=ON ..
+```
+Instead of RDRAND, use Linux `/dev/urandom/` as the Qrack random number source. (The necessary system call will only be available on Linux systems.)
+
+```sh
+$ cmake -DSEED_DEVRAND=OFF ..
+```
+If pure software pseudo-random number generator is used, it will be seeded from `/dev/random` by default. `-DSEED_DEVRAND=OFF` will use the system clock for Mersenne twister seeding, instead of `/dev/random`.
 
 ## Pure 32 bit OpenCL kernels (including OpenCL on Raspberry Pi 3)
 
@@ -157,9 +209,9 @@ Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations
 ## Variable floating point precision
 
 ```sh
-$ cmake [-FPPOW=n] ..
+$ cmake [-DFPPOW=n] ..
 ```
-Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 5^2=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels.
+Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 2^5=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels.
 
 ## Precompiled OpenCL kernels
 
@@ -173,7 +225,7 @@ The option to load and save precompiled binaries, and where to load them from, c
 ```cpp
 Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath());
 ```
-Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
+To use this method directly, _it needs to be called before any OpenCL simulators are created in the program,_ as initialization happens automatically upon creating any OpenCL simulator instance. Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
 
 ```cpp
 /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home".
@@ -188,19 +240,25 @@ $ cmake -DENABLE_VM6502Q_DEBUG=ON ..
 ```
 Qrack was originally written so that the disassembler of VM6502Q should show the classical expecation value of registers, following Ehrenfest's theorem. However, this incurs significant additional overhead for `QInterface::IndexedLDA()`, `QInterface::IndexedADC()`, and `QInterface::IndexedSBC()`. As such, this behavior in the VM6502Q disassembler is only supported when this CMake flag is specifically enabled. (It is off by default.) These three methods will return 0, if the flag is disabled.
 
-## Turn off BCD arithmetic logic unit operations
+## Turn on/off optional API components
 
 ```sh
-$ cmake -DENABLE_BCD=OFF ..
+$ cmake -DENABLE_BCD=OFF -DENABLE_REG_GATES=OFF -DENABLE_ROT_API=OFF -DENABLE_ALU=ON ..
 ```
 
-"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) On by default, turning this option off will slightly reduce binary size by excising BCD ALU operations from the API.
+Prior to the Qrack v7 API, a larger set of convenience methods were included in all builds, which increased the size of the library binary. By default, `ENABLE_REG_GATES`, `ENABLE_ROT_API` and  `ENABLE_BCD` all default to `OFF`, while `ENABLE_ALU` for arithmetic logic unit methods defaults to `ON`.
+
+`ENABLE_REG_GATES` adds various looped-over-width gates to the API, like the lengthwise `CNOT(control, target, length)` method. This method is a convenience wrapper on a loop of `CNOT` operations for `length`, starting from `control` and `target`, to `control + length - 1` and `target + length - 1`. These methods were seen as opportunities for optimization, at a much earlier point, but they have fallen out of internal use, and basically none of them are optimized as special cases, anymore. Disabling `ENABLE_REG_GATES` does **not** remove lengthwise `X(target, length)` and `H(target, length)` methods, as these specific convenience methods are still commonly used in the protected API, for negating or superposing across register width.
+
+`ENABLE_ROT_API` adds many less common **rotation** methods to the API, like dyadic fraction rotations. These never found common use in the protected API, while they add significant size to compiled binaries.
+
+"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) Off by default, turning this option on will slightly increase binary size by including BCD ALU operations from the API, but this is necessary to support the VM6502Q chip-like emulator project.
 
 ## Copyright, License, and Acknowledgements
 
-Copyright (c) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+Copyright (c) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
 
-Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of `QUnit` and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. For unit tests and benchmarks, Qrack uses Catch v2.13.7 under the Boost Software License, Version 1.0. The `QStabilizer` partial simulator "engine" is adapted from CHP by Scott Aaronson, for non-commercial use. Half precision floating point headers are provided by [http://half.sourceforge.net/](http://half.sourceforge.net/), with our thanks. GitHub user [paniash](https://github.com/paniash) has kindly contributed `README.md` styling and standardization. Thank you to all our PR contributors, tracked in GitHub, and thank you to the OSS community in general for supporting code, including [Adam Kelly](https://github.com/libtangle/qcgpu) and the [qulacs team](https://github.com/qulacs/qulacs), for Qiskit and Cirq interfaces. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).)
+Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of `QUnit` and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Special thanks go to Aryan Blaauw for his extensive systematic benchmark program, leading to much debugging and design feedback, while he spreads general good will about our community discussion space. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. For unit tests and benchmarks, Qrack uses Catch v2.13.7 under the Boost Software License, Version 1.0. The `QStabilizer` partial simulator "engine" is adapted from CHP by Scott Aaronson, for non-commercial use. Half precision floating point headers are provided by [http://half.sourceforge.net/](http://half.sourceforge.net/), with our thanks. GitHub user [paniash](https://github.com/paniash) has kindly contributed `README.md` styling and standardization. Thank you to all our PR contributors, tracked in GitHub, and thank you to the OSS community in general for supporting code, including [Adam Kelly](https://github.com/libtangle/qcgpu) and the [qulacs team](https://github.com/qulacs/qulacs), for Qiskit and Cirq interfaces. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).)
 
 We thank the Unitary Fund for its generous support, in a project to help standardize benchmarks across quantum computer simulator software!  Thank you to any and all contributors!
 

@@ -10,14 +10,14 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <fstream>
-#include <iostream> // For cout
-#include <string>
-
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 // "qneuron.hpp" defines the QNeuron class.
 #include "qneuron.hpp"
+
+#include <fstream>
+#include <iostream> // For cout
+#include <string>
 
 using namespace Qrack;
 
@@ -157,11 +157,11 @@ void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QIn
 
         if (permH.size() == 0) {
             for (i = 0; i < outputLayer.size(); i++) {
-                outputLayer[i]->LearnPermutation(row[0], etas[i] / rowCount);
+                outputLayer[i]->LearnPermutation(row[0], (real1_f)(etas[i] / rowCount));
             }
         } else {
             for (i = 0; i < outputLayer.size(); i++) {
-                outputLayer[i]->Learn(row[0], etas[i] / (rowCount * pow2Ocl(permH.size())));
+                outputLayer[i]->Learn(row[0], (real1_f)(etas[i] / (rowCount * pow2Ocl(permH.size()))));
             }
         }
     }
@@ -243,16 +243,16 @@ real1_f calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObser
     oFp = fp;
     totT = tp;
     totF = fp;
-    err = ((real1)fp) / rowCount;
+    err = ((real1_f)fp) / rowCount;
     optimumErr = err;
 
     std::set<real1>::iterator it = dfVals.begin();
     while (it != dfVals.end()) {
-        cutoff = *it;
+        cutoff = (real1_f)*it;
         it++;
 
-        lTp = (real1)tp / totT;
-        lFp = (real1)fp / totF;
+        lTp = (real1_f)tp / totT;
+        lFp = (real1_f)fp / totF;
 
         tp = 0;
         fp = 0;
@@ -275,18 +275,18 @@ real1_f calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObser
             }
         }
 
-        dTp = lTp - ((real1)tp / totT);
-        dFp = lFp - ((real1)fp / totF);
-        auc += dFp * (((real1)tp / totT) + (dTp / 2));
+        dTp = lTp - ((real1_f)tp / totT);
+        dFp = lFp - ((real1_f)fp / totF);
+        auc += dFp * (((real1_f)tp / totT) + (dTp / 2));
 
-        err = ((real1)((fp * fp) + (fn * fn))) / (rowCount * rowCount);
+        err = ((real1_f)((fp * fp) + (fn * fn))) / (rowCount * rowCount);
         if (err < optimumErr) {
             optimumErr = err;
 
             if (it == dfVals.end()) {
                 optimumCutoff = 1;
             } else {
-                optimumCutoff = cutoff + (((*it) - cutoff) / 2);
+                optimumCutoff = cutoff + ((((real1_f)*it) - cutoff) / 2);
             }
 
             oTp = tp;
