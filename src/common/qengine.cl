@@ -484,7 +484,7 @@ void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitC
             iHigh = (iHigh ^ iLow) << ONE_BCI;
         }
         i |= iHigh | cMask;
-        
+
         bitCapIntOcl perm = i & qMask;
         bitLenInt c;
         for (c = 0; perm; c++) {
@@ -717,11 +717,11 @@ void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
         qMask1 = qControlPower - ONE_BCI;
         qMask2 = qPower - ONE_BCI;
     }
-    
+
     real1 oneChancePart = ZERO_R1;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        PUSH_APART_2()    
+        PUSH_APART_2()
         i |= qPower | qControlMask;
         const cmplx amp = stateVec[i];
         oneChancePart += dot(amp, amp);
