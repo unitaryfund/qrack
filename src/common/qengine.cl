@@ -377,7 +377,6 @@ void kernel invertsinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, c
     APPLY_INVERT()
 }
 
-
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     constant bitCapIntOcl* qPowers, global cmplx4* mtrxs, constant real1* nrmIn, global real1* sumBuffer,
     local real1* lBuffer)
@@ -407,7 +406,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
         bitCapIntOcl jHigh = offset;
         bitCapIntOcl j = 0;
         for (bitLenInt p = 0; p < mtrxSkipLen; p++) {
-            bitCapIntOcl jLow = jHigh & (qPowers[controlLen + p] - ONE_BCI);
+            const bitCapIntOcl jLow = jHigh & (qPowers[controlLen + p] - ONE_BCI);
             j |= jLow;
             jHigh = (jHigh ^ jLow) << ONE_BCI;
         }
@@ -484,7 +483,7 @@ void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitC
             iHigh = (iHigh ^ iLow) << ONE_BCI;
         }
         i |= iHigh | cMask;
-        
+
         bitCapIntOcl perm = i & qMask;
         bitLenInt c;
         for (c = 0; perm; c++) {
@@ -717,11 +716,11 @@ void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
         qMask1 = qControlPower - ONE_BCI;
         qMask2 = qPower - ONE_BCI;
     }
-    
+
     real1 oneChancePart = ZERO_R1;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        PUSH_APART_2()    
+        PUSH_APART_2()
         i |= qPower | qControlMask;
         const cmplx amp = stateVec[i];
         oneChancePart += dot(amp, amp);
