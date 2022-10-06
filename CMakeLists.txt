@@ -135,7 +135,12 @@ message ("Environment variable usage is: ${ENABLE_ENV_VARS}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
 
-set(QRACK_CUDA_COMPILE_OPTS -O3 -Werror all-warnings)
+if (QBCAPPOW GREATER 6)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -Xcompiler -fpermissive)
+else (QBCAPPOW GREATER 6)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -Werror all-warnings)
+endif (QBCAPPOW GREATER 6)
+
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
     set(TEST_COMPILE_OPTS -std=c++11 -Wall)
