@@ -1099,3 +1099,4 @@ __global__ void rol(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCm
         nStateVec[lcv] = stateVec[((((regInt >> shift) | (regInt << (length - shift))) & lengthMask) << start) | (lcv & otherMask)];
     }
 }
+} //namespace Qrack
