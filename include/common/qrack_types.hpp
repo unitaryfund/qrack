@@ -76,7 +76,7 @@
 
 #if ENABLE_CUDA
 #include <cuda_runtime.h>
-#if QBCAPPOW < 5
+#if FPPOW < 5
 #define qCudaReal1 half
 #define qCudaReal2 half2
 #define qCudaReal4 half4
@@ -84,7 +84,7 @@
 #define qCudaCmplx2 half4
 #define make_qCudaCmplx make_half2
 #define make_qCudaCmplx2 make_half4
-#elif QBCAPPOW < 6
+#elif FPPOW < 6
 #define qCudaReal1 float
 #define qCudaReal2 float2
 #define qCudaReal4 float4

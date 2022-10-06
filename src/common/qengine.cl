@@ -407,7 +407,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
         bitCapIntOcl jHigh = offset;
         bitCapIntOcl j = 0;
         for (bitLenInt p = 0; p < mtrxSkipLen; p++) {
-            bitCapIntOcl jLow = jHigh & (qPowers[controlLen + p] - ONE_BCI);
+            const bitCapIntOcl jLow = jHigh & (qPowers[controlLen + p] - ONE_BCI);
             j |= jLow;
             jHigh = (jHigh ^ jLow) << ONE_BCI;
         }

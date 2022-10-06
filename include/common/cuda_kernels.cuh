@@ -13,17 +13,17 @@
 #include "common/qrack_types.hpp"
 
 namespace Qrack {
-__global__ void apply2x2(qCudaCmplx* stateVec, qCudaReal1*cmplxPtr, bitCapIntOcl* bitCapIntOclPtr,
+__global__ void apply2x2(qCudaCmplx* stateVec, qCudaReal1* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr,
     bitCapIntOcl* qPowersSorted);
-__global__ void apply2x2single(qCudaCmplx* stateVec, qCudaReal1*cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
-__global__ void apply2x2double(qCudaCmplx* stateVec, qCudaReal1*cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
-__global__ void apply2x2wide(qCudaCmplx* stateVec, qCudaReal1*cmplxPtr, bitCapIntOcl* bitCapIntOclPtr,
+__global__ void apply2x2single(qCudaCmplx* stateVec, qCudaReal1* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
+__global__ void apply2x2double(qCudaCmplx* stateVec, qCudaReal1* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
+__global__ void apply2x2wide(qCudaCmplx* stateVec, qCudaReal1* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr,
     bitCapIntOcl* qPowersSorted);
-__global__ void apply2x2singlewide(qCudaCmplx* stateVec, qCudaReal1*cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
-__global__ void apply2x2doublewide(qCudaCmplx* stateVec, qCudaReal1*cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
-__global__ void apply2x2normsingle(qCudaCmplx* stateVec, qCudaReal1*cmplxPtr, bitCapIntOcl* bitCapIntOclPtr,
+__global__ void apply2x2singlewide(qCudaCmplx* stateVec, qCudaReal1* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
+__global__ void apply2x2doublewide(qCudaCmplx* stateVec, qCudaReal1* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
+__global__ void apply2x2normsingle(qCudaCmplx* stateVec, qCudaReal1* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr,
     qCudaReal1* sumBuffer, qCudaReal1* lBuffer);
-__global__ void apply2x2normsinglewide(qCudaCmplx* stateVec, qCudaReal1*cmplxPtr,
+__global__ void apply2x2normsinglewide(qCudaCmplx* stateVec, qCudaReal1* cmplxPtr,
     bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer, qCudaReal1* lBuffer);
 __global__ void xsingle(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void xsinglewide(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr);
@@ -36,8 +36,8 @@ __global__ void phasesinglewide(qCudaCmplx* stateVec, qCudaCmplx* cmplxPtr, bitC
 __global__ void invertsingle(qCudaCmplx* stateVec, qCudaCmplx* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void invertsinglewide(qCudaCmplx* stateVec, qCudaCmplx* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void uniformlycontrolled(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
-    bitCapIntOcl* qPowers, global cmplx4* mtrxs, qCudaReal1*nrmIn, qCudaReal1* sumBuffer,
-    qCudaReal1* lBuffer);
+    bitCapIntOcl* qPowers, qCudaReal1* mtrxs, qCudaReal1* nrmIn,
+    qCudaReal1* nrmParts, qCudaReal1* lBuffer);
 __global__ void uniformparityrz(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* cmplx_ptr);
 __global__ void uniformparityrznorm(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* cmplx_ptr);
 __global__ void cuniformparityrz(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* cmplx_ptr, bitCapIntOcl* qPowers);
@@ -58,7 +58,7 @@ __global__ void dispose(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCu
 __global__ void prob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
     qCudaReal1* lBuffer);
 __global__ void cprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
-    qudaReal1* lBuffer);
+    qCudaReal1* lBuffer);
 __global__ void probreg(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
     qCudaReal1* lBuffer);
 __global__ void probregall(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer);
