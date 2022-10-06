@@ -147,6 +147,7 @@ __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a)
     stateVec[i | OFFSET2_ARG] = make_qCudaCmplx(mulRes.z, mulRes.w);
 
 #define SUM_LOCAL(part)                                                                                                \
+    extern __shared__ qCudaReal1 lBuffer[];                                                                            \
     const bitCapIntOcl locID = threadIdx.x;                                                                            \
     const bitCapIntOcl locNthreads = blockDim.x;                                                                       \
     lBuffer[locID] = part;                                                                                             \
@@ -233,7 +234,7 @@ __global__ void apply2x2doublewide(qCudaCmplx* stateVec, qCudaReal1* qCudaCmplxP
 }
 
 __global__ void apply2x2normsingle(qCudaCmplx* stateVec, qCudaReal1* qCudaCmplxPtr, bitCapIntOcl* bitCapIntOclPtr,
-    qCudaReal1* sumBuffer, qCudaReal1* lBuffer)
+    qCudaReal1* sumBuffer)
 {
     PREP_2X2()
     PREP_2X2_NORM()
@@ -250,7 +251,7 @@ __global__ void apply2x2normsingle(qCudaCmplx* stateVec, qCudaReal1* qCudaCmplxP
 }
 
 __global__ void apply2x2normsinglewide(qCudaCmplx* stateVec, qCudaReal1* qCudaCmplxPtr,
-    bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer, qCudaReal1* lBuffer)
+    bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer)
 {
     PREP_2X2_WIDE()
     PREP_2X2_NORM()
@@ -404,7 +405,7 @@ __global__ void invertsinglewide(qCudaCmplx* stateVec, qCudaCmplx* qCudaCmplxPtr
 
 __global__ void uniformlycontrolled(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
     bitCapIntOcl* qPowers, qCudaReal1* mtrxs, qCudaReal1* nrmIn,
-    qCudaReal1* sumBuffer, qCudaReal1* lBuffer)
+    qCudaReal1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -699,8 +700,7 @@ __global__ void dispose(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCu
     }
 }
 
-__global__ void prob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
-    qCudaReal1* lBuffer)
+__global__ void prob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -719,8 +719,7 @@ __global__ void prob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaR
     SUM_LOCAL(oneChancePart)
 }
 
-__global__ void cprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
-    qCudaReal1* lBuffer)
+__global__ void cprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -748,8 +747,7 @@ __global__ void cprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCuda
     SUM_LOCAL(oneChancePart)
 }
 
-__global__ void probreg(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
-    qCudaReal1* lBuffer)
+__global__ void probreg(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -793,7 +791,7 @@ __global__ void probregall(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, 
 }
 
 __global__ void probmask(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
-    bitCapIntOcl* qPowers, qCudaReal1* lBuffer)
+    bitCapIntOcl* qPowers)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -857,8 +855,7 @@ __global__ void probmaskall(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
     }
 }
 
-__global__ void probparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
-    qCudaReal1* lBuffer)
+__global__ void probparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer)
 {
 
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
@@ -884,8 +881,7 @@ __global__ void probparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, 
     SUM_LOCAL(oneChancePart)
 }
 
-__global__ void forcemparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer,
-    qCudaReal1* lBuffer)
+__global__ void forcemparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -913,8 +909,7 @@ __global__ void forcemparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr
     SUM_LOCAL(oneChancePart)
 }
 
-__global__ void expperm(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, bitCapIntOcl* bitPowers, qCudaReal1* sumBuffer,
-    qCudaReal1* lBuffer)
+__global__ void expperm(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, bitCapIntOcl* bitPowers, qCudaReal1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -966,7 +961,7 @@ __global__ void nrmlzewide(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, 
 }
 
 __global__ void updatenorm(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1*args_ptr,
-    qCudaReal1* sumBuffer, qCudaReal1* lBuffer)
+    qCudaReal1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -986,7 +981,7 @@ __global__ void updatenorm(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, 
 }
 
 __global__ void approxcompare(qCudaCmplx* stateVec1, qCudaCmplx* stateVec2, bitCapIntOcl* bitCapIntOclPtr,
-    qCudaCmplx* sumBuffer, qCudaCmplx* lBuffer)
+    qCudaCmplx* sumBuffer)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -997,20 +992,21 @@ __global__ void approxcompare(qCudaCmplx* stateVec1, qCudaCmplx* stateVec2, bitC
         partInner = make_qCudaCmplx(partInner.x + prod.x, partInner.y + prod.y);
     }
 
+    extern __shared__ qCudaCmplx lCmplxBuffer[];
     const bitCapIntOcl locID = threadIdx.x;
     const bitCapIntOcl locNthreads = blockDim.x;
-    lBuffer[locID] = partInner;
+    lCmplxBuffer[locID] = partInner;
 
     for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
         __syncthreads();
         if (locID < lcv) {
-            const qCudaCmplx a = lBuffer[locID];
-            const qCudaCmplx b = lBuffer[locID + lcv];
-            lBuffer[locID] = make_qCudaCmplx(a.x + b.x, a.y + b.y);
+            const qCudaCmplx a = lCmplxBuffer[locID];
+            const qCudaCmplx b = lCmplxBuffer[locID + lcv];
+            lCmplxBuffer[locID] = make_qCudaCmplx(a.x + b.x, a.y + b.y);
         }
     }
     if (locID == 0U) {
-        sumBuffer[blockIdx.x] = lBuffer[0];
+        sumBuffer[blockIdx.x] = lCmplxBuffer[0];
     }
 }
 
