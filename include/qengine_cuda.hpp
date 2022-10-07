@@ -189,8 +189,7 @@ protected:
     int64_t deviceID;
     cl_map_flags lockSyncFlags;
     complex permutationAmp;
-    std::shared_ptr<complex> hStateVec;
-    std::shared_ptr<complex> dStateVec;
+    std::shared_ptr<complex> stateVec;
     std::mutex queue_mutex;
     cl::CommandQueue queue;
     cl::Context context;
@@ -515,7 +514,7 @@ protected:
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount);
-    void FreeStateVec() { hStateVec = NULL; }
+    void FreeStateVec() { stateVec = NULL; }
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
     void ReinitBuffer();
