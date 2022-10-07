@@ -230,11 +230,10 @@ public:
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
         EventVecPtr waitVec = std::move(wait_events);
-        wait_events =
-            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>(), [](std::vector<cl::Event>* vec) {
-                vec->clear();
-                delete vec;
-            });
+        wait_events = EventVecPtr(new EventVec(), [](EventVec* vec) {
+            vec->clear();
+            delete vec;
+        });
         return waitVec;
     }
 
