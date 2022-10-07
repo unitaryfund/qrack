@@ -169,11 +169,11 @@ private:
 
 class OCLDeviceContext {
 public:
-    cl::Platform platform;
-    cl::Device device;
-    cl::Context context;
-    int64_t context_id;
-    int64_t device_id;
+    const cl::Platform platform;
+    const cl::Device device;
+    const cl::Context context;
+    const int64_t context_id;
+    const int64_t device_id;
     cl::CommandQueue queue;
     EventVecPtr wait_events;
 
