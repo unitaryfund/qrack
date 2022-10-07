@@ -211,7 +211,10 @@ public:
         cl_int error;
         queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
         if (error != CL_SUCCESS) {
-            queue = cl::CommandQueue(context, d);
+            queue = cl::CommandQueue(context, d, 0, &error);
+            if (error != CL_SUCCESS) {
+                throw std::runtime_error("Failed to create OpenCL command queue!");
+            }
         }
 
         wait_events =
