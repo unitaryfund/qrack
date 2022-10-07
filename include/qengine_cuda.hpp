@@ -50,7 +50,7 @@ public:
     const char* what() const noexcept { return m.c_str(); }
 };
 
-typedef std::shared_ptr<cl::Buffer> BufferPtr;
+typedef std::shared_ptr<void*> BufferPtr;
 
 class QEngineCUDA;
 
@@ -135,22 +135,17 @@ struct PoolItem {
 
     BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
-        cl_int error;
-        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
-        if (error != CL_SUCCESS) {
-            if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
-                throw bad_alloc("CL_MEM_OBJECT_ALLOCATION_FAILURE in PoolItem::MakeBuffer()");
-            }
-            if (error == CL_OUT_OF_HOST_MEMORY) {
-                throw bad_alloc("CL_OUT_OF_HOST_MEMORY in PoolItem::MakeBuffer()");
-            }
-            if (error == CL_INVALID_BUFFER_SIZE) {
-                throw bad_alloc("CL_INVALID_BUFFER_SIZE in PoolItem::MakeBuffer()");
-            }
-            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
-        }
+        return BufferPtr(
+            [size] {
+                void* toRet;
+                cudaError_t error = cudaMalloc(&toRet, size);
+                if (error != cudaSuccess) {
+                    throw std::runtime_error("CUDA error code on buffer allocation attempt: " + std::to_string(error));
+                }
 
-        return toRet;
+                return toRet;
+            },
+            [](complex* c) { cudaFree(c); });
     }
 
     PoolItem(cl::Context& context)
@@ -188,14 +183,14 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
 class QEngineCUDA : public QEngine {
 protected:
     bool unlockHostMem;
-    cl_int callbackError;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t totalOclAllocSize;
     int64_t deviceID;
     cl_map_flags lockSyncFlags;
     complex permutationAmp;
-    std::shared_ptr<complex> stateVec;
+    std::shared_ptr<complex> hStateVec;
+    std::shared_ptr<complex> dStateVec;
     std::mutex queue_mutex;
     cl::CommandQueue queue;
     cl::Context context;
@@ -210,36 +205,9 @@ protected:
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
 
-#if defined(__APPLE__)
-    real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)
-    {
-        void* toRet;
-        posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
-        return (real1*)toRet;
-    }
-#endif
-
-    void checkCallbackError(bool unlockWaitEvents = false)
-    {
-        if (callbackError == CL_SUCCESS) {
-            return;
-        }
-
-        if (unlockWaitEvents) {
-            device_context->UnlockWaitEvents();
-        }
-
-        wait_queue_items.clear();
-        wait_refs.clear();
-
-        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(callbackError));
-    }
-
     // For std::function, cl_int use might discard int qualifiers.
-    void tryOcl(std::string message, std::function<int()> oclCall, bool unlockWaitEvents = false)
+    void tryCuda(std::string message, std::function<int()> oclCall, bool unlockWaitEvents = false)
     {
-        checkCallbackError(unlockWaitEvents);
-
         if (oclCall() == CL_SUCCESS) {
             // Success
             return;
@@ -341,7 +309,6 @@ public:
         // For lock_guard:
         if (true) {
             std::lock_guard<std::mutex> lock(queue_mutex);
-            checkCallbackError();
             isBase = !wait_queue_items.size();
             wait_queue_items.push_back(item);
         }
@@ -512,48 +479,43 @@ protected:
 
     BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
-        checkCallbackError();
+        return BufferPtr(
+            [size] {
+                void* toRet;
+                cudaError_t error = cudaMalloc(&toRet, size);
+                if (error == CL_SUCCESS) {
+                    // Success
+                    return toRet;
+                }
 
-        cl_int error;
-        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
-        if (error == CL_SUCCESS) {
-            // Success
-            return toRet;
-        }
+                // Soft finish (just for this QEngineCUDA)
+                clFinish();
 
-        // Soft finish (just for this QEngineCUDA)
-        clFinish();
+                error = cudaMalloc(&toRet, size);
+                if (error == cudaSuccess) {
+                    // Success after clearing QEngineCUDA queue
+                    return toRet;
+                }
 
-        toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
-        if (error == CL_SUCCESS) {
-            // Success after clearing QEngineCUDA queue
-            return toRet;
-        }
+                // Hard finish (for the unique OpenCL device)
+                clFinish(true);
 
-        // Hard finish (for the unique OpenCL device)
-        clFinish(true);
+                error = cudaMalloc(&toRet, size);
 
-        toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
-        if (error != CL_SUCCESS) {
-            if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
-                throw bad_alloc("CL_MEM_OBJECT_ALLOCATION_FAILURE in QEngineCUDA::MakeBuffer()");
-            }
-            if (error == CL_OUT_OF_HOST_MEMORY) {
-                throw bad_alloc("CL_OUT_OF_HOST_MEMORY in QEngineCUDA::MakeBuffer()");
-            }
-            if (error == CL_INVALID_BUFFER_SIZE) {
-                throw bad_alloc("CL_INVALID_BUFFER_SIZE in QEngineCUDA::MakeBuffer()");
-            }
-            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
-        }
+                if (error != CL_SUCCESS) {
+                    throw std::runtime_error(
+                        "OpenCL error code on buffer allocation attempt: " + std::to_string(error));
+                }
 
-        return toRet;
+                return toRet;
+            },
+            [](complex* c) { cudaFree(c); });
     }
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount);
-    void FreeStateVec() { stateVec = NULL; }
+    void FreeStateVec() { hStateVec = NULL; }
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
     void ReinitBuffer();
