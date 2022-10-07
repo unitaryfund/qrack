@@ -35,13 +35,13 @@ typedef std::shared_ptr<CUDADeviceContext> DeviceContextPtr;
 class CUDADeviceContext {
 public:
     int64_t device_id;
-    cudaStream_t stream;
-    cudaDeviceProp properties;
 
 private:
     size_t globalLimit;
     size_t preferredSizeMultiple;
     size_t preferredConcurrency;
+    cudaStream_t stream;
+    cudaDeviceProp properties;
 
 public:
     CUDADeviceContext(int64_t dev_id, int64_t maxAlloc = -1)
@@ -103,6 +103,8 @@ public:
     size_t GetMaxAlloc() { return properties.totalGlobalMem; }
     size_t GetGlobalSize() { return properties.totalGlobalMem; }
     size_t GetGlobalAllocLimit() { return globalLimit; }
+
+    cudaStream_t GetDeviceStream() { return stream; }
 
     friend class CUDAEngine;
 };
