@@ -34,7 +34,7 @@ typedef std::shared_ptr<CUDADeviceContext> DeviceContextPtr;
 
 class CUDADeviceContext {
 public:
-    int64_t device_id;
+    const int64_t device_id;
 
 private:
     size_t globalLimit;
