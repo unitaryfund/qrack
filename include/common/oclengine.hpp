@@ -217,11 +217,10 @@ public:
             }
         }
 
-        wait_events =
-            EventVecPtr(new EventVec(), [](EventVec* vec) {
-                vec->clear();
-                delete vec;
-            });
+        wait_events = EventVecPtr(new EventVec(), [](EventVec* vec) {
+            vec->clear();
+            delete vec;
+        });
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(*(mutexes[call]), calls[call]); }

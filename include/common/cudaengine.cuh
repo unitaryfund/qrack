@@ -31,11 +31,17 @@ namespace Qrack {
 
 class CUDADeviceContext;
 typedef std::shared_ptr<CUDADeviceContext> DeviceContextPtr;
+typedef std::vector<cudaEvent_t> EventVec;
+typedef std::shared_ptr<std::vector<cudaEvent_t>> EventVecPtr;
 
 class CUDADeviceContext {
 public:
     const int64_t device_id;
     cudaStream_t stream;
+    EventVecPtr wait_events;
+
+protected:
+    std::mutex waitEventsMutex;
 
 private:
     size_t globalLimit;
@@ -61,9 +67,38 @@ public:
         }
 
         cudaGetDeviceProperties(&properties, device_id);
+
+        wait_events = EventVecPtr(new EventVec(), [](EventVec* vec) {
+            vec->clear();
+            delete vec;
+        });
     }
 
-    void WaitOnAllEvents() { cudaStreamSynchronize(stream); }
+    EventVecPtr ResetWaitEvents()
+    {
+        std::lock_guard<std::mutex> guard(waitEventsMutex);
+        EventVecPtr waitVec = std::move(wait_events);
+        wait_events = EventVecPtr(new EventVec(), [](EventVec* vec) {
+            vec->clear();
+            delete vec;
+        });
+        return waitVec;
+    }
+
+    void LockWaitEvents() { waitEventsMutex.lock(); }
+
+    void UnlockWaitEvents() { waitEventsMutex.unlock(); }
+
+    void WaitOnAllEvents()
+    {
+        std::lock_guard<std::mutex> guard(waitEventsMutex);
+        if (wait_events.get()->size()) {
+            for (size_t i = 0U; i < wait_events.get()->size(); ++i) {
+                cudaEventSynchronize((*wait_events)[i]);
+            }
+            wait_events->clear();
+        }
+    }
 
     size_t GetPreferredSizeMultiple()
     {
