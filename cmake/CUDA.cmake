@@ -29,6 +29,7 @@ if (ENABLE_CUDA)
     
     # Add the CUDA objects to the library
     target_sources (qrack PRIVATE
+        src/common/cudaengine.cu
         src/common/qengine.cu
         src/qengine/cuda.cu
         )

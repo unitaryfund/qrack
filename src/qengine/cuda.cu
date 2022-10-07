@@ -70,9 +70,9 @@ namespace Qrack {
         return;                                                                                                        \
     }
 
-QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int64_t devID, bool useHardwareRNG, bool ignored, real1_f norm_thresh,
-    std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
+QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
+    bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t devID, bool useHardwareRNG, bool ignored,
+    real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , unlockHostMem(false)
     , callbackError(CL_SUCCESS)
@@ -304,7 +304,7 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
         wait_refs.clear();
     } else {
         unlockHostMem = false;
-        stateVec = AllocStateVec(maxQPowerOcl, true);
+        stateVec = AllocStateVec(maxQPowerOcl);
         if (lockSyncFlags & CL_MAP_READ) {
             DISPATCH_BLOCK_READ(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, stateVec.get());
         }
@@ -634,7 +634,7 @@ void QEngineCUDA::SetDevice(int64_t dID)
     } else {
         // In this branch, the QEngineCUDA is first being initialized, and no data needs to be copied between device
         // contexts.
-        stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
+        stateVec = AllocStateVec(maxQPowerOcl);
         stateBuffer = MakeStateVecBuffer(stateVec);
     }
 }
@@ -1286,12 +1286,11 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-    const bool forceAlloc = !stateVec && ((OclMemDenom * nStateVecSize) > device_context->GetGlobalSize());
 
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl, forceAlloc);
+    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     toCopy->clFinish();
@@ -1398,7 +1397,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
         SetQubitCount(0U);
         // This will be cleared by the destructor:
         SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
-        stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
+        stateVec = AllocStateVec(maxQPowerOcl);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
         return;
@@ -2110,8 +2109,8 @@ void QEngineCUDA::INT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitL
 }
 
 /// Add or Subtract integer (without sign or carry, with controls)
-void QEngineCUDA::CINT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, const bitLenInt* controls,
-    bitLenInt controlLen)
+void QEngineCUDA::CINT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length,
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QEngineCUDA::CINT range is out-of-bounds!");
@@ -2609,7 +2608,8 @@ void QEngineCUDA::xMULx(OCLAPI api_call, const bitCapIntOcl* bciArgs, BufferPtr 
     ResetStateBuffer(nStateBuffer);
 }
 
-void QEngineCUDA::MULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+void QEngineCUDA::MULx(
+    OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCUDA::MULx range is out-of-bounds!");
@@ -3215,30 +3215,15 @@ complex* _aligned_state_vec_alloc(bitCapIntOcl allocSize)
 }
 #endif
 
-std::shared_ptr<complex> QEngineCUDA::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
+std::shared_ptr<complex> QEngineCUDA::AllocStateVec(bitCapInt elemCount)
 {
-    // If we're not using host ram, there's no reason to allocate.
-    if (!elemCount || (!doForceAlloc && !stateVec)) {
-        return NULL;
-    }
-
-#if defined(__ANDROID__)
-    return std::shared_ptr<complex>(elemCount);
-#else
-    // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
-    size_t allocSize = sizeof(complex) * (size_t)elemCount;
-    if (allocSize < QRACK_ALIGN_SIZE) {
-        allocSize = QRACK_ALIGN_SIZE;
-    }
-#if defined(__APPLE__)
-    return std::shared_ptr<complex>(_aligned_state_vec_alloc(allocSize), [](complex* c) { free(c); });
-#elif defined(_WIN32) && !defined(__CYGWIN__)
     return std::shared_ptr<complex>(
-        (complex*)_aligned_malloc(allocSize, QRACK_ALIGN_SIZE), [](complex* c) { _aligned_free(c); });
-#else
-    return std::shared_ptr<complex>((complex*)aligned_alloc(QRACK_ALIGN_SIZE, allocSize), [](complex* c) { free(c); });
-#endif
-#endif
+        [elemCount] {
+            complex* toRet;
+            cudaMalloc((void**)&toRet, sizeof(complex) * elemCount);
+            return toRet;
+        },
+        [](complex* c) { cudaFree(c); });
 }
 
 BufferPtr QEngineCUDA::MakeStateVecBuffer(std::shared_ptr<complex> nStateVec)
@@ -3258,7 +3243,7 @@ BufferPtr QEngineCUDA::MakeStateVecBuffer(std::shared_ptr<complex> nStateVec)
 void QEngineCUDA::ReinitBuffer()
 {
     AddAlloc(sizeof(complex) * maxQPowerOcl);
-    stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
+    stateVec = AllocStateVec(maxQPowerOcl);
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
 }
 

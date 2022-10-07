@@ -18,7 +18,11 @@
 #error CUDA has not been enabled
 #endif
 
-#include "common/oclengine.hpp"
+// These should go in the device-management singleton:
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+
+// #include "common/oclengine.hpp"
 #include "qengine.hpp"
 
 #include <list>
@@ -183,7 +187,6 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  */
 class QEngineCUDA : public QEngine {
 protected:
-    bool usingHostRam;
     bool unlockHostMem;
     cl_int callbackError;
     size_t nrmGroupCount;
@@ -549,7 +552,7 @@ protected:
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
-    std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount);
     void FreeStateVec() { stateVec = NULL; }
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);

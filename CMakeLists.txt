@@ -230,6 +230,7 @@ install (FILES
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
     include/common/oclengine.hpp
+    include/common/cudaengine.hpp
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
     include/common/cuda_kernels.cuh
