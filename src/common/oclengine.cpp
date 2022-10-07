@@ -55,7 +55,7 @@ namespace Qrack {
 DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t& dev)
 {
     if ((dev >= GetDeviceCount()) || (dev < -1)) {
-        throw "Invalid OpenCL device selection";
+        throw std::invalid_argument("Invalid OpenCL device selection");
     } else if (dev == -1) {
         return default_device_context;
     } else {

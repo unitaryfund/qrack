@@ -377,7 +377,6 @@ void kernel invertsinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, c
     APPLY_INVERT()
 }
 
-
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     constant bitCapIntOcl* qPowers, global cmplx4* mtrxs, constant real1* nrmIn, global real1* sumBuffer,
     local real1* lBuffer)
