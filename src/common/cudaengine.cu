@@ -68,10 +68,12 @@ InitCUDAResult CUDAEngine::InitCUDA(
     }
 
     std::vector<cudaDeviceProp> deviceProps;
+    std::vector<DeviceContextPtr> all_dev_contexts;
     for (int i = 0; i < deviceCount; ++i) {
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, i);
         deviceProps.push_back(prop);
+        all_dev_contexts.push_back(std::make_shared<CUDADeviceContext>(i, maxAllocVec[i % maxAllocVec.size()]));
     }
 
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
@@ -80,7 +82,7 @@ InitCUDAResult CUDAEngine::InitCUDA(
         std::cout << "CUDA device #" << i << ": " << deviceProps[dev].name << "\n";
     }
 
-    return InitCUDAResult(all_dev_contexts, default_dev_context);
+    return InitCUDAResult(all_dev_contexts, all_dev_contexts[dev]);
 }
 
 CUDAEngine::CUDAEngine()
