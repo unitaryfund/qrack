@@ -20,17 +20,11 @@
 #error CUDA has not been enabled
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#include <direct.h>
-#endif
-
 #include <cuda_runtime.h>
 
 #include <map>
 #include <memory>
 #include <mutex>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <vector>
 
 namespace Qrack {
