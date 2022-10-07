@@ -218,7 +218,7 @@ public:
         }
 
         wait_events =
-            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>(), [](std::vector<cl::Event>* vec) {
+            EventVecPtr(new EventVec(), [](EventVec* vec) {
                 vec->clear();
                 delete vec;
             });
@@ -245,7 +245,7 @@ public:
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
         if ((wait_events.get())->size()) {
-            cl::Event::waitForEvents((const std::vector<cl::Event>&)*(wait_events.get()));
+            cl::Event::waitForEvents((const EventVec&)*(wait_events.get()));
             wait_events->clear();
         }
     }
