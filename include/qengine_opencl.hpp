@@ -507,7 +507,7 @@ protected:
         totalOclAllocSize -= size;
     }
 
-    BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
         checkCallbackError();
 
