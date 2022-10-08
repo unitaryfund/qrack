@@ -350,7 +350,7 @@ void QEngineCUDA::clFinish(bool doHard)
     }
 
     if (doHard) {
-        tryCuda("Failed to finish queue", [&] { return queue.finish(); });
+        tryCuda("Failed to finish queue", [&] { return cudaStreamSynchronize(queue); });
     } else {
         device_context->WaitOnAllEvents();
         checkCallbackError();
@@ -408,7 +408,10 @@ void QEngineCUDA::WaitCall(
     clFinish();
 }
 
-void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data) { ((QEngineCUDA*)user_data)->PopQueue(); }
+cudaStreamCallback_t _PopQueue(cudaStream_t stream, cudaError_t status, void* user_data)
+{
+    ((QEngineCUDA*)user_data)->PopQueue();
+}
 
 void QEngineCUDA::PopQueue()
 {
@@ -529,7 +532,6 @@ void QEngineCUDA::SetDevice(int64_t dID)
 
     clFinish();
 
-    const int64_t oldContextId = device_context ? device_context->context_id : 0;
     const DeviceContextPtr nDeviceContext = CUDAEngine::Instance().GetDeviceContextPtr(dID);
     const int64_t defDevId = (int)CUDAEngine::Instance().GetDefaultDeviceID();
 
@@ -549,7 +551,6 @@ void QEngineCUDA::SetDevice(int64_t dID)
 
     device_context = nDeviceContext;
     deviceID = dID;
-    queue = device_context->queue;
 
     // If the user wants not to use host RAM, but we can't allocate enough on the device, fall back to host RAM anyway.
 #if ENABLE_OCL_MEM_GUARDS
@@ -605,38 +606,6 @@ void QEngineCUDA::SetDevice(int64_t dID)
         AddAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
     }
     powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
-
-    // If this is the same context, then all other buffers are valid.
-    if (oldContextId == nDeviceContext->context_id) {
-        return;
-    }
-
-    // create buffers on device (allocate space on GPU)
-    if (didInit) {
-        if (stateVec) {
-            ResetStateBuffer(MakeStateVecBuffer(stateVec));
-        } else {
-            ResetStateBuffer(MakeStateVecBuffer(NULL));
-
-            if (copyVec) {
-                EventVecPtr waitVec = ResetWaitEvents();
-                DISPATCH_WRITE(waitVec, *stateBuffer, sizeof(complex) * maxQPowerOcl, copyVec.get())
-                tryCuda("Failed to write buffer", [&] {
-                    return queue.enqueueWriteBuffer(
-                        *stateBuffer, CL_TRUE, 0U, sizeof(complex) * maxQPowerOcl, copyVec.get(), NULL);
-                });
-                wait_refs.clear();
-                copyVec.reset();
-            } else {
-                ClearBuffer(stateBuffer, 0U, maxQPowerOcl);
-            }
-        }
-    } else {
-        // In this branch, the QEngineCUDA is first being initialized, and no data needs to be copied between device
-        // contexts.
-        stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
-        stateBuffer = MakeStateVecBuffer(stateVec);
-    }
 }
 
 real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
@@ -654,7 +623,7 @@ real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
 void QEngineCUDA::InitOCL(int64_t devID)
 {
     cudaError_t error;
-    error = cudaStreamCreate(&stream);
+    error = cudaStreamCreate(&queue);
     if (error != cudaSuccess) {
         throw std::runtime_error("Failed to create CUDA stream!");
     }
@@ -681,14 +650,18 @@ void QEngineCUDA::SetPermutation(bitCapInt perm, complex phaseFac)
         permutationAmp = phaseFac;
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
+    ResetWaitEvents();
     device_context->LockWaitEvents();
-    device_context->wait_events->emplace_back();
+    device_context->wait_events->push_back(createCudaEvent());
     tryCuda(
         "Failed to enqueue buffer write",
         [&] {
-            return queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm,
-                sizeof(complex), &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
+            cudaError_t error = cudaMemcpyAsync((void*)((complex*)(*stateBuffer) + (size_t)perm),
+                (void*)&permutationAmp, sizeof(complex), cudaMemcpyDeviceToDevice, queue);
+            if (error != cudaSuccess) {
+                return error;
+            }
+            return cudaEventRecord(device_context->wait_events->back(), queue);
         },
         true);
     device_context->UnlockWaitEvents();
