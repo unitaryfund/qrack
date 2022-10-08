@@ -569,7 +569,7 @@ protected:
         *errorPtr = (flags & CL_MEM_USE_HOST_PTR) ? cudaHostRegister(host_ptr, size, cudaHostRegisterDefault)
                                                   : cudaMalloc(&toRet, size);
         if ((*errorPtr == cudaSuccess) && (flags & CL_MEM_COPY_HOST_PTR)) {
-            cudaMemcpy(toRet.get(), host_ptr, size, cudaMemcpyHostToDevice);
+            cudaMemcpy(toRet, host_ptr, size, cudaMemcpyHostToDevice);
         }
 
         return toRet;

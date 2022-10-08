@@ -3169,7 +3169,7 @@ complex* _aligned_state_vec_alloc(bitCapIntOcl allocSize)
 }
 #endif
 
-std::shared_ptr<complex> QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
+std::shared_ptr<complex> QEngineCUDA::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
 {
     // If we're not using host ram, there's no reason to allocate.
     if (!elemCount || (!doForceAlloc && !stateVec)) {
@@ -3220,14 +3220,14 @@ void QEngineCUDA::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl 
     PoolItemPtr poolItem = GetFreePoolItem();
 
     bitCapIntOcl bciArgs[2] = { size, offset };
-    cl::Event writeArgsEvent;
+    cudaEvent_t writeArgsEvent = createCudaEvent();
     DISPATCH_TEMP_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
 
     const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
-    writeArgsEvent.wait();
+    cudaEventSynchronize(writeArgsEvent);
 
     QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
 }
