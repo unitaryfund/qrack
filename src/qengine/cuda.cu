@@ -54,9 +54,14 @@ namespace Qrack {
         true);                                                                                                         \
     device_context->UnlockWaitEvents();
 
-#define DISPATCH_BLOCK_READ(waitVec, buff, offset, length, array)                                                      \
-    tryCuda("Failed to read buffer",                                                                                   \
-        [&] { return queue.enqueueReadBuffer(buff, CL_TRUE, offset, length, array, waitVec.get()); });                 \
+#define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                      \
+    tryCuda("Failed to read buffer", [&] {                                                                             \
+        cudaError_t err = cudaStreamSynchronize(queue);                                                                \
+        if (err != cudaSuccess) {                                                                                      \
+            return err;                                                                                                \
+        }                                                                                                              \
+        return cudaMemcpy((void*)array, (void*)(buff.get() + offset), length, cudaMemcpyDeviceToHost);                 \
+    });                                                                                                                \
     wait_refs.clear();
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
@@ -152,8 +157,8 @@ void QEngineCUDA::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCap
         return;
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * offset, sizeof(complex) * length, pagePtr);
+    ResetWaitEvents();
+    DISPATCH_BLOCK_READ(*stateBuffer, sizeof(complex) * offset, sizeof(complex) * length, pagePtr);
 }
 
 void QEngineCUDA::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
@@ -306,7 +311,7 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
         unlockHostMem = false;
         stateVec = AllocStateVec(maxQPowerOcl);
         if (lockSyncFlags & CL_MAP_READ) {
-            DISPATCH_BLOCK_READ(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, stateVec.get());
+            DISPATCH_BLOCK_READ(*stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, stateVec.get());
         }
     }
 }
@@ -1728,8 +1733,8 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
 
     QueueCall(OCL_API_PROBREGALL, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, probsBuffer });
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-    DISPATCH_BLOCK_READ(waitVec2, *probsBuffer, 0U, sizeof(real1) * lengthPower, probsArray);
+    ResetWaitEvents();
+    DISPATCH_BLOCK_READ(*probsBuffer, 0U, sizeof(real1) * lengthPower, probsArray);
 
     probsBuffer.reset();
 
@@ -1862,8 +1867,8 @@ void QEngineCUDA::ProbMaskAll(bitCapInt mask, real1* probsArray)
     QueueCall(OCL_API_PROBMASKALL, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer });
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-    DISPATCH_BLOCK_READ(waitVec2, *probsBuffer, 0U, sizeof(real1) * lengthPower, probsArray);
+    ResetWaitEvents();
+    DISPATCH_BLOCK_READ(*probsBuffer, 0U, sizeof(real1) * lengthPower, probsArray);
 
     probsBuffer.reset();
     qPowersBuffer.reset();
@@ -2929,8 +2934,7 @@ complex QEngineCUDA::GetAmplitude(bitCapInt perm)
     }
 
     complex amp;
-    EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), &amp);
+    DISPATCH_BLOCK_READ(*stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), &amp);
 
     return amp;
 }
@@ -2981,8 +2985,8 @@ void QEngineCUDA::GetQuantumState(complex* outputState)
         return;
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, outputState);
+    ResetWaitEvents();
+    DISPATCH_BLOCK_READ(*stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, outputState);
 }
 
 /// Get all probabilities, in unsigned int permutation basis
