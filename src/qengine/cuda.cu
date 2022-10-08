@@ -222,23 +222,19 @@ void QEngineCUDA::SetAmplitudePage(
 
     pageEngineOclPtr->clFinish();
 
-    if (device_context->context_id != pageEngineOclPtr->device_context->context_id) {
-        // Cross-platform - can't automatically migrate buffers.
-        pageEngineOclPtr->LockSync(CL_MAP_READ);
-        SetAmplitudePage(pageEngineOclPtr->stateVec.get() + srcOffset, dstOffset, length);
-        pageEngineOclPtr->UnlockSync();
-
-        return;
-    }
-
     EventVecPtr waitVec = ResetWaitEvents();
 
-    cl::Event copyEvent;
+    cudaEvent_t copyEvent;
+    cudaEventCreateWithFlags(&copyEvent, cudaEventBlockingSync);
     tryCuda("Failed to enqueue buffer copy", [&] {
-        return queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * srcOffset,
-            sizeof(complex) * dstOffset, sizeof(complex) * length, waitVec.get(), &copyEvent);
+        cudaError_t error =
+            cudaMemcpyAsync(*oStateBuffer, *stateBuffer, sizeof(complex) * srcOffset, cudaMemcpyDeviceToDevice, queue);
+        if (error != cudaSuccess) {
+            return error;
+        }
+        return cudaEventRecord(copyEvent, queue);
     });
-    copyEvent.wait();
+    cudaEventSynchronize(copyEvent);
 
     runningNorm = REAL1_DEFAULT_ARG;
 }

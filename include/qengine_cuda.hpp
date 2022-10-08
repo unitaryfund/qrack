@@ -262,6 +262,13 @@ protected:
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
     }
 
+    void blockForWaitVec(EventVecPtr waitVec)
+    {
+        for (size_t i = 0U; i < waitVec.get()->size(); ++i) {
+            cudaEventSynchronize(waitVec.get()[i]);
+        }
+    }
+
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
     /// design of the QEngine.
