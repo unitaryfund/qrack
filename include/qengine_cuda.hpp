@@ -41,6 +41,7 @@ typedef unsigned long cl_mem_flags;
 #define CL_MEM_WRITE_ONLY                           (1 << 1)
 #define CL_MEM_READ_ONLY                            (1 << 2)
 #define CL_MEM_USE_HOST_PTR                         (1 << 3)
+#define CL_MEM_COPY_HOST_PTR                        (1 << 5)
 // clang-format on
 
 enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
@@ -567,6 +568,9 @@ protected:
         void* toRet;
         *errorPtr = (flags & CL_MEM_USE_HOST_PTR) ? cudaHostRegister(host_ptr, size, cudaHostRegisterDefault)
                                                   : cudaMalloc(&toRet, size);
+        if ((*errorPtr == cudaSuccess) && (flags & CL_MEM_COPY_HOST_PTR)) {
+            cudaMemcpy(toRet.get(), host_ptr, size, cudaMemcpyHostToDevice);
+        }
 
         return toRet;
     }

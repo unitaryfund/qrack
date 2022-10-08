@@ -412,7 +412,7 @@ void QEngineCUDA::WaitCall(
     clFinish();
 }
 
-cudaStreamCallback_t _PopQueue(cudaStream_t stream, cudaError_t status, void* user_data)
+void CUDART_CB _PopQueue(cudaStream_t stream, cudaError_t status, void* user_data)
 {
     ((QEngineCUDA*)user_data)->PopQueue();
 }
@@ -501,28 +501,22 @@ void QEngineCUDA::DispatchQueue()
     // Dispatch the primary kernel, to apply the gate.
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
     device_context->LockWaitEvents();
-    device_context->wait_events->emplace_back();
-    device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
-    cl_int error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+    cudaError_t error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(item.workItemCount), // global number of work items
         cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
         &(device_context->wait_events->back())); // handle to wait for the kernel
+    if (error == cudaSuccess) {
+        cudaStreamAddCallback(queue, _PopQueue, (void*)this, 0);
+        device_context->wait_events->push_back(createCudaEvent());
+        cudaEventRecord(device_context->wait_events->back(), queue);
+    }
     device_context->UnlockWaitEvents();
     if (error != cudaSuccess) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
         callbackError = error;
         wait_queue_items.clear();
         wait_refs.clear();
-        return;
-    }
-    error = queue.flush();
-    if (error != cudaSuccess) {
-        // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
-        callbackError = error;
-        wait_queue_items.clear();
-        wait_refs.clear();
-        return;
     }
 }
 
