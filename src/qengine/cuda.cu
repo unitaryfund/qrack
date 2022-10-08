@@ -39,9 +39,14 @@ namespace Qrack {
     });                                                                                                                \
     wait_refs.clear();
 
-#define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
-    tryCuda("Failed to write buffer",                                                                                  \
-        [&] { return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array, waitVec.get(), &clEvent); });
+#define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, event)                                                         \
+    tryCuda("Failed to write buffer", [&] {                                                                            \
+        cudaError_t error = cudaMemcpyAsync(buff, array, size, cudaMemcpyHostToDevice, queue);                         \
+        if (error != cudaSuccess) {                                                                                    \
+            return error;                                                                                              \
+        }                                                                                                              \
+        return cudaEventRecord(event);                                                                                 \
+    });
 
 #define DISPATCH_LOC_WRITE(buff, size, array, clEvent)                                                                 \
     tryCuda("Failed to enqueue buffer write",                                                                          \
@@ -268,7 +273,7 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
 
     cudaEvent_t writeArgsEvent = createCudaEvent();
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeArgsEvent);
-    writeArgsEvent.wait();
+    cudaEventSynchronize(writeArgsEvent);
 
     engineOcl->clFinish();
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
@@ -282,15 +287,16 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
 void QEngineCUDA::LockSync(cl_map_flags flags)
 {
     lockSyncFlags = flags;
-    EventVecPtr waitVec = ResetWaitEvents();
+    ResetWaitEvents();
 
     if (stateVec) {
         unlockHostMem = true;
         tryCuda("Failed to map buffer", [&] {
-            cl_int error;
-            queue.enqueueMapBuffer(
-                *stateBuffer, CL_TRUE, flags, 0U, sizeof(complex) * maxQPowerOcl, waitVec.get(), NULL, &error);
-            return error;
+            cudaError_t error = cudaStreamSynchronize(queue);
+            if (error != cudaSuccess) {
+                return error;
+            }
+            return cudaMemcpy((void*)(stateVec.get()), *stateBuffer, sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToHost);
         });
         wait_refs.clear();
     } else {
