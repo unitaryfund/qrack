@@ -10,6 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "common/cuda_kernels.cuh"
 #include "qengine_cuda.hpp"
 
 #include <algorithm>
@@ -88,6 +89,13 @@ namespace Qrack {
     if (!stateBuffer) {                                                                                                \
         return;                                                                                                        \
     }
+
+// clang-format off
+#define CUDA_KERNEL_1(fn, t0) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()))
+#define CUDA_KERNEL_2(fn, t0, t1) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
+#define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
+#define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
+// clang-format on
 
 QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t devID, bool useHardwareRNG, bool ignored,
@@ -480,44 +488,24 @@ void QEngineCUDA::DispatchQueue()
 
     std::vector<BufferPtr> args = item.buffers;
 
-    // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
-    // other QEngineCUDA instances, until we're done queueing it.
-    OCLDeviceCall ocl = device_context->Reserve(item.api_call);
-
-    // Load the arguments.
-    for (unsigned int i = 0U; i < args.size(); ++i) {
-        ocl.call.setArg(i, args[i].get());
-    }
-
-    // For all of our kernels, if a local memory buffer is used, there is always only one, as the last argument.
-    if (item.localBuffSize) {
-#if ENABLE_SNUCL
-        ocl.call.setArg(args.size(), cl::__local(item.localBuffSize));
-#else
-        ocl.call.setArg(args.size(), cl::Local(item.localBuffSize));
-#endif
-    }
-
     // Dispatch the primary kernel, to apply the gate.
-    EventVecPtr kernelWaitVec = ResetWaitEvents(false);
+    ResetWaitEvents(false);
     device_context->LockWaitEvents();
-    cudaError_t error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(item.workItemCount), // global number of work items
-        cl::NDRange(item.localGroupSize), // local number (per group)
-        kernelWaitVec.get(), // vector of events to wait for
-        &(device_context->wait_events->back())); // handle to wait for the kernel
-    if (error == cudaSuccess) {
-        cudaStreamAddCallback(queue, _PopQueue, (void*)this, 0);
-        device_context->wait_events->push_back(createCudaEvent());
-        cudaEventRecord(device_context->wait_events->back(), queue);
+
+    switch (item.api_call) {
+    case OCL_API_APPLY2X2:
+        CUDA_KERNEL_4(apply2x2, qCudaCmplx, qCudaReal1, bitCapIntOcl, bitCapIntOcl);
+        break;
+    case OCL_API_UNKNOWN:
+    default:
+        throw std::runtime_error("Invalid CUDA kernel selected!");
     }
+
+    cudaStreamAddCallback(queue, _PopQueue, (void*)this, 0);
+    device_context->wait_events->push_back(createCudaEvent());
+    cudaEventRecord(device_context->wait_events->back(), queue);
+
     device_context->UnlockWaitEvents();
-    if (error != cudaSuccess) {
-        // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
-        callbackError = error;
-        wait_queue_items.clear();
-        wait_refs.clear();
-    }
 }
 
 void QEngineCUDA::SetDevice(int64_t dID)
