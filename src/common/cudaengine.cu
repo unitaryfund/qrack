@@ -26,7 +26,7 @@ namespace Qrack {
 DeviceContextPtr CUDAEngine::GetDeviceContextPtr(const int64_t& dev)
 {
     if ((dev >= GetDeviceCount()) || (dev < -1)) {
-        throw "Invalid CUDA device selection";
+        throw std::runtime_error("Invalid CUDA device selection");
     } else if (dev == -1) {
         return default_device_context;
     } else {
