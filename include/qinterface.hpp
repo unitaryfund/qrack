@@ -2320,7 +2320,7 @@ public:
         do {
             amp = GetAmplitude(perm);
             ++perm;
-        } while ((norm(amp) <= (REAL1_EPSILON * REAL1_EPSILON)) && (perm < maxQPower));
+        } while ((abs(amp) <= REAL1_EPSILON) && (perm < maxQPower));
 
         return (real1_f)std::arg(amp);
     }
