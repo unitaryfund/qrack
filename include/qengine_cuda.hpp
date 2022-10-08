@@ -18,11 +18,7 @@
 #error CUDA has not been enabled
 #endif
 
-// These should go in the device-management singleton:
-#include <cuda.h>
-#include <cuda_runtime_api.h>
-
-// #include "common/oclengine.hpp"
+#include "common/cudaengine.cuh"
 #include "qengine.hpp"
 
 #include <list>
@@ -125,7 +121,8 @@ struct QueueItem {
     }
 };
 
-struct PoolItem {
+class PoolItem {
+public:
     BufferPtr cmplxBuffer;
     BufferPtr realBuffer;
     BufferPtr ulongBuffer;
@@ -133,31 +130,38 @@ struct PoolItem {
     std::shared_ptr<real1> probArray;
     std::shared_ptr<real1> angleArray;
 
-    BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
-    {
-        return BufferPtr(
-            [size] {
-                void* toRet;
-                cudaError_t error = cudaMalloc(&toRet, size);
-                if (error != cudaSuccess) {
-                    throw std::runtime_error("CUDA error code on buffer allocation attempt: " + std::to_string(error));
-                }
-
-                return toRet;
-            },
-            [](complex* c) { cudaFree(c); });
-    }
-
-    PoolItem(cl::Context& context)
+    PoolItem()
         : probArray(NULL)
         , angleArray(NULL)
     {
-        cmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
-        realBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
-        ulongBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
+        cmplxBuffer = MakeBuffer(sizeof(complex) * CMPLX_NORM_LEN);
+        realBuffer = MakeBuffer(sizeof(real1) * REAL_ARG_LEN);
+        ulongBuffer = MakeBuffer(sizeof(bitCapIntOcl) * BCI_ARG_LEN);
     }
 
     ~PoolItem() {}
+
+protected:
+    BufferPtr MakeBuffer(size_t size)
+    {
+        cudaError_t error;
+
+        BufferPtr toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
+
+        if (error != cudaSuccess) {
+            throw std::runtime_error("CUDA error code on buffer allocation attempt: " + std::to_string(error));
+        }
+
+        return toRet;
+    }
+
+    void* AllocRaw(size_t size, cudaError_t* errorPtr)
+    {
+        void* toRet;
+        *errorPtr = cudaMalloc(&toRet, size);
+
+        return toRet;
+    }
 };
 
 typedef std::shared_ptr<PoolItem> PoolItemPtr;
