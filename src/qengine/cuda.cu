@@ -91,10 +91,9 @@ namespace Qrack {
     }
 
 // clang-format off
-#define CUDA_KERNEL_1(fn, t0) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()))
-#define CUDA_KERNEL_2(fn, t0, t1) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
 #define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
 #define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
+#define CUDA_KERNEL_6(fn, t0, t1, t2, t3, t4, t5) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()), (t5*)(args[5].get()))
 // clang-format on
 
 QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
@@ -495,6 +494,48 @@ void QEngineCUDA::DispatchQueue()
     switch (item.api_call) {
     case OCL_API_APPLY2X2:
         CUDA_KERNEL_4(apply2x2, qCudaCmplx, qCudaReal1, bitCapIntOcl, bitCapIntOcl);
+        break;
+    case OCL_API_APPLY2X2_SINGLE:
+        CUDA_KERNEL_3(apply2x2single, qCudaCmplx, qCudaReal1, bitCapIntOcl);
+        break;
+    case OCL_API_APPLY2X2_NORM_SINGLE:
+        CUDA_KERNEL_4(apply2x2normsingle, qCudaCmplx, qCudaReal1, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_APPLY2X2_DOUBLE:
+        CUDA_KERNEL_3(apply2x2double, qCudaCmplx, qCudaReal1, bitCapIntOcl);
+        break;
+    case OCL_API_APPLY2X2_WIDE:
+        CUDA_KERNEL_4(apply2x2wide, qCudaCmplx, qCudaReal1, bitCapIntOcl, bitCapIntOcl);
+        break;
+    case OCL_API_APPLY2X2_SINGLE_WIDE:
+        CUDA_KERNEL_3(apply2x2singlewide, qCudaCmplx, qCudaReal1, bitCapIntOcl);
+        break;
+    case OCL_API_APPLY2X2_NORM_SINGLE_WIDE:
+        CUDA_KERNEL_4(apply2x2normsinglewide, qCudaCmplx, qCudaReal1, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_APPLY2X2_DOUBLE_WIDE:
+        CUDA_KERNEL_3(apply2x2doublewide, qCudaCmplx, qCudaReal1, bitCapIntOcl);
+        break;
+    case OCL_API_PHASE_SINGLE:
+        CUDA_KERNEL_3(phasesingle, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_PHASE_SINGLE_WIDE:
+        CUDA_KERNEL_3(phasesinglewide, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_INVERT_SINGLE:
+        CUDA_KERNEL_3(invertsingle, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_INVERT_SINGLE_WIDE:
+        CUDA_KERNEL_3(invertsinglewide, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_UNIFORMLYCONTROLLED:
+        CUDA_KERNEL_6(uniformlycontrolled, qCudaCmplx, bitCapIntOcl, bitCapIntOcl, qCudaReal1, qCudaReal1, qCudaReal1);
+        break;
+    case OCL_API_UNIFORMPARITYRZ:
+        CUDA_KERNEL_3(uniformparityrz, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_UNIFORMPARITYRZ_NORM:
+        CUDA_KERNEL_3(uniformparityrznorm, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
         break;
     case OCL_API_UNKNOWN:
     default:
