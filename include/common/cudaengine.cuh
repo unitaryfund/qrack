@@ -52,6 +52,7 @@ private:
 public:
     CUDADeviceContext(int64_t dev_id, int64_t maxAlloc = -1)
         : device_id(dev_id)
+        , wait_events(new EventVec())
 #if ENABLE_OCL_MEM_GUARDS
         , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * properties.totalGlobalMem) >> 2U))
 #else
@@ -67,21 +68,13 @@ public:
         }
 
         cudaGetDeviceProperties(&properties, device_id);
-
-        wait_events = EventVecPtr(new EventVec(), [](EventVec* vec) {
-            vec->clear();
-            delete vec;
-        });
     }
 
     EventVecPtr ResetWaitEvents()
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
         EventVecPtr waitVec = std::move(wait_events);
-        wait_events = EventVecPtr(new EventVec(), [](EventVec* vec) {
-            vec->clear();
-            delete vec;
-        });
+        wait_events = EventVecPtr(new EventVec());
         return waitVec;
     }
 
