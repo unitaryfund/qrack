@@ -14,7 +14,7 @@
 
 #define _USE_MATH_DEFINES
 
-#include "config.h"
+#include "oclapi.hpp"
 
 #if !ENABLE_CUDA
 #error CUDA has not been enabled

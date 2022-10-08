@@ -1,4 +1,4 @@
-option (ENABLE_CUDA "Build CUDA-based QEngine type" ON)
+option (ENABLE_CUDA "Build CUDA-based QEngine type" OFF)
 
 find_package (CUDA)
 if (NOT CUDA_FOUND)

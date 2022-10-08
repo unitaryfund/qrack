@@ -229,8 +229,10 @@ install (FILES
     include/common/qrack_types.hpp
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
+    include/common/oclapi.hpp
     include/common/oclengine.hpp
-    include/common/cudaengine.hpp
+    include/common/cudaengine.cuh
+    include/common/cuda_kernels.cuh
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
     include/common/cuda_kernels.cuh
