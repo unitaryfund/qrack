@@ -30,6 +30,21 @@
 
 namespace Qrack {
 
+typedef unsigned long cl_map_flags;
+typedef unsigned long cl_mem_flags;
+
+// clang-format off
+#define CL_MAP_READ                                 (1 << 0)
+#define CL_MAP_WRITE                                (1 << 1)
+
+#define CL_MEM_READ_WRITE                           (1 << 0)
+#define CL_MEM_WRITE_ONLY                           (1 << 1)
+#define CL_MEM_READ_ONLY                            (1 << 2)
+#define CL_MEM_USE_HOST_PTR                         (1 << 3)
+#define CL_MEM_ALLOC_HOST_PTR                       (1 << 4)
+#define CL_MEM_COPY_HOST_PTR                        (1 << 5)
+// clang-format on
+
 enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
 
 class bad_alloc : public std::bad_alloc {
@@ -186,7 +201,9 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  */
 class QEngineCUDA : public QEngine {
 protected:
+    bool usingHostRam;
     bool unlockHostMem;
+    cudaError_t callbackError;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t totalOclAllocSize;
@@ -195,8 +212,7 @@ protected:
     complex permutationAmp;
     std::shared_ptr<complex> stateVec;
     std::mutex queue_mutex;
-    cl::CommandQueue queue;
-    cl::Context context;
+    cudaStream_t queue;
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
     // QEngineCUDA itself, specifically by QEngineCUDAMulti.
     BufferPtr stateBuffer;
@@ -209,12 +225,11 @@ protected:
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
     // If we have ~16 streams, this doesn't scale to single-qubit QEngineOCL instances under QUnit.
     // However, we prefer QHybrid!
-    cudaStream_t stream;
 
-    // For std::function, cl_int use might discard int qualifiers.
-    void tryCuda(std::string message, std::function<int()> oclCall, bool unlockWaitEvents = false)
+    // For std::function, cudaError_t use might discard int qualifiers.
+    void tryCuda(std::string message, std::function<cudaError_t()> oclCall, bool unlockWaitEvents = false)
     {
-        if (oclCall() == CL_SUCCESS) {
+        if (oclCall() == cudaSuccess) {
             // Success
             return;
         }
@@ -222,7 +237,7 @@ protected:
         // Soft finish (just for this QEngineCUDA)
         clFinish();
 
-        if (oclCall() == CL_SUCCESS) {
+        if (oclCall() == cudaSuccess) {
             // Success after clearing QEngineCUDA queue
             return;
         }
@@ -230,8 +245,8 @@ protected:
         // Hard finish (for the unique OpenCL device)
         clFinish(true);
 
-        cl_int error = oclCall();
-        if (error == CL_SUCCESS) {
+        cudaError_t error = oclCall();
+        if (error == cudaSuccess) {
             // Success after clearing all queues for the OpenCL device
             return;
         }
@@ -255,10 +270,10 @@ public:
     /**
      * Initialize a Qrack::QEngineCUDA object. Specify the number of qubits and an initial permutation state.
      * Additionally, optionally specify a pointer to a random generator engine object, a device ID from the list of
-     * devices in the OCLEngine singleton, and a boolean that is set to "true" to initialize the state vector of the
+     * devices in the CUDAEngine singleton, and a boolean that is set to "true" to initialize the state vector of the
      * object to zero norm.
      *
-     * "devID" is the index of an OpenCL device in the OCLEngine singleton, to select the device to run this engine on.
+     * "devID" is the index of an OpenCL device in the CUDAEngine singleton, to select the device to run this engine on.
      * If "useHostMem" is set false, as by default, the QEngineCUDA will attempt to allocate the state vector object
      * only on device memory. If "useHostMem" is set true, general host RAM will be used for the state vector buffers.
      * If the state vector is too large to allocate only on device memory, the QEngineCUDA will attempt to fall back to
@@ -279,7 +294,7 @@ public:
     ~QEngineCUDA()
     {
         // Theoretically, all user output is blocking, so don't throw in destructor.
-        callbackError = CL_SUCCESS;
+        callbackError = cudaSuccess;
         // Make sure we track device allocation.
         FreeAll();
     }
@@ -333,6 +348,7 @@ public:
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
+    using QInterface::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
         const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
     void UniformParityRZ(bitCapInt mask, real1_f angle);
@@ -470,57 +486,63 @@ public:
 protected:
     void AddAlloc(size_t size)
     {
-        size_t currentAlloc = OCLEngine::Instance().AddToActiveAllocSize(deviceID, size);
+        size_t currentAlloc = CUDAEngine::Instance().AddToActiveAllocSize(deviceID, size);
         if (device_context && (currentAlloc > device_context->GetGlobalAllocLimit())) {
-            OCLEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
+            CUDAEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
             throw bad_alloc("VRAM limits exceeded in QEngineCUDA::AddAlloc()");
         }
         totalOclAllocSize += size;
     }
     void SubtractAlloc(size_t size)
     {
-        OCLEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
+        CUDAEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
         totalOclAllocSize -= size;
     }
 
-    BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
-        return BufferPtr(
-            [size] {
-                void* toRet;
-                cudaError_t error = cudaMalloc(&toRet, size);
-                if (error == CL_SUCCESS) {
-                    // Success
-                    return toRet;
-                }
+        cudaError_t error;
 
-                // Soft finish (just for this QEngineCUDA)
-                clFinish();
+        BufferPtr toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
 
-                error = cudaMalloc(&toRet, size);
-                if (error == cudaSuccess) {
-                    // Success after clearing QEngineCUDA queue
-                    return toRet;
-                }
+        if (error == cudaSuccess) {
+            // Success
+            return toRet;
+        }
 
-                // Hard finish (for the unique OpenCL device)
-                clFinish(true);
+        // Soft finish (just for this QEngineCUDA)
+        clFinish();
 
-                error = cudaMalloc(&toRet, size);
+        toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
 
-                if (error != CL_SUCCESS) {
-                    throw std::runtime_error(
-                        "OpenCL error code on buffer allocation attempt: " + std::to_string(error));
-                }
+        if (error == cudaSuccess) {
+            // Success after clearing QEngineCUDA queue
+            return toRet;
+        }
 
-                return toRet;
-            },
-            [](complex* c) { cudaFree(c); });
+        // Hard finish (for the unique OpenCL device)
+        clFinish(true);
+
+        toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
+
+        if (error != cudaSuccess) {
+            throw std::runtime_error("CUDA error code on buffer allocation attempt: " + std::to_string(error));
+        }
+
+        return toRet;
+    }
+
+    void* AllocRaw(size_t size, cudaError_t* errorPtr)
+    {
+        void* toRet;
+        *errorPtr = cudaMalloc(&toRet, size);
+
+        return toRet;
     }
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
-    std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount);
+    std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
     void FreeStateVec() { stateVec = NULL; }
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);

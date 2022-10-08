@@ -75,7 +75,7 @@ QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_ge
     real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , unlockHostMem(false)
-    , callbackError(CL_SUCCESS)
+    , callbackError(cudaSuccess)
     , nrmGroupSize(0U)
     , totalOclAllocSize(0U)
     , deviceID(devID)
@@ -429,7 +429,7 @@ void QEngineCUDA::PopQueue()
         wait_queue_items.pop_front();
     }
 
-    if (callbackError != CL_SUCCESS) {
+    if (callbackError != cudaSuccess) {
         wait_queue_items.clear();
         wait_refs.clear();
         return;
@@ -498,7 +498,7 @@ void QEngineCUDA::DispatchQueue()
         kernelWaitVec.get(), // vector of events to wait for
         &(device_context->wait_events->back())); // handle to wait for the kernel
     device_context->UnlockWaitEvents();
-    if (error != CL_SUCCESS) {
+    if (error != cudaSuccess) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
         callbackError = error;
         wait_queue_items.clear();
@@ -506,7 +506,7 @@ void QEngineCUDA::DispatchQueue()
         return;
     }
     error = queue.flush();
-    if (error != CL_SUCCESS) {
+    if (error != cudaSuccess) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
         callbackError = error;
         wait_queue_items.clear();
@@ -517,7 +517,7 @@ void QEngineCUDA::DispatchQueue()
 
 void QEngineCUDA::SetDevice(int64_t dID)
 {
-    if (!(OCLEngine::Instance().GetDeviceCount())) {
+    if (!(CUDAEngine::Instance().GetDeviceCount())) {
         throw std::runtime_error("Tried to initialize QEngineCUDA, but no available OpenCL devices.");
     }
 
@@ -526,8 +526,8 @@ void QEngineCUDA::SetDevice(int64_t dID)
     clFinish();
 
     const int64_t oldContextId = device_context ? device_context->context_id : 0;
-    const DeviceContextPtr nDeviceContext = OCLEngine::Instance().GetDeviceContextPtr(dID);
-    const int64_t defDevId = (int)OCLEngine::Instance().GetDefaultDeviceID();
+    const DeviceContextPtr nDeviceContext = CUDAEngine::Instance().GetDeviceContextPtr(dID);
+    const int64_t defDevId = (int)CUDAEngine::Instance().GetDefaultDeviceID();
 
     std::unique_ptr<complex[]> copyVec = NULL;
 
@@ -631,7 +631,7 @@ void QEngineCUDA::SetDevice(int64_t dID)
     } else {
         // In this branch, the QEngineCUDA is first being initialized, and no data needs to be copied between device
         // contexts.
-        stateVec = AllocStateVec(maxQPowerOcl);
+        stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
     }
 }
@@ -1402,7 +1402,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
         SetQubitCount(0U);
         // This will be cleared by the destructor:
         SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
-        stateVec = AllocStateVec(maxQPowerOcl);
+        stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
         return;
@@ -3263,7 +3263,7 @@ BufferPtr QEngineCUDA::MakeStateVecBuffer(std::shared_ptr<complex> nStateVec)
 void QEngineCUDA::ReinitBuffer()
 {
     AddAlloc(sizeof(complex) * maxQPowerOcl);
-    stateVec = AllocStateVec(maxQPowerOcl);
+    stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
 }
 
