@@ -200,6 +200,7 @@ public:
         , context(c)
         , context_id(cntxt_id)
         , device_id(dev_id)
+        , wait_events(new EventVec())
 #if ENABLE_OCL_MEM_GUARDS
         , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * globalSize) >> 2U))
 #else
@@ -216,12 +217,6 @@ public:
                 throw std::runtime_error("Failed to create OpenCL command queue!");
             }
         }
-
-        wait_events =
-            EventVecPtr(new EventVec(), [](EventVec* vec) {
-                vec->clear();
-                delete vec;
-            });
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(*(mutexes[call]), calls[call]); }
@@ -230,10 +225,7 @@ public:
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
         EventVecPtr waitVec = std::move(wait_events);
-        wait_events = EventVecPtr(new EventVec(), [](EventVec* vec) {
-            vec->clear();
-            delete vec;
-        });
+        wait_events = EventVecPtr(new EventVec());
         return waitVec;
     }
 
