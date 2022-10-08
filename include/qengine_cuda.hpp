@@ -262,11 +262,12 @@ protected:
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
     }
 
-    void blockForWaitVec(EventVecPtr waitVec)
+    cudaEvent_t createCudaEvent()
     {
-        for (size_t i = 0U; i < waitVec.get()->size(); ++i) {
-            cudaEventSynchronize(waitVec.get()[i]);
-        }
+        cudaEvent_t event;
+        cudaEventCreateWithFlags(&event, cudaEventBlockingSync);
+
+        return event;
     }
 
 public:

@@ -224,8 +224,7 @@ void QEngineCUDA::SetAmplitudePage(
 
     EventVecPtr waitVec = ResetWaitEvents();
 
-    cudaEvent_t copyEvent;
-    cudaEventCreateWithFlags(&copyEvent, cudaEventBlockingSync);
+    cudaEvent_t copyEvent = createCudaEvent();
     tryCuda("Failed to enqueue buffer copy", [&] {
         cudaError_t error =
             cudaMemcpyAsync(*oStateBuffer, *stateBuffer, sizeof(complex) * srcOffset, cudaMemcpyDeviceToDevice, queue);
@@ -261,27 +260,13 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0U, engineOcl->maxQPowerOcl);
     }
 
-    const bitCapIntOcl halfMaxQPower = (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI);
-
-    if (device_context->context_id != engineOcl->device_context->context_id) {
-        LockSync(CL_MAP_READ | CL_MAP_WRITE);
-        engineOcl->LockSync(CL_MAP_READ | CL_MAP_WRITE);
-
-        std::swap_ranges(
-            engineOcl->stateVec.get(), engineOcl->stateVec.get() + halfMaxQPower, stateVec.get() + halfMaxQPower);
-
-        engineOcl->UnlockSync();
-        UnlockSync();
-
-        return;
-    }
-
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { halfMaxQPower, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
+        0U };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cl::Event writeArgsEvent;
+    cudaEvent_t writeArgsEvent = createCudaEvent();
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeArgsEvent);
     writeArgsEvent.wait();
 
