@@ -60,7 +60,7 @@ public:
     const char* what() const noexcept { return m.c_str(); }
 };
 
-typedef std::shared_ptr<void*> BufferPtr;
+typedef std::shared_ptr<void> BufferPtr;
 
 class QEngineCUDA;
 
@@ -160,7 +160,7 @@ protected:
     {
         cudaError_t error;
 
-        BufferPtr toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
+        BufferPtr toRet = std::shared_ptr<void>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
 
         if (error != cudaSuccess) {
             throw std::runtime_error("CUDA error code on buffer allocation attempt: " + std::to_string(error));
@@ -531,7 +531,7 @@ protected:
 
         cudaError_t error;
 
-        BufferPtr toRet = std::make_shared<void*>(
+        BufferPtr toRet = std::shared_ptr<void>(
             AllocRaw(flags, host_ptr, size, &error), [this, flags](void* c) { FreeRaw(flags, c); });
 
         if (error == cudaSuccess) {
@@ -542,7 +542,7 @@ protected:
         // Soft finish (just for this QEngineCUDA)
         clFinish();
 
-        toRet = std::make_shared<void*>(
+        toRet = std::shared_ptr<void>(
             AllocRaw(flags, host_ptr, size, &error), [this, flags](void* c) { FreeRaw(flags, c); });
 
         if (error == cudaSuccess) {
@@ -553,7 +553,7 @@ protected:
         // Hard finish (for the unique OpenCL device)
         clFinish(true);
 
-        toRet = std::make_shared<void*>(
+        toRet = std::shared_ptr<void>(
             AllocRaw(flags, host_ptr, size, &error), [this, flags](void* c) { FreeRaw(flags, c); });
 
         if (error != cudaSuccess) {
@@ -565,7 +565,7 @@ protected:
 
     void* AllocRaw(cl_mem_flags flags, void* host_ptr, size_t size, cudaError_t* errorPtr)
     {
-        void* toRet;
+        void* toRet = host_ptr;
         *errorPtr = (flags & CL_MEM_USE_HOST_PTR) ? cudaHostRegister(host_ptr, size, cudaHostRegisterDefault)
                                                   : cudaMalloc(&toRet, size);
         if ((*errorPtr == cudaSuccess) && (flags & CL_MEM_COPY_HOST_PTR)) {
