@@ -41,8 +41,6 @@ typedef unsigned long cl_mem_flags;
 #define CL_MEM_WRITE_ONLY                           (1 << 1)
 #define CL_MEM_READ_ONLY                            (1 << 2)
 #define CL_MEM_USE_HOST_PTR                         (1 << 3)
-#define CL_MEM_ALLOC_HOST_PTR                       (1 << 4)
-#define CL_MEM_COPY_HOST_PTR                        (1 << 5)
 // clang-format on
 
 enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
@@ -532,7 +530,8 @@ protected:
 
         cudaError_t error;
 
-        BufferPtr toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
+        BufferPtr toRet = std::make_shared<void*>(
+            AllocRaw(flags, host_ptr, size, &error), [this, flags](void* c) { FreeRaw(flags, c); });
 
         if (error == cudaSuccess) {
             // Success
@@ -542,7 +541,8 @@ protected:
         // Soft finish (just for this QEngineCUDA)
         clFinish();
 
-        toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
+        toRet = std::make_shared<void*>(
+            AllocRaw(flags, host_ptr, size, &error), [this, flags](void* c) { FreeRaw(flags, c); });
 
         if (error == cudaSuccess) {
             // Success after clearing QEngineCUDA queue
@@ -552,7 +552,8 @@ protected:
         // Hard finish (for the unique OpenCL device)
         clFinish(true);
 
-        toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });
+        toRet = std::make_shared<void*>(
+            AllocRaw(flags, host_ptr, size, &error), [this, flags](void* c) { FreeRaw(flags, c); });
 
         if (error != cudaSuccess) {
             throw std::runtime_error("CUDA error code on buffer allocation attempt: " + std::to_string(error));
@@ -561,12 +562,22 @@ protected:
         return toRet;
     }
 
-    void* AllocRaw(size_t size, cudaError_t* errorPtr)
+    void* AllocRaw(cl_mem_flags flags, void* host_ptr, size_t size, cudaError_t* errorPtr)
     {
         void* toRet;
-        *errorPtr = cudaMalloc(&toRet, size);
+        *errorPtr = (flags & CL_MEM_USE_HOST_PTR) ? cudaHostRegister(host_ptr, size, cudaHostRegisterDefault)
+                                                  : cudaMalloc(&toRet, size);
 
         return toRet;
+    }
+
+    void FreeRaw(cl_mem_flags flags, void* c)
+    {
+        if (flags & CL_MEM_USE_HOST_PTR) {
+            cudaHostUnregister(c);
+        } else {
+            cudaFree(c);
+        }
     }
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
