@@ -91,6 +91,7 @@ namespace Qrack {
     }
 
 // clang-format off
+#define CUDA_KERNEL_2(fn, t0, t1) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
 #define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
 #define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
 #define CUDA_KERNEL_5(fn, t0, t1, t2, t3, t4) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()))
@@ -588,6 +589,51 @@ void QEngineCUDA::DispatchQueue()
         break;
     case OCL_API_EXPPERM:
         CUDA_KERNEL_4(expperm, qCudaCmplx, bitCapIntOcl, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_X_SINGLE:
+        CUDA_KERNEL_2(xsingle, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_X_SINGLE_WIDE:
+        CUDA_KERNEL_2(xsinglewide, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_X_MASK:
+        CUDA_KERNEL_2(xmask, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_Z_SINGLE:
+        CUDA_KERNEL_2(zsingle, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_Z_SINGLE_WIDE:
+        CUDA_KERNEL_2(zsinglewide, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_PHASE_PARITY:
+        CUDA_KERNEL_3(phaseparity, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_ROL:
+        CUDA_KERNEL_3(rol, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_APPROXCOMPARE:
+        CUDA_KERNEL_4(approxcompare, qCudaCmplx, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_NORMALIZE:
+        CUDA_KERNEL_3(nrmlze, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_NORMALIZE_WIDE:
+        CUDA_KERNEL_3(nrmlzewide, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_UPDATENORM:
+        CUDA_KERNEL_4(updatenorm, qCudaCmplx, bitCapIntOcl, qCudaReal1, qCudaReal1);
+        break;
+    case OCL_API_APPLYM:
+        CUDA_KERNEL_3(applym, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_APPLYMREG:
+        CUDA_KERNEL_3(applymreg, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_CLEARBUFFER:
+        CUDA_KERNEL_2(clearbuffer, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_SHUFFLEBUFFERS:
+        CUDA_KERNEL_3(shufflebuffers, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
         break;
     case OCL_API_UNKNOWN:
     default:
