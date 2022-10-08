@@ -1076,7 +1076,8 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
     ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cl::Event writeArgsEvent, writeNormEvent;
+    cudaEvent_t writeArgsEvent = createCudaEvent();
+    cudaEvent_t writeNormEvent = createCudaEvent();
     DISPATCH_TEMP_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
     DISPATCH_TEMP_WRITE(*(poolItem->cmplxBuffer), sizeof(complex) * 3, &phaseFacs, writeNormEvent);
 
@@ -1084,8 +1085,8 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
-    writeArgsEvent.wait();
-    writeNormEvent.wait();
+    cudaEventSynchronize(writeArgsEvent);
+    cudaEventSynchronize(writeNormEvent);
     wait_refs.clear();
 
     QueueCall((abs(ONE_R1 - runningNorm) <= FP_NORM_EPSILON) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM,
@@ -1128,7 +1129,8 @@ void QEngineCUDA::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlL
     ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cl::Event writeArgsEvent, writeNormEvent;
+    cudaEvent_t writeArgsEvent = createCudaEvent();
+    cudaEvent_t writeNormEvent = createCudaEvent();
     DISPATCH_TEMP_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs, writeArgsEvent);
     DISPATCH_TEMP_WRITE(*(poolItem->cmplxBuffer), sizeof(complex) * 2, &phaseFacs, writeNormEvent);
 
@@ -1136,8 +1138,8 @@ void QEngineCUDA::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlL
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
-    writeArgsEvent.wait();
-    writeNormEvent.wait();
+    cudaEventSynchronize(writeArgsEvent);
+    cudaEventSynchronize(writeNormEvent);
     wait_refs.clear();
 
     QueueCall(OCL_API_CUNIFORMPARITYRZ, ngc, ngs,
@@ -1152,7 +1154,8 @@ void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex 
     ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cl::Event writeArgsEvent, writeNormEvent;
+    cudaEvent_t writeArgsEvent = createCudaEvent();
+    cudaEvent_t writeNormEvent = createCudaEvent();
     DISPATCH_TEMP_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs, writeArgsEvent);
     BufferPtr locCmplxBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(complex));
     DISPATCH_TEMP_WRITE(*(poolItem->cmplxBuffer), sizeof(complex), &nrm, writeNormEvent);
@@ -1161,8 +1164,8 @@ void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex 
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
-    writeArgsEvent.wait();
-    writeNormEvent.wait();
+    cudaEventSynchronize(writeArgsEvent);
+    cudaEventSynchronize(writeNormEvent);
     wait_refs.clear();
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
@@ -1212,23 +1215,16 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
         stateVec = AllocStateVec(toCopy->maxQPowerOcl);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
-        if (device_context->context_id != toCopy->device_context->context_id) {
-            toCopy->LockSync(CL_MAP_READ);
-
-            ResetWaitEvents();
-            DISPATCH_BLOCK_WRITE(*stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, toCopy->stateVec.get());
-
-            toCopy->UnlockSync();
-
-            return;
-        }
-
-        cl::Event copyEvent;
+        cudaEvent_t copyEvent = createCudaEvent();
         tryCuda("Failed to enqueue buffer copy", [&] {
-            return queue.enqueueCopyBuffer(
-                *(toCopy->stateBuffer), *stateBuffer, 0U, 0U, sizeof(complex) * maxQPowerOcl, NULL, &copyEvent);
+            cudaError_t error = cudaMemcpyAsync(
+                *stateBuffer, *(toCopy->stateBuffer), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice, queue);
+            if (error != cudaSuccess) {
+                return error;
+            }
+            return cudaEventRecord(copyEvent, queue);
         });
-        copyEvent.wait();
+        cudaEventSynchronize(copyEvent);
 
         return;
     }
@@ -1250,21 +1246,10 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
         toCopy->NormalizeState();
     }
 
-    const bool isMigrate = (device_context->context_id != toCopy->device_context->context_id);
-    const bool isReverseMigrate = qubitCount < toCopy->qubitCount;
-    const int64_t oDevID = deviceID;
-    if (isMigrate) {
-        if (isReverseMigrate) {
-            SetDevice(toCopy->deviceID);
-        } else {
-            toCopy->SetDevice(deviceID);
-        }
-    }
-
     PoolItemPtr poolItem = GetFreePoolItem();
     ResetWaitEvents();
 
-    cl::Event writeArgsEvent;
+    cudaEvent_t writeArgsEvent = createCudaEvent();
     DISPATCH_TEMP_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 7, bciArgs, writeArgsEvent);
 
     AddAlloc(sizeof(complex) * nMaxQPower);
@@ -1274,7 +1259,7 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    writeArgsEvent.wait();
+    cudaEventSynchronize(writeArgsEvent);
     wait_refs.clear();
 
     std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
@@ -1289,10 +1274,6 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
     ResetStateBuffer(nStateBuffer);
 
     SubtractAlloc(sizeof(complex) * oMaxQPower);
-
-    if (isMigrate && isReverseMigrate) {
-        SetDevice(oDevID);
-    }
 }
 
 bitLenInt QEngineCUDA::Compose(QEngineCUDAPtr toCopy)
@@ -1390,12 +1371,6 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
         return;
     }
 
-    const bool isMigrate = destination && (device_context->context_id != destination->device_context->context_id);
-    const int64_t oDevId = destination ? destination->deviceID : 0;
-    if (isMigrate) {
-        destination->SetDevice(deviceID);
-    }
-
     const bitCapIntOcl partPower = pow2Ocl(length);
     const bitCapIntOcl remainderPower = pow2Ocl(nLength);
     const bitCapIntOcl oMaxQPower = maxQPowerOcl;
@@ -1478,10 +1453,6 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
 
             destination->stateBuffer = nSB;
             destination->stateVec = NULL;
-        }
-
-        if (isMigrate) {
-            destination->SetDevice(oDevId);
         }
     }
 
@@ -3016,12 +2987,6 @@ real1_f QEngineCUDA::SumSqrDiff(QEngineCUDAPtr toCompare)
 
     toCompare->clFinish();
 
-    const bool isMigrate = (device_context->context_id != toCompare->device_context->context_id);
-    const int64_t oDevId = toCompare->deviceID;
-    if (isMigrate) {
-        toCompare->SetDevice(deviceID);
-    }
-
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
     ResetWaitEvents();
@@ -3048,10 +3013,6 @@ real1_f QEngineCUDA::SumSqrDiff(QEngineCUDAPtr toCompare)
     });
     locCmplxBuffer.reset();
     SubtractAlloc(sizeof(complex) * partInnerSize);
-
-    if (isMigrate) {
-        toCompare->SetDevice(oDevId);
-    }
 
     complex totInner = ZERO_CMPLX;
     for (size_t i = 0; i < partInnerSize; ++i) {
