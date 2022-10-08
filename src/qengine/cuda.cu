@@ -93,6 +93,7 @@ namespace Qrack {
 // clang-format off
 #define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
 #define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
+#define CUDA_KERNEL_5(fn, t0, t1, t2, t3, t4) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()))
 #define CUDA_KERNEL_6(fn, t0, t1, t2, t3, t4, t5) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()), (t5*)(args[5].get()))
 // clang-format on
 
@@ -536,6 +537,57 @@ void QEngineCUDA::DispatchQueue()
         break;
     case OCL_API_UNIFORMPARITYRZ_NORM:
         CUDA_KERNEL_3(uniformparityrznorm, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_CUNIFORMPARITYRZ:
+        CUDA_KERNEL_4(cuniformparityrz, qCudaCmplx, bitCapIntOcl, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_COMPOSE:
+        CUDA_KERNEL_4(compose, qCudaCmplx, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_COMPOSE_WIDE:
+        CUDA_KERNEL_4(composewide, qCudaCmplx, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_COMPOSE_MID:
+        CUDA_KERNEL_4(composemid, qCudaCmplx, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_DECOMPOSEPROB:
+        CUDA_KERNEL_6(decomposeprob, qCudaCmplx, bitCapIntOcl, qCudaReal1, qCudaReal1, qCudaReal1, qCudaReal1);
+        break;
+    case OCL_API_DECOMPOSEAMP:
+        CUDA_KERNEL_4(decomposeamp, qCudaReal1, qCudaReal1, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_DISPOSEPROB:
+        CUDA_KERNEL_4(disposeprob, qCudaCmplx, bitCapIntOcl, qCudaReal1, qCudaReal1);
+        break;
+    case OCL_API_DISPOSE:
+        CUDA_KERNEL_3(dispose, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_PROB:
+        CUDA_KERNEL_3(prob, qCudaCmplx, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_CPROB:
+        CUDA_KERNEL_3(cprob, qCudaCmplx, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_PROBREG:
+        CUDA_KERNEL_3(probreg, qCudaCmplx, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_PROBREGALL:
+        CUDA_KERNEL_3(probregall, qCudaCmplx, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_PROBMASK:
+        CUDA_KERNEL_4(probmask, qCudaCmplx, bitCapIntOcl, qCudaReal1, bitCapIntOcl);
+        break;
+    case OCL_API_PROBMASKALL:
+        CUDA_KERNEL_5(probmaskall, qCudaCmplx, bitCapIntOcl, qCudaReal1, bitCapIntOcl, bitCapIntOcl);
+        break;
+    case OCL_API_PROBPARITY:
+        CUDA_KERNEL_3(probparity, qCudaCmplx, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_FORCEMPARITY:
+        CUDA_KERNEL_3(forcemparity, qCudaCmplx, bitCapIntOcl, qCudaReal1);
+        break;
+    case OCL_API_EXPPERM:
+        CUDA_KERNEL_4(expperm, qCudaCmplx, bitCapIntOcl, bitCapIntOcl, qCudaReal1);
         break;
     case OCL_API_UNKNOWN:
     default:
