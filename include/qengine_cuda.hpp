@@ -226,9 +226,27 @@ protected:
     // If we have ~16 streams, this doesn't scale to single-qubit QEngineOCL instances under QUnit.
     // However, we prefer QHybrid!
 
+    void checkCallbackError(bool unlockWaitEvents = false)
+    {
+        if (callbackError == cudaSuccess) {
+            return;
+        }
+
+        if (unlockWaitEvents) {
+            device_context->UnlockWaitEvents();
+        }
+
+        wait_queue_items.clear();
+        wait_refs.clear();
+
+        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(callbackError));
+    }
+
     // For std::function, cudaError_t use might discard int qualifiers.
     void tryCuda(std::string message, std::function<cudaError_t()> oclCall, bool unlockWaitEvents = false)
     {
+        checkCallbackError(unlockWaitEvents);
+
         if (oclCall() == cudaSuccess) {
             // Success
             return;
@@ -338,6 +356,7 @@ public:
         // For lock_guard:
         if (true) {
             std::lock_guard<std::mutex> lock(queue_mutex);
+            checkCallbackError();
             isBase = !wait_queue_items.size();
             wait_queue_items.push_back(item);
         }
@@ -509,6 +528,8 @@ protected:
 
     BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
+        checkCallbackError();
+
         cudaError_t error;
 
         BufferPtr toRet = std::make_shared<void*>(AllocRaw(size, &error), [](void* c) { cudaFree(c); });

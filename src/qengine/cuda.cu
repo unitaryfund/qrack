@@ -296,7 +296,8 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
             if (error != cudaSuccess) {
                 return error;
             }
-            return cudaMemcpy((void*)(stateVec.get()), *stateBuffer, sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToHost);
+            return cudaMemcpy(
+                (void*)(stateVec.get()), *stateBuffer, sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToHost);
         });
         wait_refs.clear();
     } else {
@@ -313,10 +314,16 @@ void QEngineCUDA::UnlockSync()
     EventVecPtr waitVec = ResetWaitEvents();
 
     if (unlockHostMem) {
-        cl::Event unmapEvent;
-        tryCuda("Failed to unmap buffer",
-            [&] { return queue.enqueueUnmapMemObject(*stateBuffer, stateVec.get(), waitVec.get(), &unmapEvent); });
-        unmapEvent.wait();
+        cudaEvent_t unmapEvent = createCudaEvent();
+        tryCuda("Failed to unmap buffer", [&] {
+            cudaError_t error = cudaMemcpyAsync(
+                *stateBuffer, (void*)(stateVec.get()), sizeof(complex) * maxQPowerOcl, cudaMemcpyHostToDevice, queue);
+            if (error != cudaSuccess) {
+                return error;
+            }
+            return cudaEventRecord(unmapEvent, queue);
+        });
+        cudaEventSynchronize(unmapEvent);
         wait_refs.clear();
     } else {
         if (lockSyncFlags & CL_MAP_WRITE) {
