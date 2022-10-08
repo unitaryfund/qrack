@@ -37,7 +37,6 @@ typedef std::shared_ptr<std::vector<cudaEvent_t>> EventVecPtr;
 class CUDADeviceContext {
 public:
     const int64_t device_id;
-    cudaStream_t stream;
     EventVecPtr wait_events;
 
 protected:
@@ -61,12 +60,6 @@ public:
         , preferredSizeMultiple(0U)
         , preferredConcurrency(0U)
     {
-        cudaError_t error;
-        error = cudaStreamCreate(&stream);
-        if (error != cudaSuccess) {
-            throw std::runtime_error("Failed to create CUDA stream!");
-        }
-
         cudaGetDeviceProperties(&properties, device_id);
     }
 

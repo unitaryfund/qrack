@@ -203,6 +203,9 @@ protected:
     std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
+    // If we have ~16 streams, this doesn't scale to single-qubit QEngineOCL instances under QUnit.
+    // However, we prefer QHybrid!
+    cudaStream_t stream;
 
     // For std::function, cl_int use might discard int qualifiers.
     void tryCuda(std::string message, std::function<int()> oclCall, bool unlockWaitEvents = false)

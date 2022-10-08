@@ -648,7 +648,15 @@ real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
     return (real1_f)totSum;
 }
 
-void QEngineCUDA::InitOCL(int64_t devID) { SetDevice(devID); }
+void QEngineCUDA::InitOCL(int64_t devID)
+{
+    cudaError_t error;
+    error = cudaStreamCreate(&stream);
+    if (error != cudaSuccess) {
+        throw std::runtime_error("Failed to create CUDA stream!");
+    }
+    SetDevice(devID);
+}
 
 void QEngineCUDA::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nStateBuffer; }
 
