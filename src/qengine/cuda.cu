@@ -29,9 +29,14 @@ namespace Qrack {
 #define APPLY2X2_INVERT 0x80
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
-#define DISPATCH_BLOCK_WRITE(waitVec, buff, offset, length, array)                                                     \
-    tryCuda("Failed to write buffer",                                                                                  \
-        [&] { return queue.enqueueWriteBuffer(buff, CL_TRUE, offset, length, array, waitVec.get()); });                \
+#define DISPATCH_BLOCK_WRITE(buff, offset, length, array)                                                              \
+    tryCuda("Failed to write buffer", [&] {                                                                            \
+        cudaError_t err = cudaStreamSynchronize(queue);                                                                \
+        if (err != cudaSuccess) {                                                                                      \
+            return err;                                                                                                \
+        }                                                                                                              \
+        return cudaMemcpy((void*)((complex*)((buff).get()) + offset), (void*)(array), length, cudaMemcpyHostToDevice); \
+    });                                                                                                                \
     wait_refs.clear();
 
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
@@ -54,13 +59,13 @@ namespace Qrack {
         true);                                                                                                         \
     device_context->UnlockWaitEvents();
 
-#define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                      \
+#define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                               \
     tryCuda("Failed to read buffer", [&] {                                                                             \
         cudaError_t err = cudaStreamSynchronize(queue);                                                                \
         if (err != cudaSuccess) {                                                                                      \
             return err;                                                                                                \
         }                                                                                                              \
-        return cudaMemcpy((void*)array, (void*)(buff.get() + offset), length, cudaMemcpyDeviceToHost);                 \
+        return cudaMemcpy((void*)(array), (void*)((complex*)((buff).get()) + offset), length, cudaMemcpyDeviceToHost); \
     });                                                                                                                \
     wait_refs.clear();
 
@@ -158,7 +163,7 @@ void QEngineCUDA::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCap
     }
 
     ResetWaitEvents();
-    DISPATCH_BLOCK_READ(*stateBuffer, sizeof(complex) * offset, sizeof(complex) * length, pagePtr);
+    DISPATCH_BLOCK_READ(*stateBuffer, offset, sizeof(complex) * length, pagePtr);
 }
 
 void QEngineCUDA::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
@@ -174,8 +179,8 @@ void QEngineCUDA::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, 
         }
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_BLOCK_WRITE(waitVec, *stateBuffer, sizeof(complex) * offset, sizeof(complex) * length, pagePtr);
+    ResetWaitEvents();
+    DISPATCH_BLOCK_WRITE(*stateBuffer, offset, sizeof(complex) * length, pagePtr);
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -328,7 +333,7 @@ void QEngineCUDA::UnlockSync()
         wait_refs.clear();
     } else {
         if (lockSyncFlags & CL_MAP_WRITE) {
-            DISPATCH_BLOCK_WRITE(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, stateVec.get())
+            DISPATCH_BLOCK_WRITE(*stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, stateVec.get())
         }
         FreeStateVec();
     }
@@ -1237,8 +1242,8 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
         if (device_context->context_id != toCopy->device_context->context_id) {
             toCopy->LockSync(CL_MAP_READ);
 
-            EventVecPtr waitVec = ResetWaitEvents();
-            DISPATCH_BLOCK_WRITE(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, toCopy->stateVec.get());
+            ResetWaitEvents();
+            DISPATCH_BLOCK_WRITE(*stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, toCopy->stateVec.get());
 
             toCopy->UnlockSync();
 
@@ -2916,8 +2921,8 @@ void QEngineCUDA::SetQuantumState(const complex* inputState)
         ReinitBuffer();
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_BLOCK_WRITE(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, inputState);
+    ResetWaitEvents();
+    DISPATCH_BLOCK_WRITE(*stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, inputState);
 
     UpdateRunningNorm();
 }
@@ -2934,7 +2939,7 @@ complex QEngineCUDA::GetAmplitude(bitCapInt perm)
     }
 
     complex amp;
-    DISPATCH_BLOCK_READ(*stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), &amp);
+    DISPATCH_BLOCK_READ(*stateBuffer, (bitCapIntOcl)perm, sizeof(complex), &amp);
 
     return amp;
 }
