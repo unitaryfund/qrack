@@ -35,7 +35,7 @@ namespace Qrack {
         if (err != cudaSuccess) {                                                                                      \
             return err;                                                                                                \
         }                                                                                                              \
-        return cudaMemcpy((void*)((complex*)((buff).get()) + offset), (void*)(array), length, cudaMemcpyHostToDevice); \
+        return cudaMemcpy((void*)((complex*)(buff) + offset), (void*)(array), length, cudaMemcpyHostToDevice);         \
     });                                                                                                                \
     wait_refs.clear();
 
@@ -65,7 +65,7 @@ namespace Qrack {
         if (err != cudaSuccess) {                                                                                      \
             return err;                                                                                                \
         }                                                                                                              \
-        return cudaMemcpy((void*)(array), (void*)((complex*)((buff).get()) + offset), length, cudaMemcpyDeviceToHost); \
+        return cudaMemcpy((void*)(array), (void*)((complex*)(buff) + offset), length, cudaMemcpyDeviceToHost);         \
     });                                                                                                                \
     wait_refs.clear();
 
