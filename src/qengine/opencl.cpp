@@ -758,6 +758,10 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             throw std::invalid_argument(
                 "QEngineOCL::Apply2x2 parameter qPowersSorted array values must be within allocated qubit bounds!");
         }
+        if (i && (qPowersSorted[i - 1U] == qPowersSorted[i])) {
+            throw std::invalid_argument("QEngineOCL::Apply2x2 parameter qPowersSorted array values cannot be "
+                                        "duplicated (for control and target qubits)!");
+        }
     }
 
     const bool skipNorm = !doNormalize || (abs(ONE_R1 - runningNorm) <= FP_NORM_EPSILON);

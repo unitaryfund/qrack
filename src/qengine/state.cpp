@@ -371,6 +371,10 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             throw std::invalid_argument(
                 "QEngineCPU::Apply2x2 parameter qPowsSorted array values must be within allocated qubit bounds!");
         }
+        if (i && (qPowsSorted[i - 1U] == qPowsSorted[i])) {
+            throw std::invalid_argument("QEngineCPU::Apply2x2 parameter qPowersSorted array values cannot be "
+                                        "duplicated (for control and target qubits)!");
+        }
     }
 
     std::shared_ptr<complex> mtrxS(new complex[4U], std::default_delete<complex[]>());
@@ -551,6 +555,10 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
         if (qPowsSorted[i] >= maxQPowerOcl) {
             throw std::invalid_argument(
                 "QEngineCPU::Apply2x2 parameter qPowsSorted array values must be within allocated qubit bounds!");
+        }
+        if (i && (qPowersSorted[i - 1U] == qPowersSorted[i])) {
+            throw std::invalid_argument("QEngineCPU::Apply2x2 parameter qPowersSorted array values cannot be "
+                                        "duplicated (for control and target qubits)!");
         }
     }
 
@@ -1404,7 +1412,7 @@ real1_f QEngineCPU::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenI
 
     if (target >= qubitCount) {
         throw std::invalid_argument(
-            "QEngineOCL::CtrlOrAntiProb target index parameter must be within allocated qubit bounds!");
+            "QEngineCPU::CtrlOrAntiProb target index parameter must be within allocated qubit bounds!");
     }
 
     const bitCapIntOcl qControlPower = pow2Ocl(control);
