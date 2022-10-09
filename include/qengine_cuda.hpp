@@ -211,7 +211,10 @@ protected:
     complex permutationAmp;
     std::shared_ptr<complex> stateVec;
     std::mutex queue_mutex;
+    // If we have ~16 streams, this doesn't scale to single-qubit QEngineOCL instances under QUnit.
+    // However, we prefer QHybrid!
     cudaStream_t queue;
+    cudaStream_t params_queue;
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
     // QEngineCUDA itself, specifically by QEngineCUDAMulti.
     BufferPtr stateBuffer;
@@ -221,8 +224,6 @@ protected:
     std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
-    // If we have ~16 streams, this doesn't scale to single-qubit QEngineOCL instances under QUnit.
-    // However, we prefer QHybrid!
 
     void checkCallbackError()
     {
@@ -332,6 +333,8 @@ public:
     void QueueSetRunningNorm(real1_f runningNrm) { AddQueueItem(QueueItem(runningNrm)); }
     void AddQueueItem(const QueueItem& item)
     {
+        tryCuda("Failed to finish params_queue", [&] { return cudaStreamSynchronize(params_queue); });
+
         bool isBase;
         // For lock_guard:
         if (true) {

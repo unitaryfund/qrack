@@ -31,45 +31,29 @@ namespace Qrack {
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_BLOCK_WRITE(buff, offset, length, array)                                                              \
+    tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });                                     \
     tryCuda("Failed to write buffer", [&] {                                                                            \
-        cudaError_t err = cudaStreamSynchronize(queue);                                                                \
-        if (err != cudaSuccess) {                                                                                      \
-            return err;                                                                                                \
-        }                                                                                                              \
         return cudaMemcpy((void*)((complex*)(buff.get()) + offset), (void*)(array), length, cudaMemcpyHostToDevice);   \
     });
 
 #define DISPATCH_TEMP_WRITE(buff, size, array)                                                                         \
-    tryCuda("Failed to write buffer", [&] {                                                                            \
-        cudaError_t err = cudaStreamSynchronize(queue);                                                                \
-        if (err != cudaSuccess) {                                                                                      \
-            return err;                                                                                                \
-        }                                                                                                              \
-        return cudaMemcpy(buff.get(), array, size, cudaMemcpyHostToDevice);                                            \
-    });
+    tryCuda("Failed to write buffer",                                                                                  \
+        [&] { return cudaMemcpyAsync(buff.get(), array, size, cudaMemcpyHostToDevice, params_queue); });
 
 #define DISPATCH_WRITE(buff, size, array)                                                                              \
     tryCuda("Failed to enqueue buffer write",                                                                          \
         [&] { return cudaMemcpyAsync(buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, queue); });
 
 #define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                               \
+    tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });                                     \
     tryCuda("Failed to read buffer", [&] {                                                                             \
-        cudaError_t err = cudaStreamSynchronize(queue);                                                                \
-        if (err != cudaSuccess) {                                                                                      \
-            return err;                                                                                                \
-        }                                                                                                              \
         return cudaMemcpy((void*)(array), (void*)((complex*)(buff.get()) + offset), length, cudaMemcpyDeviceToHost);   \
     });
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
     clFinish();                                                                                                        \
-    tryCuda("Failed to enqueue buffer read", [&] {                                                                     \
-        cudaError_t err = cudaStreamSynchronize(queue);                                                                \
-        if (err != cudaSuccess) {                                                                                      \
-            return err;                                                                                                \
-        }                                                                                                              \
-        return cudaMemcpy((void*)((array).get()), buff.get(), sizeof(real1) * size, cudaMemcpyDeviceToHost);           \
-    });                                                                                                                \
+    tryCuda("Failed to enqueue buffer read",                                                                           \
+        [&] { return cudaMemcpy((void*)((array).get()), buff.get(), sizeof(real1) * size, cudaMemcpyDeviceToHost); }); \
     *(sumPtr) = ParSum(array.get(), size);
 
 #define CHECK_ZERO_SKIP()                                                                                              \
@@ -224,11 +208,8 @@ void QEngineCUDA::SetAmplitudePage(
 
     pageEngineOclPtr->clFinish();
 
+    tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
     tryCuda("Failed to enqueue buffer copy", [&] {
-        cudaError_t error = cudaStreamSynchronize(queue);
-        if (error != cudaSuccess) {
-            return error;
-        }
         return cudaMemcpy(oStateBuffer.get(), stateBuffer.get(), sizeof(complex) * srcOffset, cudaMemcpyDeviceToDevice);
     });
 
@@ -278,11 +259,8 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
 
     if (stateVec) {
         unlockHostMem = true;
+        tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
         tryCuda("Failed to map buffer", [&] {
-            cudaError_t error = cudaStreamSynchronize(queue);
-            if (error != cudaSuccess) {
-                return error;
-            }
             return cudaMemcpy(
                 (void*)(stateVec.get()), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToHost);
         });
@@ -298,11 +276,8 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
 void QEngineCUDA::UnlockSync()
 {
     if (unlockHostMem) {
+        tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
         tryCuda("Failed to unmap buffer", [&] {
-            cudaError_t error = cudaStreamSynchronize(queue);
-            if (error != cudaSuccess) {
-                return error;
-            }
             return cudaMemcpyAsync(stateBuffer.get(), (void*)(stateVec.get()), sizeof(complex) * maxQPowerOcl,
                 cudaMemcpyHostToDevice, queue);
         });
@@ -324,10 +299,12 @@ void QEngineCUDA::clFinish(bool doHard)
 
     checkCallbackError();
 
+    tryCuda("Failed to finish params_queue", [&] { return cudaStreamSynchronize(params_queue); });
+
     if (doHard) {
-        tryCuda("Failed to finish device queue", [&] { return cudaStreamSynchronize(queue); });
+        tryCuda("Failed to finish device queue", [&] { return cudaDeviceSynchronize(); });
     } else {
-        tryCuda("Failed to finish simulator queue", [&] { return cudaDeviceSynchronize(); });
+        tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
     }
 }
 
@@ -734,11 +711,9 @@ real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
 
 void QEngineCUDA::InitOCL(int64_t devID)
 {
-    cudaError_t error;
-    error = cudaStreamCreate(&queue);
-    if (error != cudaSuccess) {
-        throw std::runtime_error("Failed to create CUDA stream!");
-    }
+    tryCuda("Failed to create CUDA stream!", [&] { return cudaStreamCreate(&queue); });
+    tryCuda("Failed to create CUDA stream!", [&] { return cudaStreamCreate(&params_queue); });
+
     SetDevice(devID);
 }
 
@@ -1257,11 +1232,8 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
         stateVec = AllocStateVec(toCopy->maxQPowerOcl);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
+        tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
         tryCuda("Failed to enqueue buffer copy", [&] {
-            cudaError_t error = cudaStreamSynchronize(queue);
-            if (error != cudaSuccess) {
-                return error;
-            }
             return cudaMemcpy(
                 stateBuffer.get(), toCopy->stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
         });
@@ -1476,11 +1448,8 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
 
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
 
+            tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
             tryCuda("Failed to enqueue buffer copy", [&] {
-                cudaError_t error = cudaStreamSynchronize(queue);
-                if (error != cudaSuccess) {
-                    return error;
-                }
                 return cudaMemcpy(nSB.get(), destination->stateBuffer.get(), sizeof(complex) * maxQPowerOcl,
                     cudaMemcpyDeviceToDevice);
             });
@@ -3002,10 +2971,6 @@ real1_f QEngineCUDA::SumSqrDiff(QEngineCUDAPtr toCompare)
 
     clFinish();
     tryCuda("Failed to read buffer", [&] {
-        cudaError_t error = cudaStreamSynchronize(queue);
-        if (error != cudaSuccess) {
-            return error;
-        }
         return cudaMemcpy(
             (void*)(partInner.get()), locCmplxBuffer.get(), sizeof(complex) * partInnerSize, cudaMemcpyDeviceToHost);
     });
@@ -3033,10 +2998,6 @@ QInterfacePtr QEngineCUDA::Clone()
     clFinish();
 
     tryCuda("Failed to enqueue buffer copy", [&] {
-        cudaError_t error = cudaStreamSynchronize(queue);
-        if (error != cudaSuccess) {
-            return error;
-        }
         return cudaMemcpy(
             copyPtr->stateBuffer.get(), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
     });
