@@ -635,6 +635,62 @@ void QEngineCUDA::DispatchQueue()
     case OCL_API_SHUFFLEBUFFERS:
         CUDA_KERNEL_3(shufflebuffers, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
         break;
+#if ENABLE_ALU
+    case OCL_API_INC:
+        CUDA_KERNEL_3(inc, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_CINC:
+        CUDA_KERNEL_4(cinc, qCudaCmplx, bitCapIntOcl, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_INCDECC:
+        CUDA_KERNEL_3(incdecc, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_INCS:
+        CUDA_KERNEL_3(incs, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_INCDECSC_1:
+        CUDA_KERNEL_3(incdecsc1, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_INCDECSC_2:
+        CUDA_KERNEL_3(incdecsc2, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_MUL:
+        CUDA_KERNEL_3(mul, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_DIV:
+        CUDA_KERNEL_3(div, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_MULMODN_OUT:
+        CUDA_KERNEL_3(mulmodnout, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_IMULMODN_OUT:
+        CUDA_KERNEL_3(imulmodnout, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_POWMODN_OUT:
+        CUDA_KERNEL_3(powmodnout, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_CMUL:
+        CUDA_KERNEL_4(cmul, qCudaCmplx, bitCapIntOcl, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_CDIV:
+        CUDA_KERNEL_4(cdiv, qCudaCmplx, bitCapIntOcl, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_CMULMODN_OUT:
+        CUDA_KERNEL_4(cmulmodnout, qCudaCmplx, bitCapIntOcl, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_CIMULMODN_OUT:
+        CUDA_KERNEL_4(cimulmodnout, qCudaCmplx, bitCapIntOcl, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_CPOWMODN_OUT:
+        CUDA_KERNEL_4(cpowmodnout, qCudaCmplx, bitCapIntOcl, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_FULLADD:
+        CUDA_KERNEL_2(fulladd, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_IFULLADD:
+        CUDA_KERNEL_2(ifulladd, qCudaCmplx, bitCapIntOcl);
+        break;
+#endif
     case OCL_API_UNKNOWN:
     default:
         throw std::runtime_error("Invalid CUDA kernel selected!");
