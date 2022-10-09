@@ -31,7 +31,7 @@ namespace Qrack {
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_BLOCK_WRITE(buff, offset, length, array)                                                              \
-    tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });                                     \
+    clFinish();                                                                                                        \
     tryCuda("Failed to write buffer", [&] {                                                                            \
         return cudaMemcpy((void*)((complex*)(buff.get()) + offset), (void*)(array), length, cudaMemcpyHostToDevice);   \
     });
@@ -45,7 +45,7 @@ namespace Qrack {
         [&] { return cudaMemcpyAsync(buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, queue); });
 
 #define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                               \
-    tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });                                     \
+    clFinish();                                                                                                        \
     tryCuda("Failed to read buffer", [&] {                                                                             \
         return cudaMemcpy((void*)(array), (void*)((complex*)(buff.get()) + offset), length, cudaMemcpyDeviceToHost);   \
     });
@@ -75,12 +75,12 @@ QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_ge
     real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , unlockHostMem(false)
-    , callbackError(cudaSuccess)
     , nrmGroupSize(0U)
     , totalOclAllocSize(0U)
-    , wait_queue_item_id(0U)
     , deviceID(devID)
     , nrmArray(NULL, [](real1* r) {})
+    , queue(0)
+    , params_queue(0)
 {
     InitOCL(devID);
     clFinish();
@@ -210,7 +210,7 @@ void QEngineCUDA::SetAmplitudePage(
 
     pageEngineOclPtr->clFinish();
 
-    tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
+    clFinish();
     tryCuda("Failed to enqueue buffer copy", [&] {
         return cudaMemcpy(oStateBuffer.get(), stateBuffer.get(), sizeof(complex) * srcOffset, cudaMemcpyDeviceToDevice);
     });
@@ -261,7 +261,7 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
 
     if (stateVec) {
         unlockHostMem = true;
-        tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
+        clFinish();
         tryCuda("Failed to map buffer", [&] {
             return cudaMemcpy(
                 (void*)(stateVec.get()), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToHost);
@@ -278,7 +278,7 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
 void QEngineCUDA::UnlockSync()
 {
     if (unlockHostMem) {
-        tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
+        clFinish();
         tryCuda("Failed to unmap buffer", [&] {
             return cudaMemcpyAsync(stateBuffer.get(), (void*)(stateVec.get()), sizeof(complex) * maxQPowerOcl,
                 cudaMemcpyHostToDevice, queue);
@@ -299,7 +299,10 @@ void QEngineCUDA::clFinish(bool doHard)
         return;
     }
 
-    tryCuda("Failed to finish params_queue", [&] { return cudaStreamSynchronize(params_queue); });
+    while (wait_queue_items.size() > 1) {
+        tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
+        PopQueue(true);
+    }
 
     if (doHard) {
         tryCuda("Failed to finish device queue", [&] { return cudaDeviceSynchronize(); });
@@ -308,7 +311,19 @@ void QEngineCUDA::clFinish(bool doHard)
     }
 }
 
-void QEngineCUDA::clDump() { clFinish(); }
+void QEngineCUDA::clDump()
+{
+    if (!device_context) {
+        return;
+    }
+
+    while (wait_queue_items.size() > 1) {
+        tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
+        PopQueue(false);
+    }
+
+    tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
+}
 
 PoolItemPtr QEngineCUDA::GetFreePoolItem()
 {
@@ -328,34 +343,32 @@ void QEngineCUDA::WaitCall(
     clFinish();
 }
 
-void CUDART_CB _PopQueue(cudaStream_t stream, cudaError_t status, void* user_data)
+void CUDART_CB _PopQueue(void* user_data) { ((QEngineCUDA*)user_data)->PopQueue(true); }
+
+void QEngineCUDA::PopQueue(bool isDispatch)
 {
-    ((QEngineCUDA*)user_data)->PopQueue();
-}
+    // For lock_guard scope
+    if (true) {
+        std::lock_guard<std::mutex> lock(queue_mutex);
 
-void QEngineCUDA::PopQueue()
-{
-    std::lock_guard<std::mutex> lock(queue_mutex);
+        if (poolItems.size()) {
+            poolItems.front()->probArray = NULL;
+            poolItems.front()->angleArray = NULL;
 
-    if (poolItems.size()) {
-        poolItems.front()->probArray = NULL;
-        poolItems.front()->angleArray = NULL;
-
-        SubtractAlloc(wait_queue_items.front().deallocSize);
-
-        if (poolItems.size() > 1) {
-            rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
+            if (poolItems.size() > 1) {
+                rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
+            }
         }
+
+        if (!wait_queue_items.size()) {
+            return;
+        }
+        SubtractAlloc(wait_queue_items.front().deallocSize);
+        wait_queue_items.pop_front();
     }
 
-    if (!wait_queue_items.size()) {
-        wait_queue_item_id = 0U;
-        return;
-    }
-
-    wait_queue_items.erase(wait_queue_items.begin());
-    if (wait_queue_item_id) {
-        --wait_queue_item_id;
+    if (isDispatch) {
+        DispatchQueue();
     }
 }
 
@@ -366,11 +379,11 @@ void QEngineCUDA::DispatchQueue()
     if (true) {
         std::lock_guard<std::mutex> lock(queue_mutex);
 
-        if (wait_queue_items.size() <= wait_queue_item_id) {
+        if (!wait_queue_items.size()) {
             return;
         }
 
-        item = wait_queue_items[wait_queue_item_id];
+        item = wait_queue_items.front();
 
         while (item.isSetDoNorm || item.isSetRunningNorm) {
             if (item.isSetDoNorm) {
@@ -380,14 +393,12 @@ void QEngineCUDA::DispatchQueue()
                 runningNorm = item.runningNorm;
             }
 
-            wait_queue_items.erase(wait_queue_items.begin() + wait_queue_item_id);
-            if (wait_queue_items.size() <= wait_queue_item_id) {
+            wait_queue_items.pop_front();
+            if (!wait_queue_items.size()) {
                 return;
             }
-            item = wait_queue_items[wait_queue_item_id];
+            item = wait_queue_items.front();
         }
-
-        ++wait_queue_item_id;
     }
 
     std::vector<BufferPtr> args = item.buffers;
@@ -622,7 +633,7 @@ void QEngineCUDA::DispatchQueue()
         throw std::runtime_error("Invalid CUDA kernel selected!");
     }
 
-    cudaStreamAddCallback(queue, _PopQueue, (void*)this, 0);
+    cudaLaunchHostFunc(queue, _PopQueue, (void*)this);
 }
 
 void QEngineCUDA::SetDevice(int64_t dID)
@@ -1246,7 +1257,7 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
         stateVec = AllocStateVec(toCopy->maxQPowerOcl);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
-        tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
+        clFinish();
         tryCuda("Failed to enqueue buffer copy", [&] {
             return cudaMemcpy(
                 stateBuffer.get(), toCopy->stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
@@ -1462,7 +1473,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
 
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
 
-            tryCuda("Failed to sync queue", [&] { return cudaStreamSynchronize(queue); });
+            clFinish();
             tryCuda("Failed to enqueue buffer copy", [&] {
                 return cudaMemcpy(nSB.get(), destination->stateBuffer.get(), sizeof(complex) * maxQPowerOcl,
                     cudaMemcpyDeviceToDevice);

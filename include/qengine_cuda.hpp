@@ -202,11 +202,9 @@ class QEngineCUDA : public QEngine {
 protected:
     bool usingHostRam;
     bool unlockHostMem;
-    cudaError_t callbackError;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t totalOclAllocSize;
-    size_t wait_queue_item_id;
     int64_t deviceID;
     cl_map_flags lockSyncFlags;
     complex permutationAmp;
@@ -222,7 +220,7 @@ protected:
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
     DeviceContextPtr device_context;
-    std::vector<QueueItem> wait_queue_items;
+    std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
 
@@ -288,10 +286,16 @@ public:
 
     ~QEngineCUDA()
     {
-        // Theoretically, all user output is blocking, so don't throw in destructor.
-        callbackError = cudaSuccess;
         // Make sure we track device allocation.
         FreeAll();
+
+        // Theoretically, all user output is blocking, so don't throw in destructor.
+        if (params_queue) {
+            cudaStreamDestroy(params_queue);
+        }
+        if (queue) {
+            cudaStreamDestroy(queue);
+        }
     }
 
     virtual bool isOpenCL() { return true; }
@@ -321,15 +325,17 @@ public:
     void QueueSetRunningNorm(real1_f runningNrm) { AddQueueItem(QueueItem(runningNrm)); }
     void AddQueueItem(const QueueItem& item)
     {
-        tryCuda("Failed to finish params_queue", [&] { return cudaStreamSynchronize(params_queue); });
-
+        bool isBase;
         // For lock_guard:
         if (true) {
             std::lock_guard<std::mutex> lock(queue_mutex);
+            isBase = !wait_queue_items.size();
             wait_queue_items.push_back(item);
         }
 
-        DispatchQueue();
+        if (isBase) {
+            DispatchQueue();
+        }
     }
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U, size_t deallocSize = 0U)
@@ -473,7 +479,7 @@ public:
 
     QInterfacePtr Clone();
 
-    void PopQueue();
+    void PopQueue(bool isDispatch);
     void DispatchQueue();
 
 protected:
