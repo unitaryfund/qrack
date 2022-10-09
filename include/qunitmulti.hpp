@@ -12,8 +12,13 @@
 
 #pragma once
 
+#if ENABLE_OPENCL
 #include "common/oclengine.hpp"
 #include "qengine_opencl.hpp"
+#elif ENABLE_CUDA
+#include "common/cudaengine.cuh"
+#include "qengine_cuda.hpp"
+#endif
 #include "qinterface.hpp"
 #include "qunit.hpp"
 

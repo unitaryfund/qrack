@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
     bool stabilizer = false;
     bool stabilizer_qpager = false;
     bool stabilizer_bdt = false;
+    bool cuda = false;
 
     std::string devListStr;
 
@@ -84,6 +85,7 @@ int main(int argc, char* argv[])
             "Enable QStabilizerHybrid over QPager implementation tests") |
         Opt(stabilizer_bdt)["--proc-stabilizer-bdt"](
             "Enable QStabilizerHybrid over QBinaryDecisionTree implementation tests") |
+        Opt(cuda)["--proc-cuda"]("Enable QEngineCUDA tests") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl)["--proc-opencl"]("Single (parallel) processor OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
@@ -146,9 +148,10 @@ int main(int argc, char* argv[])
         // qunit_multi_qpager = true;
     }
 
-    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt) {
+    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt && !cuda) {
         cpu = true;
         opencl = true;
+        cuda = true;
         hybrid = true;
         stabilizer = true;
         // bdt = true;
@@ -194,7 +197,18 @@ int main(int argc, char* argv[])
             testSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
+#endif
 
+#if ENABLE_CUDA
+        if (num_failed == 0 && cuda) {
+            session.config().stream() << "############ QEngine -> CUDA ############" << std::endl;
+            testEngineType = QINTERFACE_OPENCL;
+            testSubEngineType = QINTERFACE_CUDA;
+            num_failed = session.run();
+        }
+#endif
+
+#if ENABLE_OPENCL || ENABLE_CUDA
         if (num_failed == 0 && stabilizer) {
             session.config().stream() << "############ QStabilizerHybrid -> QHybrid ############" << std::endl;
             testEngineType = QINTERFACE_STABILIZER_HYBRID;
@@ -223,6 +237,14 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl) {
             session.config().stream() << "############ QPager -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
+            num_failed = session.run();
+        }
+#endif
+
+#if ENABLE_CUDA
+        if (num_failed == 0 && cuda) {
+            session.config().stream() << "############ QPager -> QEngine -> CUDA ############" << std::endl;
+            testSubEngineType = QINTERFACE_CUDA;
             num_failed = session.run();
         }
 #endif

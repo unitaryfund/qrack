@@ -13,6 +13,14 @@
 
 #include "qfactory.hpp"
 
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 namespace Qrack {
 
 QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
@@ -33,7 +41,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
         if ((engines[i] == QINTERFACE_CPU) || (engines[i] == QINTERFACE_HYBRID)) {
             break;
         }
-        if (engines[i] == QINTERFACE_OPENCL) {
+        if (engines[i] == QRACK_GPU_ENGINE) {
             isQEngineOCL = true;
             break;
         }
@@ -46,19 +54,19 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
         thresholdQubits = qubitThreshold;
     } else {
         const bitLenInt gpuQubits =
-            log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+            log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
         const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
-    std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
-    defaultDeviceID = (deviceID < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)deviceID;
+    std::vector<DeviceContextPtr> deviceContext = QRACK_GPU_SINGLETON.GetDeviceContextPtrVector();
+    defaultDeviceID = (deviceID < 0) ? QRACK_GPU_SINGLETON.GetDefaultDeviceID() : (size_t)deviceID;
 
     const size_t devCount = devList.size() ? devList.size() : deviceContext.size();
     for (size_t i = 0; i < devCount; ++i) {
         DeviceInfo deviceInfo;
         deviceInfo.id =
-            devList.size() ? ((devList[0U] < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)devList[i]) : i;
+            devList.size() ? ((devList[0U] < 0) ? QRACK_GPU_SINGLETON.GetDefaultDeviceID() : (size_t)devList[i]) : i;
         deviceList.push_back(deviceInfo);
     }
     if (!devList.size()) {
@@ -77,10 +85,10 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     size_t deviceId = defaultDeviceID;
-    uint64_t sz = OCLEngine::Instance().GetActiveAllocSize(deviceId);
+    uint64_t sz = QRACK_GPU_SINGLETON.GetActiveAllocSize(deviceId);
 
     for (size_t i = 0U; i < deviceList.size(); ++i) {
-        uint64_t tSz = OCLEngine::Instance().GetActiveAllocSize(deviceList[i].id);
+        uint64_t tSz = QRACK_GPU_SINGLETON.GetActiveAllocSize(deviceList[i].id);
         if (sz > tSz) {
             sz = tSz;
             deviceId = deviceList[i].id;
@@ -106,7 +114,7 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
             qips.push_back(shard.unit);
             const size_t deviceIndex = std::distance(
                 deviceList.begin(), std::find_if(deviceList.begin(), deviceList.end(), [&](DeviceInfo di) {
-                    return di.id == (shard.unit->GetDevice() < 0) ? OCLEngine::Instance().GetDefaultDeviceID()
+                    return di.id == (shard.unit->GetDevice() < 0) ? QRACK_GPU_SINGLETON.GetDefaultDeviceID()
                                                                   : (size_t)shard.unit->GetDevice();
                 }));
             qinfos.push_back(QEngineInfo(shard.unit, deviceIndex));

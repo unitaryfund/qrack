@@ -15,6 +15,9 @@
 #if ENABLE_OPENCL
 #include "common/oclengine.hpp"
 #endif
+#if ENABLE_CUDA
+#include "common/cudaengine.cuh"
+#endif
 
 namespace Qrack {
 
@@ -104,6 +107,10 @@ public:
         real1_f separation_thresh = FP_NORM_EPSILON_F)
 #if ENABLE_OPENCL
         : QPager({ OCLEngine::Instance().GetDeviceCount() ? QINTERFACE_OPENCL : QINTERFACE_CPU }, qBitCount, initState,
+              rgp, phaseFac, doNorm, ignored, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh,
+              devList, qubitThreshold, separation_thresh)
+#elif ENABLE_CUDA
+        : QPager({ CUDAEngine::Instance().GetDeviceCount() ? QINTERFACE_CUDA : QINTERFACE_CPU }, qBitCount, initState,
               rgp, phaseFac, doNorm, ignored, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh,
               devList, qubitThreshold, separation_thresh)
 #else

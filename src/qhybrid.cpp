@@ -12,6 +12,14 @@
 
 #include <thread>
 
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 namespace Qrack {
 
 QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
@@ -29,12 +37,12 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         gpuThresholdQubits = qubitThreshold;
     } else {
         const bitLenInt gpuQubits =
-            log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+            log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
         const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
         gpuThresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
-    pagerThresholdQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+    pagerThresholdQubits = log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
 
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
@@ -52,7 +60,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     if (isPager) {
         engines.push_back(QINTERFACE_QPAGER);
     }
-    engines.push_back(isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+    engines.push_back(isGpu ? QRACK_GPU_ENGINE : QINTERFACE_CPU);
 
     engine = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qubitCount, initState, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
@@ -62,7 +70,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
 QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
 {
     QEnginePtr toRet =
-        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU, 0U, 0U,
+        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QRACK_GPU_ENGINE : QINTERFACE_CPU, 0U, 0U,
             rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
             (real1_f)amplitudeFloor, deviceIDs, pagerThresholdQubits, separabilityThreshold));
     toRet->SetQubitCount(qubitCount);
