@@ -590,6 +590,32 @@ void QEngineCUDA::DispatchQueue()
     case OCL_API_IFULLADD:
         CUDA_KERNEL_2(ifulladd, qCudaCmplx, bitCapIntOcl);
         break;
+    case OCL_API_INDEXEDLDA:
+        CUDA_KERNEL_4(indexedLda, qCudaCmplx, bitCapIntOcl, qCudaCmplx, unsigned char);
+        break;
+    case OCL_API_INDEXEDADC:
+        CUDA_KERNEL_4(indexedAdc, qCudaCmplx, bitCapIntOcl, qCudaCmplx, unsigned char);
+        break;
+    case OCL_API_INDEXEDSBC:
+        CUDA_KERNEL_4(indexedSbc, qCudaCmplx, bitCapIntOcl, qCudaCmplx, unsigned char);
+        break;
+    case OCL_API_HASH:
+        CUDA_KERNEL_4(hash, qCudaCmplx, bitCapIntOcl, qCudaCmplx, unsigned char);
+        break;
+    case OCL_API_CPHASEFLIPIFLESS:
+        CUDA_KERNEL_2(cphaseflipifless, qCudaCmplx, bitCapIntOcl);
+        break;
+    case OCL_API_PHASEFLIPIFLESS:
+        CUDA_KERNEL_2(phaseflipifless, qCudaCmplx, bitCapIntOcl);
+        break;
+#if ENABLE_BCD
+    case OCL_API_INCBCD:
+        CUDA_KERNEL_3(incbcd, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+    case OCL_API_INCDECBCDC:
+        CUDA_KERNEL_3(incdecbcdc, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
+        break;
+#endif
 #endif
     case OCL_API_UNKNOWN:
     default:
