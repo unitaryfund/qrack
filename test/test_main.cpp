@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
         }
     }
 
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL || ENABLE_CUDA
     SHOW_OCL_BANNER();
 #endif
 
