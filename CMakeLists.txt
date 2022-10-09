@@ -136,9 +136,9 @@ message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
 
 if (QBCAPPOW GREATER 6)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -Xcompiler -fpermissive)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -Xcompiler -fpermissive -Xcompiler -fPIC)
 else (QBCAPPOW GREATER 6)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -Werror all-warnings)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -Werror all-warnings  -Xcompiler -fPIC)
 endif (QBCAPPOW GREATER 6)
 
 if (MSVC)

@@ -64,6 +64,11 @@ enum QInterfaceEngine {
     QINTERFACE_OPENCL,
 
     /**
+     * Create a QEngineCUDA, leveraging CUDA hardware to increase the speed of certain calculations.
+     */
+    QINTERFACE_CUDA,
+
+    /**
      * Create a QHybrid, switching between QEngineCPU and QEngineOCL as efficient.
      */
     QINTERFACE_HYBRID,

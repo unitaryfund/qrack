@@ -18,6 +18,13 @@
 
 #if ENABLE_OPENCL
 #include "qengine_opencl.hpp"
+#endif
+
+#if ENABLE_CUDA
+#include "qengine_cuda.hpp"
+#endif
+
+#if ENABLE_OPENCL //|| ENABLE_CUDA
 #include "qhybrid.hpp"
 #include "qunitmulti.hpp"
 #else
@@ -56,6 +63,12 @@ QInterfacePtr CreateQuantumInterface(
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
+#endif
+#if ENABLE_CUDA
+    case QINTERFACE_CUDA:
+        return std::make_shared<QEngineCUDA>(args...);
+#endif
+#if ENABLE_OPENCL //|| ENABLE_CUDA
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
@@ -90,6 +103,12 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
+#endif
+#if ENABLE_CUDA
+    case QINTERFACE_OPENCL:
+        return std::make_shared<QEngineCUDA>(args...);
+#endif
+#if ENABLE_OPENCL //|| ENABLE_CUDA
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
@@ -120,6 +139,12 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
+#endif
+#if ENABLE_CUDA
+    case QINTERFACE_OPENCL:
+        return std::make_shared<QEngineCUDA>(args...);
+#endif
+#if ENABLE_OPENCL //|| ENABLE_CUDA
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
@@ -165,6 +190,12 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
+#endif
+#if ENABLE_CUDA
+    case QINTERFACE_OPENCL:
+        return std::make_shared<QEngineCUDA>(args...);
+#endif
+#if ENABLE_OPENCL //|| ENABLE_CUDA
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
@@ -184,6 +215,9 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
 #if ENABLE_OPENCL
     bool isOcl = oc && (OCLEngine::Instance().GetDeviceCount() > 0);
     bool isOclMulti = oc && md && (OCLEngine::Instance().GetDeviceCount() > 1);
+#elif ENABLE_CUDA
+    bool isOcl = oc && (CUDAEngine::Instance().GetDeviceCount() > 0);
+    bool isOclMulti = oc && md && (CUDAEngine::Instance().GetDeviceCount() > 1);
 #else
     bool isOclMulti = false;
 #endif
@@ -194,6 +228,10 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
 #if ENABLE_OPENCL
     if (!hy || !isOcl) {
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+    }
+#elif ENABLE_CUDA
+    if (!hy || !isOcl) {
+        simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
     }
 #endif
 
@@ -217,11 +255,15 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
     std::reverse(simulatorType.begin(), simulatorType.end());
 
     if (!simulatorType.size()) {
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL //|| ENABLE_CUDA
         if (hy && isOcl) {
             simulatorType.push_back(QINTERFACE_HYBRID);
         } else {
+#if ENABLE_OPENCL
             simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+#else
+            simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
+#endif
         }
 #else
         simulatorType.push_back(QINTERFACE_CPU);
