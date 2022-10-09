@@ -420,17 +420,17 @@ public:
     /**
      * Apply an arbitrary single bit unitary transformation.
      */
-    virtual void Mtrx(const std::vector<complex>& mtrx, bitLenInt qubitIndex) = 0;
+    virtual void Mtrx(complex const* mtrx, bitLenInt qubitIndex) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
      */
-    virtual void MCMtrx(const std::vector<bitLenInt>& controls, const std::vector<complex>& mtrx, bitLenInt target) = 0;
+    virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
      */
-    virtual void MACMtrx(const std::vector<bitLenInt>& controls, const std::vector<complex>& mtrx, bitLenInt target)
+    virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
             MACPhase(controls, mtrx[0U], mtrx[3U], target);
@@ -450,7 +450,7 @@ public:
             return;
         }
 
-        const std::vector<complex> mtrx{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         Mtrx(mtrx, qubitIndex);
     }
 
@@ -459,7 +459,7 @@ public:
      */
     virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
     {
-        const std::vector<complex> mtrx{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         Mtrx(mtrx, qubitIndex);
     }
 
@@ -472,7 +472,7 @@ public:
             return;
         }
 
-        const std::vector<complex> mtrx{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         MCMtrx(controls, mtrx, target);
     }
 
@@ -483,7 +483,7 @@ public:
     virtual void MCInvert(
         const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
-        const std::vector<complex> mtrx{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         MCMtrx(controls, mtrx, target);
     }
 
@@ -529,12 +529,12 @@ public:
      */
 
     virtual void UniformlyControlledSingleBit(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const std::vector<complex>& mtrxs)
+        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, complex const* mtrxs)
     {
         UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), 0);
     }
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        const std::vector<complex>& mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
+        complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
 
     /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
@@ -1271,8 +1271,8 @@ public:
      *
      * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
-    virtual void Exp(const std::vector<bitLenInt>& controls, bitLenInt qubit, const std::vector<complex>& matrix2x2,
-        bool antiCtrled = false);
+    virtual void Exp(
+        const std::vector<bitLenInt>& controls, bitLenInt qubit, complex const* matrix2x2, bool antiCtrled = false);
 
     /**
      * Dyadic fraction (identity) exponentiation gate
