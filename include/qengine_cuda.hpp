@@ -226,22 +226,9 @@ protected:
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
 
-    void checkCallbackError()
-    {
-        if (callbackError == cudaSuccess) {
-            return;
-        }
-
-        wait_queue_items.clear();
-
-        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(callbackError));
-    }
-
     // For std::function, cudaError_t use might discard int qualifiers.
     void tryCuda(std::string message, std::function<cudaError_t()> oclCall)
     {
-        checkCallbackError();
-
         if (oclCall() == cudaSuccess) {
             // Success
             return;
@@ -339,7 +326,6 @@ public:
         // For lock_guard:
         if (true) {
             std::lock_guard<std::mutex> lock(queue_mutex);
-            checkCallbackError();
             wait_queue_items.push_back(item);
         }
 
@@ -508,8 +494,6 @@ protected:
 
     BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
-        checkCallbackError();
-
         cudaError_t error;
 
         BufferPtr toRet = std::shared_ptr<void>(

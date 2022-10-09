@@ -299,8 +299,6 @@ void QEngineCUDA::clFinish(bool doHard)
         return;
     }
 
-    checkCallbackError();
-
     tryCuda("Failed to finish params_queue", [&] { return cudaStreamSynchronize(params_queue); });
 
     if (doHard) {
@@ -310,20 +308,11 @@ void QEngineCUDA::clFinish(bool doHard)
     }
 }
 
-void QEngineCUDA::clDump()
-{
-    if (!device_context) {
-        return;
-    }
-
-    wait_queue_items.clear();
-}
+void QEngineCUDA::clDump() { clFinish(); }
 
 PoolItemPtr QEngineCUDA::GetFreePoolItem()
 {
     std::lock_guard<std::mutex> lock(queue_mutex);
-
-    checkCallbackError();
 
     while (wait_queue_items.size() >= poolItems.size()) {
         poolItems.push_back(std::make_shared<PoolItem>());
@@ -346,35 +335,27 @@ void CUDART_CB _PopQueue(cudaStream_t stream, cudaError_t status, void* user_dat
 
 void QEngineCUDA::PopQueue()
 {
-    // For lock_guard scope
-    if (true) {
-        std::lock_guard<std::mutex> lock(queue_mutex);
+    std::lock_guard<std::mutex> lock(queue_mutex);
 
-        if (poolItems.size()) {
-            poolItems.front()->probArray = NULL;
-            poolItems.front()->angleArray = NULL;
+    if (poolItems.size()) {
+        poolItems.front()->probArray = NULL;
+        poolItems.front()->angleArray = NULL;
 
-            SubtractAlloc(wait_queue_items.front().deallocSize);
+        SubtractAlloc(wait_queue_items.front().deallocSize);
 
-            if (poolItems.size() > 1) {
-                rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
-            }
-        }
-
-        if (!wait_queue_items.size()) {
-            wait_queue_item_id = 0U;
-            return;
-        }
-        wait_queue_items.erase(wait_queue_items.begin());
-        if (wait_queue_item_id) {
-            --wait_queue_item_id;
+        if (poolItems.size() > 1) {
+            rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
         }
     }
 
-    if (callbackError != cudaSuccess) {
-        wait_queue_items.clear();
+    if (!wait_queue_items.size()) {
         wait_queue_item_id = 0U;
         return;
+    }
+
+    wait_queue_items.erase(wait_queue_items.begin());
+    if (wait_queue_item_id) {
+        --wait_queue_item_id;
     }
 }
 
