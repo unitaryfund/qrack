@@ -778,8 +778,9 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
     });
 }
 
-void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
+void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt controlLen,
+    bitLenInt qubitIndex, const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers,
+    bitCapInt mtrxSkipValueMask)
 {
     CHECK_ZERO_SKIP();
 
@@ -893,7 +894,8 @@ void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
     });
 }
 
-void QEngineCPU::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+void QEngineCPU::CUniformParityRZ(
+    const std::vector<bitLenInt>& cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
 {
     if (!controlLen) {
         return UniformParityRZ(mask, angle);
