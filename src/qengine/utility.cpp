@@ -44,6 +44,10 @@ QEnginePtr QEngineCPU::CloneEmpty()
 
 bitLenInt QEngineCPU::Allocate(bitLenInt start, bitLenInt length)
 {
+    if (start > qubitCount) {
+        throw std::invalid_argument("QEngineCPU::Allocate argument is out-of-bounds!");
+    }
+
     if (!length) {
         return start;
     }

@@ -215,6 +215,10 @@ complex QUnit::GetAmplitude(bitCapInt perm) { return GetAmplitudeOrProb(perm, fa
 
 complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 {
+    if (perm >= maxQPower) {
+        throw std::invalid_argument("QUnit::GetAmplitudeOrProb argument out-of-bounds!");
+    }
+
     if (isProb) {
         ToPermBasisProb();
     } else {
@@ -258,6 +262,10 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 
 void QUnit::SetAmplitude(bitCapInt perm, complex amp)
 {
+    if (perm >= maxQPower) {
+        throw std::invalid_argument("QUnit::SetAmplitude argument out-of-bounds!");
+    }
+
     EntangleAll();
     shards[0U].unit->SetAmplitude(perm, amp);
 }
@@ -269,6 +277,10 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); 
  */
 bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 {
+    if (start > qubitCount) {
+        throw std::invalid_argument("QUnit::Compose start index is out-of-bounds!");
+    }
+
     /* Create a clone of the quantum state in toCopy. */
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
 
@@ -282,6 +294,10 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 
 void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::Detach range is out-of-bounds!");
+    }
+
     for (bitLenInt i = 0U; i < length; ++i) {
         RevertBasis2Qb(start + i);
     }
@@ -644,6 +660,9 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
 
 bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 {
+    ThrowIfQbIdArrayIsBad(qubits, length, qubitCount,
+        "QUnit::TrySeparate parameter controls array values must be within allocated qubit bounds!");
+
     if (length == 1U) {
         bitLenInt qubit = qubits[0U];
         QEngineShard& shard = shards[qubit];
@@ -720,6 +739,10 @@ bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error
 
 bool QUnit::TrySeparate(bitLenInt qubit)
 {
+    if (qubit >= qubitCount) {
+        throw std::invalid_argument("QUnit::TrySeparate target parameter must be within allocated qubit bounds!");
+    }
+
     QEngineShard& shard = shards[qubit];
 
     if (shard.GetQubitCount() == 1U) {
@@ -798,6 +821,14 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 >= qubitCount) {
+        throw std::invalid_argument("QUnit::TrySeparate target parameter must be within allocated qubit bounds!");
+    }
+
+    if (qubit2 >= qubitCount) {
+        throw std::invalid_argument("QUnit::TrySeparate target parameter must be within allocated qubit bounds!");
+    }
+
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
@@ -1045,12 +1076,19 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
 
 real1_f QUnit::Prob(bitLenInt qubit)
 {
+    if (qubit >= qubitCount) {
+        throw std::invalid_argument("QUnit::Prob target parameter must be within allocated qubit bounds!");
+    }
+
     ToPermBasisProb(qubit);
     return ProbBase(qubit);
 }
 
 real1_f QUnit::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset)
 {
+    ThrowIfQbIdArrayIsBad(bits, length, qubitCount,
+        "QUnit::ExpectationBitsAll parameter controls array values must be within allocated qubit bounds!");
+
     if ((length == 1U) || (shards[0U].GetQubitCount() != qubitCount)) {
         return QInterface::ExpectationBitsAll(bits, length, offset);
     }
@@ -1065,6 +1103,10 @@ real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmpli
 
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 {
+    if (mask >= maxQPower) {
+        throw std::invalid_argument("QUnit::PhaseParity mask out-of-bounds!");
+    }
+
     // If no bits in mask:
     if (!mask) {
         return;
@@ -1138,6 +1180,10 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 
 real1_f QUnit::ProbParity(bitCapInt mask)
 {
+    if (mask >= maxQPower) {
+        throw std::invalid_argument("QUnit::ProbParity mask out-of-bounds!");
+    }
+
     // If no bits in mask:
     if (!mask) {
         return ZERO_R1_F;
@@ -1192,6 +1238,10 @@ real1_f QUnit::ProbParity(bitCapInt mask)
 
 bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
+    if (mask >= maxQPower) {
+        throw std::invalid_argument("QUnit::ForceMParity mask out-of-bounds!");
+    }
+
     // If no bits in mask:
     if (!mask) {
         return false;
@@ -1253,6 +1303,13 @@ bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QUnit::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
 {
+    if (mask >= maxQPower) {
+        throw std::invalid_argument("QUnit::CUniformParityRZ mask out-of-bounds!");
+    }
+
+    ThrowIfQbIdArrayIsBad(cControls, controlLen, qubitCount,
+        "QUnit::CUniformParityRZ parameter controls array values must be within allocated qubit bounds!");
+
     std::vector<bitLenInt> controls;
     if (TrimControls(cControls, controlLen, controls, false)) {
         return;
@@ -1408,6 +1465,10 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 {
+    if (qubit >= qubitCount) {
+        throw std::invalid_argument("QUnit::ForceM target parameter must be within allocated qubit bounds!");
+    }
+
     if (doApply) {
         RevertBasis1Qb(qubit);
         RevertBasis2Qb(qubit, ONLY_INVERT, ONLY_TARGETS);
@@ -1480,6 +1541,10 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
 bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::ForceMReg range is out-of-bounds!");
+    }
+
     if (!doForce && doApply && (length == qubitCount)) {
         return MAll();
     }
@@ -1554,6 +1619,9 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const bitCapInt* qPowers, b
         qIndices[i] = index;
         iQPowers[index] = pow2(i);
     }
+
+    ThrowIfQbIdArrayIsBad(&(qIndices[0]), qPowerCount, qubitCount,
+        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
 
     std::map<QInterfacePtr, std::vector<bitCapInt>> subQPowers;
     std::map<QInterfacePtr, std::vector<bitCapInt>> subIQPowers;
@@ -1699,7 +1767,12 @@ void QUnit::MultiShotMeasureMask(
             }
         }
         for (bitLenInt i = 1U; i < qPowerCount; ++i) {
-            if (unit != shards[log2(qPowers[i])].unit) {
+            const size_t qubit = log2(qPowers[i]);
+            if (qubit >= qubitCount) {
+                throw std::invalid_argument("QUnit::MultiShotMeasureMask parameter qPowers array values must be within "
+                                            "allocated qubit bounds!");
+            }
+            if (unit != shards[qubit].unit) {
                 unit = NULL;
                 break;
             }
@@ -1744,6 +1817,14 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
 void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 >= qubitCount) {
+        throw std::invalid_argument("QUnit::Swap qubit index parameter must be within allocated qubit bounds!");
+    }
+
+    if (qubit2 >= qubitCount) {
+        throw std::invalid_argument("QUnit::Swap qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (qubit1 == qubit2) {
         return;
     }
@@ -1754,6 +1835,14 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 {
+    if (qubit1 >= qubitCount) {
+        throw std::invalid_argument("QUnit::EitherISwap qubit index parameter must be within allocated qubit bounds!");
+    }
+
+    if (qubit2 >= qubitCount) {
+        throw std::invalid_argument("QUnit::EitherISwap qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (qubit1 == qubit2) {
         return;
     }
@@ -1782,6 +1871,14 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 >= qubitCount) {
+        throw std::invalid_argument("QUnit::SqrtSwap qubit index parameter must be within allocated qubit bounds!");
+    }
+
+    if (qubit2 >= qubitCount) {
+        throw std::invalid_argument("QUnit::SqrtSwap qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (qubit1 == qubit2) {
         return;
     }
@@ -1802,6 +1899,14 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 >= qubitCount) {
+        throw std::invalid_argument("QUnit::ISqrtSwap qubit index parameter must be within allocated qubit bounds!");
+    }
+
+    if (qubit2 >= qubitCount) {
+        throw std::invalid_argument("QUnit::ISqrtSwap qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (qubit1 == qubit2) {
         return;
     }
@@ -1836,6 +1941,14 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    if (qubit1 >= qubitCount) {
+        throw std::invalid_argument("QUnit::FSim qubit index parameter must be within allocated qubit bounds!");
+    }
+
+    if (qubit2 >= qubitCount) {
+        throw std::invalid_argument("QUnit::FSim qubit index parameter must be within allocated qubit bounds!");
+    }
+
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -1858,6 +1971,13 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt co
         Mtrx(mtrxs, qubitIndex);
         return;
     }
+
+    if (qubitIndex >= qubitCount) {
+        throw std::invalid_argument("QUnit::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
+    }
+
+    ThrowIfQbIdArrayIsBad(
+        controls, controlLen, qubitCount, "QUnit::UniformlyControlledSingleBit control is out-of-bounds!");
 
     std::vector<bitLenInt> trimmedControls;
     std::vector<bitCapInt> skipPowers;
@@ -1909,6 +2029,10 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt co
 
 void QUnit::H(bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::H qubit index parameter must be within allocated qubit bounds!");
+    }
+
     RevertBasisY(target);
     CommuteH(target);
 
@@ -1918,6 +2042,10 @@ void QUnit::H(bitLenInt target)
 
 void QUnit::S(bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::S qubit index parameter must be within allocated qubit bounds!");
+    }
+
     QEngineShard& shard = shards[target];
 
     shard.CommutePhase(ONE_CMPLX, I_CMPLX);
@@ -1942,6 +2070,10 @@ void QUnit::S(bitLenInt target)
 
 void QUnit::IS(bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::IS qubit index parameter must be within allocated qubit bounds!");
+    }
+
     QEngineShard& shard = shards[target];
 
     shard.CommutePhase(ONE_CMPLX, -I_CMPLX);
@@ -1966,6 +2098,10 @@ void QUnit::IS(bitLenInt target)
 
 void QUnit::XBase(bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::XBase qubit index parameter must be within allocated qubit bounds!");
+    }
+
     QEngineShard& shard = shards[target];
 
     if (shard.unit) {
@@ -1977,6 +2113,10 @@ void QUnit::XBase(bitLenInt target)
 
 void QUnit::YBase(bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::YBase qubit index parameter must be within allocated qubit bounds!");
+    }
+
     QEngineShard& shard = shards[target];
 
     if (shard.unit) {
@@ -1990,6 +2130,10 @@ void QUnit::YBase(bitLenInt target)
 
 void QUnit::ZBase(bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::ZBase qubit index parameter must be within allocated qubit bounds!");
+    }
+
     QEngineShard& shard = shards[target];
 
     if (shard.unit) {
@@ -2082,6 +2226,16 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
         !isInvert);
 
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount,                                                            \
+        "QUnit Swap variant parameter controls array values must be within allocated qubit bounds!");                  \
+    if (qubit1 >= qubitCount) {                                                                                        \
+        throw std::invalid_argument(                                                                                   \
+            "QUnit Swap variant qubit index parameter must be within allocated qubit bounds!");                        \
+    }                                                                                                                  \
+    if (qubit2 >= qubitCount) {                                                                                        \
+        throw std::invalid_argument(                                                                                   \
+            "QUnit Swap variant qubit index parameter must be within allocated qubit bounds!");                        \
+    }                                                                                                                  \
     if (qubit1 == qubit2) {                                                                                            \
         return;                                                                                                        \
     }                                                                                                                  \
@@ -2103,6 +2257,10 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
 
 void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::Phase qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (randGlobalPhase || IS_1_CMPLX(topLeft)) {
         if (IS_NORM_0(topLeft - bottomRight)) {
             return;
@@ -2153,6 +2311,10 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
 void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 {
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::Invert qubit index parameter must be within allocated qubit bounds!");
+    }
+
     QEngineShard& shard = shards[target];
 
     shard.FlipPhaseAnti();
@@ -2194,6 +2356,9 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 void QUnit::MCPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    ThrowIfQbIdArrayIsBad(lControls, lControlLen, qubitCount,
+        "QUnit::MCPhase parameter controls array values must be within allocated qubit bounds!");
+
     if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(bottomRight)) {
         return;
     }
@@ -2211,6 +2376,10 @@ void QUnit::MCPhase(
     if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
         Phase(ONE_CMPLX, bottomRight, controlVec[0U]);
         return;
+    }
+
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::MCPhase qubit index parameter must be within allocated qubit bounds!");
     }
 
     if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
@@ -2239,6 +2408,9 @@ void QUnit::MCPhase(
 void QUnit::MACPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    ThrowIfQbIdArrayIsBad(lControls, lControlLen, qubitCount,
+        "QUnit::MACPhase parameter controls array values must be within allocated qubit bounds!");
+
     if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(bottomRight)) {
         return;
     }
@@ -2256,6 +2428,10 @@ void QUnit::MACPhase(
     if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
         Phase(topLeft, ONE_CMPLX, controlVec[0U]);
         return;
+    }
+
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::MACPhase qubit index parameter must be within allocated qubit bounds!");
     }
 
     if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
@@ -2284,6 +2460,13 @@ void QUnit::MACPhase(
 void QUnit::MCInvert(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
+    ThrowIfQbIdArrayIsBad(lControls, lControlLen, qubitCount,
+        "QUnit::MCInvert parameter controls array values must be within allocated qubit bounds!");
+
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::MCInvert qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
         QEngineShard& tShard = shards[target];
         if (CACHED_PLUS(tShard)) {
@@ -2329,6 +2512,13 @@ void QUnit::MCInvert(
 void QUnit::MACInvert(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
+    ThrowIfQbIdArrayIsBad(lControls, lControlLen, qubitCount,
+        "QUnit::MACInvert parameter controls array values must be within allocated qubit bounds!");
+
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::MACInvert qubit index parameter must be within allocated qubit bounds!");
+    }
+
     if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
         QEngineShard& tShard = shards[target];
         if (CACHED_PLUS(tShard)) {
@@ -2401,6 +2591,10 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::Mtrx qubit index parameter must be within allocated qubit bounds!");
+    }
+
     RevertBasis2Qb(target);
 
     complex trnsMtrx[4U];
@@ -2438,6 +2632,9 @@ void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
         return;
     }
 
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount,
+        "QUnit::MCMtrx parameter controls array values must be within allocated qubit bounds!");
+
     std::vector<bitLenInt> controlVec;
     if (TrimControls(controls, controlLen, controlVec, false)) {
         return;
@@ -2446,6 +2643,10 @@ void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
     if (!controlVec.size()) {
         Mtrx(mtrx, target);
         return;
+    }
+
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::MCMtrx qubit index parameter must be within allocated qubit bounds!");
     }
 
     CTRLED_GEN_WRAP(MCMtrx(CTRL_GEN_ARGS));
@@ -2463,6 +2664,9 @@ void QUnit::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const compl
         return;
     }
 
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount,
+        "QUnit::MACMtrx parameter controls array values must be within allocated qubit bounds!");
+
     std::vector<bitLenInt> controlVec;
     if (TrimControls(controls, controlLen, controlVec, true)) {
         return;
@@ -2471,6 +2675,10 @@ void QUnit::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const compl
     if (!controlVec.size()) {
         Mtrx(mtrx, target);
         return;
+    }
+
+    if (target >= qubitCount) {
+        throw std::invalid_argument("QUnit::MACMtrx qubit index parameter must be within allocated qubit bounds!");
     }
 
     CTRLED_GEN_WRAP(MACMtrx(CTRL_GEN_ARGS));
@@ -2683,6 +2891,13 @@ void QUnit::ApplyEitherControlled(
 #if ENABLE_ALU
 void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::CINC range is out-of-bounds!");
+    }
+
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount,
+        "QUnit::CINC parameter controls array values must be within allocated qubit bounds!");
+
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
     if (TrimControls(controls, controlLen, controlVec, false)) {
@@ -2694,11 +2909,19 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, const bitLe
         return;
     }
 
-    INT(toMod, start, length, 0xFF, false, controlVec);
+    INT(toMod, start, length, (bitLenInt)(-1), false, controlVec);
 }
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::INCx range is out-of-bounds!");
+    }
+
+    if (flagIndex >= qubitCount) {
+        throw std::invalid_argument("QUnit::INCx flagIndex parameter must be within allocated qubit bounds!");
+    }
+
     DirtyShardRange(start, length);
     DirtyShardRangePhase(start, length);
     shards[flagIndex].MakeDirty();
@@ -2711,6 +2934,18 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 void QUnit::INCxx(
     INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::INCxx range is out-of-bounds!");
+    }
+
+    if (flag1Index >= qubitCount) {
+        throw std::invalid_argument("QUnit::INCxx flag1Index parameter must be within allocated qubit bounds!");
+    }
+
+    if (flag2Index >= qubitCount) {
+        throw std::invalid_argument("QUnit::INCxx flag2Index parameter must be within allocated qubit bounds!");
+    }
+
     /* Make sure the flag bits are entangled in the same QU. */
     DirtyShardRange(start, length);
     DirtyShardRangePhase(start, length);
@@ -2727,13 +2962,13 @@ void QUnit::INCxx(
 /// Check if overflow arithmetic can be optimized
 bool QUnit::INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex)
 {
-    return INTSCOptimize(toMod, start, length, isAdd, 0xFF, overflowIndex);
+    return INTSCOptimize(toMod, start, length, isAdd, (bitLenInt)(-1), overflowIndex);
 }
 
 /// Check if carry arithmetic can be optimized
 bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex)
 {
-    return INTSCOptimize(toMod, start, length, isAdd, carryIndex, 0xFF);
+    return INTSCOptimize(toMod, start, length, isAdd, carryIndex, (bitLenInt)(-1));
 }
 
 /// Check if arithmetic with both carry and overflow can be optimized
@@ -2744,7 +2979,7 @@ bool QUnit::INTSCOptimize(
         return false;
     }
 
-    const bool carry = (carryIndex < 0xFF);
+    const bool carry = (carryIndex != (bitLenInt)(-1));
     const bool carryIn = carry && M(carryIndex);
     if (carry && (carryIn == isAdd)) {
         ++toMod;
@@ -2758,10 +2993,10 @@ bool QUnit::INTSCOptimize(
     bool isOverflow;
     bitCapInt outInt;
     if (isAdd) {
-        isOverflow = (overflowIndex < 0xFF) && isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        isOverflow = (overflowIndex != (bitLenInt)(-1)) && isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
         outInt = inOutInt + toMod;
     } else {
-        isOverflow = (overflowIndex < 0xFF) && isOverflowSub(inOutInt, inInt, signMask, lengthPower);
+        isOverflow = (overflowIndex != (bitLenInt)(-1)) && isOverflowSub(inOutInt, inInt, signMask, lengthPower);
         outInt = (inOutInt + lengthPower) - toMod;
     }
 
@@ -2785,6 +3020,19 @@ bool QUnit::INTSCOptimize(
 void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
     std::vector<bitLenInt> controlVec)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::INT range is out-of-bounds!");
+    }
+
+    if (hasCarry && carryIndex >= qubitCount) {
+        throw std::invalid_argument("QUnit::INT carryIndex parameter must be within allocated qubit bounds!");
+    }
+
+    if (controlVec.size()) {
+        ThrowIfQbIdArrayIsBad(&(controlVec[0]), controlVec.size(), qubitCount,
+            "QUnit::INT parameter controls array values must be within allocated qubit bounds!");
+    }
+
     // Keep the bits separate, if cheap to do so:
     toMod &= pow2Mask(length);
     if (!toMod) {
@@ -2954,7 +3202,10 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     }
 }
 
-void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length) { INT(toMod, start, length, 0xFF, false); }
+void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
+{
+    INT(toMod, start, length, (bitLenInt)(-1), false);
+}
 
 /// Add integer (without sign, with carry)
 void QUnit::INCC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
@@ -2983,6 +3234,18 @@ void QUnit::DECC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLen
 void QUnit::INTS(
     bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool hasCarry)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::INT range is out-of-bounds!");
+    }
+
+    if (overflowIndex >= qubitCount) {
+        throw std::invalid_argument("QUnit::INT overflowIndex parameter must be within allocated qubit bounds!");
+    }
+
+    if (hasCarry && carryIndex >= qubitCount) {
+        throw std::invalid_argument("QUnit::INT carryIndex parameter must be within allocated qubit bounds!");
+    }
+
     toMod &= pow2Mask(length);
     if (!toMod) {
         return;
@@ -3026,7 +3289,7 @@ void QUnit::INTS(
 
 void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    INTS(toMod, start, length, overflowIndex, 0xFF, false);
+    INTS(toMod, start, length, overflowIndex, (bitLenInt)(-1), false);
 }
 
 void QUnit::INCDECSC(
@@ -3043,6 +3306,10 @@ void QUnit::INCDECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenI
 #if ENABLE_BCD
 void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::INCBCD range is out-of-bounds!");
+    }
+
     // BCD variants are low priority for optimization, for the time being.
     DirtyShardRange(start, length);
     std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))->INCBCD(toMod, shards[start].mapped, length);
@@ -3050,6 +3317,10 @@ void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 
 void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::INCBCD range is out-of-bounds!");
+    }
+
     // BCD variants are low priority for optimization, for the time being.
     DirtyShardRange(start, length);
     std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))->DECBCD(toMod, shards[start].mapped, length);
@@ -3064,6 +3335,14 @@ void QUnit::INCDECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLe
 
 void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    if (isBadBitRange(inOutStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::MUL inOutStart range is out-of-bounds!");
+    }
+
+    if (isBadBitRange(carryStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::MUL carryStart range is out-of-bounds!");
+    }
+
     // Keep the bits separate, if cheap to do so:
     if (!toMul) {
         SetReg(inOutStart, length, 0U);
@@ -3092,6 +3371,14 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
 
 void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    if (isBadBitRange(inOutStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::MUL inOutStart range is out-of-bounds!");
+    }
+
+    if (isBadBitRange(carryStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::MUL carryStart range is out-of-bounds!");
+    }
+
     // Keep the bits separate, if cheap to do so:
     if (toDiv == ONE_BCI) {
         return;
@@ -3119,6 +3406,14 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
 
 void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    if (isBadBitRange(inStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::MUL inStart range is out-of-bounds!");
+    }
+
+    if (isBadBitRange(outStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::MUL outStart range is out-of-bounds!");
+    }
+
     if (toMod == ONE_BCI) {
         SetReg(outStart, length, ONE_BCI);
         return;
@@ -3202,6 +3497,17 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
 void QUnit::CMUL(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
     bitLenInt controlLen)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::CMUL inOutStart range is out-of-bounds!");
+    }
+
+    if (isBadBitRange(carryStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::CMUL carryStart range is out-of-bounds!");
+    }
+
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount,
+        "QUnit::CMUL parameter controls array values must be within allocated qubit bounds!");
+
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
     if (TrimControls(controls, controlLen, controlVec, false)) {
@@ -3219,6 +3525,17 @@ void QUnit::CMUL(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenI
 void QUnit::CDIV(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
     bitLenInt controlLen)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::CDIV inOutStart range is out-of-bounds!");
+    }
+
+    if (isBadBitRange(carryStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::CDIV carryStart range is out-of-bounds!");
+    }
+
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount,
+        "QUnit::CDIV parameter controls array values must be within allocated qubit bounds!");
+
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
     if (TrimControls(controls, controlLen, controlVec, false)) {
@@ -3242,6 +3559,13 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
     }
 
     SetReg(outStart, length, 0U);
+
+    if (isBadBitRange(inStart, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::CPOWModNOut inStart range is out-of-bounds!");
+    }
+
+    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount,
+        "QUnit::CPOWModNOut parameter controls array values must be within allocated qubit bounds!");
 
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
@@ -3280,6 +3604,14 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, const u
 bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     const unsigned char* values, bool resetValue)
 {
+    if (isBadBitRange(indexStart, indexLength, qubitCount)) {
+        throw std::invalid_argument("QUnit::IndexedLDA indexStart range is out-of-bounds!");
+    }
+
+    if (isBadBitRange(valueStart, valueLength, qubitCount)) {
+        throw std::invalid_argument("QUnit::IndexedLDA valueStart range is out-of-bounds!");
+    }
+
     // TODO: Index bits that have exactly 0 or 1 probability can be optimized out of the gate.
     // This could follow the logic of UniformlyControlledSingleBit().
     // In the meantime, checking if all index bits are in eigenstates takes very little overhead.
@@ -3308,6 +3640,18 @@ bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, const unsigned char* values)
 {
+    if (isBadBitRange(indexStart, indexLength, qubitCount)) {
+        throw std::invalid_argument("QUnit::IndexedADC indexStart range is out-of-bounds!");
+    }
+
+    if (isBadBitRange(valueStart, valueLength, qubitCount)) {
+        throw std::invalid_argument("QUnit::IndexedADC valueStart range is out-of-bounds!");
+    }
+
+    if (carryIndex >= qubitCount) {
+        throw std::invalid_argument("QUnit::IndexedADC carryIndex is out-of-bounds!");
+    }
+
 #if ENABLE_VM6502Q_DEBUG
     if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
         bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
@@ -3347,6 +3691,18 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, const unsigned char* values)
 {
+    if (isBadBitRange(indexStart, indexLength, qubitCount)) {
+        throw std::invalid_argument("QUnit::IndexedSBC indexStart range is out-of-bounds!");
+    }
+
+    if (isBadBitRange(valueStart, valueLength, qubitCount)) {
+        throw std::invalid_argument("QUnit::IndexedSBC valueStart range is out-of-bounds!");
+    }
+
+    if (carryIndex >= qubitCount) {
+        throw std::invalid_argument("QUnit::IndexedSBC carryIndex is out-of-bounds!");
+    }
+
 #if ENABLE_VM6502Q_DEBUG
     if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
         bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
@@ -3385,6 +3741,10 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
 void QUnit::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::Hash range is out-of-bounds!");
+    }
+
     if (CheckBitsPlus(start, length)) {
         // This operation happens to do nothing.
         return;
@@ -3402,6 +3762,10 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::PhaseFlipIfLess range is out-of-bounds!");
+    }
+
     if (CheckBitsPermutation(start, length)) {
         const bitCapInt value = GetCachedPermutation(start, length);
         if (value < greaterPerm) {
@@ -3418,6 +3782,14 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    if (isBadBitRange(start, length, qubitCount)) {
+        throw std::invalid_argument("QUnit::CPhaseFlipIfLess range is out-of-bounds!");
+    }
+
+    if (flagIndex >= qubitCount) {
+        throw std::invalid_argument("QUnit::CPhaseFlipIfLess flagIndex is out-of-bounds!");
+    }
+
     if (CheckBitsPermutation(flagIndex, 1)) {
         if (SHARD_STATE(shards[flagIndex])) {
             PhaseFlipIfLess(greaterPerm, start, length);

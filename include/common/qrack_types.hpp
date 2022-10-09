@@ -213,8 +213,8 @@ public:
     /// tensor slicing.)
     virtual void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2) = 0;
     virtual void clear() = 0;
-    virtual void copy_in(const complex* inArray) = 0;
-    virtual void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
+    virtual void copy_in(complex const* inArray) = 0;
+    virtual void copy_in(complex const* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
     virtual void copy_in(StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset,
         const bitCapIntOcl length) = 0;
     virtual void copy_out(complex* outArray) = 0;
@@ -268,14 +268,14 @@ inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& lengt
 inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
 inline bool isBadBitRange(const bitLenInt& start, const bitLenInt& length, const bitLenInt& qubitCount)
 {
-    return ((start + length) > qubitCount) || ((start + length) < start);
+    return ((start + length) > qubitCount) || ((bitLenInt)(start + length) < start);
 }
 inline bool isBadPermRange(const bitCapIntOcl& start, const bitCapIntOcl& length, const bitCapIntOcl& maxQPowerOcl)
 {
-    return ((start + length) > maxQPowerOcl) || ((start + length) < start);
+    return ((start + length) > maxQPowerOcl) || ((bitCapIntOcl)(start + length) < start);
 }
 inline void ThrowIfQbIdArrayIsBad(
-    const bitLenInt* controls, const bitLenInt controlLen, const bitLenInt& qubitCount, std::string message)
+    bitLenInt const* controls, const bitLenInt controlLen, const bitLenInt& qubitCount, std::string message)
 {
     for (bitLenInt i = 0U; i < controlLen; ++i) {
         if (controls[i] >= qubitCount) {
@@ -287,13 +287,13 @@ inline void ThrowIfQbIdArrayIsBad(
 // These are utility functions defined in qinterface/protected.cpp:
 unsigned char* cl_alloc(size_t ucharCount);
 void cl_free(void* toFree);
-void mul2x2(const complex* left, const complex* right, complex* out);
-void exp2x2(const complex* matrix2x2, complex* outMatrix2x2);
-void log2x2(const complex* matrix2x2, complex* outMatrix2x2);
-void inv2x2(const complex* matrix2x2, complex* outMatrix2x2);
+void mul2x2(complex const* left, complex const* right, complex* out);
+void exp2x2(complex const* matrix2x2, complex* outMatrix2x2);
+void log2x2(complex const* matrix2x2, complex* outMatrix2x2);
+void inv2x2(complex const* matrix2x2, complex* outMatrix2x2);
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
-bitCapInt pushApartBits(const bitCapInt& perm, const std::cout<bitCapInt>& skipPowers);
+bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
 #if QBCAPPOW == 7U

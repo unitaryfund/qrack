@@ -169,11 +169,11 @@ private:
 
 class OCLDeviceContext {
 public:
-    cl::Platform platform;
-    cl::Device device;
-    cl::Context context;
-    int64_t context_id;
-    int64_t device_id;
+    const cl::Platform platform;
+    const cl::Device device;
+    const cl::Context context;
+    const int64_t context_id;
+    const int64_t device_id;
     cl::CommandQueue queue;
     EventVecPtr wait_events;
 
@@ -200,6 +200,7 @@ public:
         , context(c)
         , context_id(cntxt_id)
         , device_id(dev_id)
+        , wait_events(new EventVec())
 #if ENABLE_OCL_MEM_GUARDS
         , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * globalSize) >> 2U))
 #else
@@ -211,14 +212,11 @@ public:
         cl_int error;
         queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
         if (error != CL_SUCCESS) {
-            queue = cl::CommandQueue(context, d);
+            queue = cl::CommandQueue(context, d, 0, &error);
+            if (error != CL_SUCCESS) {
+                throw std::runtime_error("Failed to create OpenCL command queue!");
+            }
         }
-
-        wait_events =
-            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>(), [](std::vector<cl::Event>* vec) {
-                vec->clear();
-                delete vec;
-            });
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(*(mutexes[call]), calls[call]); }
@@ -227,11 +225,7 @@ public:
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
         EventVecPtr waitVec = std::move(wait_events);
-        wait_events =
-            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>(), [](std::vector<cl::Event>* vec) {
-                vec->clear();
-                delete vec;
-            });
+        wait_events = EventVecPtr(new EventVec());
         return waitVec;
     }
 
@@ -243,7 +237,7 @@ public:
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
         if ((wait_events.get())->size()) {
-            cl::Event::waitForEvents((const std::vector<cl::Event>&)*(wait_events.get()));
+            cl::Event::waitForEvents((const EventVec&)*(wait_events.get()));
             wait_events->clear();
         }
     }

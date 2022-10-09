@@ -99,7 +99,7 @@ protected:
         });
     }
 
-    bool TrimControls(const bitLenInt* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output);
+    bool TrimControls(bitLenInt const* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output);
 
 public:
     QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr, complex ignored = CMPLX_DEFAULT_ARG,
@@ -268,7 +268,7 @@ protected:
         QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
 public:
-    void SetQuantumState(const complex* inputState)
+    void SetQuantumState(complex const* inputState)
     {
         if (qubitCount > 1U) {
             throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
@@ -424,18 +424,18 @@ public:
 
     real1_f Prob(bitLenInt qubit);
 
-    void Mtrx(const complex* mtrx, bitLenInt target);
+    void Mtrx(complex const* mtrx, bitLenInt target);
     void Phase(complex topLeft, complex bottomRight, bitLenInt target);
     void Invert(complex topRight, complex bottomLeft, bitLenInt target);
     void MCPhase(
-        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
+        bitLenInt const* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
     void MACPhase(
-        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
+        bitLenInt const* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
     void MCInvert(
-        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
+        bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
     void MACInvert(
-        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
-    void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+        bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
+    void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
             MCPhase(controls, controlLen, mtrx[0U], mtrx[3U], target);
@@ -449,7 +449,7 @@ public:
 
         throw std::domain_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
     }
-    void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+    void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
             MACPhase(controls, controlLen, mtrx[0U], mtrx[3U], target);
@@ -465,7 +465,7 @@ public:
     }
     void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 
-    bool TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f ignored);
+    bool TrySeparate(bitLenInt const* qubits, bitLenInt length, real1_f ignored);
     bool TrySeparate(bitLenInt qubit) { return CanDecomposeDispose(qubit, 1U); }
     bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     {

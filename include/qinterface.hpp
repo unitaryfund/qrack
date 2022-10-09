@@ -437,7 +437,7 @@ public:
         } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
             MACInvert(controls, mtrx[1U], mtrx[2U], target);
         } else {
-            MACWrapper(controls, [this, mtrx, target](const std::vectore<bitLenInt>& lc) { MCMtrx(lc, mtrx, target); });
+            MACWrapper(controls, [this, mtrx, target](const std::vector<bitLenInt>& lc) { MCMtrx(lc, mtrx, target); });
         }
     }
 
@@ -450,7 +450,7 @@ public:
             return;
         }
 
-        const complex mtrx[4U] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        const std::vector<complex> mtrx{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         Mtrx(mtrx, qubitIndex);
     }
 
@@ -459,7 +459,7 @@ public:
      */
     virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
     {
-        const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        const std::vector<complex> mtrx{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         Mtrx(mtrx, qubitIndex);
     }
 
@@ -472,8 +472,8 @@ public:
             return;
         }
 
-        const complex mtrx[4U] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-        MCMtrx(controls, controlLen, mtrx, target);
+        const std::vector<complex> mtrx{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        MCMtrx(controls, mtrx, target);
     }
 
     /**
@@ -483,7 +483,7 @@ public:
     virtual void MCInvert(
         const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
-        const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        const std::vector<complex> mtrx{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         MCMtrx(controls, mtrx, target);
     }
 
@@ -498,7 +498,7 @@ public:
         }
 
         MACWrapper(controls, [this, topLeft, bottomRight, target](const std::vector<bitLenInt>& lc) {
-            MCPhase(lc, lcLen, topLeft, bottomRight, target);
+            MCPhase(lc, topLeft, bottomRight, target);
         });
     }
 
@@ -531,7 +531,7 @@ public:
     virtual void UniformlyControlledSingleBit(
         const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const std::vector<complex>& mtrxs)
     {
-        UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, NULL, 0, 0);
+        UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), 0);
     }
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
         const std::vector<complex>& mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
@@ -1991,7 +1991,7 @@ public:
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt M(const std::vector<bitLenInt>& bits) { return ForceM(bits, length, NULL); }
+    virtual bitCapInt M(const std::vector<bitLenInt>& bits) { return ForceM(bits, std::vector<bool>()); }
 
     /** Measure bits with indices in array, and return a mask of the results */
     virtual bitCapInt ForceM(const std::vector<bitLenInt>& bits, const std::vector<bool>& values, bool doApply = true);
@@ -2135,6 +2135,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots);
+
     /**
      * Statistical measure of masked permutation probability (returned as array)
      *
@@ -2315,7 +2316,7 @@ public:
         do {
             amp = GetAmplitude(perm);
             ++perm;
-        } while ((norm(amp) <= (REAL1_EPSILON * REAL1_EPSILON)) && (perm < maxQPower));
+        } while ((abs(amp) <= REAL1_EPSILON) && (perm < maxQPower));
 
         return (real1_f)std::arg(amp);
     }

@@ -27,7 +27,7 @@ void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 
 /// Controlled general unitary gate
 void QInterface::CU(
-    const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+    bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
     const real1 cos0 = (real1)cos(theta / 2);
     const real1 sin0 = (real1)sin(theta / 2);
@@ -39,7 +39,7 @@ void QInterface::CU(
 
 /// (Anti-)Controlled general unitary gate
 void QInterface::AntiCU(
-    const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+    bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
     const real1 cos0 = (real1)cos(theta / 2);
     const real1 sin0 = (real1)sin(theta / 2);
@@ -128,7 +128,7 @@ void QInterface::AntiCIAI(bitLenInt control, bitLenInt target, real1_f azimuth, 
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
 /// "k" of the control bits.
 void QInterface::UniformlyControlledRY(
-    const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles)
+    bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex, real1 const* angles)
 {
     const bitCapIntOcl permCount = pow2Ocl(controlLen);
     std::unique_ptr<complex[]> pauliRYs(new complex[4U * permCount]);
@@ -149,7 +149,7 @@ void QInterface::UniformlyControlledRY(
 /// Uniformly controlled z axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli z axis for each permutation
 /// "k" of the control bits.
 void QInterface::UniformlyControlledRZ(
-    const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles)
+    bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex, real1 const* angles)
 {
     const bitCapIntOcl permCount = pow2Ocl(controlLen);
     std::unique_ptr<complex[]> pauliRZs(new complex[4U * permCount]);
@@ -230,7 +230,7 @@ void QInterface::Exp(real1_f radians, bitLenInt qubit)
 
 /// Imaginary exponentiate of arbitrary single bit gate
 void QInterface::Exp(
-    const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, const complex* matrix2x2, bool antiCtrled)
+    bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit, complex const* matrix2x2, bool antiCtrled)
 {
     complex timesI[4U];
     for (bitLenInt i = 0U; i < 4U; ++i) {

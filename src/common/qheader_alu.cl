@@ -177,7 +177,6 @@ void kernel incdecsc2(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOc
     const bitCapIntOcl carryMask = bitCapIntOclPtr[4];
     const bitLenInt inOutStart = (bitLenInt)bitCapIntOclPtr[5];
     const bitCapIntOcl toAdd = bitCapIntOclPtr[6];
-    bitCapIntOcl otherRes, inOutInt, inOutRes, inInt, outInt, outRes;
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl i = lcv & (carryMask - ONE_BCI);
         i |= (lcv ^ i) << ONE_BCI;
@@ -276,8 +275,6 @@ void kernel div(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, 
     const bitLenInt outStart = (bitLenInt)bitCapIntOclPtr[7];                                                          \
     const bitCapIntOcl skipMask = bitCapIntOclPtr[8];                                                                  \
     const bitCapIntOcl modN = bitCapIntOclPtr[9];                                                                      \
-    bitCapIntOcl otherRes, inRes, outRes;                                                                              \
-    bitCapIntOcl i, iHigh, iLow;                                                                                       \
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {                                                         \
         const bitCapIntOcl iHigh = lcv;                                                                                \
         const bitCapIntOcl iLow = iHigh & skipMask;                                                                    \

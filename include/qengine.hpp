@@ -39,7 +39,7 @@ protected:
     real1 runningNorm;
     bitCapIntOcl maxQPowerOcl;
 
-    bool IsIdentity(const complex* mtrx, bool isControlled);
+    bool IsIdentity(complex const* mtrx, bool isControlled);
 
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
@@ -86,7 +86,7 @@ public:
     /** Copy a "page" of amplitudes from this QEngine's internal state, into `pagePtr`. */
     virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length) = 0;
     /** Copy a "page" of amplitudes from `pagePtr` into this QEngine's internal state. */
-    virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length) = 0;
+    virtual void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length) = 0;
     /** Copy a "page" of amplitudes from another QEngine, pointed to by `pageEnginePtr`, into this QEngine's internal
      * state. */
     virtual void SetAmplitudePage(
@@ -107,7 +107,7 @@ public:
     virtual void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
-    virtual bitCapInt ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply = true);
+    virtual bitCapInt ForceM(bitLenInt const* bits, bitLenInt length, bool const* values, bool doApply = true);
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
@@ -118,15 +118,15 @@ public:
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 
-    virtual void Mtrx(const complex* mtrx, bitLenInt qubit);
-    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    virtual void CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void Mtrx(complex const* mtrx, bitLenInt qubit);
+    virtual void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target);
+    virtual void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target);
+    virtual void CSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
 #if ENABLE_ALU
     using QInterface::M;
@@ -152,12 +152,12 @@ public:
         QInterface::DECS(toSub, start, length, overflowIndex);
     }
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
     {
         QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
     }
     virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
     {
         QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
     }
@@ -174,12 +174,12 @@ public:
         QInterface::IMULModNOut(toMul, modN, inStart, outStart, length);
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+        bitLenInt const* controls, bitLenInt controlLen)
     {
         QInterface::CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+        bitLenInt const* controls, bitLenInt controlLen)
     {
         QInterface::CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
@@ -208,12 +208,12 @@ public:
 
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
 
-    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
-        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+        bitCapIntOcl const* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
     virtual void ApplyControlled2x2(
-        const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx);
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, complex const* mtrx);
     virtual void ApplyAntiControlled2x2(
-        const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx);
+        bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, complex const* mtrx);
 
     using QInterface::Decompose;
     virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);

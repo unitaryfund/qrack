@@ -55,7 +55,7 @@ namespace Qrack {
 DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t& dev)
 {
     if ((dev >= GetDeviceCount()) || (dev < -1)) {
-        throw "Invalid OpenCL device selection";
+        throw std::invalid_argument("Invalid OpenCL device selection");
     } else if (dev == -1) {
         return default_device_context;
     } else {
@@ -345,7 +345,7 @@ InitOClResult OCLEngine::InitOCL(
             plat_id = device_platform_id[i];
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
-        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i],
+        DeviceContextPtr devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i],
             all_contexts[all_contexts.size() - 1U], i, plat_id, maxAllocVec[i % maxAllocVec.size()]);
 
         std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;

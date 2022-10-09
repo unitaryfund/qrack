@@ -121,7 +121,8 @@ struct QueueItem {
     }
 };
 
-struct PoolItem {
+class PoolItem {
+public:
     BufferPtr cmplxBuffer;
     BufferPtr realBuffer;
     BufferPtr ulongBuffer;
@@ -129,10 +130,22 @@ struct PoolItem {
     std::shared_ptr<real1> probArray;
     std::shared_ptr<real1> angleArray;
 
-    BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    PoolItem(cl::Context& context)
+        : probArray(NULL)
+        , angleArray(NULL)
+    {
+        cmplxBuffer = MakeBuffer(context, sizeof(complex) * CMPLX_NORM_LEN);
+        realBuffer = MakeBuffer(context, sizeof(real1) * REAL_ARG_LEN);
+        ulongBuffer = MakeBuffer(context, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
+    }
+
+    ~PoolItem() {}
+
+protected:
+    BufferPtr MakeBuffer(const cl::Context& context, size_t size)
     {
         cl_int error;
-        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        BufferPtr toRet = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, size, (void*)NULL, &error);
         if (error != CL_SUCCESS) {
             if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
                 throw bad_alloc("CL_MEM_OBJECT_ALLOCATION_FAILURE in PoolItem::MakeBuffer()");
@@ -148,17 +161,6 @@ struct PoolItem {
 
         return toRet;
     }
-
-    PoolItem(cl::Context& context)
-        : probArray(NULL)
-        , angleArray(NULL)
-    {
-        cmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
-        realBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
-        ulongBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
-    }
-
-    ~PoolItem() {}
 };
 
 typedef std::shared_ptr<PoolItem> PoolItemPtr;
@@ -357,6 +359,7 @@ public:
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
+    using QEngine::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
         const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
     void UniformParityRZ(bitCapInt mask, real1_f angle);
@@ -485,7 +488,7 @@ public:
 
     QInterfacePtr Clone();
 
-    void PopQueue();
+    void PopQueue(bool isDispatch);
     void DispatchQueue();
 
 protected:
@@ -504,7 +507,7 @@ protected:
         totalOclAllocSize -= size;
     }
 
-    BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
         checkCallbackError();
 
