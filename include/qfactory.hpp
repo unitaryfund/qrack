@@ -105,7 +105,7 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
         return std::make_shared<QEngineOCL>(args...);
 #endif
 #if ENABLE_CUDA
-    case QINTERFACE_OPENCL:
+    case QINTERFACE_CUDA:
         return std::make_shared<QEngineCUDA>(args...);
 #endif
 #if ENABLE_OPENCL || ENABLE_CUDA
@@ -141,7 +141,7 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QEngineOCL>(args...);
 #endif
 #if ENABLE_CUDA
-    case QINTERFACE_OPENCL:
+    case QINTERFACE_CUDA:
         return std::make_shared<QEngineCUDA>(args...);
 #endif
 #if ENABLE_OPENCL || ENABLE_CUDA
@@ -192,7 +192,7 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
         return std::make_shared<QEngineOCL>(args...);
 #endif
 #if ENABLE_CUDA
-    case QINTERFACE_OPENCL:
+    case QINTERFACE_CUDA:
         return std::make_shared<QEngineCUDA>(args...);
 #endif
 #if ENABLE_OPENCL || ENABLE_CUDA
