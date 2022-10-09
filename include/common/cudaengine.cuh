@@ -58,8 +58,6 @@ public:
         cudaGetDeviceProperties(&properties, device_id);
     }
 
-    void WaitOnAllEvents() { cudaDeviceSynchronize(); }
-
     size_t GetPreferredSizeMultiple()
     {
         return preferredSizeMultiple ? preferredSizeMultiple : preferredSizeMultiple = properties.warpSize;
