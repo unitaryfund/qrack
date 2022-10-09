@@ -299,11 +299,6 @@ void QEngineCUDA::clFinish(bool doHard)
         return;
     }
 
-    while (wait_queue_items.size() > 1) {
-        tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
-        PopQueue(true);
-    }
-
     if (doHard) {
         tryCuda("Failed to finish device queue", [&] { return cudaDeviceSynchronize(); });
     } else {
@@ -311,19 +306,7 @@ void QEngineCUDA::clFinish(bool doHard)
     }
 }
 
-void QEngineCUDA::clDump()
-{
-    if (!device_context) {
-        return;
-    }
-
-    while (wait_queue_items.size() > 1) {
-        tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
-        PopQueue(false);
-    }
-
-    tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
-}
+void QEngineCUDA::clDump() { clFinish(); }
 
 PoolItemPtr QEngineCUDA::GetFreePoolItem()
 {
@@ -343,33 +326,35 @@ void QEngineCUDA::WaitCall(
     clFinish();
 }
 
-void CUDART_CB _PopQueue(void* user_data) { ((QEngineCUDA*)user_data)->PopQueue(true); }
+void CUDART_CB _PopQueue(void* user_data) { ((QEngineCUDA*)user_data)->PopQueue(); }
 
-void QEngineCUDA::PopQueue(bool isDispatch)
+void QEngineCUDA::PopQueue()
 {
-    // For lock_guard scope
-    if (true) {
-        std::lock_guard<std::mutex> lock(queue_mutex);
+    std::lock_guard<std::mutex> lock(queue_mutex);
 
-        if (poolItems.size()) {
-            poolItems.front()->probArray = NULL;
-            poolItems.front()->angleArray = NULL;
+    if (poolItems.size()) {
+        poolItems.front()->probArray = NULL;
+        poolItems.front()->angleArray = NULL;
 
-            if (poolItems.size() > 1) {
-                rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
-            }
+        if (poolItems.size() > 1) {
+            rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
         }
-
-        if (!wait_queue_items.size()) {
-            return;
-        }
-        SubtractAlloc(wait_queue_items.front().deallocSize);
-        wait_queue_items.pop_front();
     }
 
-    if (isDispatch) {
-        DispatchQueue();
+    if (!wait_queue_items.size()) {
+        return;
     }
+
+    QueueItem item = wait_queue_items.front();
+    SubtractAlloc(item.deallocSize);
+    if (item.isSetDoNorm) {
+        doNormalize = item.doNorm;
+    }
+    if (item.isSetRunningNorm) {
+        runningNorm = item.runningNorm;
+    }
+
+    wait_queue_items.pop_front();
 }
 
 void QEngineCUDA::DispatchQueue()
@@ -383,21 +368,11 @@ void QEngineCUDA::DispatchQueue()
             return;
         }
 
-        item = wait_queue_items.front();
+        item = wait_queue_items.back();
 
-        while (item.isSetDoNorm || item.isSetRunningNorm) {
-            if (item.isSetDoNorm) {
-                doNormalize = item.doNorm;
-            }
-            if (item.isSetRunningNorm) {
-                runningNorm = item.runningNorm;
-            }
-
-            wait_queue_items.pop_front();
-            if (!wait_queue_items.size()) {
-                return;
-            }
-            item = wait_queue_items.front();
+        if (item.isSetDoNorm || item.isSetRunningNorm) {
+            cudaLaunchHostFunc(queue, _PopQueue, (void*)this);
+            return;
         }
     }
 
