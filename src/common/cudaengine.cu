@@ -45,8 +45,7 @@ void CUDAEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, De
 
 void CUDAEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
 
-InitCUDAResult CUDAEngine::InitCUDA(
-    bool buildFromSource, bool saveBinaries, std::string home, std::vector<int64_t> maxAllocVec)
+InitCUDAResult CUDAEngine::InitCUDA(std::vector<int64_t> maxAllocVec)
 {
     int deviceCount;
     cudaGetDeviceCount(&deviceCount);
@@ -126,7 +125,7 @@ CUDAEngine::CUDAEngine()
         }
     }
 
-    InitCUDAResult initResult = InitCUDA(false, false, "*", maxActiveAllocSizes);
+    InitCUDAResult initResult = InitCUDA(maxActiveAllocSizes);
     SetDeviceContextPtrVector(initResult.all_dev_contexts, initResult.default_dev_context);
     activeAllocSizes = std::vector<size_t>(initResult.all_dev_contexts.size());
 }

@@ -159,8 +159,7 @@ public:
     }
     /// Initialize the CUDA environment. This returns a Qrack::CUDAInitResult object which should be passed to
     /// SetDeviceContextPtrVector().
-    static InitCUDAResult InitCUDA(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*",
-        std::vector<int64_t> maxAllocVec = { -1 });
+    static InitCUDAResult InitCUDA(std::vector<int64_t> maxAllocVec = { -1 });
 
     /// Get a pointer one of the available CUDA contexts, by its index in the list of all contexts.
     DeviceContextPtr GetDeviceContextPtr(const int64_t& dev = -1);
