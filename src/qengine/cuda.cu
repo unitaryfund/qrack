@@ -61,12 +61,13 @@ namespace Qrack {
         return;                                                                                                        \
     }
 
+#define GRID_SIZE (item.workItemCount / item.localGroupSize)
 // clang-format off
-#define CUDA_KERNEL_2(fn, t0, t1) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
-#define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
-#define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
-#define CUDA_KERNEL_5(fn, t0, t1, t2, t3, t4) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()))
-#define CUDA_KERNEL_6(fn, t0, t1, t2, t3, t4, t5) fn<<<item.workItemCount, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()), (t5*)(args[5].get()))
+#define CUDA_KERNEL_2(fn, t0, t1) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
+#define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
+#define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
+#define CUDA_KERNEL_5(fn, t0, t1, t2, t3, t4) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()))
+#define CUDA_KERNEL_6(fn, t0, t1, t2, t3, t4, t5) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()), (t5*)(args[5].get()))
 // clang-format on
 
 QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
@@ -1569,7 +1570,7 @@ real1_f QEngineCUDA::Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs)
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
 
     const bitCapIntOcl maxI = bciArgs[0];
     const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
