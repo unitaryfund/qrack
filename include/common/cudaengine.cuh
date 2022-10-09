@@ -37,10 +37,6 @@ typedef std::shared_ptr<std::vector<cudaEvent_t>> EventVecPtr;
 class CUDADeviceContext {
 public:
     const int64_t device_id;
-    EventVecPtr wait_events;
-
-protected:
-    std::mutex waitEventsMutex;
 
 private:
     size_t globalLimit;
@@ -51,7 +47,6 @@ private:
 public:
     CUDADeviceContext(int64_t dev_id, int64_t maxAlloc = -1)
         : device_id(dev_id)
-        , wait_events(new EventVec())
 #if ENABLE_OCL_MEM_GUARDS
         , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * properties.totalGlobalMem) >> 2U))
 #else
@@ -63,28 +58,7 @@ public:
         cudaGetDeviceProperties(&properties, device_id);
     }
 
-    EventVecPtr ResetWaitEvents()
-    {
-        std::lock_guard<std::mutex> guard(waitEventsMutex);
-        EventVecPtr waitVec = std::move(wait_events);
-        wait_events = EventVecPtr(new EventVec());
-        return waitVec;
-    }
-
-    void LockWaitEvents() { waitEventsMutex.lock(); }
-
-    void UnlockWaitEvents() { waitEventsMutex.unlock(); }
-
-    void WaitOnAllEvents()
-    {
-        std::lock_guard<std::mutex> guard(waitEventsMutex);
-        if (wait_events.get()->size()) {
-            for (size_t i = 0U; i < wait_events.get()->size(); ++i) {
-                cudaEventSynchronize((*wait_events)[i]);
-            }
-            wait_events->clear();
-        }
-    }
+    void WaitOnAllEvents() { cudaDeviceSynchronize(); }
 
     size_t GetPreferredSizeMultiple()
     {

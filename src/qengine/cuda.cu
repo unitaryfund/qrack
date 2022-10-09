@@ -37,32 +37,20 @@ namespace Qrack {
             return err;                                                                                                \
         }                                                                                                              \
         return cudaMemcpy((void*)((complex*)(buff.get()) + offset), (void*)(array), length, cudaMemcpyHostToDevice);   \
-    });                                                                                                                \
-    wait_refs.clear();
+    });
 
-#define DISPATCH_TEMP_WRITE(buff, size, array, event)                                                                  \
+#define DISPATCH_TEMP_WRITE(buff, size, array)                                                                         \
     tryCuda("Failed to write buffer", [&] {                                                                            \
-        cudaError_t error = cudaMemcpyAsync(buff.get(), array, size, cudaMemcpyHostToDevice, queue);                   \
-        if (error != cudaSuccess) {                                                                                    \
-            return error;                                                                                              \
+        cudaError_t err = cudaStreamSynchronize(queue);                                                                \
+        if (err != cudaSuccess) {                                                                                      \
+            return err;                                                                                                \
         }                                                                                                              \
-        return cudaEventRecord(event);                                                                                 \
+        return cudaMemcpy(buff.get(), array, size, cudaMemcpyHostToDevice);                                            \
     });
 
 #define DISPATCH_WRITE(buff, size, array)                                                                              \
-    device_context->LockWaitEvents();                                                                                  \
-    device_context->wait_events->push_back(createCudaEvent());                                                         \
-    tryCuda(                                                                                                           \
-        "Failed to enqueue buffer write",                                                                              \
-        [&] {                                                                                                          \
-            cudaError_t error = cudaMemcpyAsync(buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, queue);      \
-            if (error != cudaSuccess) {                                                                                \
-                return error;                                                                                          \
-            }                                                                                                          \
-            return cudaEventRecord(device_context->wait_events->back());                                               \
-        },                                                                                                             \
-        true);                                                                                                         \
-    device_context->UnlockWaitEvents();
+    tryCuda("Failed to enqueue buffer write",                                                                          \
+        [&] { return cudaMemcpyAsync(buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, queue); });
 
 #define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                               \
     tryCuda("Failed to read buffer", [&] {                                                                             \
@@ -71,8 +59,7 @@ namespace Qrack {
             return err;                                                                                                \
         }                                                                                                              \
         return cudaMemcpy((void*)(array), (void*)((complex*)(buff.get()) + offset), length, cudaMemcpyDeviceToHost);   \
-    });                                                                                                                \
-    wait_refs.clear();
+    });
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
     clFinish();                                                                                                        \
@@ -107,7 +94,6 @@ QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_ge
     , nrmGroupSize(0U)
     , totalOclAllocSize(0U)
     , deviceID(devID)
-    , wait_refs()
     , nrmArray(NULL, [](real1* r) {})
 {
     InitOCL(devID);
@@ -180,7 +166,6 @@ void QEngineCUDA::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCap
         return;
     }
 
-    ResetWaitEvents();
     DISPATCH_BLOCK_READ(stateBuffer, offset, sizeof(complex) * length, pagePtr);
 }
 
@@ -197,7 +182,6 @@ void QEngineCUDA::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, 
         }
     }
 
-    ResetWaitEvents();
     DISPATCH_BLOCK_WRITE(stateBuffer, offset, sizeof(complex) * length, pagePtr);
 
     runningNorm = REAL1_DEFAULT_ARG;
@@ -240,18 +224,13 @@ void QEngineCUDA::SetAmplitudePage(
 
     pageEngineOclPtr->clFinish();
 
-    EventVecPtr waitVec = ResetWaitEvents();
-
-    cudaEvent_t copyEvent = createCudaEvent();
     tryCuda("Failed to enqueue buffer copy", [&] {
-        cudaError_t error = cudaMemcpyAsync(
-            oStateBuffer.get(), stateBuffer.get(), sizeof(complex) * srcOffset, cudaMemcpyDeviceToDevice, queue);
+        cudaError_t error = cudaStreamSynchronize(queue);
         if (error != cudaSuccess) {
             return error;
         }
-        return cudaEventRecord(copyEvent, queue);
+        return cudaMemcpy(oStateBuffer.get(), stateBuffer.get(), sizeof(complex) * srcOffset, cudaMemcpyDeviceToDevice);
     });
-    cudaEventSynchronize(copyEvent);
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -281,17 +260,13 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
         0U };
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs, writeArgsEvent);
-    cudaEventSynchronize(writeArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
     engineOcl->clFinish();
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    engineOcl->wait_refs.emplace_back(device_context->wait_events);
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;
@@ -300,7 +275,6 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
 void QEngineCUDA::LockSync(cl_map_flags flags)
 {
     lockSyncFlags = flags;
-    ResetWaitEvents();
 
     if (stateVec) {
         unlockHostMem = true;
@@ -312,7 +286,6 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
             return cudaMemcpy(
                 (void*)(stateVec.get()), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToHost);
         });
-        wait_refs.clear();
     } else {
         unlockHostMem = false;
         stateVec = AllocStateVec(maxQPowerOcl);
@@ -324,20 +297,15 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
 
 void QEngineCUDA::UnlockSync()
 {
-    EventVecPtr waitVec = ResetWaitEvents();
-
     if (unlockHostMem) {
-        cudaEvent_t unmapEvent = createCudaEvent();
         tryCuda("Failed to unmap buffer", [&] {
-            cudaError_t error = cudaMemcpyAsync(stateBuffer.get(), (void*)(stateVec.get()),
-                sizeof(complex) * maxQPowerOcl, cudaMemcpyHostToDevice, queue);
+            cudaError_t error = cudaStreamSynchronize(queue);
             if (error != cudaSuccess) {
                 return error;
             }
-            return cudaEventRecord(unmapEvent, queue);
+            return cudaMemcpyAsync(stateBuffer.get(), (void*)(stateVec.get()), sizeof(complex) * maxQPowerOcl,
+                cudaMemcpyHostToDevice, queue);
         });
-        cudaEventSynchronize(unmapEvent);
-        wait_refs.clear();
     } else {
         if (lockSyncFlags & CL_MAP_WRITE) {
             DISPATCH_BLOCK_WRITE(stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, stateVec.get())
@@ -356,20 +324,11 @@ void QEngineCUDA::clFinish(bool doHard)
 
     checkCallbackError();
 
-    while (wait_queue_items.size() > 1) {
-        device_context->WaitOnAllEvents();
-        PopQueue();
-        checkCallbackError();
-    }
-
     if (doHard) {
-        tryCuda("Failed to finish queue", [&] { return cudaStreamSynchronize(queue); });
+        tryCuda("Failed to finish device queue", [&] { return cudaStreamSynchronize(queue); });
     } else {
-        device_context->WaitOnAllEvents();
-        checkCallbackError();
+        tryCuda("Failed to finish simulator queue", [&] { return cudaDeviceSynchronize(); });
     }
-
-    wait_refs.clear();
 }
 
 void QEngineCUDA::clDump()
@@ -379,9 +338,6 @@ void QEngineCUDA::clDump()
     }
 
     wait_queue_items.clear();
-    wait_refs.clear();
-    device_context->WaitOnAllEvents();
-    checkCallbackError();
 }
 
 PoolItemPtr QEngineCUDA::GetFreePoolItem()
@@ -395,23 +351,6 @@ PoolItemPtr QEngineCUDA::GetFreePoolItem()
     }
 
     return poolItems[wait_queue_items.size()];
-}
-
-EventVecPtr QEngineCUDA::ResetWaitEvents(bool waitQueue)
-{
-    if (waitQueue) {
-        while (wait_queue_items.size() > 1) {
-            device_context->WaitOnAllEvents();
-            PopQueue();
-            checkCallbackError();
-        }
-    }
-
-    EventVecPtr waitVec = device_context->ResetWaitEvents();
-    if (waitVec->size()) {
-        wait_refs.emplace_back(waitVec);
-    }
-    return wait_refs.size() ? wait_refs.back() : std::make_shared<EventVec>();
 }
 
 void QEngineCUDA::WaitCall(
@@ -451,7 +390,6 @@ void QEngineCUDA::PopQueue()
 
     if (callbackError != cudaSuccess) {
         wait_queue_items.clear();
-        wait_refs.clear();
         return;
     }
 
@@ -490,9 +428,6 @@ void QEngineCUDA::DispatchQueue()
     std::vector<BufferPtr> args = item.buffers;
 
     // Dispatch the primary kernel, to apply the gate.
-    ResetWaitEvents(false);
-    device_context->LockWaitEvents();
-
     switch (item.api_call) {
     case OCL_API_APPLY2X2:
         CUDA_KERNEL_4(apply2x2, qCudaCmplx, qCudaReal1, bitCapIntOcl, bitCapIntOcl);
@@ -697,10 +632,6 @@ void QEngineCUDA::DispatchQueue()
     }
 
     cudaStreamAddCallback(queue, _PopQueue, (void*)this, 0);
-    device_context->wait_events->push_back(createCudaEvent());
-    cudaEventRecord(device_context->wait_events->back(), queue);
-
-    device_context->UnlockWaitEvents();
 }
 
 void QEngineCUDA::SetDevice(int64_t dID)
@@ -831,21 +762,10 @@ void QEngineCUDA::SetPermutation(bitCapInt perm, complex phaseFac)
         permutationAmp = phaseFac;
     }
 
-    ResetWaitEvents();
-    device_context->LockWaitEvents();
-    device_context->wait_events->push_back(createCudaEvent());
-    tryCuda(
-        "Failed to enqueue buffer write",
-        [&] {
-            cudaError_t error = cudaMemcpyAsync((void*)((complex*)(stateBuffer.get()) + (size_t)perm),
-                (void*)&permutationAmp, sizeof(complex), cudaMemcpyHostToDevice, queue);
-            if (error != cudaSuccess) {
-                return error;
-            }
-            return cudaEventRecord(device_context->wait_events->back(), queue);
-        },
-        true);
-    device_context->UnlockWaitEvents();
+    tryCuda("Failed to enqueue buffer write", [&] {
+        return cudaMemcpyAsync((void*)((complex*)(stateBuffer.get()) + (size_t)perm), (void*)&permutationAmp,
+            sizeof(complex), cudaMemcpyHostToDevice, queue);
+    });
 
     QueueSetRunningNorm(ONE_R1_F);
 }
@@ -926,9 +846,6 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
     doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
     doApplyNorm &= (runningNorm != ONE_R1);
 
-    // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
-    ResetWaitEvents();
-
     PoolItemPtr poolItem = GetFreePoolItem();
 
     // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
@@ -965,8 +882,7 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
         bciArgs[3] = qPowersSorted[0] - ONE_BCI;
         bciArgs[4] = qPowersSorted[1] - ONE_BCI;
     }
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * bciArgsSize, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * bciArgsSize, bciArgs);
 
     // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
     complex cmplx[CMPLX_NORM_LEN];
@@ -977,14 +893,12 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
     cmplx[5] = (real1)norm_thresh;
 
     BufferPtr locCmplxBuffer;
-    cudaEvent_t writeGateEvent = createCudaEvent();
     if (!isXGate && !isZGate) {
-        DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * CMPLX_NORM_LEN, cmplx, writeGateEvent);
+        DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
     }
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     BufferPtr locPowersBuffer;
-    cudaEvent_t writeControlsEvent = createCudaEvent();
     if (bitCount > 2) {
         if (doCalcNorm) {
             locPowersBuffer = powersBuffer;
@@ -992,9 +906,9 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
             locPowersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bitCount);
         }
         if (sizeof(bitCapInt) == sizeof(bitCapIntOcl)) {
-            DISPATCH_TEMP_WRITE(locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted, writeControlsEvent);
+            DISPATCH_TEMP_WRITE(locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted);
         } else {
-            DISPATCH_TEMP_WRITE(locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted, writeControlsEvent);
+            DISPATCH_TEMP_WRITE(locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted);
         }
     }
 
@@ -1074,16 +988,6 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
         throw std::runtime_error("Invalid APPLY2X2 kernel selected!");
     }
 
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeArgsEvent);
-    if (!isXGate && !isZGate) {
-        cudaEventSynchronize(writeGateEvent);
-    }
-    if (bitCount > 2) {
-        cudaEventSynchronize(writeControlsEvent);
-    }
-    wait_refs.clear();
-
     if (isXGate || isZGate) {
         QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
     } else if (doCalcNorm) {
@@ -1130,13 +1034,11 @@ void QEngineCUDA::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
 
     bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ mask;
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, otherMask, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -1145,14 +1047,8 @@ void QEngineCUDA::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
     if (isPhaseParity) {
         const complex phaseFac = std::polar(ONE_R1, (real1)(phase / 2));
         const complex cmplxArray[2] = { phaseFac, ONE_CMPLX / phaseFac };
-        cudaEvent_t writePhaseEvent = createCudaEvent();
-        DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, 2U * sizeof(complex), cmplxArray, writePhaseEvent);
-        cudaEventSynchronize(writePhaseEvent);
+        DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, 2U * sizeof(complex), cmplxArray);
     }
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeArgsEvent);
-    wait_refs.clear();
 
     if (isPhaseParity) {
         QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
@@ -1179,8 +1075,6 @@ void QEngineCUDA::UniformlyControlledSingleBit(const bitLenInt* controls, bitLen
     ThrowIfQbIdArrayIsBad(
         controls, controlLen, qubitCount, "QEngineCUDA::UniformlyControlledSingleBit control is out-of-bounds!");
 
-    // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
@@ -1246,21 +1140,13 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
     const complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine),
         (runningNorm > ZERO_R1) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1 };
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    cudaEvent_t writeNormEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
-    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 3, &phaseFacs, writeNormEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 3, &phaseFacs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeArgsEvent);
-    cudaEventSynchronize(writeNormEvent);
-    wait_refs.clear();
 
     QueueCall((abs(ONE_R1 - runningNorm) <= FP_NORM_EPSILON) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM,
         ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
@@ -1299,22 +1185,13 @@ void QEngineCUDA::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlL
     const real1 sine = (real1)sin(angle);
     const complex phaseFacs[2] = { complex(cosine, sine), complex(cosine, -sine) };
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    cudaEvent_t writeNormEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs, writeArgsEvent);
-    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, &phaseFacs, writeNormEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, &phaseFacs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeArgsEvent);
-    cudaEventSynchronize(writeNormEvent);
-    wait_refs.clear();
-
     QueueCall(OCL_API_CUNIFORMPARITYRZ, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer, controlBuffer });
     QueueSetRunningNorm(ONE_R1_F);
@@ -1324,22 +1201,14 @@ void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex 
 {
     CHECK_ZERO_SKIP();
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    cudaEvent_t writeNormEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
     BufferPtr locCmplxBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(complex));
-    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex), &nrm, writeNormEvent);
+    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex), &nrm);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeArgsEvent);
-    cudaEventSynchronize(writeNormEvent);
-    wait_refs.clear();
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
     QueueSetRunningNorm(ONE_R1_F);
@@ -1388,16 +1257,14 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
         stateVec = AllocStateVec(toCopy->maxQPowerOcl);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
-        cudaEvent_t copyEvent = createCudaEvent();
         tryCuda("Failed to enqueue buffer copy", [&] {
-            cudaError_t error = cudaMemcpyAsync(stateBuffer.get(), toCopy->stateBuffer.get(),
-                sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice, queue);
+            cudaError_t error = cudaStreamSynchronize(queue);
             if (error != cudaSuccess) {
                 return error;
             }
-            return cudaEventRecord(copyEvent, queue);
+            return cudaMemcpy(
+                stateBuffer.get(), toCopy->stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
         });
-        cudaEventSynchronize(copyEvent);
 
         return;
     }
@@ -1420,10 +1287,8 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
-    ResetWaitEvents();
 
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 7, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 7, bciArgs);
 
     AddAlloc(sizeof(complex) * nMaxQPower);
 
@@ -1432,16 +1297,12 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    cudaEventSynchronize(writeArgsEvent);
-    wait_refs.clear();
-
     std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     toCopy->clFinish();
 
     QueueCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
-    toCopy->wait_refs.emplace_back(device_context->wait_events);
 
     stateVec = nStateVec;
     ResetStateBuffer(nStateBuffer);
@@ -1569,7 +1430,6 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
         ClearBuffer(angleBuffer2, 0U, partPower >> ONE_BCI);
     }
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
 
@@ -1595,7 +1455,6 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
         destination->clFinish();
 
         poolItem = GetFreePoolItem();
-        ResetWaitEvents();
         DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
         const size_t ngc2 = FixWorkItemCount(partPower, nrmGroupCount);
@@ -1617,16 +1476,14 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
 
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
 
-            cudaEvent_t copyEvent = createCudaEvent();
             tryCuda("Failed to enqueue buffer copy", [&] {
-                cudaError_t error = cudaMemcpyAsync(nSB.get(), destination->stateBuffer.get(),
-                    sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice, queue);
+                cudaError_t error = cudaStreamSynchronize(queue);
                 if (error != cudaSuccess) {
                     return error;
                 }
-                return cudaEventRecord(copyEvent, queue);
+                return cudaMemcpy(nSB.get(), destination->stateBuffer.get(), sizeof(complex) * maxQPowerOcl,
+                    cudaMemcpyDeviceToDevice);
             });
-            cudaEventSynchronize(copyEvent);
 
             destination->stateBuffer = nSB;
             destination->stateVec = NULL;
@@ -1636,7 +1493,6 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPowerOcl;
     poolItem = GetFreePoolItem();
-    ResetWaitEvents();
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
     const size_t ngc3 = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -1693,7 +1549,6 @@ void QEngineCUDA::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedP
         NormalizeState();
     }
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     const bitLenInt nLength = qubitCount - length;
@@ -1744,7 +1599,6 @@ real1_f QEngineCUDA::Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs)
         return ZERO_R1_F;
     }
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
 
@@ -1846,7 +1700,6 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, start, length, 0U, 0U, 0U, 0U, 0U, 0U };
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
@@ -1859,7 +1712,6 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
 
     QueueCall(OCL_API_PROBREGALL, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, probsBuffer });
 
-    ResetWaitEvents();
     DISPATCH_BLOCK_READ(probsBuffer, 0U, sizeof(real1) * lengthPower, probsArray);
 
     probsBuffer.reset();
@@ -1894,7 +1746,6 @@ real1_f QEngineCUDA::ProbMask(bitCapInt mask, bitCapInt permutation)
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> length), (bitCapIntOcl)mask,
         (bitCapIntOcl)permutation, length, 0U, 0U, 0U, 0U, 0U, 0U };
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
@@ -1965,7 +1816,6 @@ void QEngineCUDA::ProbMaskAll(bitCapInt mask, real1* probsArray)
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, length, skipLength, 0U, 0U, 0U, 0U, 0U, 0U };
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
@@ -1993,7 +1843,6 @@ void QEngineCUDA::ProbMaskAll(bitCapInt mask, real1* probsArray)
     QueueCall(OCL_API_PROBMASKALL, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer });
 
-    ResetWaitEvents();
     DISPATCH_BLOCK_READ(probsBuffer, 0U, sizeof(real1) * lengthPower, probsArray);
 
     probsBuffer.reset();
@@ -2074,7 +1923,6 @@ real1_f QEngineCUDA::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length,
         bitPowers[p] = pow2Ocl(bits[p]);
     }
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * length);
@@ -2134,8 +1982,6 @@ void QEngineCUDA::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)
     }
     AddAlloc(sizeDiff);
 
-    ResetWaitEvents();
-
     // Allocate a temporary nStateVec, or use the one supplied.
     std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer;
@@ -2148,16 +1994,10 @@ void QEngineCUDA::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)
     nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     if (controlLen) {
-        device_context->LockWaitEvents();
-        device_context->wait_events->push_back(createCudaEvent());
-        tryCuda(
-            "Failed to enqueue buffer copy",
-            [&] {
-                return cudaMemcpyAsync(nStateBuffer.get(), stateBuffer.get(), sizeof(complex) * maxQPowerOcl,
-                    cudaMemcpyDeviceToDevice, queue);
-            },
-            true);
-        device_context->UnlockWaitEvents();
+        tryCuda("Failed to enqueue buffer copy", [&] {
+            return cudaMemcpyAsync(
+                nStateBuffer.get(), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice, queue);
+        });
     } else {
         ClearBuffer(nStateBuffer, 0U, maxQPowerOcl);
     }
@@ -2599,15 +2439,9 @@ void QEngineCUDA::FullAdx(
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)2U), pow2Ocl(inputBit1),
         pow2Ocl(inputBit2), pow2Ocl(carryInSumOut), pow2Ocl(carryOut), 0U, 0U, 0U, 0U, 0U };
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 5, bciArgs, writeArgsEvent);
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeArgsEvent);
-    wait_refs.clear();
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 5, bciArgs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2718,8 +2552,6 @@ void QEngineCUDA::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart,
 void QEngineCUDA::xMULx(OCLAPI api_call, const bitCapIntOcl* bciArgs, BufferPtr controlBuffer)
 {
     CHECK_ZERO_SKIP();
-
-    ResetWaitEvents();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
     std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
@@ -2988,18 +2820,12 @@ void QEngineCUDA::PhaseFlipX(OCLAPI api_call, const bitCapIntOcl* bciArgs)
 {
     CHECK_ZERO_SKIP();
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 5, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 5, bciArgs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeArgsEvent);
-    wait_refs.clear();
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
 }
@@ -3042,7 +2868,6 @@ void QEngineCUDA::SetQuantumState(const complex* inputState)
         ReinitBuffer();
     }
 
-    ResetWaitEvents();
     DISPATCH_BLOCK_WRITE(stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, inputState);
 
     UpdateRunningNorm();
@@ -3086,21 +2911,10 @@ void QEngineCUDA::SetAmplitude(bitCapInt perm, complex amp)
         runningNorm += norm(amp) - norm(permutationAmp);
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
-    device_context->LockWaitEvents();
-    device_context->wait_events->push_back(createCudaEvent());
-    tryCuda(
-        "Failed to enqueue buffer write",
-        [&] {
-            cudaError_t error = cudaMemcpyAsync((void*)((complex*)(stateBuffer.get()) + maxQPowerOcl),
-                (void*)&permutationAmp, sizeof(complex), cudaMemcpyHostToDevice, queue);
-            if (error != cudaSuccess) {
-                return error;
-            }
-            return cudaEventRecord(device_context->wait_events->back(), queue);
-        },
-        true);
-    device_context->UnlockWaitEvents();
+    tryCuda("Failed to enqueue buffer write", [&] {
+        return cudaMemcpyAsync((void*)((complex*)(stateBuffer.get()) + maxQPowerOcl), (void*)&permutationAmp,
+            sizeof(complex), cudaMemcpyHostToDevice, queue);
+    });
 }
 
 /// Get pure quantum state, in unsigned int permutation basis
@@ -3115,7 +2929,6 @@ void QEngineCUDA::GetQuantumState(complex* outputState)
         return;
     }
 
-    ResetWaitEvents();
     DISPATCH_BLOCK_READ(stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, outputState);
 }
 
@@ -3170,7 +2983,6 @@ real1_f QEngineCUDA::SumSqrDiff(QEngineCUDAPtr toCompare)
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
-    ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
@@ -3217,20 +3029,17 @@ QInterfacePtr QEngineCUDA::Clone()
     QEngineCUDAPtr copyPtr = std::make_shared<QEngineCUDA>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
 
-    cudaEvent_t copyEvent = createCudaEvent();
-
     copyPtr->clFinish();
     clFinish();
 
     tryCuda("Failed to enqueue buffer copy", [&] {
-        cudaError_t error = cudaMemcpyAsync(copyPtr->stateBuffer.get(), stateBuffer.get(),
-            sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice, queue);
+        cudaError_t error = cudaStreamSynchronize(queue);
         if (error != cudaSuccess) {
             return error;
         }
-        return cudaEventRecord(copyEvent, queue);
+        return cudaMemcpy(
+            copyPtr->stateBuffer.get(), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
     });
-    cudaEventSynchronize(copyEvent);
 
     copyPtr->runningNorm = runningNorm;
 
@@ -3279,20 +3088,13 @@ void QEngineCUDA::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phase
     PoolItemPtr poolItem = GetFreePoolItem();
 
     complex c_args[2] = { complex((real1)norm_thresh, ZERO_R1), std::polar((real1)nrm, (real1)phaseArg) };
-    cudaEvent_t writeRealArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, c_args, writeRealArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, c_args);
 
     bitCapIntOcl bciArgs[1] = { maxQPowerOcl };
-    cudaEvent_t writeBCIArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs, writeBCIArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeRealArgsEvent);
-    cudaEventSynchronize(writeBCIArgsEvent);
-    wait_refs.clear();
 
     OCLAPI api_call;
     if (maxQPowerOcl == ngc) {
@@ -3319,19 +3121,11 @@ void QEngineCUDA::UpdateRunningNorm(real1_f norm_thresh)
     PoolItemPtr poolItem = GetFreePoolItem();
 
     const real1 r1_args[1] = { (real1)norm_thresh };
-    cudaEvent_t writeRealArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->realBuffer, sizeof(real1), r1_args, writeRealArgsEvent);
-
-    cudaEvent_t writeBCIArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), &maxQPowerOcl, writeBCIArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->realBuffer, sizeof(real1), r1_args);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), &maxQPowerOcl);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeRealArgsEvent);
-    cudaEventSynchronize(writeBCIArgsEvent);
-    wait_refs.clear();
 
     QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->realBuffer, nrmBuffer },
         sizeof(real1) * ngs);
@@ -3403,14 +3197,10 @@ void QEngineCUDA::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl 
     PoolItemPtr poolItem = GetFreePoolItem();
 
     bitCapIntOcl bciArgs[2] = { size, offset };
-    cudaEvent_t writeArgsEvent = createCudaEvent();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
 
     const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Wait for buffer write from limited lifetime objects
-    cudaEventSynchronize(writeArgsEvent);
 
     QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
 }

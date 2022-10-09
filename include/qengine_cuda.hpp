@@ -218,33 +218,27 @@ protected:
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
     DeviceContextPtr device_context;
-    std::vector<EventVecPtr> wait_refs;
     std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
     // If we have ~16 streams, this doesn't scale to single-qubit QEngineOCL instances under QUnit.
     // However, we prefer QHybrid!
 
-    void checkCallbackError(bool unlockWaitEvents = false)
+    void checkCallbackError()
     {
         if (callbackError == cudaSuccess) {
             return;
         }
 
-        if (unlockWaitEvents) {
-            device_context->UnlockWaitEvents();
-        }
-
         wait_queue_items.clear();
-        wait_refs.clear();
 
         throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(callbackError));
     }
 
     // For std::function, cudaError_t use might discard int qualifiers.
-    void tryCuda(std::string message, std::function<cudaError_t()> oclCall, bool unlockWaitEvents = false)
+    void tryCuda(std::string message, std::function<cudaError_t()> oclCall)
     {
-        checkCallbackError(unlockWaitEvents);
+        checkCallbackError();
 
         if (oclCall() == cudaSuccess) {
             // Success
@@ -268,23 +262,10 @@ protected:
             return;
         }
 
-        if (unlockWaitEvents) {
-            device_context->UnlockWaitEvents();
-        }
-
         wait_queue_items.clear();
-        wait_refs.clear();
 
         // We're fatally blocked. Throw to exit.
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
-    }
-
-    cudaEvent_t createCudaEvent()
-    {
-        cudaEvent_t event;
-        cudaEventCreateWithFlags(&event, cudaEventBlockingSync);
-
-        return event;
     }
 
 public:
@@ -675,7 +656,6 @@ protected:
     /* Utility functions used by the operations above. */
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U);
-    EventVecPtr ResetWaitEvents(bool waitQueue = true);
     void ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex nrm);
     real1_f Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs);
 
