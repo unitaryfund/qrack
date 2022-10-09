@@ -838,7 +838,7 @@ void QEngineCUDA::SetPermutation(bitCapInt perm, complex phaseFac)
         "Failed to enqueue buffer write",
         [&] {
             cudaError_t error = cudaMemcpyAsync((void*)((complex*)(stateBuffer.get()) + (size_t)perm),
-                (void*)&permutationAmp, sizeof(complex), cudaMemcpyDeviceToDevice, queue);
+                (void*)&permutationAmp, sizeof(complex), cudaMemcpyHostToDevice, queue);
             if (error != cudaSuccess) {
                 return error;
             }
