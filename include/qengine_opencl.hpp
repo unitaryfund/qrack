@@ -488,7 +488,7 @@ public:
 
     QInterfacePtr Clone();
 
-    void PopQueue();
+    void PopQueue(bool isDispatch);
     void DispatchQueue();
 
 protected:

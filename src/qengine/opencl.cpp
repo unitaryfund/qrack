@@ -341,7 +341,7 @@ void QEngineOCL::clFinish(bool doHard)
 
     while (wait_queue_items.size() > 1) {
         device_context->WaitOnAllEvents();
-        PopQueue();
+        PopQueue(true);
         checkCallbackError();
     }
 
@@ -361,10 +361,18 @@ void QEngineOCL::clDump()
         return;
     }
 
-    wait_queue_items.clear();
-    wait_refs.clear();
+    checkCallbackError();
+
+    while (wait_queue_items.size() > 1) {
+        device_context->WaitOnAllEvents();
+        PopQueue(false);
+        checkCallbackError();
+    }
+
     device_context->WaitOnAllEvents();
     checkCallbackError();
+
+    wait_refs.clear();
 }
 
 PoolItemPtr QEngineOCL::GetFreePoolItem()
@@ -385,7 +393,7 @@ EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
     if (waitQueue) {
         while (wait_queue_items.size() > 1) {
             device_context->WaitOnAllEvents();
-            PopQueue();
+            PopQueue(true);
             checkCallbackError();
         }
     }
@@ -404,9 +412,9 @@ void QEngineOCL::WaitCall(
     clFinish();
 }
 
-void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data) { ((QEngineOCL*)user_data)->PopQueue(); }
+void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data) { ((QEngineOCL*)user_data)->PopQueue(true); }
 
-void QEngineOCL::PopQueue()
+void QEngineOCL::PopQueue(bool isDispatch)
 {
     // For lock_guard scope
     if (true) {
@@ -434,7 +442,9 @@ void QEngineOCL::PopQueue()
         return;
     }
 
-    DispatchQueue();
+    if (isDispatch) {
+        DispatchQueue();
+    }
 }
 
 void QEngineOCL::DispatchQueue()
