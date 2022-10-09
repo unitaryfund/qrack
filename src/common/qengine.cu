@@ -47,7 +47,7 @@ __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.
 #define OFFSET1_ARG bitCapIntOclPtr[1]
 #define MAXI_ARG bitCapIntOclPtr[2]
 #define BITCOUNT_ARG bitCapIntOclPtr[3]
-#define ID blockIdx.x * blockDim.x + threadIdx.x
+#define ID (blockIdx.x * blockDim.x + threadIdx.x)
 
 #define PREP_2X2()                                                                                                     \
     bitCapIntOcl Nthreads = gridDim.x * blockDim.x;                                                                    \

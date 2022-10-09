@@ -206,6 +206,7 @@ protected:
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t totalOclAllocSize;
+    size_t wait_queue_item_id;
     int64_t deviceID;
     cl_map_flags lockSyncFlags;
     complex permutationAmp;
@@ -221,7 +222,7 @@ protected:
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
     DeviceContextPtr device_context;
-    std::list<QueueItem> wait_queue_items;
+    std::vector<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
 
@@ -335,18 +336,14 @@ public:
     {
         tryCuda("Failed to finish params_queue", [&] { return cudaStreamSynchronize(params_queue); });
 
-        bool isBase;
         // For lock_guard:
         if (true) {
             std::lock_guard<std::mutex> lock(queue_mutex);
             checkCallbackError();
-            isBase = !wait_queue_items.size();
             wait_queue_items.push_back(item);
         }
 
-        if (isBase) {
-            DispatchQueue();
-        }
+        DispatchQueue();
     }
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U, size_t deallocSize = 0U)

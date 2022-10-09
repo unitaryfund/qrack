@@ -78,6 +78,7 @@ QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_ge
     , callbackError(cudaSuccess)
     , nrmGroupSize(0U)
     , totalOclAllocSize(0U)
+    , wait_queue_item_id(0U)
     , deviceID(devID)
     , nrmArray(NULL, [](real1* r) {})
 {
@@ -361,17 +362,20 @@ void QEngineCUDA::PopQueue()
         }
 
         if (!wait_queue_items.size()) {
+            wait_queue_item_id = 0U;
             return;
         }
-        wait_queue_items.pop_front();
+        wait_queue_items.erase(wait_queue_items.begin());
+        if (wait_queue_item_id) {
+            --wait_queue_item_id;
+        }
     }
 
     if (callbackError != cudaSuccess) {
         wait_queue_items.clear();
+        wait_queue_item_id = 0U;
         return;
     }
-
-    DispatchQueue();
 }
 
 void QEngineCUDA::DispatchQueue()
@@ -381,11 +385,11 @@ void QEngineCUDA::DispatchQueue()
     if (true) {
         std::lock_guard<std::mutex> lock(queue_mutex);
 
-        if (!wait_queue_items.size()) {
+        if (wait_queue_items.size() <= wait_queue_item_id) {
             return;
         }
 
-        item = wait_queue_items.front();
+        item = wait_queue_items[wait_queue_item_id];
 
         while (item.isSetDoNorm || item.isSetRunningNorm) {
             if (item.isSetDoNorm) {
@@ -395,12 +399,14 @@ void QEngineCUDA::DispatchQueue()
                 runningNorm = item.runningNorm;
             }
 
-            wait_queue_items.pop_front();
-            if (!wait_queue_items.size()) {
+            wait_queue_items.erase(wait_queue_items.begin() + wait_queue_item_id);
+            if (wait_queue_items.size() <= wait_queue_item_id) {
                 return;
             }
-            item = wait_queue_items.front();
+            item = wait_queue_items[wait_queue_item_id];
         }
+
+        ++wait_queue_item_id;
     }
 
     std::vector<BufferPtr> args = item.buffers;
