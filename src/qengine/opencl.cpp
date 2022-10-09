@@ -416,8 +416,6 @@ void QEngineOCL::PopQueue()
             poolItems.front()->probArray = NULL;
             poolItems.front()->angleArray = NULL;
 
-            SubtractAlloc(wait_queue_items.front().deallocSize);
-
             if (poolItems.size() > 1) {
                 rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
             }
@@ -426,6 +424,7 @@ void QEngineOCL::PopQueue()
         if (!wait_queue_items.size()) {
             return;
         }
+        SubtractAlloc(wait_queue_items.front().deallocSize);
         wait_queue_items.pop_front();
     }
 
