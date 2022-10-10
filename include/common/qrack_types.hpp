@@ -275,9 +275,9 @@ inline bool isBadPermRange(const bitCapIntOcl& start, const bitCapIntOcl& length
     return ((start + length) > maxQPowerOcl) || ((bitCapIntOcl)(start + length) < start);
 }
 inline void ThrowIfQbIdArrayIsBad(
-    bitLenInt const* controls, const bitLenInt controlLen, const bitLenInt& qubitCount, std::string message)
+    const std::vector<bitLenInt>& controls, const bitLenInt& qubitCount, std::string message)
 {
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         if (controls[i] >= qubitCount) {
             throw std::invalid_argument(message);
         }

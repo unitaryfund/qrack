@@ -256,7 +256,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void GetProbs(std::vector<real1>& outputProbs) = 0;
+    virtual void GetProbs(real1* outputProbs) = 0;
 
     /** Get the representational amplitude of a full permutation
      *
@@ -1184,7 +1184,7 @@ public:
      * bits, there are therefore 2^k real components in "angles."
      */
     virtual void UniformlyControlledRY(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const std::vector<real1>& angles);
+        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, real1 const* angles);
 
     /**
      * Apply a "uniformly controlled" rotation of a bit around the Pauli Z axis. (See
@@ -1197,7 +1197,7 @@ public:
      * bits, there are therefore 2^k real components in "angles."
      */
     virtual void UniformlyControlledRZ(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const std::vector<real1>& angles);
+        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, real1 const* angles);
 
     /**
      * Phase shift gate
@@ -2098,7 +2098,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void ProbMaskAll(bitCapInt mask, std::vector<real1>& probsArray);
+    virtual void ProbMaskAll(bitCapInt mask, real1* probsArray);
 
     /**
      * Direct measure of listed permutation probability
@@ -2108,7 +2108,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void ProbBitsAll(const std::vector<bitLenInt>& bits, std::vector<real1>& probsArray);
+    virtual void ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArray);
 
     /**
      * Get permutation expectation value of bits
@@ -2118,7 +2118,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitLenInt length, bitCapInt offset = 0);
+    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
 
     /**
      * Statistical measure of masked permutation probability
