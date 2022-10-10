@@ -277,9 +277,16 @@ inline bool isBadPermRange(const bitCapIntOcl& start, const bitCapIntOcl& length
 inline void ThrowIfQbIdArrayIsBad(
     bitLenInt const* controls, const bitLenInt controlLen, const bitLenInt& qubitCount, std::string message)
 {
+    std::set<bitLenInt> dupes;
     for (bitLenInt i = 0U; i < controlLen; ++i) {
         if (controls[i] >= qubitCount) {
             throw std::invalid_argument(message);
+        }
+
+        if (dupes.find(controls[i]) == dupes.end()) {
+            dupes.insert(controls[i]);
+        } else {
+            throw std::invalid_argument(message + " (Found duplicate qubit indices!)");
         }
     }
 }
