@@ -22,6 +22,7 @@
 #include <limits>
 #include <memory>
 #include <random>
+#include <set>
 
 #if UINTPOW < 4
 #define ONE_BCI ((uint8_t)1U)
