@@ -244,13 +244,13 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void SetQuantumState(const std::vector<complex>& inputState) = 0;
+    virtual void SetQuantumState(complex const* inputState) = 0;
 
     /** Get the pure quantum state representation
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void GetQuantumState(std::vector<complex> outputState) = 0;
+    virtual void GetQuantumState(complex* outputState) = 0;
 
     /** Get the pure quantum state representation
      *
