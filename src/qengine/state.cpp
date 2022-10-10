@@ -372,7 +372,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                 "QEngineCPU::Apply2x2 parameter qPowsSorted array values must be within allocated qubit bounds!");
         }
         if (i && (qPowsSorted[i - 1U] == qPowsSorted[i])) {
-            throw std::invalid_argument("QEngineCPU::Apply2x2 parameter qPowersSorted array values cannot be "
+            throw std::invalid_argument("QEngineCPU::Apply2x2 parameter qPowSorted array values cannot be "
                                         "duplicated (for control and target qubits)!");
         }
     }
@@ -556,8 +556,8 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             throw std::invalid_argument(
                 "QEngineCPU::Apply2x2 parameter qPowsSorted array values must be within allocated qubit bounds!");
         }
-        if (i && (qPowersSorted[i - 1U] == qPowersSorted[i])) {
-            throw std::invalid_argument("QEngineCPU::Apply2x2 parameter qPowersSorted array values cannot be "
+        if (i && (qPowsSorted[i - 1U] == qPowsSorted[i])) {
+            throw std::invalid_argument("QEngineCPU::Apply2x2 parameter qPowsSorted array values cannot be "
                                         "duplicated (for control and target qubits)!");
         }
     }
