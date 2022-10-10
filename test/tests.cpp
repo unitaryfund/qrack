@@ -4771,10 +4771,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     REQUIRE_FLOAT((real1_f)abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
     REQUIRE_FLOAT((real1_f)abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 
-    bitLenInt controls[1] = { 1 };
-    bool controlToggles[1] = { false };
+    std::vector<bitLenInt> controls{ 1U };
+    std::vector<bool> controlToggles{ false };
 
-    HamiltonianOpPtr h1 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, false, controlToggles);
+    HamiltonianOpPtr h1 = std::make_shared<HamiltonianOp>(controls, 0, o2neg1, false, controlToggles);
     h[0] = h1;
 
     // The point of this "toggle" behavior is to allow enumeration of arbitrary local Hamiltonian terms with
@@ -4790,7 +4790,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     REQUIRE_FLOAT((real1_f)abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 
     controlToggles[0] = true;
-    HamiltonianOpPtr h2 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, false, controlToggles);
+    HamiltonianOpPtr h2 = std::make_shared<HamiltonianOp>(controls, 0, o2neg1, false, controlToggles);
     h[0] = h2;
 
     qftReg->SetPermutation(2);
@@ -4799,7 +4799,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     REQUIRE_FLOAT(qftReg->Prob(0), ZERO_R1_F);
 
     controlToggles[0] = false;
-    HamiltonianOpPtr h3 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, true, controlToggles);
+    HamiltonianOpPtr h3 = std::make_shared<HamiltonianOp>(controls, 0, o2neg1, true, controlToggles);
     h[0] = h3;
 
     qftReg->SetPermutation(2);
@@ -4808,7 +4808,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     REQUIRE_FLOAT(qftReg->Prob(0), ZERO_R1_F);
 
     controlToggles[0] = true;
-    HamiltonianOpPtr h4 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, true, controlToggles);
+    HamiltonianOpPtr h4 = std::make_shared<HamiltonianOp>(controls, 0, o2neg1, true, controlToggles);
     h[0] = h4;
 
     qftReg->SetPermutation(2);
@@ -4834,9 +4834,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
     o2neg1.get()[6] = complex(-aParam, ZERO_R1);
     o2neg1.get()[7] = complex(e0, ZERO_R1);
 
-    bitLenInt controls[1] = { 1 };
+    std::vector<bitLenInt> controls{ 1 };
 
-    HamiltonianOpPtr h0 = std::make_shared<UniformHamiltonianOp>(controls, 1, 0, o2neg1);
+    HamiltonianOpPtr h0 = std::make_shared<UniformHamiltonianOp>(controls, 0, o2neg1);
     Hamiltonian h(1);
     h[0] = h0;
 

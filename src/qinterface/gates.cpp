@@ -727,7 +727,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 
         bitCapIntOcl maxJ = 4U;
         if (op->uniform) {
-            maxJ *= pow2Ocl(op->controlLen);
+            maxJ *= pow2Ocl(op->controls.size());
         }
         std::unique_ptr<complex[]> mtrx(new complex[maxJ]);
 
@@ -735,8 +735,8 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
             mtrx[j] = opMtrx[j] * (-timeDiff);
         }
 
-        if (op->toggles) {
-            for (bitLenInt j = 0U; j < op->controlLen; ++j) {
+        if (op->toggles.size()) {
+            for (bitLenInt j = 0U; j < op->controls.size(); ++j) {
                 if (op->toggles[j]) {
                     X(op->controls[j]);
                 }
@@ -745,27 +745,27 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 
         if (op->uniform) {
             std::unique_ptr<complex[]> expMtrx(new complex[maxJ]);
-            for (bitCapIntOcl j = 0U; j < pow2(op->controlLen); ++j) {
+            for (bitCapIntOcl j = 0U; j < pow2(op->controls.size()); ++j) {
                 exp2x2(mtrx.get() + (j * 4U), expMtrx.get() + (j * 4U));
             }
-            UniformlyControlledSingleBit(op->controls.get(), op->controlLen, op->targetBit, expMtrx.get());
+            UniformlyControlledSingleBit(&(op->controls[0]), op->controls.size(), op->targetBit, expMtrx.get());
         } else {
             complex timesI[4U]{ I_CMPLX * mtrx[0U], I_CMPLX * mtrx[1U], I_CMPLX * mtrx[2U], I_CMPLX * mtrx[3U] };
             complex toApply[4U];
             exp2x2(timesI, toApply);
-            if (op->controlLen == 0U) {
+            if (op->controls.size() == 0U) {
                 Mtrx(toApply, op->targetBit);
             } else if (op->anti) {
-                MACMtrx(op->controls.get(), op->controlLen, toApply, op->targetBit);
+                MACMtrx(&(op->controls[0]), op->controls.size(), toApply, op->targetBit);
             } else {
-                MCMtrx(op->controls.get(), op->controlLen, toApply, op->targetBit);
+                MCMtrx(&(op->controls[0]), op->controls.size(), toApply, op->targetBit);
             }
         }
 
-        if (op->toggles) {
-            for (bitLenInt j = 0U; j < op->controlLen; ++j) {
-                if (op->toggles.get()[j]) {
-                    X(op->controls.get()[j]);
+        if (op->toggles.size()) {
+            for (bitLenInt j = 0U; j < op->controls.size(); ++j) {
+                if (op->toggles[j]) {
+                    X(op->controls[j]);
                 }
             }
         }
