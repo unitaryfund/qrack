@@ -28,57 +28,47 @@ namespace Qrack {
  */
 struct HamiltonianOp {
     bitLenInt targetBit;
-    BitOp matrix;
-    std::unique_ptr<bitLenInt[]> controls;
-    bitLenInt controlLen;
     bool anti;
-    std::unique_ptr<bool[]> toggles;
     bool uniform;
+    BitOp matrix;
+    std::vector<bitLenInt> controls;
+    std::vector<bool> toggles;
 
     HamiltonianOp()
         : targetBit(0U)
-        , matrix(NULL)
-        , controls(NULL)
-        , controlLen(0U)
         , anti(false)
-        , toggles(NULL)
         , uniform(false)
+        , matrix(NULL)
+        , controls()
+        , toggles()
     {
     }
 
     HamiltonianOp(bitLenInt target, BitOp mtrx)
         : targetBit(target)
-        , matrix(mtrx)
-        , controls(NULL)
-        , controlLen(0U)
         , anti(false)
-        , toggles(NULL)
         , uniform(false)
+        , matrix(mtrx)
+        , controls()
+        , toggles()
     {
     }
 
-    HamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx, bool antiCtrled = false,
-        bool* ctrlToggles = NULL)
+    HamiltonianOp(const std::vector<bitLenInt>& ctrls, bitLenInt target, BitOp mtrx, bool antiCtrled = false,
+        const std::vector<bool>& ctrlToggles = std::vector<bool>())
         : targetBit(target)
-        , matrix(mtrx)
-        , controls(new bitLenInt[ctrlLen])
-        , controlLen(ctrlLen)
         , anti(antiCtrled)
-        , toggles(NULL)
         , uniform(false)
+        , matrix(mtrx)
+        , controls(ctrls)
+        , toggles(ctrlToggles)
     {
-        std::copy(ctrls, ctrls + ctrlLen, controls.get());
-
-        if (ctrlToggles) {
-            toggles = std::unique_ptr<bool[]>(new bool[ctrlLen]);
-            std::copy(ctrlToggles, ctrlToggles + ctrlLen, toggles.get());
-        }
     }
 };
 
 struct UniformHamiltonianOp : HamiltonianOp {
-    UniformHamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
-        : HamiltonianOp(ctrls, ctrlLen, target, mtrx)
+    UniformHamiltonianOp(const std::vector<bitLenInt>& ctrls, bitLenInt target, BitOp mtrx)
+        : HamiltonianOp(ctrls, target, mtrx)
     {
         uniform = true;
     }
@@ -88,11 +78,9 @@ struct UniformHamiltonianOp : HamiltonianOp {
     {
         targetBit = (bitLenInt)(teoh.target);
 
-        controlLen = (bitLenInt)teoh.controlLen;
-        controls = std::unique_ptr<bitLenInt[]>(new bitLenInt[controlLen]);
-        for (bitLenInt i = 0U; i < controlLen; ++i) {
-            controls[i] = (bitLenInt)teoh.controls[i];
-        }
+        const bitLenInt controlLen = (bitLenInt)teoh.controlLen;
+        controls = std::vector<bitLenInt>(controlLen);
+        std::copy(teoh.controls, teoh.controls + controlLen, controls.begin());
 
         uniform = true;
 
