@@ -64,7 +64,7 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t& dev)
 }
 
 // clang-format off
-const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
+const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_APPLY2X2, "apply2x2"),
     OCLKernelHandle(OCL_API_APPLY2X2_SINGLE, "apply2x2single"),
     OCLKernelHandle(OCL_API_APPLY2X2_NORM_SINGLE, "apply2x2normsingle"),

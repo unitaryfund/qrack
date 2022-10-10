@@ -1394,7 +1394,7 @@ void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
     const bitCapIntOcl carryInSumOutMask = pow2Ocl(carryInSumOut);
     const bitCapIntOcl carryOutMask = pow2Ocl(carryOut);
 
-    bitCapIntOcl qPowers[2] = { carryInSumOutMask, carryOutMask };
+    bitCapIntOcl qPowers[2]{ carryInSumOutMask, carryOutMask };
     std::sort(qPowers, qPowers + 2);
 
     Finish();
@@ -1478,7 +1478,7 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
     const bitCapIntOcl carryInSumOutMask = pow2Ocl(carryInSumOut);
     const bitCapIntOcl carryOutMask = pow2Ocl(carryOut);
 
-    bitCapIntOcl qPowers[2] = { carryInSumOutMask, carryOutMask };
+    bitCapIntOcl qPowers[2]{ carryInSumOutMask, carryOutMask };
     std::sort(qPowers, qPowers + 2);
 
     Finish();

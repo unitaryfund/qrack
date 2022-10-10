@@ -96,7 +96,7 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm, bitLenInt qbCount)
 
 void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
 {
-    complex pauliX[4U] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
     pauliShard->Compose(shards[qubit]->gate);
     shards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
@@ -105,7 +105,7 @@ void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
 
 void QStabilizerHybrid::FlushH(bitLenInt qubit)
 {
-    complex hGate[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+    complex hGate[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
         -complex(SQRT1_2_R1, ZERO_R1) };
     MpsShardPtr shard = std::make_shared<MpsShard>(hGate);
     shard->Compose(shards[qubit]->gate);
@@ -284,7 +284,7 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
     stabilizer->H(target);
     if (stabilizer->IsSeparableZ(target)) {
         // X eigenstate
-        const complex mtrx[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        const complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
             complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
         toRet = std::make_shared<MpsShard>(mtrx);
     } else {
@@ -293,7 +293,7 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
         stabilizer->H(target);
         if (stabilizer->IsSeparableZ(target)) {
             // Y eigenstate
-            const complex mtrx[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+            const complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
                 complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
             toRet = std::make_shared<MpsShard>(mtrx);
         } else {
@@ -607,7 +607,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
     const complex phase0 = std::polar(ONE_R1, arg(inputState[0U]));
     const complex phase1 = std::polar(ONE_R1, arg(inputState[1U]));
-    const complex mtrx[4U] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
+    const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
     Mtrx(mtrx, 0);
 }
 

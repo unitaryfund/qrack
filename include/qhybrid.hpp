@@ -103,7 +103,7 @@ public:
     void SwitchPagerMode(bool usePager)
     {
         if (!isPager && usePager) {
-            std::vector<QInterfaceEngine> engines = { isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU };
+            std::vector<QInterfaceEngine> engines{ isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU };
             engine = std::make_shared<QPager>(engine, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
                 randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, 0U,
                 separabilityThreshold);

@@ -451,7 +451,7 @@ public:
             return;
         }
 
-        const complex mtrx[4U] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         Mtrx(mtrx, qubitIndex);
     }
 
@@ -460,7 +460,7 @@ public:
      */
     virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
     {
-        const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         Mtrx(mtrx, qubitIndex);
     }
 
@@ -474,7 +474,7 @@ public:
             return;
         }
 
-        const complex mtrx[4U] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         MCMtrx(controls, controlLen, mtrx, target);
     }
 
@@ -485,7 +485,7 @@ public:
     virtual void MCInvert(
         bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
     {
-        const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         MCMtrx(controls, controlLen, mtrx, target);
     }
 

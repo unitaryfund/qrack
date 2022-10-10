@@ -281,8 +281,7 @@ public:
         const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
         const complex phase0 = std::polar(ONE_R1, arg(inputState[0U]));
         const complex phase1 = std::polar(ONE_R1, arg(inputState[1U]));
-        const complex mtrx[4U] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1,
-            -sqrt1MinProb * phase1 };
+        const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
         Mtrx(mtrx, 0U);
     }
     void SetAmplitude(bitCapInt perm, complex amp)

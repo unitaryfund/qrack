@@ -859,9 +859,9 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
 
     // "Controlled inverse state preparation"
-    const complex mtrx[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
-        complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1) };
-    const bitLenInt controls[1U] = { mapped1 };
+    const complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1), complex(SQRT1_2_R1, ZERO_R1),
+        complex(ZERO_R1, SQRT1_2_R1) };
+    const bitLenInt controls[1U]{ mapped1 };
 
     real1_f z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     unit->CH(shard1.mapped, shard2.mapped);
@@ -1927,7 +1927,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    bitLenInt controls[1U] = { qubit1 };
+    bitLenInt controls[1U]{ qubit1 };
     real1 sinTheta = (real1)sin(theta);
 
     if (IS_0_R1(sinTheta)) {
@@ -2187,7 +2187,7 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
     ApplyEitherControlled(                                                                                             \
         controlVec, { target },                                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
-            complex trnsMtrx[4U] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                 \
+            complex trnsMtrx[4U]{ ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                    \
             if (shards[target].pauliBasis == PauliX) {                                                                 \
                 TransformX2x2(mtrx, trnsMtrx);                                                                         \
             } else if (shards[target].pauliBasis == PauliY) {                                                          \
@@ -2204,7 +2204,7 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
         controlVec, { target },                                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             if (shards[target].pauliBasis == PauliX) {                                                                 \
-                complex trnsMtrx[4U] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                             \
+                complex trnsMtrx[4U]{ ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                \
                 if (isInvert) {                                                                                        \
                     TransformXInvert(top, bottom, trnsMtrx);                                                           \
                 } else {                                                                                               \
@@ -2212,7 +2212,7 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
                 }                                                                                                      \
                 unit->ctrldgen;                                                                                        \
             } else if (shards[target].pauliBasis == PauliY) {                                                          \
-                complex trnsMtrx[4U] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                             \
+                complex trnsMtrx[4U]{ ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                \
                 if (isInvert) {                                                                                        \
                     TransformYInvert(top, bottom, trnsMtrx);                                                           \
                 } else {                                                                                               \
@@ -2292,7 +2292,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
         return;
     }
 
-    complex mtrx[4U] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
+    complex mtrx[4U]{ ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
     TransformPhase(topLeft, bottomRight, mtrx);
 
     if (shard.unit) {
@@ -2332,7 +2332,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
         return;
     }
 
-    complex mtrx[4U] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
+    complex mtrx[4U]{ ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
     if (shard.pauliBasis == PauliX) {
         TransformXInvert(topRight, bottomLeft, mtrx);
     } else {
@@ -3976,7 +3976,7 @@ QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
 
 void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt target, bool isAnti)
 {
-    const bitLenInt controls[1U] = { control };
+    const bitLenInt controls[1U]{ control };
 
     const complex polarDiff = phaseShard->cmplxDiff;
     const complex polarSame = phaseShard->cmplxSame;

@@ -1091,7 +1091,7 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ uintq sid, _In_reads_(8) double* m, _In_ u
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    complex mtrx[4U] = { complex((real1)m[0U], (real1)m[1U]), complex((real1)m[2U], (real1)m[3U]),
+    complex mtrx[4U]{ complex((real1)m[0U], (real1)m[1U]), complex((real1)m[2U], (real1)m[3U]),
         complex((real1)m[4U], (real1)m[5U]), complex((real1)m[6U], (real1)m[7U]) };
 
     QInterfacePtr simulator = simulators[sid];
@@ -1158,8 +1158,8 @@ MICROSOFT_QUANTUM_DECL void MCZ(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uint
  */
 MICROSOFT_QUANTUM_DECL void MCH(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q)
 {
-    const complex hGate[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-        complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
+    const complex hGate[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        complex(-SQRT1_2_R1, ZERO_R1) };
 
     MAP_CONTROLS_AND_LOCK(sid, n)
     try {
@@ -1248,7 +1248,7 @@ MICROSOFT_QUANTUM_DECL void MCU(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uint
 MICROSOFT_QUANTUM_DECL void MCMtrx(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_reads_(8) double* m, _In_ uintq q)
 {
-    complex mtrx[4U] = { complex((real1)m[0U], (real1)m[1U]), complex((real1)m[2U], (real1)m[3U]),
+    complex mtrx[4U]{ complex((real1)m[0U], (real1)m[1U]), complex((real1)m[2U], (real1)m[3U]),
         complex((real1)m[4U], (real1)m[5U]), complex((real1)m[6U], (real1)m[7U]) };
 
     MAP_CONTROLS_AND_LOCK(sid, n)
@@ -1307,8 +1307,8 @@ MICROSOFT_QUANTUM_DECL void MACZ(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
  */
 MICROSOFT_QUANTUM_DECL void MACH(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q)
 {
-    const complex hGate[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-        complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
+    const complex hGate[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        complex(-SQRT1_2_R1, ZERO_R1) };
 
     MAP_CONTROLS_AND_LOCK(sid, n)
     try {
@@ -1399,7 +1399,7 @@ MICROSOFT_QUANTUM_DECL void MACU(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
 MICROSOFT_QUANTUM_DECL void MACMtrx(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_reads_(8) double* m, _In_ uintq q)
 {
-    complex mtrx[4U] = { complex((real1)m[0U], (real1)m[1U]), complex((real1)m[2U], (real1)m[3U]),
+    complex mtrx[4U]{ complex((real1)m[0U], (real1)m[1U]), complex((real1)m[2U], (real1)m[3U]),
         complex((real1)m[4U], (real1)m[5U]), complex((real1)m[6U], (real1)m[7U]) };
 
     MAP_CONTROLS_AND_LOCK(sid, n)

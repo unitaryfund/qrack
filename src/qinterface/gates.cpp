@@ -22,7 +22,7 @@
 #define GATE_1_BIT(gate, mtrx00, mtrx01, mtrx10, mtrx11)                                                               \
     void QInterface::gate(bitLenInt qubit)                                                                             \
     {                                                                                                                  \
-        const complex mtrx[4] = { mtrx00, mtrx01, mtrx10, mtrx11 };                                                    \
+        const complex mtrx[4]{ mtrx00, mtrx01, mtrx10, mtrx11 };                                                       \
         Mtrx(mtrx, qubit);                                                                                             \
     }
 
@@ -156,71 +156,71 @@ void QInterface::CIT(bitLenInt control, bitLenInt target) { CIPhaseRootN(3U, con
 /// Controlled not
 void QInterface::CNOT(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MCInvert(controls, 1, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// Apply controlled Pauli Y matrix to bit
 void QInterface::CY(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MCInvert(controls, 1, -I_CMPLX, I_CMPLX, target);
 }
 
 /// Apply doubly-controlled Pauli Z matrix to bit
 void QInterface::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2]{ control1, control2 };
     MCInvert(controls, 2, -I_CMPLX, I_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled Y" - Apply Pauli Y if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2]{ control1, control2 };
     MACInvert(controls, 2, -I_CMPLX, I_CMPLX, target);
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCY(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MACInvert(controls, 1, -I_CMPLX, I_CMPLX, target);
 }
 
 /// Apply controlled Pauli Z matrix to bit
 void QInterface::CZ(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MCPhase(controls, 1, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// Apply doubly-controlled Pauli Z matrix to bit
 void QInterface::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2]{ control1, control2 };
     MCPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled Z" - Apply Pauli Z if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2]{ control1, control2 };
     MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// "Anti-controlled Z" - Apply Pauli Z if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCZ(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MACPhase(controls, 1, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// Apply controlled Hadamard matrix to bit
 void QInterface::CH(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
-    const complex h[4] = { complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
+    const bitLenInt controls[1]{ control };
+    const complex h[4]{ complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
         complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
     MCMtrx(controls, 1, h, target);
 }
@@ -228,8 +228,8 @@ void QInterface::CH(bitLenInt control, bitLenInt target)
 /// Apply (anti-)controlled Hadamard matrix to bit
 void QInterface::AntiCH(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
-    const complex h[4] = { complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
+    const bitLenInt controls[1]{ control };
+    const complex h[4]{ complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
         complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
     MACMtrx(controls, 1, h, target);
 }
@@ -237,21 +237,21 @@ void QInterface::AntiCH(bitLenInt control, bitLenInt target)
 /// Doubly-controlled not
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2]{ control1, control2 };
     MCInvert(controls, 2, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2]{ control1, control2 };
     MACInvert(controls, 2, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MACInvert(controls, 1, ONE_CMPLX, ONE_CMPLX, target);
 }
 
@@ -266,7 +266,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
 
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
 
     if (n == 2) {
         MCPhase(controls, 1, ONE_CMPLX, I_CMPLX, target);
@@ -291,7 +291,7 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
 
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
 
     if (n == 2) {
         MCPhase(controls, 1, ONE_CMPLX, -I_CMPLX, target);
@@ -317,7 +317,7 @@ void QInterface::AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targe
         return;
     }
 
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
 
     if (n == 2) {
         MACPhase(controls, 1, ONE_CMPLX, I_CMPLX, target);
@@ -343,7 +343,7 @@ void QInterface::AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targ
         return;
     }
 
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
 
     if (n == 2) {
         MACPhase(controls, 1, ONE_CMPLX, -I_CMPLX, target);
@@ -587,13 +587,13 @@ void QInterface::CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitL
 
     MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
 
-    const complex had[4] = { C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
+    const complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
     MCMtrx(lControls.get(), controlLen, had, q1);
 
-    const complex it[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
+    const complex it[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
     MCMtrx(lControls.get(), controlLen, it, q2);
 
-    const complex t[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
+    const complex t[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
     MCMtrx(lControls.get(), controlLen, t, q1);
 
     MCMtrx(lControls.get(), controlLen, had, q2);
@@ -612,10 +612,10 @@ void QInterface::CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitL
 
     MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
 
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
     MCMtrx(lControls.get(), controlLen, is, q1);
 
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
     MCMtrx(lControls.get(), controlLen, s, q2);
 }
 
@@ -630,18 +630,18 @@ void QInterface::CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bit
     std::copy(controls, controls + controlLen, lControls.get());
     lControls[controlLen] = q1;
 
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
     MCMtrx(lControls.get(), controlLen, is, q2);
 
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
     MCMtrx(lControls.get(), controlLen, s, q1);
 
     MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
 
-    const complex had[4] = { C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
+    const complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
     MCMtrx(lControls.get(), controlLen, had, q1);
 
-    const complex t[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
+    const complex t[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
     MCMtrx(lControls.get(), controlLen, t, q1);
 
     MCMtrx(lControls.get(), controlLen, had, q2);
@@ -654,7 +654,7 @@ void QInterface::CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bit
 
     MCMtrx(lControls.get(), controlLen, had, q2);
 
-    const complex it[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
+    const complex it[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
     MCMtrx(lControls.get(), controlLen, it, q1);
 
     MCMtrx(lControls.get(), controlLen, t, q2);
@@ -754,7 +754,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
             }
             UniformlyControlledSingleBit(&(op->controls[0]), op->controls.size(), op->targetBit, expMtrx.get());
         } else {
-            complex timesI[4U] = { I_CMPLX * mtrx[0U], I_CMPLX * mtrx[1U], I_CMPLX * mtrx[2U], I_CMPLX * mtrx[3U] };
+            complex timesI[4U]{ I_CMPLX * mtrx[0U], I_CMPLX * mtrx[1U], I_CMPLX * mtrx[2U], I_CMPLX * mtrx[3U] };
             complex toApply[4U];
             exp2x2(timesI, toApply);
             if (op->controls.size() == 0U) {

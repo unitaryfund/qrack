@@ -225,7 +225,7 @@ void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
 
     const bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
 
-    const bitCapIntOcl qPowers[1U] = { pow2Ocl(qubit) };
+    const bitCapIntOcl qPowers[1U]{ pow2Ocl(qubit) };
     Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doCalcNorm);
 }
 
@@ -278,7 +278,7 @@ void QEngine::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q
         return;
     }
 
-    const complex pauliX[4U] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     bitCapIntOcl skipMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
     for (bitLenInt i = 0U; i < controlLen; ++i) {
@@ -303,7 +303,7 @@ void QEngine::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenI
         return;
     }
 
-    const complex pauliX[4U] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
     for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
@@ -325,7 +325,7 @@ void QEngine::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenI
         return;
     }
 
-    const complex sqrtX[4] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
+    const complex sqrtX[4]{ complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     bitCapIntOcl skipMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
@@ -351,7 +351,7 @@ void QEngine::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bit
         return;
     }
 
-    const complex sqrtX[4] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
+    const complex sqrtX[4]{ complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
     for (bitLenInt i = 0U; i < controlLen; ++i) {
@@ -374,7 +374,7 @@ void QEngine::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLen
         return;
     }
 
-    const complex iSqrtX[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+    const complex iSqrtX[4]{ complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     bitCapIntOcl skipMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
@@ -400,7 +400,7 @@ void QEngine::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bi
         return;
     }
 
-    const complex iSqrtX[4U] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+    const complex iSqrtX[4U]{ complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
     for (bitLenInt i = 0U; i < controlLen; ++i) {
@@ -448,8 +448,8 @@ void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex pauliX[4U] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
@@ -461,8 +461,8 @@ void QEngine::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex pauliX[4U] = { ZERO_CMPLX, I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    const complex pauliX[4U]{ ZERO_CMPLX, I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
@@ -474,8 +474,8 @@ void QEngine::IISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex pauliX[4U] = { ZERO_CMPLX, -I_CMPLX, -I_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    const complex pauliX[4U]{ ZERO_CMPLX, -I_CMPLX, -I_CMPLX, ZERO_CMPLX };
+    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
@@ -487,9 +487,9 @@ void QEngine::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex sqrtX[4U] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
+    const complex sqrtX[4U]{ complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
-    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], sqrtX, 2U, qPowersSorted, false);
 }
@@ -501,9 +501,9 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex iSqrtX[4U] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+    const complex iSqrtX[4U]{ complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
-    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], iSqrtX, 2U, qPowersSorted, false);
 }
@@ -515,9 +515,9 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
     const real1 sinTheta = (real1)sin(theta);
 
     if (abs(ONE_R1 - cosTheta) > REAL1_EPSILON) {
-        const complex fSimSwap[4U] = { complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta),
-            complex(ZERO_R1, sinTheta), complex(cosTheta, ZERO_R1) };
-        bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
+        const complex fSimSwap[4U]{ complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta), complex(ZERO_R1, sinTheta),
+            complex(cosTheta, ZERO_R1) };
+        bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
         std::sort(qPowersSorted, qPowersSorted + 2U);
         Apply2x2(qPowersSorted[0U], qPowersSorted[1U], fSimSwap, 2U, qPowersSorted, false);
     }
@@ -526,7 +526,7 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
         return;
     }
 
-    const bitLenInt controls[1U] = { qubit1 };
+    const bitLenInt controls[1U]{ qubit1 };
     MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
 }
 

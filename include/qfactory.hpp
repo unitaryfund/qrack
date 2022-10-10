@@ -36,7 +36,7 @@ QInterfacePtr CreateQuantumInterface(
     QInterfaceEngine engine1, QInterfaceEngine engine2, QInterfaceEngine engine3, Ts... args)
 {
     QInterfaceEngine engine = engine1;
-    std::vector<QInterfaceEngine> engines = { engine2, engine3 };
+    std::vector<QInterfaceEngine> engines{ engine2, engine3 };
 
     switch (engine) {
     case QINTERFACE_CPU:
@@ -70,7 +70,7 @@ template <typename... Ts>
 QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine engine2, Ts... args)
 {
     QInterfaceEngine engine = engine1;
-    std::vector<QInterfaceEngine> engines = { engine2 };
+    std::vector<QInterfaceEngine> engines{ engine2 };
 
     switch (engine) {
     case QINTERFACE_CPU:

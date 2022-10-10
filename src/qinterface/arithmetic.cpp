@@ -228,7 +228,7 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
     const bitCapInt diffPow = pow2(length) / modN;
     const bitLenInt lDiff = log2(diffPow);
-    bitLenInt controls[1] = { (bitLenInt)(inStart + length - (lDiff + 1U)) };
+    bitLenInt controls[1]{ (bitLenInt)(inStart + length - (lDiff + 1U)) };
 
     if (!isPow2) {
         for (bitCapInt i = 0U; i < diffPow; ++i) {
