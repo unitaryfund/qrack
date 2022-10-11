@@ -229,7 +229,7 @@ void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
     Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doCalcNorm);
 }
 
-void QEngine::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+void QEngine::MCMtrx(bitLenInt const* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (!controlLen) {
         Mtrx(mtrx, target);
@@ -248,7 +248,7 @@ void QEngine::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const comp
     }
 }
 
-void QEngine::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+void QEngine::MACMtrx(bitLenInt const* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (!controlLen) {
         Mtrx(mtrx, target);
@@ -267,7 +267,7 @@ void QEngine::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const com
     }
 }
 
-void QEngine::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+void QEngine::CSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
         Swap(qubit1, qubit2);
@@ -292,7 +292,7 @@ void QEngine::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q
         skipMask | pow2Ocl(qubit1), skipMask | pow2Ocl(qubit2), pauliX, controlLen + 2U, qPowersSorted.get(), false);
 }
 
-void QEngine::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+void QEngine::AntiCSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
         Swap(qubit1, qubit2);
@@ -314,7 +314,7 @@ void QEngine::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenI
     Apply2x2(pow2Ocl(qubit1), pow2Ocl(qubit2), pauliX, controlLen + 2U, qPowersSorted.get(), false);
 }
 
-void QEngine::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+void QEngine::CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
         SqrtSwap(qubit1, qubit2);
@@ -340,7 +340,7 @@ void QEngine::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenI
         skipMask | pow2Ocl(qubit1), skipMask | pow2Ocl(qubit2), sqrtX, controlLen + 2U, qPowersSorted.get(), false);
 }
 
-void QEngine::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+void QEngine::AntiCSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
         SqrtSwap(qubit1, qubit2);
@@ -363,7 +363,7 @@ void QEngine::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bit
     Apply2x2(pow2Ocl(qubit1), pow2Ocl(qubit2), sqrtX, controlLen + 2U, qPowersSorted.get(), false);
 }
 
-void QEngine::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+void QEngine::CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
         ISqrtSwap(qubit1, qubit2);
@@ -389,7 +389,7 @@ void QEngine::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLen
         skipMask | pow2Ocl(qubit1), skipMask | pow2Ocl(qubit2), iSqrtX, controlLen + 2U, qPowersSorted.get(), false);
 }
 
-void QEngine::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+void QEngine::AntiCISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
         ISqrtSwap(qubit1, qubit2);
@@ -412,7 +412,7 @@ void QEngine::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bi
     Apply2x2(pow2Ocl(qubit1), pow2Ocl(qubit2), iSqrtX, controlLen + 2U, qPowersSorted.get(), false);
 }
 
-void QEngine::ApplyControlled2x2(const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx)
+void QEngine::ApplyControlled2x2(bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx)
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 1U]);
     const bitCapIntOcl targetMask = pow2Ocl(target);
@@ -429,7 +429,7 @@ void QEngine::ApplyControlled2x2(const bitLenInt* controls, bitLenInt controlLen
 }
 
 void QEngine::ApplyAntiControlled2x2(
-    const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx)
+    bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx)
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 1U]);
     const bitCapIntOcl targetMask = pow2Ocl(target);
