@@ -22,6 +22,7 @@
 #include <limits>
 #include <memory>
 #include <random>
+#include <set>
 
 #if UINTPOW < 4
 #define ONE_BCI ((uint8_t)1U)
@@ -277,9 +278,16 @@ inline bool isBadPermRange(const bitCapIntOcl& start, const bitCapIntOcl& length
 inline void ThrowIfQbIdArrayIsBad(
     const std::vector<bitLenInt>& controls, const bitLenInt& qubitCount, std::string message)
 {
+    std::set<bitLenInt> dupes;
     for (bitLenInt i = 0U; i < controls.size(); ++i) {
         if (controls[i] >= qubitCount) {
             throw std::invalid_argument(message);
+        }
+
+        if (dupes.find(controls[i]) == dupes.end()) {
+            dupes.insert(controls[i]);
+        } else {
+            throw std::invalid_argument(message + " (Found duplicate qubit indices!)");
         }
     }
 }

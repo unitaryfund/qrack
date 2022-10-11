@@ -19,7 +19,7 @@ void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
     const real1 cos0 = (real1)cos(theta / 2);
     const real1 sin0 = (real1)sin(theta / 2);
-    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+    const complex uGate[4]{ complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
         sin0 * complex((real1)cos(phi), (real1)sin(phi)),
         cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
     Mtrx(uGate, target);
@@ -31,7 +31,7 @@ void QInterface::CU(
 {
     const real1 cos0 = (real1)cos(theta / 2);
     const real1 sin0 = (real1)sin(theta / 2);
-    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+    const complex uGate[4]{ complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
         sin0 * complex((real1)cos(phi), (real1)sin(phi)),
         cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
     MCMtrx(controls, controlLen, uGate, target);
@@ -43,7 +43,7 @@ void QInterface::AntiCU(
 {
     const real1 cos0 = (real1)cos(theta / 2);
     const real1 sin0 = (real1)sin(theta / 2);
-    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+    const complex uGate[4]{ complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
         sin0 * complex((real1)cos(phi), (real1)sin(phi)),
         cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
     MACMtrx(controls, controlLen, uGate, target);
@@ -56,7 +56,7 @@ void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
     const real1 sineA = (real1)sin(azimuth);
     const real1 cosineI = (real1)cos(inclination / 2);
     const real1 sineI = (real1)sin(inclination / 2);
-    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
+    const complex mtrx[4]{ cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
     Mtrx(mtrx, target);
 }
 
@@ -67,7 +67,7 @@ void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
     const real1 sineA = (real1)sin(azimuth);
     const real1 cosineI = (real1)cos(inclination / 2);
     const real1 sineI = (real1)sin(inclination / 2);
-    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
+    const complex mtrx[4]{ cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
     complex invMtrx[4];
     inv2x2(mtrx, invMtrx);
     Mtrx(invMtrx, target);
@@ -80,8 +80,8 @@ void QInterface::CAI(bitLenInt control, bitLenInt target, real1_f azimuth, real1
     const real1 sineA = (real1)sin(azimuth);
     const real1 cosineI = (real1)cos(inclination / 2);
     const real1 sineI = (real1)sin(inclination / 2);
-    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
-    const bitLenInt controls[1] = { control };
+    const complex mtrx[4]{ cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
+    const bitLenInt controls[1]{ control };
     MCMtrx(controls, 1U, mtrx, target);
 }
 
@@ -92,8 +92,8 @@ void QInterface::CIAI(bitLenInt control, bitLenInt target, real1_f azimuth, real
     const real1 sineA = (real1)sin(azimuth);
     const real1 cosineI = (real1)cos(inclination / 2);
     const real1 sineI = (real1)sin(inclination / 2);
-    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
-    const bitLenInt controls[1] = { control };
+    const complex mtrx[4]{ cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
+    const bitLenInt controls[1]{ control };
     complex invMtrx[4];
     inv2x2(mtrx, invMtrx);
     MCMtrx(controls, 1U, invMtrx, target);
@@ -106,8 +106,8 @@ void QInterface::AntiCAI(bitLenInt control, bitLenInt target, real1_f azimuth, r
     const real1 sineA = (real1)sin(azimuth);
     const real1 cosineI = (real1)cos(inclination / 2);
     const real1 sineI = (real1)sin(inclination / 2);
-    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
-    const bitLenInt controls[1] = { control };
+    const complex mtrx[4]{ cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
+    const bitLenInt controls[1]{ control };
     MACMtrx(controls, 1U, mtrx, target);
 }
 
@@ -118,8 +118,8 @@ void QInterface::AntiCIAI(bitLenInt control, bitLenInt target, real1_f azimuth, 
     const real1 sineA = (real1)sin(azimuth);
     const real1 cosineI = (real1)cos(inclination / 2);
     const real1 sineI = (real1)sin(inclination / 2);
-    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
-    const bitLenInt controls[1] = { control };
+    const complex mtrx[4]{ cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
+    const bitLenInt controls[1]{ control };
     complex invMtrx[4];
     inv2x2(mtrx, invMtrx);
     MACMtrx(controls, 1U, invMtrx, target);
@@ -178,7 +178,7 @@ void QInterface::RX(real1_f radians, bitLenInt qubit)
 {
     const real1 cosine = (real1)cos(radians / 2);
     const real1 sine = (real1)sin(radians / 2);
-    const complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+    const complex pauliRX[4]{ complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
         complex(cosine, ZERO_R1) };
     Mtrx(pauliRX, qubit);
 }
@@ -188,7 +188,7 @@ void QInterface::RY(real1_f radians, bitLenInt qubit)
 {
     const real1 cosine = (real1)cos(radians / 2);
     const real1 sine = (real1)sin(radians / 2);
-    const complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    const complex pauliRY[4]{ cosine, -sine, sine, cosine };
     Mtrx(pauliRY, qubit);
 }
 
@@ -205,7 +205,7 @@ void QInterface::CRZ(real1_f radians, bitLenInt control, bitLenInt target)
 {
     const real1 cosine = (real1)cos(radians / 2);
     const real1 sine = (real1)sin(radians / 2);
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MCPhase(controls, 1, complex(cosine, -sine), complex(cosine, sine), target);
 }
 
@@ -214,9 +214,9 @@ void QInterface::CRY(real1_f radians, bitLenInt control, bitLenInt target)
 {
     const real1 cosine = (real1)cos(radians / 2);
     const real1 sine = (real1)sin(radians / 2);
-    const complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
+    const complex pauliRY[4]{ complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
         complex(cosine, ZERO_R1) };
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MCMtrx(controls, 1, pauliRY, target);
 }
 
@@ -269,7 +269,7 @@ void QInterface::ExpZ(real1_f radians, bitLenInt qubit)
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
 void QInterface::CRT(real1_f radians, bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MCPhase(controls, 1, ONE_CMPLX, complex((real1)cos(radians / 2), (real1)sin(radians / 2)), target);
 }
 
@@ -278,9 +278,9 @@ void QInterface::CRX(real1_f radians, bitLenInt control, bitLenInt target)
 {
     const real1 cosine = (real1)cos(radians / 2);
     const real1 sine = (real1)sin(radians / 2);
-    const complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, sine),
+    const complex pauliRX[4]{ complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, sine),
         complex(cosine, ZERO_R1) };
-    const bitLenInt controls[1] = { control };
+    const bitLenInt controls[1]{ control };
     MCMtrx(controls, 1, pauliRX, target);
 }
 #endif

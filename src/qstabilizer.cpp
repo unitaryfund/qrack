@@ -1711,7 +1711,7 @@ void QStabilizer::MACInvert(
 
 void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    const bitLenInt controls[1U] = { qubit1 };
+    const bitLenInt controls[1U]{ qubit1 };
     real1 sinTheta = (real1)sin(theta);
 
     if (IS_0_R1(sinTheta)) {

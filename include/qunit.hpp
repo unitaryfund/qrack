@@ -418,7 +418,7 @@ protected:
         real1 sineI = (real1)sin(inclination / 2);
         complex expA = complex(cosineA, sineA);
         complex expNegA = complex(cosineA, -sineA);
-        complex mtrx[4U] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
+        complex mtrx[4U]{ cosineI, -expNegA * sineI, expA * sineI, cosineI };
 
         QEngineShard& shard = shards[qubit];
 
@@ -458,7 +458,7 @@ protected:
 
         shard.pauliBasis = PauliX;
 
-        const complex mtrx[4U] = { ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
+        const complex mtrx[4U]{ ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
             ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
             ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX) };
 
@@ -536,7 +536,7 @@ protected:
 
         shard.pauliBasis = PauliY;
 
-        const complex mtrx[4U] = { ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
+        const complex mtrx[4U]{ ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
             ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
             ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX) };
 
@@ -560,7 +560,7 @@ protected:
 
         shard.pauliBasis = PauliZ;
 
-        const complex mtrx[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        const complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
             complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
 
         if (shard.unit) {
@@ -583,7 +583,7 @@ protected:
 
         shard.pauliBasis = PauliY;
 
-        const complex mtrx[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
+        const complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
             complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1) };
 
         if (shard.unit) {
@@ -732,7 +732,7 @@ protected:
         } else if (norm(shard.amp0) <= FP_NORM_EPSILON) {
             shard.unit = MakeEngine(1U, 1U);
         } else {
-            complex bitState[2U] = { shard.amp0, shard.amp1 };
+            complex bitState[2U]{ shard.amp0, shard.amp1 };
             shard.unit = MakeEngine(1U, 0U);
             shard.unit->SetQuantumState(bitState);
         }

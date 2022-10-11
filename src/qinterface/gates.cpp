@@ -631,7 +631,6 @@ void QInterface::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1
 
     const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
     MCMtrx(controls, s, q1);
-
     MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
     const complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
@@ -736,7 +735,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         }
 
         if (op->toggles.size()) {
-            for (bitLenInt j = 0U; j < op->controls.size(); ++j) {
+            for (size_t j = 0U; j < op->controls.size(); ++j) {
                 if (op->toggles[j]) {
                     X(op->controls[j]);
                 }
@@ -763,7 +762,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         }
 
         if (op->toggles.size()) {
-            for (bitLenInt j = 0U; j < op->controls.size(); ++j) {
+            for (size_t j = 0U; j < op->controls.size(); ++j) {
                 if (op->toggles[j]) {
                     X(op->controls[j]);
                 }

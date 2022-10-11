@@ -809,7 +809,7 @@ void QBdt::MCPhase(
         return;
     }
 
-    const complex mtrx[4U] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, false);
         return;
@@ -838,7 +838,7 @@ void QBdt::MACPhase(
         return;
     }
 
-    const complex mtrx[4U] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - bottomRight)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, true);
         return;
@@ -867,7 +867,7 @@ void QBdt::MCInvert(
         return;
     }
 
-    const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, false);
         return;
@@ -895,7 +895,7 @@ void QBdt::MACInvert(
         return;
     }
 
-    const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (!IS_NORM_0(ONE_CMPLX + topRight) || !IS_NORM_0(ONE_CMPLX + bottomLeft)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, true);
         return;
