@@ -106,7 +106,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 }
 
 /// Measure permutation state of a register
-bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply)
+bitCapInt QEngine::ForceM(bitLenInt const* bits, bitLenInt length, const bool* values, bool doApply)
 {
     for (bitLenInt i = 0U; i < length; ++i) {
         if (bits[i] >= qubitCount) {
