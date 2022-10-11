@@ -740,7 +740,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         }
 
         if (op->toggles.size()) {
-            for (bitLenInt j = 0U; j < op->controls.size(); ++j) {
+            for (size_t j = 0U; j < op->controls.size(); ++j) {
                 if (op->toggles[j]) {
                     X(op->controls[j]);
                 }
@@ -767,7 +767,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         }
 
         if (op->toggles.size()) {
-            for (bitLenInt j = 0U; j < op->controls.size(); ++j) {
+            for (size_t j = 0U; j < op->controls.size(); ++j) {
                 if (op->toggles[j]) {
                     X(op->controls[j]);
                 }
