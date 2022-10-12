@@ -1710,17 +1710,17 @@ void QStabilizer::MACInvert(
 
 void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    const bitLenInt controls[1U]{ qubit1 };
+    const std::vector<bitLenInt> controls{ qubit1 };
     real1 sinTheta = (real1)sin(theta);
 
     if (IS_0_R1(sinTheta)) {
-        MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
 
     if (IS_1_R1(-sinTheta)) {
         ISwap(qubit1, qubit2);
-        MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
 
@@ -1729,13 +1729,13 @@ void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt q
 
 bool QStabilizer::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored)
 {
-    for (bitLenInt i = 0U; i < length; ++i) {
+    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
         Swap(qubits[i], i);
     }
 
     const bool toRet = CanDecomposeDispose(0U, 2U);
 
-    for (bitLenInt i = 0U; i < length; ++i) {
+    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
         Swap(qubits[i], i);
     }
 

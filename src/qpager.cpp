@@ -948,9 +948,9 @@ void QPager::ApplyEitherControlledSingleBit(
     auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
         if (intraControls.size()) {
             if (anti) {
-                engine->MACMtrx(&(intraControls[0U]), intraControls.size(), mtrx, lTarget);
+                engine->MACMtrx(intraControls, mtrx, lTarget);
             } else {
-                engine->MCMtrx(&(intraControls[0U]), intraControls.size(), mtrx, lTarget);
+                engine->MCMtrx(intraControls, mtrx, lTarget);
             }
         } else {
             engine->Mtrx(mtrx, lTarget);
@@ -1140,7 +1140,7 @@ void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, b
         controls);
 }
 void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    const std::vector<bitLenInt>& controls, bitLenInt controlLen)
+    const std::vector<bitLenInt>& controls)
 {
     if (!controls.size()) {
         DIV(toDiv, inOutStart, carryStart, length);
@@ -1154,7 +1154,7 @@ void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, b
 void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controlLen) {
+    if (!controls.size()) {
         MULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -1178,7 +1178,7 @@ void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bi
 void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controlLen) {
+    if (!controls.size()) {
         POWModNOut(base, modN, inStart, outStart, length);
         return;
     }
@@ -1442,11 +1442,10 @@ real1_f QPager::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
         QEnginePtr engine = qPages[i];
 #if ENABLE_PTHREAD
-        futures[i] = std::async(std::launch::async, [engine, bits, qpp, pagePerm, offset]() {
-            return engine->ExpectationBitsAll(bits, qpp, pagePerm + offset);
-        });
+        futures[i] = std::async(std::launch::async,
+            [engine, bits, qpp, pagePerm, offset]() { return engine->ExpectationBitsAll(bits, pagePerm + offset); });
 #else
-        expectation += engine->ExpectationBitsAll(bits, qpp, pagePerm + offset);
+        expectation += engine->ExpectationBitsAll(bits, pagePerm + offset);
 #endif
         pagePerm += pagePower;
     }

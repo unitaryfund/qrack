@@ -460,7 +460,7 @@ public:
     }
     void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 
-    bool TrySeparate(const std::vector<bitLenInt>& qubits, bitLenInt length, real1_f ignored);
+    bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored);
     bool TrySeparate(bitLenInt qubit) { return CanDecomposeDispose(qubit, 1U); }
     bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     {
