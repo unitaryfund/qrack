@@ -142,8 +142,8 @@ TEST_CASE("test_complex")
 TEST_CASE("test_push_apart_bits")
 {
     bitCapInt perm = 0x13U;
-    bitCapInt skipPowers[1] = { 1U << 2U };
-    REQUIRE(pushApartBits(perm, skipPowers, 1U) == 0x23U);
+    const std::vector<bitCapInt> skipPowers{ 1U << 2U };
+    REQUIRE(pushApartBits(perm, skipPowers) == 0x23U);
 }
 
 #if UINTPOW > 3
@@ -242,7 +242,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
 
-    bitCapIntOcl skipArray[] = { 0x4, 0x100 }; // Skip bits 0b100000100
+    const std::vector<bitCapIntOcl> skipArray{ 0x4, 0x100 }; // Skip bits 0b100000100
     int NUM_SKIP = sizeof(skipArray) / sizeof(skipArray[0]);
 
     calls.store(0);
@@ -253,7 +253,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
     qengine->SetConcurrencyLevel(1);
 
-    qengine->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv, const int cpu) {
+    qengine->par_for_mask(0, NUM_ENTRIES, skipArray, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[(bitCapIntOcl)lcv].exchange(old);
         REQUIRE(old == false);
@@ -425,12 +425,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticy")
 {
-    bitLenInt controls[1] = { 0 };
+    const std::vector<bitLenInt> controls{ 0 };
 
     qftReg->SetPermutation(0x01);
     qftReg->H(0, 2);
     qftReg->AntiCY(0, 1);
-    qftReg->MACInvert(controls, 1, -I_CMPLX, I_CMPLX, 1);
+    qftReg->MACInvert(controls, -I_CMPLX, I_CMPLX, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x01));
 
@@ -438,68 +438,68 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticy")
     qftReg->H(0, 2);
     qftReg->Z(0);
     qftReg->AntiCY(0, 1);
-    qftReg->MACInvert(controls, 1, -I_CMPLX, I_CMPLX, 1);
+    qftReg->MACInvert(controls, -I_CMPLX, I_CMPLX, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x01));
 
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 2);
     qftReg->AntiCY(0, 1);
-    qftReg->MACInvert(controls, 1, -I_CMPLX, I_CMPLX, 1);
+    qftReg->MACInvert(controls, -I_CMPLX, I_CMPLX, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
 {
-    bitLenInt controls[2] = { 0, 1 };
+    const std::vector<bitLenInt> controls{ 0, 1 };
 
     qftReg->SetPermutation(0x03);
     qftReg->H(0, 3);
     qftReg->CCNOT(0, 1, 2);
     qftReg->H(2);
-    qftReg->MCPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
+    qftReg->MCPhase(controls, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
 {
-    bitLenInt controls[2] = { 0, 1 };
+    const std::vector<bitLenInt> controls{ 0, 1 };
 
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 3);
     qftReg->AntiCCNOT(0, 1, 2);
     qftReg->H(2);
-    qftReg->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
+    qftReg->MACPhase(controls, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcy")
 {
-    bitLenInt controls[2] = { 0, 1 };
+    const std::vector<bitLenInt> controls{ 0, 1 };
 
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 3);
     qftReg->AntiCCY(0, 1, 2);
-    qftReg->MACPhase(controls, 2, I_CMPLX, -I_CMPLX, 2);
+    qftReg->MACPhase(controls, I_CMPLX, -I_CMPLX, 2);
     qftReg->H(2);
-    qftReg->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
+    qftReg->MACPhase(controls, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcz")
 {
-    bitLenInt controls[2] = { 0, 1 };
+    const std::vector<bitLenInt> controls{ 0, 1 };
 
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 3);
     qftReg->AntiCCZ(0, 1, 2);
-    qftReg->MACPhase(controls, 2, I_CMPLX, -I_CMPLX, 2);
+    qftReg->MACPhase(controls, I_CMPLX, -I_CMPLX, 2);
     qftReg->H(2);
-    qftReg->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
+    qftReg->MACPhase(controls, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
@@ -558,16 +558,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_Iiswap")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
 {
-    bitLenInt control[1] = { 8 };
+    std::vector<bitLenInt> control{ 8 };
     qftReg->SetPermutation(0x001);
-    qftReg->CSwap(control, 1, 0, 4);
+    qftReg->CSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x001));
     qftReg->SetPermutation(0x101);
-    qftReg->CSwap(control, 1, 0, 4);
+    qftReg->CSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
     qftReg->H(8);
-    qftReg->CSwap(control, 1, 0, 4);
-    qftReg->CSwap(control, 1, 0, 4);
+    qftReg->CSwap(control, 0, 4);
+    qftReg->CSwap(control, 0, 4);
     qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
 
@@ -577,98 +577,98 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
 
     control[0] = 9;
     qftReg2->SetPermutation((1U << 9U) | (1U << 10U));
-    qftReg2->CSwap(control, 1, 10, 11);
+    qftReg2->CSwap(control, 10, 11);
     REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U) | (1U << 11U)));
 
     qftReg2->SetPermutation((1U << 9U) | (1U << 10U));
-    qftReg2->CSwap(control, 1, 10, 0);
+    qftReg2->CSwap(control, 10, 0);
     REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U) | 1U));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticswap")
 {
-    bitLenInt control[1] = { 8 };
+    const std::vector<bitLenInt> control{ 8 };
     qftReg->SetPermutation(0x101);
-    qftReg->AntiCSwap(control, 1, 0, 4);
+    qftReg->AntiCSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
     qftReg->SetPermutation(0x001);
-    qftReg->AntiCSwap(control, 1, 0, 4);
+    qftReg->AntiCSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x010));
     qftReg->H(8);
-    qftReg->AntiCSwap(control, 1, 0, 4);
-    qftReg->AntiCSwap(control, 1, 0, 4);
+    qftReg->AntiCSwap(control, 0, 4);
+    qftReg->AntiCSwap(control, 0, 4);
     qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x010));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_csqrtswap")
 {
-    bitLenInt control[1] = { 8 };
+    const std::vector<bitLenInt> control{ 8 };
     qftReg->SetPermutation(0x001);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x001));
     qftReg->SetPermutation(0x101);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
     qftReg->H(8);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
     qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticsqrtswap")
 {
-    bitLenInt control[1] = { 8 };
+    const std::vector<bitLenInt> control{ 8 };
     qftReg->SetPermutation(0x101);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
     qftReg->SetPermutation(0x001);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x010));
     qftReg->H(8);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
     qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x010));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cisqrtswap")
 {
-    bitLenInt control[1] = { 8 };
+    const std::vector<bitLenInt> control{ 8 };
     qftReg->SetPermutation(0x101);
-    qftReg->CSqrtSwap(control, 1, 0, 4);
-    qftReg->CISqrtSwap(control, 1, 0, 4);
+    qftReg->CSqrtSwap(control, 0, 4);
+    qftReg->CISqrtSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
     qftReg->H(8);
-    qftReg->CISqrtSwap(control, 1, 0, 4);
-    qftReg->CISqrtSwap(control, 1, 0, 4);
-    qftReg->CISqrtSwap(control, 1, 0, 4);
-    qftReg->CISqrtSwap(control, 1, 0, 4);
+    qftReg->CISqrtSwap(control, 0, 4);
+    qftReg->CISqrtSwap(control, 0, 4);
+    qftReg->CISqrtSwap(control, 0, 4);
+    qftReg->CISqrtSwap(control, 0, 4);
     qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticisqrtswap")
 {
-    bitLenInt control[1] = { 8 };
+    const std::vector<bitLenInt> control{ 8 };
     qftReg->SetPermutation(0x001);
-    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x001));
     qftReg->H(8);
-    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
-    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 0, 4);
     qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x001));
 }
@@ -710,7 +710,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fsim")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 {
-    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->Mtrx(pauliX, 19);
@@ -721,122 +721,122 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_bit")
 {
-    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    bitLenInt controls[3] = { 0, 1, 3 };
+    const complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const std::vector<bitLenInt> controls{ 0, 1, 3 };
     qftReg->SetPermutation(0x8000F);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x8000F));
-    qftReg->MCMtrx(controls, 3, pauliX, 19);
+    qftReg->MCMtrx(controls, pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0F));
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->MCMtrx(controls, 3, pauliX, 19);
+    qftReg->MCMtrx(controls, pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
-    qftReg->MCMtrx(controls, 3, pauliX, 19);
-    qftReg->MCMtrx(controls, 3, pauliX, 19);
+    qftReg->MCMtrx(controls, pauliX, 19);
+    qftReg->MCMtrx(controls, pauliX, 19);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->MCMtrx(NULL, 0, pauliX, 0);
+    qftReg->MCMtrx(std::vector<bitLenInt>(), pauliX, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_invert")
 {
-    complex topRight = ONE_CMPLX;
-    complex bottomLeft = ONE_CMPLX;
-    bitLenInt controls[3] = { 0, 1, 3 };
+    const complex topRight = ONE_CMPLX;
+    const complex bottomLeft = ONE_CMPLX;
+    const std::vector<bitLenInt> controls{ 0, 1, 3 };
     qftReg->SetPermutation(0x8000F);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x8000F));
-    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, topRight, bottomLeft, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0F));
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, topRight, bottomLeft, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
-    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
-    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, topRight, bottomLeft, 19);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->MCInvert(NULL, 0, topRight, bottomLeft, 0);
+    qftReg->MCInvert(std::vector<bitLenInt>(), topRight, bottomLeft, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_bit")
 {
-    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    bitLenInt controls[3] = { 0, 1, 3 };
+    const complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const std::vector<bitLenInt> controls{ 0, 1, 3 };
     qftReg->SetPermutation(0x80000);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
-    qftReg->MACMtrx(controls, 3, pauliX, 19);
+    qftReg->MACMtrx(controls, pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00));
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->MACMtrx(controls, 3, pauliX, 19);
+    qftReg->MACMtrx(controls, pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
-    qftReg->MACMtrx(controls, 3, pauliX, 19);
-    qftReg->MACMtrx(controls, 3, pauliX, 19);
+    qftReg->MACMtrx(controls, pauliX, 19);
+    qftReg->MACMtrx(controls, pauliX, 19);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->MACMtrx(NULL, 0, pauliX, 0);
+    qftReg->MACMtrx(std::vector<bitLenInt>(), pauliX, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->H(0);
-    qftReg->MACPhase(NULL, 0, ONE_CMPLX, -ONE_CMPLX, 0);
+    qftReg->MACPhase(std::vector<bitLenInt>(), ONE_CMPLX, -ONE_CMPLX, 0);
     qftReg->H(0);
     qftReg->H(1);
-    qftReg->MACPhase(NULL, 0, ONE_CMPLX, -ONE_CMPLX, 1);
+    qftReg->MACPhase(std::vector<bitLenInt>(), ONE_CMPLX, -ONE_CMPLX, 1);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_invert")
 {
-    complex topRight = ONE_CMPLX;
-    complex bottomLeft = ONE_CMPLX;
-    bitLenInt controls[3] = { 0, 1, 3 };
+    const complex topRight = ONE_CMPLX;
+    const complex bottomLeft = ONE_CMPLX;
+    const std::vector<bitLenInt> controls{ 0, 1, 3 };
     qftReg->SetPermutation(0x80000);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
-    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, topRight, bottomLeft, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, topRight, bottomLeft, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
-    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
-    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, topRight, bottomLeft, 19);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->MCInvert(NULL, 0, topRight, bottomLeft, 0);
+    qftReg->MCInvert(std::vector<bitLenInt>(), topRight, bottomLeft, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->H(0);
-    qftReg->MACPhase(NULL, 0, ONE_CMPLX, -ONE_CMPLX, 0);
+    qftReg->MACPhase(std::vector<bitLenInt>(), ONE_CMPLX, -ONE_CMPLX, 0);
     qftReg->H(0);
     qftReg->H(1);
-    qftReg->MACPhase(NULL, 0, ONE_CMPLX, -ONE_CMPLX, 1);
+    qftReg->MACPhase(std::vector<bitLenInt>(), ONE_CMPLX, -ONE_CMPLX, 1);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
@@ -856,40 +856,40 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_invert")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_phase")
 {
-    bitLenInt controls[1] = { 0 };
+    const std::vector<bitLenInt> controls{ 0 };
 
     qftReg->SetPermutation(0x01);
     qftReg->H(1);
-    qftReg->MCPhase(NULL, 0U, ONE_CMPLX, -ONE_CMPLX, 1U);
+    qftReg->MCPhase(std::vector<bitLenInt>(), ONE_CMPLX, -ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 
     qftReg->SetPermutation(0x01);
     qftReg->H(1);
-    qftReg->MCPhase(controls, 1U, ONE_CMPLX, -ONE_CMPLX, 1U);
+    qftReg->MCPhase(controls, ONE_CMPLX, -ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 
     qftReg->SetPermutation(0x01);
     qftReg->H(1);
-    qftReg->MCPhase(controls, 1U, ONE_CMPLX, ONE_CMPLX, 1U);
+    qftReg->MCPhase(controls, ONE_CMPLX, ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x01));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anti_controlled_single_phase")
 {
-    bitLenInt controls[1] = { 0 };
+    const std::vector<bitLenInt> controls{ 0 };
 
     qftReg->SetPermutation(0x00);
     qftReg->H(1);
-    qftReg->MACPhase(NULL, 0U, ONE_CMPLX, -ONE_CMPLX, 1U);
+    qftReg->MACPhase(std::vector<bitLenInt>(), ONE_CMPLX, -ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x02));
 
     qftReg->SetPermutation(0x00);
     qftReg->H(1);
-    qftReg->MACPhase(controls, 1U, ONE_CMPLX, -ONE_CMPLX, 1U);
+    qftReg->MACPhase(controls, ONE_CMPLX, -ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x02));
 }
@@ -1293,14 +1293,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cy")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccy")
 {
-    bitLenInt controls[2] = { 0, 1 };
+    const std::vector<bitLenInt> controls{ 0, 1 };
 
     qftReg->SetPermutation(0x03);
     qftReg->H(0, 3);
     qftReg->CCY(0, 1, 2);
-    qftReg->MCPhase(controls, 2, I_CMPLX, -I_CMPLX, 2);
+    qftReg->MCPhase(controls, I_CMPLX, -I_CMPLX, 2);
     qftReg->H(2);
-    qftReg->MCPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
+    qftReg->MCPhase(controls, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 }
@@ -1420,31 +1420,31 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_rz")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 {
-    bitLenInt controls[2] = { 4, 5 };
+    std::vector<bitLenInt> controls{ 4, 5 };
     real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
-    qftReg->UniformlyControlledRY(NULL, 0, 0, angles);
-    qftReg->UniformlyControlledRY(NULL, 0, 1, angles);
+    qftReg->UniformlyControlledRY(std::vector<bitLenInt>(), 0, angles);
+    qftReg->UniformlyControlledRY(std::vector<bitLenInt>(), 1, angles);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
-    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-    qftReg->UniformlyControlledRY(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRY(controls, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 1, angles);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
     qftReg->SetReg(0, 8, 0x12);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x12));
-    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-    qftReg->UniformlyControlledRY(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRY(controls, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 1, angles);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x11));
 
     qftReg->SetReg(0, 8, 0x22);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
-    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-    qftReg->UniformlyControlledRY(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRY(controls, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 1, angles);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
 
     controls[0] = 5;
@@ -1452,8 +1452,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 
     qftReg->SetReg(0, 8, 0x22);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
-    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-    qftReg->UniformlyControlledRY(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRY(controls, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 1, angles);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
 
     controls[0] = 4;
@@ -1462,8 +1462,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->H(4);
-    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-    qftReg->UniformlyControlledRY(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRY(controls, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 1, angles);
     qftReg->H(4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
@@ -1473,8 +1473,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
     if (!QINTERFACE_RESTRICTED) {
-        qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-        qftReg2->QInterface::UniformlyControlledRY(controls, 2, 0, angles);
+        qftReg->UniformlyControlledRY(controls, 0, angles);
+        qftReg2->QInterface::UniformlyControlledRY(controls, 0, angles);
 
         REQUIRE(qftReg->ApproxCompare(qftReg2));
     }
@@ -1482,34 +1482,34 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
 {
-    bitLenInt controls[2] = { 4, 5 };
+    std::vector<bitLenInt> controls{ 4, 5 };
     real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
 
     qftReg->SetReg(0, 8, 0x01);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
     qftReg->H(1, 2);
-    qftReg->UniformlyControlledRZ(NULL, 0, 1, angles);
+    qftReg->UniformlyControlledRZ(std::vector<bitLenInt>(), 1, angles);
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 
     qftReg->SetReg(0, 8, 0x01);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
     qftReg->H(1, 2);
-    qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRZ(controls, 1, angles);
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 
     qftReg->SetReg(0, 8, 0x11);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x11));
     qftReg->H(1, 2);
-    qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRZ(controls, 1, angles);
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
 
     qftReg->SetReg(0, 8, 0x21);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
     qftReg->H(1, 2);
-    qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRZ(controls, 1, angles);
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
 
@@ -1519,7 +1519,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
     qftReg->SetReg(0, 8, 0x21);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
     qftReg->H(1, 2);
-    qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRZ(controls, 1, angles);
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x23));
 
@@ -1530,7 +1530,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
     qftReg->H(4);
     qftReg->H(1, 2);
-    qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
+    qftReg->UniformlyControlledRZ(controls, 1, angles);
     qftReg->H(1, 2);
     qftReg->H(4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
@@ -1538,7 +1538,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
 {
-    bitLenInt controls[2] = { 4, 5 };
+    std::vector<bitLenInt> controls{ 4, 5 };
     real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
     complex pauliRYs[16];
 
@@ -1555,33 +1555,33 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
-    qftReg->UniformlyControlledSingleBit(NULL, 0, 0, pauliRYs);
-    qftReg->UniformlyControlledSingleBit(NULL, 0, 1, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(std::vector<bitLenInt>(), 0, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(std::vector<bitLenInt>(), 1, pauliRYs);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
-    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-    qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 0, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 1, pauliRYs);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
     qftReg->SetReg(0, 8, 0x12);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x12));
-    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-    qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 0, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 1, pauliRYs);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x11));
 
     qftReg->SetReg(0, 8, 0x22);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
-    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-    qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 0, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 1, pauliRYs);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
 
     qftReg->SetReg(0, 8, 0x22);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
     qftReg->H(4);
-    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-    qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 0, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 1, pauliRYs);
     qftReg->H(4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
 
@@ -1590,8 +1590,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
 
     qftReg->SetReg(0, 8, 0x22);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
-    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-    qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 0, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 1, pauliRYs);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
 
     controls[0] = 4;
@@ -1600,8 +1600,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->H(4);
-    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-    qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 0, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 1, pauliRYs);
     qftReg->H(4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
@@ -1611,8 +1611,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
     if (!QINTERFACE_RESTRICTED) {
-        qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-        qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
+        qftReg->UniformlyControlledSingleBit(controls, 0, pauliRYs);
+        qftReg2->QInterface::UniformlyControlledSingleBit(controls, 0, pauliRYs);
 
         REQUIRE(qftReg->ApproxCompare(qftReg2));
 
@@ -1621,8 +1621,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
         REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-        qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-        qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs, NULL, 0, 0);
+        qftReg->UniformlyControlledSingleBit(controls, 0, pauliRYs);
+        qftReg2->QInterface::UniformlyControlledSingleBit(controls, 0, pauliRYs, std::vector<bitCapInt>(), 0);
 
         REQUIRE(qftReg->ApproxCompare(qftReg2));
     }
@@ -2748,8 +2748,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     const bool isStabilizerQBdt =
         (testSubSubEngineType == QINTERFACE_BDT) && (testSubEngineType == QINTERFACE_STABILIZER_HYBRID);
 
-    bitLenInt toSep[2];
-
     qftReg->SetPermutation(85);
 
     int i;
@@ -2761,8 +2759,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     for (i = 0; i < 8; i++) {
         qftReg->TrySeparate(i);
         if (!isStabilizerQBdt) {
-            toSep[0] = i;
-            qftReg->TrySeparate(toSep, 1, FP_NORM_EPSILON_F);
+            const std::vector<bitLenInt> toSep{ (bitLenInt)i };
+            qftReg->TrySeparate(toSep, FP_NORM_EPSILON_F);
         }
     }
 
@@ -2775,9 +2773,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     qftReg->CNOT(0, 2);
     qftReg->TrySeparate(0, 1);
     if (!isStabilizerQBdt) {
-        toSep[0] = 0;
-        toSep[1] = 1;
-        qftReg->TrySeparate(toSep, 2, FP_NORM_EPSILON_F);
+        const std::vector<bitLenInt> toSep{ 0, 1 };
+        qftReg->TrySeparate(toSep, FP_NORM_EPSILON_F);
     }
     qftReg->CNOT(0, 1);
     qftReg->Z(0);
@@ -2836,10 +2833,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_m_array")
 {
-    bitLenInt bits[3] = { 0, 2, 3 };
+    const std::vector<bitLenInt> bits{ 0, 2, 3 };
     REQUIRE(qftReg->M(0) == 0);
     qftReg->SetReg(0, 8, 0x07);
-    REQUIRE(qftReg->M(bits, 3) == 5);
+    REQUIRE(qftReg->M(bits) == 5);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x07));
 }
 
@@ -3087,9 +3084,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probbitsall")
 {
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 3, 5, rng);
-    bitLenInt bits[2] = { 2, 1 };
+    const std::vector<bitLenInt> bits{ 2, 1 };
     real1 probs1[4];
-    qftReg->ProbBitsAll(bits, 2U, probs1);
+    qftReg->ProbBitsAll(bits, probs1);
     REQUIRE(probs1[0] < 0.01);
     REQUIRE(probs1[1] > 0.99);
     REQUIRE(probs1[2] < 0.01);
@@ -3097,7 +3094,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probbitsall")
 
     qftReg->H(2);
 
-    qftReg->ProbBitsAll(bits, 2U, probs1);
+    qftReg->ProbBitsAll(bits, probs1);
     REQUIRE_FLOAT((real1_f)probs1[0], 0.5);
     REQUIRE_FLOAT((real1_f)probs1[1], 0.5);
     REQUIRE(probs1[2] < 0.01);
@@ -3107,9 +3104,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probbitsall")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_expectationbitsall")
 {
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 8, 0, rng);
-    bitLenInt bits[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    const std::vector<bitLenInt> bits{ 0, 1, 2, 3, 4, 5, 6, 7 };
     qftReg->H(0, 8);
-    REQUIRE_FLOAT(qftReg->ExpectationBitsAll(bits, 8U), 127 + (ONE_R1_F / 2))
+    REQUIRE_FLOAT(qftReg->ExpectationBitsAll(bits), 127 + (ONE_R1_F / 2))
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
@@ -3198,36 +3195,37 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cuniformparityrz")
 {
-    bitLenInt controls[2] = { 3, 4 };
+    const std::vector<bitLenInt> controls{ 3, 4 };
+    const std::vector<bitLenInt> control{ 3 };
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
-    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 1, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 1, M_PI_2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0));
 
     qftReg->SetPermutation(0x18);
     qftReg->H(0);
-    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 1, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 1, M_PI_2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x1 | 0x18));
 
     qftReg->SetPermutation(0x3 | 0x18);
     qftReg->H(0, 3);
-    QPARITY(qftReg)->CUniformParityRZ(controls, 1, 0x7, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(control, 0x7, M_PI_2);
     qftReg->H(0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0x4 | 0x18));
 
     qftReg->SetPermutation(0x1 | 0x18);
     qftReg->H(0, 3);
-    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 0x7, M_PI_2);
-    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 0x7, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 0x7, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 0x7, M_PI_2);
     qftReg->H(0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0x1 | 0x18));
 
     qftReg->SetPermutation(0x01 | 0x18);
     qftReg->H(0);
-    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 1, M_PI_4);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 1, M_PI_4);
     qftReg->S(0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x0 | 0x18));
@@ -3237,7 +3235,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
 {
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 8, 0, rng);
 
-    bitCapInt qPowers[3] = { pow2(6), pow2(2), pow2(3) };
+    const std::vector<bitCapInt> qPowers{ pow2(6), pow2(2), pow2(3) };
 
     qftReg->SetPermutation(0);
     qftReg->H(6);
@@ -3246,7 +3244,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
 
     const std::set<bitCapInt> possibleResults = { 2, 3, 6, 7 };
 
-    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 3U, 1000);
+    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 1000);
     std::map<bitCapInt, int>::iterator it = results.begin();
     while (it != results.end()) {
         REQUIRE(possibleResults.find(it->first) != possibleResults.end());
@@ -3262,12 +3260,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
     REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0), 0.0625);
     REQUIRE_FLOAT(qftReg->ProbMask(0x7, 0), 0.125);
 
-    bitLenInt bits[3] = { 0, 1, 2 };
+    const std::vector<bitLenInt> bits{ 0, 1, 2 };
+    const std::vector<bitLenInt> bit{ 0 };
     bool results[3] = { 0, 1, 0 };
 
-    qftReg->ForceM(bits, 1, results);
-    qftReg->ForceM(bits, 3, results);
-    qftReg->ForceM(bits, 1, NULL);
+    qftReg->ForceM(bit, results);
+    qftReg->ForceM(bits, results);
+    qftReg->ForceM(bit, NULL);
     qftReg->ForceMReg(0, 1, results[0], false);
 
     REQUIRE(qftReg->ProbMask(0x7, 0x2) > 0.99);
@@ -3560,41 +3559,41 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_iadc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cfulladd")
 {
-    bitLenInt control[1] = { 10 };
+    const std::vector<bitLenInt> control{ 10 };
     qftReg->SetPermutation(0x00); // off
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
     qftReg->SetPermutation(0x01);
     qftReg->X(control[0]); // on
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x05));
 
     qftReg->SetPermutation(0x02); // off
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
 
     qftReg->SetPermutation(0x03);
     qftReg->X(control[0]); // on
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0B));
 
     qftReg->SetPermutation(0x04); // off
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
 
     qftReg->SetPermutation(0x05);
     qftReg->X(control[0]); // on
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x09));
 
     qftReg->SetPermutation(0x06); // off
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x06));
 
     qftReg->SetPermutation(0x07);
     qftReg->X(control[0]); // on
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0F));
 }
 
@@ -3602,61 +3601,61 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cifulladd")
 {
     // This is contingent on the previous test passing.
 
-    bitLenInt control[1] = { 10 };
+    const std::vector<bitLenInt> control{ 10 };
 
     qftReg->SetPermutation(0x00); // off
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
-    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
     qftReg->SetPermutation(0x01);
     qftReg->X(control[0]); // on
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
-    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
     qftReg->SetPermutation(0x02); // off
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
-    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
 
     qftReg->SetPermutation(0x03);
     qftReg->X(control[0]); // on
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
-    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 
     qftReg->SetPermutation(0x04); // off
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
-    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
 
     qftReg->SetPermutation(0x05);
     qftReg->X(control[0]); // on
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
-    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x05));
 
     qftReg->X(control[0]); // off
 
     qftReg->SetPermutation(0x06);
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
-    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x06));
 
     qftReg->SetPermutation(0x07); // off
-    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
-    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CFullAdd(control, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 0, 1, 2, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x07));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cadc")
 {
-    bitLenInt control[1] = { 10 };
+    const std::vector<bitLenInt> control{ 10 };
 
     qftReg->SetPermutation(0); // off
     qftReg->H(2, 2);
-    qftReg->CADC(control, 1, 0, 2, 4, 2, 6);
+    qftReg->CADC(control, 0, 2, 4, 2, 6);
     qftReg->H(2, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
@@ -3664,31 +3663,31 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cadc")
     qftReg->X(control[0]); // on
     qftReg->H(0);
     qftReg->CNOT(0, 2);
-    qftReg->CADC(control, 1, 0, 2, 4, 2, 6);
-    qftReg->CIADC(control, 1, 0, 2, 4, 2, 6);
+    qftReg->CADC(control, 0, 2, 4, 2, 6);
+    qftReg->CIADC(control, 0, 2, 4, 2, 6);
     qftReg->CNOT(0, 2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
     qftReg->SetPermutation(1);
     qftReg->X(control[0]); // on
-    qftReg->CADC(control, 1, 0, 1, 2, 1, 3);
+    qftReg->CADC(control, 0, 1, 2, 1, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 5));
 
     qftReg->SetPermutation(1); // off
-    qftReg->CADC(control, 1, 0, 1, 2, 0, 3);
+    qftReg->CADC(control, 0, 1, 2, 0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ciadc")
 {
     // This is contingent on the previous test passing.
-    bitLenInt control[1] = { 10 };
+    const std::vector<bitLenInt> control{ 10 };
 
     qftReg->SetPermutation(8); // off
     qftReg->H(2, 2);
-    qftReg->CADC(control, 1, 0, 2, 4, 2, 6);
-    qftReg->CIADC(control, 1, 0, 2, 4, 2, 6);
+    qftReg->CADC(control, 0, 2, 4, 2, 6);
+    qftReg->CIADC(control, 0, 2, 4, 2, 6);
     qftReg->H(2, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 8));
 
@@ -3696,23 +3695,23 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ciadc")
     qftReg->X(control[0]); // on
     qftReg->H(0);
     qftReg->CNOT(0, 2);
-    qftReg->CADC(control, 1, 0, 2, 4, 2, 6);
-    qftReg->CIADC(control, 1, 0, 2, 4, 2, 6);
+    qftReg->CADC(control, 0, 2, 4, 2, 6);
+    qftReg->CIADC(control, 0, 2, 4, 2, 6);
     qftReg->CNOT(0, 2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
     qftReg->SetPermutation(2);
     qftReg->X(control[0]); // on
-    qftReg->CADC(control, 1, 0, 1, 2, 1, 3);
+    qftReg->CADC(control, 0, 1, 2, 1, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 6));
-    qftReg->CIADC(control, 1, 0, 1, 2, 1, 3);
+    qftReg->CIADC(control, 0, 1, 2, 1, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
     qftReg->SetPermutation(2); // off
-    qftReg->CADC(control, 1, 0, 1, 2, 0, 3);
+    qftReg->CADC(control, 0, 1, 2, 0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
-    qftReg->CIADC(control, 1, 0, 1, 2, 0, 3);
+    qftReg->CIADC(control, 0, 1, 2, 0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 }
 
@@ -3906,10 +3905,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
 {
 
     qftReg->SetPermutation(1);
-    QALU(qftReg)->CINC(1, 0, 8, NULL, 0);
+    QALU(qftReg)->CINC(1, 0, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
-    bitLenInt controls[1] = { 8 };
+    const std::vector<bitLenInt> controls{ 8 };
 
     qftReg->SetPermutation(250);
 
@@ -3917,7 +3916,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
         // Turn control on
         qftReg->X(controls[0]);
 
-        QALU(qftReg)->CINC(1, 0, 8, controls, 1);
+        QALU(qftReg)->CINC(1, 0, 8, controls);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -3927,7 +3926,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
         // Turn control off
         qftReg->X(controls[0]);
 
-        QALU(qftReg)->CINC(1, 0, 8, controls, 1);
+        QALU(qftReg)->CINC(1, 0, 8, controls);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -3942,7 +3941,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
     int start = 0x08;
 
     qftReg->SetPermutation(2);
-    QALU(qftReg)->CDEC(1, 0, 8, NULL, 0);
+    QALU(qftReg)->CDEC(1, 0, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(start);
@@ -4026,20 +4025,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec", "[travis_xfail]")
 {
     int i;
 
-    bitLenInt controls[1] = { 8 };
+    const std::vector<bitLenInt> controls{ 8 };
 
     qftReg->SetPermutation(0x08);
     for (i = 0; i < 8; i++) {
         // Turn control on
         qftReg->X(controls[0]);
 
-        QALU(qftReg)->CDEC(9, 0, 8, controls, 1);
+        QALU(qftReg)->CDEC(9, 0, 8, controls);
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
 
         // Turn control off
         qftReg->X(controls[0]);
 
-        QALU(qftReg)->CDEC(9, 0, 8, controls, 1);
+        QALU(qftReg)->CDEC(9, 0, 8, controls);
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
     }
 }
@@ -4221,16 +4220,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
 {
     int i;
 
-    bitLenInt controls[1] = { 16 };
+    const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
-    QALU(qftReg)->CMUL(2, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CMUL(2, 0, 8, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
     qftReg->SetPermutation(3 | (1 << 16));
     bitCapInt res = 3;
     for (i = 0; i < 8; i++) {
-        QALU(qftReg)->CMUL(2, 0, 8, 8, controls, 1);
+        QALU(qftReg)->CMUL(2, 0, 8, 8, controls);
         if ((i % 2) == 0) {
             res *= 2;
         }
@@ -4244,16 +4243,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 {
     int i;
 
-    bitLenInt controls[1] = { 16 };
+    const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(2);
-    QALU(qftReg)->CDIV(2, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CDIV(2, 0, 8, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(256 | (1 << 16));
     bitCapInt res = 256;
     for (i = 0; i < 8; i++) {
-        QALU(qftReg)->CDIV(2, 0, 8, 8, controls, 1);
+        QALU(qftReg)->CDIV(2, 0, 8, 8, controls);
         if ((i % 2) == 0) {
             res /= 2;
         }
@@ -4264,71 +4263,71 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
 {
-    bitLenInt controls[1] = { 16 };
+    const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
-    QALU(qftReg)->CMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 | (2 << 8)));
 
     qftReg->SetPermutation(3 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (9 << 8)));
 
     qftReg->SetPermutation(3);
     qftReg->H(16);
-    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3 | (9 << 8) | (1 << 16)));
 
     qftReg->SetPermutation(65 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (75 << 8)));
 
     qftReg->SetPermutation(126 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 126 | (5 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
 {
-    bitLenInt controls[1] = { 16 };
+    const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
-    QALU(qftReg)->CMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
-    QALU(qftReg)->CIMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
+    QALU(qftReg)->CIMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1));
 
     qftReg->SetPermutation(3 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
-    QALU(qftReg)->CIMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls);
+    QALU(qftReg)->CIMULModNOut(3, 256U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3 | (1 << 16)));
 
     qftReg->SetPermutation(65 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls, 1);
-    QALU(qftReg)->CIMULModNOut(5, 125U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls);
+    QALU(qftReg)->CIMULModNOut(5, 125U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
 
     qftReg->SetPermutation(126 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls, 1);
-    QALU(qftReg)->CIMULModNOut(5, 125U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls);
+    QALU(qftReg)->CIMULModNOut(5, 125U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 126));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")
 {
-    bitLenInt controls[1] = { 16 };
+    const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
-    QALU(qftReg)->CPOWModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CPOWModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 | (2 << 8)));
 
     qftReg->SetPermutation(3 | (1 << 16));
-    QALU(qftReg)->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CPOWModNOut(3, 256U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (27 << 8)));
 
     qftReg->SetPermutation(3);
     qftReg->H(16);
-    QALU(qftReg)->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CPOWModNOut(3, 256U, 0, 8, 8, controls);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3 | (27 << 8) | (1 << 16)));
 }
@@ -4855,15 +4854,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
         return;
     }
 
-    bitLenInt controls[2] = { 1, 2 };
+    const std::vector<bitLenInt> controls{ 1, 2 };
     real1 angles[4] = { (real1)3.0f, (real1)0.8f, (real1)1.2f, (real1)0.7f };
 
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 3, 0, rng);
     qftReg->SetPermutation(2);
     QInterfacePtr qftReg2 = qftReg->Clone();
 
-    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-    qftReg2->QInterface::UniformlyControlledRY(controls, 2, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 0, angles);
+    qftReg2->QInterface::UniformlyControlledRY(controls, 0, angles);
 
     complex a, b;
     for (bitCapInt i = 0; i < 8; i++) {
@@ -4884,14 +4883,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
 
     qftReg->Dispose(0, qftReg->GetQubitCount() - (InputCount + OutputCount));
 
-    bitLenInt inputIndices[InputCount];
+    std::vector<bitLenInt> inputIndices(InputCount);
     for (bitLenInt i = 0; i < InputCount; i++) {
         inputIndices[i] = i;
     }
 
     std::vector<QNeuronPtr> outputLayer;
     for (bitLenInt i = 0; i < OutputCount; i++) {
-        outputLayer.push_back(std::make_shared<QNeuron>(qftReg, inputIndices, InputCount, InputCount + i));
+        outputLayer.push_back(std::make_shared<QNeuron>(qftReg, inputIndices, InputCount + i));
     }
 
     // Train the network to associate powers of 2 with their log2()
@@ -4919,14 +4918,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_bell_m")
 {
-    bitCapInt qPowers[2] = { 1, 2 };
+    const std::vector<bitCapInt> qPowers{ 1, 2 };
     const std::set<bitCapInt> possibleResults = { 0, 3 };
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 2);
     qftReg->CZ(0, 1);
     qftReg->H(0);
-    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 2U, 1000);
+    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 1000);
     std::map<bitCapInt, int>::iterator it = results.begin();
     while (it != results.end()) {
         REQUIRE(possibleResults.find(it->first) != possibleResults.end());
@@ -4937,7 +4936,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_bell_m")
     qftReg->H(0, 2);
     qftReg->CZ(0, 1);
     qftReg->H(1);
-    results = qftReg->MultiShotMeasureMask(qPowers, 2U, 1000);
+    results = qftReg->MultiShotMeasureMask(qPowers, 1000);
     it = results.begin();
     while (it != results.end()) {
         REQUIRE(possibleResults.find(it->first) != possibleResults.end());
@@ -5056,8 +5055,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_h_cnot_rand")
     REQUIRE_FLOAT((real1_f)norm(state[2]), ZERO_R1_F);
     REQUIRE_FLOAT((real1_f)norm(state[3]), ONE_R1_F / 2);
 
-    bitCapInt qPowers[2] = { 1, 2 };
-    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 2U, 1000);
+    const std::vector<bitCapInt> qPowers{ 1, 2 };
+    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 1000);
 
     REQUIRE(results.find(1) == results.end());
     REQUIRE(results.find(2) == results.end());
