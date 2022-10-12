@@ -28,7 +28,7 @@ void QAlu::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 /// Subtract integer (without sign, with controls)
 void QAlu::CDEC(bitCapInt toSub, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
-    const bitCapInt invToSub = pow2(controls.size()) - toSub;
+    const bitCapInt invToSub = pow2(length) - toSub;
     CINC(invToSub, start, length, controls);
 }
 
