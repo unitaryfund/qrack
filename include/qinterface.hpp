@@ -473,7 +473,7 @@ public:
         }
 
         const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-        MCMtrx(controls, controlLen, mtrx, target);
+        MCMtrx(controls, mtrx, target);
     }
 
     /**
@@ -484,7 +484,7 @@ public:
         const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
         const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-        MCMtrx(controls, controlLen, mtrx, target);
+        MCMtrx(controls, mtrx, target);
     }
 
     /**
