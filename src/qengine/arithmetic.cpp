@@ -176,7 +176,7 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 
 /// Add integer (without sign, with controls)
 void QEngineCPU::CINC(
-    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
 {
     CHECK_ZERO_SKIP();
 
@@ -534,7 +534,7 @@ void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
 }
 
 void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
-    const bitLenInt& carryStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt controlLen)
+    const bitLenInt& carryStart, const bitLenInt& length, bitLenInt const* controls, const bitLenInt controlLen)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::CMULDIV range is out-of-bounds!");
@@ -601,7 +601,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 }
 
 void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt const* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         MUL(toMul, inOutStart, carryStart, length);
@@ -624,7 +624,7 @@ void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 }
 
 void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt const* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         DIV(toDiv, inOutStart, carryStart, length);
@@ -718,7 +718,7 @@ void QEngineCPU::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, 
 }
 
 void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart,
-    const bitLenInt& outStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& outStart, const bitLenInt& length, bitLenInt const* controls, const bitLenInt& controlLen,
     const bool& inverse)
 {
     if (isBadBitRange(inStart, length, qubitCount)) {
@@ -788,7 +788,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 }
 
 void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt const* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         MULModNOut(toMod, modN, inStart, outStart, length);
@@ -803,7 +803,7 @@ void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
 }
 
 void QEngineCPU::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt const* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         IMULModNOut(toMod, modN, inStart, outStart, length);
@@ -816,7 +816,7 @@ void QEngineCPU::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart
 }
 
 void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt const* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         POWModNOut(toMod, modN, inStart, outStart, length);
