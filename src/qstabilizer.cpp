@@ -58,10 +58,9 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     SetPermutation(perm);
 }
 
-bool QStabilizer::TrimControls(
-    const bitLenInt* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output)
+bool QStabilizer::TrimControls(const std::vector<bitLenInt>& lControls, bool isAnti, std::vector<bitLenInt>& output)
 {
-    for (bitLenInt i = 0U; i < lControlLen; ++i) {
+    for (bitLenInt i = 0U; i < lControls.size(); ++i) {
         const bitLenInt bit = lControls[i];
         if (!IsSeparableZ(bit)) {
             output.push_back(bit);
@@ -1414,14 +1413,14 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 }
 
 void QStabilizer::MCPhase(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
         return;
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, false, controls)) {
+    if (TrimControls(lControls, false, controls)) {
         return;
     }
 
@@ -1496,14 +1495,14 @@ void QStabilizer::MCPhase(
 }
 
 void QStabilizer::MACPhase(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
         return;
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, true, controls)) {
+    if (TrimControls(lControls, true, controls)) {
         return;
     }
 
@@ -1578,10 +1577,10 @@ void QStabilizer::MACPhase(
 }
 
 void QStabilizer::MCInvert(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, false, controls)) {
+    if (TrimControls(lControls, false, controls)) {
         return;
     }
 
@@ -1644,10 +1643,10 @@ void QStabilizer::MCInvert(
 }
 
 void QStabilizer::MACInvert(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, true, controls)) {
+    if (TrimControls(lControls, true, controls)) {
         return;
     }
 
@@ -1728,7 +1727,7 @@ void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt q
     throw std::domain_error("QStabilizer::FSim() not implemented for non-Clifford/Pauli cases!");
 }
 
-bool QStabilizer::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f ignored)
+bool QStabilizer::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored)
 {
     for (bitLenInt i = 0U; i < length; ++i) {
         Swap(qubits[i], i);

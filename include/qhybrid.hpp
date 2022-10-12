@@ -395,7 +395,7 @@ public:
         engine->POWModNOut(base, modN, inStart, outStart, length);
     }
     void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
         engine->CMUL(toMul, inOutStart, carryStart, length, controls);
     }

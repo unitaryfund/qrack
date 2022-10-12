@@ -79,11 +79,11 @@ protected:
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
-    void CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, bitLenInt const* controls, bitLenInt controlLen);
+    void CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, const std::vector<bitLenInt>& controls);
 
     void ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target);
     void ApplyEitherControlledSingleBit(
-        bool anti, bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, complex const* mtrx);
+        bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
     void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
     void Init();
@@ -309,17 +309,17 @@ public:
     {
         ApplySingleEither(true, topRight, bottomLeft, qubitIndex);
     }
-    void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
+    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
     {
-        ApplyEitherControlledSingleBit(false, controls, controlLen, target, mtrx);
+        ApplyEitherControlledSingleBit(false, controls, target, mtrx);
     }
-    void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
+    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
     {
-        ApplyEitherControlledSingleBit(true, controls, controlLen, target, mtrx);
+        ApplyEitherControlledSingleBit(true, controls, target, mtrx);
     }
 
     void UniformParityRZ(bitCapInt mask, real1_f angle);
-    void CUniformParityRZ(bitLenInt const* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
+    void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
 
     void XMask(bitCapInt mask);
     void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
@@ -344,16 +344,16 @@ public:
     void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt const* controls,
-        bitLenInt controlLen);
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt const* controls,
-        bitLenInt controlLen);
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls);
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls);
     void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen);
+        const std::vector<bitLenInt>& controls);
     void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen);
+        const std::vector<bitLenInt>& controls);
     void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen);
+        const std::vector<bitLenInt>& controls);
 
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         const unsigned char* values, bool resetValue = true);
@@ -395,7 +395,7 @@ public:
         CombineEngines();
         return qPages[0U]->ForceMParity(mask, result, doForce);
     }
-    real1_f ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, bitCapInt offset = 0);
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
 
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void NormalizeState(
