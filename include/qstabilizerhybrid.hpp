@@ -58,8 +58,7 @@ protected:
     void FlushH(bitLenInt qubit);
     void FlushIfBlocked(bitLenInt control, bitLenInt target, bool isPhase = false);
     bool CollapseSeparableShard(bitLenInt qubit);
-    bool TrimControls(
-        bitLenInt const* lControls, bitLenInt lControlLen, std::vector<bitLenInt>& output, bool anti = false);
+    bool TrimControls(const std::vector<bitLenInt>& lControls, std::vector<bitLenInt>& output, bool anti = false);
     void CacheEigenstate(bitLenInt target);
     void FlushBuffers();
     void DumpBuffers()
@@ -275,34 +274,30 @@ public:
     bitCapInt MAll();
 
     void Mtrx(complex const* mtrx, bitLenInt target);
-    void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target);
-    void MCPhase(
-        bitLenInt const* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    void MCInvert(
-        bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
-    void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target);
-    void MACPhase(
-        bitLenInt const* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    void MACInvert(
-        bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
+    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
+    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
+    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
+    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
 
     using QInterface::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(
-        bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex, complex const* mtrxs)
+        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, complex const* mtrxs)
     {
         if (stabilizer) {
-            QInterface::UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
+            QInterface::UniformlyControlledSingleBit(controls, qubitIndex, mtrxs);
             return;
         }
 
-        engine->UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
+        engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs);
     }
 
-    void CSwap(bitLenInt const* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void CSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
             std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, lControlLen, controls, false)) {
+            if (TrimControls(lControls, controls, false)) {
                 return;
             }
             if (!controls.size()) {
@@ -312,13 +307,13 @@ public:
             SwitchToEngine();
         }
 
-        engine->CSwap(lControls, lControlLen, qubit1, qubit2);
+        engine->CSwap(lControls, qubit1, qubit2);
     }
-    void CSqrtSwap(bitLenInt const* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void CSqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
             std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, lControlLen, controls, false)) {
+            if (TrimControls(lControls, controls, false)) {
                 return;
             }
             if (!controls.size()) {
@@ -328,13 +323,13 @@ public:
             SwitchToEngine();
         }
 
-        engine->CSqrtSwap(lControls, lControlLen, qubit1, qubit2);
+        engine->CSqrtSwap(lControls, qubit1, qubit2);
     }
-    void AntiCSqrtSwap(bitLenInt const* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void AntiCSqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
             std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, lControlLen, controls, true)) {
+            if (TrimControls(lControls, controls, true)) {
                 return;
             }
             if (!controls.size()) {
@@ -344,13 +339,13 @@ public:
             SwitchToEngine();
         }
 
-        engine->AntiCSqrtSwap(lControls, lControlLen, qubit1, qubit2);
+        engine->AntiCSqrtSwap(lControls, qubit1, qubit2);
     }
-    void CISqrtSwap(bitLenInt const* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void CISqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
             std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, lControlLen, controls, false)) {
+            if (TrimControls(lControls, controls, false)) {
                 return;
             }
             if (!controls.size()) {
@@ -360,13 +355,13 @@ public:
             SwitchToEngine();
         }
 
-        engine->CISqrtSwap(lControls, lControlLen, qubit1, qubit2);
+        engine->CISqrtSwap(lControls, qubit1, qubit2);
     }
-    void AntiCISqrtSwap(bitLenInt const* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void AntiCISqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
             std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, lControlLen, controls, true)) {
+            if (TrimControls(lControls, controls, true)) {
                 return;
             }
             if (!controls.size()) {
@@ -376,7 +371,7 @@ public:
             SwitchToEngine();
         }
 
-        engine->AntiCISqrtSwap(lControls, lControlLen, qubit1, qubit2);
+        engine->AntiCISqrtSwap(lControls, qubit1, qubit2);
     }
 
     void XMask(bitCapInt mask)
@@ -456,10 +451,10 @@ public:
         SwitchToEngine();
         return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
     }
-    void CUniformParityRZ(bitLenInt const* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+    void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
     {
         SwitchToEngine();
-        QINTERFACE_TO_QPARITY(engine)->CUniformParityRZ(controls, controlLen, mask, angle);
+        QINTERFACE_TO_QPARITY(engine)->CUniformParityRZ(controls, mask, angle);
     }
 
 #if ENABLE_ALU
@@ -505,14 +500,14 @@ public:
 
         engine->DECS(toSub, start, length, overflowIndex);
     }
-    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
+    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         if (stabilizer) {
-            QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
+            QInterface::CINC(toAdd, inOutStart, length, controls);
             return;
         }
 
-        engine->CINC(toAdd, inOutStart, length, controls, controlLen);
+        engine->CINC(toAdd, inOutStart, length, controls);
     }
     void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
@@ -579,35 +574,35 @@ public:
         SwitchToEngine();
         QINTERFACE_TO_QALU(engine)->POWModNOut(base, modN, inStart, outStart, length);
     }
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt const* controls,
-        bitLenInt controlLen)
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls)
     {
         SwitchToEngine();
-        QINTERFACE_TO_QALU(engine)->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CMUL(toMul, inOutStart, carryStart, length, controls);
     }
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt const* controls,
-        bitLenInt controlLen)
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls)
     {
         SwitchToEngine();
-        QINTERFACE_TO_QALU(engine)->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CDIV(toDiv, inOutStart, carryStart, length, controls);
     }
     void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
         SwitchToEngine();
-        QINTERFACE_TO_QALU(engine)->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
     void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
         SwitchToEngine();
-        QINTERFACE_TO_QALU(engine)->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
     void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
         SwitchToEngine();
-        QINTERFACE_TO_QALU(engine)->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CPOWModNOut(base, modN, inStart, outStart, length, controls);
     }
 
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -704,18 +699,18 @@ public:
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
 
-    real1_f ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, bitCapInt offset = 0)
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
     {
         if (stabilizer) {
-            return QInterface::ExpectationBitsAll(bits, length, offset);
+            return QInterface::ExpectationBitsAll(bits, offset);
         }
 
-        return engine->ExpectationBitsAll(bits, length, offset);
+        return engine->ExpectationBitsAll(bits, offset);
     }
 
     bool TrySeparate(bitLenInt qubit);
     bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
-    bool TrySeparate(bitLenInt const* qubits, bitLenInt length, real1_f error_tol);
+    bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol);
 
     QInterfacePtr Clone();
 

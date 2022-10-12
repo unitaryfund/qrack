@@ -271,21 +271,20 @@ public:
     {
         engine->Invert(topRight, bottomLeft, qubitIndex);
     }
-    void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
-        engine->MCMtrx(controls, controlLen, mtrx, target);
+        engine->MCMtrx(controls, mtrx, target);
     }
-    void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
-        engine->MACMtrx(controls, controlLen, mtrx, target);
+        engine->MACMtrx(controls, mtrx, target);
     }
 
     using QEngine::UniformlyControlledSingleBit;
-    void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-        const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
+    void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
+        const complex* mtrxs, const std::vector<bitCapInt> mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
     {
-        engine->UniformlyControlledSingleBit(
-            controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
+        engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
     }
 
     void XMask(bitCapInt mask) { engine->XMask(mask); }
@@ -295,34 +294,34 @@ public:
     real1_f ACProb(bitLenInt control, bitLenInt target) { return engine->ACProb(control, target); }
 
     void UniformParityRZ(bitCapInt mask, real1_f angle) { engine->UniformParityRZ(mask, angle); }
-    void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+    void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
     {
-        engine->CUniformParityRZ(controls, controlLen, mask, angle);
+        engine->CUniformParityRZ(controls, mask, angle);
     }
 
-    void CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void CSwap(const std::vector<bitLenInt>& controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        engine->CSwap(controls, controlLen, qubit1, qubit2);
+        engine->CSwap(controls, qubit1, qubit2);
     }
-    void AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        engine->AntiCSwap(controls, controlLen, qubit1, qubit2);
+        engine->AntiCSwap(controls, qubit1, qubit2);
     }
-    void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        engine->CSqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->CSqrtSwap(controls, qubit1, qubit2);
     }
-    void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->AntiCSqrtSwap(controls, qubit1, qubit2);
     }
-    void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        engine->CISqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->CISqrtSwap(controls, qubit1, qubit2);
     }
-    void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->AntiCISqrtSwap(controls, qubit1, qubit2);
     }
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
@@ -332,9 +331,9 @@ public:
 
 #if ENABLE_ALU
     void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INC(toAdd, start, length); }
-    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
-        engine->CINC(toAdd, inOutStart, length, controls, controlLen);
+        engine->CINC(toAdd, inOutStart, length, controls);
     }
     void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
@@ -395,30 +394,30 @@ public:
     {
         engine->POWModNOut(base, modN, inStart, outStart, length);
     }
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
-        bitLenInt controlLen)
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls, bitLenInt controlLen)
     {
-        engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
+        engine->CMUL(toMul, inOutStart, carryStart, length, controls);
     }
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
-        bitLenInt controlLen)
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls)
     {
-        engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
+        engine->CDIV(toDiv, inOutStart, carryStart, length, controls);
     }
     void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
-        engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
     void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
-        engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
     void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
-        engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
+        engine->CPOWModNOut(base, modN, inStart, outStart, length, controls);
     }
 
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -485,9 +484,9 @@ public:
         engine->NormalizeState(nrm, norm_thresh, phaseArg);
     }
 
-    real1_f ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset = 0)
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
     {
-        return engine->ExpectationBitsAll(bits, length, offset);
+        return engine->ExpectationBitsAll(bits, offset);
     }
 
     void Finish() { engine->Finish(); }
@@ -528,13 +527,13 @@ protected:
     {
         engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
     }
-    void ApplyControlled2x2(const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx)
+    void ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
     {
-        engine->ApplyControlled2x2(controls, controlLen, target, mtrx);
+        engine->ApplyControlled2x2(controls, target, mtrx);
     }
-    void ApplyAntiControlled2x2(const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx)
+    void ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
     {
-        engine->ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
+        engine->ApplyAntiControlled2x2(controls, target, mtrx);
     }
 
 #if ENABLE_ALU
