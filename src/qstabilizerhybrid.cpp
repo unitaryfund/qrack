@@ -233,15 +233,14 @@ void QStabilizerHybrid::FlushBuffers()
     }
 }
 
-bool QStabilizerHybrid::TrimControls(
-    const bitLenInt* lControls, bitLenInt lControlLen, std::vector<bitLenInt>& output, bool anti)
+bool QStabilizerHybrid::TrimControls(const std::vector<bitLenInt>& lControls, std::vector<bitLenInt>& output, bool anti)
 {
     if (engine) {
-        output.insert(output.begin(), lControls, lControls + lControlLen);
+        output.insert(output.begin(), lControls.begin(), lControls.end());
         return false;
     }
 
-    for (bitLenInt i = 0U; i < lControlLen; ++i) {
+    for (bitLenInt i = 0U; i < lControls.size(); ++i) {
         bitLenInt bit = lControls[i];
 
         if (!stabilizer->IsSeparableZ(bit)) {
@@ -639,20 +638,20 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     }
 }
 
-void QStabilizerHybrid::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
+void QStabilizerHybrid::MCMtrx(const std::vector<bitLenInt>& lControls, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-        MCPhase(lControls, lControlLen, mtrx[0U], mtrx[3U], target);
+        MCPhase(lControls, mtrx[0U], mtrx[3U], target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-        MCInvert(lControls, lControlLen, mtrx[1U], mtrx[2U], target);
+        MCInvert(lControls, mtrx[1U], mtrx[2U], target);
         return;
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls)) {
+    if (TrimControls(lControls, controls)) {
         return;
     }
 
@@ -662,18 +661,18 @@ void QStabilizerHybrid::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen
     }
 
     SwitchToEngine();
-    engine->MCMtrx(lControls, lControlLen, mtrx, target);
+    engine->MCMtrx(lControls, mtrx, target);
 }
 
 void QStabilizerHybrid::MCPhase(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
         return;
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls)) {
+    if (TrimControls(lControls, controls)) {
         return;
     }
 
@@ -699,14 +698,12 @@ void QStabilizerHybrid::MCPhase(
     }
 
     if (engine) {
-        engine->MCPhase(lControls, lControlLen, topLeft, bottomRight, target);
+        engine->MCPhase(lControls, topLeft, bottomRight, target);
         return;
     }
 
     const bitLenInt control = controls[0U];
-    std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
-    std::copy(controls.begin(), controls.end(), ctrls.get());
-    stabilizer->MCPhase(ctrls.get(), controls.size(), topLeft, bottomRight, target);
+    stabilizer->MCPhase(controls, topLeft, bottomRight, target);
     if (shards[control]) {
         CacheEigenstate(control);
     }
@@ -716,10 +713,10 @@ void QStabilizerHybrid::MCPhase(
 }
 
 void QStabilizerHybrid::MCInvert(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls)) {
+    if (TrimControls(lControls, controls)) {
         return;
     }
 
@@ -744,14 +741,12 @@ void QStabilizerHybrid::MCInvert(
     }
 
     if (engine) {
-        engine->MCInvert(lControls, lControlLen, topRight, bottomLeft, target);
+        engine->MCInvert(lControls, topRight, bottomLeft, target);
         return;
     }
 
     const bitLenInt control = controls[0U];
-    std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
-    std::copy(controls.begin(), controls.end(), ctrls.get());
-    stabilizer->MCInvert(ctrls.get(), controls.size(), topRight, bottomLeft, target);
+    stabilizer->MCInvert(controls, topRight, bottomLeft, target);
     if (shards[control]) {
         CacheEigenstate(control);
     }
@@ -760,21 +755,20 @@ void QStabilizerHybrid::MCInvert(
     }
 }
 
-void QStabilizerHybrid::MACMtrx(
-    const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
+void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-        MACPhase(lControls, lControlLen, mtrx[0U], mtrx[3U], target);
+        MACPhase(lControls, mtrx[0U], mtrx[3U], target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-        MACInvert(lControls, lControlLen, mtrx[1U], mtrx[2U], target);
+        MACInvert(lControls, mtrx[1U], mtrx[2U], target);
         return;
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls, true)) {
+    if (TrimControls(lControls, controls, true)) {
         return;
     }
 
@@ -784,14 +778,14 @@ void QStabilizerHybrid::MACMtrx(
     }
 
     SwitchToEngine();
-    engine->MACMtrx(lControls, lControlLen, mtrx, target);
+    engine->MACMtrx(lControls, mtrx, target);
 }
 
 void QStabilizerHybrid::MACPhase(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls, true)) {
+    if (TrimControls(lControls, controls, true)) {
         return;
     }
 
@@ -817,14 +811,12 @@ void QStabilizerHybrid::MACPhase(
     }
 
     if (engine) {
-        engine->MACPhase(lControls, lControlLen, topLeft, bottomRight, target);
+        engine->MACPhase(lControls, topLeft, bottomRight, target);
         return;
     }
 
     const bitLenInt control = controls[0U];
-    std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
-    std::copy(controls.begin(), controls.end(), ctrls.get());
-    stabilizer->MACPhase(ctrls.get(), controls.size(), topLeft, bottomRight, target);
+    stabilizer->MACPhase(controls, topLeft, bottomRight, target);
     if (shards[control]) {
         CacheEigenstate(control);
     }
@@ -834,10 +826,10 @@ void QStabilizerHybrid::MACPhase(
 }
 
 void QStabilizerHybrid::MACInvert(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls, true)) {
+    if (TrimControls(lControls, controls, true)) {
         return;
     }
 
@@ -862,14 +854,12 @@ void QStabilizerHybrid::MACInvert(
     }
 
     if (engine) {
-        engine->MACInvert(lControls, lControlLen, topRight, bottomLeft, target);
+        engine->MACInvert(lControls, topRight, bottomLeft, target);
         return;
     }
 
     const bitLenInt control = controls[0U];
-    std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
-    std::copy(controls.begin(), controls.end(), ctrls.get());
-    stabilizer->MACInvert(ctrls.get(), controls.size(), topRight, bottomLeft, target);
+    stabilizer->MACInvert(controls, topRight, bottomLeft, target);
     if (shards[control]) {
         CacheEigenstate(control);
     }
@@ -998,8 +988,7 @@ bitCapInt QStabilizerHybrid::MAll()
     return toRet;
 }
 
-std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
-    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
+std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
 {
     if (!shots) {
         return std::map<bitCapInt, int>();
@@ -1008,23 +997,21 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
     if (ancillaCount) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         clone->SwitchToEngine();
-        return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots);
+        return clone->MultiShotMeasureMask(qPowers, shots);
     }
 
     if (engine) {
-        return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
+        return engine->MultiShotMeasureMask(qPowers, shots);
     }
 
-    std::vector<bitLenInt> bits(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-        bits[i] = log2(qPowers[i]);
-    }
+    std::vector<bitLenInt> bits(qPowers.size());
+    std::transform(qPowers.begin(), qPowers.end(), bits.begin(), log2);
 
     std::map<bitCapInt, int> results;
     for (unsigned shot = 0U; shot < shots; ++shot) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
-        for (bitLenInt i = 0U; i < qPowerCount; ++i) {
+        for (bitLenInt i = 0U; i < qPowers.size(); ++i) {
             if (clone->M(bits[i])) {
                 sample |= pow2(i);
             }
@@ -1036,7 +1023,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
 }
 
 void QStabilizerHybrid::MultiShotMeasureMask(
-    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray)
+    const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
 {
     if (!shots) {
         return;
@@ -1045,23 +1032,21 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     if (ancillaCount) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         clone->SwitchToEngine();
-        return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
+        return clone->MultiShotMeasureMask(qPowers, shots, shotsArray);
     }
 
     if (engine) {
-        engine->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
+        engine->MultiShotMeasureMask(qPowers, shots, shotsArray);
         return;
     }
 
-    std::vector<bitLenInt> bits(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-        bits[i] = log2(qPowers[i]);
-    }
+    std::vector<bitLenInt> bits(qPowers.size());
+    std::transform(qPowers.begin(), qPowers.end(), bits.begin(), log2);
 
     par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
-        for (bitLenInt i = 0U; i < qPowerCount; ++i) {
+        for (bitLenInt i = 0U; i < qPowers.size(); ++i) {
             if (clone->M(bits[i])) {
                 sample |= pow2(i);
             }
@@ -1192,23 +1177,23 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
     return toRet;
 }
-bool QStabilizerHybrid::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+bool QStabilizerHybrid::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol)
 {
     if (engine) {
-        return engine->TrySeparate(qubits, length, error_tol);
+        return engine->TrySeparate(qubits, error_tol);
     }
 
-    std::vector<bitLenInt> q(length);
-    std::copy(qubits, qubits + length, q.begin());
+    std::vector<bitLenInt> q(qubits.size());
+    std::copy(qubits.begin(), qubits.end(), q.begin());
     std::sort(q.begin(), q.end());
 
-    for (bitLenInt i = 1U; i < length; ++i) {
+    for (bitLenInt i = 1U; i < q.size(); ++i) {
         Swap(q[0U] + i, q[i]);
     }
 
-    const bool toRet = stabilizer->CanDecomposeDispose(q[0U], length);
+    const bool toRet = stabilizer->CanDecomposeDispose(q[0U], q.size());
 
-    for (bitLenInt i = 1U; i < length; ++i) {
+    for (bitLenInt i = 1U; i < q.size(); ++i) {
         Swap(q[0U] + i, q[i]);
     }
 

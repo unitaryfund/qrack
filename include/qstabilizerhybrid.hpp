@@ -419,9 +419,8 @@ public:
         }
     }
 
-    std::map<bitCapInt, int> MultiShotMeasureMask(bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots);
-    void MultiShotMeasureMask(
-        bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray);
+    std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots);
+    void MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray);
 
     real1_f ProbParity(bitCapInt mask)
     {

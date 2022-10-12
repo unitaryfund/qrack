@@ -192,14 +192,14 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
-    bitLenInt controls[1];
+    std::vector<bitLenInt> controls(1);
     for (bitLenInt i = 0U; i < length; ++i) {
         controls[0] = inStart + i;
         const bitCapInt partMul = (toMul * pow2(i)) % modN;
         if (!partMul) {
             continue;
         }
-        CINC(partMul, outStart, oLength, controls, 1U);
+        CINC(partMul, outStart, oLength, controls);
     }
 
     if (isPow2) {
@@ -212,7 +212,7 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
     for (bitCapInt i = 0U; i < diffPow; ++i) {
         DEC(modN, inStart, length);
         X(controls[0]);
-        CDEC(modN, outStart, oLength, controls, 1U);
+        CDEC(modN, outStart, oLength, controls);
         X(controls[0]);
     }
     for (bitCapInt i = 0U; i < diffPow; ++i) {
@@ -229,7 +229,7 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
     const bitCapInt diffPow = pow2(length) / modN;
     const bitLenInt lDiff = log2(diffPow);
-    bitLenInt controls[1]{ (bitLenInt)(inStart + length - (lDiff + 1U)) };
+    std::vector<bitLenInt> controls{ (bitLenInt)(inStart + length - (lDiff + 1U)) };
 
     if (!isPow2) {
         for (bitCapInt i = 0U; i < diffPow; ++i) {
@@ -237,7 +237,7 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
         }
         for (bitCapInt i = 0U; i < diffPow; ++i) {
             X(controls[0]);
-            CINC(modN, outStart, oLength, controls, 1U);
+            CINC(modN, outStart, oLength, controls);
             X(controls[0]);
             INC(modN, inStart, length);
         }
@@ -249,7 +249,7 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
         if (!partMul) {
             continue;
         }
-        CDEC(partMul, outStart, oLength, controls, 1U);
+        CDEC(partMul, outStart, oLength, controls);
     }
 }
 
@@ -355,12 +355,12 @@ void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 }
 
 /// Quantum analog of classical "Full Adder" gate
-void QInterface::CFullAdd(const std::vector<bitLenInt>& controlBits, bitLenInt inputBit1, bitLenInt inputBit2,
+void QInterface::CFullAdd(const std::vector<bitLenInt>& controls, bitLenInt inputBit1, bitLenInt inputBit2,
     bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
     std::vector<bitLenInt> cBits(controls.size() + 2U);
-    std::copy(controlBits.begin(), controlBits.end(), cBits.begin());
+    std::copy(controls.begin(), controls.end(), cBits.begin());
 
     // Assume outputBit is in 0 state.
     cBits[controls.size()] = inputBit1;
@@ -381,28 +381,28 @@ void QInterface::CFullAdd(const std::vector<bitLenInt>& controlBits, bitLenInt i
 }
 
 /// Inverse of FullAdd
-void QInterface::CIFullAdd(const std::vector<bitLenInt>& controlBits, bitLenInt controlLen, bitLenInt inputBit1,
-    bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+void QInterface::CIFullAdd(const std::vector<bitLenInt>& controls, bitLenInt inputBit1, bitLenInt inputBit2,
+    bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
     // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
     // (CNOT and CCNOT are self-inverse.)
 
-    std::vector<bitLenInt> cBits(controlLen + 2U);
-    std::copy(controlBits.begin(), controlBits.end(), cBits.begin());
+    std::vector<bitLenInt> cBits(controls.size() + 2U);
+    std::copy(controls.begin(), controls.end(), cBits.begin());
 
     // Assume outputBit is in 0 state.
-    cBits[controlLen] = inputBit1;
+    cBits[controls.size()] = inputBit1;
     MCInvert(
         std::vector<bitLenInt>(cBits.begin(), cBits.begin() + controls.size() + 1U), ONE_CMPLX, ONE_CMPLX, inputBit2);
-    cBits[controlLen] = inputBit2;
-    MCInvert(std::vector<bitLenInt>(cBits.begin(), cBits.begin() + controls.size() + 1U) ONE_CMPLX, ONE_CMPLX,
+    cBits[controls.size()] = inputBit2;
+    MCInvert(std::vector<bitLenInt>(cBits.begin(), cBits.begin() + controls.size() + 1U), ONE_CMPLX, ONE_CMPLX,
         carryInSumOut);
 
     cBits[controls.size() + 1U] = carryInSumOut;
     MCInvert(cBits, ONE_CMPLX, ONE_CMPLX, carryOut);
 
-    cBits[controlLen] = inputBit1;
+    cBits[controls.size()] = inputBit1;
     MCInvert(
         std::vector<bitLenInt>(cBits.begin(), cBits.begin() + controls.size() + 1U), ONE_CMPLX, ONE_CMPLX, inputBit2);
     cBits[controls.size() + 1U] = inputBit2;
