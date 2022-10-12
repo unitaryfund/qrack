@@ -221,11 +221,16 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
 }
 
 /// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, bool const* values, bool doApply)
+bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vector<bool>& values, bool doApply)
 {
+    if (values.size() && (bits.size() != values.size())) {
+        throw std::invalid_argument(
+            "QInterface::ForceM() boolean values vector length does not match bit vector length!");
+    }
+
     bitCapInt result = 0U;
 
-    if (values) {
+    if (values.size()) {
         for (bitLenInt bit = 0U; bit < bits.size(); ++bit) {
             result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0U;
         }

@@ -1991,10 +1991,10 @@ public:
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt M(const std::vector<bitLenInt>& bits) { return ForceM(bits, NULL); }
+    virtual bitCapInt M(const std::vector<bitLenInt>& bits) { return ForceM(bits, std::vector<bool>()); }
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt ForceM(const std::vector<bitLenInt>& bits, bool const* values, bool doApply = true);
+    virtual bitCapInt ForceM(const std::vector<bitLenInt>& bits, const std::vector<bool>& values, bool doApply = true);
 
     /** Swap values of two bits in register */
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);

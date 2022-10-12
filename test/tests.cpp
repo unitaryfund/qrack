@@ -3262,11 +3262,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
 
     const std::vector<bitLenInt> bits{ 0, 1, 2 };
     const std::vector<bitLenInt> bit{ 0 };
-    bool results[3] = { 0, 1, 0 };
+    const std::vector<bool> results{ 0, 1, 0 };
+    const std::vector<bool> result{ 0 };
 
-    qftReg->ForceM(bit, results);
+    qftReg->ForceM(bit, result);
     qftReg->ForceM(bits, results);
-    qftReg->ForceM(bit, NULL);
+    qftReg->ForceM(bit, std::vector<bool>());
     qftReg->ForceMReg(0, 1, results[0], false);
 
     REQUIRE(qftReg->ProbMask(0x7, 0x2) > 0.99);

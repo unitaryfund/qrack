@@ -564,7 +564,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     std::shared_ptr<complex> mtrxS(new complex[4U], std::default_delete<complex[]>());
     std::copy(matrix, matrix + 4U, mtrxS.get());
 
-    std::shared_ptr<bitCapIntOcl> qPowersSorted(bitCount);
+    std::vector<bitCapIntOcl> qPowersSorted(bitCount);
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted.begin());
 
     const bool doApplyNorm = doNormalize && (bitCount == 1U) && (runningNorm > ZERO_R1);
@@ -657,7 +657,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                 const bitCapIntOcl filterValues = filterMask & offset1 & offset2;
                 par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
             } else {
-                par_for_mask(0U, maxQPowerOcl, qPowersSorted, bitCount, fn);
+                par_for_mask(0U, maxQPowerOcl, qPowersSorted, fn);
             }
 
             if (doApplyNorm) {
