@@ -154,7 +154,7 @@ public:
     void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
 #if ENABLE_ALU
     void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
+    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
     void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 #if ENABLE_BCD
     void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
@@ -164,16 +164,16 @@ public:
     void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
-        bitLenInt controlLen);
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
-        bitLenInt controlLen);
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls);
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls);
     void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen);
+        const std::vector<bitLenInt>& controls);
     void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen);
+        const std::vector<bitLenInt>& controls);
     void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen);
+        const std::vector<bitLenInt>& controls);
     void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
     void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -197,10 +197,10 @@ public:
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QEngine::UniformlyControlledSingleBit;
-    void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+    void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
         const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
     void UniformParityRZ(bitCapInt mask, real1_f angle);
-    void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
+    void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
 
     /** @} */
 
@@ -264,13 +264,13 @@ protected:
     void MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
         const bitLenInt& carryStart, const bitLenInt& length);
     void CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
-        const bitLenInt& carryStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt controlLen);
+        const bitLenInt& carryStart, const bitLenInt& length, const std::vector<bitLenInt>& controls);
 
     typedef std::function<bitCapIntOcl(const bitCapIntOcl&)> MFn;
     void ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
         const bitLenInt& length, const bool& inverse = false);
     void CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
-        const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen, const bool& inverse = false);
+        const bitLenInt& length, const std::vector<bitLenInt>& controls, const bool& inverse = false);
 #endif
 };
 } // namespace Qrack
