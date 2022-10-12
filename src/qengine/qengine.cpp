@@ -106,8 +106,13 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 }
 
 /// Measure permutation state of a register
-bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const bool* values, bool doApply)
+bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<bool>& values, bool doApply)
 {
+    if (values.size() && (bits.size() != values.size())) {
+        throw std::invalid_argument(
+            "QInterface::ForceM() boolean values vector length does not match bit vector length!");
+    }
+
     for (bitLenInt i = 0U; i < bits.size(); ++i) {
         if (bits[i] >= qubitCount) {
             throw std::invalid_argument(
@@ -117,7 +122,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const bool* values
 
     // Single bit operations are better optimized for this special case:
     if (bits.size() == 1U) {
-        if (values == NULL) {
+        if (!values.size()) {
             if (M(bits[0U])) {
                 return pow2(bits[0U]);
             } else {
@@ -148,7 +153,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const bool* values
     real1 nrmlzr = ONE_R1;
     bitCapInt result;
     complex nrm;
-    if (values != NULL) {
+    if (values.size()) {
         bitCapInt result = 0U;
         for (bitLenInt j = 0U; j < bits.size(); ++j) {
             result |= values[j] ? pow2(bits[j]) : 0U;
