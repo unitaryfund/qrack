@@ -299,7 +299,7 @@ public:
         engine->CUniformParityRZ(controls, mask, angle);
     }
 
-    void CSwap(const std::vector<bitLenInt>& controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
         engine->CSwap(controls, qubit1, qubit2);
     }
