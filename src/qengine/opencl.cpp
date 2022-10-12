@@ -1015,7 +1015,7 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
 }
 
 void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-    const complex* mtrxs, const std::vecto<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+    const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
     CHECK_ZERO_SKIP();
 
@@ -1941,11 +1941,11 @@ bool QEngineOCL::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 real1_f QEngineOCL::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
 {
-    if (length == 1U) {
+    if (bits.size() == 1U) {
         return Prob(bits[0]);
     }
 
-    if (!stateBuffer || !length) {
+    if (!stateBuffer || !bits.size()) {
         return ZERO_R1_F;
     }
 
@@ -1953,17 +1953,16 @@ real1_f QEngineOCL::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCa
         NormalizeState();
     }
 
-    std::unique_ptr<bitCapIntOcl[]> bitPowers(new bitCapIntOcl[length]);
-    for (bitLenInt p = 0U; p < length; ++p) {
-        bitPowers[p] = pow2Ocl(bits[p]);
-    }
+    std::unique_ptr<bitCapIntOcl[]> bitPowers(new bitCapIntOcl[bits.size()]);
+    std::transform(bits.begin(), bits.end(), bitPowers.get(), pow2Ocl);
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * length);
-    DISPATCH_WRITE(waitVec, *bitMapBuffer, sizeof(bitCapIntOcl) * length, bitPowers.get());
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, length, (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bits.size());
+    DISPATCH_WRITE(waitVec, *bitMapBuffer, sizeof(bitCapIntOcl) * bits.size(), bitPowers.get());
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U,
+        0U };
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -2150,7 +2149,7 @@ void QEngineOCL::CINT(
     const bitCapIntOcl regMask = lengthMask << start;
 
     bitCapIntOcl controlMask = 0U;
-    std::vector<bitCapIntOcl> controlPowers(controls.size());
+    std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controls.size()]);
     for (bitLenInt i = 0U; i < controls.size(); ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
@@ -2161,7 +2160,7 @@ void QEngineOCL::CINT(
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), regMask, otherMask,
         lengthPower, start, toMod, controls.size(), controlMask, 0U, 0U };
 
-    CArithmeticCall(api_call, bciArgs, controlPowers);
+    CArithmeticCall(api_call, bciArgs, controlPowers.get(), controls.size());
 }
 
 /** Increment integer (without sign, with carry) */
