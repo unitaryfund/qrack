@@ -438,7 +438,7 @@ __global__ void uniformlycontrolled(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIn
         partNrm += qCudaDot(qubit, qubit);
 
         stateVec[i] = make_qCudaCmplx(qubit.x, qubit.y);
-        stateVec[i | targetPower] = make_qCudaCmplx(qubit.y, qubit.z);
+        stateVec[i | targetPower] = make_qCudaCmplx(qubit.z, qubit.w);
     }
 
     SUM_LOCAL(partNrm)
