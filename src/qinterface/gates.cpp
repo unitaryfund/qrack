@@ -358,7 +358,7 @@ void QInterface::AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targ
 void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
     complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
-    for (bitLenInt bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
+    for (size_t bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
         X(controls[bit_pos]);
     }
     const bitCapInt maxI = pow2(controls.size()) - ONE_BCI;
@@ -367,7 +367,7 @@ void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
         MCMtrx(controls, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
 
         const bitCapInt lcvDiff = lcv ^ (lcv + ONE_BCI);
-        for (bitLenInt bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
+        for (size_t bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
             if ((lcvDiff >> bit_pos) & ONE_BCI) {
                 X(controls[bit_pos]);
             }
@@ -391,7 +391,7 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     }
 
     std::vector<bitLenInt> controls(length - 1U);
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         controls[i] = start + i;
     }
     MACPhase(controls, -ONE_CMPLX, ONE_CMPLX, start + controls.size());
@@ -556,7 +556,7 @@ void QInterface::CSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bit
 void QInterface::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         m |= pow2(controls[i]);
     }
 
@@ -662,7 +662,7 @@ void QInterface::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1
 void QInterface::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         m |= pow2(controls[i]);
     }
 
@@ -674,7 +674,7 @@ void QInterface::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt
 void QInterface::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         m |= pow2(controls[i]);
     }
 

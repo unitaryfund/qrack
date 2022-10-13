@@ -279,7 +279,7 @@ inline void ThrowIfQbIdArrayIsBad(
     const std::vector<bitLenInt>& controls, const bitLenInt& qubitCount, std::string message)
 {
     std::set<bitLenInt> dupes;
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         if (controls[i] >= qubitCount) {
             throw std::invalid_argument(message);
         }

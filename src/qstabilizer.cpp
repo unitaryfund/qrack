@@ -60,7 +60,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
 
 bool QStabilizer::TrimControls(const std::vector<bitLenInt>& lControls, bool isAnti, std::vector<bitLenInt>& output)
 {
-    for (bitLenInt i = 0U; i < lControls.size(); ++i) {
+    for (size_t i = 0U; i < lControls.size(); ++i) {
         const bitLenInt bit = lControls[i];
         if (!IsSeparableZ(bit)) {
             output.push_back(bit);
@@ -1729,13 +1729,13 @@ void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt q
 
 bool QStabilizer::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored)
 {
-    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+    for (size_t i = 0U; i < qubits.size(); ++i) {
         Swap(qubits[i], i);
     }
 
     const bool toRet = CanDecomposeDispose(0U, 2U);
 
-    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+    for (size_t i = 0U; i < qubits.size(); ++i) {
         Swap(qubits[i], i);
     }
 

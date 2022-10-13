@@ -203,7 +203,7 @@ void QEngineCPU::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, c
 
     std::vector<bitCapIntOcl> controlPowers(controls.size());
     bitCapIntOcl controlMask = 0;
-    for (bitLenInt i = 0; i < controls.size(); ++i) {
+    for (size_t i = 0; i < controls.size(); ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
     }
@@ -556,7 +556,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     std::vector<bitCapIntOcl> skipPowers(controls.size() + length);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controls.size()]);
     bitCapIntOcl controlMask = 0;
-    for (bitLenInt i = 0; i < controls.size(); ++i) {
+    for (size_t i = 0; i < controls.size(); ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
@@ -586,7 +586,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
         bitCapIntOcl partControlMask;
         for (bitCapIntOcl j = ONE_BCI; j < pow2Mask(controls.size()); ++j) {
             partControlMask = 0;
-            for (bitLenInt k = 0; k < controls.size(); ++k) {
+            for (size_t k = 0; k < controls.size(); ++k) {
                 if ((j >> k) & ONE_BCI) {
                     partControlMask |= controlPowers[k];
                 }
@@ -739,7 +739,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     std::vector<bitCapIntOcl> skipPowers(controls.size() + length);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controls.size()]);
     bitCapIntOcl controlMask = 0;
-    for (bitLenInt i = 0; i < controls.size(); ++i) {
+    for (size_t i = 0; i < controls.size(); ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
@@ -771,7 +771,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 
         for (bitCapIntOcl j = ONE_BCI; j < pow2Mask(controls.size()); ++j) {
             bitCapIntOcl partControlMask = 0;
-            for (bitLenInt k = 0; k < controls.size(); ++k) {
+            for (size_t k = 0; k < controls.size(); ++k) {
                 if ((j >> k) & ONE_BCI) {
                     partControlMask |= controlPowers[k];
                 }

@@ -415,7 +415,7 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
     sortedMasks[controls.size()] = targetPow - ONE_BCI;
 
     bitCapIntOcl controlMask = 0U;
-    for (bitLenInt i = 0U; i < (bitLenInt)controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         sortedMasks[i] = pow2Ocl(controls[i] - qpp);
         if (!anti) {
             controlMask |= sortedMasks[i];
@@ -509,7 +509,7 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
     std::vector<bitLenInt> sortedMasks(controls.size());
 
     bitCapIntOcl controlMask = 0U;
-    for (bitLenInt i = 0U; i < (bitLenInt)controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         sortedMasks[i] = pow2Ocl(controls[i] - qpp);
         if (!anti) {
             controlMask |= sortedMasks[i];
@@ -541,7 +541,7 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
     }
 
     bitLenInt highestBit = 0U;
-    for (bitLenInt i = 0U; i < (bitLenInt)bits.size(); ++i) {
+    for (size_t i = 0U; i < bits.size(); ++i) {
         if (bits[i] > highestBit) {
             highestBit = bits[i];
         }
@@ -562,7 +562,7 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
 template <typename F>
 void QPager::CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, const std::vector<bitLenInt>& controls)
 {
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         bits.push_back(controls[i]);
     }
 
@@ -935,7 +935,7 @@ void QPager::ApplyEitherControlledSingleBit(
     std::vector<bitLenInt> metaControls;
     std::vector<bitLenInt> intraControls;
     bool isSqiCtrl = false;
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         if ((target >= qpp) && (controls[i] == (qpp - 1U))) {
             isSqiCtrl = true;
         } else if (controls[i] < qpp) {

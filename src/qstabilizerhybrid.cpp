@@ -240,7 +240,7 @@ bool QStabilizerHybrid::TrimControls(const std::vector<bitLenInt>& lControls, st
         return false;
     }
 
-    for (bitLenInt i = 0U; i < lControls.size(); ++i) {
+    for (size_t i = 0U; i < lControls.size(); ++i) {
         bitLenInt bit = lControls[i];
 
         if (!stabilizer->IsSeparableZ(bit)) {
@@ -1011,7 +1011,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     for (unsigned shot = 0U; shot < shots; ++shot) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
-        for (bitLenInt i = 0U; i < qPowers.size(); ++i) {
+        for (size_t i = 0U; i < qPowers.size(); ++i) {
             if (clone->M(bits[i])) {
                 sample |= pow2(i);
             }
@@ -1046,7 +1046,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
-        for (bitLenInt i = 0U; i < qPowers.size(); ++i) {
+        for (size_t i = 0U; i < qPowers.size(); ++i) {
             if (clone->M(bits[i])) {
                 sample |= pow2(i);
             }
@@ -1187,13 +1187,13 @@ bool QStabilizerHybrid::TrySeparate(const std::vector<bitLenInt>& qubits, real1_
     std::copy(qubits.begin(), qubits.end(), q.begin());
     std::sort(q.begin(), q.end());
 
-    for (bitLenInt i = 1U; i < q.size(); ++i) {
+    for (size_t i = 1U; i < q.size(); ++i) {
         Swap(q[0U] + i, q[i]);
     }
 
     const bool toRet = stabilizer->CanDecomposeDispose(q[0U], q.size());
 
-    for (bitLenInt i = 1U; i < q.size(); ++i) {
+    for (size_t i = 1U; i < q.size(); ++i) {
         Swap(q[0U] + i, q[i]);
     }
 

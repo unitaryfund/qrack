@@ -155,9 +155,9 @@ void QInterface::QFTR(const std::vector<bitLenInt>& qubits, bool trySeparate)
     }
 
     const bitLenInt end = (qubits.size() - 1U);
-    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+    for (size_t i = 0U; i < qubits.size(); ++i) {
         H(qubits[end - i]);
-        for (bitLenInt j = 0U; j < (bitLenInt)((qubits.size() - 1U) - i); ++j) {
+        for (size_t j = 0U; j < ((qubits.size() - 1U) - i); ++j) {
             CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
         }
 
@@ -174,8 +174,8 @@ void QInterface::IQFTR(const std::vector<bitLenInt>& qubits, bool trySeparate)
         return;
     }
 
-    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
-        for (bitLenInt j = 0U; j < i; ++j) {
+    for (size_t i = 0U; i < qubits.size(); ++i) {
+        for (size_t j = 0U; j < i; ++j) {
             CIPhaseRootN(j + 2U, qubits[i - (j + 1U)], qubits[i]);
         }
         H(qubits[i]);
@@ -231,14 +231,14 @@ bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vect
     bitCapInt result = 0U;
 
     if (values.size()) {
-        for (bitLenInt bit = 0U; bit < bits.size(); ++bit) {
+        for (size_t bit = 0U; bit < bits.size(); ++bit) {
             result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0U;
         }
         return result;
     }
 
     if (doApply) {
-        for (bitLenInt bit = 0U; bit < bits.size(); ++bit) {
+        for (size_t bit = 0U; bit < bits.size(); ++bit) {
             result |= M(bits[bit]) ? pow2(bits[bit]) : 0U;
         }
         return result;
@@ -374,7 +374,7 @@ void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArr
 
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapIntOcl retIndex = 0U;
-        for (bitLenInt p = 0U; p < bits.size(); ++p) {
+        for (size_t p = 0U; p < bits.size(); ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2Ocl(p);
             }
@@ -398,7 +398,7 @@ real1_f QInterface::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCa
     real1_f expectation = 0;
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapInt retIndex = 0U;
-        for (bitLenInt p = 0U; p < bits.size(); ++p) {
+        for (size_t p = 0U; p < bits.size(); ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2(p);
             }

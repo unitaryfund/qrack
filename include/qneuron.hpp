@@ -171,13 +171,13 @@ public:
         }
 
         bitCapInt perm = 0U;
-        for (bitLenInt i = 0U; i < inputIndices.size(); ++i) {
+        for (size_t i = 0U; i < inputIndices.size(); ++i) {
             perm |= qReg->M(inputIndices[i]) ? pow2(i) : 0U;
         }
 
         LearnInternal(expected, eta, perm, startProb);
 
-        for (bitLenInt i = 0U; i < inputIndices.size(); ++i) {
+        for (size_t i = 0U; i < inputIndices.size(); ++i) {
             qReg->TrySeparate(inputIndices[i]);
         }
     }
