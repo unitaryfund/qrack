@@ -777,7 +777,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
 }
 
 void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-    complex const* mtrxs, bitCapInt const* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
+    complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
     CHECK_ZERO_SKIP();
 
@@ -802,8 +802,8 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
         qPowers[i] = pow2Ocl(controls[i]);
     }
 
-    std::unique_ptr<bitCapIntOcl[]> mtrxSkipPowersOcl(new bitCapIntOcl[mtrxSkipLen]);
-    for (bitLenInt i = 0U; i < mtrxSkipLen; ++i) {
+    std::unique_ptr<bitCapIntOcl[]> mtrxSkipPowersOcl(new bitCapIntOcl[mtrxSkipPowers.size()]);
+    for (bitLenInt i = 0U; i < mtrxSkipPowers.size(); ++i) {
         mtrxSkipPowersOcl[i] = (bitCapIntOcl)mtrxSkipPowers[i];
     }
 
@@ -825,7 +825,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
         bitCapIntOcl i, iHigh;
         iHigh = offset;
         i = 0U;
-        for (bitCapIntOcl p = 0U; p < mtrxSkipLen; ++p) {
+        for (bitCapIntOcl p = 0U; p < mtrxSkipPowers.size(); ++p) {
             bitCapIntOcl iLow = iHigh & (mtrxSkipPowersOcl[p] - ONE_BCI);
             i |= iLow;
             iHigh = (iHigh ^ iLow) << ONE_BCI;
