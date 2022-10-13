@@ -1707,8 +1707,8 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
 
                     if (is3Qubit) {
                         if ((gateRand < (3 * ONE_R1)) && ((8 * qReg->Rand()) < ONE_R1)) {
-                            const bitLenInt controls[1U] = { b1 };
-                            qReg->CSwap(controls, 1U, b2, b3);
+                            const std::vector<bitLenInt> controls{ b1 };
+                            qReg->CSwap(controls, b2, b3);
                             continue;
                         }
 
@@ -1993,8 +1993,8 @@ TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
                         }
 
                         if ((gateRand < (3 * ONE_R1)) && ((8 * qReg->Rand()) < ONE_R1)) {
-                            const bitLenInt controls[1U] = { b1 };
-                            qReg->CSwap(controls, 1U, b2, b3);
+                            const std::vector<bitLenInt> controls{ b1 };
+                            qReg->CSwap(controls, b2, b3);
                             continue;
                         }
 
@@ -2211,8 +2211,8 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
 
                     if (is3Qubit) {
                         if ((8 * qReg->Rand()) < ONE_R1) {
-                            const bitLenInt controls[1U] = { b1 };
-                            qReg->CSwap(controls, 1U, b2, b3);
+                            const std::vector<bitLenInt> controls{ b1 };
+                            qReg->CSwap(controls, b2, b3);
                             continue;
                         }
 
@@ -2430,8 +2430,8 @@ TEST_CASE("test_noisy_dense_cc_nn", "[supreme]")
                         inject_1qb_u3_noise(qReg, b3, noiseParam);
 
                         if ((8 * qReg->Rand()) < ONE_R1) {
-                            const bitLenInt controls[1U] = { b1 };
-                            qReg->CSwap(controls, 1U, b2, b3);
+                            const std::vector<bitLenInt> controls{ b1 };
+                            qReg->CSwap(controls, b2, b3);
                             continue;
                         }
 
@@ -2537,7 +2537,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
         bitLenInt b1, b2;
         int row, col;
         int tempRow, tempCol;
-        bitLenInt controls[1];
+        std::vector<bitLenInt> controls;
 
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
@@ -2702,7 +2702,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             controls[0] = b1;
                             top = std::polar(ONE_R1, (real1)(2 * PI_R1 * qReg->Rand()));
                             bottom = std::conj(top);
-                            qReg->MCPhase(controls, 1U, top, bottom, b2);
+                            qReg->MCPhase(controls, top, bottom, b2);
                         } else {
                             // "Phase" transforms:
                             gateRand = DimCountMultiQb * qReg->Rand();
@@ -2733,7 +2733,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             controls[0] = b1;
                             top = std::polar(ONE_R1, (real1)(2 * PI_R1 * qReg->Rand()));
                             bottom = std::conj(top);
-                            qReg->MACPhase(controls, 1U, top, bottom, b2);
+                            qReg->MACPhase(controls, top, bottom, b2);
                         }
                     }
                 }
@@ -2933,7 +2933,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
             bitLenInt i;
             real1_f gateRand;
             bitLenInt b1, b2, b3;
-            bitLenInt control[1];
+            std::vector<bitLenInt> control;
             complex polar0;
             bool canDo3;
             int gateThreshold, gateMax;
@@ -2983,9 +2983,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                         control[0] = b1;
                         polar0 = complex(std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand())));
                         if (gateRand < (gateThreshold * ONE_R1 / gateMax)) {
-                            qReg->MCPhase(control, 1U, polar0, -polar0, b2);
+                            qReg->MCPhase(control, polar0, -polar0, b2);
                         } else {
-                            qReg->MCInvert(control, 1U, polar0, polar0, b2);
+                            qReg->MCInvert(control, polar0, polar0, b2);
                         }
                     }
                 }
@@ -3110,7 +3110,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         int row, col;
         int tempRow, tempCol;
 
-        bitLenInt controls[1];
+        std::vector<bitLenInt> controls;
 
         std::vector<int> lastSingleBitGates;
         std::set<int>::iterator gateChoiceIterator;
@@ -3222,7 +3222,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->ISwap(b1, b2);
                     // "1/6 of CZ" is read to indicate the 6th root.
                     controls[0] = b1;
-                    qReg->MCPhase(controls, 1U, ONE_CMPLX, sixthRoot, b2);
+                    qReg->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
                     // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
@@ -3284,7 +3284,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
         int row, col;
         int tempRow, tempCol;
 
-        bitLenInt controls[1];
+        std::vector<bitLenInt> controls;
 
         std::vector<int> lastSingleBitGates;
         std::set<int>::iterator gateChoiceIterator;
@@ -3399,7 +3399,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     // complex sixthRoot = pow(-ONE_CMPLX, complex(root));
 
                     controls[0] = b1;
-                    qReg->MCPhase(controls, 1U, ONE_CMPLX, sixthRoot, b2);
+                    qReg->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
                     // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
@@ -3678,12 +3678,12 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         }
     }
 
-    bitCapInt qPowers[n];
+    std::vector<bitCapInt> qPowers(n);
     for (i = 0; i < n; i++) {
         qPowers[i] = pow2(i);
     }
 
-    std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+    std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, ITERATIONS);
 
     std::map<bitCapInt, int>::iterator measurementBin;
 
@@ -3705,7 +3705,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     crossEntropy = ONE_R1_F - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. uniform random cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
-    std::map<bitCapInt, int> goldStandardResult2 = goldStandard->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+    std::map<bitCapInt, int> goldStandardResult2 = goldStandard->MultiShotMeasureMask(qPowers, ITERATIONS);
 
     int testBinResult;
     crossEntropy = ZERO_R1_F;
@@ -3846,7 +3846,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
             }
         }
     }
-    testCaseResult2 = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+    testCaseResult2 = testCase->MultiShotMeasureMask(qPowers, ITERATIONS);
 
     crossEntropy = ZERO_R1_F;
     for (perm = 0; perm < permCount; perm++) {

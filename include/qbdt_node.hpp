@@ -30,7 +30,7 @@ protected:
         QBdtNodeInterfacePtr& b1, bitLenInt depth);
 #else
     virtual void PushStateVector(
-        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth);
+        complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth);
 #endif
 
 public:
@@ -72,7 +72,7 @@ public:
 #if ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth);
 #else
-    virtual void Apply2x2(const complex* mtrx, bitLenInt depth);
+    virtual void Apply2x2(complex const* mtrx, bitLenInt depth);
 #endif
 };
 

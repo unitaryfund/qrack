@@ -107,7 +107,7 @@ public:
     virtual void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
-    virtual bitCapInt ForceM(bitLenInt const* bits, bitLenInt length, bool const* values, bool doApply = true);
+    virtual bitCapInt ForceM(const std::vector<bitLenInt>& bits, const std::vector<bool>& values, bool doApply = true);
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
@@ -119,14 +119,14 @@ public:
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 
     virtual void Mtrx(complex const* mtrx, bitLenInt qubit);
-    virtual void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target);
-    virtual void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target);
-    virtual void CSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void AntiCSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void AntiCSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
-    virtual void AntiCISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    virtual void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
 
 #if ENABLE_ALU
     using QInterface::M;
@@ -151,15 +151,13 @@ public:
     {
         QInterface::DECS(toSub, start, length, overflowIndex);
     }
-    virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
+    virtual void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
-        QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
+        QInterface::CINC(toAdd, inOutStart, length, controls);
     }
-    virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen)
+    virtual void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
-        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
+        QInterface::CDEC(toSub, inOutStart, length, controls);
     }
     virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
@@ -174,14 +172,14 @@ public:
         QInterface::IMULModNOut(toMul, modN, inStart, outStart, length);
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
-        QInterface::CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        QInterface::CMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
-        QInterface::CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        QInterface::CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
 #endif
 
@@ -210,10 +208,8 @@ public:
 
     virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
         bitCapIntOcl const* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
-    virtual void ApplyControlled2x2(
-        bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, complex const* mtrx);
-    virtual void ApplyAntiControlled2x2(
-        bitLenInt const* controls, bitLenInt controlLen, bitLenInt target, complex const* mtrx);
+    virtual void ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
+    virtual void ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
 
     using QInterface::Decompose;
     virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);

@@ -31,14 +31,14 @@ int main()
     // QEngineCPU.
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, InputCount + OutputCount, 0);
 
-    bitLenInt inputIndices[InputCount];
+    std::vector<bitLenInt> inputIndices(InputCount);
     for (bitLenInt i = 0; i < InputCount; i++) {
         inputIndices[i] = i;
     }
 
     std::vector<QNeuronPtr> outputLayer;
     for (bitLenInt i = 0; i < OutputCount; i++) {
-        outputLayer.push_back(std::make_shared<QNeuron>(qReg, inputIndices, InputCount, InputCount + i));
+        outputLayer.push_back(std::make_shared<QNeuron>(qReg, inputIndices, InputCount + i));
     }
 
     // Train the network to associate powers of 2 with their log2()

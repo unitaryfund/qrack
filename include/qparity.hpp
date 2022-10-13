@@ -30,7 +30,10 @@ public:
      * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set
      * parity is even, this applies the conjugate, e^{-i angle}.
      */
-    virtual void UniformParityRZ(bitCapInt mask, real1_f angle) { CUniformParityRZ(NULL, 0U, mask, angle); }
+    virtual void UniformParityRZ(bitCapInt mask, real1_f angle)
+    {
+        CUniformParityRZ(std::vector<bitLenInt>(), mask, angle);
+    }
 
     /** Overall probability of any odd permutation of the masked set of bits */
     virtual real1_f ProbParity(bitCapInt mask) = 0;
@@ -48,6 +51,6 @@ public:
      * If the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
      * Otherwise, do nothing if any control is not set.
      */
-    virtual void CUniformParityRZ(bitLenInt const* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle) = 0;
+    virtual void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle) = 0;
 };
 } // namespace Qrack

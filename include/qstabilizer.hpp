@@ -99,7 +99,7 @@ protected:
         });
     }
 
-    bool TrimControls(bitLenInt const* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output);
+    bool TrimControls(const std::vector<bitLenInt>& lControls, bool isAnti, std::vector<bitLenInt>& output);
 
 public:
     QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr, complex ignored = CMPLX_DEFAULT_ARG,
@@ -426,37 +426,33 @@ public:
     void Mtrx(complex const* mtrx, bitLenInt target);
     void Phase(complex topLeft, complex bottomRight, bitLenInt target);
     void Invert(complex topRight, complex bottomLeft, bitLenInt target);
-    void MCPhase(
-        bitLenInt const* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    void MACPhase(
-        bitLenInt const* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    void MCInvert(
-        bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
-    void MACInvert(
-        bitLenInt const* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
-    void MCMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
+    void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
+    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
+    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
+    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
+    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-            MCPhase(controls, controlLen, mtrx[0U], mtrx[3U], target);
+            MCPhase(controls, mtrx[0U], mtrx[3U], target);
             return;
         }
 
         if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-            MCInvert(controls, controlLen, mtrx[1U], mtrx[2U], target);
+            MCInvert(controls, mtrx[1U], mtrx[2U], target);
             return;
         }
 
         throw std::domain_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
     }
-    void MACMtrx(bitLenInt const* controls, bitLenInt controlLen, complex const* mtrx, bitLenInt target)
+    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-            MACPhase(controls, controlLen, mtrx[0U], mtrx[3U], target);
+            MACPhase(controls, mtrx[0U], mtrx[3U], target);
             return;
         }
 
         if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-            MACInvert(controls, controlLen, mtrx[1U], mtrx[2U], target);
+            MACInvert(controls, mtrx[1U], mtrx[2U], target);
             return;
         }
 
@@ -464,7 +460,7 @@ public:
     }
     void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 
-    bool TrySeparate(bitLenInt const* qubits, bitLenInt length, real1_f ignored);
+    bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored);
     bool TrySeparate(bitLenInt qubit) { return CanDecomposeDispose(qubit, 1U); }
     bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     {

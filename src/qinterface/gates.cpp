@@ -156,103 +156,103 @@ void QInterface::CIT(bitLenInt control, bitLenInt target) { CIPhaseRootN(3U, con
 /// Controlled not
 void QInterface::CNOT(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1]{ control };
-    MCInvert(controls, 1, ONE_CMPLX, ONE_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control };
+    MCInvert(controls, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// Apply controlled Pauli Y matrix to bit
 void QInterface::CY(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1]{ control };
-    MCInvert(controls, 1, -I_CMPLX, I_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control };
+    MCInvert(controls, -I_CMPLX, I_CMPLX, target);
 }
 
 /// Apply doubly-controlled Pauli Z matrix to bit
 void QInterface::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2]{ control1, control2 };
-    MCInvert(controls, 2, -I_CMPLX, I_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control1, control2 };
+    MCInvert(controls, -I_CMPLX, I_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled Y" - Apply Pauli Y if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2]{ control1, control2 };
-    MACInvert(controls, 2, -I_CMPLX, I_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control1, control2 };
+    MACInvert(controls, -I_CMPLX, I_CMPLX, target);
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCY(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1]{ control };
-    MACInvert(controls, 1, -I_CMPLX, I_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control };
+    MACInvert(controls, -I_CMPLX, I_CMPLX, target);
 }
 
 /// Apply controlled Pauli Z matrix to bit
 void QInterface::CZ(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1]{ control };
-    MCPhase(controls, 1, ONE_CMPLX, -ONE_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control };
+    MCPhase(controls, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// Apply doubly-controlled Pauli Z matrix to bit
 void QInterface::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2]{ control1, control2 };
-    MCPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control1, control2 };
+    MCPhase(controls, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled Z" - Apply Pauli Z if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2]{ control1, control2 };
-    MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control1, control2 };
+    MACPhase(controls, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// "Anti-controlled Z" - Apply Pauli Z if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCZ(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1]{ control };
-    MACPhase(controls, 1, ONE_CMPLX, -ONE_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control };
+    MACPhase(controls, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// Apply controlled Hadamard matrix to bit
 void QInterface::CH(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1]{ control };
+    const std::vector<bitLenInt> controls{ control };
     const complex h[4]{ complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
         complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
-    MCMtrx(controls, 1, h, target);
+    MCMtrx(controls, h, target);
 }
 
 /// Apply (anti-)controlled Hadamard matrix to bit
 void QInterface::AntiCH(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1]{ control };
+    const std::vector<bitLenInt> controls{ control };
     const complex h[4]{ complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
         complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
-    MACMtrx(controls, 1, h, target);
+    MACMtrx(controls, h, target);
 }
 
 /// Doubly-controlled not
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2]{ control1, control2 };
-    MCInvert(controls, 2, ONE_CMPLX, ONE_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control1, control2 };
+    MCInvert(controls, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    const bitLenInt controls[2]{ control1, control2 };
-    MACInvert(controls, 2, ONE_CMPLX, ONE_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control1, control2 };
+    MACInvert(controls, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    const bitLenInt controls[1]{ control };
-    MACInvert(controls, 1, ONE_CMPLX, ONE_CMPLX, target);
+    const std::vector<bitLenInt> controls{ control };
+    MACInvert(controls, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// Apply controlled "PhaseRootN" gate to bit
@@ -266,18 +266,18 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
 
-    const bitLenInt controls[1]{ control };
+    const std::vector<bitLenInt> controls{ control };
 
     if (n == 2) {
-        MCPhase(controls, 1, ONE_CMPLX, I_CMPLX, target);
+        MCPhase(controls, ONE_CMPLX, I_CMPLX, target);
         return;
     }
     if (n == 3) {
-        MCPhase(controls, 1, ONE_CMPLX, C_SQRT_I, target);
+        MCPhase(controls, ONE_CMPLX, C_SQRT_I, target);
         return;
     }
 
-    MCPhase(controls, 1, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
+    MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
 }
 
 /// Apply controlled "IPhaseRootN" gate to bit
@@ -291,19 +291,18 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
 
-    const bitLenInt controls[1]{ control };
+    const std::vector<bitLenInt> controls{ control };
 
     if (n == 2) {
-        MCPhase(controls, 1, ONE_CMPLX, -I_CMPLX, target);
+        MCPhase(controls, ONE_CMPLX, -I_CMPLX, target);
         return;
     }
     if (n == 3) {
-        MCPhase(controls, 1, ONE_CMPLX, C_SQRT_N_I, target);
+        MCPhase(controls, ONE_CMPLX, C_SQRT_N_I, target);
         return;
     }
 
-    MCPhase(
-        controls, 1, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
+    MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
 }
 
 /// Apply (anti-)controlled "PhaseRootN" gate to bit
@@ -317,19 +316,18 @@ void QInterface::AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targe
         return;
     }
 
-    const bitLenInt controls[1]{ control };
+    const std::vector<bitLenInt> controls{ control };
 
     if (n == 2) {
-        MACPhase(controls, 1, ONE_CMPLX, I_CMPLX, target);
+        MACPhase(controls, ONE_CMPLX, I_CMPLX, target);
         return;
     }
     if (n == 3) {
-        MACPhase(controls, 1, ONE_CMPLX, C_SQRT_I, target);
+        MACPhase(controls, ONE_CMPLX, C_SQRT_I, target);
         return;
     }
 
-    MACPhase(
-        controls, 1, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
+    MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
 }
 
 /// Apply (anti-)controlled "IPhaseRootN" gate to bit
@@ -343,41 +341,40 @@ void QInterface::AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targ
         return;
     }
 
-    const bitLenInt controls[1]{ control };
+    const std::vector<bitLenInt> controls{ control };
 
     if (n == 2) {
-        MACPhase(controls, 1, ONE_CMPLX, -I_CMPLX, target);
+        MACPhase(controls, ONE_CMPLX, -I_CMPLX, target);
         return;
     }
     if (n == 3) {
-        MACPhase(controls, 1, ONE_CMPLX, C_SQRT_N_I, target);
+        MACPhase(controls, ONE_CMPLX, C_SQRT_N_I, target);
         return;
     }
 
-    MACPhase(
-        controls, 1, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
+    MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
 }
 
-void QInterface::UniformlyControlledSingleBit(bitLenInt const* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-    complex const* mtrxs, bitCapInt const* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
+void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
+    complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
-    for (bitLenInt bit_pos = 0U; bit_pos < controlLen; ++bit_pos) {
+    for (bitLenInt bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
         X(controls[bit_pos]);
     }
-    const bitCapInt maxI = pow2(controlLen) - ONE_BCI;
+    const bitCapInt maxI = pow2(controls.size()) - ONE_BCI;
     for (bitCapInt lcv = 0U; lcv < maxI; ++lcv) {
-        const bitCapInt index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
-        MCMtrx(controls, controlLen, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
+        const bitCapInt index = pushApartBits(lcv, mtrxSkipPowers) | mtrxSkipValueMask;
+        MCMtrx(controls, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
 
         const bitCapInt lcvDiff = lcv ^ (lcv + ONE_BCI);
-        for (bitLenInt bit_pos = 0U; bit_pos < controlLen; ++bit_pos) {
+        for (bitLenInt bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
             if ((lcvDiff >> bit_pos) & ONE_BCI) {
                 X(controls[bit_pos]);
             }
         }
     }
-    const bitCapInt index = pushApartBits(maxI, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
-    MCMtrx(controls, controlLen, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
+    const bitCapInt index = pushApartBits(maxI, mtrxSkipPowers) | mtrxSkipValueMask;
+    MCMtrx(controls, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
 }
 
 void QInterface::PhaseFlip() { Phase(-ONE_CMPLX, -ONE_CMPLX, 0); }
@@ -393,12 +390,11 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         return;
     }
 
-    const bitLenInt min1 = length - 1U;
-    std::unique_ptr<bitLenInt[]> controls(new bitLenInt[min1]);
-    for (bitLenInt i = 0U; i < min1; ++i) {
+    std::vector<bitLenInt> controls(length - 1U);
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         controls[i] = start + i;
     }
-    MACPhase(controls.get(), min1, -ONE_CMPLX, ONE_CMPLX, start + min1);
+    MACPhase(controls, -ONE_CMPLX, ONE_CMPLX, start + controls.size());
 }
 
 void QInterface::XMask(bitCapInt mask)
@@ -533,9 +529,9 @@ void QInterface::ISqrtSwap(bitLenInt q1, bitLenInt q2)
     CNOT(q1, q2);
 }
 
-void QInterface::CSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::CSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
-    if (!controlLen) {
+    if (!controls.size()) {
         Swap(q1, q2);
         return;
     }
@@ -544,34 +540,34 @@ void QInterface::CSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenIn
         return;
     }
 
-    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
-    std::copy(controls, controls + controlLen, lControls.get());
+    std::vector<bitLenInt> lControls(controls.size() + 1U);
+    std::copy(controls.begin(), controls.end(), lControls.begin());
 
-    lControls[controlLen] = q1;
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    lControls[controls.size()] = q1;
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
-    lControls[controlLen] = q2;
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q1);
+    lControls[controls.size()] = q2;
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q1);
 
-    lControls[controlLen] = q1;
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    lControls[controls.size()] = q1;
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 }
 
-void QInterface::AntiCSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         m |= pow2(controls[i]);
     }
 
     XMask(m);
-    CSwap(controls, controlLen, q1, q2);
+    CSwap(controls, q1, q2);
     XMask(m);
 }
 
-void QInterface::CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
-    if (!controlLen) {
+    if (!controls.size()) {
         SqrtSwap(q1, q2);
         return;
     }
@@ -581,110 +577,109 @@ void QInterface::CSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitL
     }
 
     // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
-    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
-    std::copy(controls, controls + controlLen, lControls.get());
-    lControls[controlLen] = q1;
+    std::vector<bitLenInt> lControls(controls.size() + 1U);
+    std::copy(controls.begin(), controls.end(), lControls.begin());
+    lControls[controls.size()] = q1;
 
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
     const complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
-    MCMtrx(lControls.get(), controlLen, had, q1);
+    MCMtrx(controls, had, q1);
 
     const complex it[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
-    MCMtrx(lControls.get(), controlLen, it, q2);
+    MCMtrx(controls, it, q2);
 
     const complex t[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
-    MCMtrx(lControls.get(), controlLen, t, q1);
+    MCMtrx(controls, t, q1);
 
-    MCMtrx(lControls.get(), controlLen, had, q2);
+    MCMtrx(controls, had, q2);
 
-    MCMtrx(lControls.get(), controlLen, had, q1);
+    MCMtrx(controls, had, q1);
 
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
-    MCMtrx(lControls.get(), controlLen, had, q1);
+    MCMtrx(controls, had, q1);
 
-    MCMtrx(lControls.get(), controlLen, had, q2);
+    MCMtrx(controls, had, q2);
 
-    MCMtrx(lControls.get(), controlLen, it, q1);
+    MCMtrx(controls, it, q1);
 
-    MCMtrx(lControls.get(), controlLen, had, q1);
+    MCMtrx(controls, had, q1);
 
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
     const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
-    MCMtrx(lControls.get(), controlLen, is, q1);
+    MCMtrx(controls, is, q1);
 
     const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    MCMtrx(lControls.get(), controlLen, s, q2);
+    MCMtrx(controls, s, q2);
 }
 
-void QInterface::CISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     if (q1 == q2) {
         return;
     }
 
     // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
-    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
-    std::copy(controls, controls + controlLen, lControls.get());
-    lControls[controlLen] = q1;
+    std::vector<bitLenInt> lControls(controls.size() + 1U);
+    std::copy(controls.begin(), controls.end(), lControls.begin());
+    lControls[controls.size()] = q1;
 
     const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
-    MCMtrx(lControls.get(), controlLen, is, q2);
+    MCMtrx(controls, is, q2);
 
     const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    MCMtrx(lControls.get(), controlLen, s, q1);
-
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    MCMtrx(controls, s, q1);
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
     const complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
-    MCMtrx(lControls.get(), controlLen, had, q1);
+    MCMtrx(controls, had, q1);
 
     const complex t[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
-    MCMtrx(lControls.get(), controlLen, t, q1);
+    MCMtrx(controls, t, q1);
 
-    MCMtrx(lControls.get(), controlLen, had, q2);
+    MCMtrx(controls, had, q2);
 
-    MCMtrx(lControls.get(), controlLen, had, q1);
+    MCMtrx(controls, had, q1);
 
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
-    MCMtrx(lControls.get(), controlLen, had, q1);
+    MCMtrx(controls, had, q1);
 
-    MCMtrx(lControls.get(), controlLen, had, q2);
+    MCMtrx(controls, had, q2);
 
     const complex it[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
-    MCMtrx(lControls.get(), controlLen, it, q1);
+    MCMtrx(controls, it, q1);
 
-    MCMtrx(lControls.get(), controlLen, t, q2);
+    MCMtrx(controls, t, q2);
 
-    MCMtrx(lControls.get(), controlLen, had, q1);
+    MCMtrx(controls, had, q1);
 
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 }
 
-void QInterface::AntiCSqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         m |= pow2(controls[i]);
     }
 
     XMask(m);
-    CSqrtSwap(controls, controlLen, q1, q2);
+    CSqrtSwap(controls, q1, q2);
     XMask(m);
 }
 
-void QInterface::AntiCISqrtSwap(bitLenInt const* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+void QInterface::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         m |= pow2(controls[i]);
     }
 
     XMask(m);
-    CISqrtSwap(controls, controlLen, q1, q2);
+    CISqrtSwap(controls, q1, q2);
     XMask(m);
 }
 
@@ -752,7 +747,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
             for (bitCapIntOcl j = 0U; j < pow2(op->controls.size()); ++j) {
                 exp2x2(mtrx.get() + (j * 4U), expMtrx.get() + (j * 4U));
             }
-            UniformlyControlledSingleBit(&(op->controls[0]), op->controls.size(), op->targetBit, expMtrx.get());
+            UniformlyControlledSingleBit(op->controls, op->targetBit, expMtrx.get());
         } else {
             complex timesI[4U]{ I_CMPLX * mtrx[0U], I_CMPLX * mtrx[1U], I_CMPLX * mtrx[2U], I_CMPLX * mtrx[3U] };
             complex toApply[4U];
@@ -760,9 +755,9 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
             if (op->controls.size() == 0U) {
                 Mtrx(toApply, op->targetBit);
             } else if (op->anti) {
-                MACMtrx(&(op->controls[0]), op->controls.size(), toApply, op->targetBit);
+                MACMtrx(op->controls, toApply, op->targetBit);
             } else {
-                MCMtrx(&(op->controls[0]), op->controls.size(), toApply, op->targetBit);
+                MCMtrx(op->controls, toApply, op->targetBit);
             }
         }
 

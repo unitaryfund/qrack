@@ -58,10 +58,9 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     SetPermutation(perm);
 }
 
-bool QStabilizer::TrimControls(
-    const bitLenInt* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output)
+bool QStabilizer::TrimControls(const std::vector<bitLenInt>& lControls, bool isAnti, std::vector<bitLenInt>& output)
 {
-    for (bitLenInt i = 0U; i < lControlLen; ++i) {
+    for (bitLenInt i = 0U; i < lControls.size(); ++i) {
         const bitLenInt bit = lControls[i];
         if (!IsSeparableZ(bit)) {
             output.push_back(bit);
@@ -1185,7 +1184,7 @@ real1_f QStabilizer::Prob(bitLenInt qubit)
     return ONE_R1_F / 2;
 }
 
-void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
+void QStabilizer::Mtrx(complex const* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         Phase(mtrx[0U], mtrx[3U], target);
@@ -1414,14 +1413,14 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 }
 
 void QStabilizer::MCPhase(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
         return;
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, false, controls)) {
+    if (TrimControls(lControls, false, controls)) {
         return;
     }
 
@@ -1496,14 +1495,14 @@ void QStabilizer::MCPhase(
 }
 
 void QStabilizer::MACPhase(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
         return;
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, true, controls)) {
+    if (TrimControls(lControls, true, controls)) {
         return;
     }
 
@@ -1578,10 +1577,10 @@ void QStabilizer::MACPhase(
 }
 
 void QStabilizer::MCInvert(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, false, controls)) {
+    if (TrimControls(lControls, false, controls)) {
         return;
     }
 
@@ -1644,10 +1643,10 @@ void QStabilizer::MCInvert(
 }
 
 void QStabilizer::MACInvert(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, true, controls)) {
+    if (TrimControls(lControls, true, controls)) {
         return;
     }
 
@@ -1711,32 +1710,32 @@ void QStabilizer::MACInvert(
 
 void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    const bitLenInt controls[1U]{ qubit1 };
+    const std::vector<bitLenInt> controls{ qubit1 };
     real1 sinTheta = (real1)sin(theta);
 
     if (IS_0_R1(sinTheta)) {
-        MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
 
     if (IS_1_R1(-sinTheta)) {
         ISwap(qubit1, qubit2);
-        MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
 
     throw std::domain_error("QStabilizer::FSim() not implemented for non-Clifford/Pauli cases!");
 }
 
-bool QStabilizer::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f ignored)
+bool QStabilizer::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored)
 {
-    for (bitLenInt i = 0U; i < length; ++i) {
+    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
         Swap(qubits[i], i);
     }
 
     const bool toRet = CanDecomposeDispose(0U, 2U);
 
-    for (bitLenInt i = 0U; i < length; ++i) {
+    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
         Swap(qubits[i], i);
     }
 

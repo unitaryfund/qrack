@@ -276,10 +276,10 @@ inline bool isBadPermRange(const bitCapIntOcl& start, const bitCapIntOcl& length
     return ((start + length) > maxQPowerOcl) || ((bitCapIntOcl)(start + length) < start);
 }
 inline void ThrowIfQbIdArrayIsBad(
-    bitLenInt const* controls, const bitLenInt controlLen, const bitLenInt& qubitCount, std::string message)
+    const std::vector<bitLenInt>& controls, const bitLenInt& qubitCount, std::string message)
 {
     std::set<bitLenInt> dupes;
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         if (controls[i] >= qubitCount) {
             throw std::invalid_argument(message);
         }
@@ -301,7 +301,7 @@ void log2x2(complex const* matrix2x2, complex* outMatrix2x2);
 void inv2x2(complex const* matrix2x2, complex* outMatrix2x2);
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
-bitCapInt pushApartBits(const bitCapInt& perm, bitCapInt const* skipPowers, const bitLenInt skipPowersCount);
+bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
 #if QBCAPPOW == 7U

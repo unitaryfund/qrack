@@ -156,7 +156,7 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
     DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * offset, sizeof(complex) * length, pagePtr);
 }
 
-void QEngineOCL::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+void QEngineOCL::SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
     if (isBadPermRange(offset, length, maxQPowerOcl)) {
         throw std::invalid_argument("QEngineOCL::SetAmplitudePage range is out-of-bounds!");
@@ -743,7 +743,7 @@ void QEngineOCL::Phase(complex topLeft, complex bottomRight, bitLenInt qubitInde
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PHASE);
 }
 
-void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
     const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
 {
     CHECK_ZERO_SKIP();
@@ -1014,13 +1014,13 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
     }
 }
 
-void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
+void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
+    complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
     CHECK_ZERO_SKIP();
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
-    if (!controlLen) {
+    if (!controls.size()) {
         Mtrx(mtrxs + (bitCapIntOcl)(mtrxSkipValueMask * 4U), qubitIndex);
         return;
     }
@@ -1029,8 +1029,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
         throw std::invalid_argument("QEngineOCL::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
     }
 
-    ThrowIfQbIdArrayIsBad(
-        controls, controlLen, qubitCount, "QEngineOCL::UniformlyControlledSingleBit control is out-of-bounds!");
+    ThrowIfQbIdArrayIsBad(controls, qubitCount, "QEngineOCL::UniformlyControlledSingleBit control is out-of-bounds!");
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec = ResetWaitEvents();
@@ -1040,7 +1039,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
 
     // Load the integer kernel arguments buffer.
     const bitCapIntOcl maxI = maxQPowerOcl >> ONE_BCI;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxI, pow2Ocl(qubitIndex), controlLen, mtrxSkipLen,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxI, pow2Ocl(qubitIndex), controls.size(), mtrxSkipPowers.size(),
         (bitCapIntOcl)mtrxSkipValueMask, 0U, 0U, 0U, 0U, 0U };
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 5, bciArgs);
 
@@ -1048,18 +1047,19 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     const real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
     DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm);
 
-    const size_t sizeDiff = sizeof(complex) * 4U * pow2Ocl(controlLen + mtrxSkipLen);
+    const size_t sizeDiff = sizeof(complex) * 4U * pow2Ocl(controls.size() + mtrxSkipPowers.size());
     AddAlloc(sizeDiff);
     BufferPtr uniformBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeDiff);
 
-    DISPATCH_WRITE(waitVec, *uniformBuffer, sizeof(complex) * 4U * pow2Ocl(controlLen + mtrxSkipLen), mtrxs);
+    DISPATCH_WRITE(
+        waitVec, *uniformBuffer, sizeof(complex) * 4U * pow2Ocl(controls.size() + mtrxSkipPowers.size()), mtrxs);
 
-    std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controlLen + mtrxSkipLen]);
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controls.size() + mtrxSkipPowers.size()]);
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         qPowers[i] = pow2Ocl(controls[i]);
     }
-    for (bitLenInt i = 0U; i < mtrxSkipLen; ++i) {
-        qPowers[controlLen + i] = (bitCapIntOcl)mtrxSkipPowers[i];
+    for (bitLenInt i = 0U; i < mtrxSkipPowers.size(); ++i) {
+        qPowers[controls.size() + i] = (bitCapIntOcl)mtrxSkipPowers[i];
     }
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
@@ -1068,7 +1068,8 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
-    DISPATCH_WRITE(waitVec, *powersBuffer, sizeof(bitCapIntOcl) * (controlLen + mtrxSkipLen), qPowers.get());
+    DISPATCH_WRITE(
+        waitVec, *powersBuffer, sizeof(bitCapIntOcl) * (controls.size() + mtrxSkipPowers.size()), qPowers.get());
 
     // We call the kernel, with global buffers and one local buffer.
     WaitCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
@@ -1119,9 +1120,9 @@ void QEngineOCL::UniformParityRZ(bitCapInt mask, real1_f angle)
     QueueSetRunningNorm(ONE_R1_F);
 }
 
-void QEngineOCL::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+void QEngineOCL::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
 {
-    if (!controlLen) {
+    if (!controls.size()) {
         UniformParityRZ(mask, angle);
         return;
     }
@@ -1130,23 +1131,23 @@ void QEngineOCL::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLe
         throw std::invalid_argument("QEngineOCL::CUniformParityRZ mask out-of-bounds!");
     }
 
-    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount, "QEngineOCL::CUniformParityRZ control is out-of-bounds!");
+    ThrowIfQbIdArrayIsBad(controls, qubitCount, "QEngineOCL::CUniformParityRZ control is out-of-bounds!");
 
     CHECK_ZERO_SKIP();
 
     bitCapIntOcl controlMask = 0U;
-    std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controls.size()]);
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
     }
-    std::sort(controlPowers.get(), controlPowers.get() + controlLen);
-    BufferPtr controlBuffer =
-        MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controlLen, controlPowers.get());
+    std::sort(controlPowers.get(), controlPowers.get() + controls.size());
+    BufferPtr controlBuffer = MakeBuffer(
+        CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controls.size(), controlPowers.get());
     controlPowers.reset();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controlLen), (bitCapIntOcl)mask,
-        controlMask, controlLen, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), (bitCapIntOcl)mask,
+        controlMask, controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
     const complex phaseFacs[2]{ complex(cosine, sine), complex(cosine, -sine) };
@@ -1938,13 +1939,13 @@ bool QEngineOCL::ForceMParity(bitCapInt mask, bool result, bool doForce)
     return result;
 }
 
-real1_f QEngineOCL::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset)
+real1_f QEngineOCL::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
 {
-    if (length == 1U) {
+    if (bits.size() == 1U) {
         return Prob(bits[0]);
     }
 
-    if (!stateBuffer || !length) {
+    if (!stateBuffer || !bits.size()) {
         return ZERO_R1_F;
     }
 
@@ -1952,17 +1953,16 @@ real1_f QEngineOCL::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, 
         NormalizeState();
     }
 
-    std::unique_ptr<bitCapIntOcl[]> bitPowers(new bitCapIntOcl[length]);
-    for (bitLenInt p = 0U; p < length; ++p) {
-        bitPowers[p] = pow2Ocl(bits[p]);
-    }
+    std::unique_ptr<bitCapIntOcl[]> bitPowers(new bitCapIntOcl[bits.size()]);
+    std::transform(bits.begin(), bits.end(), bitPowers.get(), pow2Ocl);
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * length);
-    DISPATCH_WRITE(waitVec, *bitMapBuffer, sizeof(bitCapIntOcl) * length, bitPowers.get());
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, length, (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bits.size());
+    DISPATCH_WRITE(waitVec, *bitMapBuffer, sizeof(bitCapIntOcl) * bits.size(), bitPowers.get());
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U,
+        0U };
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -2126,14 +2126,14 @@ void QEngineOCL::INT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLe
 }
 
 /// Add or Subtract integer (without sign or carry, with controls)
-void QEngineOCL::CINT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, const bitLenInt* controls,
-    bitLenInt controlLen)
+void QEngineOCL::CINT(
+    OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QEngineOCL::CINT range is out-of-bounds!");
     }
 
-    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount, "QEngineOCL::CINT control is out-of-bounds!");
+    ThrowIfQbIdArrayIsBad(controls, qubitCount, "QEngineOCL::CINT control is out-of-bounds!");
 
     if (!length) {
         return;
@@ -2149,18 +2149,18 @@ void QEngineOCL::CINT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitL
     const bitCapIntOcl regMask = lengthMask << start;
 
     bitCapIntOcl controlMask = 0U;
-    std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controls.size()]);
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
     }
-    std::sort(controlPowers.get(), controlPowers.get() + controlLen);
+    std::sort(controlPowers.get(), controlPowers.get() + controls.size());
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (regMask | controlMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controlLen), regMask, otherMask,
-        lengthPower, start, toMod, controlLen, controlMask, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), regMask, otherMask,
+        lengthPower, start, toMod, controls.size(), controlMask, 0U, 0U };
 
-    CArithmeticCall(api_call, bciArgs, controlPowers.get(), controlLen);
+    CArithmeticCall(api_call, bciArgs, controlPowers.get(), controls.size());
 }
 
 /** Increment integer (without sign, with carry) */
@@ -2169,15 +2169,14 @@ void QEngineOCL::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     INT(OCL_API_INC, (bitCapIntOcl)toAdd, start, length);
 }
 
-void QEngineOCL::CINC(
-    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+void QEngineOCL::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
-    if (!controlLen) {
+    if (!controls.size()) {
         INC(toAdd, inOutStart, length);
         return;
     }
 
-    CINT(OCL_API_CINC, (bitCapIntOcl)toAdd, inOutStart, length, controls, controlLen);
+    CINT(OCL_API_CINC, (bitCapIntOcl)toAdd, inOutStart, length, controls);
 }
 
 /// Add or Subtract integer (without sign, with carry)
@@ -2499,11 +2498,11 @@ void QEngineOCL::FullAdx(
 
 /** Controlled multiplication by integer */
 void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    const std::vector<bitLenInt>& controls)
 {
     CHECK_ZERO_SKIP();
 
-    if (!controlLen) {
+    if (!controls.size()) {
         MUL(toMul, inOutStart, carryStart, length);
         return;
     }
@@ -2516,14 +2515,14 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
         return;
     }
 
-    CMULx(OCL_API_CMUL, (bitCapIntOcl)toMul, inOutStart, carryStart, length, controls, controlLen);
+    CMULx(OCL_API_CMUL, (bitCapIntOcl)toMul, inOutStart, carryStart, length, controls);
 }
 
 /** Controlled division by integer */
 void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    const std::vector<bitLenInt>& controls)
 {
-    if (!controlLen) {
+    if (!controls.size()) {
         DIV(toDiv, inOutStart, carryStart, length);
         return;
     }
@@ -2536,16 +2535,16 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
         return;
     }
 
-    CMULx(OCL_API_CDIV, (bitCapIntOcl)toDiv, inOutStart, carryStart, length, controls, controlLen);
+    CMULx(OCL_API_CDIV, (bitCapIntOcl)toDiv, inOutStart, carryStart, length, controls);
 }
 
 /** Controlled multiplication modulo N by integer, (out of place) */
 void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    const std::vector<bitLenInt>& controls)
 {
     CHECK_ZERO_SKIP();
 
-    if (!controlLen) {
+    if (!controls.size()) {
         MULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -2558,14 +2557,13 @@ void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
         return;
     }
 
-    CMULModx(
-        OCL_API_CMULMODN_OUT, (bitCapIntOcl)toMul, (bitCapIntOcl)modN, inStart, outStart, length, controls, controlLen);
+    CMULModx(OCL_API_CMULMODN_OUT, (bitCapIntOcl)toMul, (bitCapIntOcl)modN, inStart, outStart, length, controls);
 }
 
 void QEngineOCL::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    const std::vector<bitLenInt>& controls)
 {
-    if (!controlLen) {
+    if (!controls.size()) {
         IMULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -2576,25 +2574,23 @@ void QEngineOCL::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
         return;
     }
 
-    CMULModx(OCL_API_CIMULMODN_OUT, (bitCapIntOcl)toMul, (bitCapIntOcl)modN, inStart, outStart, length, controls,
-        controlLen);
+    CMULModx(OCL_API_CIMULMODN_OUT, (bitCapIntOcl)toMul, (bitCapIntOcl)modN, inStart, outStart, length, controls);
 }
 
 /** Controlled multiplication modulo N by integer, (out of place) */
 void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    const std::vector<bitLenInt>& controls)
 {
     CHECK_ZERO_SKIP();
 
-    if (!controlLen) {
+    if (!controls.size()) {
         POWModNOut(base, modN, inStart, outStart, length);
         return;
     }
 
     SetReg(outStart, length, 0U);
 
-    CMULModx(
-        OCL_API_CPOWMODN_OUT, (bitCapIntOcl)base, (bitCapIntOcl)modN, inStart, outStart, length, controls, controlLen);
+    CMULModx(OCL_API_CPOWMODN_OUT, (bitCapIntOcl)base, (bitCapIntOcl)modN, inStart, outStart, length, controls);
 }
 
 void QEngineOCL::xMULx(OCLAPI api_call, const bitCapIntOcl* bciArgs, BufferPtr controlBuffer)
@@ -2674,7 +2670,7 @@ void QEngineOCL::MULModx(
 }
 
 void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt carryStart,
-    bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineOCL::CMULx range is out-of-bounds!");
@@ -2684,29 +2680,29 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart
         throw std::invalid_argument("QEngineOCL::CMULx range is out-of-bounds!");
     }
 
-    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount, "QEngineOCL::CMULx control is out-of-bounds!");
+    ThrowIfQbIdArrayIsBad(controls, qubitCount, "QEngineOCL::CMULx control is out-of-bounds!");
 
     const bitCapIntOcl lowMask = pow2MaskOcl(length);
     const bitCapIntOcl inOutMask = lowMask << inOutStart;
     const bitCapIntOcl carryMask = lowMask << carryStart;
 
-    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
+    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controls.size() + length]);
     bitCapIntOcl controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         bitCapIntOcl controlPower = pow2Ocl(controls[i]);
         skipPowers[i] = controlPower;
         controlMask |= controlPower;
     }
     for (bitLenInt i = 0U; i < length; ++i) {
-        skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
+        skipPowers[i + controls.size()] = pow2Ocl(carryStart + i);
     }
-    std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
+    std::sort(skipPowers.get(), skipPowers.get() + controls.size() + length);
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)(controlLen + length)), toMod,
-        controlLen, controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)(controls.size() + length)),
+        toMod, controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
 
-    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controlLen * 2U) + length);
+    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
     AddAlloc(sizeDiff);
     BufferPtr controlBuffer = MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeDiff, skipPowers.get());
     skipPowers.reset();
@@ -2717,7 +2713,7 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart
 }
 
 void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN, bitLenInt inOutStart,
-    bitLenInt carryStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt carryStart, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineOCL::CMULModx range is out-of-bounds!");
@@ -2727,28 +2723,28 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
         throw std::invalid_argument("QEngineOCL::CMULModx range is out-of-bounds!");
     }
 
-    ThrowIfQbIdArrayIsBad(controls, controlLen, qubitCount, "QEngineOCL::CMULModx control is out-of-bounds!");
+    ThrowIfQbIdArrayIsBad(controls, qubitCount, "QEngineOCL::CMULModx control is out-of-bounds!");
 
     const bitCapIntOcl lowMask = pow2MaskOcl(length);
     const bitCapIntOcl inOutMask = lowMask << inOutStart;
     const bitCapIntOcl carryMask = lowMask << carryStart;
 
-    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
+    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controls.size() + length]);
     bitCapIntOcl controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
+    for (bitLenInt i = 0U; i < controls.size(); ++i) {
         bitCapIntOcl controlPower = pow2Ocl(controls[i]);
         skipPowers[i] = controlPower;
         controlMask |= controlPower;
     }
     for (bitLenInt i = 0U; i < length; ++i) {
-        skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
+        skipPowers[i + controls.size()] = pow2Ocl(carryStart + i);
     }
-    std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
+    std::sort(skipPowers.get(), skipPowers.get() + controls.size() + length);
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, controlLen, controlMask, inOutMask, carryMask, modN,
-        length, inOutStart, carryStart };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, controls.size(), controlMask, inOutMask, carryMask,
+        modN, length, inOutStart, carryStart };
 
-    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controlLen * 2U) + length);
+    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
     AddAlloc(sizeDiff);
     BufferPtr controlBuffer = MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeDiff, skipPowers.get());
     skipPowers.reset();
@@ -2915,7 +2911,7 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 #endif
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineOCL::SetQuantumState(const complex* inputState)
+void QEngineOCL::SetQuantumState(complex const* inputState)
 {
     clDump();
 

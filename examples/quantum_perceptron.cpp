@@ -29,12 +29,12 @@ int main()
     // QEngineCPU.
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, ControlCount + 1, 0);
 
-    bitLenInt inputIndices[ControlCount];
+    std::vector<bitLenInt> inputIndices(ControlCount);
     for (bitLenInt i = 0; i < ControlCount; i++) {
         inputIndices[i] = i;
     }
 
-    QNeuronPtr qPerceptron = std::make_shared<QNeuron>(qReg, inputIndices, ControlCount, ControlCount);
+    QNeuronPtr qPerceptron = std::make_shared<QNeuron>(qReg, inputIndices, ControlCount);
 
     // Train the network to recognize powers of 2
     bool isPowerOf2;

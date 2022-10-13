@@ -148,16 +148,16 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 }
 
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
-void QInterface::QFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparate)
+void QInterface::QFTR(const std::vector<bitLenInt>& qubits, bool trySeparate)
 {
-    if (!length) {
+    if (!qubits.size()) {
         return;
     }
 
-    const bitLenInt end = (length - 1U);
-    for (bitLenInt i = 0U; i < length; ++i) {
+    const bitLenInt end = (qubits.size() - 1U);
+    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
         H(qubits[end - i]);
-        for (bitLenInt j = 0U; j < (bitLenInt)((length - 1U) - i); ++j) {
+        for (bitLenInt j = 0U; j < (bitLenInt)((qubits.size() - 1U) - i); ++j) {
             CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
         }
 
@@ -168,13 +168,13 @@ void QInterface::QFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparat
 }
 
 /// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
-void QInterface::IQFTR(bitLenInt const* qubits, bitLenInt length, bool trySeparate)
+void QInterface::IQFTR(const std::vector<bitLenInt>& qubits, bool trySeparate)
 {
-    if (!length) {
+    if (!qubits.size()) {
         return;
     }
 
-    for (bitLenInt i = 0U; i < length; ++i) {
+    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
         for (bitLenInt j = 0U; j < i; ++j) {
             CIPhaseRootN(j + 2U, qubits[i - (j + 1U)], qubits[i]);
         }
@@ -221,27 +221,32 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
 }
 
 /// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceM(bitLenInt const* bits, bitLenInt length, bool const* values, bool doApply)
+bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vector<bool>& values, bool doApply)
 {
+    if (values.size() && (bits.size() != values.size())) {
+        throw std::invalid_argument(
+            "QInterface::ForceM() boolean values vector length does not match bit vector length!");
+    }
+
     bitCapInt result = 0U;
 
-    if (values) {
-        for (bitLenInt bit = 0U; bit < length; ++bit) {
+    if (values.size()) {
+        for (bitLenInt bit = 0U; bit < bits.size(); ++bit) {
             result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0U;
         }
         return result;
     }
 
     if (doApply) {
-        for (bitLenInt bit = 0U; bit < length; ++bit) {
+        for (bitLenInt bit = 0U; bit < bits.size(); ++bit) {
             result |= M(bits[bit]) ? pow2(bits[bit]) : 0U;
         }
         return result;
     }
 
-    std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[length]);
-    std::transform(bits, bits + length, qPowers.get(), pow2);
-    result = MultiShotMeasureMask(qPowers.get(), length, 1).begin()->first;
+    std::vector<bitCapInt> qPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), qPowers.begin(), pow2);
+    result = MultiShotMeasureMask(qPowers, 1).begin()->first;
 
     return result;
 }
@@ -345,9 +350,9 @@ void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
     }
 }
 
-void QInterface::ProbBitsAll(bitLenInt const* bits, bitLenInt length, real1* probsArray)
+void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArray)
 {
-    if (length == qubitCount) {
+    if (bits.size() == qubitCount) {
         bool isOrdered = true;
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             if (bits[i] != i) {
@@ -362,14 +367,14 @@ void QInterface::ProbBitsAll(bitLenInt const* bits, bitLenInt length, real1* pro
         }
     }
 
-    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
+    std::fill(probsArray, probsArray + pow2Ocl(bits.size()), ZERO_R1);
 
-    std::vector<bitCapInt> bitPowers(length);
-    std::transform(bits, bits + length, bitPowers.begin(), pow2);
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
 
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapIntOcl retIndex = 0U;
-        for (bitLenInt p = 0U; p < length; ++p) {
+        for (bitLenInt p = 0U; p < bits.size(); ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2Ocl(p);
             }
@@ -378,22 +383,22 @@ void QInterface::ProbBitsAll(bitLenInt const* bits, bitLenInt length, real1* pro
     }
 }
 
-real1_f QInterface::ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, bitCapInt offset)
+real1_f QInterface::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
 {
-    ThrowIfQbIdArrayIsBad(bits, length, qubitCount,
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
         "QInterface::ExpectationBitsAll parameter controls array values must be within allocated qubit bounds!");
 
-    if (length == 1U) {
+    if (bits.size() == 1U) {
         return Prob(bits[0]);
     }
 
-    std::vector<bitCapInt> bitPowers(length);
-    std::transform(bits, bits + length, bitPowers.begin(), pow2);
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
 
     real1_f expectation = 0;
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapInt retIndex = 0U;
-        for (bitLenInt p = 0U; p < length; ++p) {
+        for (bitLenInt p = 0U; p < bits.size(); ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2(p);
             }
@@ -404,22 +409,21 @@ real1_f QInterface::ExpectationBitsAll(bitLenInt const* bits, bitLenInt length, 
     return expectation;
 }
 
-std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
-    bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots)
+std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
 {
     if (!shots) {
         return std::map<bitCapInt, int>();
     }
 
-    std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
-    std::transform(qPowers, qPowers + qPowerCount, bitMap.get(), log2);
+    std::vector<bitLenInt> bitMap(qPowers.size());
+    std::transform(qPowers.begin(), qPowers.end(), bitMap.begin(), log2);
 
-    ThrowIfQbIdArrayIsBad(bitMap.get(), qPowerCount, qubitCount,
+    ThrowIfQbIdArrayIsBad(bitMap, qubitCount,
         "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
 
-    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
+    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowers.size());
     std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
-    ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
+    ProbBitsAll(bitMap, &(maskProbsVec[0]));
     std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
 
     std::random_device rd;
@@ -434,21 +438,21 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
 }
 
 void QInterface::MultiShotMeasureMask(
-    bitCapInt const* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray)
+    const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
 {
     if (!shots) {
         return;
     }
 
-    std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
-    std::transform(qPowers, qPowers + qPowerCount, bitMap.get(), log2);
+    std::vector<bitLenInt> bitMap(qPowers.size());
+    std::transform(qPowers.begin(), qPowers.end(), bitMap.begin(), log2);
 
-    ThrowIfQbIdArrayIsBad(bitMap.get(), qPowerCount, qubitCount,
+    ThrowIfQbIdArrayIsBad(bitMap, qubitCount,
         "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
 
-    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
+    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowers.size());
     std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
-    ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
+    ProbBitsAll(bitMap, &(maskProbsVec[0]));
     std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
 
     std::random_device rd;

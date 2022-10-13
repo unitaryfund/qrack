@@ -58,8 +58,8 @@ public:
         const bitLenInt skipBitCount, ParallelFunc fn);
 
     /** Skip over the bits listed in maskArray in the same fashion as par_for_skip. */
-    void par_for_mask(const bitCapIntOcl, const bitCapIntOcl, const bitCapIntOcl* maskArray, const bitLenInt maskLen,
-        ParallelFunc fn);
+    void par_for_mask(
+        const bitCapIntOcl, const bitCapIntOcl, const std::vector<bitCapIntOcl>& maskArray, ParallelFunc fn);
 
     /** Iterate over a sparse state vector. */
     void par_for_set(const std::set<bitCapIntOcl>& sparseSet, ParallelFunc fn);
