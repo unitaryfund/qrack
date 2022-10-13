@@ -40,11 +40,9 @@ public:
     /** Add integer (without sign) */
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) = 0;
     /** Add integer (without sign, with controls) */
-    virtual void CINC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen) = 0;
+    virtual void CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls) = 0;
     /** Subtract integer (without sign, with controls) */
-    virtual void CDEC(
-        bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt const* controls, bitLenInt controlLen);
+    virtual void CDEC(bitCapInt toSub, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls);
     /** Add integer (without sign, with carry) */
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     /** Subtract classical integer (without sign, with carry) */
@@ -85,19 +83,19 @@ public:
         bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
     /** Controlled multiplication by integer */
     virtual void CMUL(bitCapInt toMul, bitLenInt start, bitLenInt carryStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen) = 0;
+        const std::vector<bitLenInt>& controls) = 0;
     /** Controlled division by power of integer */
     virtual void CDIV(bitCapInt toDiv, bitLenInt start, bitLenInt carryStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen) = 0;
+        const std::vector<bitLenInt>& controls) = 0;
     /** Controlled multiplication modulo N by integer, (out of place) */
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen) = 0;
+        const std::vector<bitLenInt>& controls) = 0;
     /** Inverse of controlled multiplication modulo N by integer, (out of place) */
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen) = 0;
+        const std::vector<bitLenInt>& controls) = 0;
     /** Controlled, raise a classical base to a quantum power, modulo N, (out of place) */
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt const* controls, bitLenInt controlLen) = 0;
+        const std::vector<bitLenInt>& controls) = 0;
 
 #if ENABLE_BCD
     /** Add classical BCD integer (without sign) */

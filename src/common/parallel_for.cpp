@@ -127,9 +127,10 @@ void ParallelFor::par_for_skip(const bitCapIntOcl begin, const bitCapIntOcl end,
     par_for_inc(begin, (end - begin) >> maskWidth, incFn, fn);
 }
 
-void ParallelFor::par_for_mask(const bitCapIntOcl begin, const bitCapIntOcl end, const bitCapIntOcl* maskArray,
-    const bitLenInt maskLen, ParallelFunc fn)
+void ParallelFor::par_for_mask(
+    const bitCapIntOcl begin, const bitCapIntOcl end, const std::vector<bitCapIntOcl>& maskArray, ParallelFunc fn)
 {
+    const bitLenInt maskLen = maskArray.size();
     /* Pre-calculate the masks to simplify the increment function later. */
     std::unique_ptr<bitCapIntOcl[][2]> masks(new bitCapIntOcl[maskLen][2]);
 

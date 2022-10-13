@@ -100,7 +100,7 @@ protected:
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
     void ApplyControlledSingle(
-        const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti);
+        complex const* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
@@ -110,7 +110,7 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    void ApplySingle(const complex* mtrx, bitLenInt target);
+    void ApplySingle(complex const* mtrx, bitLenInt target);
 
     void Init();
 
@@ -197,7 +197,7 @@ public:
 
     void GetQuantumState(complex* state);
     void GetQuantumState(QInterfacePtr eng);
-    void SetQuantumState(const complex* state);
+    void SetQuantumState(complex const* state);
     void SetQuantumState(QInterfacePtr eng);
     void GetProbs(real1* outputProbs);
 
@@ -264,17 +264,13 @@ public:
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
     bitCapInt MAll();
 
-    void Mtrx(const complex* mtrx, bitLenInt target);
-    void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    void MCPhase(
-        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    void MACPhase(
-        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    void MCInvert(
-        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
-    void MACInvert(
-        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
+    void Mtrx(complex const* mtrx, bitLenInt target);
+    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
+    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
+    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
+    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
 
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
@@ -296,11 +292,10 @@ public:
             [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(NODE_TO_QENGINE(root))->ProbParity(mask); });
         return toRet;
     }
-    void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+    void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) {
-            QINTERFACE_TO_QPARITY(eng)->CUniformParityRZ(controls, controlLen, mask, angle);
-        });
+        ExecuteAsStateVector(
+            [&](QInterfacePtr eng) { QINTERFACE_TO_QPARITY(eng)->CUniformParityRZ(controls, mask, angle); });
     }
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
@@ -341,13 +336,13 @@ public:
     {
         QInterface::DECS(toSub, start, length, overflowIndex);
     }
-    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
-        QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
+        QInterface::CINC(toAdd, inOutStart, length, controls);
     }
-    void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
-        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
+        QInterface::CDEC(toSub, inOutStart, length, controls);
     }
     void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
@@ -362,17 +357,17 @@ public:
         QInterface::IMULModNOut(toMul, modN, inStart, outStart, length);
     }
     void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
-            QINTERFACE_TO_QALU(eng)->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+            QINTERFACE_TO_QALU(eng)->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
         });
     }
     void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
-            QINTERFACE_TO_QALU(eng)->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+            QINTERFACE_TO_QALU(eng)->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
         });
     }
     void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
@@ -423,25 +418,23 @@ public:
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->POWModNOut(base, modN, inStart, outStart, length); });
     }
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
-        bitLenInt controlLen)
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) {
-            QINTERFACE_TO_QALU(eng)->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
-        });
+        ExecuteAsStateVector(
+            [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->CMUL(toMul, inOutStart, carryStart, length, controls); });
     }
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
-        bitLenInt controlLen)
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        const std::vector<bitLenInt>& controls)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) {
-            QINTERFACE_TO_QALU(eng)->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
-        });
+        ExecuteAsStateVector(
+            [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->CDIV(toDiv, inOutStart, carryStart, length, controls); });
     }
     void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+        const std::vector<bitLenInt>& controls)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
-            QINTERFACE_TO_QALU(eng)->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
+            QINTERFACE_TO_QALU(eng)->CPOWModNOut(base, modN, inStart, outStart, length, controls);
         });
     }
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,

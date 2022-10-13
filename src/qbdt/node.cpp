@@ -356,7 +356,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1->PopStateVector();
 }
 #else
-void QBdtNode::Apply2x2(const complex* mtrx, bitLenInt depth)
+void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -387,7 +387,7 @@ void QBdtNode::Apply2x2(const complex* mtrx, bitLenInt depth)
     Prune(depth);
 }
 
-void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+void QBdtNode::PushStateVector(complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
 {
     const bool isB0Zero = IS_NORM_0(b0->scale);
     const bool isB1Zero = IS_NORM_0(b1->scale);

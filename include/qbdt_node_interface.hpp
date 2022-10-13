@@ -40,7 +40,7 @@ protected:
         QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
 #else
     virtual void PushStateVector(
-        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
+        complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
 #endif
 
 public:
@@ -101,13 +101,13 @@ public:
 #if ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth) = 0;
 #else
-    virtual void Apply2x2(const complex* mtrx, bitLenInt depth) = 0;
+    virtual void Apply2x2(complex const* mtrx, bitLenInt depth) = 0;
 #endif
 
 #if ENABLE_COMPLEX_X2
     virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b1)
 #else
-    virtual void PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
+    virtual void PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 #endif
     {
         throw std::out_of_range("QBdtNodeInterface::PushSpecial() not implemented! (You probably called "
