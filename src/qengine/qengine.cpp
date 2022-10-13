@@ -16,10 +16,10 @@
 
 namespace Qrack {
 
-inline bool IsPhase(const complex* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
-inline bool IsInvert(const complex* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
+inline bool IsPhase(complex const* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
+inline bool IsInvert(complex const* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
 
-bool QEngine::IsIdentity(const complex* mtrx, bool isControlled)
+bool QEngine::IsIdentity(complex const* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
@@ -222,7 +222,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
     return result;
 }
 
-void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
+void QEngine::Mtrx(complex const* mtrx, bitLenInt qubit)
 {
     if (IsIdentity(mtrx, false)) {
         return;
@@ -234,7 +234,7 @@ void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
     Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doCalcNorm);
 }
 
-void QEngine::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
+void QEngine::MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
 {
     if (!controls.size()) {
         Mtrx(mtrx, target);
@@ -253,7 +253,7 @@ void QEngine::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx
     }
 }
 
-void QEngine::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
+void QEngine::MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
 {
     if (!controls.size()) {
         Mtrx(mtrx, target);
@@ -417,7 +417,7 @@ void QEngine::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q
     Apply2x2(pow2Ocl(qubit1), pow2Ocl(qubit2), iSqrtX, controls.size() + 2U, qPowersSorted.get(), false);
 }
 
-void QEngine::ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
+void QEngine::ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx)
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controls.size() + 1U]);
     const bitCapIntOcl targetMask = pow2Ocl(target);
@@ -433,7 +433,7 @@ void QEngine::ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenI
     Apply2x2(controlMask, fullMask, mtrx, controls.size() + 1U, qPowersSorted.get(), false);
 }
 
-void QEngine::ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
+void QEngine::ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx)
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controls.size() + 1U]);
     const bitCapIntOcl targetMask = pow2Ocl(target);

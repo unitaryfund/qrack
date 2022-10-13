@@ -1184,7 +1184,7 @@ real1_f QStabilizer::Prob(bitLenInt qubit)
     return ONE_R1_F / 2;
 }
 
-void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
+void QStabilizer::Mtrx(complex const* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         Phase(mtrx[0U], mtrx[3U], target);

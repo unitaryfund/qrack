@@ -326,7 +326,7 @@ public:
     void CopyStateVec(QEnginePtr src);
 
     void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
-    void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
+    void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
     void SetAmplitudePage(
         QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length);
     void ShuffleBuffers(QEnginePtr engine);
@@ -361,7 +361,7 @@ public:
 
     using QEngine::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
+        complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
     void UniformParityRZ(bitCapInt mask, real1_f angle);
     void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
 
@@ -470,7 +470,7 @@ public:
     void SetDevice(int64_t dID);
     int64_t GetDevice() { return deviceID; }
 
-    void SetQuantumState(const complex* inputState);
+    void SetQuantumState(complex const* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm);
@@ -621,12 +621,12 @@ protected:
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
 
     using QEngine::Apply2x2;
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE, norm_thresh);
     }
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special,
         real1_f norm_thresh = REAL1_DEFAULT_ARG);
 

@@ -157,7 +157,7 @@ void QBdtQEngineNode::PushSpecial(const complex2& mtrxCol1, const complex2& mtrx
 {
     const complex mtrx[4U]{ mtrxCol1.c[0U], mtrxCol2.c[0U], mtrxCol1.c[1U], mtrxCol2.c[1U] };
 #else
-void QBdtQEngineNode::PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
+void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 {
 #endif
     const bool is0Zero = IS_NORM_0(scale);
