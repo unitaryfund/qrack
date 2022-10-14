@@ -1055,10 +1055,10 @@ void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
         waitVec, *uniformBuffer, sizeof(complex) * 4U * pow2Ocl(controls.size() + mtrxSkipPowers.size()), mtrxs);
 
     std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controls.size() + mtrxSkipPowers.size()]);
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         qPowers[i] = pow2Ocl(controls[i]);
     }
-    for (bitLenInt i = 0U; i < mtrxSkipPowers.size(); ++i) {
+    for (size_t i = 0U; i < mtrxSkipPowers.size(); ++i) {
         qPowers[controls.size() + i] = (bitCapIntOcl)mtrxSkipPowers[i];
     }
 
@@ -1137,7 +1137,7 @@ void QEngineOCL::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCap
 
     bitCapIntOcl controlMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controls.size()]);
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
     }
@@ -2150,7 +2150,7 @@ void QEngineOCL::CINT(
 
     bitCapIntOcl controlMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controls.size()]);
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
     }
@@ -2688,7 +2688,7 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controls.size() + length]);
     bitCapIntOcl controlMask = 0U;
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         bitCapIntOcl controlPower = pow2Ocl(controls[i]);
         skipPowers[i] = controlPower;
         controlMask |= controlPower;
@@ -2731,7 +2731,7 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controls.size() + length]);
     bitCapIntOcl controlMask = 0U;
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
+    for (size_t i = 0U; i < controls.size(); ++i) {
         bitCapIntOcl controlPower = pow2Ocl(controls[i]);
         skipPowers[i] = controlPower;
         controlMask |= controlPower;

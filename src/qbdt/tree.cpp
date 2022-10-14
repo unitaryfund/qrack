@@ -707,7 +707,7 @@ void QBdt::ApplyControlledSingle(
     const bitCapInt qPower = pow2(maxQubit);
     std::vector<bitLenInt> ketControlsVec;
     bitCapInt lowControlMask = 0U;
-    for (bitLenInt c = 0U; c < controls.size(); ++c) {
+    for (size_t c = 0U; c < controls.size(); ++c) {
         const bitLenInt control = controlVec[c];
         if (control < bdtQubitCount) {
             lowControlMask |= pow2(maxQubit - (control + 1U));

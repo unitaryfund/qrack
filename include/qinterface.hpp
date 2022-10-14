@@ -184,7 +184,7 @@ protected:
     template <typename Fn> void MACWrapper(const std::vector<bitLenInt>& controls, Fn fn)
     {
         bitCapInt xMask = 0U;
-        for (bitLenInt i = 0U; i < controls.size(); ++i) {
+        for (size_t i = 0U; i < controls.size(); ++i) {
             xMask |= pow2(controls[i]);
         }
 
