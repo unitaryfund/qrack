@@ -29,9 +29,6 @@
 #include <queue>
 
 namespace Qrack {
-
-typedef std::function<void(void)> DispatchFn;
-
 class DispatchQueue {
 public:
     DispatchQueue()
