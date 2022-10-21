@@ -557,16 +557,18 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
         if (result) {
             if (IS_NORM_0(b1->scale)) {
-                throw std::runtime_error("ForceM() forced 0 probability!");
+                leaf->SetZero();
+            } else {
+                b0->SetZero();
+                b1->scale /= abs(b1->scale);
             }
-            b0->SetZero();
-            b1->scale /= abs(b1->scale);
         } else {
             if (IS_NORM_0(b0->scale)) {
-                throw std::runtime_error("ForceM() forced 0 probability!");
+                leaf->SetZero();
+            } else {
+                b0->scale /= abs(b0->scale);
+                b1->SetZero();
             }
-            b0->scale /= abs(b0->scale);
-            b1->SetZero();
         }
     }
 
