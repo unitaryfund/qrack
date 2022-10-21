@@ -42,7 +42,7 @@ namespace Qrack {
 
 #define DISPATCH_WRITE(buff, size, array)                                                                              \
     tryCuda("Failed to enqueue buffer write",                                                                          \
-        [&] { return cudaMemcpyAsync(buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, queue); });
+        [&] { return cudaMemcpyAsync(buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, params_queue); });
 
 #define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                               \
     clFinish();                                                                                                        \
