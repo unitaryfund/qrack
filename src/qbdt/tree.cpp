@@ -380,7 +380,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         return start;
     }
 
-    root->InsertAtDepth(toCopy->root, start, toCopy->qubitCount);
+    root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
     SetQubitCount(qubitCount + toCopy->qubitCount, attachedQubitCount + toCopy->attachedQubitCount);
 
     return start;
@@ -416,7 +416,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
 
     if (dest) {
-        dest->root = root->RemoveSeparableAtDepth(start, length);
+        dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
         dest->SetQubitCount(length, attachedDiff);
     } else {
         root->RemoveSeparableAtDepth(start, length);
