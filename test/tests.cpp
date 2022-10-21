@@ -3268,7 +3268,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
     qftReg->ForceM(bit, result);
     qftReg->ForceM(bits, results);
     qftReg->ForceM(bit, std::vector<bool>());
-    qftReg->ForceMReg(0, 1, results[0], false);
+    qftReg->ForceMReg(0, 1, 0, false);
 
     REQUIRE(qftReg->ProbMask(0x7, 0x2) > 0.99);
     REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0x2), 0.5);

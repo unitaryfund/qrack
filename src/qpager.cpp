@@ -1432,7 +1432,6 @@ real1_f QPager::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt
         }
     }
 
-    const bitLenInt qpp = qubitsPerPage();
     const bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     real1_f expectation = ZERO_R1_F;
     bitCapIntOcl pagePerm = 0U;
@@ -1443,7 +1442,7 @@ real1_f QPager::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt
         QEnginePtr engine = qPages[i];
 #if ENABLE_PTHREAD
         futures[i] = std::async(std::launch::async,
-            [engine, bits, qpp, pagePerm, offset]() { return engine->ExpectationBitsAll(bits, pagePerm + offset); });
+            [engine, bits, pagePerm, offset]() { return engine->ExpectationBitsAll(bits, pagePerm + offset); });
 #else
         expectation += engine->ExpectationBitsAll(bits, pagePerm + offset);
 #endif
