@@ -302,6 +302,7 @@ void QEngineCUDA::clFinish(bool doHard)
     if (doHard) {
         tryCuda("Failed to finish device queue", [&] { return cudaDeviceSynchronize(); });
     } else {
+        tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(params_queue); });
         tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
     }
 }
