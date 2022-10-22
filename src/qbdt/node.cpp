@@ -79,11 +79,7 @@ void QBdtNode::Prune(bitLenInt depth)
         for (bitLenInt j = 0U; j < depth; ++j) {
             size_t bit = SelectBit(i, depth - (j + 1U));
 
-            if (!leaf0 || !leaf1) {
-                break;
-            }
-
-            if (leaf0->branches[bit] == leaf1->branches[bit]) {
+            if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(depth - j) - ONE_BCI);
             }
