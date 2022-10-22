@@ -16,7 +16,7 @@
 
 #include "qbdt_qengine_node.hpp"
 
-#define IS_SAME_AMP(a, b) (norm((a) - (b)) <= (REAL1_EPSILON * REAL1_EPSILON))
+#define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
 
 namespace Qrack {
 bool QBdtQEngineNode::isEqual(QBdtNodeInterfacePtr r)
