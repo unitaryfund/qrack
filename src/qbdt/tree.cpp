@@ -55,9 +55,6 @@ QBdt::QBdt(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qB
     SetQubitCount(qBitCount, qBitCount);
 
     LockEngine(enginePtr);
-
-    // "Attached" state vector qubits are broken:
-    ResetStateVector();
 }
 
 void QBdt::Init()

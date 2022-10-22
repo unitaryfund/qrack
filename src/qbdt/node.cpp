@@ -50,8 +50,15 @@ void QBdtNode::Prune(bitLenInt depth)
         branches[1U]->Prune(depth);
     }
 
+    if (IS_NORM_0(b0->scale)) {
+        b0->SetZero();
+    }
+    if (IS_NORM_0(b1->scale)) {
+        b1->SetZero();
+    }
+
     const complex phaseFac =
-        std::polar(ONE_R1, (real1)(IS_NORM_0(b0->scale) ? std::arg(b1->scale) : std::arg(b0->scale)));
+        std::polar(ONE_R1, (real1)((b0->scale == ZERO_CMPLX) ? std::arg(b1->scale) : std::arg(b0->scale)));
     scale *= phaseFac;
     b0->scale /= phaseFac;
     if (b0.get() == b1.get()) {
