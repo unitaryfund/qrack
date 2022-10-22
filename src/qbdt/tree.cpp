@@ -827,33 +827,6 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
     ApplyControlledSingle(mtrx, lControls, target, false);
 }
 
-void QBdt::MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
-{
-    if (!controls.size()) {
-        Phase(topLeft, bottomRight, target);
-        return;
-    }
-
-    const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    if (!IS_NORM_0(ONE_CMPLX - bottomRight)) {
-        ApplyControlledSingle(mtrx, controls, target, true);
-        return;
-    }
-
-    if (IS_NORM_0(ONE_CMPLX - topLeft)) {
-        return;
-    }
-
-    std::vector<bitLenInt> lControls(controls);
-    std::sort(lControls.begin(), lControls.end());
-
-    if (target < lControls[controls.size() - 1U]) {
-        std::swap(target, lControls[controls.size() - 1U]);
-    }
-
-    ApplyControlledSingle(mtrx, lControls, target, true);
-}
-
 void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
 {
     if (!controls.size()) {
@@ -877,32 +850,6 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
 
     H(target);
     MCPhase(lControls, ONE_CMPLX, -ONE_CMPLX, target);
-    H(target);
-}
-
-void QBdt::MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
-{
-    if (!controls.size()) {
-        Invert(topRight, bottomLeft, target);
-        return;
-    }
-
-    const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    if (!IS_NORM_0(ONE_CMPLX + topRight) || !IS_NORM_0(ONE_CMPLX + bottomLeft)) {
-        ApplyControlledSingle(mtrx, controls, target, true);
-        return;
-    }
-
-    std::vector<bitLenInt> lControls(controls);
-    std::sort(lControls.begin(), lControls.end());
-
-    if ((lControls[controls.size() - 1U] < target) || (target >= bdtQubitCount)) {
-        ApplyControlledSingle(mtrx, lControls, target, true);
-        return;
-    }
-
-    H(target);
-    MACPhase(lControls, -ONE_CMPLX, ONE_CMPLX, target);
     H(target);
 }
 } // namespace Qrack

@@ -268,9 +268,7 @@ public:
     void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
     void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
-    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
-    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
 
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
