@@ -52,8 +52,10 @@ void QBdtNode::Prune(bitLenInt depth)
 
     if (IS_NORM_0(b0->scale)) {
         b0->SetZero();
+        b1->scale /= abs(b1->scale);
     }
     if (IS_NORM_0(b1->scale)) {
+        b0->scale /= abs(b0->scale);
         b1->SetZero();
     }
 
