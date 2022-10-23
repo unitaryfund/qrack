@@ -10,10 +10,10 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "qengine_opencl.hpp"
 #if ENABLE_QBDT
 #include "qbdt.hpp"
 #endif
-#include "qengine_opencl.hpp"
 
 #include <algorithm>
 #include <thread>
