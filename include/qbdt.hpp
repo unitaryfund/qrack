@@ -67,21 +67,6 @@ protected:
         // If the calling function fully deferences our return, it's automatically freed.
         return copyPtr;
     }
-    void SetStateVector()
-    {
-        if (!bdtQubitCount) {
-            return;
-        }
-
-        if (attachedQubitCount) {
-            throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
-        }
-
-        QBdtQEngineNodePtr nRoot = MakeQEngineNode(ONE_R1, qubitCount);
-        GetQuantumState(NODE_TO_QENGINE(nRoot));
-        root = nRoot;
-        SetQubitCount(qubitCount, qubitCount);
-    }
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
@@ -118,31 +103,6 @@ protected:
 
     void Init();
 
-    void ResetStateVector(bitLenInt aqb = 0U)
-    {
-        if (attachedQubitCount <= aqb) {
-            return;
-        }
-
-        if (!bdtQubitCount) {
-            QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
-            SetQubitCount(qubitCount, aqb);
-            SetQuantumState(NODE_TO_QENGINE(oRoot));
-        }
-
-        const bitLenInt length = attachedQubitCount - aqb;
-        const bitLenInt oBdtQubitCount = bdtQubitCount;
-        QBdtPtr nQubits =
-            std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
-                -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
-        nQubits->SetQubitCount(length, 0U);
-        nQubits->SetPermutation(0U);
-        root->InsertAtDepth(nQubits->root, oBdtQubitCount, length);
-        SetQubitCount(qubitCount + length, attachedQubitCount);
-        ROR(length, oBdtQubitCount, qubitCount);
-        Dispose(qubitCount - length, length);
-    }
-
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -178,6 +138,46 @@ public:
     void LockEngine(QEnginePtr eng) { root = std::make_shared<QBdtQEngineNode>(ONE_CMPLX, eng); }
 
     bool isBinaryDecisionTree() { return true; };
+
+    void SetStateVector()
+    {
+        if (!bdtQubitCount) {
+            return;
+        }
+
+        if (attachedQubitCount) {
+            throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
+        }
+
+        QBdtQEngineNodePtr nRoot = MakeQEngineNode(ONE_R1, qubitCount);
+        GetQuantumState(NODE_TO_QENGINE(nRoot));
+        root = nRoot;
+        SetQubitCount(qubitCount, qubitCount);
+    }
+    void ResetStateVector(bitLenInt aqb = 0U)
+    {
+        if (attachedQubitCount <= aqb) {
+            return;
+        }
+
+        if (!bdtQubitCount) {
+            QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
+            SetQubitCount(qubitCount, aqb);
+            SetQuantumState(NODE_TO_QENGINE(oRoot));
+        }
+
+        const bitLenInt length = attachedQubitCount - aqb;
+        const bitLenInt oBdtQubitCount = bdtQubitCount;
+        QBdtPtr nQubits =
+            std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+                -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+        nQubits->SetQubitCount(length, 0U);
+        nQubits->SetPermutation(0U);
+        root->InsertAtDepth(nQubits->root, oBdtQubitCount, length);
+        SetQubitCount(qubitCount + length, attachedQubitCount);
+        ROR(length, oBdtQubitCount, qubitCount);
+        Dispose(qubitCount - length, length);
+    }
 
     void SetDevice(int64_t dID);
 

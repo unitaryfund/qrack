@@ -10,6 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "qbdt.hpp"
 #include "qengine_opencl.hpp"
 
 #include <algorithm>
@@ -1278,14 +1279,19 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     }
 
     const bool isMigrate = (device_context->context_id != toCopy->device_context->context_id);
-    const bool isReverseMigrate = qubitCount < toCopy->qubitCount;
-    const int64_t oDevID = deviceID;
     if (isMigrate) {
-        if (isReverseMigrate) {
-            SetDevice(toCopy->deviceID);
-        } else {
-            toCopy->SetDevice(deviceID);
-        }
+        // Neat trick: If we need to migrate between platforms via the host anyway,
+        // then an intermediate conversion to QBdt can compress from the source of the original device
+        // and decompress directly onto the new device!
+        QBdtPtr toCopyCompressed =
+            std::make_shared<QBdt>(toCopy, std::vector<QInterfaceEngine>{ QINTERFACE_OPENCL }, toCopy->qubitCount, 0U,
+                nullptr, CMPLX_DEFAULT_ARG, toCopy->doNormalize, toCopy->randGlobalPhase, toCopy->useHostRam,
+                toCopy->deviceID, toCopy->hardware_rand_generator != NULL, false, (real1_f)toCopy->amplitudeFloor);
+        toCopy = NULL;
+        toCopyCompressed->ResetStateVector();
+        toCopyCompressed->SetDevice(deviceID);
+        toCopyCompressed->SetStateVector();
+        toCopy = std::dynamic_pointer_cast<QEngineOCL>(toCopyCompressed->ReleaseEngine());
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1317,10 +1323,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     ResetStateBuffer(nStateBuffer);
 
     SubtractAlloc(sizeof(complex) * oMaxQPower);
-
-    if (isMigrate && isReverseMigrate) {
-        SetDevice(oDevID);
-    }
 }
 
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
@@ -1421,7 +1423,18 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     const bool isMigrate = destination && (device_context->context_id != destination->device_context->context_id);
     const int64_t oDevId = destination ? destination->deviceID : 0;
     if (isMigrate) {
-        destination->SetDevice(deviceID);
+        // Neat trick: If we need to migrate between platforms via the host anyway,
+        // then an intermediate conversion to QBdt can compress from the source of the original device
+        // and decompress directly onto the new device!
+        QBdtPtr destinationCompressed = std::make_shared<QBdt>(destination,
+            std::vector<QInterfaceEngine>{ QINTERFACE_OPENCL }, destination->qubitCount, 0U, nullptr, CMPLX_DEFAULT_ARG,
+            destination->doNormalize, destination->randGlobalPhase, destination->useHostRam, destination->deviceID,
+            destination->hardware_rand_generator != NULL, false, (real1_f)destination->amplitudeFloor);
+        destination = NULL;
+        destinationCompressed->ResetStateVector();
+        destinationCompressed->SetDevice(deviceID);
+        destinationCompressed->SetStateVector();
+        destination = std::dynamic_pointer_cast<QEngineOCL>(destinationCompressed->ReleaseEngine());
     }
 
     const bitCapIntOcl partPower = pow2Ocl(length);
@@ -1509,7 +1522,16 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         }
 
         if (isMigrate) {
-            destination->SetDevice(oDevId);
+            QBdtPtr destinationCompressed =
+                std::make_shared<QBdt>(destination, std::vector<QInterfaceEngine>{ QINTERFACE_OPENCL },
+                    destination->qubitCount, 0U, nullptr, CMPLX_DEFAULT_ARG, destination->doNormalize,
+                    destination->randGlobalPhase, destination->useHostRam, destination->deviceID,
+                    destination->hardware_rand_generator != NULL, false, (real1_f)destination->amplitudeFloor);
+            destination = NULL;
+            destinationCompressed->ResetStateVector();
+            destinationCompressed->SetDevice(oDevId);
+            destinationCompressed->SetStateVector();
+            destination = std::dynamic_pointer_cast<QEngineOCL>(destinationCompressed->ReleaseEngine());
         }
     }
 
