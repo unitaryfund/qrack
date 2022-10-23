@@ -413,7 +413,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
         return qubitCount;
     }
 
-    if (ancillaCount || toCopy->ancillaCount) {
+    if (toCopy->ancillaCount) {
         const bitLenInt origSize = qubitCount;
         ROL(origSize - start, 0, qubitCount);
         const bitLenInt result = Compose(toCopy);
