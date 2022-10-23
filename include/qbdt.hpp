@@ -175,7 +175,9 @@ public:
         nQubits->SetPermutation(0U);
         root->InsertAtDepth(nQubits->root, oBdtQubitCount, length);
         SetQubitCount(qubitCount + length, attachedQubitCount);
-        ROR(length, oBdtQubitCount, qubitCount);
+        for (bitLenInt i = 0U; i < length; ++i) {
+            Swap(oBdtQubitCount + i, oBdtQubitCount + length + i);
+        }
         Dispose(qubitCount - length, length);
     }
 
