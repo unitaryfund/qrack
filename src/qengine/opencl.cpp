@@ -10,7 +10,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#if ENABLE_QBDT
 #include "qbdt.hpp"
+#endif
 #include "qengine_opencl.hpp"
 
 #include <algorithm>
@@ -1280,6 +1282,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
 
     const bool isMigrate = (device_context->context_id != toCopy->device_context->context_id);
     if (isMigrate) {
+#if ENABLE_QBDT
         // Neat trick: If we need to migrate between platforms via the host anyway,
         // then an intermediate conversion to QBdt can compress from the source of the original device
         // and decompress directly onto the new device!
@@ -1292,6 +1295,9 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
         toCopyCompressed->SetDevice(deviceID);
         toCopyCompressed->SetStateVector();
         toCopy = std::dynamic_pointer_cast<QEngineOCL>(toCopyCompressed->ReleaseEngine());
+#else
+        toCopy->SetDevice(deviceID);
+#endif
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1423,6 +1429,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     const bool isMigrate = destination && (device_context->context_id != destination->device_context->context_id);
     const int64_t oDevId = destination ? destination->deviceID : 0;
     if (isMigrate) {
+#if ENABLE_QBDT
         // Neat trick: If we need to migrate between platforms via the host anyway,
         // then an intermediate conversion to QBdt can compress from the source of the original device
         // and decompress directly onto the new device!
@@ -1435,6 +1442,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         destinationCompressed->SetDevice(deviceID);
         destinationCompressed->SetStateVector();
         destination = std::dynamic_pointer_cast<QEngineOCL>(destinationCompressed->ReleaseEngine());
+#else
+        destination->SetDevice(deviceID);
+#endif
     }
 
     const bitCapIntOcl partPower = pow2Ocl(length);
@@ -1522,6 +1532,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         }
 
         if (isMigrate) {
+#if ENABLE_QBDT
             QBdtPtr destinationCompressed =
                 std::make_shared<QBdt>(destination, std::vector<QInterfaceEngine>{ QINTERFACE_OPENCL },
                     destination->qubitCount, 0U, nullptr, CMPLX_DEFAULT_ARG, destination->doNormalize,
@@ -1532,6 +1543,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             destinationCompressed->SetDevice(oDevId);
             destinationCompressed->SetStateVector();
             destination = std::dynamic_pointer_cast<QEngineOCL>(destinationCompressed->ReleaseEngine());
+#else
+            destination->SetDevice(oDevId);
+#endif
         }
     }
 
