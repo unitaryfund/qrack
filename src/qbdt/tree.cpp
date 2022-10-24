@@ -341,6 +341,10 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         throw std::invalid_argument("QBdt::Compose start index is out-of-bounds!");
     }
 
+    if (!toCopy->qubitCount) {
+        return start;
+    }
+
     if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount)) {
         const bitLenInt diff = (attachedQubitCount + toCopy->attachedQubitCount) - maxPageQubits;
         ResetStateVector((diff < qubitCount) ? (qubitCount - diff) : 0U);
@@ -401,6 +405,10 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QBdt::DecomposeDispose range is out-of-bounds!");
+    }
+
+    if (!length) {
+        return;
     }
 
     if (start && bdtQubitCount && attachedQubitCount) {
