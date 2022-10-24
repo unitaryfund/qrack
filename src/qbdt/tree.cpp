@@ -237,15 +237,14 @@ void QBdt::SetQuantumState(complex const* state)
         return;
     }
 
-    const bool isAttached = attachedQubitCount;
-    const bitLenInt qbCount = bdtQubitCount;
-    SetTraversal([isAttached, qbCount, state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
-        if (isAttached) {
+    if (attachedQubitCount) {
+        const bitLenInt qbCount = bdtQubitCount;
+        SetTraversal([qbCount, state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
             NODE_TO_QENGINE(leaf)->SetAmplitude(i >> qbCount, state[i]);
-        } else {
-            leaf->scale = state[i];
-        }
-    });
+        });
+    } else {
+        SetTraversal([state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = state[i]; });
+    }
 }
 void QBdt::SetQuantumState(QInterfacePtr eng)
 {
