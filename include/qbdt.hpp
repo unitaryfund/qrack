@@ -72,6 +72,11 @@ protected:
     template <typename Fn> void SetTraversal(Fn setLambda);
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
+        if (!bdtQubitCount) {
+            operation(NODE_TO_QENGINE(root));
+            return;
+        }
+
         SetStateVector();
         operation(NODE_TO_QENGINE(root));
         ResetStateVector();
@@ -79,6 +84,10 @@ protected:
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
+        if (!bdtQubitCount) {
+            return operation(NODE_TO_QENGINE(root));
+        }
+
         SetStateVector();
         bitCapInt toRet = operation(NODE_TO_QENGINE(root));
         ResetStateVector();
@@ -210,9 +219,6 @@ public:
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp)
     {
-        if (perm >= maxQPower) {
-            throw std::domain_error("QBdt::SetAmplitude argument out-of-bounds!");
-        }
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
     }
 

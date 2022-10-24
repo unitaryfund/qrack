@@ -347,9 +347,11 @@ void QStabilizerHybrid::SwitchToEngine()
 
     engine = MakeEngine(0, stabilizer->GetQubitCount());
     if (engineTypes.size() && (engineTypes[0] == QINTERFACE_BDT)) {
-        std::dynamic_pointer_cast<QBdt>(engine)->SetQuantumState(stabilizer);
-    } else {
-        stabilizer->GetQuantumState(engine);
+        std::dynamic_pointer_cast<QBdt>(engine)->SetStateVector();
+    }
+    stabilizer->GetQuantumState(engine);
+    if (engineTypes.size() && (engineTypes[0] == QINTERFACE_BDT)) {
+        std::dynamic_pointer_cast<QBdt>(engine)->ResetStateVector();
     }
     stabilizer = NULL;
     FlushBuffers();
