@@ -200,7 +200,7 @@ void QBdtNode::PopStateVector(bitLenInt depth)
 
 void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
 {
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (norm(scale) == ZERO_R1) {
         return;
     }
 
@@ -223,7 +223,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     if (!depth && size) {
         QBdtNodeInterfacePtr c = branches[0U];
 
-        if (norm(branches[0U]->scale) > FP_NORM_EPSILON) {
+        if (!IS_NORM_0(branches[0U]->scale)) {
             branches[0U] = std::make_shared<QBdtNode>(branches[0U]->scale, b->branches);
             branches[0U]->InsertAtDepth(c, size, 0);
 
@@ -233,7 +233,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             }
         }
 
-        if (norm(branches[1U]->scale) <= FP_NORM_EPSILON) {
+        if (IS_NORM_0(branches[1U]->scale)) {
             return;
         }
 

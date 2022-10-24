@@ -17,6 +17,7 @@
 #include "qbdt_node_interface.hpp"
 
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
+#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 
 namespace Qrack {
 
@@ -82,8 +83,8 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        return norm(r->scale) <= FP_NORM_EPSILON;
+    if (IS_NORM_0(scale)) {
+        return IS_NORM_0(r->scale);
     }
 
     if (branches[0U] != r->branches[0U]) {
@@ -112,7 +113,7 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end
 
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (norm(scale) == ZERO_R1) {
         return NULL;
     }
 
