@@ -1057,7 +1057,7 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     }
 
     if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(), fn);
+        par_for_set(CastStateVecSparse()->iterable(0, skipPower, 0), fn);
     } else {
         par_for_skip(0, maxQPowerOcl, skipPower, valueLength, fn);
     }
