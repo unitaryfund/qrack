@@ -187,7 +187,8 @@ public:
         for (bitLenInt i = 0U; i < length; ++i) {
             Swap(oBdtQubitCount + i, oBdtQubitCount + length + i);
         }
-        Dispose(qubitCount - length, length);
+        root->RemoveSeparableAtDepth(qubitCount - length, length);
+        SetQubitCount(qubitCount - length, 0U);
     }
 
     void SetDevice(int64_t dID);
