@@ -181,7 +181,8 @@ public:
 
     void write(const bitCapIntOcl& i, const complex& c)
     {
-        const bool isCSet = abs(c) > REAL1_EPSILON;;
+        const bool isCSet = abs(c) > REAL1_EPSILON;
+        ;
         bool isFound;
         SparseStateVecMap::iterator it;
 

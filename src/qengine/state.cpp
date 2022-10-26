@@ -469,8 +469,9 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex co
                 const bitCapIntOcl setMask = offset1 ^ offset2;
                 bitCapIntOcl filterMask = 0U;
                 for (bitLenInt i = 0U; i < bitCount; ++i) {
-                    filterMask |= (qPowersSorted[i] & ~setMask);
+                    filterMask |= qPowersSorted[i];
                 }
+                filterMask &= ~setMask;
                 const bitCapIntOcl filterValues = filterMask & offset1 & offset2;
                 par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
             } else {
@@ -652,8 +653,9 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex co
                 const bitCapIntOcl setMask = offset1 ^ offset2;
                 bitCapIntOcl filterMask = 0U;
                 for (bitLenInt i = 0U; i < bitCount; ++i) {
-                    filterMask |= (qPowersSorted[i] & ~setMask);
+                    filterMask |= qPowersSorted[i];
                 }
+                filterMask &= ~setMask;
                 const bitCapIntOcl filterValues = filterMask & offset1 & offset2;
                 par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
             } else {
@@ -1313,7 +1315,6 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     const bitCapIntOcl remainderPower = pow2Ocl(nLength);
     const bitCapIntOcl skipMask = pow2Ocl(start) - ONE_BCI;
     const bitCapIntOcl disposedRes = disposedPermOcl << (bitCapIntOcl)start;
-    const bitCapIntOcl saveMask = ~((pow2Ocl(start + length) - ONE_BCI) ^ skipMask);
 
     if (doNormalize) {
         NormalizeState();
@@ -1323,21 +1324,12 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
     stateVec->isReadLocked = false;
 
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            const bitCapIntOcl iHigh = lcv & saveMask;
-            const bitCapIntOcl iLow = iHigh & skipMask;
-            const bitCapIntOcl i = iLow | ((iHigh ^ iLow) >> (bitCapIntOcl)length);
-            nStateVec->write(i, stateVec->read(lcv));
-        });
-    } else {
-        par_for(0U, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            const bitCapIntOcl iHigh = lcv;
-            const bitCapIntOcl iLow = iHigh & skipMask;
-            bitCapIntOcl i = iLow | ((iHigh ^ iLow) << (bitCapIntOcl)length) | disposedRes;
-            nStateVec->write(lcv, stateVec->read(i));
-        });
-    }
+    par_for(0U, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+        const bitCapIntOcl iHigh = lcv;
+        const bitCapIntOcl iLow = iHigh & skipMask;
+        bitCapIntOcl i = iLow | ((iHigh ^ iLow) << (bitCapIntOcl)length) | disposedRes;
+        nStateVec->write(lcv, stateVec->read(i));
+    });
 
     if (!nLength) {
         SetQubitCount(1U);
