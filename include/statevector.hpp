@@ -24,22 +24,11 @@
 #include <future>
 #endif
 
-#if ENABLE_UINT128
-#if BOOST_AVAILABLE
-#include <boost/functional/hash.hpp>
-#include <unordered_map>
-#define SparseStateVecMap std::unordered_map<bitCapIntOcl, complex>
-#else
-#include <map>
-#define SparseStateVecMap std::map<bitCapIntOcl, complex>
-#endif
-#else
 #if QBCAPPOW > 7
 #include <boost/functional/hash.hpp>
 #endif
 #include <unordered_map>
 #define SparseStateVecMap std::unordered_map<bitCapIntOcl, complex>
-#endif
 
 namespace Qrack {
 
@@ -192,7 +181,7 @@ public:
 
     void write(const bitCapIntOcl& i, const complex& c)
     {
-        const bool isCSet = (c != ZERO_CMPLX);
+        const bool isCSet = abs(c) > REAL1_EPSILON;;
         bool isFound;
         SparseStateVecMap::iterator it;
 
@@ -220,13 +209,13 @@ public:
 
     void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2)
     {
-        const bool isC1Set = (c1 != ZERO_CMPLX);
-        const bool isC2Set = (c2 != ZERO_CMPLX);
-        if (!(isC1Set || isC2Set)) {
-            return;
-        }
-
-        if (isC1Set && isC2Set) {
+        const bool isC1Set = abs(c1) > REAL1_EPSILON;
+        const bool isC2Set = abs(c2) > REAL1_EPSILON;
+        if (!isC1Set && !isC2Set) {
+            std::lock_guard<std::mutex> lock(mtx);
+            amplitudes.erase(i1);
+            amplitudes.erase(i2);
+        } else if (isC1Set && isC2Set) {
             std::lock_guard<std::mutex> lock(mtx);
             amplitudes[i1] = c1;
             amplitudes[i2] = c2;
@@ -256,7 +245,7 @@ public:
 
         std::lock_guard<std::mutex> lock(mtx);
         for (bitCapIntOcl i = 0U; i < capacity; ++i) {
-            if (copyIn[i] == ZERO_CMPLX) {
+            if (abs(copyIn[i]) <= REAL1_EPSILON) {
                 amplitudes.erase(i);
             } else {
                 amplitudes[i] = copyIn[i];
@@ -277,7 +266,7 @@ public:
 
         std::lock_guard<std::mutex> lock(mtx);
         for (bitCapIntOcl i = 0U; i < length; ++i) {
-            if (copyIn[i] == ZERO_CMPLX) {
+            if (abs(copyIn[i]) <= REAL1_EPSILON) {
                 amplitudes.erase(i);
             } else {
                 amplitudes[i + offset] = copyIn[i];
@@ -302,7 +291,7 @@ public:
         std::lock_guard<std::mutex> lock(mtx);
         for (bitCapIntOcl i = 0U; i < length; ++i) {
             complex amp = copyIn->read(i + srcOffset);
-            if (amp == ZERO_CMPLX) {
+            if (abs(amp) <= REAL1_EPSILON) {
                 amplitudes.erase(i + srcOffset);
             } else {
                 amplitudes[i + dstOffset] = amp;
