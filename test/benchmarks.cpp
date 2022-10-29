@@ -2537,7 +2537,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
         bitLenInt b1, b2;
         int row, col;
         int tempRow, tempCol;
-        std::vector<bitLenInt> controls;
+        std::vector<bitLenInt> controls(1);
 
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
@@ -3110,7 +3110,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         int row, col;
         int tempRow, tempCol;
 
-        std::vector<bitLenInt> controls;
+        std::vector<bitLenInt> controls(1);
 
         std::vector<int> lastSingleBitGates;
         std::set<int>::iterator gateChoiceIterator;
@@ -3284,7 +3284,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
         int row, col;
         int tempRow, tempCol;
 
-        std::vector<bitLenInt> controls;
+        std::vector<bitLenInt> controls(1);
 
         std::vector<int> lastSingleBitGates;
         std::set<int>::iterator gateChoiceIterator;
