@@ -76,23 +76,22 @@ void QBdt::Init()
 
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
-        // bitLenInt segmentGlobalQb = -1;
-        // bitLenInt segmentGlobalQb = 5U;
-        // #if ENABLE_ENV_VARS
-        //         if (getenv("QRACK_SEGMENT_QBDT_QB")) {
-        //             segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_QBDT_QB")));
-        //         }
-        // #endif
-        // maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+        bitLenInt segmentGlobalQb = -1;
+#if ENABLE_ENV_VARS
+        if (getenv("QRACK_SEGMENT_QBDT_QB")) {
+            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_QBDT_QB")));
+        }
+#endif
+        maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
         const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
         bitLenInt gpuQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
         if (gpuQubits > cpuQubits) {
             gpuQubits = cpuQubits;
         }
-        // maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
-        // if ((maxPageQubits < gpuQubits) && !getenv("QRACK_SEGMENT_QBDT_QB")) {
-        maxPageQubits = gpuQubits;
-        // }
+        maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
+        if ((maxPageQubits < gpuQubits) && !getenv("QRACK_SEGMENT_QBDT_QB")) {
+            maxPageQubits = gpuQubits;
+        }
     }
 #endif
 }
