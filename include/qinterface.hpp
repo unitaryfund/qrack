@@ -923,42 +923,56 @@ public:
      *
      * Applies a 1/4 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void S(bitLenInt qubit) { PhaseRootN(2U, qubit); }
+    virtual void S(bitLenInt qubit) { Phase(ONE_CMPLX, I_CMPLX, qubit); }
 
     /**
      * Inverse S gate
      *
      * Applies an inverse 1/4 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void IS(bitLenInt qubit) { IPhaseRootN(2U, qubit); }
+    virtual void IS(bitLenInt qubit) { Phase(ONE_CMPLX, -I_CMPLX, qubit); }
 
     /**
      * T gate
      *
      * Applies a 1/8 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void T(bitLenInt qubit) { PhaseRootN(3U, qubit); }
+    virtual void T(bitLenInt qubit) { Phase(ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), qubit); }
 
     /**
      * Inverse T gate
      *
      * Applies an inverse 1/8 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void IT(bitLenInt qubit) { IPhaseRootN(3U, qubit); }
+    virtual void IT(bitLenInt qubit) { Phase(ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), qubit); }
 
     /**
      * "PhaseRootN" gate
      *
      * Applies a 1/(2^N) phase rotation to the qubit at "qubitIndex."
      */
-    virtual void PhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+    virtual void PhaseRootN(bitLenInt n, bitLenInt qubit)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), qubit);
+    }
 
     /**
      * Inverse "PhaseRootN" gate
      *
      * Applies an inverse 1/(2^N) phase rotation to the qubit at "qubitIndex."
      */
-    virtual void IPhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+    virtual void IPhaseRootN(bitLenInt n, bitLenInt qubit)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), qubit);
+    }
 
     /**
      * Parity phase gate
@@ -1106,7 +1120,11 @@ public:
      * If the "control" bit is set to 1, then the S gate is applied
      * to "target."
      */
-    virtual void CS(bitLenInt control, bitLenInt target) { CPhaseRootN(2U, control, target); }
+    virtual void CS(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, I_CMPLX, target);
+    }
 
     /**
      * (Anti-)controlled S gate
@@ -1114,7 +1132,11 @@ public:
      * If the "control" bit is set to 1, then the S gate is applied
      * to "target."
      */
-    virtual void AntiCS(bitLenInt control, bitLenInt target) { AntiCPhaseRootN(2U, control, target); }
+    virtual void AntiCS(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, I_CMPLX, target);
+    }
 
     /**
      * Controlled inverse S gate
@@ -1122,7 +1144,11 @@ public:
      * If the "control" bit is set to 1, then the inverse S gate is applied
      * to "target."
      */
-    virtual void CIS(bitLenInt control, bitLenInt target) { CIPhaseRootN(2U, control, target); }
+    virtual void CIS(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, -I_CMPLX, target);
+    }
 
     /**
      * (Anti-)controlled inverse S gate
@@ -1130,7 +1156,11 @@ public:
      * If the "control" bit is set to 1, then the inverse S gate is applied
      * to "target."
      */
-    virtual void AntiCIS(bitLenInt control, bitLenInt target) { AntiCIPhaseRootN(2U, control, target); }
+    virtual void AntiCIS(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, -I_CMPLX, target);
+    }
 
     /**
      * Controlled T gate
@@ -1138,7 +1168,11 @@ public:
      * If the "control" bit is set to 1, then the T gate is applied
      * to "target."
      */
-    virtual void CT(bitLenInt control, bitLenInt target) { CPhaseRootN(3U, control, target); }
+    virtual void CT(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), target);
+    }
 
     /**
      * Controlled inverse T gate
@@ -1146,7 +1180,11 @@ public:
      * If the "control" bit is set to 1, then the inverse T gate is applied
      * to "target."
      */
-    virtual void CIT(bitLenInt control, bitLenInt target) { CIPhaseRootN(3U, control, target); }
+    virtual void CIT(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), target);
+    }
 
     /**
      * Controlled "PhaseRootN" gate
@@ -1154,7 +1192,15 @@ public:
      * If the "control" bit is set to 1, then the "PhaseRootN" gate is applied
      * to "target."
      */
-    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+    }
 
     /**
      * (Anti-)controlled "PhaseRootN" gate
@@ -1162,7 +1208,15 @@ public:
      * If the "control" bit is set to 0, then the "PhaseRootN" gate is applied
      * to "target."
      */
-    virtual void AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+    virtual void AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+    }
 
     /**
      * Controlled inverse "PhaseRootN" gate
@@ -1170,7 +1224,15 @@ public:
      * If the "control" bit is set to 1, then the inverse "PhaseRootN" gate is applied
      * to "target."
      */
-    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+    }
 
     /**
      * (Anti-)controlled inverse "PhaseRootN" gate
@@ -1178,7 +1240,15 @@ public:
      * If the "control" bit is set to 0, then the inverse "PhaseRootN" gate is applied
      * to "target."
      */
-    virtual void AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+    virtual void AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+    }
 
     /** @} */
 
