@@ -441,8 +441,14 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
 
     QBdtPtr nQubits = std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+    nQubits->SetQubitCount(length, 0U);
+    nQubits->SetPermutation(0U);
+    nQubits->root->InsertAtDepth(root, length, qubitCount);
+    root = nQubits->root;
+    SetQubitCount(qubitCount + length, attachedQubitCount);
+    ROR(length, 0U, start + length);
 
-    return Compose(nQubits, start);
+    return start;
 }
 
 real1_f QBdt::Prob(bitLenInt qubit)
