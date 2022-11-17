@@ -7016,7 +7016,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
             }
             testCase->SetPermutation(randPerm);
 
-            for (d = 0; d < n; d++) {
+            for (d = 0; d < (n >> 1U); d++) {
                 std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
                 for (i = 0; i < (int)layer1QbRands.size(); i++) {
                     SingleQubitGate gate1Qb = layer1QbRands[i];
