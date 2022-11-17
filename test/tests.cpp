@@ -6937,3 +6937,180 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
         REQUIRE(result == randPerm);
     }
 }
+
+struct SingleQubitGate {
+    real1_f th;
+    real1_f ph;
+    real1_f lm;
+};
+
+TEST_CASE("test_noisy_fidelity", "[mirror]")
+{
+    std::cout << ">>> 'test_noisy_fidelity':" << std::endl;
+
+    const int GateCountMultiQb = 13;
+    const int GateCount2Qb = 7;
+    const int TRIALS = 100;
+
+    int d;
+    int i;
+    int maxGates;
+
+    int gate;
+
+    for (int n = 4; n < 13; n = n + 2) {
+        QInterfacePtr testCase =
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
+        std::vector<real1_f> fidelities;
+
+        for (int trial = 0; trial < TRIALS; ++trial) {
+            std::vector<std::vector<SingleQubitGate>> gate1QbRands(n);
+            std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
+
+            for (d = 0; d < (n >> 1U); d++) {
+                std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
+                for (i = 0; i < n; i++) {
+                    SingleQubitGate gate1qb;
+                    gate1qb.th = 4 * PI_R1 * testCase->Rand();
+                    gate1qb.ph = 4 * PI_R1 * testCase->Rand();
+                    gate1qb.lm = 4 * PI_R1 * testCase->Rand();
+                    layer1QbRands.push_back(gate1qb);
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    unusedBits.insert(i);
+                }
+
+                std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+                while (unusedBits.size() > 1) {
+                    MultiQubitGate multiGate;
+                    multiGate.b1 = pickRandomBit(testCase, &unusedBits);
+                    multiGate.b2 = pickRandomBit(testCase, &unusedBits);
+                    multiGate.b3 = 0;
+
+                    if (unusedBits.size() > 0) {
+                        maxGates = GateCountMultiQb;
+                    } else {
+                        maxGates = GateCount2Qb;
+                    }
+
+                    gate = (int)(testCase->Rand() * maxGates);
+                    if (gate >= maxGates) {
+                        gate = (maxGates - 1U);
+                    }
+
+                    multiGate.gate = gate;
+
+                    if (multiGate.gate >= GateCount2Qb) {
+                        multiGate.b3 = pickRandomBit(testCase, &unusedBits);
+                    }
+
+                    layerMultiQbRands.push_back(multiGate);
+                }
+            }
+
+            bitCapIntOcl randPerm = (bitCapIntOcl)(testCase->Rand() * (bitCapIntOcl)testCase->GetMaxQPower());
+            if (randPerm >= testCase->GetMaxQPower()) {
+                randPerm = (bitCapIntOcl)testCase->GetMaxQPower() - 1U;
+            }
+            testCase->SetPermutation(randPerm);
+
+            for (d = 0; d < n; d++) {
+                std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
+                for (i = 0; i < (int)layer1QbRands.size(); i++) {
+                    SingleQubitGate gate1Qb = layer1QbRands[i];
+                    testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
+                }
+
+                std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+                for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
+                    MultiQubitGate multiGate = layerMultiQbRands[i];
+                    if (multiGate.gate == 0) {
+                        testCase->ISwap(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 1) {
+                        testCase->CNOT(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 2) {
+                        testCase->CY(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 3) {
+                        testCase->CZ(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 4) {
+                        testCase->AntiCNOT(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 5) {
+                        testCase->AntiCY(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 6) {
+                        testCase->AntiCZ(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 7) {
+                        testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else if (multiGate.gate == 8) {
+                        testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else if (multiGate.gate == 9) {
+                        testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else if (multiGate.gate == 10) {
+                        testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else if (multiGate.gate == 11) {
+                        testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else {
+                        testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                    }
+                }
+            }
+
+            // Mirror the circuit
+            for (d = (n >> 1U) - 1U; d >= 0; d--) {
+                std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+                for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
+                    MultiQubitGate multiGate = layerMultiQbRands[i];
+                    if (multiGate.gate == 0) {
+                        testCase->IISwap(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 1) {
+                        testCase->CNOT(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 2) {
+                        testCase->CY(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 3) {
+                        testCase->CZ(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 4) {
+                        testCase->AntiCNOT(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 5) {
+                        testCase->AntiCY(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 6) {
+                        testCase->AntiCZ(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 7) {
+                        testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else if (multiGate.gate == 8) {
+                        testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else if (multiGate.gate == 9) {
+                        testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else if (multiGate.gate == 10) {
+                        testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else if (multiGate.gate == 11) {
+                        testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                    } else {
+                        testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                    }
+                }
+
+                std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
+                for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
+                    SingleQubitGate gate1Qb = layer1QbRands[i];
+                    // Order reversal is intentional.
+                    testCase->U(i, -gate1Qb.th, -gate1Qb.lm, -gate1Qb.ph);
+                }
+            }
+
+            // We mirrored for half, hence the "gold standard" is identically |randPerm>.
+            QInterfacePtr goldStandard =
+                CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
+            goldStandard->SetPermutation(randPerm);
+            fidelities.push_back(goldStandard->SumSqrDiff(testCase));
+        }
+
+        real1_f averageInfidelity = 0.0f;
+        for (int trial = 0; trial < TRIALS; ++trial) {
+            averageInfidelity += fidelities[trial];
+        }
+        averageInfidelity /= TRIALS;
+
+        std::cout << "Average infidelity for width " << n << ": " << averageInfidelity << std::endl;
+    }
+}
