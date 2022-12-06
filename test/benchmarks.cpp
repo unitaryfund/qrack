@@ -107,14 +107,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     }
 
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
-
-        if (isBinaryOutput) {
-            mOutputFile << std::endl << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
-            mOutputFile << benchmarkSamples << " iterations" << std::endl;
-            mOutputFile << (int)numBits << " qubits" << std::endl;
-            mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
-        }
-
         QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
             enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
         if (disable_t_injection) {
@@ -207,20 +199,17 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 isTrialSuccessful = false;
             }
 
-            if (mOutputFileName.compare("")) {
-                bitCapInt result = qftReg->MReg(0, numBits);
-                if (isBinaryOutput) {
-                    if (isTrialSuccessful) {
-                        mOutputFile.write(reinterpret_cast<char*>(&result), sizeof(bitCapInt));
-                    }
-                } else {
-                    mOutputFile << Catch::getResultCapture().getCurrentTestName() << "," << (int)numBits << ",";
-                    if (isTrialSuccessful) {
-                        mOutputFile << result << std::endl;
-                    } else {
-                        mOutputFile << "-1" << std::endl;
-                    }
+            if (mOutputFileName.compare("") && isTrialSuccessful) {
+                std::vector<bitCapInt> qPowers;
+                for (bitLenInt i = 0U; i < numBits; ++i) {
+                    qPowers.push_back(pow2(i));
                 }
+                unsigned long long* results = new unsigned long long[1000000U];
+                qftReg->MultiShotMeasureMask(qPowers, 1000000U, results);
+                for (size_t i = 0U; i < 1000000U; ++i) {
+                    mOutputFile << results[i] << std::endl;
+                }
+                delete[] results;
             }
         }
 
@@ -3140,12 +3129,15 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     gateRand = 3 * qReg->Rand();
                     if (gateRand < ONE_R1) {
                         qReg->SqrtX(i);
+                        std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
                         lastSingleBitGates.push_back(0);
                     } else if (gateRand < (2 * ONE_R1)) {
                         qReg->SqrtY(i);
+                        std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                         lastSingleBitGates.push_back(1);
                     } else {
                         qReg->Mtrx(sqrtwMtrx, i);
+                        std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                         lastSingleBitGates.push_back(2);
                     }
                 } else {
@@ -3162,12 +3154,15 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
                     if (gateChoice == 0) {
                         qReg->SqrtX(i);
+                        std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
                         lastSingleBitGates[i] = 0;
                     } else if (gateChoice == 1) {
                         qReg->SqrtY(i);
+                        std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                         lastSingleBitGates[i] = 1;
                     } else {
                         qReg->Mtrx(sqrtwMtrx, i);
+                        std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                         lastSingleBitGates[i] = 2;
                     }
                 }
@@ -3226,14 +3221,11 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
                     // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
+                    std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
                 }
             }
             // std::cout<<"Depth++"<<std::endl;
         }
-        // std::cout<<"New iteration."<<std::endl;
-
-        // We measure all bits once, after the circuit is run.
-        qReg->MAll();
     });
 }
 
