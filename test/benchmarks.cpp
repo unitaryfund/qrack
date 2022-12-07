@@ -3202,6 +3202,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         continue;
                     }
 
+                    std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+
                     if (d == (benchmarkDepth - 1)) {
                         // For the last layer of couplers, the immediately next operation is measurement, and the phase
                         // effects make no observable difference.
@@ -3221,7 +3223,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
                     // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
-                    std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
                 }
             }
             // std::cout<<"Depth++"<<std::endl;
