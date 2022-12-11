@@ -15,6 +15,14 @@
 #define _USE_MATH_DEFINES
 #include "config.h"
 
+#if ENABLE_COMPLEX_X2
+#if FPPOW == 5
+#include "common/complex8x2simd.hpp"
+#elif FPPOW == 6
+#include "common/complex16x2simd.hpp"
+#endif
+#endif
+
 #include <cfloat>
 #include <cmath>
 #include <complex>
@@ -211,6 +219,9 @@ public:
     {
     }
     virtual complex read(const bitCapIntOcl& i) = 0;
+#if ENABLE_COMPLEX_X2
+    virtual complex2 read2(const bitCapIntOcl& i1, const bitCapIntOcl& i2) = 0;
+#endif
     virtual void write(const bitCapIntOcl& i, const complex& c) = 0;
     /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
     /// tensor slicing.)

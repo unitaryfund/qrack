@@ -12,14 +12,6 @@
 
 #include "qengine_cpu.hpp"
 
-#if ENABLE_COMPLEX_X2
-#if FPPOW == 5
-#include "common/complex8x2simd.hpp"
-#elif FPPOW == 6
-#include "common/complex16x2simd.hpp"
-#endif
-#endif
-
 #include <chrono>
 #include <thread>
 
@@ -329,7 +321,7 @@ void QEngineCPU::GetProbs(real1* outputProbs)
 
 #define NORM_THRESH_KERNEL(o1, o2, fn)                                                                                 \
     [&](const bitCapIntOcl& lcv, const unsigned& cpu) {                                                                \
-        complex2 qubit(stateVec->read(lcv + o1), stateVec->read(lcv + o2));                                            \
+        complex2 qubit = stateVec->read2(lcv + o1, lcv + o2);                                                          \
         qubit.c2 = fn;                                                                                                 \
                                                                                                                        \
         real1 dotMulRes = norm(qubit.c[0U]);                                                                           \
@@ -350,7 +342,7 @@ void QEngineCPU::GetProbs(real1* outputProbs)
 
 #define NORM_CALC_KERNEL(o1, o2, fn)                                                                                   \
     [&](const bitCapIntOcl& lcv, const unsigned& cpu) {                                                                \
-        complex2 qubit(stateVec->read(lcv + o1), stateVec->read(lcv + o2));                                            \
+        complex2 qubit = stateVec->read2(lcv + o1, lcv + o2);                                                          \
         qubit.c2 = fn;                                                                                                 \
         rngNrm[cpu] += norm(qubit.c2);                                                                                 \
         stateVec->write2(lcv + offset1, qubit.c[0U], lcv + offset2, qubit.c[1U]);                                      \
@@ -410,19 +402,19 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex co
             if (!doCalcNorm) {
                 if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                        complex2 qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+                        complex2 qubit = stateVec->read2(lcv + offset1, lcv + offset2);
                         qubit.c2 = mtrxPhase.c2 * qubit.c2;
                         stateVec->write2(lcv + offset1, qubit.c[0U], lcv + offset2, qubit.c[1U]);
                     };
                 } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                        complex2 qubit(stateVec->read(lcv + offset2), stateVec->read(lcv + offset1));
+                        complex2 qubit = stateVec->read2(lcv + offset2, lcv + offset1);
                         qubit.c2 = mtrxPhase.c2 * qubit.c2;
                         stateVec->write2(lcv + offset1, qubit.c[0U], lcv + offset2, qubit.c[1U]);
                     };
                 } else {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                        complex2 qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+                        complex2 qubit = stateVec->read2(lcv + offset1, lcv + offset2);
                         qubit.c2 = matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2);
                         stateVec->write2(lcv + offset1, qubit.c[0U], lcv + offset2, qubit.c[1U]);
                     };

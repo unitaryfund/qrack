@@ -85,6 +85,13 @@ public:
 
     complex read(const bitCapIntOcl& i) { return amplitudes.get()[i]; };
 
+#if ENABLE_COMPLEX_X2
+    complex2 read2(const bitCapIntOcl& i1, const bitCapIntOcl& i2)
+    {
+        return complex2(amplitudes.get()[i1], amplitudes.get()[i2]);
+    }
+#endif
+
     void write(const bitCapIntOcl& i, const complex& c) { amplitudes.get()[i] = c; };
 
     void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2)
@@ -178,6 +185,16 @@ public:
     }
 
     complex read(const bitCapIntOcl& i) { return isReadLocked ? readLocked(i) : readUnlocked(i); }
+
+#if ENABLE_COMPLEX_X2
+    complex2 read2(const bitCapIntOcl& i1, const bitCapIntOcl& i2)
+    {
+        if (isReadLocked) {
+            return complex2(readLocked(i1), readLocked(i2));
+        }
+        return complex2(readUnlocked(i1), readUnlocked(i2));
+    }
+#endif
 
     void write(const bitCapIntOcl& i, const complex& c)
     {
