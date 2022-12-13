@@ -1348,19 +1348,50 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
         return ZERO_R1_F;
     }
 
+    if (qubitCount == 1U) {
+        return norm(stateVec->read(1U));
+    }
+
     const bitCapIntOcl qPower = pow2Ocl(qubit);
     const unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
-    ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
-    };
+    ParallelFunc fn;
+    if (isSparse) {
+        fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
+        };
+    } else {
+#if ENABLE_COMPLEX_X2
+        if (qPower == 1U) {
+            fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                oneChanceBuff[cpu] += norm(stateVec->read2((lcv << 2U) | 1U, (lcv << 2U) | 3U).c2);
+            };
+        } else {
+            fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                oneChanceBuff[cpu] += norm(stateVec->read2((lcv << 1U) | qPower, (lcv << 1U) | 1U | qPower).c2);
+            };
+        }
+#else
+        fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
+        };
+#endif
+    }
 
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
         par_for_set(CastStateVecSparse()->iterable(qPower, qPower, qPower), fn);
     } else {
+#if ENABLE_COMPLEX_X2
+        if (qPower == 1U) {
+            par_for(0U, maxQPowerOcl >> 2U, fn);
+        } else {
+            par_for_skip(0U, maxQPowerOcl >> 1U, qPower >> 1U, 1U, fn);
+        }
+#else
         par_for_skip(0U, maxQPowerOcl, qPower, 1U, fn);
+#endif
     }
     stateVec->isReadLocked = true;
 
