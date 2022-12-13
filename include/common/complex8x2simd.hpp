@@ -14,6 +14,8 @@
 
 #if defined(_WIN32)
 #include <intrin.h>
+#elif ENABLE_SSE3
+#include <pmmintrin.h>
 #else
 #include <xmmintrin.h>
 #endif
@@ -121,9 +123,18 @@ inline Complex8x2Simd operator*(const float& lhs, const Complex8x2Simd& rhs)
     return _mm_mul_ps(_mm_set1_ps(lhs), rhs._val2);
 }
 
+// See
+// https://stackoverflow.com/questions/6996764/fastest-way-to-do-horizontal-sse-vector-sum-or-other-reduction#answer-35270026
 inline float norm(const Complex8x2Simd& c)
 {
-    const complex2 cu(_mm_mul_ps(c._val2, c._val2));
-    return (cu.f[0] + cu.f[1] + cu.f[2] + cu.f[3]);
+    const __m128 n = _mm_mul_ps(c._val2, c._val2);
+#if ENABLE_SSE3
+    __m128 shuf = _mm_movehdup_ps(n);
+#else
+    __m128 shuf = _mm_shuffle_ps(n, n, _MM_SHUFFLE(2, 3, 0, 1));
+#endif
+    __m128 sums = _mm_add_ps(n, shuf);
+    shuf = _mm_movehl_ps(shuf, sums);
+    return _mm_cvtss_f32(_mm_add_ss(sums, shuf));
 }
 } // namespace Qrack
