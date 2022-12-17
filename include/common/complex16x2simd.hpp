@@ -20,6 +20,8 @@
 #include <smmintrin.h>
 #endif
 
+#include <complex>
+
 namespace Qrack {
 
 static const __m256d ZERO_256D = _mm256_set_pd(0, 0, 0, 0);
