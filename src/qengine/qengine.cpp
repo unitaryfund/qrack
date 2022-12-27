@@ -175,8 +175,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
     ProbMaskAll(regMask, probArray.get());
 
     bitCapIntOcl lcv = 0U;
-    real1 lowerProb = ZERO_R1;
-    real1 largestProb = ZERO_R1;
+    real1 lowerProb = probArray[0U];
     result = lengthPower - ONE_BCI;
 
     /*
@@ -185,20 +184,16 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
      * vector.
      */
     while ((lowerProb < prob) && (lcv < lengthPower)) {
+        ++lcv;
         lowerProb += probArray[lcv];
-        if (largestProb <= probArray[lcv]) {
-            largestProb = probArray[lcv];
-            nrmlzr = largestProb;
+        if (probArray[lcv] > ZERO_R1) {
+            nrmlzr = probArray[lcv];
             result = lcv;
         }
-        ++lcv;
     }
     if (lcv < lengthPower) {
-        if (lcv) {
-            --lcv;
-        }
-        result = lcv;
         nrmlzr = probArray[lcv];
+        result = lcv;
     }
 
     probArray.reset();
