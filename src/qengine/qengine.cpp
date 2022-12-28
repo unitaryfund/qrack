@@ -170,7 +170,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
 
     const bitCapIntOcl lengthPower = pow2Ocl(bits.size());
     real1_f prob = Rand();
-    std::unique_ptr<real1[]> probArray(new real1[lengthPower]());
+    std::unique_ptr<real1[]> probArray(new real1[lengthPower]);
 
     ProbMaskAll(regMask, probArray.get());
 
@@ -572,7 +572,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         nrmlzr = ProbMask(regMask, result << (bitCapIntOcl)start);
     } else {
         bitCapIntOcl lcv = 0;
-        std::unique_ptr<real1[]> probArray(new real1[lengthPower]());
+        std::unique_ptr<real1[]> probArray(new real1[lengthPower]);
         ProbRegAll(start, length, probArray.get());
 
         const real1_f prob = Rand();

@@ -376,7 +376,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex co
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted.begin());
 
     const bool doApplyNorm = doNormalize && (bitCount == 1U) && (runningNorm > ZERO_R1);
-    doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
+    doCalcNorm &= doApplyNorm || (runningNorm <= ZERO_R1);
 
     const real1 nrm = doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
@@ -561,7 +561,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex co
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted.begin());
 
     const bool doApplyNorm = doNormalize && (bitCount == 1U) && (runningNorm > ZERO_R1);
-    doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
+    doCalcNorm &= doApplyNorm || (runningNorm <= ZERO_R1);
 
     const real1 nrm = doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
@@ -816,9 +816,8 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
             }
         }
 
-        bitCapIntOcl i, iHigh;
-        iHigh = offset;
-        i = 0U;
+        bitCapIntOcl i = 0U;
+        bitCapIntOcl iHigh = offset;
         for (bitCapIntOcl p = 0U; p < mtrxSkipPowers.size(); ++p) {
             bitCapIntOcl iLow = iHigh & (mtrxSkipPowersOcl[p] - ONE_BCI);
             i |= iLow;
@@ -826,11 +825,9 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
         }
         i |= iHigh;
 
-        offset = i | mtrxSkipValueMaskOcl;
-
         // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of
         // capacity for the unsigned bitCapInt.)
-        offset *= 4U;
+        offset = (i | mtrxSkipValueMaskOcl) * 4U;
 
         complex qubit[2U];
 
@@ -1232,8 +1229,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             j |= (lcv ^ j) << length;
 
             for (bitCapIntOcl k = 0U; k < partPower; ++k) {
-                const bitCapIntOcl l = j | (k << start);
-                remainderStateProb[lcv] += norm(stateVec->read(l));
+                remainderStateProb[lcv] += norm(stateVec->read(j | (k << start)));
             }
         });
 
@@ -1316,11 +1312,9 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
     stateVec->isReadLocked = false;
 
-    par_for(0U, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        const bitCapIntOcl iHigh = lcv;
+    par_for(0U, remainderPower, [&](const bitCapIntOcl& iHigh, const unsigned& cpu) {
         const bitCapIntOcl iLow = iHigh & skipMask;
-        bitCapIntOcl i = iLow | ((iHigh ^ iLow) << (bitCapIntOcl)length) | disposedRes;
-        nStateVec->write(lcv, stateVec->read(i));
+        nStateVec->write(iHigh, stateVec->read(iLow | ((iHigh ^ iLow) << (bitCapIntOcl)length) | disposedRes));
     });
 
     if (!nLength) {
@@ -1517,15 +1511,12 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 
-    std::vector<bitCapIntOcl> skipPowers(length);
-    std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers.begin());
-
     const unsigned num_threads = GetConcurrencyLevel();
     std::unique_ptr<real1[]> probs(new real1[num_threads]());
 
     const bitCapIntOcl permutationOcl = (bitCapIntOcl)permutation;
     stateVec->isReadLocked = false;
-    par_for_mask(0U, maxQPowerOcl, skipPowers, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+    par_for_mask(0U, maxQPowerOcl, skipPowersVec, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         probs[cpu] += norm(stateVec->read(lcv | permutationOcl));
     });
     stateVec->isReadLocked = true;
