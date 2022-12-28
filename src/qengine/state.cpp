@@ -1210,8 +1210,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
             for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
                 bitCapIntOcl l = k & pow2MaskOcl(start);
-                l |= (k ^ l) << length;
-                l = j | l;
+                l |= j | ((k ^ l) << length);
 
                 const complex amp = stateVec->read(l);
                 const real1 nrm = norm(amp);
@@ -1239,8 +1238,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
             for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
                 bitCapIntOcl l = k & pow2MaskOcl(start);
-                l |= (k ^ l) << length;
-                l = j | l;
+                l |= j | ((k ^ l) << length);
 
                 const complex amp = stateVec->read(l);
 
