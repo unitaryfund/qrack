@@ -329,19 +329,18 @@ std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr
 void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
 {
     bitCapInt v = mask; // count the number of bits set in v
-    bitLenInt length;
     std::vector<bitCapInt> bitPowers;
-    for (length = 0U; v; ++length) {
+    for (bitLenInt length = 0U; v; ++length) {
         bitCapInt oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         bitPowers.push_back((v ^ oldV) & oldV);
     }
 
-    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
+    std::fill(probsArray, probsArray + pow2Ocl(bitPowers.size()), ZERO_R1);
 
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapIntOcl retIndex = 0U;
-        for (bitLenInt p = 0U; p < length; ++p) {
+        for (size_t p = 0U; p < bitPowers.size(); ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2Ocl(p);
             }
