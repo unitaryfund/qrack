@@ -3591,7 +3591,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::cout << "samples collected: " << ITERATIONS << std::endl;
 
     int d;
-    bitLenInt i;
+    size_t i;
     std::vector<std::vector<int>> gate1QbRands(Depth);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
     int maxGates;
