@@ -457,6 +457,23 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
     MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
 }
 
+real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
+{
+    if (controlState) {
+        AntiCNOT(control, target);
+    } else {
+        CNOT(control, target);
+    }
+    const real1_f prob = Prob(target);
+    if (controlState) {
+        AntiCNOT(control, target);
+    } else {
+        CNOT(control, target);
+    }
+
+    return prob;
+}
+
 void QEngine::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray)
 {
     const bitCapIntOcl lengthMask = pow2Ocl(length) - ONE_BCI;

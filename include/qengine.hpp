@@ -236,22 +236,7 @@ public:
 
         return clampProb((real1_f)norm(GetAmplitude(fullRegister)));
     }
-    virtual real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
-    {
-        if (controlState) {
-            AntiCNOT(control, target);
-        } else {
-            CNOT(control, target);
-        }
-        const real1_f prob = Prob(target);
-        if (controlState) {
-            AntiCNOT(control, target);
-        } else {
-            CNOT(control, target);
-        }
-
-        return prob;
-    }
+    virtual real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target);
     virtual real1_f CProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(true, control, target); }
     virtual real1_f ACProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(false, control, target); }
     virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation) = 0;

@@ -2223,7 +2223,7 @@ public:
     virtual real1_f CProb(bitLenInt control, bitLenInt target)
     {
         AntiCNOT(control, target);
-        real1_f prob = Prob(target);
+        const real1_f prob = Prob(target);
         AntiCNOT(control, target);
 
         return prob;
@@ -2236,7 +2236,7 @@ public:
     virtual real1_f ACProb(bitLenInt control, bitLenInt target)
     {
         CNOT(control, target);
-        real1_f prob = Prob(target);
+        const real1_f prob = Prob(target);
         CNOT(control, target);
 
         return prob;
