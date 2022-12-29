@@ -16,24 +16,6 @@
 
 namespace Qrack {
 
-real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
-{
-    real1_f prob;
-    if (controlState) {
-        AntiCNOT(control, target);
-    } else {
-        CNOT(control, target);
-    }
-    prob = Prob(target);
-    if (controlState) {
-        AntiCNOT(control, target);
-    } else {
-        CNOT(control, target);
-    }
-
-    return prob;
-}
-
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
@@ -469,15 +451,6 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     }
 
     return result;
-}
-
-QInterfacePtr QEngine::Decompose(bitLenInt start, bitLenInt length)
-{
-    QEnginePtr dest = CloneEmpty();
-    dest->SetQubitCount(length);
-    Decompose(start, dest);
-
-    return dest;
 }
 
 } // namespace Qrack

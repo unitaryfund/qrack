@@ -333,7 +333,23 @@ public:
 
         return clampProb((real1_f)norm(GetAmplitude(fullRegister)));
     }
-    virtual real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target);
+    virtual real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
+    {
+        real1_f prob;
+        if (controlState) {
+            AntiCNOT(control, target);
+        } else {
+            CNOT(control, target);
+        }
+        prob = Prob(target);
+        if (controlState) {
+            AntiCNOT(control, target);
+        } else {
+            CNOT(control, target);
+        }
+
+        return prob;
+    }
     virtual real1_f CProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(true, control, target); }
     virtual real1_f ACProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(false, control, target); }
     virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation) = 0;
@@ -348,6 +364,13 @@ public:
     virtual void ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
 
     using QInterface::Decompose;
-    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
+    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
+    {
+        QEnginePtr dest = CloneEmpty();
+        dest->SetQubitCount(length);
+        Decompose(start, dest);
+
+        return dest;
+    }
 };
 } // namespace Qrack
