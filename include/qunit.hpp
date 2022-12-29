@@ -98,12 +98,35 @@ public:
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetAmplitude(bitCapInt perm, complex amp);
+    virtual void SetAmplitude(bitCapInt perm, complex amp)
+    {
+        if (perm >= maxQPower) {
+            throw std::invalid_argument("QUnit::SetAmplitude argument out-of-bounds!");
+        }
+
+        EntangleAll();
+        shards[0U].unit->SetAmplitude(perm, amp);
+    }
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
-    virtual bitLenInt Compose(QUnitPtr toCopy);
+    virtual bitLenInt Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); }
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnit>(toCopy)); }
-    virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start)
+    {
+        if (start > qubitCount) {
+            throw std::invalid_argument("QUnit::Compose start index is out-of-bounds!");
+        }
+
+        /* Create a clone of the quantum state in toCopy. */
+        QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
+
+        /* Insert the new shards in the middle */
+        shards.insert(start, clone->shards);
+
+        SetQubitCount(qubitCount + toCopy->GetQubitCount());
+
+        return start;
+    }
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
         return Compose(std::dynamic_pointer_cast<QUnit>(toCopy), start);
@@ -112,10 +135,19 @@ public:
     {
         Decompose(start, std::dynamic_pointer_cast<QUnit>(dest));
     }
-    virtual void Decompose(bitLenInt start, QUnitPtr dest);
-    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-    virtual void Dispose(bitLenInt start, bitLenInt length);
-    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
+    virtual void Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQubitCount(), dest); }
+    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
+    {
+        QUnitPtr dest = std::make_shared<QUnit>(engines, length, 0U, rand_generator, phaseFactor, doNormalize,
+            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+            thresholdQubits, separabilityThreshold);
+
+        Decompose(start, dest);
+
+        return dest;
+    }
+    virtual void Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { Detach(start, length, nullptr); }
     using QInterface::Allocate;
     virtual bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
@@ -255,7 +287,23 @@ public:
      */
 
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
-    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
+    {
+        if (qubit1 >= qubitCount) {
+            throw std::invalid_argument("QUnit::Swap qubit index parameter must be within allocated qubit bounds!");
+        }
+
+        if (qubit2 >= qubitCount) {
+            throw std::invalid_argument("QUnit::Swap qubit index parameter must be within allocated qubit bounds!");
+        }
+
+        if (qubit1 == qubit2) {
+            return;
+        }
+
+        // Simply swap the bit mapping.
+        shards.swap(qubit1, qubit2);
+    }
     virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, false); }
     virtual void IISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, true); }
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
@@ -270,8 +318,16 @@ public:
      * @{
      */
 
-    virtual real1_f Prob(bitLenInt qubit);
-    virtual real1_f ProbAll(bitCapInt fullRegister);
+    virtual real1_f Prob(bitLenInt qubit)
+    {
+        if (qubit >= qubitCount) {
+            throw std::invalid_argument("QUnit::Prob target parameter must be within allocated qubit bounds!");
+        }
+
+        ToPermBasisProb(qubit);
+        return ProbBase(qubit);
+    }
+    virtual real1_f ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true))); }
     virtual real1_f ProbParity(bitCapInt mask);
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
@@ -425,11 +481,45 @@ protected:
         ClampShard(qubit);
     }
 
-    void TransformX2x2(complex const* mtrxIn, complex* mtrxOut);
-    void TransformXInvert(complex topRight, complex bottomLeft, complex* mtrxOut);
-    void TransformY2x2(complex const* mtrxIn, complex* mtrxOut);
-    void TransformYInvert(complex topRight, complex bottomLeft, complex* mtrxOut);
-    void TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOut);
+    void TransformX2x2(complex const* mtrxIn, complex* mtrxOut)
+    {
+        mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + mtrxIn[1U] + mtrxIn[2U] + mtrxIn[3U]);
+        mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - mtrxIn[1U] + mtrxIn[2U] - mtrxIn[3U]);
+        mtrxOut[2U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + mtrxIn[1U] - mtrxIn[2U] - mtrxIn[3U]);
+        mtrxOut[3U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - mtrxIn[1U] - mtrxIn[2U] + mtrxIn[3U]);
+    }
+
+    void TransformXInvert(complex topRight, complex bottomLeft, complex* mtrxOut)
+    {
+        mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(topRight + bottomLeft);
+        mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(-topRight + bottomLeft);
+        mtrxOut[2U] = -mtrxOut[1U];
+        mtrxOut[3U] = -mtrxOut[0U];
+    }
+
+    void TransformY2x2(complex const* mtrxIn, complex* mtrxOut)
+    {
+        mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
+        mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);
+        mtrxOut[2U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);
+        mtrxOut[3U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
+    }
+
+    void TransformYInvert(complex topRight, complex bottomLeft, complex* mtrxOut)
+    {
+        mtrxOut[0U] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(topRight - bottomLeft);
+        mtrxOut[1U] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(-topRight - bottomLeft);
+        mtrxOut[2U] = -mtrxOut[1U];
+        mtrxOut[3U] = -mtrxOut[0U];
+    }
+
+    void TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOut)
+    {
+        mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(topLeft + bottomRight);
+        mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(topLeft - bottomRight);
+        mtrxOut[2U] = mtrxOut[1U];
+        mtrxOut[3U] = mtrxOut[0U];
+    }
 
     void RevertBasisX(bitLenInt i)
     {

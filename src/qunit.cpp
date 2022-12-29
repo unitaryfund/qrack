@@ -260,38 +260,6 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     return result;
 }
 
-void QUnit::SetAmplitude(bitCapInt perm, complex amp)
-{
-    if (perm >= maxQPower) {
-        throw std::invalid_argument("QUnit::SetAmplitude argument out-of-bounds!");
-    }
-
-    EntangleAll();
-    shards[0U].unit->SetAmplitude(perm, amp);
-}
-
-bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); }
-
-/*
- * Append QInterface in the middle of QUnit.
- */
-bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
-{
-    if (start > qubitCount) {
-        throw std::invalid_argument("QUnit::Compose start index is out-of-bounds!");
-    }
-
-    /* Create a clone of the quantum state in toCopy. */
-    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
-
-    /* Insert the new shards in the middle */
-    shards.insert(start, clone->shards);
-
-    SetQubitCount(qubitCount + toCopy->GetQubitCount());
-
-    return start;
-}
-
 void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
     if (isBadBitRange(start, length, qubitCount)) {
@@ -407,24 +375,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     shards.erase(start, start + length);
     SetQubitCount(qubitCount - length);
 }
-
-void QUnit::Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQubitCount(), dest); }
-
-QInterfacePtr QUnit::Decompose(bitLenInt start, bitLenInt length)
-{
-    QUnitPtr dest = std::make_shared<QUnit>(engines, length, 0U, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
-        separabilityThreshold);
-
-    Decompose(start, dest);
-
-    return dest;
-}
-
-void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
-
-// The optimization of this method is redundant with other optimizations in QUnit.
-void QUnit::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { Detach(start, length, nullptr); }
 
 QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
@@ -1074,16 +1024,6 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     return prob;
 }
 
-real1_f QUnit::Prob(bitLenInt qubit)
-{
-    if (qubit >= qubitCount) {
-        throw std::invalid_argument("QUnit::Prob target parameter must be within allocated qubit bounds!");
-    }
-
-    ToPermBasisProb(qubit);
-    return ProbBase(qubit);
-}
-
 real1_f QUnit::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
 {
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
@@ -1098,8 +1038,6 @@ real1_f QUnit::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt 
 
     return shards[0U].unit->ExpectationBitsAll(bits, offset);
 }
-
-real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true))); }
 
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 {
@@ -1812,24 +1750,6 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     }
 }
 
-void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (qubit1 >= qubitCount) {
-        throw std::invalid_argument("QUnit::Swap qubit index parameter must be within allocated qubit bounds!");
-    }
-
-    if (qubit2 >= qubitCount) {
-        throw std::invalid_argument("QUnit::Swap qubit index parameter must be within allocated qubit bounds!");
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    // Simply swap the bit mapping.
-    shards.swap(qubit1, qubit2);
-}
-
 void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 {
     if (qubit1 >= qubitCount) {
@@ -2136,46 +2056,6 @@ void QUnit::ZBase(bitLenInt target)
     }
 
     shard.amp1 = -shard.amp1;
-}
-
-void QUnit::TransformX2x2(complex const* mtrxIn, complex* mtrxOut)
-{
-    mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + mtrxIn[1U] + mtrxIn[2U] + mtrxIn[3U]);
-    mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - mtrxIn[1U] + mtrxIn[2U] - mtrxIn[3U]);
-    mtrxOut[2U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + mtrxIn[1U] - mtrxIn[2U] - mtrxIn[3U]);
-    mtrxOut[3U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - mtrxIn[1U] - mtrxIn[2U] + mtrxIn[3U]);
-}
-
-void QUnit::TransformXInvert(complex topRight, complex bottomLeft, complex* mtrxOut)
-{
-    mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(topRight + bottomLeft);
-    mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(-topRight + bottomLeft);
-    mtrxOut[2U] = -mtrxOut[1U];
-    mtrxOut[3U] = -mtrxOut[0U];
-}
-
-void QUnit::TransformY2x2(complex const* mtrxIn, complex* mtrxOut)
-{
-    mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
-    mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);
-    mtrxOut[2U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);
-    mtrxOut[3U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
-}
-
-void QUnit::TransformYInvert(complex topRight, complex bottomLeft, complex* mtrxOut)
-{
-    mtrxOut[0U] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(topRight - bottomLeft);
-    mtrxOut[1U] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(-topRight - bottomLeft);
-    mtrxOut[2U] = -mtrxOut[1U];
-    mtrxOut[3U] = -mtrxOut[0U];
-}
-
-void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOut)
-{
-    mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(topLeft + bottomRight);
-    mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(topLeft - bottomRight);
-    mtrxOut[2U] = mtrxOut[1U];
-    mtrxOut[3U] = mtrxOut[0U];
 }
 
 #define CTRLED_GEN_WRAP(ctrld)                                                                                         \

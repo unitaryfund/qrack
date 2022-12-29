@@ -16,6 +16,38 @@
 
 namespace Qrack {
 
+void QEngine::Mtrx(complex const* mtrx, bitLenInt qubit)
+{
+    if (IsIdentity(mtrx, false)) {
+        return;
+    }
+
+    const bitCapIntOcl qPowers[1U]{ pow2Ocl(qubit) };
+    Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx)));
+}
+
+void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target, bool isAnti)
+{
+    if (!controls.size()) {
+        Mtrx(mtrx, target);
+        return;
+    }
+
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
+
+    if (isAnti) {
+        ApplyAntiControlled2x2(controls, target, mtrx);
+    } else {
+        ApplyControlled2x2(controls, target, mtrx);
+    }
+
+    if (doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx))) {
+        UpdateRunningNorm();
+    }
+}
+
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
@@ -356,7 +388,51 @@ void QEngine::ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bit
     Apply2x2(0U, targetMask, mtrx, controls.size() + 1U, qPowersSorted.get(), false);
 }
 
-/// "fSim" gate, (useful in the simulation of particles with fermionic statistics)
+#define _QRACK_QENGINE_SWAP_PREAMBLE()                                                                                 \
+    if (qubit1 == qubit2) {                                                                                            \
+        return;                                                                                                        \
+    }                                                                                                                  \
+                                                                                                                       \
+    if (qubit2 < qubit1) {                                                                                             \
+        std::swap(qubit1, qubit2);                                                                                     \
+    }
+void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    _QRACK_QENGINE_SWAP_PREAMBLE()
+    const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
+}
+void QEngine::ISwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    _QRACK_QENGINE_SWAP_PREAMBLE()
+    const complex pauliX[4U]{ ZERO_CMPLX, I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
+}
+void QEngine::IISwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    _QRACK_QENGINE_SWAP_PREAMBLE()
+    const complex pauliX[4U]{ ZERO_CMPLX, -I_CMPLX, -I_CMPLX, ZERO_CMPLX };
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
+}
+void QEngine::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    _QRACK_QENGINE_SWAP_PREAMBLE()
+    const complex sqrtX[4U]{ complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    Apply2x2(qPowersSorted[0U], qPowersSorted[1U], sqrtX, 2U, qPowersSorted, false);
+}
+void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    _QRACK_QENGINE_SWAP_PREAMBLE()
+    const complex iSqrtX[4U]{ complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
+    Apply2x2(qPowersSorted[0U], qPowersSorted[1U], iSqrtX, 2U, qPowersSorted, false);
+}
 void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
     const real1 cosTheta = (real1)cos(theta);
