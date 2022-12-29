@@ -65,6 +65,8 @@ protected:
         return true;
     }
 
+    void EitherMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target, bool isAnti);
+
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
@@ -142,46 +144,14 @@ public:
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 
-    virtual void Mtrx(complex const* mtrx, bitLenInt qubit)
-    {
-        if (IsIdentity(mtrx, false)) {
-            return;
-        }
-
-        const bitCapIntOcl qPowers[1U]{ pow2Ocl(qubit) };
-        Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx)));
-    }
+    virtual void Mtrx(complex const* mtrx, bitLenInt qubit);
     virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
     {
-        if (!controls.size()) {
-            Mtrx(mtrx, target);
-            return;
-        }
-
-        if (IsIdentity(mtrx, true)) {
-            return;
-        }
-
-        ApplyControlled2x2(controls, target, mtrx);
-        if (doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx))) {
-            UpdateRunningNorm();
-        }
+        EitherMtrx(controls, mtrx, target, false);
     }
     virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
     {
-        if (!controls.size()) {
-            Mtrx(mtrx, target);
-            return;
-        }
-
-        if (IsIdentity(mtrx, true)) {
-            return;
-        }
-
-        ApplyAntiControlled2x2(controls, target, mtrx);
-        if (doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx))) {
-            UpdateRunningNorm();
-        }
+        EitherMtrx(controls, mtrx, target, true);
     }
     virtual void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
     virtual void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
@@ -246,82 +216,15 @@ public:
 #endif
 
     using QInterface::Swap;
-    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        if (qubit2 < qubit1) {
-            std::swap(qubit1, qubit2);
-        }
-
-        const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-        const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-        Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
-    }
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::ISwap;
-    virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        if (qubit2 < qubit1) {
-            std::swap(qubit1, qubit2);
-        }
-
-        const complex pauliX[4U]{ ZERO_CMPLX, I_CMPLX, I_CMPLX, ZERO_CMPLX };
-        const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-        Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
-    }
+    virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::IISwap;
-    virtual void IISwap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        if (qubit2 < qubit1) {
-            std::swap(qubit1, qubit2);
-        }
-
-        const complex pauliX[4U]{ ZERO_CMPLX, -I_CMPLX, -I_CMPLX, ZERO_CMPLX };
-        const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-        Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
-    }
+    virtual void IISwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::SqrtSwap;
-    virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        if (qubit2 < qubit1) {
-            std::swap(qubit1, qubit2);
-        }
-
-        const complex sqrtX[4U]{ complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
-            complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
-        const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-        Apply2x2(qPowersSorted[0U], qPowersSorted[1U], sqrtX, 2U, qPowersSorted, false);
-    }
+    virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::ISqrtSwap;
-    virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        if (qubit2 < qubit1) {
-            std::swap(qubit1, qubit2);
-        }
-
-        const complex iSqrtX[4U]{ complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
-            complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
-        const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-        Apply2x2(qPowersSorted[0U], qPowersSorted[1U], iSqrtX, 2U, qPowersSorted, false);
-    }
+    virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::FSim;
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
@@ -335,13 +238,12 @@ public:
     }
     virtual real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
     {
-        real1_f prob;
         if (controlState) {
             AntiCNOT(control, target);
         } else {
             CNOT(control, target);
         }
-        prob = Prob(target);
+        const real1_f prob = Prob(target);
         if (controlState) {
             AntiCNOT(control, target);
         } else {

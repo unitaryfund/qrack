@@ -1144,6 +1144,51 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     return toRet;
 }
 
+void QStabilizerHybrid::ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inverse)
+{
+    if (qubit1 == qubit2) {
+        return;
+    }
+
+    MpsShardPtr shard = shards[qubit1];
+    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+        FlushH(qubit1);
+    }
+    shard = shards[qubit1];
+    if (shard && shard->IsInvert()) {
+        InvertBuffer(qubit1);
+    }
+
+    shard = shards[qubit2];
+    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+        FlushH(qubit2);
+    }
+    shard = shards[qubit2];
+    if (shard && shard->IsInvert()) {
+        InvertBuffer(qubit2);
+    }
+
+    if ((shards[qubit1] && !shards[qubit1]->IsPhase()) || (shards[qubit2] && !shards[qubit2]->IsPhase())) {
+        FlushBuffers();
+    }
+
+    std::swap(shards[qubit1], shards[qubit2]);
+
+    if (stabilizer) {
+        if (inverse) {
+            stabilizer->IISwap(qubit1, qubit2);
+        } else {
+            stabilizer->ISwap(qubit1, qubit2);
+        }
+    } else {
+        if (inverse) {
+            engine->IISwap(qubit1, qubit2);
+        } else {
+            engine->ISwap(qubit1, qubit2);
+        }
+    }
+}
+
 void QStabilizerHybrid::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
     if ((nrm > ZERO_R1) && (abs(ONE_R1 - nrm) > FP_NORM_EPSILON)) {
