@@ -191,37 +191,20 @@ public:
         SwitchToEngine();
         engine->SetAmplitude(perm, amp);
     }
-    void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
-    {
-        DumpBuffers();
+    void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-        engine = NULL;
-
-        if (stabilizer && !ancillaCount) {
-            stabilizer->SetPermutation(perm);
-        } else {
-            ancillaCount = 0U;
-            stabilizer = MakeStabilizer(perm);
-        }
-    }
-
-    void Swap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        std::swap(shards[qubit1], shards[qubit2]);
-
-        if (stabilizer) {
-            stabilizer->Swap(qubit1, qubit2);
-        } else {
-            engine->Swap(qubit1, qubit2);
-        }
-    }
-
+    void Swap(bitLenInt qubit1, bitLenInt qubit2);
     void ISwap(bitLenInt qubit1, bitLenInt qubit2) { ISwapHelper(qubit1, qubit2, false); }
     void IISwap(bitLenInt qubit1, bitLenInt qubit2) { ISwapHelper(qubit1, qubit2, true); }
+    void CSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2);
+    void CSqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2);
+    void AntiCSqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2);
+    void CISqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2);
+    void AntiCISqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2);
+
+    void XMask(bitCapInt mask);
+    void YMask(bitCapInt mask);
+    void ZMask(bitCapInt mask);
 
     real1_f Prob(bitLenInt qubit);
 
@@ -239,173 +222,13 @@ public:
 
     using QInterface::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, complex const* mtrxs)
-    {
-        if (stabilizer) {
-            QInterface::UniformlyControlledSingleBit(controls, qubitIndex, mtrxs);
-            return;
-        }
-
-        engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs);
-    }
-
-    void CSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (stabilizer) {
-            std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, controls, false)) {
-                return;
-            }
-            if (!controls.size()) {
-                stabilizer->Swap(qubit1, qubit2);
-                return;
-            }
-            SwitchToEngine();
-        }
-
-        engine->CSwap(lControls, qubit1, qubit2);
-    }
-    void CSqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (stabilizer) {
-            std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, controls, false)) {
-                return;
-            }
-            if (!controls.size()) {
-                QInterface::SqrtSwap(qubit1, qubit2);
-                return;
-            }
-            SwitchToEngine();
-        }
-
-        engine->CSqrtSwap(lControls, qubit1, qubit2);
-    }
-    void AntiCSqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (stabilizer) {
-            std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, controls, true)) {
-                return;
-            }
-            if (!controls.size()) {
-                QInterface::SqrtSwap(qubit1, qubit2);
-                return;
-            }
-            SwitchToEngine();
-        }
-
-        engine->AntiCSqrtSwap(lControls, qubit1, qubit2);
-    }
-    void CISqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (stabilizer) {
-            std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, controls, false)) {
-                return;
-            }
-            if (!controls.size()) {
-                QInterface::ISqrtSwap(qubit1, qubit2);
-                return;
-            }
-            SwitchToEngine();
-        }
-
-        engine->CISqrtSwap(lControls, qubit1, qubit2);
-    }
-    void AntiCISqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (stabilizer) {
-            std::vector<bitLenInt> controls;
-            if (TrimControls(lControls, controls, true)) {
-                return;
-            }
-            if (!controls.size()) {
-                QInterface::ISqrtSwap(qubit1, qubit2);
-                return;
-            }
-            SwitchToEngine();
-        }
-
-        engine->AntiCISqrtSwap(lControls, qubit1, qubit2);
-    }
-
-    void XMask(bitCapInt mask)
-    {
-        if (!stabilizer) {
-            engine->XMask(mask);
-            return;
-        }
-
-        bitCapInt v = mask;
-        while (mask) {
-            v = v & (v - ONE_BCI);
-            X(log2(mask ^ v));
-            mask = v;
-        }
-    }
-
-    void YMask(bitCapInt mask)
-    {
-        if (!stabilizer) {
-            engine->YMask(mask);
-            return;
-        }
-
-        bitCapInt v = mask;
-        while (mask) {
-            v = v & (v - ONE_BCI);
-            Y(log2(mask ^ v));
-            mask = v;
-        }
-    }
-
-    void ZMask(bitCapInt mask)
-    {
-        if (!stabilizer) {
-            engine->ZMask(mask);
-            return;
-        }
-
-        bitCapInt v = mask;
-        while (mask) {
-            v = v & (v - ONE_BCI);
-            Z(log2(mask ^ v));
-            mask = v;
-        }
-    }
+        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, complex const* mtrxs);
 
     std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots);
     void MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray);
 
-    real1_f ProbParity(bitCapInt mask)
-    {
-        if (!mask) {
-            return ZERO_R1_F;
-        }
-
-        if (!(mask & (mask - ONE_BCI))) {
-            return Prob(log2(mask));
-        }
-
-        SwitchToEngine();
-        return QINTERFACE_TO_QPARITY(engine)->ProbParity(mask);
-    }
-    bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
-    {
-        // If no bits in mask:
-        if (!mask) {
-            return false;
-        }
-
-        // If only one bit in mask:
-        if (!(mask & (mask - ONE_BCI))) {
-            return ForceM(log2(mask), result, doForce);
-        }
-
-        SwitchToEngine();
-        return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
-    }
+    real1_f ProbParity(bitCapInt mask);
+    bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
     {
         SwitchToEngine();
