@@ -21,7 +21,7 @@
 #endif
 #include <set>
 
-#define IS_NODE_0(c) (norm(c) <= _qrack_sep_thresh)
+#define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 
 namespace Qrack {

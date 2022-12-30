@@ -168,6 +168,7 @@ Note that this controls total direct Qrack OpenCL buffer allocation, not total Q
 ## Approximation options
 `QUnit` can optionally round qubit subsystems proactively or on-demand to the nearest single or double qubit eigenstate with the `QRACK_QUNIT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]` environment variable, with a value between `0.0` and `0.5`. When trying to find separable subsystems, Qrack will start by making 3-axis (independent or conditional) probability measurements. Based on the probability measurements, under the assumption that the state _is_ separable, an inverse state preparation to |0> procedure is fixed. If inverse state preparation would bring any single qubit probability within parameter range of a |0> eigenstate, then the subsystem will be rounded to that state, normalized, and then "uncomputed" with the corresponding (forward) state preparation, effectively "hyperpolarizing" one and two qubit separable substates by replacing entanglement with local qubit Bloch sphere extent. (If 3-axis probability is _not_ within rounding range, nothing is done directly to the substate.)
 
+Similarly functionality to above is available for `QBdt` with `QRACK_QBDT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]`
 ## Vectorization optimization
 
 ```sh
