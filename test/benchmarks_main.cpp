@@ -465,6 +465,15 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
+
+        if (num_failed == 0 && stabilizer_bdt) {
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QBinaryDecisionTree ############"
+                                      << std::endl;
+            testEngineType = QINTERFACE_QUNIT;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT;
+            num_failed = session.run();
+        }
 #endif
     }
 
