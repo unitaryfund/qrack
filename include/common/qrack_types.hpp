@@ -218,6 +218,11 @@ public:
         , isReadLocked(true)
     {
     }
+    virtual ~StateVector()
+    {
+        // Intentionally left blank.
+    }
+
     virtual complex read(const bitCapIntOcl& i) = 0;
 #if ENABLE_COMPLEX_X2
     virtual complex2 read2(const bitCapIntOcl& i1, const bitCapIntOcl& i2) = 0;
@@ -321,4 +326,8 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
 std::ostream& operator<<(std::ostream& os, bitCapInt b);
 std::istream& operator>>(std::istream& is, bitCapInt& b);
 #endif
+
+const real1_f _qbdt_node_sep_thresh = getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")
+    ? (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")))
+    : FP_NORM_EPSILON;
 } // namespace Qrack
