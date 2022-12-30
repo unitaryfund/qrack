@@ -21,7 +21,7 @@
 #endif
 #include <set>
 
-#define IS_NORM_0(c) (norm(c) <= _qbdt_node_sep_thresh)
+#define IS_NORM_0(c) (norm(c) <= _qrack_sep_thresh)
 
 namespace Qrack {
 
@@ -174,19 +174,19 @@ void QBdtNode::PopStateVector(bitLenInt depth)
     const real1 nrm0 = norm(b0->scale);
     const real1 nrm1 = norm(b1->scale);
 
-    if ((nrm0 + nrm1) <= _qbdt_node_sep_thresh) {
+    if ((nrm0 + nrm1) <= _qrack_sep_thresh) {
         SetZero();
         return;
     }
 
-    if (nrm0 <= _qbdt_node_sep_thresh) {
+    if (nrm0 <= _qrack_sep_thresh) {
         scale = b1->scale;
         b0->SetZero();
         b1->scale = ONE_CMPLX;
         return;
     }
 
-    if (nrm1 <= _qbdt_node_sep_thresh) {
+    if (nrm1 <= _qrack_sep_thresh) {
         scale = b0->scale;
         b0->scale = ONE_CMPLX;
         b1->SetZero();

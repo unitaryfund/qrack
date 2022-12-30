@@ -17,6 +17,8 @@
 #include "qbdt_node.hpp"
 #include "qfactory.hpp"
 
+#define IS_NODE_0(c) (norm(c) <= _qrack_sep_thresh)
+
 namespace Qrack {
 
 QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
@@ -184,14 +186,14 @@ template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
         for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
-            if (IS_NORM_0(scale)) {
+            if (IS_NODE_0(scale)) {
                 break;
             }
             leaf = leaf->branches[SelectBit(i, j)];
             scale *= leaf->scale;
         }
 
-        if (!IS_NORM_0(scale) && attachedQubitCount) {
+        if (!IS_NODE_0(scale) && attachedQubitCount) {
             scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(i >> bdtQubitCount);
         }
 
@@ -364,14 +366,14 @@ complex QBdt::GetAmplitude(bitCapInt perm)
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
-        if (IS_NORM_0(scale)) {
+        if (IS_NODE_0(scale)) {
             break;
         }
         leaf = leaf->branches[SelectBit(perm, j)];
         scale *= leaf->scale;
     }
 
-    if (!IS_NORM_0(scale) && attachedQubitCount) {
+    if (!IS_NODE_0(scale) && attachedQubitCount) {
         scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(perm >> bdtQubitCount);
     }
 
@@ -512,14 +514,14 @@ real1_f QBdt::Prob(bitLenInt qubit)
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (IS_NORM_0(scale)) {
+            if (IS_NODE_0(scale)) {
                 break;
             }
             leaf = leaf->branches[SelectBit(i, j)];
             scale *= leaf->scale;
         }
 
-        if (IS_NORM_0(scale)) {
+        if (IS_NODE_0(scale)) {
             continue;
         }
 
@@ -545,14 +547,14 @@ real1_f QBdt::ProbAll(bitCapInt perm)
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
-        if (IS_NORM_0(scale)) {
+        if (IS_NODE_0(scale)) {
             break;
         }
         leaf = leaf->branches[SelectBit(perm, j)];
         scale *= leaf->scale;
     }
 
-    if (!IS_NORM_0(scale) && attachedQubitCount) {
+    if (!IS_NODE_0(scale) && attachedQubitCount) {
         scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(perm >> bdtQubitCount);
     }
 
@@ -586,14 +588,14 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     for (bitCapInt i = 0U; i < qPower; ++i) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (IS_NORM_0(leaf->scale)) {
+            if (IS_NODE_0(leaf->scale)) {
                 break;
             }
             leaf->Branch();
             leaf = leaf->branches[SelectBit(i, j)];
         }
 
-        if (IS_NORM_0(leaf->scale)) {
+        if (IS_NODE_0(leaf->scale)) {
             continue;
         }
 
@@ -608,14 +610,14 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         QBdtNodeInterfacePtr& b1 = leaf->branches[1U];
 
         if (result) {
-            if (IS_NORM_0(b1->scale)) {
+            if (IS_NODE_0(b1->scale)) {
                 leaf->SetZero();
             } else {
                 b0->SetZero();
                 b1->scale /= abs(b1->scale);
             }
         } else {
-            if (IS_NORM_0(b0->scale)) {
+            if (IS_NODE_0(b0->scale)) {
                 leaf->SetZero();
             } else {
                 b0->scale /= abs(b0->scale);
@@ -694,7 +696,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (IS_NORM_0(leaf->scale)) {
+            if (IS_NODE_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
             }
@@ -702,7 +704,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
             leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
         }
 
-        if (IS_NORM_0(leaf->scale)) {
+        if (IS_NODE_0(leaf->scale)) {
             return (bitCapInt)0U;
         }
 
@@ -784,7 +786,7 @@ void QBdt::ApplyControlledSingle(
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (IS_NORM_0(leaf->scale)) {
+            if (IS_NODE_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
             }
@@ -792,7 +794,7 @@ void QBdt::ApplyControlledSingle(
             leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
         }
 
-        if (IS_NORM_0(leaf->scale)) {
+        if (IS_NODE_0(leaf->scale)) {
             return (bitCapInt)0U;
         }
 
