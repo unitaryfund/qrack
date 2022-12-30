@@ -176,6 +176,10 @@ int main(int argc, char* argv[])
         session.config().stream() << "QRACK_QUNIT_SEPARABILITY_THRESHOLD: "
                                   << std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) << std::endl;
     }
+    if (getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")) {
+        session.config().stream() << "QRACK_QBDT_SEPARABILITY_THRESHOLD: "
+                                  << std::string(getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")) << std::endl;
+    }
 #endif
 
     if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager && !qunit_multi_qpager) {
