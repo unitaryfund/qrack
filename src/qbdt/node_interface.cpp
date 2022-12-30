@@ -17,7 +17,7 @@
 #include "qbdt_node_interface.hpp"
 
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_NORM_0(c) (norm(c) <= _qbdt_node_sep_thresh)
 
 namespace Qrack {
 
