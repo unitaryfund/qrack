@@ -374,34 +374,8 @@ public:
     void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex);
     using QEngine::Phase;
     void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex);
-
-    void XMask(bitCapInt mask)
-    {
-        if (!mask) {
-            return;
-        }
-
-        if (!(mask & (mask - ONE_BCI))) {
-            X(log2(mask));
-            return;
-        }
-
-        BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
-    }
-    void PhaseParity(real1_f radians, bitCapInt mask)
-    {
-        if (!mask) {
-            return;
-        }
-
-        if (!(mask & (mask - ONE_BCI))) {
-            complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
-            Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
-            return;
-        }
-
-        BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
-    }
+    void XMask(bitCapInt mask);
+    void PhaseParity(real1_f radians, bitCapInt mask);
 
     using QEngine::Compose;
     bitLenInt Compose(QEngineOCLPtr toCopy);

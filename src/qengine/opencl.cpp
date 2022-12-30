@@ -742,6 +742,33 @@ void QEngineOCL::Phase(complex topLeft, complex bottomRight, bitLenInt qubitInde
     const bitCapIntOcl qPowers[1]{ pow2Ocl(qubitIndex) };
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PHASE);
 }
+void QEngineOCL::XMask(bitCapInt mask)
+{
+    if (!mask) {
+        return;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        X(log2(mask));
+        return;
+    }
+
+    BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
+}
+void QEngineOCL::PhaseParity(real1_f radians, bitCapInt mask)
+{
+    if (!mask) {
+        return;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
+        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+        return;
+    }
+
+    BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
+}
 
 void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
     const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
