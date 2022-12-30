@@ -266,6 +266,49 @@ void QBdt::GetProbs(real1* outputProbs)
 {
     GetTraversal([outputProbs](bitCapIntOcl i, complex scale) { outputProbs[i] = norm(scale); });
 }
+
+void QBdt::SetStateVector()
+{
+    if (!bdtQubitCount) {
+        return;
+    }
+
+    if (attachedQubitCount) {
+        throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
+    }
+
+    QBdtQEngineNodePtr nRoot = MakeQEngineNode(ONE_R1, qubitCount);
+    GetQuantumState(NODE_TO_QENGINE(nRoot));
+    root = nRoot;
+    SetQubitCount(qubitCount, qubitCount);
+}
+void QBdt::ResetStateVector(bitLenInt aqb)
+{
+    if (attachedQubitCount <= aqb) {
+        return;
+    }
+
+    if (!bdtQubitCount) {
+        QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
+        SetQubitCount(qubitCount, aqb);
+        SetQuantumState(NODE_TO_QENGINE(oRoot));
+    }
+
+    const bitLenInt length = attachedQubitCount - aqb;
+    const bitLenInt oBdtQubitCount = bdtQubitCount;
+    QBdtPtr nQubits = std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+    nQubits->SetQubitCount(length, 0U);
+    nQubits->SetPermutation(0U);
+    root->InsertAtDepth(nQubits->root, oBdtQubitCount, length);
+    SetQubitCount(qubitCount + length, attachedQubitCount);
+    for (bitLenInt i = 0U; i < length; ++i) {
+        Swap(oBdtQubitCount + i, oBdtQubitCount + length + i);
+    }
+    root->RemoveSeparableAtDepth(qubitCount - length, length);
+    SetQubitCount(qubitCount - length, 0U);
+}
+
 void QBdt::SetDevice(int64_t dID)
 {
     if (devID == dID) {
