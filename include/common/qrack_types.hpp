@@ -327,7 +327,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b);
 std::istream& operator>>(std::istream& is, bitCapInt& b);
 #endif
 
-const real1_f _qbdt_node_sep_thresh = getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")
+const real1_f _qrack_sep_thresh = getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")
     ? (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")))
     : FP_NORM_EPSILON;
 } // namespace Qrack

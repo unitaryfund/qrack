@@ -206,7 +206,7 @@ void QBdtQEngineNode::PopStateVector(bitLenInt depth)
     qReg->UpdateRunningNorm();
     const real1_f nrm = qReg->GetRunningNorm();
 
-    if (nrm <= _qbdt_node_sep_thresh) {
+    if (nrm <= _qrack_sep_thresh) {
         SetZero();
         return;
     }
