@@ -6964,6 +6964,7 @@ struct SingleQubitGate {
     real1_f lm;
 };
 
+#if 0
 TEST_CASE("test_noisy_fidelity", "[mirror]")
 {
     std::cout << ">>> 'test_noisy_fidelity':" << std::endl;
@@ -6978,7 +6979,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
     int gate;
 
-    for (int n = 4; n < 17; n = n + 2) {
+    for (int n = 4; n < 13; n = n + 2) {
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
         std::vector<real1_f> fidelities;
@@ -7134,3 +7135,4 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
         std::cout << "Average infidelity for width " << n << ": " << averageInfidelity << std::endl;
     }
 }
+#endif
