@@ -209,6 +209,7 @@ void ParallelFor::par_for_inc(
     }
 }
 
+#if 0
 void ParallelFor::par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     if (end < pStride) {
@@ -260,6 +261,14 @@ void ParallelFor::par_for_qbdt(const bitCapInt end, BdtFunc fn)
         futures[cpu].get();
     }
 }
+#else
+void ParallelFor::par_for_qbdt(const bitCapInt end, BdtFunc fn)
+{
+    for (bitCapInt j = 0U; j < end; ++j) {
+        j |= fn(j, 0U);
+    }
+}
+#endif
 
 real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr stateArray, real1_f norm_thresh)
 {
