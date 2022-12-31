@@ -173,26 +173,10 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
     // Depth-first
     --depth;
-#if ENABLE_PTHREAD
-    if (b0.get() == b1.get()) {
-        b0->PopStateVector(depth, parDepth);
-    } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
-        ++parDepth;
-
-        std::future<void> future0 = std::async(std::launch::async, [&] { b0->PopStateVector(depth, parDepth); });
-        b1->PopStateVector(depth, parDepth);
-
-        future0.get();
-    } else {
-        b0->PopStateVector(depth, parDepth);
-        b1->PopStateVector(depth, parDepth);
-    }
-#else
     b0->PopStateVector(depth);
     if (b0.get() != b1.get()) {
         b1->PopStateVector(depth);
     }
-#endif
 
     const real1 nrm0 = norm(b0->scale);
     const real1 nrm1 = norm(b1->scale);
