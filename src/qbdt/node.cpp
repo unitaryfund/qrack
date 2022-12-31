@@ -27,8 +27,7 @@
 
 namespace Qrack {
 
-const bool isParallel = (std::thread::hardware_concurrency() > 1U);
-const unsigned numThreads = (std::thread::hardware_concurrency() << 1U);
+const unsigned numThreads = std::thread::hardware_concurrency();
 #if ENABLE_ENV_VARS
 const bitLenInt pStridePow =
     (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
@@ -43,7 +42,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
 
     // If scale of this node is zero, nothing under it makes a difference.
-    if (IS_NORM_0(scale)) {
+    if (IS_NODE_0(scale)) {
         SetZero();
         return;
     }
@@ -59,7 +58,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #if ENABLE_PTHREAD
     if (b0.get() == b1.get()) {
         b0->Prune(depth, parDepth);
-    } else if (isParallel && (depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+    } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
@@ -129,7 +128,7 @@ void QBdtNode::Branch(bitLenInt depth)
     if (!depth) {
         return;
     }
-    if (IS_NORM_0(scale)) {
+    if (IS_NODE_0(scale)) {
         SetZero();
         return;
     }
@@ -155,7 +154,7 @@ void QBdtNode::Normalize(bitLenInt depth)
     if (!depth) {
         return;
     }
-    if (IS_NORM_0(scale)) {
+    if (IS_NODE_0(scale)) {
         SetZero();
         return;
     }
@@ -166,11 +165,12 @@ void QBdtNode::Normalize(bitLenInt depth)
     }
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
+    --depth;
     const real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
-    b0->Normalize(depth - 1U);
+    b0->Normalize(depth);
     b0->scale *= ONE_R1 / nrm;
     if (b0.get() != b1.get()) {
-        b1->Normalize(depth - 1U);
+        b1->Normalize(depth);
         b1->scale *= ONE_R1 / nrm;
     }
 }
@@ -181,7 +181,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    if (IS_NORM_0(scale)) {
+    if (IS_NODE_0(scale)) {
         SetZero();
         return;
     }
@@ -197,7 +197,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 #if ENABLE_PTHREAD
     if (b0.get() == b1.get()) {
         b0->PopStateVector(depth, parDepth);
-    } else if (isParallel && (depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+    } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async, [&] { b0->PopStateVector(depth, parDepth); });
@@ -268,8 +268,8 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     if (!depth && size) {
         QBdtNodeInterfacePtr c = branches[0U];
 
-        if (!IS_NORM_0(branches[0U]->scale)) {
-            branches[0U] = std::make_shared<QBdtNode>(branches[0U]->scale, b->branches);
+        if (!IS_NODE_0(c->scale)) {
+            branches[0U] = std::make_shared<QBdtNode>(c->scale, b->branches);
             branches[0U]->InsertAtDepth(c, size, 0);
 
             if (c.get() == branches[1U].get()) {
@@ -278,7 +278,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             }
         }
 
-        if (IS_NORM_0(branches[1U]->scale)) {
+        if (IS_NODE_0(branches[1U]->scale)) {
             return;
         }
 
@@ -334,8 +334,8 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
 void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
     QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-    const bool isB0Zero = IS_NORM_0(b0->scale);
-    const bool isB1Zero = IS_NORM_0(b1->scale);
+    const bool isB0Zero = IS_NODE_0(b0->scale);
+    const bool isB1Zero = IS_NODE_0(b1->scale);
 
     if (isB0Zero && isB1Zero) {
         b0->SetZero();
@@ -400,7 +400,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1->scale = SQRT1_2_R1;
 
 #if ENABLE_PTHREAD
-    if (isParallel && (depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async,
@@ -457,8 +457,8 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 void QBdtNode::PushStateVector(
     complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-    const bool isB0Zero = IS_NORM_0(b0->scale);
-    const bool isB1Zero = IS_NORM_0(b1->scale);
+    const bool isB0Zero = IS_NODE_0(b0->scale);
+    const bool isB1Zero = IS_NODE_0(b1->scale);
 
     if (isB0Zero && isB1Zero) {
         b0->SetZero();
@@ -523,7 +523,7 @@ void QBdtNode::PushStateVector(
     b1->scale = SQRT1_2_R1;
 
 #if ENABLE_PTHREAD
-    if (isParallel && (depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(

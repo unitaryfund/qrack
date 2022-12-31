@@ -347,8 +347,8 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && stabilizer_bdt) {
-            session.config().stream()
-                << "############ QUnit -> QStabilizerHybrid -> QBinaryDecisionTree ############" << std::endl;
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QBinaryDecisionTree ############"
+                                      << std::endl;
             testEngineType = QINTERFACE_QUNIT;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_BDT;
