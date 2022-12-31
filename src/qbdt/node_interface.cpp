@@ -118,7 +118,7 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
     return true;
 }
 
-#if ENABLE_PTHREAD
+#if 0
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     if (end < pStride) {

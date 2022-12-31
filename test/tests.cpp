@@ -6964,7 +6964,6 @@ struct SingleQubitGate {
     real1_f lm;
 };
 
-#if 0
 TEST_CASE("test_noisy_fidelity", "[mirror]")
 {
     std::cout << ">>> 'test_noisy_fidelity':" << std::endl;
@@ -7135,4 +7134,3 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
         std::cout << "Average infidelity for width " << n << ": " << averageInfidelity << std::endl;
     }
 }
-#endif
