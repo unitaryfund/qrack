@@ -51,10 +51,11 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     // Prune recursively to depth.
     --depth;
 #if ENABLE_PTHREAD
-    ++parDepth;
     if (b0.get() == b1.get()) {
         b0->Prune(depth, parDepth);
     } else if (isParallel && (pow2(parDepth) <= numThreads)) {
+        ++parDepth;
+    
         std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
         std::future<void> future1 = std::async(std::launch::async, [&] { b1->Prune(depth, parDepth); });
 
@@ -188,10 +189,11 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     // Depth-first
     --depth;
 #if ENABLE_PTHREAD
-    ++parDepth;
     if (b0.get() == b1.get()) {
         b0->PopStateVector(depth, parDepth);
     } else if (isParallel && (pow2(parDepth) <= numThreads)) {
+        ++parDepth;
+    
         std::future<void> future0 = std::async(std::launch::async, [&] { b0->PopStateVector(depth, parDepth); });
         std::future<void> future1 = std::async(std::launch::async, [&] { b1->PopStateVector(depth, parDepth); });
 
@@ -392,8 +394,9 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1->scale = SQRT1_2_R1;
 
 #if ENABLE_PTHREAD
-    ++parDepth;
     if (isParallel && (pow2(parDepth) <= numThreads)) {
+        ++parDepth;
+    
         std::future<void> future0 = std::async(std::launch::async,
             [&] { PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth); });
         std::future<void> future1 = std::async(std::launch::async,
@@ -514,8 +517,9 @@ void QBdtNode::PushStateVector(
     b1->scale = SQRT1_2_R1;
 
 #if ENABLE_PTHREAD
-    ++parDepth;
     if (isParallel && (pow2(parDepth) <= numThreads)) {
+        ++parDepth;
+    
         std::future<void> future0 = std::async(
             std::launch::async, [&] { PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth); });
         std::future<void> future1 = std::async(
