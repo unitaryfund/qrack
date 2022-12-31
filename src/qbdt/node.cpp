@@ -338,7 +338,6 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
                                 "depth, or root depth lacks method implementation.)");
     }
-    --depth;
 
     b0->Branch();
     b1->Branch();
@@ -360,6 +359,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1->branches[1U]->scale *= b1->scale;
     b1->scale = SQRT1_2_R1;
 
+    --depth;
 #if ENABLE_PTHREAD
     if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
@@ -458,7 +458,6 @@ void QBdtNode::PushStateVector(
         throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
                                 "depth, or root depth lacks method implementation.)");
     }
-    --depth;
 
     b0->Branch();
     b1->Branch();
@@ -480,6 +479,7 @@ void QBdtNode::PushStateVector(
     b1->branches[1U]->scale *= b1->scale;
     b1->scale = SQRT1_2_R1;
 
+    --depth;
 #if ENABLE_PTHREAD
     if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
