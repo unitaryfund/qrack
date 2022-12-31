@@ -37,11 +37,15 @@ protected:
     static void _par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
 #if ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
-        QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth = 1U) = 0;
+        QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth = 1U)
 #else
     virtual void PushStateVector(complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
-        bitLenInt depth, bitLenInt parDepth = 1U) = 0;
+        bitLenInt depth, bitLenInt parDepth = 1U)
 #endif
+    {
+        throw std::out_of_range("QBdtNodeInterface::PushStateVector() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
 public:
     complex scale;
@@ -73,7 +77,11 @@ public:
         // Virtual destructor for inheritance
     }
 
-    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size) = 0;
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
+    {
+        throw std::out_of_range("QBdtNodeInterface::InsertAtDepth() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
 
@@ -88,21 +96,45 @@ public:
 
     virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
 
-    virtual QBdtNodeInterfacePtr ShallowClone() = 0;
+    virtual QBdtNodeInterfacePtr ShallowClone()
+    {
+        throw std::out_of_range("QBdtNodeInterface::ShallowClone() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U) = 0;
+    virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+    {
+        throw std::out_of_range("QBdtNodeInterface::PopStateVector() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual void Branch(bitLenInt depth = 1U) = 0;
+    virtual void Branch(bitLenInt depth = 1U)
+    {
+        throw std::out_of_range("QBdtNodeInterface::Branch() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U) = 0;
+    virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+    {
+        throw std::out_of_range("QBdtNodeInterface::Prune() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual void Normalize(bitLenInt depth) = 0;
+    virtual void Normalize(bitLenInt depth)
+    {
+        throw std::out_of_range("QBdtNodeInterface::Normalize() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
 #if ENABLE_COMPLEX_X2
-    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth) = 0;
+    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth)
 #else
-    virtual void Apply2x2(complex const* mtrx, bitLenInt depth) = 0;
+    virtual void Apply2x2(complex const* mtrx, bitLenInt depth)
 #endif
+    {
+        throw std::out_of_range("QBdtNodeInterface::Apply2x2() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
 #if ENABLE_COMPLEX_X2
     virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b1)
