@@ -186,7 +186,7 @@ template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
         for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
-            if (IS_NODE_0(scale) || !leaf->branches[0U]) {
+            if (IS_NODE_0(scale)) {
                 scale = ZERO_CMPLX;
                 break;
             }
@@ -367,7 +367,7 @@ complex QBdt::GetAmplitude(bitCapInt perm)
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
-        if (IS_NODE_0(scale) || !leaf->branches[0U]) {
+        if (IS_NODE_0(scale)) {
             scale = ZERO_CMPLX;
             break;
         }
@@ -516,7 +516,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (IS_NODE_0(scale) || !leaf->branches[0U]) {
+            if (IS_NODE_0(scale)) {
                 scale = ZERO_CMPLX;
                 break;
             }
@@ -550,7 +550,7 @@ real1_f QBdt::ProbAll(bitCapInt perm)
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
-        if (IS_NODE_0(scale) || !leaf->branches[0U]) {
+        if (IS_NODE_0(scale)) {
             scale = ZERO_CMPLX;
             break;
         }
@@ -700,7 +700,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (IS_NODE_0(leaf->scale) || !leaf->branches[0U]) {
+            if (IS_NODE_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
             }
@@ -790,7 +790,7 @@ void QBdt::ApplyControlledSingle(
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (IS_NODE_0(leaf->scale) || !leaf->branches[0U]) {
+            if (IS_NODE_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
             }
