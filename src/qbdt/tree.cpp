@@ -696,7 +696,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 #endif
 
-    par_for_qbdt(0U, qPower, [&](const bitCapInt& i, const int& cpu) {
+    par_for_qbdt(qPower, [&](const bitCapInt& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
@@ -782,7 +782,7 @@ void QBdt::ApplyControlledSingle(
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 #endif
 
-    par_for_qbdt(0U, qPower, [&](const bitCapInt& i, const int& cpu) {
+    par_for_qbdt(qPower, [&](const bitCapInt& i, const int& cpu) {
         if ((i & lowControlMask) != lowControlPerm) {
             return (bitCapInt)(lowControlMask - ONE_BCI);
         }
