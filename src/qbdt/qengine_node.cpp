@@ -112,7 +112,7 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
     }
 }
 
-void QBdtQEngineNode::Prune(bitLenInt depth)
+void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 {
     if (IS_NORM_0(scale)) {
         SetZero();

@@ -27,7 +27,7 @@
 
 namespace Qrack {
 
-void QBdtNode::Prune(bitLenInt depth)
+void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 {
     if (!depth) {
         return;
@@ -47,10 +47,26 @@ void QBdtNode::Prune(bitLenInt depth)
 
     // Prune recursively to depth.
     --depth;
-    branches[0U]->Prune(depth);
-    if (b0.get() != b1.get()) {
-        branches[1U]->Prune(depth);
+#if ENABLE_PTHREAD
+    ++parDepth;
+    if (b0.get() == b1.get()) {
+        b0->Prune(depth, parDepth);
+    } else if (pow2(parDepth) <= std::thread::hardware_concurrency()) {
+        std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
+        std::future<void> future1 = std::async(std::launch::async, [&] { b1->Prune(depth, parDepth); });
+
+        future0.get();
+        future1.get();
+    } else {
+        b0->Prune(depth, parDepth);
+        b1->Prune(depth, parDepth);
     }
+#else
+    b0->Prune(depth);
+    if (b0.get() != b1.get()) {
+        b1->Prune(depth);
+    }
+#endif
 
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
@@ -358,7 +374,6 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
 #if ENABLE_PTHREAD
     ++parDepth;
-
     if (pow2(parDepth) <= std::thread::hardware_concurrency()) {
         std::future<void> future0 = std::async(std::launch::async,
             [&] { PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth); });
@@ -481,7 +496,6 @@ void QBdtNode::PushStateVector(
 
 #if ENABLE_PTHREAD
     ++parDepth;
-
     if (pow2(parDepth) <= std::thread::hardware_concurrency()) {
         std::future<void> future0 = std::async(
             std::launch::async, [&] { PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth); });

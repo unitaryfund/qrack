@@ -94,7 +94,7 @@ public:
 
     virtual void Branch(bitLenInt depth = 1U) = 0;
 
-    virtual void Prune(bitLenInt depth = 1U) = 0;
+    virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 0U) = 0;
 
     virtual void Normalize(bitLenInt depth) = 0;
 
