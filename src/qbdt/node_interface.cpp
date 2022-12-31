@@ -16,10 +16,26 @@
 
 #include "qbdt_node_interface.hpp"
 
+#if ENABLE_PTHREAD
+#include <future>
+#include <mutex>
+#include <thread>
+#endif
+
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
+#define ATOMIC_ASYNC(...)                                                                                              \
+    std::async(std::launch::async, [__VA_ARGS__]()
 
 namespace Qrack {
+
+const unsigned numCores = std::thread::hardware_concurrency();
+#if ENABLE_ENV_VARS
+const bitCapIntOcl pStride =
+    pow2((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW));
+#else
+const bitCapIntOcl pStride = pow2(PSTRIDEPOW);
+#endif
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs)
 {
@@ -102,14 +118,66 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
     return true;
 }
 
-void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn)
+#if ENABLE_PTHREAD
+void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
-    const bitCapInt itemCount = end - begin;
-    const bitCapInt maxLcv = begin + itemCount;
-    for (bitCapInt j = begin; j < maxLcv; ++j) {
+    if (end < pStride) {
+        for (bitCapInt j = 0U; j < end; ++j) {
+            j |= fn(j, 0U);
+        }
+        return;
+    }
+
+    const bitCapIntOcl Stride = pStride;
+    unsigned threads = (unsigned)(end / pStride);
+    if (threads > numCores) {
+        threads = numCores;
+    }
+
+    std::mutex myMutex;
+    bitCapIntOcl idx = 0U;
+    std::vector<std::future<void>> futures(threads);
+    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        futures[cpu] = ATOMIC_ASYNC(cpu, &myMutex, &idx, &end, &Stride, fn)
+        {
+            for (;;) {
+                bitCapIntOcl i;
+                if (true) {
+                    std::lock_guard<std::mutex> lock(myMutex);
+                    i = idx++;
+                }
+                const bitCapIntOcl l = i * Stride;
+                if (l >= end) {
+                    break;
+                }
+                const bitCapIntOcl maxJ = ((l + Stride) < end) ? Stride : (end - l);
+                bitCapIntOcl j;
+                for (j = 0U; j < maxJ; ++j) {
+                    bitCapIntOcl k = j + l;
+                    k |= fn(k, cpu);
+                    j = k - l;
+                    if (j >= maxJ) {
+                        std::lock_guard<std::mutex> lock(myMutex);
+                        idx |= j / Stride;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        futures[cpu].get();
+    }
+}
+#else
+void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
+{
+    for (bitCapInt j = 0U; j < end; ++j) {
         j |= fn(j, 0U);
     }
 }
+#endif
 
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {

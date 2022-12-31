@@ -34,7 +34,7 @@ typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 class QBdtNodeInterface {
 protected:
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
-    static void _par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
+    static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
 #if ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
         QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth = 1U)
