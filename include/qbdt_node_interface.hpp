@@ -37,10 +37,10 @@ protected:
     static void _par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
 #if ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
-        QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
+        QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth = 0U) = 0;
 #else
-    virtual void PushStateVector(
-        complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
+    virtual void PushStateVector(complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
+        bitLenInt depth, bitLenInt parDepth = 0U) = 0;
 #endif
 
 public:
