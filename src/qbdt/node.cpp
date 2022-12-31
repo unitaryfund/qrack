@@ -35,7 +35,7 @@ const bitLenInt pStridePow =
 const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
 
-void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
+void QBdtNode::Prune(bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -54,26 +54,10 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     // Prune recursively to depth.
     --depth;
-#if ENABLE_PTHREAD
-    if (b0.get() == b1.get()) {
-        b0->Prune(depth, parDepth);
-    } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
-        ++parDepth;
-
-        std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
-        b1->Prune(depth, parDepth);
-
-        future0.get();
-    } else {
-        b0->Prune(depth, parDepth);
-        b1->Prune(depth, parDepth);
-    }
-#else
     b0->Prune(depth);
     if (b0.get() != b1.get()) {
         b1->Prune(depth);
     }
-#endif
 
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
