@@ -51,7 +51,12 @@ public:
         : QBdtNodeInterface(scl)
         , qReg(q)
     {
-        // Intentionally left blank.
+        // Intentionally left blank
+    }
+
+    virtual ~QBdtQEngineNode()
+    {
+        // Virtual destructor for inheritance
     }
 
     virtual void SetZero()

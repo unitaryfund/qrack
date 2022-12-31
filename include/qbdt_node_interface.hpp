@@ -70,7 +70,7 @@ public:
 
     virtual ~QBdtNodeInterface()
     {
-        // Intentionally left blank
+        // Virtual destructor for inheritance
     }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size) = 0;

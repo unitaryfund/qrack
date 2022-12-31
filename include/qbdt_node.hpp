@@ -54,7 +54,7 @@ public:
 
     virtual ~QBdtNode()
     {
-        // Intentionally left blank
+        // Virtual destructor for inheritance
     }
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }

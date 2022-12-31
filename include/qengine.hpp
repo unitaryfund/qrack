@@ -90,6 +90,11 @@ public:
         // Intentionally left blank
     }
 
+    virtual ~QEngine()
+    {
+        // Virtual destructor for inheritance
+    }
+
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);

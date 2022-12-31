@@ -28,8 +28,6 @@ private:
 public:
     ParallelFor();
 
-    virtual ~ParallelFor() {}
-
     void SetConcurrencyLevel(unsigned num) { numCores = num; }
     unsigned GetConcurrencyLevel() { return numCores; }
     bitCapIntOcl GetStride() { return pStride; }
