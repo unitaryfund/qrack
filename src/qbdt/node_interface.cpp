@@ -16,7 +16,7 @@
 
 #include "qbdt_node_interface.hpp"
 
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
 
 namespace Qrack {
@@ -83,8 +83,8 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    if (IS_NORM_0(scale)) {
-        return IS_NORM_0(r->scale);
+    if (IS_NODE_0(scale)) {
+        return IS_NODE_0(r->scale);
     }
 
     if (branches[0U] != r->branches[0U]) {

@@ -16,6 +16,7 @@
 
 #include "qbdt_qengine_node.hpp"
 
+#define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
 
 namespace Qrack {
@@ -33,7 +34,7 @@ bool QBdtQEngineNode::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    if (IS_NORM_0(scale)) {
+    if (IS_NODE_0(scale)) {
         return true;
     }
 
@@ -61,8 +62,8 @@ bool QBdtQEngineNode::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    if (IS_NORM_0(scale)) {
-        return IS_NORM_0(r->scale);
+    if (IS_NODE_0(scale)) {
+        return IS_NODE_0(r->scale);
     }
 
     QEnginePtr rReg = std::dynamic_pointer_cast<QBdtQEngineNode>(r)->qReg;
@@ -85,8 +86,7 @@ void QBdtQEngineNode::Normalize(bitLenInt depth)
         return;
     }
 
-    if (IS_NORM_0(scale)) {
-        SetZero();
+    if (IS_NODE_0(scale)) {
         return;
     }
 
@@ -102,8 +102,7 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
         return;
     }
 
-    if (IS_NORM_0(scale)) {
-        SetZero();
+    if (IS_NODE_0(scale)) {
         return;
     }
 
@@ -114,8 +113,7 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
 
 void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 {
-    if (IS_NORM_0(scale)) {
-        SetZero();
+    if (IS_NODE_0(scale)) {
         return;
     }
 
@@ -126,7 +124,7 @@ void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 
 void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
 {
-    if (IS_NORM_0(scale)) {
+    if (IS_NODE_0(scale)) {
         return;
     }
 
@@ -136,7 +134,7 @@ void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, con
 
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
-    if (!size || IS_NORM_0(scale)) {
+    if (!size || IS_NODE_0(scale)) {
         return NULL;
     }
 
@@ -160,8 +158,8 @@ void QBdtQEngineNode::PushSpecial(const complex2& mtrxCol1, const complex2& mtrx
 void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 {
 #endif
-    const bool is0Zero = IS_NORM_0(scale);
-    const bool is1Zero = IS_NORM_0(b1->scale);
+    const bool is0Zero = IS_NODE_0(scale);
+    const bool is1Zero = IS_NODE_0(b1->scale);
 
     if (is0Zero && is1Zero) {
         SetZero();
@@ -198,8 +196,7 @@ void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 
 void QBdtQEngineNode::PopStateVector(bitLenInt depth, bitLenInt unused)
 {
-    if (IS_NORM_0(scale)) {
-        SetZero();
+    if (IS_NODE_0(scale)) {
         return;
     }
 
