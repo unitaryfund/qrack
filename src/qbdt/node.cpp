@@ -27,7 +27,7 @@
 
 namespace Qrack {
 
-const unsigned numThreads = std::thread::hardware_concurrency();
+const unsigned numThreads = std::thread::hardware_concurrency() << 1U;
 #if ENABLE_ENV_VARS
 const bitLenInt pStridePow =
     (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
@@ -61,10 +61,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
-        std::future<void> future1 = std::async(std::launch::async, [&] { b1->Prune(depth, parDepth); });
+        b1->Prune(depth, parDepth);
 
         future0.get();
-        future1.get();
     } else {
         b0->Prune(depth, parDepth);
         b1->Prune(depth, parDepth);
@@ -197,10 +196,9 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async, [&] { b0->PopStateVector(depth, parDepth); });
-        std::future<void> future1 = std::async(std::launch::async, [&] { b1->PopStateVector(depth, parDepth); });
+        b1->PopStateVector(depth, parDepth);
 
         future0.get();
-        future1.get();
     } else {
         b0->PopStateVector(depth, parDepth);
         b1->PopStateVector(depth, parDepth);
@@ -359,8 +357,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         return;
     }
 
-    const bool isSame = b0->isEqualUnder(b1);
-    if (isSame) {
+    if (b0->isEqualUnder(b1)) {
         complex2 qubit(b0->scale, b1->scale);
         qubit.c2 = matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2);
         b0->scale = qubit.c[0U];
@@ -401,11 +398,9 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
         std::future<void> future0 = std::async(std::launch::async,
             [&] { PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth); });
-        std::future<void> future1 = std::async(std::launch::async,
-            [&] { PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth, parDepth); });
+        PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth, parDepth);
 
         future0.get();
-        future1.get();
     } else {
         PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth);
         PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth, parDepth);
@@ -482,8 +477,7 @@ void QBdtNode::PushStateVector(
         return;
     }
 
-    const bool isSame = b0->isEqualUnder(b1);
-    if (isSame) {
+    if (b0->isEqualUnder(b1)) {
         const complex Y0 = b0->scale;
         const complex Y1 = b1->scale;
         b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
@@ -524,11 +518,9 @@ void QBdtNode::PushStateVector(
 
         std::future<void> future0 = std::async(
             std::launch::async, [&] { PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth); });
-        std::future<void> future1 = std::async(
-            std::launch::async, [&] { PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth); });
+        PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
 
         future0.get();
-        future1.get();
     } else {
         PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth);
         PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
