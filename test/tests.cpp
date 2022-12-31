@@ -4610,6 +4610,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
     const bitLenInt length = 10;
@@ -4665,6 +4669,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_amplitude_amplification")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     int i;
 
     // Grover's search inverts the function of a black box subroutine.

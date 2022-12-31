@@ -90,7 +90,7 @@ public:
 
     virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
-    virtual void PopStateVector(bitLenInt depth = 1U) = 0;
+    virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 0U) = 0;
 
     virtual void Branch(bitLenInt depth = 1U) = 0;
 

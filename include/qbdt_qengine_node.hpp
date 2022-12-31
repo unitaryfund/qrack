@@ -76,7 +76,7 @@ public:
 
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
 
-    virtual void PopStateVector(bitLenInt depth = 1U);
+    virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 0U);
 
 #if ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth)

@@ -61,7 +61,7 @@ public:
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size);
 
-    virtual void PopStateVector(bitLenInt depth = 1U);
+    virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 0U);
 
     virtual void Branch(bitLenInt depth = 1U);
 

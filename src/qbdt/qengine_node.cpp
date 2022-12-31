@@ -196,7 +196,7 @@ void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
     std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg = qReg1;
 }
 
-void QBdtQEngineNode::PopStateVector(bitLenInt depth)
+void QBdtQEngineNode::PopStateVector(bitLenInt depth, bitLenInt unused)
 {
     if (IS_NORM_0(scale)) {
         SetZero();
