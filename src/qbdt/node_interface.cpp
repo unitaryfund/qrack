@@ -18,7 +18,6 @@
 
 #if ENABLE_PTHREAD
 #include <future>
-#include <mutex>
 #include <thread>
 #endif
 
