@@ -163,8 +163,6 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     if (IS_NODE_0(scale)) {
         return;
     }

@@ -30,9 +30,6 @@ bool QBdtQEngineNode::isEqual(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
-
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
@@ -64,9 +61,6 @@ bool QBdtQEngineNode::isEqualUnder(QBdtNodeInterfacePtr r)
     if (this == r.get()) {
         return true;
     }
-
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     if (IS_NODE_0(scale)) {
         return IS_NODE_0(r->scale);

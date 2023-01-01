@@ -18,8 +18,6 @@
 
 #include "common/qrack_types.hpp"
 
-#include <mutex>
-
 #if ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
@@ -52,7 +50,6 @@ protected:
 public:
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
-    std::recursive_mutex mtx;
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
