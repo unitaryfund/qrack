@@ -57,11 +57,7 @@ public:
         // Virtual destructor for inheritance
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone()
-    {
-        std::lock_guard<std::recursive_mutex> lock(mtx);
-        return std::make_shared<QBdtNode>(scale, branches);
-    }
+    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size);
 

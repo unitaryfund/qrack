@@ -92,8 +92,6 @@ void QBdtQEngineNode::Normalize(bitLenInt depth)
         return;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -110,8 +108,6 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
         return;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -123,8 +119,6 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
 
 void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 {
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -212,8 +206,6 @@ void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 
 void QBdtQEngineNode::PopStateVector(bitLenInt depth, bitLenInt unused)
 {
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     if (IS_NODE_0(scale)) {
         return;
     }
