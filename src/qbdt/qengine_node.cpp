@@ -26,9 +26,6 @@ bool QBdtQEngineNode::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
-
     if (this == r.get()) {
         return true;
     }
@@ -40,6 +37,9 @@ bool QBdtQEngineNode::isEqual(QBdtNodeInterfacePtr r)
     if (IS_NODE_0(scale)) {
         return true;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     QEnginePtr rReg = std::dynamic_pointer_cast<QBdtQEngineNode>(r)->qReg;
 
@@ -61,9 +61,6 @@ bool QBdtQEngineNode::isEqualUnder(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
-
     if (this == r.get()) {
         return true;
     }
@@ -71,6 +68,9 @@ bool QBdtQEngineNode::isEqualUnder(QBdtNodeInterfacePtr r)
     if (IS_NODE_0(scale)) {
         return IS_NODE_0(r->scale);
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     QEnginePtr rReg = std::dynamic_pointer_cast<QBdtQEngineNode>(r)->qReg;
 
