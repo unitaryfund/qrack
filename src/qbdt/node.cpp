@@ -56,7 +56,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     // Prune recursively to depth.
     --depth;
-#if ENABLE_PTHREAD
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if (b0.get() == b1.get()) {
         b0->Prune(depth, parDepth);
     } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
@@ -197,7 +197,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
     // Depth-first
     --depth;
-#if ENABLE_PTHREAD
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if (b0.get() == b1.get()) {
         b0->PopStateVector(depth, parDepth);
     } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
@@ -402,7 +402,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1->scale = SQRT1_2_R1;
 
     --depth;
-#if ENABLE_PTHREAD
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
@@ -522,7 +522,7 @@ void QBdtNode::PushStateVector(
     b1->scale = SQRT1_2_R1;
 
     --depth;
-#if ENABLE_PTHREAD
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
