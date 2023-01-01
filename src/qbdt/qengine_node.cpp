@@ -92,6 +92,8 @@ void QBdtQEngineNode::Normalize(bitLenInt depth)
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -144,7 +146,11 @@ void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, con
 
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
-    if (!size || IS_NODE_0(scale)) {
+    if (!size) {
+        return NULL;
+    }
+
+    if (IS_NODE_0(scale)) {
         return NULL;
     }
 
@@ -168,8 +174,6 @@ void QBdtQEngineNode::PushSpecial(const complex2& mtrxCol1, const complex2& mtrx
 void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 {
 #endif
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     const bool is0Zero = IS_NODE_0(scale);
     const bool is1Zero = IS_NODE_0(b1->scale);
 
