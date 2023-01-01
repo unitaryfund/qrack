@@ -52,14 +52,6 @@ bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs
 
 bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs) { return !(lhs == rhs); }
 
-QBdtNodeInterfacePtr operator-(const QBdtNodeInterfacePtr& t)
-{
-    QBdtNodeInterfacePtr m = t->ShallowClone();
-    m->scale *= -ONE_CMPLX;
-
-    return m;
-}
-
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
     if (!r) {

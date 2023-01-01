@@ -41,6 +41,8 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
+    std::lock_guard<std::mutex> lock(mtx);
+
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NODE_0(scale)) {
         return;
@@ -126,6 +128,9 @@ void QBdtNode::Branch(bitLenInt depth)
     if (!depth) {
         return;
     }
+
+    std::lock_guard<std::mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -151,6 +156,9 @@ void QBdtNode::Normalize(bitLenInt depth)
     if (!depth) {
         return;
     }
+
+    std::lock_guard<std::mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -448,6 +456,8 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 void QBdtNode::PushStateVector(
     complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
+    std::lock_guard<std::mutex> lock(mtx);
+
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
 

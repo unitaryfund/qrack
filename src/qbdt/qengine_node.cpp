@@ -86,6 +86,8 @@ void QBdtQEngineNode::Normalize(bitLenInt depth)
         return;
     }
 
+    std::lock_guard<std::mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -102,6 +104,8 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
         return;
     }
 
+    std::lock_guard<std::mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -113,6 +117,8 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
 
 void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 {
+    std::lock_guard<std::mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }

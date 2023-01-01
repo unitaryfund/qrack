@@ -18,6 +18,8 @@
 
 #include "common/qrack_types.hpp"
 
+#include <mutex>
+
 #if ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
@@ -50,6 +52,7 @@ protected:
 public:
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
+    std::mutex mtx;
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
@@ -72,10 +75,7 @@ public:
         branches[1U] = b[1U];
     }
 
-    virtual ~QBdtNodeInterface()
-    {
-        // Virtual destructor for inheritance
-    }
+    virtual ~QBdtNodeInterface() { std::lock_guard<std::mutex> lock(mtx); }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
     {
@@ -87,6 +87,7 @@ public:
 
     virtual void SetZero()
     {
+        std::lock_guard<std::mutex> lock(mtx);
         scale = ZERO_CMPLX;
         branches[0U] = NULL;
         branches[1U] = NULL;
@@ -149,5 +150,4 @@ public:
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
 bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
-QBdtNodeInterfacePtr operator-(const QBdtNodeInterfacePtr& t);
 } // namespace Qrack
