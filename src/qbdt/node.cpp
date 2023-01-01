@@ -41,6 +41,8 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NODE_0(scale)) {
         return;
@@ -54,26 +56,10 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     // Prune recursively to depth.
     --depth;
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if (b0.get() == b1.get()) {
-        b0->Prune(depth, parDepth);
-    } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
-        ++parDepth;
-
-        std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
-        b1->Prune(depth, parDepth);
-
-        future0.get();
-    } else {
-        b0->Prune(depth, parDepth);
-        b1->Prune(depth, parDepth);
-    }
-#else
     b0->Prune(depth);
     if (b0.get() != b1.get()) {
         b1->Prune(depth);
     }
-#endif
 
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
@@ -178,6 +164,8 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     if (!depth) {
         return;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
 
     if (IS_NODE_0(scale)) {
         return;
