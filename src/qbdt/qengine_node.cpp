@@ -26,12 +26,12 @@ bool QBdtQEngineNode::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
-
     if (this == r.get()) {
         return true;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
@@ -61,12 +61,12 @@ bool QBdtQEngineNode::isEqualUnder(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
-
     if (this == r.get()) {
         return true;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     if (IS_NODE_0(scale)) {
         return IS_NODE_0(r->scale);
@@ -121,6 +121,8 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
 
 void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 {
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -166,6 +168,8 @@ void QBdtQEngineNode::PushSpecial(const complex2& mtrxCol1, const complex2& mtrx
 void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 {
 #endif
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+
     const bool is0Zero = IS_NODE_0(scale);
     const bool is1Zero = IS_NODE_0(b1->scale);
 
@@ -204,6 +208,8 @@ void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 
 void QBdtQEngineNode::PopStateVector(bitLenInt depth, bitLenInt unused)
 {
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }

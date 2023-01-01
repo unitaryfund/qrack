@@ -54,12 +54,12 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
-
     if (this == r.get()) {
         return true;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
@@ -86,12 +86,12 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
-
     if (this == r.get()) {
         return true;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     if (IS_NODE_0(scale)) {
         return IS_NODE_0(r->scale);
@@ -175,8 +175,6 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     if (norm(scale) == ZERO_R1) {
         return NULL;
     }
