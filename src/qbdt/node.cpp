@@ -41,8 +41,6 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NODE_0(scale)) {
         return;
