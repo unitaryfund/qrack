@@ -32,7 +32,7 @@ namespace Qrack {
 const unsigned numCores = std::thread::hardware_concurrency();
 #if ENABLE_ENV_VARS
 const bitCapIntOcl pStride =
-    pow2((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW));
+    pow2Ocl((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW));
 #else
 const bitCapIntOcl pStride = pow2(PSTRIDEPOW);
 #endif
@@ -112,7 +112,7 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
     return true;
 }
 
-#if ENABLE_PTHREAD
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     if (end < pStride) {
@@ -122,32 +122,32 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
         return;
     }
 
-    const bitCapIntOcl Stride = pStride;
+    const bitCapInt Stride = pStride;
     unsigned threads = (unsigned)(end / pStride);
     if (threads > numCores) {
         threads = numCores;
     }
 
     std::mutex myMutex;
-    bitCapIntOcl idx = 0U;
+    bitCapInt idx = 0U;
     std::vector<std::future<void>> futures(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &myMutex, &idx, &end, &Stride, fn)
         {
             for (;;) {
-                bitCapIntOcl i;
+                bitCapInt i;
                 if (true) {
                     std::lock_guard<std::mutex> lock(myMutex);
                     i = idx++;
                 }
-                const bitCapIntOcl l = i * Stride;
+                const bitCapInt l = i * Stride;
                 if (l >= end) {
                     break;
                 }
-                const bitCapIntOcl maxJ = ((l + Stride) < end) ? Stride : (end - l);
-                bitCapIntOcl j;
+                const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
+                bitCapInt j;
                 for (j = 0U; j < maxJ; ++j) {
-                    bitCapIntOcl k = j + l;
+                    bitCapInt k = j + l;
                     k |= fn(k, cpu);
                     j = k - l;
                     if (j >= maxJ) {
