@@ -106,7 +106,7 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     void Dispatch(DispatchFn fn)
     {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#if 0 // ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         if (qubitCount >= dispatchThreshold) {
             dispatchQueue.dispatch(fn);
         } else {
