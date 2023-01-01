@@ -114,7 +114,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    virtual void Prune(bitLenInt depth = 1U)
+    virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
         throw std::out_of_range("QBdtNodeInterface::Prune() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
