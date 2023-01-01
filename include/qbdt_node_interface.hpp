@@ -90,7 +90,6 @@ public:
 
     virtual void SetZero()
     {
-        std::lock_guard<std::recursive_mutex> lock(mtx);
         scale = ZERO_CMPLX;
         branches[0U] = NULL;
         branches[1U] = NULL;
