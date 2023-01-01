@@ -108,6 +108,8 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }
