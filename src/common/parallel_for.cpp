@@ -369,32 +369,32 @@ void ParallelFor::par_for_qbdt(const bitCapInt end, BdtFunc fn)
         return;
     }
 
-    const bitCapIntOcl Stride = pStride;
+    const bitCapInt Stride = pStride;
     unsigned threads = (unsigned)(end / pStride);
     if (threads > numCores) {
         threads = numCores;
     }
 
     std::mutex myMutex;
-    bitCapIntOcl idx = 0U;
+    bitCapInt idx = 0U;
     std::vector<std::future<void>> futures(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &myMutex, &idx, &end, &Stride, fn)
         {
             for (;;) {
-                bitCapIntOcl i;
+                bitCapInt i;
                 if (true) {
                     std::lock_guard<std::mutex> lock(myMutex);
                     i = idx++;
                 }
-                const bitCapIntOcl l = i * Stride;
+                const bitCapInt l = i * Stride;
                 if (l >= end) {
                     break;
                 }
-                const bitCapIntOcl maxJ = ((l + Stride) < end) ? Stride : (end - l);
-                bitCapIntOcl j;
+                const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
+                bitCapInt j;
                 for (j = 0U; j < maxJ; ++j) {
-                    bitCapIntOcl k = j + l;
+                    bitCapInt k = j + l;
                     k |= fn(k, cpu);
                     j = k - l;
                     if (j >= maxJ) {
