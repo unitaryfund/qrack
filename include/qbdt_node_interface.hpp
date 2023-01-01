@@ -75,7 +75,10 @@ public:
         branches[1U] = b[1U];
     }
 
-    virtual ~QBdtNodeInterface() { std::lock_guard<std::recursive_mutex> lock(mtx); }
+    virtual ~QBdtNodeInterface()
+    {
+        // Virtual destructor for inheritance
+    }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
     {
