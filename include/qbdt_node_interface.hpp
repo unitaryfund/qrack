@@ -52,7 +52,7 @@ protected:
 public:
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
-    std::mutex mtx;
+    std::recursive_mutex mtx;
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
@@ -75,7 +75,7 @@ public:
         branches[1U] = b[1U];
     }
 
-    virtual ~QBdtNodeInterface() { std::lock_guard<std::mutex> lock(mtx); }
+    virtual ~QBdtNodeInterface() { std::lock_guard<std::recursive_mutex> lock(mtx); }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
     {
@@ -87,7 +87,7 @@ public:
 
     virtual void SetZero()
     {
-        std::lock_guard<std::mutex> lock(mtx);
+        std::lock_guard<std::recursive_mutex> lock(mtx);
         scale = ZERO_CMPLX;
         branches[0U] = NULL;
         branches[1U] = NULL;
