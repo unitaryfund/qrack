@@ -359,64 +359,10 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
 }
 #endif
 
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-void ParallelFor::par_for_qbdt(const bitCapInt end, BdtFunc fn)
-{
-    if (end < pStride) {
-        for (bitCapInt j = 0U; j < end; ++j) {
-            j |= fn(j, 0U);
-        }
-        return;
-    }
-
-    const bitCapInt Stride = pStride;
-    unsigned threads = (unsigned)(end / pStride);
-    if (threads > numCores) {
-        threads = numCores;
-    }
-
-    std::mutex myMutex;
-    bitCapInt idx = 0U;
-    std::vector<std::future<void>> futures(threads);
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu] = ATOMIC_ASYNC(cpu, &myMutex, &idx, &end, &Stride, fn)
-        {
-            for (;;) {
-                bitCapInt i;
-                if (true) {
-                    std::lock_guard<std::mutex> lock(myMutex);
-                    i = idx++;
-                }
-                const bitCapInt l = i * Stride;
-                if (l >= end) {
-                    break;
-                }
-                const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
-                bitCapInt j;
-                for (j = 0U; j < maxJ; ++j) {
-                    bitCapInt k = j + l;
-                    k |= fn(k, cpu);
-                    j = k - l;
-                    if (j >= maxJ) {
-                        std::lock_guard<std::mutex> lock(myMutex);
-                        idx |= j / Stride;
-                        break;
-                    }
-                }
-            }
-        });
-    }
-
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu].get();
-    }
-}
-#else
 void ParallelFor::par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     for (bitCapInt j = 0U; j < end; ++j) {
         j |= fn(j, 0U);
     }
 }
-#endif
 } // namespace Qrack

@@ -157,6 +157,8 @@ void QBdtNode::Normalize(bitLenInt depth)
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+
     if (IS_NODE_0(scale)) {
         return;
     }
@@ -308,6 +310,8 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+
     Branch();
     QBdtNodeInterfacePtr& b0 = branches[0U];
     QBdtNodeInterfacePtr& b1 = branches[1U];
@@ -336,8 +340,6 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
 void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
     QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
 
@@ -429,6 +431,8 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
     if (!depth) {
         return;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
 
     Branch();
     QBdtNodeInterfacePtr& b0 = branches[0U];
