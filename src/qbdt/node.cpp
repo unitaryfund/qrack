@@ -16,24 +16,10 @@
 
 #include "qbdt_node.hpp"
 
-#if ENABLE_PTHREAD
-#include <future>
-#include <thread>
-#endif
-#include <set>
-
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 
 namespace Qrack {
-
-const unsigned numThreads = std::thread::hardware_concurrency() << 1U;
-#if ENABLE_ENV_VARS
-const bitLenInt pStridePow =
-    (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
-#else
-const bitLenInt pStridePow = PSTRIDEPOW;
-#endif
 
 void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 {
@@ -175,26 +161,10 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
     // Depth-first
     --depth;
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if (b0.get() == b1.get()) {
-        b0->PopStateVector(depth, parDepth);
-    } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
-        ++parDepth;
-
-        std::future<void> future0 = std::async(std::launch::async, [&] { b0->PopStateVector(depth, parDepth); });
-        b1->PopStateVector(depth, parDepth);
-
-        future0.get();
-    } else {
-        b0->PopStateVector(depth, parDepth);
-        b1->PopStateVector(depth, parDepth);
-    }
-#else
     b0->PopStateVector(depth);
     if (b0.get() != b1.get()) {
         b1->PopStateVector(depth);
     }
-#endif
 
     const real1 nrm0 = norm(b0->scale);
     const real1 nrm1 = norm(b1->scale);
@@ -378,23 +348,8 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1->scale = SQRT1_2_R1;
 
     --depth;
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
-        ++parDepth;
-
-        std::future<void> future0 = std::async(std::launch::async,
-            [&] { PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth); });
-        PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth, parDepth);
-
-        future0.get();
-    } else {
-        PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth);
-        PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth, parDepth);
-    }
-#else
-    PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth);
-    PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth);
-#endif
+    b0->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth);
+    b1->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth);
 
     b0->PopStateVector();
     b1->PopStateVector();
@@ -498,23 +453,8 @@ void QBdtNode::PushStateVector(
     b1->scale = SQRT1_2_R1;
 
     --depth;
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
-        ++parDepth;
-
-        std::future<void> future0 = std::async(
-            std::launch::async, [&] { PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth); });
-        PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
-
-        future0.get();
-    } else {
-        PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth);
-        PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
-    }
-#else
     PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth);
     PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth);
-#endif
 
     b0->PopStateVector();
     b1->PopStateVector();
