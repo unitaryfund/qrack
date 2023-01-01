@@ -16,25 +16,10 @@
 
 #include "qbdt_node_interface.hpp"
 
-#if ENABLE_PTHREAD
-#include <future>
-#include <thread>
-#endif
-
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
-#define ATOMIC_ASYNC(...)                                                                                              \
-    std::async(std::launch::async, [__VA_ARGS__]()
 
 namespace Qrack {
-
-const unsigned numCores = std::thread::hardware_concurrency();
-#if ENABLE_ENV_VARS
-const bitCapIntOcl pStride =
-    pow2Ocl((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW));
-#else
-const bitCapIntOcl pStride = pow2(PSTRIDEPOW);
-#endif
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs)
 {
@@ -56,9 +41,6 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
     if (this == r.get()) {
         return true;
     }
-
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
@@ -88,9 +70,6 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
     if (this == r.get()) {
         return true;
     }
-
-    std::lock_guard<std::recursive_mutex> lock(mtx);
-    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     if (IS_NODE_0(scale)) {
         return IS_NODE_0(r->scale);

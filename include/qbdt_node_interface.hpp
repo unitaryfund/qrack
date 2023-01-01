@@ -18,8 +18,6 @@
 
 #include "common/qrack_types.hpp"
 
-#include <mutex>
-
 #if ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
@@ -37,6 +35,8 @@ class QBdtNodeInterface {
 protected:
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
     static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
+
+public:
 #if ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
         QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth = 1U)
@@ -49,10 +49,8 @@ protected:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-public:
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
-    std::recursive_mutex mtx;
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
