@@ -65,7 +65,11 @@ public:
         qReg = NULL;
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQEngineNode>(scale, qReg); }
+    virtual QBdtNodeInterfacePtr ShallowClone()
+    {
+        std::lock_guard<std::recursive_mutex> lock(mtx);
+        return std::make_shared<QBdtQEngineNode>(scale, qReg);
+    }
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);
 
