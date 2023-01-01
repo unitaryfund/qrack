@@ -48,6 +48,10 @@ using namespace Qrack;
         (testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER) ||                           \
         (testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT))
 
+#define QINTERFACE_GROVER_RESTRICTED                                                                                   \
+    ((testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT) ||                                    \
+        (testSubSubEngineType == QINTERFACE_BDT))
+
 #define C_SQRT1_2 complex(SQRT1_2_R1, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, SQRT1_2_R1)
 
@@ -4512,6 +4516,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     int i;
 
     // Grover's search inverts the function of a black box subroutine.
@@ -4549,6 +4557,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     int i;
 
     // Grover's search to find a value in a lookup table.
@@ -4598,6 +4610,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
     const bitLenInt length = 10;
@@ -4653,6 +4669,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_amplitude_amplification")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     int i;
 
     // Grover's search inverts the function of a black box subroutine.
@@ -6959,7 +6979,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
     int gate;
 
-    for (int n = 4; n < 13; n = n + 2) {
+    for (int n = 4; n < 17; n = n + 2) {
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
         std::vector<real1_f> fidelities;

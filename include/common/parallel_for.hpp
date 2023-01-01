@@ -28,8 +28,6 @@ private:
 public:
     ParallelFor();
 
-    virtual ~ParallelFor() {}
-
     void SetConcurrencyLevel(unsigned num) { numCores = num; }
     unsigned GetConcurrencyLevel() { return numCores; }
     bitCapIntOcl GetStride() { return pStride; }
@@ -72,7 +70,7 @@ public:
         const bitLenInt& highStart, ParallelFunc fn);
 
     /** Iterate over a QBDT tree */
-    void par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
+    void par_for_qbdt(const bitCapInt end, BdtFunc fn);
 
     /** Calculate the normal for the array, (with flooring). */
     real1_f par_norm(const bitCapIntOcl maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1_F);

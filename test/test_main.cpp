@@ -169,6 +169,25 @@ int main(int argc, char* argv[])
     SHOW_OCL_BANNER();
 #endif
 
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QPAGER_DEVICES")) {
+        session.config().stream() << "QRACK_QPAGER_DEVICES: " << std::string(getenv("QRACK_QPAGER_DEVICES"))
+                                  << std::endl;
+    }
+    if (getenv("QRACK_QPAGER_DEVICES_HOST_POINTER")) {
+        session.config().stream() << "QRACK_QPAGER_DEVICES_HOST_POINTER: "
+                                  << std::string(getenv("QRACK_QPAGER_DEVICES_HOST_POINTER")) << std::endl;
+    }
+    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
+        session.config().stream() << "QRACK_QUNIT_SEPARABILITY_THRESHOLD: "
+                                  << std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) << std::endl;
+    }
+    if (getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")) {
+        session.config().stream() << "QRACK_QBDT_SEPARABILITY_THRESHOLD: "
+                                  << std::string(getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")) << std::endl;
+    }
+#endif
+
     int num_failed = 0;
 
     if (num_failed == 0 && qengine) {
@@ -328,8 +347,8 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && stabilizer_bdt) {
-            session.config().stream()
-                << "############ QUnitMulti -> QStabilizerHybrid -> QBinaryDecisionTree ############" << std::endl;
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QBinaryDecisionTree ############"
+                                      << std::endl;
             testEngineType = QINTERFACE_QUNIT;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_BDT;
