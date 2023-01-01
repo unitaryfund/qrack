@@ -190,7 +190,7 @@ typedef std::shared_ptr<complex> BitOp;
 /** Called once per value between begin and end. */
 typedef std::function<void(const bitCapIntOcl&, const unsigned& cpu)> ParallelFunc;
 typedef std::function<bitCapIntOcl(const bitCapIntOcl&, const unsigned& cpu)> IncrementFunc;
-typedef std::function<bitCapInt(const bitCapInt&, const unsigned& cpu)> BdtFunc;
+typedef std::function<bitCapInt(const bitCapInt&)> BdtFunc;
 
 class StateVector;
 class StateVectorArray;

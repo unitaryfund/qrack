@@ -358,11 +358,4 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
     return nrmSqr;
 }
 #endif
-
-void ParallelFor::par_for_qbdt(const bitCapInt end, BdtFunc fn)
-{
-    for (bitCapInt j = 0U; j < end; ++j) {
-        j |= fn(j, 0U);
-    }
-}
 } // namespace Qrack

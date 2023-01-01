@@ -93,7 +93,7 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     for (bitCapInt j = 0U; j < end; ++j) {
-        j |= fn(j, 0U);
+        j |= fn(j);
     }
 }
 
