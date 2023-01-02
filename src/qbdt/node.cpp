@@ -45,11 +45,11 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    QBdtNodeInterfacePtr& b0 = branches[0U];
+    QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
         return;
     }
-    QBdtNodeInterfacePtr& b1 = branches[1U];
+    QBdtNodeInterfacePtr b1 = branches[1U];
 
     // Prune recursively to depth.
     --depth;
@@ -142,7 +142,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (b0 == b1) {
-        b1 = b0;
+        branches[0U] = branches[1U];
     }
 }
 
@@ -210,11 +210,11 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    QBdtNodeInterfacePtr& b0 = branches[0U];
+    QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
         return;
     }
-    QBdtNodeInterfacePtr& b1 = branches[1U];
+    QBdtNodeInterfacePtr b1 = branches[1U];
 
     // Depth-first
     --depth;
