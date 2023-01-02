@@ -42,6 +42,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -153,6 +154,7 @@ void QBdtNode::Branch(bitLenInt depth)
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -181,6 +183,7 @@ void QBdtNode::Normalize(bitLenInt depth)
     std::lock_guard<std::mutex> lock(mtx);
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -207,6 +210,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
