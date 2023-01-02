@@ -156,20 +156,20 @@ void QBdtNode::Branch(bitLenInt depth)
         return;
     }
 
-    QBdtNodeInterfacePtr& b0 = branches[0U];
-    QBdtNodeInterfacePtr& b1 = branches[1U];
+    QBdtNodeInterfacePtr b0 = branches[0U];
+    QBdtNodeInterfacePtr b1 = branches[1U];
     if (!b0) {
-        b0 = std::make_shared<QBdtNode>(SQRT1_2_R1);
-        b1 = std::make_shared<QBdtNode>(SQRT1_2_R1);
+        branches[0U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
+        branches[1U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
     } else {
         // Split all clones.
-        b0 = b0->ShallowClone();
-        b1 = b1->ShallowClone();
+        branches[0U] = b0->ShallowClone();
+        branches[1U] = b1->ShallowClone();
     }
 
     --depth;
-    b0->Branch(depth);
-    b1->Branch(depth);
+    branches[0U]->Branch(depth);
+    branches[1U]->Branch(depth);
 }
 
 void QBdtNode::Normalize(bitLenInt depth)
@@ -184,11 +184,11 @@ void QBdtNode::Normalize(bitLenInt depth)
         return;
     }
 
-    QBdtNodeInterfacePtr b0 = branches[0U];
+    QBdtNodeInterfacePtr& b0 = branches[0U];
     if (!b0) {
         return;
     }
-    QBdtNodeInterfacePtr b1 = branches[1U];
+    QBdtNodeInterfacePtr& b1 = branches[1U];
 
     --depth;
     const real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
@@ -335,8 +335,8 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
     std::lock_guard<std::mutex> lock(mtx);
 
     Branch();
-    QBdtNodeInterfacePtr b0 = branches[0U];
-    QBdtNodeInterfacePtr b1 = branches[1U];
+    QBdtNodeInterfacePtr& b0 = branches[0U];
+    QBdtNodeInterfacePtr& b1 = branches[1U];
 
     if (IS_NORM_0(mtrxCol2.c[0U]) && IS_NORM_0(mtrxCol1.c[1U])) {
         b0->scale *= mtrxCol1.c[0U];
@@ -355,7 +355,7 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
         return;
     }
 
-    PushStateVector(mtrxCol1, mtrxCol2, branches[0U], branches[1U], depth);
+    PushStateVector(mtrxCol1, mtrxCol2, b0, b1, depth);
     Prune(depth);
 }
 
@@ -461,8 +461,8 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
     std::lock_guard<std::mutex> lock(mtx);
 
     Branch();
-    QBdtNodeInterfacePtr b0 = branches[0U];
-    QBdtNodeInterfacePtr b1 = branches[1U];
+    QBdtNodeInterfacePtr& b0 = branches[0U];
+    QBdtNodeInterfacePtr& b1 = branches[1U];
 
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         b0->scale *= mtrx[0U];
@@ -481,7 +481,7 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
         return;
     }
 
-    PushStateVector(mtrx, branches[0U], branches[1U], depth);
+    PushStateVector(mtrx, b0, b1, depth);
     Prune(depth);
 }
 
