@@ -307,8 +307,9 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
 void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
     QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-    std::lock_guard<std::mutex> lock0(b0->mtx);
-    std::lock_guard<std::mutex> lock1(b1->mtx);
+    std::lock(b0->mtx, b1->mtx);
+    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
@@ -432,9 +433,9 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 void QBdtNode::PushStateVector(
     complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-    std::lock(mtx, r->mtx);
-    std::lock_guard<std::mutex> lLock(mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> rLock(r->mtx, std::adopt_lock);
+    std::lock(b0->mtx, b1->mtx);
+    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
