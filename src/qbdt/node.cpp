@@ -466,8 +466,8 @@ void QBdtNode::PushStateVector(
     b1->scale = SQRT1_2_R1;
 
     --depth;
-    PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth);
-    PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth);
+    b0->PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth);
+    b1->PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth);
 
     b0->PopStateVector();
     b1->PopStateVector();
