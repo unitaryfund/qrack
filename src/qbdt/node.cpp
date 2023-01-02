@@ -74,13 +74,18 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         for (bitLenInt j = 0U; j < depth; ++j) {
             size_t bit = SelectBit(i, depth - (j + 1U));
 
-            if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
-                // WARNING: Mutates loop control variable!
-                return (bitCapInt)(pow2(depth - j) - ONE_BCI);
-            }
+            if (true) {
+                std::lock_guard<std::mutex> lock0(b0->mtx);
+                std::lock_guard<std::mutex> lock1(b1->mtx);
 
-            leaf0 = leaf0->branches[bit];
-            leaf1 = leaf1->branches[bit];
+                if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
+                    // WARNING: Mutates loop control variable!
+                    return (bitCapInt)(pow2(depth - j) - ONE_BCI);
+                }
+
+                leaf0 = leaf0->branches[bit];
+                leaf1 = leaf1->branches[bit];
+            }
         }
 
         return (bitCapInt)0U;
