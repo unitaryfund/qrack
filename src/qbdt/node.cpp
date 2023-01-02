@@ -142,8 +142,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         });
     }
 
-    if (b0 == b1) {
-        branches[0U] = branches[1U];
+    if (branches[0U] == branches[1U]) {
+        std::lock_guard<std::mutex> lock(branches[1U]->mtx);
+        branches[1U] = branches[0U];
     }
 }
 
