@@ -783,7 +783,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
 #if ENABLE_COMPLEX_X2
                 leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
 #else
-            leaf->Apply2x2(mtrx, bdtQubitCount - target);
+                leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
             }
 
@@ -882,7 +882,7 @@ void QBdt::ApplyControlledSingle(
 #if ENABLE_COMPLEX_X2
                 leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
 #else
-            leaf->Apply2x2(mtrx, bdtQubitCount - target);
+                leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
             }
 

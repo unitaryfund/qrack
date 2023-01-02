@@ -124,7 +124,6 @@ protected:
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }
-            std::lock_guard<std::mutex> lock(root->mtx);
             root->Prune(maxQubit);
         });
     }
