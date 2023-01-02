@@ -26,6 +26,9 @@ bool QBdtQEngineNode::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
+
     if (this == r.get()) {
         return true;
     }
@@ -57,6 +60,9 @@ bool QBdtQEngineNode::isEqualUnder(QBdtNodeInterfacePtr r)
     if (!r) {
         return false;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(mtx);
+    std::lock_guard<std::recursive_mutex> rLock(r->mtx);
 
     if (this == r.get()) {
         return true;
