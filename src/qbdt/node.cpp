@@ -113,27 +113,33 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
     b1->scale /= phaseFac;
 
-    // Now, we try to combine pointers to equivalent branches.
-    const bitCapInt depthPow = pow2(depth);
-    // Combine single elements at bottom of full depth, up to where branches are equal below:
-    _par_for_qbdt(depthPow, [&](const bitCapInt& i) {
-        QBdtNodeInterfacePtr leaf0 = b0;
-        QBdtNodeInterfacePtr leaf1 = b1;
+    if (true) {
+        std::lock(b0->mtx, b1->mtx);
+        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
-        for (bitLenInt j = 0U; j < depth; ++j) {
-            size_t bit = SelectBit(i, depth - (j + 1U));
+        // Now, we try to combine pointers to equivalent branches.
+        const bitCapInt depthPow = pow2(depth);
+        // Combine single elements at bottom of full depth, up to where branches are equal below:
+        _par_for_qbdt(depthPow, [&](const bitCapInt& i) {
+            QBdtNodeInterfacePtr leaf0 = b0;
+            QBdtNodeInterfacePtr leaf1 = b1;
 
-            if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
-                // WARNING: Mutates loop control variable!
-                return (bitCapInt)(pow2(depth - j) - ONE_BCI);
+            for (bitLenInt j = 0U; j < depth; ++j) {
+                size_t bit = SelectBit(i, depth - (j + 1U));
+
+                if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
+                    // WARNING: Mutates loop control variable!
+                    return (bitCapInt)(pow2(depth - j) - ONE_BCI);
+                }
+
+                leaf0 = leaf0->branches[bit];
+                leaf1 = leaf1->branches[bit];
             }
 
-            leaf0 = leaf0->branches[bit];
-            leaf1 = leaf1->branches[bit];
-        }
-
-        return (bitCapInt)0U;
-    });
+            return (bitCapInt)0U;
+        });
+    }
 
     if (b0 == b1) {
         b1 = b0;
@@ -171,6 +177,8 @@ void QBdtNode::Normalize(bitLenInt depth)
     if (!depth) {
         return;
     }
+
+    std::lock_guard<std::mutex> lock(mtx);
 
     if (IS_NODE_0(scale)) {
         return;
@@ -210,8 +218,17 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
     // Depth-first
     --depth;
-    b0->PopStateVector(depth);
-    if (b0.get() != b1.get()) {
+    if (b0.get() == b1.get()) {
+        std::lock_guard<std::mutex> lock(b0->mtx);
+        b0->PopStateVector(depth);
+    } else {
+        ++parDepth;
+
+        std::lock(b0->mtx, b1->mtx);
+        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+        b0->PopStateVector(depth);
         b1->PopStateVector(depth);
     }
 
@@ -224,6 +241,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (nrm0 <= FP_NORM_EPSILON) {
+        std::lock_guard<std::mutex> lock(b0->mtx);
         scale = b1->scale;
         b0->SetZero();
         b1->scale = ONE_CMPLX;
@@ -231,6 +249,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (nrm1 <= FP_NORM_EPSILON) {
+        std::lock_guard<std::mutex> lock(b1->mtx);
         scale = b0->scale;
         b0->scale = ONE_CMPLX;
         b1->SetZero();
