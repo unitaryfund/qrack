@@ -16,22 +16,28 @@
 
 #include "qbdt_node_interface.hpp"
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #include <future>
 #include <thread>
+#endif
 
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #define ATOMIC_ASYNC(...)                                                                                              \
     std::async(std::launch::async, [__VA_ARGS__]()
+#endif
 
 namespace Qrack {
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 const unsigned numCores = std::thread::hardware_concurrency();
 #if ENABLE_ENV_VARS
 const bitCapIntOcl pStride =
     pow2Ocl((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW));
 #else
 const bitCapIntOcl pStride = pow2(PSTRIDEPOW);
+#endif
 #endif
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs)
