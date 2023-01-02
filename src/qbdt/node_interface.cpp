@@ -55,6 +55,10 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
         return true;
     }
 
+    std::lock(mtx, r->mtx);
+    std::lock_guard<std::mutex> lLock(mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> rLock(r->mtx, std::adopt_lock);
+
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
