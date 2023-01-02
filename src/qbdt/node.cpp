@@ -366,12 +366,16 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+    // For parallelism, keep shared_ptr b0 and b1 from deallocating.
+    QBdtNodeInterfacePtr b0Ref = b0;
+    QBdtNodeInterfacePtr b1Ref = b1;
+
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
 
     if (isB0Zero && isB1Zero) {
-        b0->SetZero();
-        b1->SetZero();
+        b0Ref->SetZero();
+        b1Ref->SetZero();
 
         return;
     }
@@ -492,12 +496,16 @@ void QBdtNode::PushStateVector(
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+    // For parallelism, keep shared_ptr b0 and b1 from deallocating.
+    QBdtNodeInterfacePtr b0Ref = b0;
+    QBdtNodeInterfacePtr b1Ref = b1;
+
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
 
     if (isB0Zero && isB1Zero) {
-        b0->SetZero();
-        b1->SetZero();
+        b0Ref->SetZero();
+        b1Ref->SetZero();
 
         return;
     }
