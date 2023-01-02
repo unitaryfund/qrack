@@ -78,7 +78,9 @@ public:
 
     virtual ~QBdtNodeInterface()
     {
-        // Virtual destructor for inheritance
+        scale = ZERO_CMPLX;
+        branches[0U] = NULL;
+        branches[1U] = NULL;
     }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
