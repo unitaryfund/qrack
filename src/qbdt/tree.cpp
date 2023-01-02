@@ -584,7 +584,9 @@ real1_f QBdt::Prob(bitLenInt qubit)
             continue;
         }
 
-        oneChance += norm(scale * leaf->branches[1U]->scale);
+        if (leaf->branches[1U]) {
+            oneChance += norm(scale * leaf->branches[1U]->scale);
+        }
     }
 
     return clampProb((real1_f)oneChance);
