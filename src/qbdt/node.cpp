@@ -53,16 +53,52 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     // Prune recursively to depth.
     --depth;
-    b0->Prune(depth);
-    if (b0.get() != b1.get()) {
-        b1->Prune(depth);
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+    if (b0.get() == b1.get()) {
+        std::lock_guard<std::mutex> lock(b0->mtx);
+        b0->Prune(depth, parDepth);
+    } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+        ++parDepth;
+
+        std::lock(b0->mtx, b1->mtx);
+        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+        std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
+        b1->Prune(depth, parDepth);
+
+        future0.get();
+    } else {
+        std::lock(b0->mtx, b1->mtx);
+        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+        b0->Prune(depth, parDepth);
+        b1->Prune(depth, parDepth);
     }
+#else
+    if (b0.get() == b1.get()) {
+        std::lock_guard<std::mutex> lock(b0->mtx);
+        b0->Prune(depth, parDepth);
+    } else {
+        ++parDepth;
+
+        std::lock(b0->mtx, b1->mtx);
+        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+        b0->Prune(depth, parDepth);
+        b1->Prune(depth, parDepth);
+    }
+#endif
 
     if (IS_NODE_0(b0->scale)) {
+        std::lock_guard<std::mutex> lock(b0->mtx);
         b0->SetZero();
         b1->scale /= abs(b1->scale);
     }
     if (IS_NODE_0(b1->scale)) {
+        std::lock_guard<std::mutex> lock(b1->mtx);
         b0->scale /= abs(b0->scale);
         b1->SetZero();
     }
