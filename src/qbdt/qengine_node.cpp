@@ -103,6 +103,7 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -114,6 +115,7 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
 void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 {
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -125,6 +127,7 @@ void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
 {
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -139,6 +142,7 @@ QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, co
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return NULL;
     }
 
@@ -201,6 +205,7 @@ void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 void QBdtQEngineNode::PopStateVector(bitLenInt depth, bitLenInt unused)
 {
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
