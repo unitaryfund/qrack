@@ -539,7 +539,6 @@ real1_f QBdt::Prob(bitLenInt qubit)
         complex scale = leaf->scale;
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
             if (IS_NODE_0(leaf->scale)) {
-                scale = ZERO_CMPLX;
                 break;
             }
             leaf = leaf->branches[SelectBit(i, j)];
@@ -561,9 +560,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
             continue;
         }
 
-        if (leaf->branches[1U]) {
-            oneChance += norm(scale * leaf->branches[1U]->scale);
-        }
+        oneChance += norm(scale * leaf->branches[1U]->scale);
     }
 
     return clampProb((real1_f)oneChance);
