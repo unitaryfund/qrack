@@ -199,9 +199,11 @@ void QBdtNode::Normalize(bitLenInt depth)
 
     --depth;
     if (b0.get() == b1.get()) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
-
-        const real1 nrm = (real1)sqrt(2 * norm(b0->scale));
+        real1 nrm;
+        if (true) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            nrm = (real1)sqrt(2 * norm(b0->scale));
+        }
         b0->Normalize(depth);
         b0->scale *= ONE_R1 / nrm;
     } else {
@@ -273,7 +275,6 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         }
 
         if (nrm0 <= FP_NORM_EPSILON) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
             scale = b1->scale;
             b0->SetZero();
             b1->scale = ONE_CMPLX;
@@ -281,7 +282,6 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         }
 
         if (nrm1 <= FP_NORM_EPSILON) {
-            std::lock_guard<std::mutex> lock(b1->mtx);
             scale = b0->scale;
             b0->scale = ONE_CMPLX;
             b1->SetZero();
