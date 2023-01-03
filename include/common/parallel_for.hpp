@@ -74,6 +74,9 @@ public:
 
     /** Calculate the normal for the array, (without flooring.) */
     real1_f par_norm_exact(const bitCapIntOcl maxQPower, const StateVectorPtr stateArray);
+
+    /** Parallel for loop specific to QBdt **/
+    void par_for_qbdt(const bitCapInt end, BdtFunc fn);
 };
 
 } // namespace Qrack
