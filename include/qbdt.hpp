@@ -19,10 +19,6 @@
 #include "qbdt_qengine_node.hpp"
 #include "qengine.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-#include "common/dispatchqueue.hpp"
-#endif
-
 #define NODE_TO_QENGINE(leaf) (std::dynamic_pointer_cast<QBdtQEngineNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
@@ -46,10 +42,6 @@ protected:
     bitCapInt bdtMaxQPower;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    bitLenInt dispatchThreshold;
-    DispatchQueue dispatchQueue;
-#endif
 
     void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
@@ -104,19 +96,7 @@ protected:
     }
 
     typedef std::function<void(void)> DispatchFn;
-    void Dispatch(DispatchFn fn)
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if (qubitCount >= dispatchThreshold) {
-            dispatchQueue.dispatch(fn);
-        } else {
-            Finish();
-            fn();
-        }
-#else
-        fn();
-#endif
-    }
+    void Dispatch(DispatchFn fn) { fn(); }
 
     void par_for_qbdt(bitCapInt end, bitLenInt maxQubit, BdtFunc fn)
     {
@@ -169,29 +149,6 @@ public:
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     ~QBdt() { Dump(); }
-
-    void Finish()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        dispatchQueue.finish();
-#endif
-    };
-
-    bool isFinished()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        return dispatchQueue.isFinished();
-#else
-        return true;
-#endif
-    }
-
-    void Dump()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        dispatchQueue.dump();
-#endif
-    }
 
     QEnginePtr ReleaseEngine()
     {
