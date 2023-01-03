@@ -191,11 +191,11 @@ void QBdtNode::Normalize(bitLenInt depth)
         return;
     }
 
-    QBdtNodeInterfacePtr& b0 = branches[0U];
+    QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
         return;
     }
-    QBdtNodeInterfacePtr& b1 = branches[1U];
+    QBdtNodeInterfacePtr b1 = branches[1U];
 
     --depth;
     if (b0.get() == b1.get()) {
