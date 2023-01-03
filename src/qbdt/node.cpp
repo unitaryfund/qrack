@@ -58,24 +58,21 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     if (b0.get() == b1.get()) {
         std::lock_guard<std::mutex> lock(b0->mtx);
         b0->Prune(depth, parDepth);
-    } else if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
-        ++parDepth;
-
-        std::lock(b0->mtx, b1->mtx);
-        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
-
-        std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
-        b1->Prune(depth, parDepth);
-
-        future0.get();
     } else {
         std::lock(b0->mtx, b1->mtx);
         std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+        if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+            ++parDepth;
 
-        b0->Prune(depth, parDepth);
-        b1->Prune(depth, parDepth);
+            std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
+            b1->Prune(depth, parDepth);
+
+            future0.get();
+        } else {
+            b0->Prune(depth, parDepth);
+            b1->Prune(depth, parDepth);
+        }
     }
 #else
     if (b0.get() == b1.get()) {
@@ -94,14 +91,28 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #endif
 
     if (IS_NODE_0(b0->scale)) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
-        b0->SetZero();
+        if (true) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            b0->SetZero();
+        }
+        if (b0.get() == b1.get()) {
+            SetZero();
+            return;
+        }
+        std::lock_guard<std::mutex> lock(b1->mtx);
         b1->scale /= abs(b1->scale);
     }
     if (IS_NODE_0(b1->scale)) {
-        std::lock_guard<std::mutex> lock(b1->mtx);
+        if (true) {
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            b1->SetZero();
+        }
+        if (b0.get() == b1.get()) {
+            SetZero();
+            return;
+        }
+        std::lock_guard<std::mutex> lock(b0->mtx);
         b0->scale /= abs(b0->scale);
-        b1->SetZero();
     }
 
     const complex phaseFac =
@@ -146,7 +157,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (branches[0U] == branches[1U]) {
-        std::lock_guard<std::mutex> lock(branches[1U]->mtx);
+        std::lock(branches[0U]->mtx, branches[1U]->mtx);
+        std::lock_guard<std::mutex> lock0(branches[0U]->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(branches[1U]->mtx, std::adopt_lock);
         branches[1U] = branches[0U];
     }
 }
@@ -205,7 +218,10 @@ void QBdtNode::Normalize(bitLenInt depth)
             nrm = (real1)sqrt(2 * norm(b0->scale));
         }
         b0->Normalize(depth);
-        b0->scale *= ONE_R1 / nrm;
+        if (true) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            b0->scale *= ONE_R1 / nrm;
+        }
     } else {
         real1 nrm;
         if (true) {
@@ -219,9 +235,15 @@ void QBdtNode::Normalize(bitLenInt depth)
         nrm = sqrt(nrm);
 
         b0->Normalize(depth);
-        b0->scale *= ONE_R1 / nrm;
+        if (true) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            b0->scale *= ONE_R1 / nrm;
+        }
         b1->Normalize(depth);
-        b1->scale *= ONE_R1 / nrm;
+        if (true) {
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            b1->scale *= ONE_R1 / nrm;
+        }
     }
 }
 
@@ -256,6 +278,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         }
 
         scale = std::polar((real1)sqrt(nrm), (real1)std::arg(b0->scale));
+        b0->scale /= scale;
     } else {
         ++parDepth;
 
@@ -289,10 +312,9 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         }
 
         scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(b0->scale));
+        b0->scale /= scale;
+        b1->scale /= scale;
     }
-
-    b0->scale /= scale;
-    b1->scale /= scale;
 }
 
 void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
@@ -301,7 +323,8 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         return;
     }
 
-    if (norm(scale) == ZERO_R1) {
+    if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -320,10 +343,6 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         return;
     }
     --depth;
-
-    if (!branches[0U]) {
-        return;
-    }
 
     if (!depth && size) {
         QBdtNodeInterfacePtr c = branches[0U];
