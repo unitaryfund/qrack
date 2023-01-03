@@ -107,17 +107,20 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     const complex phaseFac =
         std::polar(ONE_R1, (real1)((b0->scale == ZERO_CMPLX) ? std::arg(b1->scale) : std::arg(b0->scale)));
     scale *= phaseFac;
-    b0->scale /= phaseFac;
+    if (true) {
+        std::lock_guard<std::mutex> lock(b0->mtx);
+        b0->scale /= phaseFac;
+    }
     if (b0.get() == b1.get()) {
         // Phase factor already applied, and branches point to same object.
         return;
     }
-    b1->scale /= phaseFac;
-
     if (true) {
         std::lock(b0->mtx, b1->mtx);
         std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+        b1->scale /= phaseFac;
 
         // Now, we try to combine pointers to equivalent branches.
         const bitCapInt depthPow = pow2(depth);
@@ -195,10 +198,26 @@ void QBdtNode::Normalize(bitLenInt depth)
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
     --depth;
-    const real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
-    b0->Normalize(depth);
-    b0->scale *= ONE_R1 / nrm;
-    if (b0.get() != b1.get()) {
+    if (b0.get() == b1.get()) {
+        std::lock_guard<std::mutex> lock(b0->mtx);
+
+        const real1 nrm = (real1)sqrt(2 * norm(b0->scale));
+        b0->Normalize(depth);
+        b0->scale *= ONE_R1 / nrm;
+    } else {
+        real1 nrm;
+        if (true) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            nrm = norm(b0->scale);
+        }
+        if (true) {
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            nrm += norm(b1->scale);
+        }
+        nrm = sqrt(nrm);
+
+        b0->Normalize(depth);
+        b0->scale *= ONE_R1 / nrm;
         b1->Normalize(depth);
         b1->scale *= ONE_R1 / nrm;
     }
@@ -226,6 +245,15 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     if (b0.get() == b1.get()) {
         std::lock_guard<std::mutex> lock(b0->mtx);
         b0->PopStateVector(depth);
+
+        const real1 nrm = (real1)(2 * norm(b0->scale));
+
+        if (nrm <= FP_NORM_EPSILON) {
+            SetZero();
+            return;
+        }
+
+        scale = std::polar((real1)sqrt(nrm), (real1)std::arg(b0->scale));
     } else {
         ++parDepth;
 
@@ -235,33 +263,34 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
         b0->PopStateVector(depth);
         b1->PopStateVector(depth);
+
+        const real1 nrm0 = norm(b0->scale);
+        const real1 nrm1 = norm(b1->scale);
+
+        if ((nrm0 + nrm1) <= FP_NORM_EPSILON) {
+            SetZero();
+            return;
+        }
+
+        if (nrm0 <= FP_NORM_EPSILON) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            scale = b1->scale;
+            b0->SetZero();
+            b1->scale = ONE_CMPLX;
+            return;
+        }
+
+        if (nrm1 <= FP_NORM_EPSILON) {
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            scale = b0->scale;
+            b0->scale = ONE_CMPLX;
+            b1->SetZero();
+            return;
+        }
+
+        scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(b0->scale));
     }
 
-    const real1 nrm0 = norm(b0->scale);
-    const real1 nrm1 = norm(b1->scale);
-
-    if ((nrm0 + nrm1) <= FP_NORM_EPSILON) {
-        SetZero();
-        return;
-    }
-
-    if (nrm0 <= FP_NORM_EPSILON) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
-        scale = b1->scale;
-        b0->SetZero();
-        b1->scale = ONE_CMPLX;
-        return;
-    }
-
-    if (nrm1 <= FP_NORM_EPSILON) {
-        std::lock_guard<std::mutex> lock(b1->mtx);
-        scale = b0->scale;
-        b0->scale = ONE_CMPLX;
-        b1->SetZero();
-        return;
-    }
-
-    scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(b0->scale));
     b0->scale /= scale;
     b1->scale /= scale;
 }
@@ -295,11 +324,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     if (!depth && size) {
         QBdtNodeInterfacePtr c = branches[0U];
 
-        if (!c) {
-            return;
-        }
-
-        if (!IS_NODE_0(c->scale)) {
+        if (c && !IS_NODE_0(c->scale)) {
             branches[0U] = std::make_shared<QBdtNode>(c->scale, b->branches);
             branches[0U]->InsertAtDepth(c, size, 0);
 
@@ -309,12 +334,12 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             }
         }
 
-        if (IS_NODE_0(branches[1U]->scale)) {
+        c = branches[1U];
+        if (!c || IS_NODE_0(c->scale)) {
             return;
         }
 
-        c = branches[1U];
-        branches[1U] = std::make_shared<QBdtNode>(branches[1U]->scale, b->branches);
+        branches[1U] = std::make_shared<QBdtNode>(c->scale, b->branches);
         branches[1U]->InsertAtDepth(c, size, 0U);
 
         return;
@@ -344,8 +369,14 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
     if (IS_NORM_0(mtrxCol2.c[0U]) && IS_NORM_0(mtrxCol1.c[1U])) {
-        b0->scale *= mtrxCol1.c[0U];
-        b1->scale *= mtrxCol2.c[1U];
+        if (true) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            b0->scale *= mtrxCol1.c[0U];
+        }
+        if (true) {
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            b1->scale *= mtrxCol2.c[1U];
+        }
         Prune();
 
         return;
@@ -353,8 +384,14 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
 
     if (IS_NORM_0(mtrxCol1.c[0U]) && IS_NORM_0(mtrxCol2.c[1U])) {
         b0.swap(b1);
-        b0->scale *= mtrxCol2.c[0U];
-        b1->scale *= mtrxCol1.c[1U];
+        if (true) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            b0->scale *= mtrxCol2.c[0U];
+        }
+        if (true) {
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            b1->scale *= mtrxCol1.c[1U];
+        }
         Prune();
 
         return;
@@ -430,12 +467,24 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         return;
     }
 
-    b0->branches[0U]->scale *= b0->scale;
-    b0->branches[1U]->scale *= b0->scale;
+    if (true) {
+        std::lock_guard<std::mutex> lock(b0->branches[0U]->mtx);
+        b0->branches[0U]->scale *= b0->scale;
+    }
+    if (true) {
+        std::lock_guard<std::mutex> lock(b0->branches[1U]->mtx);
+        b0->branches[1U]->scale *= b0->scale;
+    }
     b0->scale = SQRT1_2_R1;
 
-    b1->branches[0U]->scale *= b1->scale;
-    b1->branches[1U]->scale *= b1->scale;
+    if (true) {
+        std::lock_guard<std::mutex> lock(b1->branches[0U]->mtx);
+        b1->branches[0U]->scale *= b1->scale;
+    }
+    if (true) {
+        std::lock_guard<std::mutex> lock(b1->branches[1U]->mtx);
+        b1->branches[1U]->scale *= b1->scale;
+    }
     b1->scale = SQRT1_2_R1;
 
     --depth;
@@ -560,12 +609,24 @@ void QBdtNode::PushStateVector(
         return;
     }
 
-    b0->branches[0U]->scale *= b0->scale;
-    b0->branches[1U]->scale *= b0->scale;
+    if (true) {
+        std::lock_guard<std::mutex> lock(b0->branches[0U]->mtx);
+        b0->branches[0U]->scale *= b0->scale;
+    }
+    if (true) {
+        std::lock_guard<std::mutex> lock(b0->branches[1U]->mtx);
+        b0->branches[1U]->scale *= b0->scale;
+    }
     b0->scale = SQRT1_2_R1;
 
-    b1->branches[0U]->scale *= b1->scale;
-    b1->branches[1U]->scale *= b1->scale;
+    if (true) {
+        std::lock_guard<std::mutex> lock(b1->branches[0U]->mtx);
+        b1->branches[0U]->scale *= b1->scale;
+    }
+    if (true) {
+        std::lock_guard<std::mutex> lock(b1->branches[1U]->mtx);
+        b1->branches[1U]->scale *= b1->scale;
+    }
     b1->scale = SQRT1_2_R1;
 
     --depth;
@@ -574,8 +635,8 @@ void QBdtNode::PushStateVector(
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async,
-            [&] { b0->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth); });
-        b1->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth, parDepth);
+            [&] { b0->PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth); });
+        b1->PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
 
         future0.get();
     } else {
