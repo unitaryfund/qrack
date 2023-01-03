@@ -722,7 +722,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 #endif
 
-    par_for_qbdt(qPower,
+    par_for_qbdt(qPower, maxQubit,
 #if ENABLE_COMPLEX_X2
         [this, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet](const bitCapInt& i) {
 #else
@@ -811,7 +811,7 @@ void QBdt::ApplyControlledSingle(
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 #endif
 
-    par_for_qbdt(qPower,
+    par_for_qbdt(qPower, maxQubit,
 #if ENABLE_COMPLEX_X2
         [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet, isAnti,
             ketControlsVec](const bitCapInt& i) {
