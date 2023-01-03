@@ -761,7 +761,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
 #if ENABLE_COMPLEX_X2
         [this, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet](const bitCapInt& i) {
 #else
-        [this, maxQubit, target, mtrx](const bitCapInt& i) {
+        [this, maxQubit, target, mtrx, isKet](const bitCapInt& i) {
 #endif
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
@@ -851,7 +851,7 @@ void QBdt::ApplyControlledSingle(
         [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet, isAnti,
             ketControlsVec](const bitCapInt& i) {
 #else
-        [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, isKet, isAnti ketControlsVec](const bitCapInt& i) {
+        [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, isKet, isAnti, ketControlsVec](const bitCapInt& i) {
 #endif
             if ((i & lowControlMask) != lowControlPerm) {
                 return (bitCapInt)(lowControlMask - ONE_BCI);
