@@ -90,6 +90,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
 #endif
 
+    // We can't assume that peer pairs of nodes don't point to the same memory (and mutex).
+    // When we lock a peer pair of nodes, deadlock can arise from not locking both at once.
+    // Alternatively, we could lock either node at any time, but not one after the other.
     bool is0Zero = false;
     bool is1Zero = false;
     if (true) {
@@ -97,33 +100,34 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         if (IS_NODE_0(b0->scale)) {
             is0Zero = true;
             b0->SetZero();
-            if (b0.get() == b1.get()) {
-                // Shouldn't happen, under normal circumstances.
-                SetZero();
-                return;
-            }
-            std::lock_guard<std::mutex> lock(b1->mtx);
-            b1->scale /= abs(b1->scale);
         }
+    }
+    if (is0Zero) {
+        if (b0.get() == b1.get()) {
+            // Shouldn't happen, under normal circumstances.
+            // However, if it ever does, we want this branch.
+            SetZero();
+            return;
+        }
+        std::lock_guard<std::mutex> lock(b1->mtx);
+        b1->scale /= abs(b1->scale);
     }
     if (true) {
         std::lock_guard<std::mutex> lock(b1->mtx);
         if (IS_NODE_0(b1->scale)) {
             is1Zero = true;
             b1->SetZero();
-            if (b0.get() == b1.get()) {
-                // Shouldn't happen, under normal circumstances.
-                SetZero();
-                return;
-            }
-            std::lock_guard<std::mutex> lock(b0->mtx);
-            b0->scale /= abs(b0->scale);
         }
     }
-    if (is0Zero && is1Zero) {
-        // Shouldn't happen, under normal circumstances.
-        SetZero();
-        return;
+    if (is1Zero) {
+        if (b0.get() == b1.get()) {
+            // Shouldn't happen, under normal circumstances.
+            // However, it it ever does, we want this branch.
+            SetZero();
+            return;
+        }
+        std::lock_guard<std::mutex> lock(b0->mtx);
+        b0->scale /= abs(b0->scale);
     }
 
     const complex phaseFac =
@@ -177,6 +181,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
         if (IS_NODE_0(branches[1U]->scale)) {
             // Shouldn't happen, under normal circumstances.
+            // However, if it ever does, we want this branch.
             SetZero();
         }
     }
