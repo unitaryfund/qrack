@@ -90,55 +90,23 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
 #endif
 
-    // We can't assume that peer pairs of nodes don't point to the same memory (and mutex).
-    // When we lock a peer pair of nodes, deadlock can arise from not locking both at once.
-    // Alternatively, we could lock either node at any time, but not one after the other.
-    bool is0Zero = false;
-    bool is1Zero = false;
-    if (true) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
-        if (IS_NODE_0(b0->scale)) {
-            is0Zero = true;
-            b0->SetZero();
-        }
-    }
-    if (is0Zero) {
-        if (b0.get() == b1.get()) {
-            // Shouldn't happen, under normal circumstances.
-            // However, if it ever does, we want this branch.
-            SetZero();
-            return;
-        }
-        std::lock_guard<std::mutex> lock(b1->mtx);
-        b1->scale /= abs(b1->scale);
-    }
-    if (true) {
-        std::lock_guard<std::mutex> lock(b1->mtx);
-        if (IS_NODE_0(b1->scale)) {
-            is1Zero = true;
-            b1->SetZero();
-        }
-    }
-    if (is1Zero) {
-        if (b0.get() == b1.get()) {
-            // Shouldn't happen, under normal circumstances.
-            // However, it it ever does, we want this branch.
-            SetZero();
-            return;
-        }
-        std::lock_guard<std::mutex> lock(b0->mtx);
-        b0->scale /= abs(b0->scale);
-    }
-
-    const complex phaseFac =
-        std::polar(ONE_R1, (real1)((b0->scale == ZERO_CMPLX) ? std::arg(b1->scale) : std::arg(b0->scale)));
-    scale *= phaseFac;
-    if (true) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
-        b0->scale /= phaseFac;
-    }
+    // When we lock a peer pair of (distinct) nodes, deadlock can arise from not locking both at once.
+    // However, we can't assume that peer pairs of nodes don't point to the same memory (and mutex).
+    // As we're locked on the node above already, our shared_ptr copies are safe.
     if (b0.get() == b1.get()) {
-        // Phase factor already applied, and branches point to same object.
+        std::lock_guard<std::mutex> lock(b0->mtx);
+
+        if (IS_NODE_0(b0->scale)) {
+            // Shouldn't happen. However, it implies the parent is 0.
+            SetZero();
+            return;
+        }
+
+        const complex phaseFac = std::polar(ONE_R1, (real1)(std::arg(b0->scale)));
+        scale *= phaseFac;
+        b0->scale /= phaseFac;
+
+        // Phase factor applied, and branches point to same object.
         return;
     }
 
@@ -147,6 +115,19 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+        if (IS_NODE_0(b0->scale)) {
+            b0->SetZero();
+            b1->scale /= abs(b1->scale);
+        } else if (IS_NODE_0(b1->scale)) {
+            b1->SetZero();
+            b0->scale /= abs(b0->scale);
+        }
+
+        const complex phaseFac =
+            std::polar(ONE_R1, (real1)((b0->scale == ZERO_CMPLX) ? std::arg(b1->scale) : std::arg(b0->scale)));
+        scale *= phaseFac;
+
+        b0->scale /= phaseFac;
         b1->scale /= phaseFac;
 
         // Now, we try to combine pointers to equivalent branches.
