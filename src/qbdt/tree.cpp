@@ -220,7 +220,7 @@ template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
 }
 template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
 {
-    Finish();
+    Dump();
 
     root = std::make_shared<QBdtNode>();
 
@@ -589,10 +589,10 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
 real1_f QBdt::ProbAll(bitCapInt perm)
 {
+    Finish();
+
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
-
-    Finish();
 
     for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
         if (IS_NODE_0(leaf->scale)) {
