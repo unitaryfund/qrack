@@ -321,10 +321,14 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     }
     --depth;
 
+    if (!branches[0U]) {
+        return;
+    }
+
     if (!depth && size) {
         QBdtNodeInterfacePtr c = branches[0U];
 
-        if (c && !IS_NODE_0(c->scale)) {
+        if (!IS_NODE_0(c->scale)) {
             branches[0U] = std::make_shared<QBdtNode>(c->scale, b->branches);
             branches[0U]->InsertAtDepth(c, size, 0);
 
@@ -335,17 +339,13 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         }
 
         c = branches[1U];
-        if (!c || IS_NODE_0(c->scale)) {
+        if (IS_NODE_0(c->scale)) {
             return;
         }
 
         branches[1U] = std::make_shared<QBdtNode>(c->scale, b->branches);
         branches[1U]->InsertAtDepth(c, size, 0U);
 
-        return;
-    }
-
-    if (!branches[0U]) {
         return;
     }
 
