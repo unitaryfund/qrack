@@ -95,14 +95,6 @@ protected:
         return toRet;
     }
 
-    void par_for_qbdt(bitCapInt end, bitLenInt maxQubit, BdtFunc fn)
-    {
-        for (bitCapInt j = 0U; j < end; ++j) {
-            j |= fn(j);
-        }
-        root->Prune(maxQubit);
-    }
-
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
     void ApplyControlledSingle(
