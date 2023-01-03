@@ -201,8 +201,6 @@ void QBdtNode::Normalize(bitLenInt depth)
         return;
     }
 
-    std::lock_guard<std::mutex> lock(mtx);
-
     if (IS_NODE_0(scale)) {
         SetZero();
         return;
@@ -216,38 +214,24 @@ void QBdtNode::Normalize(bitLenInt depth)
 
     --depth;
     if (b0.get() == b1.get()) {
-        real1 nrm;
-        if (true) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
-            nrm = (real1)sqrt(2 * norm(b0->scale));
-        }
-        b0->Normalize(depth);
-        if (true) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
-            b0->scale *= ONE_R1 / nrm;
-        }
-    } else {
-        real1 nrm;
-        if (true) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
-            nrm = norm(b0->scale);
-        }
-        if (true) {
-            std::lock_guard<std::mutex> lock(b1->mtx);
-            nrm += norm(b1->scale);
-        }
-        nrm = sqrt(nrm);
+        std::lock_guard<std::mutex> lock(b0->mtx);
+
+        const real1 nrm = (real1)sqrt(2 * norm(b0->scale));
 
         b0->Normalize(depth);
-        if (true) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
-            b0->scale *= ONE_R1 / nrm;
-        }
+        b0->scale *= ONE_R1 / nrm;
+    } else {
+        std::lock(b1->branches[0U]->mtx, b1->branches[1U]->mtx);
+        std::lock_guard<std::mutex> lock0(b1->branches[0U]->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->branches[1U]->mtx, std::adopt_lock);
+
+        const real1 nrm = sqrt(norm(b0->scale) + norm(b1->scale));
+
+        b0->Normalize(depth);
         b1->Normalize(depth);
-        if (true) {
-            std::lock_guard<std::mutex> lock(b1->mtx);
-            b1->scale *= ONE_R1 / nrm;
-        }
+
+        b0->scale *= ONE_R1 / nrm;
+        b1->scale *= ONE_R1 / nrm;
     }
 }
 
@@ -491,21 +475,19 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     }
 
     if (true) {
-        std::lock_guard<std::mutex> lock(b0->branches[0U]->mtx);
+        std::lock(b0->branches[0U]->mtx, b0->branches[1U]->mtx);
+        std::lock_guard<std::mutex> lock0(b0->branches[0U]->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b0->branches[1U]->mtx, std::adopt_lock);
         b0->branches[0U]->scale *= b0->scale;
-    }
-    if (true) {
-        std::lock_guard<std::mutex> lock(b0->branches[1U]->mtx);
         b0->branches[1U]->scale *= b0->scale;
     }
     b0->scale = SQRT1_2_R1;
 
     if (true) {
-        std::lock_guard<std::mutex> lock(b1->branches[0U]->mtx);
+        std::lock(b1->branches[0U]->mtx, b1->branches[1U]->mtx);
+        std::lock_guard<std::mutex> lock0(b1->branches[0U]->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->branches[1U]->mtx, std::adopt_lock);
         b1->branches[0U]->scale *= b1->scale;
-    }
-    if (true) {
-        std::lock_guard<std::mutex> lock(b1->branches[1U]->mtx);
         b1->branches[1U]->scale *= b1->scale;
     }
     b1->scale = SQRT1_2_R1;
@@ -633,21 +615,19 @@ void QBdtNode::PushStateVector(
     }
 
     if (true) {
-        std::lock_guard<std::mutex> lock(b0->branches[0U]->mtx);
+        std::lock(b0->branches[0U]->mtx, b0->branches[1U]->mtx);
+        std::lock_guard<std::mutex> lock0(b0->branches[0U]->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b0->branches[1U]->mtx, std::adopt_lock);
         b0->branches[0U]->scale *= b0->scale;
-    }
-    if (true) {
-        std::lock_guard<std::mutex> lock(b0->branches[1U]->mtx);
         b0->branches[1U]->scale *= b0->scale;
     }
     b0->scale = SQRT1_2_R1;
 
     if (true) {
-        std::lock_guard<std::mutex> lock(b1->branches[0U]->mtx);
+        std::lock(b1->branches[0U]->mtx, b1->branches[1U]->mtx);
+        std::lock_guard<std::mutex> lock0(b1->branches[0U]->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->branches[1U]->mtx, std::adopt_lock);
         b1->branches[0U]->scale *= b1->scale;
-    }
-    if (true) {
-        std::lock_guard<std::mutex> lock(b1->branches[1U]->mtx);
         b1->branches[1U]->scale *= b1->scale;
     }
     b1->scale = SQRT1_2_R1;
