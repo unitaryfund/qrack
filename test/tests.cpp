@@ -7120,18 +7120,15 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
             }
 
             // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-            QInterfacePtr goldStandard =
-                CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
-            goldStandard->SetPermutation(randPerm);
-            fidelities.push_back(goldStandard->SumSqrDiff(testCase));
+            fidelities.push_back(norm(testCase->GetAmplitude(randPerm)));
         }
 
-        real1_f averageInfidelity = 0.0f;
+        real1_f averageFidelity = 0.0f;
         for (int trial = 0; trial < TRIALS; ++trial) {
-            averageInfidelity += fidelities[trial];
+            averageFidelity += fidelities[trial];
         }
-        averageInfidelity /= TRIALS;
+        averageFidelity /= TRIALS;
 
-        std::cout << "Average infidelity for width " << n << ": " << averageInfidelity << std::endl;
+        std::cout << "Average fidelity for width " << n << ": " << averageFidelity << std::endl;
     }
 }
