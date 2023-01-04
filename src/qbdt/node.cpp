@@ -377,11 +377,11 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
 
     if (IS_NORM_0(mtrxCol2.c[0U]) && IS_NORM_0(mtrxCol1.c[1U])) {
         if (true) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
+            std::lock(b0->mtx, b1->mtx);
+            std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
             b0->scale *= mtrxCol1.c[0U];
-        }
-        if (true) {
-            std::lock_guard<std::mutex> lock(b1->mtx);
             b1->scale *= mtrxCol2.c[1U];
         }
         Prune();
@@ -392,11 +392,11 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
     if (IS_NORM_0(mtrxCol1.c[0U]) && IS_NORM_0(mtrxCol2.c[1U])) {
         b0.swap(b1);
         if (true) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
+            std::lock(b0->mtx, b1->mtx);
+            std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
             b0->scale *= mtrxCol2.c[0U];
-        }
-        if (true) {
-            std::lock_guard<std::mutex> lock(b1->mtx);
             b1->scale *= mtrxCol1.c[1U];
         }
         Prune();
@@ -528,8 +528,14 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-        b0->scale *= mtrx[0U];
-        b1->scale *= mtrx[3U];
+        if (true) {
+            std::lock(b0->mtx, b1->mtx);
+            std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+            b0->scale *= mtrx[0U];
+            b1->scale *= mtrx[3U];
+        }
         Prune();
 
         return;
@@ -537,8 +543,14 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         b0.swap(b1);
-        b0->scale *= mtrx[1U];
-        b1->scale *= mtrx[2U];
+        if (true) {
+            std::lock(b0->mtx, b1->mtx);
+            std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+            b0->scale *= mtrx[1U];
+            b1->scale *= mtrx[2U];
+        }
         Prune();
 
         return;
