@@ -145,6 +145,10 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
                     return (bitCapInt)(pow2(depth - j) - ONE_BCI);
                 }
 
+                std::lock(leaf0->mtx, leaf1->mtx);
+                std::lock_guard<std::mutex> lock0(leaf0->mtx, std::adopt_lock);
+                std::lock_guard<std::mutex> lock1(leaf1->mtx, std::adopt_lock);
+
                 leaf0 = leaf0->branches[bit];
                 leaf1 = leaf1->branches[bit];
             }
