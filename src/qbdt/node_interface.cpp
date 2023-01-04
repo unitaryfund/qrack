@@ -73,13 +73,19 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    branches[0U] = r->branches[0U];
+    if (branches[0U]) {
+        std::lock_guard<std::mutex> lock(branches[0U]->mtx);
+        branches[0U] = r->branches[0U];
+    }
 
     if (branches[1U] != r->branches[1U]) {
         return false;
     }
 
-    branches[1U] = r->branches[1U];
+    if (branches[1U]) {
+        std::lock_guard<std::mutex> lock(branches[1U]->mtx);
+        branches[1U] = r->branches[1U];
+    }
 
     return true;
 }
