@@ -6964,14 +6964,14 @@ struct SingleQubitGate {
     real1_f lm;
 };
 
-#if 0
 TEST_CASE("test_noisy_fidelity", "[mirror]")
 {
     std::cout << ">>> 'test_noisy_fidelity':" << std::endl;
 
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
-    const int TRIALS = 100;
+    const int TRIALS = 1;
+    const int w = 54;
 
     int d;
     int i;
@@ -6979,14 +6979,14 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
     int gate;
 
-    for (int n = 4; n < 17; n = n + 2) {
+    for (int n = 20; n < 21; n = n + 2) {
         QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
         std::vector<real1_f> fidelities;
 
         for (int trial = 0; trial < TRIALS; ++trial) {
-            std::vector<std::vector<SingleQubitGate>> gate1QbRands(n);
-            std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
+            std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
+            std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
 
             for (d = 0; d < (n >> 1U); d++) {
                 std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -6999,7 +6999,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
                 }
 
                 std::set<bitLenInt> unusedBits;
-                for (i = 0; i < n; i++) {
+                for (i = 0; i < w; i++) {
                     unusedBits.insert(i);
                 }
 
@@ -7121,7 +7121,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
             // We mirrored for half, hence the "gold standard" is identically |randPerm>.
             QInterfacePtr goldStandard =
-                CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
+                CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
             goldStandard->SetPermutation(randPerm);
             fidelities.push_back(goldStandard->SumSqrDiff(testCase));
         }
@@ -7135,4 +7135,3 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
         std::cout << "Average infidelity for width " << n << ": " << averageInfidelity << std::endl;
     }
 }
-#endif
