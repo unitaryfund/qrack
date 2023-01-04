@@ -444,7 +444,7 @@ void QInterface::DepolarizingChannelWeak1Qb(bitLenInt qubit, real1_f lambda)
     // Allocate an ancilla
     const bitLenInt ancilla = Allocate(1U);
     // Partially entangle with the ancilla
-    CRY(2 * asin(std::pow(lambda, ONE_R1 / 4)), qubit, ancilla);
+    CRY(2 * asin(std::pow((real1_s)lambda, (real1_s)(1.0f / 4.0f))), qubit, ancilla);
     // Partially collapse the original state
     M(ancilla);
     // The ancilla is fully separable, after measurement.
@@ -465,7 +465,7 @@ bitLenInt QInterface::DepolarizingChannelStrong1Qb(bitLenInt qubit, real1_f lamb
     // Allocate an ancilla
     const bitLenInt ancilla = Allocate(1U);
     // Partially entangle with the ancilla
-    CRY(2 * asin(std::pow(lambda, ONE_R1 / 4)), qubit, ancilla);
+    CRY(2 * asin(std::pow((real1_s)lambda, (real1_s)(1.0f / 4.0f))), qubit, ancilla);
 
     // Uncompute
     H(qubit);
