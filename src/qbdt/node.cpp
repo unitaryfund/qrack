@@ -138,20 +138,41 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
             QBdtNodeInterfacePtr leaf0 = b0->branches[topBit];
             QBdtNodeInterfacePtr leaf1 = b1->branches[topBit];
 
+            if (!leaf0 || !leaf1) {
+                // WARNING: Mutates loop control variable!
+                return (bitCapInt)(pow2(depth) - ONE_BCI);
+            }
+
+            if (leaf0 == leaf1) {
+                std::lock_guard<std::mutex> lock(leaf1->mtx);
+                b1->branches[topBit] = b0->branches[topBit];
+                // WARNING: Mutates loop control variable!
+                return (bitCapInt)(pow2(depth) - ONE_BCI);
+            }
+
             for (bitLenInt j = 1U; j < depth; ++j) {
                 size_t bit = SelectBit(i, depth - (j + 1U));
 
-                if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
+                if (true) {
+                    std::lock_guard<std::mutex> lock(leaf0->mtx);
+                    leaf0 = leaf0->branches[bit];
+                }
+                if (true) {
+                    std::lock_guard<std::mutex> lock(leaf1->mtx);
+                    leaf1 = leaf1->branches[bit];
+                }
+
+                if (!leaf0 || !leaf1) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(depth - j) - ONE_BCI);
                 }
 
-                std::lock(leaf0->mtx, leaf1->mtx);
-                std::lock_guard<std::mutex> lock0(leaf0->mtx, std::adopt_lock);
-                std::lock_guard<std::mutex> lock1(leaf1->mtx, std::adopt_lock);
-
-                leaf0 = leaf0->branches[bit];
-                leaf1 = leaf1->branches[bit];
+                if (leaf0 == leaf1) {
+                    std::lock_guard<std::mutex> lock(leaf1->mtx);
+                    leaf1->branches[bit] = leaf0->branches[bit];
+                    // WARNING: Mutates loop control variable!
+                    return (bitCapInt)(pow2(depth - j) - ONE_BCI);
+                }
             }
 
             return (bitCapInt)0U;
