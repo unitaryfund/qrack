@@ -134,10 +134,11 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         const bitCapInt depthPow = pow2(depth);
         // Combine single elements at bottom of full depth, up to where branches are equal below:
         _par_for_qbdt(depthPow, [&](const bitCapInt& i) {
-            QBdtNodeInterfacePtr leaf0 = b0;
-            QBdtNodeInterfacePtr leaf1 = b1;
+            const bitLenInt topBit = SelectBit(i, depth - 1U);
+            QBdtNodeInterfacePtr leaf0 = b0->branches[topBit];
+            QBdtNodeInterfacePtr leaf1 = b1->branches[topBit];
 
-            for (bitLenInt j = 0U; j < depth; ++j) {
+            for (bitLenInt j = 1U; j < depth; ++j) {
                 size_t bit = SelectBit(i, depth - (j + 1U));
 
                 if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
