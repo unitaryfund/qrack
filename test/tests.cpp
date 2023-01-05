@@ -6971,7 +6971,9 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
     const int TRIALS = 1;
-    const int w = 54;
+    const int w = 36;
+    std::cout << "Circuit width: " << w << std::endl;
+
 
     int d;
     int i;
@@ -6979,7 +6981,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
     int gate;
 
-    for (int n = 20; n < 21; n = n + 2) {
+    for (int n = 4; n < 21; n = n + 2) {
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
         std::vector<real1_f> fidelities;
