@@ -286,7 +286,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
         const real1 nrm = (real1)(2 * norm(b0->scale));
 
-        if (nrm <= FP_NORM_EPSILON) {
+        if (nrm <= _qrack_qbdt_sep_thresh) {
             SetZero();
             return;
         }
@@ -306,19 +306,19 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         const real1 nrm0 = norm(b0->scale);
         const real1 nrm1 = norm(b1->scale);
 
-        if ((nrm0 + nrm1) <= FP_NORM_EPSILON) {
+        if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
             SetZero();
             return;
         }
 
-        if (nrm0 <= FP_NORM_EPSILON) {
+        if (nrm0 <= _qrack_qbdt_sep_thresh) {
             scale = b1->scale;
             b0->SetZero();
             b1->scale = ONE_CMPLX;
             return;
         }
 
-        if (nrm1 <= FP_NORM_EPSILON) {
+        if (nrm1 <= _qrack_qbdt_sep_thresh) {
             scale = b0->scale;
             b0->scale = ONE_CMPLX;
             b1->SetZero();
