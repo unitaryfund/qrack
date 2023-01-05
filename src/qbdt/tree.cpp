@@ -722,13 +722,11 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 #endif
 
-    std::set<QBdtNodeInterfacePtr> qnis;
-
     par_for_qbdt(qPower, maxQubit,
 #if ENABLE_COMPLEX_X2
-        [this, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet, &qnis](const bitCapInt& i) {
+        [this, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet](const bitCapInt& i) {
 #else
-        [this, maxQubit, target, mtrx, isKet, &qnis](const bitCapInt& i) {
+        [this, maxQubit, target, mtrx, isKet](const bitCapInt& i) {
 #endif
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
@@ -744,11 +742,6 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
             if (IS_NODE_0(leaf->scale)) {
                 return (bitCapInt)0U;
             }
-
-            if (qnis.find(leaf) != qnis.end()) {
-                return (bitCapInt)0U;
-            }
-            qnis.insert(leaf);
 
             if (isKet) {
                 leaf->Branch();
@@ -818,14 +811,12 @@ void QBdt::ApplyControlledSingle(
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 #endif
 
-    std::set<QBdtNodeInterfacePtr> qnis;
-
     par_for_qbdt(qPower, maxQubit,
 #if ENABLE_COMPLEX_X2
         [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet, isAnti,
-            ketControlsVec, &qnis](const bitCapInt& i) {
+            ketControlsVec](const bitCapInt& i) {
 #else
-        [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, isKet, isAnti, ketControlsVec, &qnis](const bitCapInt& i) {
+        [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, isKet, isAnti, ketControlsVec](const bitCapInt& i) {
 #endif
             if ((i & lowControlMask) != lowControlPerm) {
                 return (bitCapInt)(lowControlMask - ONE_BCI);
@@ -845,11 +836,6 @@ void QBdt::ApplyControlledSingle(
             if (IS_NODE_0(leaf->scale)) {
                 return (bitCapInt)0U;
             }
-
-            if (qnis.find(leaf) != qnis.end()) {
-                return (bitCapInt)0U;
-            }
-            qnis.insert(leaf);
 
             if (isKet) {
                 leaf->Branch();
