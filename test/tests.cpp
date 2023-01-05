@@ -7129,7 +7129,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
         }
         averageFidelity /= TRIALS;
 
-        std::cout << "Average fidelity for width " << n << ": " << averageFidelity << std::endl;
+        std::cout << "Average fidelity for depth " << n << ": " << averageFidelity << std::endl;
     }
 }
 #endif
