@@ -735,9 +735,10 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
                 }
-                leaf->Branch();
                 leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
             }
+
+            std::lock_guard<std::mutex> lock(leaf->mtx);
 
             if (IS_NODE_0(leaf->scale)) {
                 return (bitCapInt)0U;
@@ -829,9 +830,10 @@ void QBdt::ApplyControlledSingle(
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
                 }
-                leaf->Branch();
                 leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
             }
+
+            std::lock_guard<std::mutex> lock(leaf->mtx);
 
             if (IS_NODE_0(leaf->scale)) {
                 return (bitCapInt)0U;

@@ -96,7 +96,7 @@ void QBdtQEngineNode::Normalize(bitLenInt depth)
     }
 }
 
-void QBdtQEngineNode::Branch(bitLenInt depth)
+void QBdtQEngineNode::Branch(bitLenInt depth, bitLenInt parDepth)
 {
     if (!depth) {
         return;

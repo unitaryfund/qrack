@@ -97,9 +97,62 @@ protected:
 
     void par_for_qbdt(bitCapInt end, bitLenInt maxQubit, BdtFunc fn)
     {
+        root->Branch(maxQubit);
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+        const bitCapInt Stride = GetStride();
+        if (end < Stride) {
+            for (bitCapInt j = 0U; j < end; ++j) {
+                j |= fn(j);
+            }
+            root->Prune(maxQubit);
+            return;
+        }
+
+        const unsigned nmCrs = GetConcurrencyLevel();
+        unsigned threads = (unsigned)(end / Stride);
+        if (threads > nmCrs) {
+            threads = nmCrs;
+        }
+
+        std::mutex myMutex;
+        bitCapInt idx = 0U;
+        std::vector<std::future<void>> futures(threads);
+        for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+            futures[cpu] = std::async(std::launch::async, [cpu, &myMutex, &idx, &end, &Stride, fn]() {
+                for (;;) {
+                    bitCapInt i;
+                    if (true) {
+                        std::lock_guard<std::mutex> lock(myMutex);
+                        i = idx++;
+                    }
+                    const bitCapInt l = i * Stride;
+                    if (l >= end) {
+                        break;
+                    }
+                    const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
+                    bitCapInt j;
+                    for (j = 0U; j < maxJ; ++j) {
+                        bitCapInt k = j + l;
+                        k |= fn(k);
+                        j = k - l;
+                        if (j >= maxJ) {
+                            std::lock_guard<std::mutex> lock(myMutex);
+                            idx |= j / Stride;
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
+        for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+            futures[cpu].get();
+        }
+#else
         for (bitCapInt j = 0U; j < end; ++j) {
             j |= fn(j);
         }
+#endif
         root->Prune(maxQubit);
     }
 

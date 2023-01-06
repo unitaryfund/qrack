@@ -112,7 +112,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    virtual void Branch(bitLenInt depth = 1U)
+    virtual void Branch(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
         throw std::out_of_range("QBdtNodeInterface::Branch() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
