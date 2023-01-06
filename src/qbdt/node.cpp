@@ -135,6 +135,8 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         // Combine single elements at bottom of full depth, up to where branches are equal below:
         _par_for_qbdt(depthPow, [&](const bitCapInt& i) {
             const bitLenInt topBit = SelectBit(i, depth - 1U);
+            QBdtNodeInterfacePtr parent0 = b0;
+            QBdtNodeInterfacePtr parent1 = b1;
             QBdtNodeInterfacePtr leaf0 = b0->branches[topBit];
             QBdtNodeInterfacePtr leaf1 = b1->branches[topBit];
 
@@ -155,21 +157,26 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
                 if (true) {
                     std::lock_guard<std::mutex> lock(leaf0->mtx);
+                    parent0 = leaf0;
                     leaf0 = leaf0->branches[bit];
+                }
+                if (!leaf0) {
+                    // WARNING: Mutates loop control variable!
+                    return (bitCapInt)(pow2(depth - j) - ONE_BCI);
                 }
                 if (true) {
                     std::lock_guard<std::mutex> lock(leaf1->mtx);
+                    parent1 = leaf1;
                     leaf1 = leaf1->branches[bit];
                 }
-
-                if (!leaf0 || !leaf1) {
+                if (!leaf1) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(depth - j) - ONE_BCI);
                 }
 
                 if (leaf0 == leaf1) {
                     std::lock_guard<std::mutex> lock(leaf1->mtx);
-                    leaf1->branches[bit] = leaf0->branches[bit];
+                    parent1->branches[bit] = parent0->branches[bit];
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(depth - j) - ONE_BCI);
                 }
