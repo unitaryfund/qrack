@@ -121,7 +121,7 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
 
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
-    if (norm(scale) == ZERO_R1) {
+    if (IS_NODE_0(scale)) {
         return NULL;
     }
 
