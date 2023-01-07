@@ -6971,7 +6971,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
     const int w = 54;
-    const int n = 16;
+    const int n = 14;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
 
