@@ -6974,7 +6974,6 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     const int w = 36;
     std::cout << "Circuit width: " << w << std::endl;
 
-
     int d;
     int i;
     int maxGates;
@@ -7149,6 +7148,9 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
         -pow(complex((real1)ZERO_R1, (real1)SQRT1_2_R1), (real1)(ONE_R1 / 2)),
         pow(complex((real1)ZERO_R1, (real1)(-SQRT1_2_R1)), (real1)(ONE_R1 / 2)),
         complex((real1)SQRT1_2_R1, (real1)ZERO_R1) };
+
+    complex iSqrtwMtrx[4];
+    inv2x2(sqrtwMtrx, iSqrtwMtrx);
 
     // The test runs 2 bit gates according to a tiling sequence.
     // The 1 bit indicates +/- column offset.
@@ -7334,13 +7336,13 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                 for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
                     int gate1Qb = layer1QbRands[i];
                     if (!gate1Qb) {
-                        testCase->SqrtX(i);
+                        testCase->ISqrtX(i);
                         // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
                     } else if (gate1Qb == 1U) {
-                        testCase->SqrtY(i);
+                        testCase->ISqrtY(i);
                         // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                     } else {
-                        testCase->Mtrx(sqrtwMtrx, i);
+                        testCase->Mtrx(iSqrtwMtrx, i);
                         // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                     }
                 }
