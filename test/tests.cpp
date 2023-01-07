@@ -7357,7 +7357,7 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Average fidelity for width " << n << ", SDRP=" << sdrp << ": "
+        std::cout << "Average fidelity for depth " << n << ", SDRP=" << sdrp << ": "
                   << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
