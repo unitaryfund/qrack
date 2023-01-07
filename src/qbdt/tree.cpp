@@ -196,13 +196,10 @@ template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
                 break;
             }
             leaf = leaf->branches[SelectBit(i, j)];
-            if (!leaf) {
-                break;
-            }
             scale *= leaf->scale;
         }
 
-        if (leaf && !IS_NODE_0(leaf->scale) && attachedQubitCount) {
+        if (!IS_NODE_0(leaf->scale) && attachedQubitCount) {
             scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(i >> bdtQubitCount);
         }
 
@@ -389,13 +386,10 @@ complex QBdt::GetAmplitude(bitCapInt perm)
             break;
         }
         leaf = leaf->branches[SelectBit(perm, j)];
-        if (!leaf) {
-            break;
-        }
         scale *= leaf->scale;
     }
 
-    if (leaf && !IS_NODE_0(leaf->scale) && attachedQubitCount) {
+    if (!IS_NODE_0(leaf->scale) && attachedQubitCount) {
         scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(perm >> bdtQubitCount);
     }
 
@@ -548,13 +542,10 @@ real1_f QBdt::Prob(bitLenInt qubit)
                 break;
             }
             leaf = leaf->branches[SelectBit(i, j)];
-            if (!leaf) {
-                break;
-            }
             scale *= leaf->scale;
         }
 
-        if (!leaf || IS_NODE_0(leaf->scale)) {
+        if (IS_NODE_0(leaf->scale)) {
             continue;
         }
 
@@ -587,13 +578,10 @@ real1_f QBdt::ProbAll(bitCapInt perm)
             break;
         }
         leaf = leaf->branches[SelectBit(perm, j)];
-        if (!leaf) {
-            break;
-        }
         scale *= leaf->scale;
     }
 
-    if (leaf && !IS_NODE_0(leaf->scale) && attachedQubitCount) {
+    if (!IS_NODE_0(leaf->scale) && attachedQubitCount) {
         scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(perm >> bdtQubitCount);
     }
 
@@ -627,14 +615,14 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     for (bitCapInt i = 0U; i < qPower; ++i) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (!leaf || IS_NODE_0(leaf->scale)) {
+            if (IS_NODE_0(leaf->scale)) {
                 break;
             }
             leaf->Branch();
             leaf = leaf->branches[SelectBit(i, j)];
         }
 
-        if (!leaf || IS_NODE_0(leaf->scale)) {
+        if (IS_NODE_0(leaf->scale)) {
             continue;
         }
 
@@ -649,14 +637,14 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         QBdtNodeInterfacePtr& b1 = leaf->branches[1U];
 
         if (result) {
-            if (!b1 || IS_NODE_0(b1->scale)) {
+            if (IS_NODE_0(b1->scale)) {
                 leaf->SetZero();
             } else {
                 b0->SetZero();
                 b1->scale /= abs(b1->scale);
             }
         } else {
-            if (!b0 || IS_NODE_0(b0->scale)) {
+            if (IS_NODE_0(b0->scale)) {
                 leaf->SetZero();
             } else {
                 b0->scale /= abs(b0->scale);
@@ -743,15 +731,11 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < maxQubit; ++j) {
-                if (!leaf || IS_NODE_0(leaf->scale)) {
+                if (IS_NODE_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
                 }
                 leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
-            }
-
-            if (!leaf) {
-                return (bitCapInt)0U;
             }
 
             std::lock_guard<std::mutex> lock(leaf->mtx);
@@ -842,15 +826,11 @@ void QBdt::ApplyControlledSingle(
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < maxQubit; ++j) {
-                if (!leaf || IS_NODE_0(leaf->scale)) {
+                if (IS_NODE_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
                 }
                 leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
-            }
-
-            if (!leaf) {
-                return (bitCapInt)0U;
             }
 
             std::lock_guard<std::mutex> lock(leaf->mtx);
