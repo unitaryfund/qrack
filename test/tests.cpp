@@ -7182,10 +7182,14 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
     auto start = std::chrono::high_resolution_clock::now();
     real1_f sdrp = 0.325f;
 
-    while ((std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(60)) {
+    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(60)) {
         start = std::chrono::high_resolution_clock::now();
 
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (!sdrp) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
