@@ -122,7 +122,6 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
     if (IS_NODE_0(scale)) {
-        SetZero();
         return NULL;
     }
 
@@ -130,11 +129,6 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
 
     if (depth) {
         --depth;
-
-        if (!branches[0U] || !branches[1U]) {
-            SetZero();
-            return NULL;
-        }
 
         QBdtNodeInterfacePtr toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size);
         QBdtNodeInterfacePtr toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size);
