@@ -6971,7 +6971,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
     const int w = 54;
-    const int n = 10;
+    const int n = 16;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
 
@@ -7035,9 +7035,9 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    real1_f sdrp = 0.325f;
+    real1_s sdrp = 0.325f;
 
-    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(60)) {
+    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(120)) {
         start = std::chrono::high_resolution_clock::now();
 
         if (sdrp < FP_NORM_EPSILON) {
@@ -7190,7 +7190,7 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
     int row, col;
 
     auto start = std::chrono::high_resolution_clock::now();
-    real1_f sdrp = 0.325f;
+    real1_s sdrp = 0.325f;
 
     std::vector<real1_f> fidelities;
     std::vector<std::vector<int>> gate1QbRands(n >> 1U);
