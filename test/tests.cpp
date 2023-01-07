@@ -7143,6 +7143,7 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
 
     // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
     const complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
+    const complex iSixthRoot = pow(-ONE_CMPLX, complex((real1)(-1.0f / 6.0f)));
 
     const complex sqrtwMtrx[4] = { complex((real1)SQRT1_2_R1, (real1)ZERO_R1),
         -pow(complex((real1)ZERO_R1, (real1)SQRT1_2_R1), (real1)(ONE_R1 / 2)),
@@ -7326,9 +7327,9 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
 
                     // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
                     // different.
-                    testCase->ISwap(b1, b2);
+                    testCase->IISwap(b1, b2);
                     // "1/6 of CZ" is read to indicate the 6th root.
-                    testCase->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
+                    testCase->MCPhase(controls, ONE_CMPLX, iSixthRoot, b2);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
                 }
 
