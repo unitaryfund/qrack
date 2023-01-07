@@ -6970,9 +6970,10 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
-    const int w = 36;
-    const int n = 10;
+    const int w = 54;
+    const int n = 8;
     std::cout << "Circuit width: " << w << std::endl;
+    std::cout << "Circuit layer depth: " << n << std::endl;
 
     int d;
     int i;
@@ -7134,8 +7135,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Average fidelity for depth " << n << ", SDRP=" << sdrp << ": "
-                  << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
+        std::cout << "Average fidelity for SDRP=" << sdrp << ": " << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
                   << "s" << std::endl;
