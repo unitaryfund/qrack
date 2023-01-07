@@ -48,6 +48,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
+        SetZero();
         return;
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
@@ -252,6 +253,7 @@ void QBdtNode::Normalize(bitLenInt depth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
+        SetZero();
         return;
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
@@ -292,6 +294,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
+        SetZero();
         return;
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
@@ -365,6 +368,11 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             return;
         }
 
+        if (!b->branches[0U] || !b->branches[1U]) {
+            b->SetZero();
+            return;
+        }
+
         QBdtNodeInterfacePtr c = ShallowClone();
         scale = b->scale;
         branches[0U] = b->branches[0U]->ShallowClone();
@@ -375,6 +383,11 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         return;
     }
     --depth;
+
+    if (!branches[0U] || !branches[1U]) {
+        SetZero();
+        return;
+    }
 
     if (!depth && size) {
         QBdtNodeInterfacePtr c = branches[0U];
@@ -416,6 +429,11 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
     Branch();
     QBdtNodeInterfacePtr& b0 = branches[0U];
     QBdtNodeInterfacePtr& b1 = branches[1U];
+
+    if (!b0 || !b1) {
+        SetZero();
+        return;
+    }
 
     if (IS_NORM_0(mtrxCol2.c[0U]) && IS_NORM_0(mtrxCol1.c[1U])) {
         if (true) {
@@ -507,12 +525,16 @@ void QBdtNode::PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2,
     b0->Branch();
     b1->Branch();
 
-    if (!b0->branches[0U]) {
+    if (!b0->branches[0U] && !b0->branches[1U] && !b1->branches[0U] && !b1->branches[1U]) {
         b0->PushSpecial(mtrxCol1, mtrxCol2, b1);
 
         b0->PopStateVector();
         b1->PopStateVector();
 
+        return;
+    }
+
+    if (!b0->branches[0U] || !b0->branches[1U] || !b1->branches[0U] || !b1->branches[1U]) {
         return;
     }
 
@@ -567,6 +589,11 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
     QBdtNodeInterfacePtr& b0 = branches[0U];
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
+    if (!b0 || !b1) {
+        SetZero();
+        return;
+    }
+
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         if (true) {
             std::lock(b0->mtx, b1->mtx);
@@ -603,6 +630,10 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 void QBdtNode::PushStateVector(
     complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
+    if (!b0 || !b1) {
+        return;
+    }
+
     // For parallelism, keep shared_ptr b0 and b1 from deallocating.
     QBdtNodeInterfacePtr b0Ref = b0;
     QBdtNodeInterfacePtr b1Ref = b1;
@@ -657,12 +688,16 @@ void QBdtNode::PushStateVector(
     b0->Branch();
     b1->Branch();
 
-    if (!b0->branches[0U]) {
+    if (!b0->branches[0U] && !b0->branches[1U] && !b1->branches[0U] && !b1->branches[1U]) {
         b0->PushSpecial(mtrx, b1);
 
         b0->PopStateVector();
         b1->PopStateVector();
 
+        return;
+    }
+
+    if (!b0->branches[0U] || !b0->branches[1U] || !b1->branches[0U] || !b1->branches[1U]) {
         return;
     }
 
