@@ -92,8 +92,22 @@ public:
     virtual void SetZero()
     {
         scale = ZERO_CMPLX;
-        branches[0U] = NULL;
-        branches[1U] = NULL;
+
+        if (!branches[0U]) {
+            return;
+        }
+
+        if (true) {
+            QBdtNodeInterfacePtr b0 = branches[0U];
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            branches[0U] = NULL;
+        }
+
+        if (true) {
+            QBdtNodeInterfacePtr b1 = branches[1U];
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            branches[1U] = NULL;
+        }
     }
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);

@@ -96,12 +96,6 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     if (b0.get() == b1.get()) {
         std::lock_guard<std::mutex> lock(b0->mtx);
 
-        if (IS_NODE_0(b0->scale)) {
-            // Shouldn't happen. However, it implies the parent is 0.
-            SetZero();
-            return;
-        }
-
         const complex phaseFac = std::polar(ONE_R1, (real1)(std::arg(b0->scale)));
         scale *= phaseFac;
         b0->scale /= phaseFac;
@@ -192,12 +186,6 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock1(branches[1U]->mtx, std::adopt_lock);
 
         branches[1U] = branches[0U];
-
-        if (IS_NODE_0(branches[1U]->scale)) {
-            // Shouldn't happen, under normal circumstances.
-            // However, if it ever does, we want this branch.
-            SetZero();
-        }
     }
 }
 
@@ -305,7 +293,10 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         const real1 nrm = (real1)(2 * norm(b0->scale));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
-            SetZero();
+            scale = ZERO_CMPLX;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
+
             return;
         }
 
@@ -325,7 +316,10 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         const real1 nrm1 = norm(b1->scale);
 
         if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
-            SetZero();
+            scale = ZERO_CMPLX;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
+
             return;
         }
 
