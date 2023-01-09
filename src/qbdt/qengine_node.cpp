@@ -103,6 +103,7 @@ void QBdtQEngineNode::Branch(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -114,6 +115,7 @@ void QBdtQEngineNode::Branch(bitLenInt depth, bitLenInt parDepth)
 void QBdtQEngineNode::Prune(bitLenInt depth, bitLenInt unused)
 {
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -168,6 +170,9 @@ void QBdtQEngineNode::PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
     const bool is1Zero = IS_NODE_0(b1->scale);
 
     if (is0Zero && is1Zero) {
+        SetZero();
+        b1->SetZero();
+
         return;
     }
 

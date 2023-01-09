@@ -42,6 +42,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -97,6 +98,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
         if (IS_NODE_0(b0->scale)) {
             // Shouldn't happen. However, it implies the parent is 0.
+            SetZero();
             return;
         }
 
@@ -190,6 +192,12 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock1(branches[1U]->mtx, std::adopt_lock);
 
         branches[1U] = branches[0U];
+
+        if (IS_NODE_0(branches[1U]->scale)) {
+            // Shouldn't happen, under normal circumstances.
+            // However, if it ever does, we want this branch.
+            SetZero();
+        }
     }
 }
 
@@ -200,6 +208,7 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -237,6 +246,7 @@ void QBdtNode::Normalize(bitLenInt depth)
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -276,6 +286,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
@@ -345,6 +356,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     }
 
     if (IS_NODE_0(scale)) {
+        SetZero();
         return;
     }
 
