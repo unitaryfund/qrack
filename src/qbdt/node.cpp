@@ -423,8 +423,23 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+            const bool is0Zero = IS_NODE_0(b0->scale);
+            const bool is1Zero = IS_NODE_0(b1->scale);
+
+            if (is0Zero && is1Zero) {
+                return;
+            }
+
             b0->scale *= mtrxCol1.c[0U];
             b1->scale *= mtrxCol2.c[1U];
+
+            if (is0Zero) {
+                b0->branches[0U] = b1->branches[0U];
+                b0->branches[1U] = b1->branches[1U];
+            } else if (is1Zero) {
+                b1->branches[0U] = b0->branches[0U];
+                b1->branches[1U] = b0->branches[1U];
+            }
         }
         Prune();
 
@@ -438,8 +453,23 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+            const bool is0Zero = IS_NODE_0(b0->scale);
+            const bool is1Zero = IS_NODE_0(b1->scale);
+
+            if (is0Zero && is1Zero) {
+                return;
+            }
+
             b0->scale *= mtrxCol2.c[0U];
             b1->scale *= mtrxCol1.c[1U];
+
+            if (is0Zero) {
+                b0->branches[0U] = b1->branches[0U];
+                b0->branches[1U] = b1->branches[1U];
+            } else if (is1Zero) {
+                b1->branches[0U] = b0->branches[0U];
+                b1->branches[1U] = b0->branches[1U];
+            }
         }
         Prune();
 
@@ -573,8 +603,23 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+            const bool is0Zero = IS_NODE_0(b0->scale);
+            const bool is1Zero = IS_NODE_0(b1->scale);
+
+            if (is0Zero && is1Zero) {
+                return;
+            }
+
             b0->scale *= mtrx[0U];
             b1->scale *= mtrx[3U];
+
+            if (is0Zero) {
+                b0->branches[0U] = b1->branches[0U];
+                b0->branches[1U] = b1->branches[1U];
+            } else if (is1Zero) {
+                b1->branches[0U] = b0->branches[0U];
+                b1->branches[1U] = b0->branches[1U];
+            }
         }
         Prune();
 
@@ -588,8 +633,23 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+            const bool is0Zero = IS_NODE_0(b0->scale);
+            const bool is1Zero = IS_NODE_0(b1->scale);
+
+            if (is0Zero && is1Zero) {
+                return;
+            }
+
             b0->scale *= mtrx[1U];
             b1->scale *= mtrx[2U];
+
+            if (is0Zero) {
+                b0->branches[0U] = b1->branches[0U];
+                b0->branches[1U] = b1->branches[1U];
+            } else if (is1Zero) {
+                b1->branches[0U] = b0->branches[0U];
+                b1->branches[1U] = b0->branches[1U];
+            }
         }
         Prune();
 
