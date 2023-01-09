@@ -429,12 +429,12 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
     }
 
     if (IS_NORM_0(mtrxCol1.c[0U]) && IS_NORM_0(mtrxCol2.c[1U])) {
-        b0.swap(b1);
         if (true) {
             std::lock(b0->mtx, b1->mtx);
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+            b0.swap(b1);
             b0->scale *= mtrxCol2.c[0U];
             b1->scale *= mtrxCol1.c[1U];
         }
@@ -579,12 +579,12 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
     }
 
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-        b0.swap(b1);
         if (true) {
             std::lock(b0->mtx, b1->mtx);
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
+            b0.swap(b1);
             b0->scale *= mtrx[1U];
             b1->scale *= mtrx[2U];
         }
