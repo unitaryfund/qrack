@@ -48,6 +48,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
+        SetZero();
         return;
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
@@ -240,6 +241,7 @@ void QBdtNode::Normalize(bitLenInt depth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
+        SetZero();
         return;
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
@@ -280,6 +282,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
+        SetZero();
         return;
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
