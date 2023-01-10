@@ -118,7 +118,7 @@ protected:
         bitCapInt idx = 0U;
         std::vector<std::future<void>> futures(threads);
         for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-            futures[cpu] = std::async(std::launch::async, [cpu, &myMutex, &idx, &end, &Stride, fn]() {
+            futures[cpu] = std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, fn]() {
                 for (;;) {
                     bitCapInt i;
                     if (true) {
