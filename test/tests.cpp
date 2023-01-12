@@ -7146,7 +7146,8 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
 TEST_CASE("test_noisy_sycamore", "[mirror]")
 {
-    std::cout << ">>> 'test_noisy_fidelity':" << std::endl;
+    std::cout << ">>> 'test_noisy_sycamore':" << std::endl;
+    std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit.";
 
     const int w = 54;
     const int n = 6;
@@ -7203,13 +7204,6 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
         std::vector<int> layer1QbRands;
         std::vector<MultiQubitGate> layerMultiQbRands;
         for (i = 0; i < w; ++i) {
-            if ((w == 54U) && (i == deadQubit)) {
-                if (!d) {
-                    lastSingleBitGates.push_back(0);
-                }
-                continue;
-            }
-
             // Each individual bit has one of these 3 gates applied at random.
             // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants
             // are handled as general single bit gates.
@@ -7269,10 +7263,6 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                 int b1 = row * colLen + col;
                 int b2 = tempRow * colLen + tempCol;
 
-                if ((w == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
-                    continue;
-                }
-
                 MultiQubitGate multiGate;
                 multiGate.b1 = b1;
                 multiGate.b2 = b2;
@@ -7305,6 +7295,10 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
         for (d = 0; d < (n >> 1U); d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             for (i = 0; i < (int)layer1QbRands.size(); i++) {
+                if ((w == 54U) && (i == deadQubit)) {
+                    continue;
+                }
+
                 int gate1Qb = layer1QbRands[i];
                 if (!gate1Qb) {
                     testCase->SqrtX(i);
@@ -7323,6 +7317,11 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                 MultiQubitGate multiGate = layerMultiQbRands[i];
                 const bitLenInt b1 = multiGate.b1;
                 const bitLenInt b2 = multiGate.b2;
+
+                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                    continue;
+                }
+
                 const std::vector<bitLenInt> controls = { b1 };
 
                 testCase->TrySeparate(b1, b2);
@@ -7343,6 +7342,11 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                 MultiQubitGate multiGate = layerMultiQbRands[i];
                 const bitLenInt b1 = multiGate.b1;
                 const bitLenInt b2 = multiGate.b2;
+
+                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                    continue;
+                }
+
                 const std::vector<bitLenInt> controls = { b1 };
 
                 testCase->TrySeparate(b1, b2);
@@ -7357,6 +7361,10 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
 
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
+                if ((w == 54U) && (i == deadQubit)) {
+                    continue;
+                }
+
                 int gate1Qb = layer1QbRands[i];
                 if (!gate1Qb) {
                     testCase->ISqrtX(i);
@@ -7374,8 +7382,7 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Average fidelity for depth " << n << ", SDRP=" << sdrp << ": "
-                  << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
+        std::cout << "Fidelity for SDRP=" << sdrp << ": " << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
                   << "s" << std::endl;
