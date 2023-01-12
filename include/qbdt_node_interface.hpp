@@ -165,6 +165,6 @@ public:
     }
 };
 
-bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
-bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
+bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs);
+bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs);
 } // namespace Qrack
