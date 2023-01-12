@@ -731,6 +731,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < maxQubit; ++j) {
+                std::lock_guard<std::mutex> lock(leaf->mtx);
                 if (IS_NODE_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
@@ -826,6 +827,7 @@ void QBdt::ApplyControlledSingle(
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < maxQubit; ++j) {
+                std::lock_guard<std::mutex> lock(leaf->mtx);
                 if (IS_NODE_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
