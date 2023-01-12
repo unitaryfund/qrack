@@ -171,6 +171,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (branches[0U] == branches[1U]) {
+        QBdtNodeInterfacePtr b1n = branches[1U];
         std::lock_guard<std::mutex> lock0(branches[1U]->mtx);
         branches[1U] = branches[0U];
     }
