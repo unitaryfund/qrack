@@ -171,10 +171,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (branches[0U] == branches[1U]) {
-        std::lock(branches[0U]->mtx, branches[1U]->mtx);
-        std::lock_guard<std::mutex> lock0(branches[0U]->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(branches[1U]->mtx, std::adopt_lock);
-
+        std::lock_guard<std::mutex> lock0(branches[1U]->mtx);
         branches[1U] = branches[0U];
     }
 }
@@ -215,6 +212,7 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
 
     std::future<void> future0 = std::async(std::launch::async, [&] { branches[0U]->Branch(depth); });
     branches[1U]->Branch(depth);
+    future0.get();
 }
 
 void QBdtNode::Normalize(bitLenInt depth)
