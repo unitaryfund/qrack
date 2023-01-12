@@ -189,6 +189,11 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     QBdtNodeInterfacePtr b1 = branches[1U];
+
+    std::lock(b0->mtx, b1->mtx);
+    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
     if (!b0) {
         branches[0U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
         branches[1U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
@@ -197,20 +202,18 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
         branches[0U] = b0->ShallowClone();
         branches[1U] = b1->ShallowClone();
     }
-    b0 = branches[0U];
-    b1 = branches[1U];
 
     --depth;
+
+    std::lock(branches[0U]->mtx, branches[1U]->mtx);
+    std::lock_guard<std::mutex> lock0(branches[0U]->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(branches[1U]->mtx, std::adopt_lock);
 
     if ((depth < pStridePow) | (pow2(parDepth) > numThreads)) {
         branches[0U]->Branch(depth);
         branches[1U]->Branch(depth);
         return;
     }
-
-    std::lock(branches[0U]->mtx, branches[1U]->mtx);
-    std::lock_guard<std::mutex> lock0(branches[0U]->mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> lock1(branches[1U]->mtx, std::adopt_lock);
 
     std::future<void> future0 = std::async(std::launch::async, [&] { branches[0U]->Branch(depth); });
     branches[1U]->Branch(depth);
