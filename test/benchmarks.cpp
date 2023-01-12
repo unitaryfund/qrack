@@ -3100,7 +3100,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // std::cout<<"colLen="<<(int)colLen<<std::endl;
 
         // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-        complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
+        complex sixthRoot = pow(-ONE_CMPLX, (real1)(1.0f / 6.0f));
 
         real1_f gateRand;
         bitLenInt gate;
@@ -3270,7 +3270,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
         int rowLen = n / colLen;
 
         // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-        complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
+        complex sixthRoot = pow(-ONE_CMPLX, (real1)(1.0f / 6.0f));
 
         // std::cout<<"n="<<(int)n<<std::endl;
         // std::cout<<"rowLen="<<(int)rowLen<<std::endl;
