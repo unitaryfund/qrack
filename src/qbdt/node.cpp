@@ -197,6 +197,8 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
         branches[0U] = b0->ShallowClone();
         branches[1U] = b1->ShallowClone();
     }
+    b0 = branches[0U];
+    b1 = branches[1U];
 
     --depth;
 
