@@ -159,8 +159,10 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
                 }
 
                 if (leaf0 == leaf1) {
-                    std::lock_guard<std::mutex> lock(leaf1->mtx);
+                    QBdtNodeInterfacePtr b1n = parent1->branches[bit];
+                    std::lock_guard<std::mutex> lock(b1n->mtx);
                     parent1->branches[bit] = parent0->branches[bit];
+
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(depth - j) - ONE_BCI);
                 }
@@ -172,7 +174,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     if (branches[0U] == branches[1U]) {
         QBdtNodeInterfacePtr b1n = branches[1U];
-        std::lock_guard<std::mutex> lock0(branches[1U]->mtx);
+        std::lock_guard<std::mutex> lock0(b1n->mtx);
         branches[1U] = branches[0U];
     }
 }
