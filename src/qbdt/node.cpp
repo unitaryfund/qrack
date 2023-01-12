@@ -80,6 +80,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #endif
     }
 
+    b0 = branches[0U];
+    b1 = branches[1U];
+
     // When we lock a peer pair of (distinct) nodes, deadlock can arise from not locking both at once.
     // However, we can't assume that peer pairs of nodes don't point to the same memory (and mutex).
     // As we're locked on the node above already, our shared_ptr copies are safe.
@@ -211,14 +214,17 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
 
     --depth;
 
+    b0 = branches[0U];
+    b1 = branches[1U];
+
     if ((depth < pStridePow) | (pow2(parDepth) > numThreads)) {
-        branches[0U]->Branch(depth);
-        branches[1U]->Branch(depth);
+        b0->Branch(depth);
+        b1->Branch(depth);
         return;
     }
 
-    std::future<void> future0 = std::async(std::launch::async, [&] { branches[0U]->Branch(depth); });
-    branches[1U]->Branch(depth);
+    std::future<void> future0 = std::async(std::launch::async, [&] { b0->Branch(depth); });
+    b1->Branch(depth);
     future0.get();
 }
 
