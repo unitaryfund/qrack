@@ -40,7 +40,7 @@ const bitCapIntOcl pStride = pow2(PSTRIDEPOW);
 #endif
 #endif
 
-bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs)
+bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
 {
     if (!lhs) {
         return !rhs;
@@ -49,7 +49,7 @@ bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs
     return lhs->isEqual(rhs);
 }
 
-bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs) { return !(lhs == rhs); }
+bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs) { return !(lhs == rhs); }
 
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
