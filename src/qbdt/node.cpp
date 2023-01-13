@@ -123,53 +123,55 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     const bitCapInt depthPow = pow2(depth);
     // Combine single elements at bottom of full depth, up to where branches are equal below:
     _par_for_qbdt(depthPow, [&](const bitCapInt& i) {
-        QBdtNodeInterfacePtr leaf0 = b0;
-        QBdtNodeInterfacePtr leaf1 = b1;
-
         const size_t topBit = SelectBit(i, depth - 1U);
-        QBdtNodeInterfacePtr l = leaf0->branches[topBit];
-        QBdtNodeInterfacePtr r = leaf1->branches[topBit];
+        QBdtNodeInterfacePtr leaf0 = b0->branches[topBit];
+        QBdtNodeInterfacePtr leaf1 = b1->branches[topBit];
 
-        if (!l || !r) {
-            // WARNING: Mutates loop control variable!
-            return (bitCapInt)(pow2(depth - 1U) - ONE_BCI);
-        }
-
-        if (l == r) {
-            std::lock_guard<std::mutex> lock0(l->mtx);
-            leaf1->branches[topBit] = leaf0->branches[topBit];
-
+        if (!leaf0 || !leaf1 || (leaf0.get() == leaf1.get())) {
             // WARNING: Mutates loop control variable!
             return (bitCapInt)(pow2(depth) - ONE_BCI);
         }
 
-        leaf0 = l;
-        leaf1 = r;
+        if (true) {
+            std::lock(leaf0->mtx, leaf1->mtx);
+            std::lock_guard<std::mutex> lock00(leaf0->mtx, std::adopt_lock);
+            std::lock_guard<std::mutex> lock11(leaf1->mtx, std::adopt_lock);
+
+            if (leaf0->isEqual(leaf1)) {
+                b1->branches[topBit] = b0->branches[topBit];
+
+                // WARNING: Mutates loop control variable!
+                return (bitCapInt)(pow2(depth) - ONE_BCI);
+            }
+        }
 
         for (bitLenInt j = 1U; j < depth; ++j) {
             size_t bit = SelectBit(i, depth - (j + 1U));
 
-            std::lock(leaf0->mtx, leaf1->mtx);
-            std::lock_guard<std::mutex> lock0(leaf0->mtx, std::adopt_lock);
-            std::lock_guard<std::mutex> lock1(leaf1->mtx, std::adopt_lock);
+            QBdtNodeInterfacePtr lRef = leaf0;
+            QBdtNodeInterfacePtr rRef = leaf1;
 
-            QBdtNodeInterfacePtr l = leaf0->branches[bit];
-            QBdtNodeInterfacePtr r = leaf1->branches[bit];
+            std::lock(lRef->mtx, rRef->mtx);
+            std::lock_guard<std::mutex> lock0(lRef->mtx, std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(rRef->mtx, std::adopt_lock);
 
-            if (l == r) {
-                std::lock_guard<std::mutex> lock0(l->mtx);
-                leaf1->branches[bit] = leaf0->branches[bit];
+            leaf0 = lRef->branches[bit];
+            leaf1 = rRef->branches[bit];
 
+            if (!leaf0 || !leaf1 || (leaf0.get() == leaf1.get())) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(depth - j) - ONE_BCI);
             }
 
-            leaf0 = l;
-            leaf1 = r;
+            std::lock(leaf0->mtx, leaf1->mtx);
+            std::lock_guard<std::mutex> lock00(leaf0->mtx, std::adopt_lock);
+            std::lock_guard<std::mutex> lock11(leaf1->mtx, std::adopt_lock);
 
-            if (!leaf0 || !leaf1) {
+            if (leaf0->isEqual(leaf1)) {
+                lRef->branches[bit] = rRef->branches[bit];
+
                 // WARNING: Mutates loop control variable!
-                return (bitCapInt)(pow2(depth - (j + 1U)) - ONE_BCI);
+                return (bitCapInt)(pow2(depth - j) - ONE_BCI);
             }
         }
 
