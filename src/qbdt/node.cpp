@@ -80,6 +80,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #endif
     }
 
+    QBdtNodeInterfacePtr b0Ref = b0;
+    QBdtNodeInterfacePtr b1Ref = b1;
+
     b0 = branches[0U];
     b1 = branches[1U];
 
