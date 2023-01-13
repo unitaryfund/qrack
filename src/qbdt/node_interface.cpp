@@ -61,31 +61,53 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    std::lock(mtx, r->mtx);
-    std::lock_guard<std::mutex> lLock(mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> rLock(r->mtx, std::adopt_lock);
-
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
 
-    if (branches[0U] != r->branches[0U]) {
+    if (!branches[0U]) {
+        return !r->branches[0U];
+    }
+
+    if (!r->branches[0U]) {
         return false;
     }
 
-    if (branches[0U]) {
-        QBdtNodeInterfacePtr b = branches[0U];
-        std::lock_guard<std::mutex> lock(b->mtx);
+    if (branches[0U].get() != r->branches[0U].get()) {
+        QBdtNodeInterfacePtr l0 = branches[0U];
+        QBdtNodeInterfacePtr r0 = r->branches[0U];
+
+        std::lock(l0->mtx, r0->mtx);
+        std::lock_guard<std::mutex> lLock(l0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> rLock(r0->mtx, std::adopt_lock);
+
+        if (branches[0U] != r->branches[0U]) {
+            return false;
+        }
+
         branches[0U] = r->branches[0U];
     }
 
-    if (branches[1U] != r->branches[1U]) {
+    if (!branches[1U]) {
+        return !r->branches[1U];
+    }
+
+    if (!r->branches[1U]) {
         return false;
     }
 
-    if (branches[1U]) {
-        QBdtNodeInterfacePtr b = branches[1U];
-        std::lock_guard<std::mutex> lock(b->mtx);
+    if (branches[1U].get() != r->branches[1U].get()) {
+        QBdtNodeInterfacePtr l1 = branches[1U];
+        QBdtNodeInterfacePtr r1 = r->branches[1U];
+
+        std::lock(l1->mtx, r1->mtx);
+        std::lock_guard<std::mutex> lLock(l1->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> rLock(r1->mtx, std::adopt_lock);
+
+        if (branches[1U] != r->branches[1U]) {
+            return false;
+        }
+
         branches[1U] = r->branches[1U];
     }
 
