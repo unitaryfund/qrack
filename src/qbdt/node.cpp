@@ -411,8 +411,8 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
     }
 
     Branch();
-    QBdtNodeInterfacePtr& b0 = branches[0U];
-    QBdtNodeInterfacePtr& b1 = branches[1U];
+    QBdtNodeInterfacePtr b0 = branches[0U];
+    QBdtNodeInterfacePtr b1 = branches[1U];
 
     if (IS_NORM_0(mtrxCol2.c[0U]) && IS_NORM_0(mtrxCol1.c[1U])) {
         if (true) {
@@ -434,16 +434,16 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
-            b0.swap(b1);
-            b0->scale *= mtrxCol2.c[0U];
-            b1->scale *= mtrxCol1.c[1U];
+            branches[0U].swap(branches[1U]);
+            b1->scale *= mtrxCol2.c[0U];
+            b0->scale *= mtrxCol1.c[1U];
         }
         Prune();
 
         return;
     }
 
-    PushStateVector(mtrxCol1, mtrxCol2, b0, b1, depth);
+    PushStateVector(mtrxCol1, mtrxCol2, branches[0U], branches[1U], depth);
     Prune(depth);
 }
 
@@ -561,8 +561,8 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
     }
 
     Branch();
-    QBdtNodeInterfacePtr& b0 = branches[0U];
-    QBdtNodeInterfacePtr& b1 = branches[1U];
+    QBdtNodeInterfacePtr b0 = branches[0U];
+    QBdtNodeInterfacePtr b1 = branches[1U];
 
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         if (true) {
@@ -584,16 +584,16 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
-            b0.swap(b1);
-            b0->scale *= mtrx[1U];
-            b1->scale *= mtrx[2U];
+            branches[0U].swap(branches[1U]);
+            b1->scale *= mtrx[1U];
+            b0->scale *= mtrx[2U];
         }
         Prune();
 
         return;
     }
 
-    PushStateVector(mtrx, b0, b1, depth);
+    PushStateVector(mtrx, branches[0U], branches[1U], depth);
     Prune(depth);
 }
 
