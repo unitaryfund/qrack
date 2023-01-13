@@ -450,10 +450,6 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
 void QBdtNode::PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2, QBdtNodeInterfacePtr& b0,
     QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-    // For parallelism, keep shared_ptr b0 and b1 from deallocating.
-    QBdtNodeInterfacePtr b0Ref = b0;
-    QBdtNodeInterfacePtr b1Ref = b1;
-
     std::lock(b0->mtx, b1->mtx);
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
@@ -462,8 +458,8 @@ void QBdtNode::PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2,
     const bool isB1Zero = IS_NODE_0(b1->scale);
 
     if (isB0Zero && isB1Zero) {
-        b0Ref->SetZero();
-        b1Ref->SetZero();
+        b0->SetZero();
+        b1->SetZero();
 
         return;
     }
@@ -504,7 +500,13 @@ void QBdtNode::PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2,
     b0->Branch();
     b1->Branch();
 
-    if (!b0->branches[0U]) {
+    // For parallelism, keep shared_ptr from deallocating.
+    QBdtNodeInterfacePtr b00 = b0->branches[0U];
+    QBdtNodeInterfacePtr b01 = b0->branches[1U];
+    QBdtNodeInterfacePtr b10 = b1->branches[0U];
+    QBdtNodeInterfacePtr b11 = b1->branches[1U];
+
+    if (!b00) {
         b0->PushSpecial(mtrxCol1, mtrxCol2, b1);
 
         b0->PopStateVector();
@@ -514,20 +516,20 @@ void QBdtNode::PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2,
     }
 
     if (true) {
-        std::lock(b0->branches[0U]->mtx, b0->branches[1U]->mtx);
-        std::lock_guard<std::mutex> lock0(b0->branches[0U]->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b0->branches[1U]->mtx, std::adopt_lock);
-        b0->branches[0U]->scale *= b0->scale;
-        b0->branches[1U]->scale *= b0->scale;
+        std::lock(b00->mtx, b01->mtx);
+        std::lock_guard<std::mutex> lock0(b00->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b01->mtx, std::adopt_lock);
+        b00->scale *= b0->scale;
+        b01->scale *= b0->scale;
     }
     b0->scale = SQRT1_2_R1;
 
     if (true) {
-        std::lock(b1->branches[0U]->mtx, b1->branches[1U]->mtx);
-        std::lock_guard<std::mutex> lock0(b1->branches[0U]->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->branches[1U]->mtx, std::adopt_lock);
-        b1->branches[0U]->scale *= b1->scale;
-        b1->branches[1U]->scale *= b1->scale;
+        std::lock(b10->mtx, b11->mtx);
+        std::lock_guard<std::mutex> lock0(b10->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b11->mtx, std::adopt_lock);
+        b10->scale *= b1->scale;
+        b11->scale *= b1->scale;
     }
     b1->scale = SQRT1_2_R1;
 
@@ -600,10 +602,6 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 void QBdtNode::PushStateVector(
     complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-    // For parallelism, keep shared_ptr b0 and b1 from deallocating.
-    QBdtNodeInterfacePtr b0Ref = b0;
-    QBdtNodeInterfacePtr b1Ref = b1;
-
     std::lock(b0->mtx, b1->mtx);
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
@@ -612,8 +610,8 @@ void QBdtNode::PushStateVector(
     const bool isB1Zero = IS_NODE_0(b1->scale);
 
     if (isB0Zero && isB1Zero) {
-        b0Ref->SetZero();
-        b1Ref->SetZero();
+        b0->SetZero();
+        b1->SetZero();
 
         return;
     }
@@ -654,7 +652,13 @@ void QBdtNode::PushStateVector(
     b0->Branch();
     b1->Branch();
 
-    if (!b0->branches[0U]) {
+    // For parallelism, keep shared_ptr from deallocating.
+    QBdtNodeInterfacePtr b00 = b0->branches[0U];
+    QBdtNodeInterfacePtr b01 = b0->branches[1U];
+    QBdtNodeInterfacePtr b10 = b1->branches[0U];
+    QBdtNodeInterfacePtr b11 = b1->branches[1U];
+
+    if (!b00) {
         b0->PushSpecial(mtrx, b1);
 
         b0->PopStateVector();
@@ -664,20 +668,20 @@ void QBdtNode::PushStateVector(
     }
 
     if (true) {
-        std::lock(b0->branches[0U]->mtx, b0->branches[1U]->mtx);
-        std::lock_guard<std::mutex> lock0(b0->branches[0U]->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b0->branches[1U]->mtx, std::adopt_lock);
-        b0->branches[0U]->scale *= b0->scale;
-        b0->branches[1U]->scale *= b0->scale;
+        std::lock(b00->mtx, b01->mtx);
+        std::lock_guard<std::mutex> lock0(b00->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b01->mtx, std::adopt_lock);
+        b00->scale *= b0->scale;
+        b01->scale *= b0->scale;
     }
     b0->scale = SQRT1_2_R1;
 
     if (true) {
-        std::lock(b1->branches[0U]->mtx, b1->branches[1U]->mtx);
-        std::lock_guard<std::mutex> lock0(b1->branches[0U]->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->branches[1U]->mtx, std::adopt_lock);
-        b1->branches[0U]->scale *= b1->scale;
-        b1->branches[1U]->scale *= b1->scale;
+        std::lock(b10->mtx, b11->mtx);
+        std::lock_guard<std::mutex> lock0(b10->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b11->mtx, std::adopt_lock);
+        b10->scale *= b1->scale;
+        b11->scale *= b1->scale;
     }
     b1->scale = SQRT1_2_R1;
 
