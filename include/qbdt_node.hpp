@@ -67,7 +67,7 @@ public:
 
     virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
 
-    virtual void Normalize(bitLenInt depth);
+    virtual void Normalize(bitLenInt depth = 1U);
 
 #if ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth);
