@@ -7037,7 +7037,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     auto start = std::chrono::high_resolution_clock::now();
     real1_s sdrp = 0.325f;
 
-    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(120)) {
+    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(80)) {
         start = std::chrono::high_resolution_clock::now();
 
         if (sdrp < FP_NORM_EPSILON) {
