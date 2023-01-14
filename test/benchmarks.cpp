@@ -3055,11 +3055,6 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-const complex sqrtwMtrx[4] = { complex((real1)SQRT1_2_R1, (real1)ZERO_R1),
-    -pow(complex((real1)ZERO_R1, (real1)SQRT1_2_R1), (real1)(ONE_R1 / 2)),
-    pow(complex((real1)ZERO_R1, (real1)(-SQRT1_2_R1)), (real1)(ONE_R1 / 2)),
-    complex((real1)SQRT1_2_R1, (real1)ZERO_R1) };
-
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
@@ -3136,7 +3131,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                         lastSingleBitGates.push_back(1);
                     } else {
-                        qReg->Mtrx(sqrtwMtrx, i);
+                        qReg->SqrtW(i);
                         std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                         lastSingleBitGates.push_back(2);
                     }
@@ -3161,7 +3156,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                         lastSingleBitGates[i] = 1;
                     } else {
-                        qReg->Mtrx(sqrtwMtrx, i);
+                        qReg->SqrtW(i);
                         std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                         lastSingleBitGates[i] = 2;
                     }
@@ -3312,7 +3307,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                         qReg->SqrtY(i);
                         lastSingleBitGates.push_back(1);
                     } else {
-                        qReg->Mtrx(sqrtwMtrx, i);
+                        qReg->SqrtW(i);
                         lastSingleBitGates.push_back(2);
                     }
                 } else {
@@ -3334,7 +3329,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                         qReg->SqrtY(i);
                         lastSingleBitGates[i] = 1;
                     } else {
-                        qReg->Mtrx(sqrtwMtrx, i);
+                        qReg->SqrtW(i);
                         lastSingleBitGates[i] = 2;
                     }
                 }

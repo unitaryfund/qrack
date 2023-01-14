@@ -7156,14 +7156,6 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
     const complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
     const complex iSixthRoot = pow(-ONE_CMPLX, complex((real1)(-1.0f / 6.0f)));
 
-    const complex sqrtwMtrx[4] = { complex((real1)SQRT1_2_R1, (real1)ZERO_R1),
-        -pow(complex((real1)ZERO_R1, (real1)SQRT1_2_R1), (real1)(ONE_R1 / 2)),
-        pow(complex((real1)ZERO_R1, (real1)(-SQRT1_2_R1)), (real1)(ONE_R1 / 2)),
-        complex((real1)SQRT1_2_R1, (real1)ZERO_R1) };
-
-    complex iSqrtwMtrx[4];
-    inv2x2(sqrtwMtrx, iSqrtwMtrx);
-
     // The test runs 2 bit gates according to a tiling sequence.
     // The 1 bit indicates +/- column offset.
     // The 2 bit indicates +/- row offset.
@@ -7307,7 +7299,7 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                     testCase->SqrtY(i);
                     // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                 } else {
-                    testCase->Mtrx(sqrtwMtrx, i);
+                    testCase->SqrtW(i);
                     // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                 }
             }
@@ -7373,7 +7365,7 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                     testCase->ISqrtY(i);
                     // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                 } else {
-                    testCase->Mtrx(iSqrtwMtrx, i);
+                    testCase->ISqrtW(i);
                     // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                 }
             }
