@@ -1073,7 +1073,7 @@ public:
     }
 
     /**
-     * Square root of Y gate
+     * Inverse square root of Y gate
      *
      * Applies the (by convention) inverse square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
      * "Y" operator is similar to a logical "NOT" with permutation phase
@@ -1083,6 +1083,28 @@ public:
     {
         const complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
         const complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, -ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2 };
+        Mtrx(mtrx, qubit);
+    }
+    
+    /**
+     * Square root of W gate
+     *
+     * Per 2019 Arute, Google's "quantum supremacy" experiment
+     */
+    virtual void SqrtW(bitLenInt qubit)
+    {
+        const complex mtrx[4]{ complex(SQRT1_2_R1, ZERO_R1), -complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2), complex(SQRT1_2_R1, ZERO_R1) };
+        Mtrx(mtrx, qubit);
+    }
+    
+    /**
+     * Inverse square root of W gate
+     *
+     * Per 2019 Arute, Google's "quantum supremacy" experiment
+     */
+    virtual void ISqrtW(bitLenInt qubit)
+    {
+        const complex mtrx[4]{ complex(SQRT1_2_R1, ZERO_R1), complex(ONE_R1 / 2, ONE_R1 / 2), -complex(ONE_R1 / 2, -ONE_R1 / 2), complex(SQRT1_2_R1, ZERO_R1) };
         Mtrx(mtrx, qubit);
     }
 
