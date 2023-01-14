@@ -80,6 +80,8 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #endif
     }
 
+    Normalize();
+
     QBdtNodeInterfacePtr b0Ref = b0;
     QBdtNodeInterfacePtr b1Ref = b1;
 
@@ -255,9 +257,9 @@ void QBdtNode::Normalize(bitLenInt depth)
         b0->Normalize(depth);
         b0->scale *= ONE_R1 / nrm;
     } else {
-        std::lock(b1->branches[0U]->mtx, b1->branches[1U]->mtx);
-        std::lock_guard<std::mutex> lock0(b1->branches[0U]->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->branches[1U]->mtx, std::adopt_lock);
+        std::lock(b0->mtx, b1->mtx);
+        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
         const real1 nrm = sqrt(norm(b0->scale) + norm(b1->scale));
 

@@ -138,7 +138,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    virtual void Normalize(bitLenInt depth)
+    virtual void Normalize(bitLenInt depth = 1U)
     {
         throw std::out_of_range("QBdtNodeInterface::Normalize() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
