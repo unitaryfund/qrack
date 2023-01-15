@@ -65,38 +65,36 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    if (!branches[0U]) {
-        return !r->branches[0U];
-    }
-
-    if (!r->branches[0U]) {
+    if ((!branches[0U]) != (!r->branches[0U])) {
         return false;
     }
 
     if (branches[0U].get() != r->branches[0U].get()) {
-        QBdtNodeInterfacePtr leaf = branches[0U];
-        std::lock_guard<std::mutex> lock(leaf->mtx);
+        QBdtNodeInterfacePtr lLeaf = branches[0U];
+        QBdtNodeInterfacePtr rLeaf = r->branches[0U];
+        std::lock(lLeaf->mtx, rLeaf->mtx);
+        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
 
-        if (branches[0U] != r->branches[0U]) {
+        if (lLeaf != rLeaf) {
             return false;
         }
 
         branches[0U] = r->branches[0U];
     }
 
-    if (!branches[1U]) {
-        return !r->branches[1U];
-    }
-
-    if (!r->branches[1U]) {
+    if ((!branches[1U]) != (!r->branches[1U])) {
         return false;
     }
 
     if (branches[1U].get() != r->branches[1U].get()) {
-        QBdtNodeInterfacePtr leaf = branches[1U];
-        std::lock_guard<std::mutex> lock(leaf->mtx);
+        QBdtNodeInterfacePtr lLeaf = branches[1U];
+        QBdtNodeInterfacePtr rLeaf = r->branches[1U];
+        std::lock(lLeaf->mtx, rLeaf->mtx);
+        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
 
-        if (branches[1U] != r->branches[1U]) {
+        if (lLeaf != rLeaf) {
             return false;
         }
 
@@ -120,23 +118,39 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return IS_NODE_0(r->scale);
     }
 
-    if (branches[0U] != r->branches[0U]) {
+    if ((!branches[0U]) != (!r->branches[0U])) {
         return false;
     }
 
-    if (branches[0U]) {
-        QBdtNodeInterfacePtr b = branches[0U];
-        std::lock_guard<std::mutex> lock(b->mtx);
+    if (branches[0U].get() != r->branches[0U].get()) {
+        QBdtNodeInterfacePtr lLeaf = branches[0U];
+        QBdtNodeInterfacePtr rLeaf = r->branches[0U];
+        std::lock(lLeaf->mtx, rLeaf->mtx);
+        std::lock_guard<std::mutex> rLock(lLeaf->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lLock(rLeaf->mtx, std::adopt_lock);
+
+        if (lLeaf != rLeaf) {
+            return false;
+        }
+
         branches[0U] = r->branches[0U];
     }
 
-    if (branches[1U] != r->branches[1U]) {
+    if ((!branches[0U]) != (!r->branches[0U])) {
         return false;
     }
 
-    if (branches[1U]) {
-        QBdtNodeInterfacePtr b = branches[1U];
-        std::lock_guard<std::mutex> lock(b->mtx);
+    if (branches[1U].get() != r->branches[1U].get()) {
+        QBdtNodeInterfacePtr lLeaf = branches[1U];
+        QBdtNodeInterfacePtr rLeaf = r->branches[1U];
+        std::lock(lLeaf->mtx, rLeaf->mtx);
+        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
+
+        if (lLeaf != rLeaf) {
+            return false;
+        }
+
         branches[1U] = r->branches[1U];
     }
 
