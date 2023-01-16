@@ -106,7 +106,7 @@ protected:
         const unsigned nmCrs = (unsigned)GetConcurrencyLevel();
         unsigned threads = (unsigned)(end / Stride);
 
-        if ((nmCrs <= 1U) || (threads <= 1U) || (underTail >= (nmCrs >> 1U))) {
+        if ((nmCrs <= 1U) || (threads <= 1U) || (underTail > (nmCrs >> 1U))) {
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }
