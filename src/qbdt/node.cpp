@@ -63,8 +63,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((depth >= pStridePow) && (pow2((depth - pStridePow) + (parDepth - 1U)) <= numThreads) &&
-            (pow2(parDepth) <= numThreads)) {
+        if ((depth >= pStridePow) && (pow2((depth - pStridePow) + parDepth) <= numThreads)) {
             ++parDepth;
 
             std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
@@ -540,8 +539,7 @@ void QBdtNode::PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2,
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2((depth - pStridePow) + (parDepth - 1U)) <= numThreads) &&
-        (pow2(parDepth) <= numThreads)) {
+    if ((depth >= pStridePow) && (pow2((depth - pStridePow) + parDepth) <= numThreads)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async,
@@ -693,8 +691,7 @@ void QBdtNode::PushStateVector(
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2((depth - pStridePow) + (parDepth - 1U)) <= numThreads) &&
-        (pow2(parDepth) <= numThreads)) {
+    if ((depth >= pStridePow) && (pow2((depth - pStridePow) + parDepth) <= numThreads)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async,
