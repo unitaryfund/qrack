@@ -200,7 +200,7 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
         threads = numCores;
     }
 
-    if ((end < pStride) || (threads <= (numCores >> 1U))) {
+    if (threads <= (numCores >> 1U)) {
         for (bitCapInt j = 0U; j < end; ++j) {
             j |= fn(j);
         }
