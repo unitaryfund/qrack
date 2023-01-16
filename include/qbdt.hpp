@@ -105,10 +105,11 @@ protected:
 
     void par_for_qbdt(bitCapInt end, bitLenInt maxQubit, BdtFunc fn)
     {
-        root->Branch(maxQubit);
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         const bitCapInt Stride = GetStride();
         if (end < Stride) {
+            Finish();
+            root->Branch(maxQubit);
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }
@@ -120,6 +121,7 @@ protected:
         unsigned threads = (unsigned)(end / Stride);
         if (threads < nmCrs) {
             dispatchQueue.dispatch([this, end, maxQubit, fn] {
+                root->Branch(maxQubit);
                 for (bitCapInt j = 0U; j < end; ++j) {
                     j |= fn(j);
                 }
@@ -127,6 +129,9 @@ protected:
             });
             return;
         }
+
+        Finish();
+        root->Branch(maxQubit);
 
         std::mutex myMutex;
         bitCapInt idx = 0U;
