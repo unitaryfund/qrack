@@ -19,6 +19,10 @@
 #include "qbdt_qengine_node.hpp"
 #include "qengine.hpp"
 
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#include "common/dispatchqueue.hpp"
+#endif
+
 #define NODE_TO_QENGINE(leaf) (std::dynamic_pointer_cast<QBdtQEngineNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
@@ -42,6 +46,9 @@ protected:
     bitCapInt bdtMaxQPower;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+    DispatchQueue dispatchQueue;
+#endif
 
     void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
@@ -102,12 +109,10 @@ protected:
         const bitLenInt tailQubits = qubitCount - (maxQubit + 1U);
         const bitLenInt parallelQubits = (pow2(tailQubits) > Stride) ? (tailQubits - log2(Stride)) : 0U;
         const unsigned nmCrs = GetConcurrencyLevel() >> parallelQubits;
-        const unsigned threads = (unsigned)(end / Stride);
 
-        Finish();
-        root->Branch(maxQubit);
-
-        if ((nmCrs <= 1U) || (end < Stride) || (threads < nmCrs)) {
+        if ((end < Stride) || (nmCrs <= 1U)) {
+            Finish();
+            root->Branch(maxQubit);
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }
@@ -115,10 +120,29 @@ protected:
             return;
         }
 
+        if (parallelQubits) {
+            dispatchQueue.dispatch([this, end, maxQubit, fn] {
+                root->Branch(maxQubit);
+                for (bitCapInt j = 0U; j < end; ++j) {
+                    j |= fn(j);
+                }
+                root->Prune(maxQubit);
+            });
+            return;
+        }
+
+        unsigned threads = (unsigned)(end / Stride);
+        if (threads > nmCrs) {
+            threads = nmCrs;
+        }
+
+        Finish();
+        root->Branch(maxQubit);
+
         std::mutex myMutex;
         bitCapInt idx = 0U;
-        std::vector<std::future<void>> futures(nmCrs);
-        for (unsigned cpu = 0U; cpu != nmCrs; ++cpu) {
+        std::vector<std::future<void>> futures(threads);
+        for (unsigned cpu = 0U; cpu != threads; ++cpu) {
             futures[cpu] = std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, fn]() {
                 for (;;) {
                     bitCapInt i;
@@ -146,7 +170,7 @@ protected:
             });
         }
 
-        for (unsigned cpu = 0U; cpu != nmCrs; ++cpu) {
+        for (unsigned cpu = 0U; cpu != threads; ++cpu) {
             futures[cpu].get();
         }
 #else
@@ -196,6 +220,31 @@ public:
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
+
+    ~QBdt() { Dump(); }
+
+    void Finish()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        dispatchQueue.finish();
+#endif
+    };
+
+    bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
+    }
+
+    void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        dispatchQueue.dump();
+#endif
+    }
 
     QEnginePtr ReleaseEngine()
     {
