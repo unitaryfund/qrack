@@ -98,18 +98,15 @@ protected:
     void par_for_qbdt(bitCapInt end, bitLenInt maxQubit, BdtFunc fn)
     {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        const bitCapInt Stride = GetStride();
-        bitCapInt underTail = pow2(qubitCount - (maxQubit + 1U)) / Stride;
-        if (!underTail) {
-            underTail = 1U;
-        }
-
         Finish();
         root->Branch(maxQubit);
 
-        const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underTail + 1U));
+        const bitCapInt Stride = GetStride();
+        const bitCapInt underTail = pow2(qubitCount - (maxQubit + 1U)) / Stride;
+        const unsigned nmCrs = (unsigned)GetConcurrencyLevel();
         unsigned threads = (unsigned)(end / Stride);
-        if ((nmCrs <= 1U) || (threads <= 1U)) {
+
+        if ((nmCrs <= 1U) || (threads <= 1U) || (underTail >= (nmCrs >> 1U))) {
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }
