@@ -99,11 +99,16 @@ protected:
     {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         const bitCapInt Stride = GetStride();
+        bitCapInt underTail = pow2(qubitCount - (maxQubit + 1U)) / Stride;
+        if (!underTail) {
+            underTail = 1U;
+        }
 
         Finish();
         root->Branch(maxQubit);
 
-        if ((end < Stride) || (Stride < pow2(qubitCount - (maxQubit + 1U)))) {
+        const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / underTail);
+        if ((nmCrs <= 1U) || (end < Stride)) {
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }
@@ -111,7 +116,6 @@ protected:
             return;
         }
 
-        const unsigned nmCrs = GetConcurrencyLevel();
         unsigned threads = (unsigned)(end / Stride);
         if (threads > nmCrs) {
             threads = nmCrs;

@@ -55,6 +55,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     // Prune recursively to depth.
     --depth;
+
     if (b0.get() == b1.get()) {
         std::lock_guard<std::mutex> lock(b0->mtx);
         b0->Prune(depth, parDepth);
@@ -62,22 +63,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock(b0->mtx, b1->mtx);
         std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((depth >= pStridePow) && (pow2(depth + parDepth - pStridePow) <= numThreads)) {
-            ++parDepth;
 
-            std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
-            b1->Prune(depth, parDepth);
-
-            future0.get();
-        } else {
-            b0->Prune(depth, parDepth);
-            b1->Prune(depth, parDepth);
-        }
-#else
         b0->Prune(depth, parDepth);
         b1->Prune(depth, parDepth);
-#endif
     }
 
     Normalize();
