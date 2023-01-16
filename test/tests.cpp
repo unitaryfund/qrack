@@ -7151,6 +7151,8 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
 
     const int w = 54;
     const int n = 6;
+    std::cout << "Circuit width: " << w << std::endl;
+    std::cout << "Circuit layer depth: " << n << std::endl;
 
     // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
     const complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
