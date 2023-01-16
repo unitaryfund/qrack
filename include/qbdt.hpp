@@ -107,8 +107,9 @@ protected:
         Finish();
         root->Branch(maxQubit);
 
-        const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / underTail);
-        if ((nmCrs <= 1U) || (end < Stride)) {
+        const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underTail + 1U));
+        unsigned threads = (unsigned)(end / Stride);
+        if ((nmCrs <= 1U) || (threads <= 1U)) {
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }
@@ -116,7 +117,6 @@ protected:
             return;
         }
 
-        unsigned threads = (unsigned)(end / Stride);
         if (threads > nmCrs) {
             threads = nmCrs;
         }
