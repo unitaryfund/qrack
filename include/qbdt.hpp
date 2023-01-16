@@ -106,7 +106,7 @@ protected:
     {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         const bitCapInt Stride = GetStride();
-        if (end < Stride) {
+        if ((end < Stride) || (pow2(bdtQubitCount - maxQubit) > Stride)) {
             Finish();
             root->Branch(maxQubit);
             for (bitCapInt j = 0U; j < end; ++j) {
