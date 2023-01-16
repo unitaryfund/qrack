@@ -47,7 +47,6 @@ protected:
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    bitLenInt dispatchThreshold;
     DispatchQueue dispatchQueue;
 #endif
 
