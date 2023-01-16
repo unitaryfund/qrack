@@ -102,14 +102,14 @@ protected:
         root->Branch(maxQubit);
 
         const bitCapInt Stride = GetStride();
-        const unsigned underThreads = (unsigned)(pow2(qubitCount - maxQubit) / Stride);
-        const unsigned nmCrs = (unsigned)GetConcurrencyLevel();
+        const unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
+        const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underThreads + 1U));
         unsigned threads = (unsigned)(end / Stride);
         if (threads > nmCrs) {
             threads = nmCrs;
         }
 
-        if ((threads <= 1U) || (underThreads > (nmCrs >> 1U))) {
+        if (threads <= 1U) {
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }

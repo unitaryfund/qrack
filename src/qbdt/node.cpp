@@ -207,15 +207,8 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     b0 = branches[0U];
     b1 = branches[1U];
 
-    if ((depth < pStridePow) | (pow2(parDepth) > numThreads)) {
-        b0->Branch(depth);
-        b1->Branch(depth);
-        return;
-    }
-
-    std::future<void> future0 = std::async(std::launch::async, [&] { b0->Branch(depth); });
+    b0->Branch(depth);
     b1->Branch(depth);
-    future0.get();
 }
 
 void QBdtNode::Normalize(bitLenInt depth)
@@ -527,7 +520,7 @@ void QBdtNode::PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2,
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2(depth + parDepth - pStridePow) <= numThreads)) {
+    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async,
@@ -679,7 +672,7 @@ void QBdtNode::PushStateVector(
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2(depth + parDepth - pStridePow) <= numThreads)) {
+    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async,
