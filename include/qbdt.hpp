@@ -106,7 +106,11 @@ protected:
     {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         const bitCapInt Stride = GetStride();
-        if ((end < Stride) || (pow2(bdtQubitCount - maxQubit) > Stride)) {
+        const bitLenInt tailQubits = qubitCount - (maxQubit + 1U);
+        const bitLenInt parallelQubits = (pow2(tailQubits) > Stride) ? (tailQubits - log2(Stride)) : 0U;
+        const unsigned nmCrs = GetConcurrencyLevel() >> parallelQubits;
+
+        if ((nmCrs <= 1U) || (end < Stride)) {
             Finish();
             root->Branch(maxQubit);
             for (bitCapInt j = 0U; j < end; ++j) {
@@ -116,8 +120,7 @@ protected:
             return;
         }
 
-        const unsigned nmCrs = GetConcurrencyLevel();
-        unsigned threads = (unsigned)(end / Stride);
+        const unsigned threads = (unsigned)(end / Stride);
         if (threads < nmCrs) {
             dispatchQueue.dispatch([this, end, maxQubit, fn] {
                 root->Branch(maxQubit);
@@ -134,8 +137,8 @@ protected:
 
         std::mutex myMutex;
         bitCapInt idx = 0U;
-        std::vector<std::future<void>> futures(threads);
-        for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        std::vector<std::future<void>> futures(nmCrs);
+        for (unsigned cpu = 0U; cpu != nmCrs; ++cpu) {
             futures[cpu] = std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, fn]() {
                 for (;;) {
                     bitCapInt i;
@@ -163,7 +166,7 @@ protected:
             });
         }
 
-        for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        for (unsigned cpu = 0U; cpu != nmCrs; ++cpu) {
             futures[cpu].get();
         }
 #else
