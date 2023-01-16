@@ -6970,7 +6970,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
-    const int w = 63;
+    const int w = 53;
     const int n = 14;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
@@ -6988,7 +6988,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
     for (d = 0; d < (n >> 1U); d++) {
         std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < w; i++) {
             SingleQubitGate gate1qb;
             gate1qb.th = 4 * PI_R1 * rng->Rand();
             gate1qb.ph = 4 * PI_R1 * rng->Rand();
