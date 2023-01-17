@@ -120,9 +120,6 @@ protected:
             return;
         }
 
-        Finish();
-        root->Branch(maxQubit);
-
         std::mutex myMutex;
         bitCapInt idx = 0U;
         std::vector<std::future<void>> futures(threads);
