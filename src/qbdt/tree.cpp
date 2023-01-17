@@ -736,7 +736,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     const bitCapInt qPower = pow2(maxQubit);
     root->scale = GetNonunitaryPhase();
 
-    for (bitCapInt i = 0U; i < qPower; ++i) {
+    _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
             if (IS_NODE_0(leaf->scale)) {
@@ -746,15 +746,17 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             leaf = leaf->branches[SelectBit(i, j)];
         }
 
+        std::lock_guard<std::mutex> lock(leaf->mtx);
+
         if (IS_NODE_0(leaf->scale)) {
-            continue;
+            return;
         }
 
         leaf->Branch();
 
         if (isKet) {
             NODE_TO_QENGINE(leaf)->ForceM(qubit - bdtQubitCount, result, true, true);
-            continue;
+            return;
         }
 
         QBdtNodeInterfacePtr& b0 = leaf->branches[0U];
@@ -775,7 +777,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                 b1->SetZero();
             }
         }
-    }
+    });
 
     root->Prune(maxQubit);
 
@@ -855,7 +857,6 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < maxQubit; ++j) {
-                std::lock_guard<std::mutex> lock(leaf->mtx);
                 if (IS_NODE_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
@@ -951,7 +952,6 @@ void QBdt::ApplyControlledSingle(
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < maxQubit; ++j) {
-                std::lock_guard<std::mutex> lock(leaf->mtx);
                 if (IS_NODE_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
