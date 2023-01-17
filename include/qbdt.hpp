@@ -146,6 +146,29 @@ public:
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
+    void Finish()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        dispatchQueue.finish();
+#endif
+    };
+
+    bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
+    }
+
+    void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        dispatchQueue.dump();
+#endif
+    }
+
     QEnginePtr ReleaseEngine()
     {
         if (bdtQubitCount) {
