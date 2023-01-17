@@ -245,7 +245,7 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
                 }
                 const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
                 for (bitCapInt j = 0U; j < maxJ; ++j) {
-                    fn(j + 1, cpu);
+                    fn(j + l, cpu);
                 }
             }
         });
