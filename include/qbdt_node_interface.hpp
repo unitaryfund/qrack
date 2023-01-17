@@ -40,7 +40,7 @@ protected:
 
 public:
 #if ENABLE_COMPLEX_X2
-    virtual void PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2, QBdtNodeInterfacePtr& b0,
+    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
         QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth = 1U)
 #else
     virtual void PushStateVector(complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,

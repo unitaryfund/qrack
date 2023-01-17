@@ -462,7 +462,7 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
     Prune(depth);
 }
 
-void QBdtNode::PushStateVector(const complex2 mtrxCol1, const complex2 mtrxCol2, QBdtNodeInterfacePtr& b0,
+void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
     QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
     std::lock(b0->mtx, b1->mtx);
