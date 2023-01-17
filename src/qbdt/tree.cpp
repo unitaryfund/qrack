@@ -107,6 +107,123 @@ QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCa
                 hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs)));
 }
 
+void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
+{
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+    Finish();
+    root->Branch(maxQubit);
+
+    const bitCapInt Stride = GetStride();
+    unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
+    if (underThreads == 1U) {
+        underThreads = 0U;
+    }
+    const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underThreads + 1U));
+    unsigned threads = (unsigned)(end / Stride);
+    if (threads > nmCrs) {
+        threads = nmCrs;
+    }
+
+    if (threads <= 1U) {
+        for (bitCapInt j = 0U; j < end; ++j) {
+            j |= fn(j);
+        }
+        root->Prune(maxQubit);
+        return;
+    }
+
+    std::mutex myMutex;
+    bitCapInt idx = 0U;
+    std::vector<std::future<void>> futures(threads);
+    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        futures[cpu] = std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, fn]() {
+            for (;;) {
+                bitCapInt i;
+                if (true) {
+                    std::lock_guard<std::mutex> lock(myMutex);
+                    i = idx++;
+                }
+                const bitCapInt l = i * Stride;
+                if (l >= end) {
+                    break;
+                }
+                const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
+                bitCapInt j;
+                for (j = 0U; j < maxJ; ++j) {
+                    bitCapInt k = j + l;
+                    k |= fn(k);
+                    j = k - l;
+                    if (j >= maxJ) {
+                        std::lock_guard<std::mutex> lock(myMutex);
+                        idx |= j / Stride;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        futures[cpu].get();
+    }
+#else
+    for (bitCapInt j = 0U; j < end; ++j) {
+        j |= fn(j);
+    }
+#endif
+    root->Prune(maxQubit);
+}
+
+void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
+{
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+    const bitCapInt Stride = GetStride();
+    const unsigned nmCrs = GetConcurrencyLevel();
+    unsigned threads = (unsigned)(end / Stride);
+    if (threads > nmCrs) {
+        threads = nmCrs;
+    }
+
+    if (threads <= 1U) {
+        for (bitCapInt j = 0U; j < end; ++j) {
+            fn(j, 0U);
+        }
+        return;
+    }
+
+    std::mutex myMutex;
+    bitCapInt idx = 0U;
+    std::vector<std::future<void>> futures(threads);
+    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        futures[cpu] = std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, cpu, fn]() {
+            for (;;) {
+                bitCapInt i;
+                if (true) {
+                    std::lock_guard<std::mutex> lock(myMutex);
+                    i = idx++;
+                }
+                const bitCapInt l = i * Stride;
+                if (l >= end) {
+                    break;
+                }
+                const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
+                for (bitCapInt j = 0U; j < maxJ; ++j) {
+                    fn(j + 1, cpu);
+                }
+            }
+        });
+    }
+
+    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        futures[cpu].get();
+    }
+#else
+    for (bitCapInt j = 0U; j < end; ++j) {
+        fn(j, 0U);
+    }
+#endif
+}
+
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     Dump();
@@ -531,10 +648,12 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
     std::map<QEnginePtr, real1> qiProbs;
 
+    const unsigned numCores = GetConcurrencyLevel();
+    std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
+
     Finish();
 
-    real1 oneChance = ZERO_R1;
-    for (bitCapInt i = 0U; i < qPower; ++i) {
+    _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
         for (bitLenInt j = 0U; j < maxQubit; ++j) {
@@ -546,7 +665,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
         }
 
         if (IS_NODE_0(leaf->scale)) {
-            continue;
+            return;
         }
 
         if (isKet) {
@@ -555,12 +674,17 @@ real1_f QBdt::Prob(bitLenInt qubit)
             if (qiProbs.find(qi) == qiProbs.end()) {
                 qiProbs[qi] = sqrt(NODE_TO_QENGINE(leaf)->Prob(qubit - bdtQubitCount));
             }
-            oneChance += norm(scale * qiProbs[qi]);
+            oneChanceBuff[cpu] += norm(scale * qiProbs[qi]);
 
-            continue;
+            return;
         }
 
-        oneChance += norm(scale * leaf->branches[1U]->scale);
+        oneChanceBuff[cpu] += norm(scale * leaf->branches[1U]->scale);
+    });
+
+    real1 oneChance = ZERO_R1;
+    for (unsigned i = 0U; i < numCores; ++i) {
+        oneChance += oneChanceBuff[i];
     }
 
     return clampProb((real1_f)oneChance);

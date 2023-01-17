@@ -191,6 +191,7 @@ typedef std::shared_ptr<complex> BitOp;
 typedef std::function<void(const bitCapIntOcl&, const unsigned& cpu)> ParallelFunc;
 typedef std::function<bitCapIntOcl(const bitCapIntOcl&, const unsigned& cpu)> IncrementFunc;
 typedef std::function<bitCapInt(const bitCapInt&)> BdtFunc;
+typedef std::function<void(const bitCapInt&, const unsigned& cpu)> ParallelFuncBdt;
 
 class StateVector;
 class StateVectorArray;

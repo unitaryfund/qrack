@@ -95,72 +95,8 @@ protected:
         return toRet;
     }
 
-    void par_for_qbdt(bitCapInt end, bitLenInt maxQubit, BdtFunc fn)
-    {
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        Finish();
-        root->Branch(maxQubit);
-
-        const bitCapInt Stride = GetStride();
-        unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
-        if (underThreads == 1U) {
-            underThreads = 0U;
-        }
-        const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underThreads + 1U));
-        unsigned threads = (unsigned)(end / Stride);
-        if (threads > nmCrs) {
-            threads = nmCrs;
-        }
-
-        if (threads <= 1U) {
-            for (bitCapInt j = 0U; j < end; ++j) {
-                j |= fn(j);
-            }
-            root->Prune(maxQubit);
-            return;
-        }
-
-        std::mutex myMutex;
-        bitCapInt idx = 0U;
-        std::vector<std::future<void>> futures(threads);
-        for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-            futures[cpu] = std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, fn]() {
-                for (;;) {
-                    bitCapInt i;
-                    if (true) {
-                        std::lock_guard<std::mutex> lock(myMutex);
-                        i = idx++;
-                    }
-                    const bitCapInt l = i * Stride;
-                    if (l >= end) {
-                        break;
-                    }
-                    const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
-                    bitCapInt j;
-                    for (j = 0U; j < maxJ; ++j) {
-                        bitCapInt k = j + l;
-                        k |= fn(k);
-                        j = k - l;
-                        if (j >= maxJ) {
-                            std::lock_guard<std::mutex> lock(myMutex);
-                            idx |= j / Stride;
-                            break;
-                        }
-                    }
-                }
-            });
-        }
-
-        for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-            futures[cpu].get();
-        }
-#else
-        for (bitCapInt j = 0U; j < end; ++j) {
-            j |= fn(j);
-        }
-#endif
-        root->Prune(maxQubit);
-    }
+    void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn);
+    void _par_for(const bitCapInt& end, ParallelFuncBdt fn);
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
