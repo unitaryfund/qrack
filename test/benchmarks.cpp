@@ -3124,15 +3124,15 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     gateRand = 3 * qReg->Rand();
                     if (gateRand < ONE_R1) {
                         qReg->SqrtX(i);
-                        std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
+                        // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
                         lastSingleBitGates.push_back(0);
                     } else if (gateRand < (2 * ONE_R1)) {
                         qReg->SqrtY(i);
-                        std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
+                        // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                         lastSingleBitGates.push_back(1);
                     } else {
                         qReg->SqrtW(i);
-                        std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
+                        // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                         lastSingleBitGates.push_back(2);
                     }
                 } else {
@@ -3149,15 +3149,15 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
                     if (gateChoice == 0) {
                         qReg->SqrtX(i);
-                        std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
+                        // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
                         lastSingleBitGates[i] = 0;
                     } else if (gateChoice == 1) {
                         qReg->SqrtY(i);
-                        std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
+                        // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                         lastSingleBitGates[i] = 1;
                     } else {
                         qReg->SqrtW(i);
-                        std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
+                        // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                         lastSingleBitGates[i] = 2;
                     }
                 }
@@ -3197,7 +3197,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         continue;
                     }
 
-                    std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                    // std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
 
                     if (d == (benchmarkDepth - 1)) {
                         // For the last layer of couplers, the immediately next operation is measurement, and the phase
@@ -4021,13 +4021,13 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                 int gate1Qb = layer1QbRands[i];
                 if (!gate1Qb) {
                     testCase->SqrtX(i);
-                    // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
+                    std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
                 } else if (gate1Qb == 1U) {
                     testCase->SqrtY(i);
-                    // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
+                    std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
                 } else {
                     testCase->SqrtW(i);
-                    // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
+                    std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
                 }
             }
 
@@ -4051,6 +4051,8 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                 // "1/6 of CZ" is read to indicate the 6th root.
                 testCase->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
                 // Note that these gates are both symmetric under exchange of "b1" and "b2".
+
+                std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
             }
         }
 
@@ -4076,6 +4078,8 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                 // different.
                 testCase->IISwap(b1, b2);
                 // Note that these gates are both symmetric under exchange of "b1" and "b2".
+
+                std::cout << "qReg->ICoupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
             }
 
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -4087,13 +4091,13 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
                 int gate1Qb = layer1QbRands[i];
                 if (!gate1Qb) {
                     testCase->ISqrtX(i);
-                    // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
+                    std::cout << "qReg->ISqrtX(" << (int)i << ");" << std::endl;
                 } else if (gate1Qb == 1U) {
                     testCase->ISqrtY(i);
-                    // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
+                    std::cout << "qReg->ISqrtY(" << (int)i << ");" << std::endl;
                 } else {
                     testCase->ISqrtW(i);
-                    // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
+                    std::cout << "qReg->ISqrtW(" << (int)i << ");" << std::endl;
                 }
             }
         }
