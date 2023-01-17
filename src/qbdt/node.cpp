@@ -226,8 +226,15 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     b0 = branches[0U];
     b1 = branches[1U];
 
-    b0->Branch(depth);
+    if ((depth < pStridePow) | (pow2(parDepth) > numThreads)) {
+        b0->Branch(depth);
+        b1->Branch(depth);
+        return;
+    }
+
+    std::future<void> future0 = std::async(std::launch::async, [&] { b0->Branch(depth); });
     b1->Branch(depth);
+    future0.get();
 }
 
 void QBdtNode::Normalize(bitLenInt depth)
