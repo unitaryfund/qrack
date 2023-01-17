@@ -65,6 +65,8 @@ void QBdt::Init()
     SetConcurrency(std::thread::hardware_concurrency());
 #endif
 
+    bdtStride = (GetStride() + 1U) >> 1U;
+
     bitLenInt engineLevel = 0U;
     if (!engines.size()) {
         engines.push_back(QINTERFACE_OPTIMAL_BASE);
@@ -86,7 +88,7 @@ void QBdt::Init()
         //         }
         // #endif
         // maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-        const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
+        const bitLenInt cpuQubits = (bdtStride <= ONE_BCI) ? 0U : (log2(bdtStride - ONE_BCI) + 1U);
         bitLenInt gpuQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
         if (gpuQubits > cpuQubits) {
             gpuQubits = cpuQubits;
@@ -113,7 +115,7 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
     Finish();
     root->Branch(maxQubit);
 
-    const bitCapInt Stride = GetStride();
+    const bitCapInt Stride = bdtStride;
     unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
     if (underThreads == 1U) {
         underThreads = 0U;
@@ -177,7 +179,7 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
 void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
 {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    const bitCapInt Stride = GetStride();
+    const bitCapInt Stride = bdtStride;
     const unsigned nmCrs = GetConcurrencyLevel();
     unsigned threads = (unsigned)(end / Stride);
     if (threads > nmCrs) {

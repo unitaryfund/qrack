@@ -33,10 +33,12 @@ namespace Qrack {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 const unsigned numCores = std::thread::hardware_concurrency();
 #if ENABLE_ENV_VARS
-const bitCapIntOcl pStride =
-    pow2Ocl((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW));
+const bitLenInt pStride =
+    (((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW)) +
+        1U) >>
+    1U;
 #else
-const bitCapIntOcl pStride = pow2(PSTRIDEPOW);
+const bitLenInt pStride = (PSTRIDEPOW + 1U) >> 1U;
 #endif
 #endif
 
