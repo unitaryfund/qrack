@@ -66,7 +66,10 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        const unsigned underThreads = (unsigned)(pow2(depth) / pStride);
+        unsigned underThreads = (unsigned)(pow2(depth) / pStride);
+        if (underThreads == 1U) {
+            underThreads = 0U;
+        }
         if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {
             ++parDepth;
 

@@ -102,7 +102,10 @@ protected:
         root->Branch(maxQubit);
 
         const bitCapInt Stride = GetStride();
-        const unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
+        unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
+        if (underThreads == 1U) {
+            underThreads = 0U;
+        }
         const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underThreads + 1U));
         unsigned threads = (unsigned)(end / Stride);
         if (threads > nmCrs) {
