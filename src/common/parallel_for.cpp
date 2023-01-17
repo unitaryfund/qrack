@@ -168,18 +168,18 @@ void ParallelFor::par_for_mask(
 void ParallelFor::par_for_inc(
     const bitCapIntOcl begin, const bitCapIntOcl itemCount, IncrementFunc inc, ParallelFunc fn)
 {
-    if (itemCount < pStride) {
+    const bitCapIntOcl Stride = pStride;
+    unsigned threads = (unsigned)(itemCount / pStride);
+    if (threads > numCores) {
+        threads = numCores;
+    }
+
+    if (threads <= 1U) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; ++j) {
             fn(inc(j, 0U), 0U);
         }
         return;
-    }
-
-    const bitCapIntOcl Stride = pStride;
-    unsigned threads = (unsigned)(itemCount / pStride);
-    if (threads > numCores) {
-        threads = numCores;
     }
 
     DECLARE_ATOMIC_BITCAPINT();
@@ -215,7 +215,13 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
         return par_norm_exact(itemCount, stateArray);
     }
 
-    if (itemCount < pStride) {
+    const bitCapIntOcl Stride = pStride;
+    unsigned threads = (unsigned)(itemCount / pStride);
+    if (threads > numCores) {
+        threads = numCores;
+    }
+
+    if (threads <= 1U) {
         real1 nrmSqr = ZERO_R1;
         const real1 nrm_thresh = (real1)norm_thresh;
         for (bitCapIntOcl j = 0U; j < itemCount; ++j) {
@@ -226,12 +232,6 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
         }
 
         return (real1_f)nrmSqr;
-    }
-
-    const bitCapIntOcl Stride = pStride;
-    unsigned threads = (unsigned)(itemCount / pStride);
-    if (threads > numCores) {
-        threads = numCores;
     }
 
     DECLARE_ATOMIC_BITCAPINT();
@@ -272,19 +272,19 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
 
 real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVectorPtr stateArray)
 {
-    if (itemCount < pStride) {
+    const bitCapIntOcl Stride = pStride;
+    unsigned threads = (unsigned)(itemCount / pStride);
+    if (threads > numCores) {
+        threads = numCores;
+    }
+
+    if (threads <= 1U) {
         real1 nrmSqr = ZERO_R1;
         for (bitCapIntOcl j = 0U; j < itemCount; ++j) {
             nrmSqr += norm(stateArray->read(j));
         }
 
         return (real1_f)nrmSqr;
-    }
-
-    const bitCapIntOcl Stride = pStride;
-    unsigned threads = (unsigned)(itemCount / pStride);
-    if (threads > numCores) {
-        threads = numCores;
     }
 
     DECLARE_ATOMIC_BITCAPINT();
