@@ -97,18 +97,6 @@ void QBdt::Init()
         // }
     }
 #endif
-
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-#if ENABLE_ENV_VARS
-    const bitLenInt pStridePow =
-        (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
-#else
-    const bitLenInt pStridePow = PSTRIDEPOW;
-#endif
-    const unsigned numCores = GetConcurrencyLevel();
-    const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;
-    dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
-#endif
 }
 
 QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm)
@@ -122,6 +110,9 @@ QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCa
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
 {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+    Finish();
+    root->Branch(maxQubit);
+
     const bitCapInt Stride = GetStride();
     unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
     if (underThreads == 1U) {
@@ -134,28 +125,12 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
     }
 
     if (threads <= 1U) {
-        Finish();
-        root->Branch(maxQubit);
         for (bitCapInt j = 0U; j < end; ++j) {
             j |= fn(j);
         }
         root->Prune(maxQubit);
         return;
     }
-
-    if (threads < nmCrs) {
-        dispatchQueue.dispatch([this, end, maxQubit, fn] {
-            root->Branch(maxQubit);
-            for (bitCapInt j = 0U; j < end; ++j) {
-                j |= fn(j);
-            }
-            root->Prune(maxQubit);
-        });
-        return;
-    }
-
-    Finish();
-    root->Branch(maxQubit);
 
     std::mutex myMutex;
     bitCapInt idx = 0U;
@@ -210,23 +185,11 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
     }
 
     if (threads <= 1U) {
-        Finish();
         for (bitCapInt j = 0U; j < end; ++j) {
             fn(j, 0U);
         }
         return;
     }
-
-    if (threads < nmCrs) {
-        dispatchQueue.dispatch([this, end, fn] {
-            for (bitCapInt j = 0U; j < end; ++j) {
-                fn(j, 0U);
-            }
-        });
-        return;
-    }
-
-    Finish();
 
     std::mutex myMutex;
     bitCapInt idx = 0U;

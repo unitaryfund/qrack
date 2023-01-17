@@ -19,10 +19,6 @@
 #include "qbdt_qengine_node.hpp"
 #include "qengine.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-#include "common/dispatchqueue.hpp"
-#endif
-
 #define NODE_TO_QENGINE(leaf) (std::dynamic_pointer_cast<QBdtQEngineNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
@@ -46,10 +42,6 @@ protected:
     bitCapInt bdtMaxQPower;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    bitLenInt dispatchThreshold;
-    DispatchQueue dispatchQueue;
-#endif
 
     void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
