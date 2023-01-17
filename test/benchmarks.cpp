@@ -3225,183 +3225,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
     });
 }
 
-TEST_CASE("test_noisy_sycamore", "[supreme]")
-{
-    real1_f noiseParam = ONE_R1 / 5;
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
-        noiseParam = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
-    }
-#endif
-
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
-    std::cout << "(noise parameter: " << noiseParam << ")" << std::endl;
-    std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit.";
-
-    // This is an attempt to simulate the circuit argued to establish quantum supremacy.
-    // See https://doi.org/10.1038/s41586-019-1666-5
-
-    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
-        // The test runs 2 bit gates according to a tiling sequence.
-        // The 1 bit indicates +/- column offset.
-        // The 2 bit indicates +/- row offset.
-        // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
-        // paper.
-        const bitLenInt deadQubit = 3U;
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
-
-        // We factor the qubit count into two integers, as close to a perfect square as we can.
-        int colLen = std::sqrt(n);
-        while (((n / colLen) * colLen) != n) {
-            colLen--;
-        }
-        int rowLen = n / colLen;
-
-        // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-        complex sixthRoot = pow(-ONE_CMPLX, (real1)(1.0f / 6.0f));
-
-        // std::cout<<"n="<<(int)n<<std::endl;
-        // std::cout<<"rowLen="<<(int)rowLen<<std::endl;
-        // std::cout<<"colLen="<<(int)colLen<<std::endl;
-
-        real1_f gateRand;
-        bitLenInt gate;
-        int b1, b2;
-        bitLenInt i;
-        int d;
-        int row, col;
-        int tempRow, tempCol;
-
-        std::vector<bitLenInt> controls(1);
-
-        std::vector<int> lastSingleBitGates;
-        std::set<int>::iterator gateChoiceIterator;
-        int gateChoice;
-
-        // We repeat the entire prepartion for "depth" iterations.
-        // We can avoid maximal representational entanglement of the state as a single Schr{\"o}dinger method unit.
-        // See https://arxiv.org/abs/1710.05867
-        for (d = 0; d < benchmarkDepth; d++) {
-            for (i = 0; i < n; i++) {
-                if ((n == 54U) && (i == deadQubit)) {
-                    if (d == 0) {
-                        lastSingleBitGates.push_back(0);
-                    }
-                    continue;
-                }
-
-                // Each individual bit has one of these 3 gates applied at random.
-                // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants
-                // are handled as general single bit gates.
-
-                // The same gate is not applied twice consecutively in sequence.
-
-                if (d == 0) {
-                    // For the first iteration, we can pick any gate.
-
-                    gateRand = 3 * qReg->Rand();
-                    if (gateRand < ONE_R1) {
-                        qReg->SqrtX(i);
-                        lastSingleBitGates.push_back(0);
-                    } else if (gateRand < (2 * ONE_R1)) {
-                        qReg->SqrtY(i);
-                        lastSingleBitGates.push_back(1);
-                    } else {
-                        qReg->SqrtW(i);
-                        lastSingleBitGates.push_back(2);
-                    }
-                } else {
-                    // For all subsequent iterations after the first, we eliminate the choice of the same gate applied
-                    // on the immediately previous iteration.
-
-                    gateChoice = (int)(2 * qReg->Rand());
-                    if (gateChoice >= 2) {
-                        gateChoice = 1;
-                    }
-                    if (gateChoice >= lastSingleBitGates[i]) {
-                        ++gateChoice;
-                    }
-
-                    if (gateChoice == 0) {
-                        qReg->SqrtX(i);
-                        lastSingleBitGates[i] = 0;
-                    } else if (gateChoice == 1) {
-                        qReg->SqrtY(i);
-                        lastSingleBitGates[i] = 1;
-                    } else {
-                        qReg->SqrtW(i);
-                        lastSingleBitGates[i] = 2;
-                    }
-                }
-
-                // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose")
-                // the representation without changing the logical state of the QUnit, up to float error:
-                // qReg->TrySeparate(i);
-            }
-
-            gate = gateSequence.front();
-            gateSequence.pop_front();
-            gateSequence.push_back(gate);
-
-            for (row = 1; row < rowLen; row += 2) {
-                for (col = 0; col < colLen; col++) {
-                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                    // In this test, the boundaries of the rectangle have no couplers.
-                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
-                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
-                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
-                    // awkwardly.)
-
-                    tempRow = row;
-                    tempCol = col;
-
-                    tempRow += ((gate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
-
-                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
-                        continue;
-                    }
-
-                    b1 = row * colLen + col;
-                    b2 = tempRow * colLen + tempCol;
-
-                    if ((n == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
-                        continue;
-                    }
-
-                    qReg->TrySeparate(b1, b2);
-
-                    inject_1qb_u3_noise(qReg, b1, noiseParam);
-                    inject_1qb_u3_noise(qReg, b2, noiseParam);
-
-                    // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                    // different.
-                    qReg->ISwap(b1, b2);
-
-                    // "1/6 of CZ" is read to indicate the 6th root.
-                    // To make the circuit easier, we assume that the noise profile on this gate makes it uniformly
-                    // randomly a controlled phase gate between 0 and 1/3 root of -1.
-
-                    // real1_f root = ONE_R1 / 6;
-                    // root = (ONE_R1 + 2 * (qReg->Rand() - noiseParam)) * root;
-                    // complex sixthRoot = pow(-ONE_CMPLX, complex(root));
-
-                    controls[0] = b1;
-                    qReg->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
-                    // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                    // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
-                }
-            }
-            // std::cout<<"Depth++"<<std::endl;
-        }
-        // std::cout<<"New iteration."<<std::endl;
-
-        // We measure all bits once, after the circuit is run.
-        qReg->MAll();
-    });
-}
-
 TEST_CASE("test_cosmology", "[cosmos]")
 {
     // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
@@ -3858,4 +3681,431 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     }
     crossEntropy = ONE_R1_F - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Test case vs. (duplicate) test case cross entropy (out of 1.0): " << crossEntropy << std::endl;
+}
+
+struct SingleQubitGate {
+    real1_f th;
+    real1_f ph;
+    real1_f lm;
+};
+
+TEST_CASE("test_noisy_fidelity", "[mirror]")
+{
+    std::cout << ">>> 'test_noisy_fidelity':" << std::endl;
+
+    const int GateCountMultiQb = 13;
+    const int GateCount2Qb = 7;
+    const int w = max_qubits;
+    const int n = benchmarkDepth;
+    std::cout << "Circuit width: " << w << std::endl;
+    std::cout << "Circuit layer depth: " << n << std::endl;
+
+    int d;
+    int i;
+    int maxGates;
+
+    int gate;
+
+    QInterfacePtr rng = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
+
+    std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
+    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
+
+    for (d = 0; d < (n >> 1U); d++) {
+        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
+        for (i = 0; i < w; i++) {
+            SingleQubitGate gate1qb;
+            gate1qb.th = 4 * PI_R1 * rng->Rand();
+            gate1qb.ph = 4 * PI_R1 * rng->Rand();
+            gate1qb.lm = 4 * PI_R1 * rng->Rand();
+            layer1QbRands.push_back(gate1qb);
+        }
+
+        std::set<bitLenInt> unusedBits;
+        for (i = 0; i < w; i++) {
+            unusedBits.insert(i);
+        }
+
+        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+        while (unusedBits.size() > 1) {
+            MultiQubitGate multiGate;
+            multiGate.b1 = pickRandomBit(rng, &unusedBits);
+            multiGate.b2 = pickRandomBit(rng, &unusedBits);
+            multiGate.b3 = 0;
+
+            if (unusedBits.size() > 0) {
+                maxGates = GateCountMultiQb;
+            } else {
+                maxGates = GateCount2Qb;
+            }
+
+            gate = (int)(rng->Rand() * maxGates);
+            if (gate >= maxGates) {
+                gate = (maxGates - 1U);
+            }
+
+            multiGate.gate = gate;
+
+            if (multiGate.gate >= GateCount2Qb) {
+                multiGate.b3 = pickRandomBit(rng, &unusedBits);
+            }
+
+            layerMultiQbRands.push_back(multiGate);
+        }
+    }
+
+    bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(w));
+    if (randPerm >= pow2Ocl(w)) {
+        randPerm = pow2Ocl(w) - 1U;
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
+    real1_s sdrp = 0.325f;
+
+    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(120)) {
+        start = std::chrono::high_resolution_clock::now();
+
+        if (sdrp < FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
+
+        QInterfacePtr testCase =
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
+        testCase->SetPermutation(randPerm);
+
+        for (d = 0; d < (n >> 1U); d++) {
+            std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < (int)layer1QbRands.size(); i++) {
+                SingleQubitGate gate1Qb = layer1QbRands[i];
+                testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                if (multiGate.gate == 0) {
+                    testCase->ISwap(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 1) {
+                    testCase->CNOT(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 2) {
+                    testCase->CY(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 3) {
+                    testCase->CZ(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 4) {
+                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 5) {
+                    testCase->AntiCY(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 6) {
+                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 7) {
+                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else if (multiGate.gate == 8) {
+                    testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else if (multiGate.gate == 9) {
+                    testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else if (multiGate.gate == 10) {
+                    testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else if (multiGate.gate == 11) {
+                    testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else {
+                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                }
+            }
+        }
+
+        // Mirror the circuit
+        for (d = (n >> 1U) - 1U; d >= 0; d--) {
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                if (multiGate.gate == 0) {
+                    testCase->IISwap(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 1) {
+                    testCase->CNOT(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 2) {
+                    testCase->CY(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 3) {
+                    testCase->CZ(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 4) {
+                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 5) {
+                    testCase->AntiCY(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 6) {
+                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 7) {
+                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else if (multiGate.gate == 8) {
+                    testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else if (multiGate.gate == 9) {
+                    testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else if (multiGate.gate == 10) {
+                    testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else if (multiGate.gate == 11) {
+                    testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                } else {
+                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                }
+            }
+
+            std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
+            for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
+                SingleQubitGate gate1Qb = layer1QbRands[i];
+                // Order reversal is intentional.
+                testCase->U(i, -gate1Qb.th, -gate1Qb.lm, -gate1Qb.ph);
+            }
+        }
+
+        testCase->Finish();
+
+        // We mirrored for half, hence the "gold standard" is identically |randPerm>.
+        std::cout << "Fidelity for SDRP=" << sdrp << ": " << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
+
+        sdrp -= 0.0125f;
+    }
+}
+
+TEST_CASE("test_noisy_sycamore", "[mirror]")
+{
+    std::cout << ">>> 'test_noisy_sycamore':" << std::endl;
+    std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit." << std::endl;
+
+    const int w = max_qubits;
+    const int n = benchmarkDepth;
+    std::cout << "Circuit width: " << w << std::endl;
+    std::cout << "Circuit layer depth: " << n << std::endl;
+
+    // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
+    const complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
+    const complex iSixthRoot = pow(-ONE_CMPLX, complex((real1)(-1.0f / 6.0f)));
+
+    // The test runs 2 bit gates according to a tiling sequence.
+    // The 1 bit indicates +/- column offset.
+    // The 2 bit indicates +/- row offset.
+    // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
+    // paper.
+    const bitLenInt deadQubit = 3U;
+    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+
+    // We factor the qubit count into two integers, as close to a perfect square as we can.
+    int colLen = std::sqrt(w);
+    while (((w / colLen) * colLen) != w) {
+        colLen--;
+    }
+    int rowLen = w / colLen;
+
+    // std::cout<<"n="<<(int)n<<std::endl;
+    // std::cout<<"rowLen="<<(int)rowLen<<std::endl;
+    // std::cout<<"colLen="<<(int)colLen<<std::endl;
+
+    int d;
+    int i;
+
+    int gate;
+
+    int row, col;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    real1_s sdrp = 0.325f;
+
+    std::vector<real1_f> fidelities;
+    std::vector<std::vector<int>> gate1QbRands(n >> 1U);
+    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n >> 1U);
+    std::vector<int> lastSingleBitGates;
+
+    QInterfacePtr rng = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
+
+    for (d = 0; d < (n >> 1U); d++) {
+        std::vector<int> layer1QbRands;
+        std::vector<MultiQubitGate> layerMultiQbRands;
+        for (i = 0; i < w; ++i) {
+            // Each individual bit has one of these 3 gates applied at random.
+            // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants
+            // are handled as general single bit gates.
+
+            // The same gate is not applied twice consecutively in sequence.
+
+            if (d == 0) {
+                // For the first iteration, we can pick any gate.
+
+                int gate = (int)(3 * rng->Rand());
+                if (gate > 2) {
+                    gate = 2;
+                }
+                layer1QbRands.push_back(gate);
+                lastSingleBitGates.push_back(gate);
+            } else {
+                // For all subsequent iterations after the first, we eliminate the choice of the same gate
+                // applied on the immediately previous iteration.
+
+                int gate = (int)(2 * rng->Rand());
+                if (gate > 1) {
+                    gate = 1;
+                }
+                if (gate >= lastSingleBitGates[i]) {
+                    ++gate;
+                }
+                layer1QbRands.push_back(gate);
+                lastSingleBitGates[i] = gate;
+            }
+        }
+
+        gate1QbRands[d] = layer1QbRands;
+
+        gate = gateSequence.front();
+        gateSequence.pop_front();
+        gateSequence.push_back(gate);
+
+        for (row = 1; row < rowLen; row += 2) {
+            for (col = 0; col < colLen; col++) {
+                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                // In this test, the boundaries of the rectangle have no couplers.
+                // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                // awkwardly.)
+
+                int tempRow = row;
+                int tempCol = col;
+
+                tempRow += ((gate & 2U) ? 1 : -1);
+                tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
+
+                if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
+                    continue;
+                }
+
+                int b1 = row * colLen + col;
+                int b2 = tempRow * colLen + tempCol;
+
+                MultiQubitGate multiGate;
+                multiGate.b1 = b1;
+                multiGate.b2 = b2;
+
+                layerMultiQbRands.push_back(multiGate);
+            }
+        }
+
+        gateMultiQbRands[d] = layerMultiQbRands;
+    }
+
+    bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(w));
+    if (randPerm >= pow2Ocl(w)) {
+        randPerm = pow2Ocl(w) - 1U;
+    }
+
+    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(60)) {
+        start = std::chrono::high_resolution_clock::now();
+
+        if (sdrp < FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
+
+        QInterfacePtr testCase =
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
+        testCase->SetPermutation(randPerm);
+
+        for (d = 0; d < (n >> 1U); d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < (int)layer1QbRands.size(); i++) {
+                if ((w == 54U) && (i == deadQubit)) {
+                    continue;
+                }
+
+                int gate1Qb = layer1QbRands[i];
+                if (!gate1Qb) {
+                    testCase->SqrtX(i);
+                    // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
+                } else if (gate1Qb == 1U) {
+                    testCase->SqrtY(i);
+                    // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
+                } else {
+                    testCase->SqrtW(i);
+                    // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
+                }
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                const bitLenInt b1 = multiGate.b1;
+                const bitLenInt b2 = multiGate.b2;
+
+                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                    continue;
+                }
+
+                const std::vector<bitLenInt> controls = { b1 };
+
+                testCase->TrySeparate(b1, b2);
+
+                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
+                // different.
+                testCase->ISwap(b1, b2);
+                // "1/6 of CZ" is read to indicate the 6th root.
+                testCase->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
+                // Note that these gates are both symmetric under exchange of "b1" and "b2".
+            }
+        }
+
+        // Mirror the circuit
+        for (d = (n >> 1U) - 1U; d >= 0; d--) {
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                const bitLenInt b1 = multiGate.b1;
+                const bitLenInt b2 = multiGate.b2;
+
+                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                    continue;
+                }
+
+                const std::vector<bitLenInt> controls = { b1 };
+
+                testCase->TrySeparate(b1, b2);
+
+                // "1/6 of CZ" is read to indicate the 6th root.
+                testCase->MCPhase(controls, ONE_CMPLX, iSixthRoot, b2);
+                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
+                // different.
+                testCase->IISwap(b1, b2);
+                // Note that these gates are both symmetric under exchange of "b1" and "b2".
+            }
+
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
+                if ((w == 54U) && (i == deadQubit)) {
+                    continue;
+                }
+
+                int gate1Qb = layer1QbRands[i];
+                if (!gate1Qb) {
+                    testCase->ISqrtX(i);
+                    // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
+                } else if (gate1Qb == 1U) {
+                    testCase->ISqrtY(i);
+                    // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
+                } else {
+                    testCase->ISqrtW(i);
+                    // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
+                }
+            }
+        }
+
+        testCase->Finish();
+
+        // We mirrored for half, hence the "gold standard" is identically |randPerm>.
+        std::cout << "Fidelity for SDRP=" << sdrp << ": " << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
+
+        sdrp -= 0.0125f;
+    }
 }

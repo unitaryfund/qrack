@@ -97,21 +97,27 @@ protected:
 
     void par_for_qbdt(bitCapInt end, bitLenInt maxQubit, BdtFunc fn)
     {
-        root->Branch(maxQubit);
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+        Finish();
+        root->Branch(maxQubit);
+
         const bitCapInt Stride = GetStride();
-        if (end < Stride) {
+        unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
+        if (underThreads == 1U) {
+            underThreads = 0U;
+        }
+        const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underThreads + 1U));
+        unsigned threads = (unsigned)(end / Stride);
+        if (threads > nmCrs) {
+            threads = nmCrs;
+        }
+
+        if (threads <= 1U) {
             for (bitCapInt j = 0U; j < end; ++j) {
                 j |= fn(j);
             }
             root->Prune(maxQubit);
             return;
-        }
-
-        const unsigned nmCrs = GetConcurrencyLevel();
-        unsigned threads = (unsigned)(end / Stride);
-        if (threads > nmCrs) {
-            threads = nmCrs;
         }
 
         std::mutex myMutex;
@@ -195,8 +201,6 @@ public:
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
-
-    ~QBdt() { Dump(); }
 
     QEnginePtr ReleaseEngine()
     {

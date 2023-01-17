@@ -194,17 +194,17 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
-    if (end < pStride) {
-        for (bitCapInt j = 0U; j < end; ++j) {
-            j |= fn(j);
-        }
-        return;
-    }
-
     const bitCapInt Stride = pStride;
     unsigned threads = (unsigned)(end / pStride);
     if (threads > numCores) {
         threads = numCores;
+    }
+
+    if (threads <= 1U) {
+        for (bitCapInt j = 0U; j < end; ++j) {
+            j |= fn(j);
+        }
+        return;
     }
 
     std::mutex myMutex;

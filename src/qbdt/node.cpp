@@ -33,6 +33,7 @@ const bitLenInt pStridePow =
 #else
 const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
+const bitCapInt pStride = pow2(pStridePow);
 
 void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 {
@@ -55,6 +56,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     // Prune recursively to depth.
     --depth;
+
     if (b0.get() == b1.get()) {
         std::lock_guard<std::mutex> lock(b0->mtx);
         b0->Prune(depth, parDepth);
@@ -62,8 +64,13 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock(b0->mtx, b1->mtx);
         std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+        unsigned underThreads = (unsigned)(pow2(depth) / pStride);
+        if (underThreads == 1U) {
+            underThreads = 0U;
+        }
+        if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {
             ++parDepth;
 
             std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
@@ -219,14 +226,16 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     b0 = branches[0U];
     b1 = branches[1U];
 
-    if ((depth < pStridePow) | (pow2(parDepth) > numThreads)) {
-        b0->Branch(depth);
-        b1->Branch(depth);
+    if ((depth <= pStridePow) || (pow2(parDepth) > numThreads)) {
+        b0->Branch(depth, parDepth);
+        b1->Branch(depth, parDepth);
         return;
     }
 
-    std::future<void> future0 = std::async(std::launch::async, [&] { b0->Branch(depth); });
-    b1->Branch(depth);
+    ++parDepth;
+
+    std::future<void> future0 = std::async(std::launch::async, [&] { b0->Branch(depth, parDepth); });
+    b1->Branch(depth, parDepth);
     future0.get();
 }
 
