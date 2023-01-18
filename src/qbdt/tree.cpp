@@ -332,7 +332,7 @@ template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
     root = std::make_shared<QBdtNode>();
     root->Branch(bdtQubitCount);
 
-    for (bitCapInt i = 0U; i < maxQPower; ++i) {
+    _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr prevLeaf = root;
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
@@ -346,7 +346,7 @@ template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
         }
 
         setLambda((bitCapIntOcl)i, leaf);
-    }
+    });
 
     root->PopStateVector(bdtQubitCount);
     root->Prune(bdtQubitCount);
@@ -377,6 +377,8 @@ void QBdt::SetQuantumState(complex const* state)
 }
 void QBdt::SetQuantumState(QInterfacePtr eng)
 {
+    eng->Finish();
+
     if (!bdtQubitCount) {
         NODE_TO_QENGINE(root) = std::dynamic_pointer_cast<QEngine>(eng->Clone());
         return;
