@@ -172,6 +172,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
 
         QBdtNodeInterfacePtr toRet1, toRet2;
         if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+            ++parDepth;
             std::future<QBdtNodeInterfacePtr> future0 = std::async(
                 std::launch::async, [&] { return branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth); });
             toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
