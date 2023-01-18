@@ -30,17 +30,16 @@
 
 namespace Qrack {
 
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-const unsigned numCores = std::thread::hardware_concurrency();
+const unsigned numThreads = std::thread::hardware_concurrency() << 1U;
 #if ENABLE_ENV_VARS
-const bitLenInt pStride =
+const bitLenInt pStridePow =
     (((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW)) +
         1U) >>
     1U;
 #else
-const bitLenInt pStride = (PSTRIDEPOW + 1U) >> 1U;
+const bitLenInt pStridePow = (PSTRIDEPOW + 1U) >> 1U;
 #endif
-#endif
+const bitCapInt pStride = pow2(pStridePow);
 
 bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
 {
@@ -171,8 +170,16 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     if (depth) {
         --depth;
 
-        QBdtNodeInterfacePtr toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size);
-        QBdtNodeInterfacePtr toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size);
+        QBdtNodeInterfacePtr toRet1, toRet2;
+        if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+            std::future<QBdtNodeInterfacePtr> future0 = std::async(
+                std::launch::async, [&] { return branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth); });
+            toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            toRet1 = future0.get();
+        } else {
+            toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+        }
 
         return (norm(branches[0U]->scale) > norm(branches[1U]->scale)) ? toRet1 : toRet2;
     }
@@ -199,8 +206,8 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     const bitCapInt Stride = pStride;
     unsigned threads = (unsigned)(end / pStride);
-    if (threads > numCores) {
-        threads = numCores;
+    if (threads > numThreads) {
+        threads = numThreads;
     }
 
     if (threads <= 1U) {
