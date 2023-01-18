@@ -330,17 +330,17 @@ template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
     Dump();
 
     root = std::make_shared<QBdtNode>();
+    root->Branch(bdtQubitCount);
 
     for (bitCapInt i = 0U; i < maxQPower; ++i) {
         QBdtNodeInterfacePtr prevLeaf = root;
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
-            leaf->Branch();
             prevLeaf = leaf;
             leaf = leaf->branches[SelectBit(i, j)];
         }
 
-        if (bdtQubitCount < qubitCount) {
+        if (attachedQubitCount) {
             leaf = MakeQEngineNode(ONE_CMPLX, attachedQubitCount, 0U);
             prevLeaf->branches[SelectBit(i, bdtQubitCount - 1U)] = leaf;
         }
