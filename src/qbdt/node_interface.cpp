@@ -213,7 +213,7 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
     bitCapInt idx = 0U;
     std::vector<std::future<void>> futures(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu] = ATOMIC_ASYNC(cpu, &myMutex, &idx, &end, &Stride, fn)
+        futures[cpu] = ATOMIC_ASYNC(&myMutex, &idx, &end, &Stride, fn)
         {
             for (;;) {
                 bitCapInt i;
