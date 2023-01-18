@@ -3706,7 +3706,23 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
 
     int gate;
 
-    QInterfacePtr rng = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
+    std::vector<QInterfaceEngine> engineStack;
+    if (optimal) {
+#if ENABLE_OPENCL
+        engineStack.push_back(
+            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+#endif
+    } else if (optimal_single) {
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+    } else {
+        engineStack.push_back(testEngineType);
+        engineStack.push_back(testSubEngineType);
+        engineStack.push_back(testSubSubEngineType);
+    }
+
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -3771,8 +3787,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
             setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
         }
 
-        QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0);
         testCase->SetPermutation(randPerm);
 
         for (d = 0; d < (n >> 1U); d++) {
@@ -3917,7 +3932,23 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n >> 1U);
     std::vector<int> lastSingleBitGates;
 
-    QInterfacePtr rng = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
+    std::vector<QInterfaceEngine> engineStack;
+    if (optimal) {
+#if ENABLE_OPENCL
+        engineStack.push_back(
+            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+#endif
+    } else if (optimal_single) {
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+    } else {
+        engineStack.push_back(testEngineType);
+        engineStack.push_back(testSubEngineType);
+        engineStack.push_back(testSubSubEngineType);
+    }
+
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
     for (d = 0; d < (n >> 1U); d++) {
         std::vector<int> layer1QbRands;
@@ -4007,8 +4038,7 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
             setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
         }
 
-        QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, w, 0);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0);
         testCase->SetPermutation(randPerm);
 
         for (d = 0; d < (n >> 1U); d++) {
