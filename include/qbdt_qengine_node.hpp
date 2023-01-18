@@ -77,9 +77,10 @@ public:
 
     virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
 
-    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size);
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U);
 
-    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
+    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(
+        bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U);
 
     virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
 

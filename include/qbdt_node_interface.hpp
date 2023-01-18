@@ -81,13 +81,14 @@ public:
         // Virtual destructor for inheritance
     }
 
-    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U)
     {
         throw std::out_of_range("QBdtNodeInterface::InsertAtDepth() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
+    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(
+        bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U);
 
     virtual void SetZero()
     {
