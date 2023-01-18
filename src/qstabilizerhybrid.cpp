@@ -352,26 +352,23 @@ void QStabilizerHybrid::SwitchToEngine()
         std::dynamic_pointer_cast<QBdt>(engine)->SetStateVector();
     }
     stabilizer->GetQuantumState(engine);
-    if (isBdt) {
-        std::dynamic_pointer_cast<QBdt>(engine)->ResetStateVector();
-    }
     stabilizer = NULL;
     FlushBuffers();
 
     if (!ancillaCount) {
+        if (isBdt) {
+            std::dynamic_pointer_cast<QBdt>(engine)->ResetStateVector();
+        }
         return;
     }
 
     // When we measure, we act postselection on reverse T-gadgets.
-    if (isBdt) {
-        std::dynamic_pointer_cast<QBdt>(engine)->SetStateVector();
-    }
     engine->ForceMReg(qubitCount, ancillaCount, 0, true, true);
-    // Ancillae are separable after measurement.
-    engine->Dispose(qubitCount, ancillaCount);
     if (isBdt) {
         std::dynamic_pointer_cast<QBdt>(engine)->ResetStateVector();
     }
+    // Ancillae are separable after measurement.
+    engine->Dispose(qubitCount, ancillaCount);
     // We have extra "gate fusion" shards leftover.
     shards.erase(shards.begin() + qubitCount, shards.end());
     // We're done with ancillae.
