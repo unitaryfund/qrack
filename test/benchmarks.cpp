@@ -3697,8 +3697,10 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     const int GateCount2Qb = 8;
     const int w = max_qubits;
     const int n = benchmarkDepth;
+    const int testTimeout = timeout < 0 ? 60000 : timeout;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
+    std::cout << "Repetition timeout: " << testTimeout << " ms" << std::endl;
 
     int d;
     int i;
@@ -3778,7 +3780,7 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     auto start = std::chrono::high_resolution_clock::now();
     real1_s sdrp = 0.425f;
 
-    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(60)) {
+    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::milliseconds(testTimeout)) {
         start = std::chrono::high_resolution_clock::now();
 
         if (sdrp < FP_NORM_EPSILON) {
@@ -3952,8 +3954,10 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
 
     const int w = max_qubits;
     const int n = benchmarkDepth;
+    const int testTimeout = timeout < 0 ? 60000 : timeout;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
+    std::cout << "Repetition timeout: " << testTimeout << " ms" << std::endl;
 
     // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
     const complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
@@ -4090,7 +4094,7 @@ TEST_CASE("test_noisy_sycamore", "[mirror]")
         randPerm = pow2Ocl(w) - 1U;
     }
 
-    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::seconds(60)) {
+    while ((sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::milliseconds(testTimeout)) {
         start = std::chrono::high_resolution_clock::now();
 
         if (sdrp < FP_NORM_EPSILON) {
