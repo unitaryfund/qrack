@@ -476,7 +476,11 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         return ONE_R1_F;
     }
 
+    const unsigned numCores = GetConcurrencyLevel();
+    std::unique_ptr<complex[]> projectionBuff(new complex[numCores]());
+
     Finish();
+    toCompare->Finish();
 
     if (randGlobalPhase) {
         real1_f lPhaseArg = FirstNonzeroPhase();
@@ -484,9 +488,13 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         root->scale *= std::polar(ONE_R1, (real1)(rPhaseArg - lPhaseArg));
     }
 
+    _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
+        projectionBuff[cpu] += conj(toCompare->GetAmplitude(i)) * GetAmplitude(i);
+    });
+
     complex projection = ZERO_CMPLX;
-    for (bitCapInt i = 0U; i < maxQPower; ++i) {
-        projection += conj(toCompare->GetAmplitude(i)) * GetAmplitude(i);
+    for (unsigned i = 0U; i < numCores; ++i) {
+        projection += projectionBuff[i];
     }
 
     return ONE_R1_F - clampProb((real1_f)norm(projection));
