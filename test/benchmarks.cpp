@@ -4039,13 +4039,92 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
     auto start = std::chrono::high_resolution_clock::now();
     real1_s sdrp = 0.425f;
 
+    unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
+
+    std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
+
+    for (d = 0; d < n; d++) {
+        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
+        for (i = 0; i < (int)layer1QbRands.size(); i++) {
+            SingleQubitGate gate1Qb = layer1QbRands[i];
+            goldStandard->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
+            // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
+            //           << ");" << std::endl;
+        }
+
+        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+        for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
+            MultiQubitGate multiGate = layerMultiQbRands[i];
+            if (multiGate.gate == 0) {
+                goldStandard->ISwap(multiGate.b1, multiGate.b2);
+                // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
+                // std::endl;
+            } else if (multiGate.gate == 1) {
+                goldStandard->IISwap(multiGate.b1, multiGate.b2);
+                // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
+                // std::endl;
+            } else if (multiGate.gate == 2) {
+                goldStandard->CNOT(multiGate.b1, multiGate.b2);
+                // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
+                // std::endl;
+            } else if (multiGate.gate == 3) {
+                goldStandard->CY(multiGate.b1, multiGate.b2);
+                // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
+            } else if (multiGate.gate == 4) {
+                goldStandard->CZ(multiGate.b1, multiGate.b2);
+                // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
+            } else if (multiGate.gate == 5) {
+                goldStandard->AntiCNOT(multiGate.b1, multiGate.b2);
+                // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
+                //           << std::endl;
+            } else if (multiGate.gate == 6) {
+                goldStandard->AntiCY(multiGate.b1, multiGate.b2);
+                // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
+                // std::endl;
+            } else if (multiGate.gate == 7) {
+                goldStandard->AntiCZ(multiGate.b1, multiGate.b2);
+                // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
+                // std::endl;
+            } else if (multiGate.gate == 8) {
+                goldStandard->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                // std::cout << "qReg->CCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
+                //           << (int)multiGate.b3 << ");" << std::endl;
+            } else if (multiGate.gate == 9) {
+                goldStandard->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                // std::cout << "qReg->CCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
+                //           << (int)multiGate.b3 << ");" << std::endl;
+            } else if (multiGate.gate == 10) {
+                goldStandard->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                // std::cout << "qReg->CCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
+                //           << (int)multiGate.b3 << ");" << std::endl;
+            } else if (multiGate.gate == 11) {
+                goldStandard->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                // std::cout << "qReg->AntiCCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
+                //           << (int)multiGate.b3 << ");" << std::endl;
+            } else if (multiGate.gate == 12) {
+                goldStandard->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                // std::cout << "qReg->AntiCCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
+                //           << (int)multiGate.b3 << ");" << std::endl;
+            } else {
+                goldStandard->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                // std::cout << "qReg->AntiCCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
+                //           << (int)multiGate.b3 << ");" << std::endl;
+            }
+        }
+    }
+
+    std::cout
+        << "Done. ("
+        << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()
+        << "s)" << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
+
     while (
         (sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::milliseconds(testTimeout)) {
         start = std::chrono::high_resolution_clock::now();
-
-        unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
-
-        QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
 
         if (sdrp > FP_NORM_EPSILON) {
             setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
@@ -4058,7 +4137,6 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
             for (i = 0; i < (int)layer1QbRands.size(); i++) {
                 SingleQubitGate gate1Qb = layer1QbRands[i];
                 testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-                goldStandard->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
                 // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
                 //           << ");" << std::endl;
             }
@@ -4068,70 +4146,56 @@ TEST_CASE("test_noisy_fidelity", "[mirror]")
                 MultiQubitGate multiGate = layerMultiQbRands[i];
                 if (multiGate.gate == 0) {
                     testCase->ISwap(multiGate.b1, multiGate.b2);
-                    goldStandard->ISwap(multiGate.b1, multiGate.b2);
                     // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
                     // std::endl;
                 } else if (multiGate.gate == 1) {
                     testCase->IISwap(multiGate.b1, multiGate.b2);
-                    goldStandard->IISwap(multiGate.b1, multiGate.b2);
                     // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
                     // std::endl;
                 } else if (multiGate.gate == 2) {
                     testCase->CNOT(multiGate.b1, multiGate.b2);
-                    goldStandard->CNOT(multiGate.b1, multiGate.b2);
                     // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
                     // std::endl;
                 } else if (multiGate.gate == 3) {
                     testCase->CY(multiGate.b1, multiGate.b2);
-                    goldStandard->CY(multiGate.b1, multiGate.b2);
                     // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
                 } else if (multiGate.gate == 4) {
                     testCase->CZ(multiGate.b1, multiGate.b2);
-                    goldStandard->CZ(multiGate.b1, multiGate.b2);
                     // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
                 } else if (multiGate.gate == 5) {
                     testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                    goldStandard->AntiCNOT(multiGate.b1, multiGate.b2);
                     // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
                     //           << std::endl;
                 } else if (multiGate.gate == 6) {
                     testCase->AntiCY(multiGate.b1, multiGate.b2);
-                    goldStandard->AntiCY(multiGate.b1, multiGate.b2);
                     // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
                     // std::endl;
                 } else if (multiGate.gate == 7) {
                     testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                    goldStandard->AntiCZ(multiGate.b1, multiGate.b2);
                     // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
                     // std::endl;
                 } else if (multiGate.gate == 8) {
                     testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    goldStandard->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
                     // std::cout << "qReg->CCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
                     //           << (int)multiGate.b3 << ");" << std::endl;
                 } else if (multiGate.gate == 9) {
                     testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    goldStandard->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
                     // std::cout << "qReg->CCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
                     //           << (int)multiGate.b3 << ");" << std::endl;
                 } else if (multiGate.gate == 10) {
                     testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    goldStandard->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
                     // std::cout << "qReg->CCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
                     //           << (int)multiGate.b3 << ");" << std::endl;
                 } else if (multiGate.gate == 11) {
                     testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    goldStandard->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
                     // std::cout << "qReg->AntiCCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
                     //           << (int)multiGate.b3 << ");" << std::endl;
                 } else if (multiGate.gate == 12) {
                     testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    goldStandard->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
                     // std::cout << "qReg->AntiCCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
                     //           << (int)multiGate.b3 << ");" << std::endl;
                 } else {
                     testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    goldStandard->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
                     // std::cout << "qReg->AntiCCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
                     //           << (int)multiGate.b3 << ");" << std::endl;
                 }
