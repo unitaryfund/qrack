@@ -1767,7 +1767,9 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (IS_SAME_UNIT(shard1, shard2) || ARE_CLIFFORD(shard1, shard2)) {
+    const bool isSameUnit = IS_SAME_UNIT(shard1, shard2);
+
+    if (isSameUnit || ARE_CLIFFORD(shard1, shard2)) {
         QInterfacePtr unit = Entangle({ qubit1, qubit2 });
         if (isInverse) {
             unit->IISwap(shard1.mapped, shard2.mapped);
@@ -1777,8 +1779,10 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
         shard1.MakeDirty();
         shard2.MakeDirty();
 
-        TrySeparate(qubit1);
-        TrySeparate(qubit2);
+        if (isSameUnit && !ARE_CLIFFORD(shard1, shard2)) {
+            TrySeparate(qubit1);
+            TrySeparate(qubit2);
+        }
         return;
     }
 
@@ -1809,6 +1813,7 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
+    const bool isSameUnit = IS_SAME_UNIT(shard1, shard2);
     Entangle({ qubit1, qubit2 })->SqrtSwap(shard1.mapped, shard2.mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
@@ -1816,8 +1821,10 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     shard1.MakeDirty();
     shard2.MakeDirty();
 
-    TrySeparate(qubit1);
-    TrySeparate(qubit2);
+    if (isSameUnit) {
+        TrySeparate(qubit1);
+        TrySeparate(qubit2);
+    }
 }
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -1840,6 +1847,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
+    const bool isSameUnit = IS_SAME_UNIT(shard1, shard2);
     Entangle({ qubit1, qubit2 })->ISqrtSwap(shard1.mapped, shard2.mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
@@ -1847,8 +1855,10 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     shard1.MakeDirty();
     shard2.MakeDirty();
 
-    TrySeparate(qubit1);
-    TrySeparate(qubit2);
+    if (isSameUnit) {
+        TrySeparate(qubit1);
+        TrySeparate(qubit2);
+    }
 }
 
 void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
@@ -1881,6 +1891,7 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
+    const bool isSameUnit = IS_SAME_UNIT(shard1, shard2);
     Entangle({ qubit1, qubit2 })->FSim(theta, phi, shard1.mapped, shard2.mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
@@ -1888,8 +1899,10 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     shard1.MakeDirty();
     shard2.MakeDirty();
 
-    TrySeparate(qubit1);
-    TrySeparate(qubit2);
+    if (isSameUnit && !ARE_CLIFFORD(shard1, shard2)) {
+        TrySeparate(qubit1);
+        TrySeparate(qubit2);
+    }
 }
 
 void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
