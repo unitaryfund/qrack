@@ -1776,6 +1776,9 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
         }
         shard1.MakeDirty();
         shard2.MakeDirty();
+
+        TrySeparate(qubit1);
+        TrySeparate(qubit2);
         return;
     }
 
@@ -1812,6 +1815,9 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     shard1.MakeDirty();
     shard2.MakeDirty();
+
+    TrySeparate(qubit1);
+    TrySeparate(qubit2);
 }
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -1840,6 +1846,9 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     shard1.MakeDirty();
     shard2.MakeDirty();
+
+    TrySeparate(qubit1);
+    TrySeparate(qubit2);
 }
 
 void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
@@ -1878,6 +1887,9 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 
     shard1.MakeDirty();
     shard2.MakeDirty();
+
+    TrySeparate(qubit1);
+    TrySeparate(qubit2);
 }
 
 void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
