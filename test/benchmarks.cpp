@@ -4254,7 +4254,6 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 
     int row, col;
 
-    std::vector<real1_f> fidelities;
     std::vector<std::vector<int>> gate1QbRands(n);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
     std::vector<int> lastSingleBitGates;
@@ -4529,7 +4528,6 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
     auto start = std::chrono::high_resolution_clock::now();
     double sdrp = 0.5;
 
-    std::vector<real1_f> fidelities;
     std::vector<std::vector<int>> gate1QbRands(n >> 1U);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n >> 1U);
     std::vector<int> lastSingleBitGates;
@@ -4792,7 +4790,6 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
     }
     std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
 
-    std::vector<real1_f> fidelities;
     std::vector<std::vector<int>> gate1QbRands(n);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
     std::vector<int> lastSingleBitGates;
