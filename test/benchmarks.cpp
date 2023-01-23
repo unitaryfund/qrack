@@ -3082,9 +3082,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // std::cout<<"rowLen="<<(int)rowLen<<std::endl;
         // std::cout<<"colLen="<<(int)colLen<<std::endl;
 
-        // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-        complex sixthRoot = pow(-ONE_CMPLX, (real1)(1.0f / 6.0f));
-
         real1_f gateRand;
         bitLenInt gate;
         int b1, b2;
@@ -3196,7 +3193,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         continue;
                     }
 
-                    // std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                    // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" <<
+                    // std::endl;
 
                     if (d == (benchmarkDepth - 1)) {
                         // For the last layer of couplers, the immediately next operation is measurement, and the phase
@@ -3207,16 +3205,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     }
 
                     qReg->TrySeparate(b1, b2);
-
-                    // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                    // different.
-                    qReg->ISwap(b1, b2);
-                    // "1/6 of CZ" is read to indicate the 6th root.
-                    controls[0] = b1;
-                    qReg->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
-                    // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                    // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
+                    qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
                 }
             }
             // std::cout<<"Depth++"<<std::endl;
@@ -4225,9 +4214,6 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
     std::cout << "Circuit layer depth: " << n << std::endl;
     std::cout << "Repetition timeout: " << testTimeout << " ms" << std::endl;
 
-    // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-    const complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
-
     // The test runs 2 bit gates according to a tiling sequence.
     // The 1 bit indicates +/- column offset.
     // The 2 bit indicates +/- row offset.
@@ -4394,18 +4380,18 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                 continue;
             }
 
-            const std::vector<bitLenInt> controls = { b1 };
+            // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+
+            if (d == (n - 1)) {
+                // For the last layer of couplers, the immediately next operation is measurement, and the phase effects
+                // make no observable difference.
+                goldStandard->Swap(b1, b2);
+
+                continue;
+            }
 
             goldStandard->TrySeparate(b1, b2);
-
-            // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-            // different.
-            goldStandard->ISwap(b1, b2);
-            // "1/6 of CZ" is read to indicate the 6th root.
-            goldStandard->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
-            // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-            // std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+            goldStandard->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
         }
     }
 
@@ -4456,18 +4442,19 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     continue;
                 }
 
-                const std::vector<bitLenInt> controls = { b1 };
+                // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" <<
+                // std::endl;
+
+                if (d == (n - 1)) {
+                    // For the last layer of couplers, the immediately next operation is measurement, and the phase
+                    // effects make no observable difference.
+                    testCase->Swap(b1, b2);
+
+                    continue;
+                }
 
                 testCase->TrySeparate(b1, b2);
-
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different.
-                testCase->ISwap(b1, b2);
-                // "1/6 of CZ" is read to indicate the 6th root.
-                testCase->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
-                // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                // std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                testCase->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
             }
         }
 
@@ -4494,10 +4481,6 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
     std::cout << "Repetition timeout: " << testTimeout << " ms" << std::endl;
-
-    // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-    const complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
-    const complex iSixthRoot = pow(-ONE_CMPLX, complex((real1)(-1.0f / 6.0f)));
 
     // The test runs 2 bit gates according to a tiling sequence.
     // The 1 bit indicates +/- column offset.
@@ -4672,18 +4655,19 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                     continue;
                 }
 
-                const std::vector<bitLenInt> controls = { b1 };
+                // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" <<
+                // std::endl;
+
+                if (d == ((n >> 1U) - 1)) {
+                    // For the last layer of couplers, the immediately next operation is measurement, and the phase
+                    // effects make no observable difference.
+                    testCase->Swap(b1, b2);
+
+                    continue;
+                }
 
                 testCase->TrySeparate(b1, b2);
-
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different.
-                testCase->ISwap(b1, b2);
-                // "1/6 of CZ" is read to indicate the 6th root.
-                testCase->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
-                // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                // std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                testCase->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
             }
         }
 
@@ -4699,18 +4683,18 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                     continue;
                 }
 
-                const std::vector<bitLenInt> controls = { b1 };
+                // std::cout << "qReg->FSim(PI_R1 / 2, -PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+
+                if (d == ((n >> 1U) - 1)) {
+                    // For the last layer of couplers, the immediately next operation is measurement, and the phase
+                    // effects make no observable difference.
+                    testCase->Swap(b1, b2);
+
+                    continue;
+                }
 
                 testCase->TrySeparate(b1, b2);
-
-                // "1/6 of CZ" is read to indicate the 6th root.
-                testCase->MCPhase(controls, ONE_CMPLX, iSixthRoot, b2);
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different.
-                testCase->IISwap(b1, b2);
-                // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                // std::cout << "qReg->ICoupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                testCase->FSim(PI_R1 / 2, -PI_R1 / 6, b1, b2);
             }
 
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -4755,10 +4739,6 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
     const int n = benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
-
-    // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-    const complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
-    const complex iSixthRoot = pow(-ONE_CMPLX, complex((real1)(-1.0f / 6.0f)));
 
     // The test runs 2 bit gates according to a tiling sequence.
     // The 1 bit indicates +/- column offset.
@@ -4933,18 +4913,19 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                     continue;
                 }
 
-                const std::vector<bitLenInt> controls = { b1 };
+                std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");"
+                          << std::endl;
+
+                if (d == (n - 1)) {
+                    // For the last layer of couplers, the immediately next operation is measurement, and the phase
+                    // effects make no observable difference.
+                    testCase->Swap(b1, b2);
+
+                    continue;
+                }
 
                 testCase->TrySeparate(b1, b2);
-
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different.
-                testCase->ISwap(b1, b2);
-                // "1/6 of CZ" is read to indicate the 6th root.
-                testCase->MCPhase(controls, ONE_CMPLX, sixthRoot, b2);
-                // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                std::cout << "qReg->Coupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                testCase->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
             }
         }
 
@@ -4978,18 +4959,18 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                     continue;
                 }
 
-                const std::vector<bitLenInt> controls = { b1 };
+                std::cout << "qReg->FSim(PI_R1 / 2, -PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+
+                if (d == (n - 1)) {
+                    // For the last layer of couplers, the immediately next operation is measurement, and the phase
+                    // effects make no observable difference.
+                    testCase->Swap(b1, b2);
+
+                    continue;
+                }
 
                 testCase->TrySeparate(b1, b2);
-
-                // "1/6 of CZ" is read to indicate the 6th root.
-                testCase->MCPhase(controls, ONE_CMPLX, iSixthRoot, b2);
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different.
-                testCase->IISwap(b1, b2);
-                // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                std::cout << "qReg->ICoupler(" << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                testCase->FSim(PI_R1 / 2, -PI_R1 / 6, b1, b2);
             }
 
             std::vector<int>& layer1QbRands = gate1QbRands[d];
