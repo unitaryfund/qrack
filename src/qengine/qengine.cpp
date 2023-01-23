@@ -448,11 +448,8 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
         Apply2x2(qPowersSorted[0U], qPowersSorted[1U], fSimSwap, 2U, qPowersSorted, false);
     }
 
-    const complex phiExp = exp(complex(ZERO_R1, (real1)phi));
-    if (!IS_NORM_0(phiExp)) {
-        const std::vector<bitLenInt> controls{ qubit1 };
-        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-    }
+    const std::vector<bitLenInt> controls{ qubit1 };
+    MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
 }
 
 real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
