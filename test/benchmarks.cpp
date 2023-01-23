@@ -3193,7 +3193,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         continue;
                     }
 
-                    // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" <<
+                    // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
                     // std::endl;
 
                     if (d == (benchmarkDepth - 1)) {
@@ -4380,7 +4380,8 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                 continue;
             }
 
-            // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+            // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
+            // std::endl;
 
             if (d == (n - 1)) {
                 // For the last layer of couplers, the immediately next operation is measurement, and the phase effects
@@ -4442,7 +4443,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     continue;
                 }
 
-                // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" <<
+                // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
                 // std::endl;
 
                 if (d == (n - 1)) {
@@ -4654,7 +4655,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                     continue;
                 }
 
-                // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" <<
+                // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
                 // std::endl;
 
                 if (d == ((n >> 1U) - 1)) {
@@ -4682,7 +4683,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                     continue;
                 }
 
-                // std::cout << "qReg->FSim(PI_R1 / 2, -PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                // std::cout << "qReg->FSim(PI_R1 / 2, -PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" << std::endl;
 
                 if (d == ((n >> 1U) - 1)) {
                     // For the last layer of couplers, the immediately next operation is measurement, and the phase
@@ -4912,7 +4913,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                     continue;
                 }
 
-                std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");"
+                std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");"
                           << std::endl;
 
                 if (d == (n - 1)) {
@@ -4958,7 +4959,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                     continue;
                 }
 
-                std::cout << "qReg->FSim(PI_R1 / 2, -PI_R1 / 6," << (int)b1 << ", " << (int)b2 << ");" << std::endl;
+                std::cout << "qReg->FSim(PI_R1 / 2, -PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" << std::endl;
 
                 if (d == (n - 1)) {
                     // For the last layer of couplers, the immediately next operation is measurement, and the phase
