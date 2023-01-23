@@ -442,19 +442,17 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
         std::swap(qubit1, qubit2);
     }
 
-    if (abs(ONE_R1 - cosTheta) > REAL1_EPSILON) {
-        const complex fSimSwap[4U]{ complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta), complex(ZERO_R1, sinTheta),
+    if (abs(ONE_R1 - cosTheta) > FP_NORM_EPSILON) {
+        const complex fSimSwap[4U]{ complex(cosTheta, ZERO_R1), complex(ZERO_R1, -sinTheta), complex(ZERO_R1, -sinTheta),
             complex(cosTheta, ZERO_R1) };
         const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
         Apply2x2(qPowersSorted[0U], qPowersSorted[1U], fSimSwap, 2U, qPowersSorted, false);
     }
 
-    if (abs(phi) <= REAL1_EPSILON) {
-        return;
+    if (abs(phi) > FP_NORM_EPSILON) {
+        const std::vector<bitLenInt> controls{ qubit1 };
+        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
     }
-
-    const std::vector<bitLenInt> controls{ qubit1 };
-    MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
 }
 
 real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)

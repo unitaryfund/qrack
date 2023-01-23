@@ -1877,6 +1877,12 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    if (IS_1_R1(sinTheta)) {
+        IISwap(qubit1, qubit2);
+        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        return;
+    }
+
     if (qubit1 >= qubitCount) {
         throw std::invalid_argument("QUnit::FSim qubit index parameter must be within allocated qubit bounds!");
     }
