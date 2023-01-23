@@ -435,21 +435,21 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 }
 void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    const real1 cosTheta = (real1)cos(theta);
-    const real1 sinTheta = (real1)sin(theta);
-
     if (qubit2 < qubit1) {
         std::swap(qubit1, qubit2);
     }
 
-    if (abs(ONE_R1 - cosTheta) > FP_NORM_EPSILON) {
-        const complex fSimSwap[4U]{ complex(cosTheta, ZERO_R1), complex(ZERO_R1, -sinTheta), complex(ZERO_R1, -sinTheta),
-            complex(cosTheta, ZERO_R1) };
+    const real1 sinTheta = (real1)sin(theta);
+    if ((sinTheta * sinTheta) > FP_NORM_EPSILON) {
+        const real1 cosTheta = (real1)cos(theta);
+        const complex fSimSwap[4U]{ complex(cosTheta, ZERO_R1), complex(ZERO_R1, -sinTheta),
+            complex(ZERO_R1, -sinTheta), complex(cosTheta, ZERO_R1) };
         const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
         Apply2x2(qPowersSorted[0U], qPowersSorted[1U], fSimSwap, 2U, qPowersSorted, false);
     }
 
-    if (abs(phi) > FP_NORM_EPSILON) {
+    const complex phiExp = exp(complex(ZERO_R1, (real1)phi));
+    if (!IS_NORM_0(phiExp)) {
         const std::vector<bitLenInt> controls{ qubit1 };
         MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
     }
