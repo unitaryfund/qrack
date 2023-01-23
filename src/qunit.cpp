@@ -1869,17 +1869,21 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
+    const bool wasSameUnit = IS_SAME_UNIT(shards[qubit1], shards[qubit2]) &&
+        (!ARE_CLIFFORD(shards[qubit1], shards[qubit2]) || !(IS_1_CMPLX(expIPhi) || IS_1_CMPLX(-expIPhi)));
+
     const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
-    if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
+    if (!wasSameUnit && ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON)) {
         ISwap(qubit1, qubit2);
-        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         return;
     }
 
     const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
-    if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
+    if (!wasSameUnit && ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON)) {
         IISwap(qubit1, qubit2);
-        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         return;
     }
 
