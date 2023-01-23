@@ -4044,8 +4044,7 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
             setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
         }
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0);
-        testCase->SetPermutation(randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < (n >> 1U); d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -4193,7 +4192,8 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Fidelity for SDRP=" << sdrp << ": " << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
+        std::cout << "(Square root) fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
+                  << ", Time:"
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
                   << "s" << std::endl;
@@ -4622,8 +4622,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
             setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
         }
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0);
-        testCase->SetPermutation(randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < (n >> 1U); d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -4720,7 +4719,8 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Fidelity for SDRP=" << sdrp << ": " << norm(testCase->GetAmplitude(randPerm)) << ", Time:"
+        std::cout << "(Square root) fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
+                  << ", Time:"
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
                   << "s" << std::endl;
@@ -4880,8 +4880,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
             setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
         }
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0);
-        testCase->SetPermutation(randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < n; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -4996,7 +4995,8 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Mirror fidelity for SDRP=" << sdrp << ": " << norm(testCase->GetAmplitude(randPerm)) << std::endl;
+        std::cout << "(Square root) mirror fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
+                  << std::endl;
         std::cout << "Inverse circuit execution time: "
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
