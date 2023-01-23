@@ -3204,7 +3204,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         continue;
                     }
 
-                    qReg->TrySeparate(b1, b2);
+                    // qReg->TrySeparate(b1, b2);
                     qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
                 }
             }
@@ -4390,7 +4390,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                 continue;
             }
 
-            goldStandard->TrySeparate(b1, b2);
+            // goldStandard->TrySeparate(b1, b2);
             goldStandard->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
         }
     }
@@ -4453,7 +4453,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     continue;
                 }
 
-                testCase->TrySeparate(b1, b2);
+                // testCase->TrySeparate(b1, b2);
                 testCase->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
             }
         }
@@ -4666,7 +4666,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                     continue;
                 }
 
-                testCase->TrySeparate(b1, b2);
+                // testCase->TrySeparate(b1, b2);
                 testCase->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
             }
         }
@@ -4693,7 +4693,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                     continue;
                 }
 
-                testCase->TrySeparate(b1, b2);
+                // testCase->TrySeparate(b1, b2);
                 testCase->FSim(PI_R1 / 2, -PI_R1 / 6, b1, b2);
             }
 
@@ -4924,7 +4924,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                     continue;
                 }
 
-                testCase->TrySeparate(b1, b2);
+                // testCase->TrySeparate(b1, b2);
                 testCase->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
             }
         }
@@ -4969,7 +4969,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                     continue;
                 }
 
-                testCase->TrySeparate(b1, b2);
+                // testCase->TrySeparate(b1, b2);
                 testCase->FSim(PI_R1 / 2, -PI_R1 / 6, b1, b2);
             }
 
