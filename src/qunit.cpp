@@ -738,7 +738,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     const real1_f r = sqrt(x * x + y * y + z * z);
-    if (((ONE_R1 - r) > separabilityThreshold) || (r > (ONE_R1 + separabilityThreshold))) {
+    if ((ONE_R1 - r) > separabilityThreshold) {
         return false;
     }
 
