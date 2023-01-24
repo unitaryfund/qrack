@@ -4376,7 +4376,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
             const bitLenInt b1 = multiGate.b1;
             const bitLenInt b2 = multiGate.b2;
 
-            if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+            if ((w == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
                 continue;
             }
 
@@ -4439,7 +4439,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                 const bitLenInt b1 = multiGate.b1;
                 const bitLenInt b2 = multiGate.b2;
 
-                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                if ((w == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
                     continue;
                 }
 
@@ -4651,7 +4651,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                 const bitLenInt b1 = multiGate.b1;
                 const bitLenInt b2 = multiGate.b2;
 
-                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                if ((w == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
                     continue;
                 }
 
@@ -4679,7 +4679,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                 const bitLenInt b1 = multiGate.b1;
                 const bitLenInt b2 = multiGate.b2;
 
-                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                if ((w == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
                     continue;
                 }
 
@@ -4909,7 +4909,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                 const bitLenInt b1 = multiGate.b1;
                 const bitLenInt b2 = multiGate.b2;
 
-                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                if ((w == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
                     continue;
                 }
 
@@ -4955,7 +4955,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                 const bitLenInt b1 = multiGate.b1;
                 const bitLenInt b2 = multiGate.b2;
 
-                if ((w == 54U) && (b1 == deadQubit) || (b2 == deadQubit)) {
+                if ((w == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
                     continue;
                 }
 
