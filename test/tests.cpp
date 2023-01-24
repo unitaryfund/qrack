@@ -6601,6 +6601,11 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     int gate;
 
+    std::vector<bitCapInt> qPowers(n);
+    for (int i = 0; i < n; ++i) {
+        qPowers[i] = pow2(i);
+    }
+
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
@@ -6770,9 +6775,9 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             }
         }
 
-        bitCapInt result = testCase->MAll();
+        std::map<bitCapInt, int> result = testCase->MultiShotMeasureMask(qPowers, 100U);
 
-        if (result != randPerm) {
+        if ((result.size() > 1U) || (result.begin()->first != randPerm)) {
             for (d = 0; d < Depth; d++) {
                 std::vector<int>& layer1QbRands = gate1QbRands[d];
                 for (i = 0; i < (int)layer1QbRands.size(); i++) {
@@ -6954,6 +6959,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             }
         }
 
-        REQUIRE(result == randPerm);
+        REQUIRE(result.size() == 1U);
+        REQUIRE(result.begin()->first == randPerm);
     }
 }

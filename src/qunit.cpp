@@ -1544,7 +1544,13 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
         return std::map<bitCapInt, int>();
     }
 
-    ToPermBasisProb();
+    if (qPowers.size() == shards.size()) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            RevertBasis1Qb(i);
+        }
+    } else {
+        ToPermBasisProb();
+    }
 
     bitLenInt index;
     std::vector<bitLenInt> qIndices(qPowers.size());
@@ -1679,7 +1685,38 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
         combinedResults = nCombinedResults;
     }
 
-    return combinedResults;
+    if (qPowers.size() != shards.size()) {
+        return combinedResults;
+    }
+
+    std::map<bitCapInt, int> toRet;
+    for (auto mapPerm = combinedResults.begin(); mapPerm != combinedResults.end(); ++mapPerm) {
+        bitCapInt perm = mapPerm->first;
+
+        for (size_t i = 0U; i < qIndices.size(); ++i) {
+            QEngineShard& shard = shards[qIndices[i]];
+            ShardToPhaseMap controlsShards = ((perm >> i) & 1U) ? shard.controlsShards : shard.antiControlsShards;
+            for (auto phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); ++phaseShard) {
+                if (!phaseShard->second->isInvert) {
+                    continue;
+                }
+
+                QEngineShardPtr partner = phaseShard->first;
+                const bitLenInt target = FindShardIndex(partner);
+
+                for (size_t j = 0U; j < qIndices.size(); ++j) {
+                    if (qIndices[j] == target) {
+                        perm ^= pow2(j);
+                        break;
+                    }
+                }
+            }
+        }
+
+        toRet[perm] += mapPerm->second;
+    }
+
+    return toRet;
 }
 
 void QUnit::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
@@ -1688,38 +1725,41 @@ void QUnit::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned
         return;
     }
 
-    ToPermBasisProb();
+    if (qPowers.size() != shards.size()) {
+        ToPermBasisProb();
 
-    QInterfacePtr unit = shards[log2(qPowers[0U])].unit;
-    if (unit) {
-        std::vector<bitCapInt> mappedIndices(qPowers.size());
-        for (bitLenInt j = 0U; j < qubitCount; ++j) {
-            if (qPowers[0U] == pow2(j)) {
-                mappedIndices[0U] = pow2(shards[j].mapped);
-                break;
-            }
-        }
-        for (size_t i = 1U; i < qPowers.size(); ++i) {
-            const size_t qubit = log2(qPowers[i]);
-            if (qubit >= qubitCount) {
-                throw std::invalid_argument("QUnit::MultiShotMeasureMask parameter qPowers array values must be within "
-                                            "allocated qubit bounds!");
-            }
-            if (unit != shards[qubit].unit) {
-                unit = NULL;
-                break;
-            }
+        QInterfacePtr unit = shards[log2(qPowers[0U])].unit;
+        if (unit) {
+            std::vector<bitCapInt> mappedIndices(qPowers.size());
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
-                if (qPowers[i] == pow2(j)) {
-                    mappedIndices[i] = pow2(shards[j].mapped);
+                if (qPowers[0U] == pow2(j)) {
+                    mappedIndices[0U] = pow2(shards[j].mapped);
                     break;
                 }
             }
-        }
+            for (size_t i = 1U; i < qPowers.size(); ++i) {
+                const size_t qubit = log2(qPowers[i]);
+                if (qubit >= qubitCount) {
+                    throw std::invalid_argument(
+                        "QUnit::MultiShotMeasureMask parameter qPowers array values must be within "
+                        "allocated qubit bounds!");
+                }
+                if (unit != shards[qubit].unit) {
+                    unit = NULL;
+                    break;
+                }
+                for (bitLenInt j = 0U; j < qubitCount; ++j) {
+                    if (qPowers[i] == pow2(j)) {
+                        mappedIndices[i] = pow2(shards[j].mapped);
+                        break;
+                    }
+                }
+            }
 
-        if (unit) {
-            unit->MultiShotMeasureMask(mappedIndices, shots, shotsArray);
-            return;
+            if (unit) {
+                unit->MultiShotMeasureMask(mappedIndices, shots, shotsArray);
+                return;
+            }
         }
     }
 
@@ -4283,7 +4323,7 @@ void QUnit::CommuteH(bitLenInt bitIndex)
             continue;
         }
 
-        bitLenInt control = FindShardIndex(partner);
+        const bitLenInt control = FindShardIndex(partner);
         shard.RemoveControl(partner);
         ApplyBuffer(buffer, control, bitIndex, false);
     }
