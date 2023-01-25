@@ -3685,10 +3685,8 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
     const int GateCount2Qb = 8;
     const int w = max_qubits;
     const int n = benchmarkDepth;
-    const int testTimeout = timeout < 0 ? 60000 : timeout;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
-    std::cout << "Repetition timeout: " << testTimeout << " ms" << std::endl;
 
     int d;
     int i;
@@ -3766,7 +3764,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 0.5;
+    double sdrp = 1.0;
 
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 
@@ -3851,13 +3849,10 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
 
     start = std::chrono::high_resolution_clock::now();
 
-    while (
-        (sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::milliseconds(testTimeout)) {
+    while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
 
-        if (sdrp > FP_NORM_EPSILON) {
-            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
-        }
+        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
@@ -3951,10 +3946,8 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
     const int GateCount2Qb = 8;
     const int w = max_qubits;
     const int n = benchmarkDepth;
-    const int testTimeout = timeout < 0 ? 60000 : timeout;
     std::cout << "Circuit width: " << w << std::endl;
-    std::cout << "Circuit layer depth: " << n << std::endl;
-    std::cout << "Repetition timeout: " << testTimeout << " ms" << std::endl;
+    std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
     int d;
     int i;
@@ -3983,7 +3976,7 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
 
-    for (d = 0; d < (n >> 1U); d++) {
+    for (d = 0; d < n; d++) {
         std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
         for (i = 0; i < w; i++) {
             SingleQubitGate gate1qb;
@@ -4032,21 +4025,16 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 0.5;
+    double sdrp = 1.0;
 
-    while (
-        (sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::milliseconds(testTimeout)) {
+    while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
 
-        if (sdrp < FP_NORM_EPSILON) {
-            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
-        } else {
-            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
-        }
+        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
-        for (d = 0; d < (n >> 1U); d++) {
+        for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
             for (i = 0; i < (int)layer1QbRands.size(); i++) {
                 SingleQubitGate gate1Qb = layer1QbRands[i];
@@ -4117,7 +4105,7 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
         }
 
         // Mirror the circuit
-        for (d = (n >> 1U) - 1U; d >= 0; d--) {
+        for (d = n - 1U; d >= 0; d--) {
             std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
             for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
                 MultiQubitGate multiGate = layerMultiQbRands[i];
@@ -4209,10 +4197,8 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 
     const int w = max_qubits;
     const int n = benchmarkDepth;
-    const int testTimeout = timeout < 0 ? 60000 : timeout;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
-    std::cout << "Repetition timeout: " << testTimeout << " ms" << std::endl;
 
     // The test runs 2 bit gates according to a tiling sequence.
     // The 1 bit indicates +/- column offset.
@@ -4342,7 +4328,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 0.5;
+    double sdrp = 1.0;
 
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 
@@ -4403,13 +4389,10 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 
     start = std::chrono::high_resolution_clock::now();
 
-    while (
-        (sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::milliseconds(testTimeout)) {
+    while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
 
-        if (sdrp > FP_NORM_EPSILON) {
-            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
-        }
+        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
@@ -4478,10 +4461,8 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
 
     const int w = max_qubits;
     const int n = benchmarkDepth;
-    const int testTimeout = timeout < 0 ? 60000 : timeout;
     std::cout << "Circuit width: " << w << std::endl;
-    std::cout << "Circuit layer depth: " << n << std::endl;
-    std::cout << "Repetition timeout: " << testTimeout << " ms" << std::endl;
+    std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
     // The test runs 2 bit gates according to a tiling sequence.
     // The 1 bit indicates +/- column offset.
@@ -4510,10 +4491,10 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
     int row, col;
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 0.5;
+    double sdrp = 1.0;
 
-    std::vector<std::vector<int>> gate1QbRands(n >> 1U);
-    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n >> 1U);
+    std::vector<std::vector<int>> gate1QbRands(n);
+    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
     std::vector<int> lastSingleBitGates;
 
     std::vector<QInterfaceEngine> engineStack;
@@ -4534,7 +4515,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
-    for (d = 0; d < (n >> 1U); d++) {
+    for (d = 0; d < n; d++) {
         std::vector<int> layer1QbRands;
         std::vector<MultiQubitGate> layerMultiQbRands;
         for (i = 0; i < w; ++i) {
@@ -4613,19 +4594,14 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
         randPerm = pow2Ocl(w) - 1U;
     }
 
-    while (
-        (sdrp >= 0) && (std::chrono::high_resolution_clock::now() - start) < std::chrono::milliseconds(testTimeout)) {
+    while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
 
-        if (sdrp < FP_NORM_EPSILON) {
-            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
-        } else {
-            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
-        }
+        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
-        for (d = 0; d < (n >> 1U); d++) {
+        for (d = 0; d < n; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             for (i = 0; i < (int)layer1QbRands.size(); i++) {
                 if ((w == 54U) && (i == deadQubit)) {
@@ -4658,7 +4634,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                 // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
                 // std::endl;
 
-                if (d == ((n >> 1U) - 1)) {
+                if (d == (n - 1)) {
                     // For the last layer of couplers, the immediately next operation is measurement, and the phase
                     // effects make no observable difference.
                     testCase->Swap(b1, b2);
@@ -4672,7 +4648,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
         }
 
         // Mirror the circuit
-        for (d = (n >> 1U) - 1U; d >= 0; d--) {
+        for (d = n - 1U; d >= 0; d--) {
             std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
             for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
                 MultiQubitGate multiGate = layerMultiQbRands[i];
@@ -4685,7 +4661,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
 
                 // std::cout << "qReg->FSim(PI_R1 / 2, -PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" << std::endl;
 
-                if (d == ((n >> 1U) - 1)) {
+                if (d == (n - 1)) {
                     // For the last layer of couplers, the immediately next operation is measurement, and the phase
                     // effects make no observable difference.
                     testCase->Swap(b1, b2);
@@ -4763,7 +4739,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
 
     int row, col;
 
-    double sdrp = 0.5;
+    double sdrp = 1.0;
 
     std::vector<bitCapInt> qPowers;
     for (bitLenInt i = 0U; i < w; ++i) {
