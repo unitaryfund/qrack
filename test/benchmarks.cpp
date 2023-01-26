@@ -4402,22 +4402,24 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
             }
         }
 
-        std::cout << "Circuit execution time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const int exeTime =
+            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count();
+        std::cout << "Circuit execution time: " << exeTime << "s" << std::endl;
         std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
         start = std::chrono::high_resolution_clock::now();
-        testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
-        for (size_t i = 0U; i < 1000000U; ++i) {
-            std::cout << results.get()[i] << std::endl;
+        if (exeTime > 360) {
+            testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
+            for (size_t i = 0U; i < 1000000U; ++i) {
+                std::cout << results.get()[i] << std::endl;
+            }
+            std::cout << "(You should apply XEB against ideal simulation measurements, to find the true fidelity...)"
+                      << std::endl;
+            std::cout << "Measurement sampling time: "
+                      << std::chrono::duration_cast<std::chrono::seconds>(
+                             std::chrono::high_resolution_clock::now() - start)
+                             .count()
+                      << "s" << std::endl;
         }
-        std::cout << "(You should apply XEB against ideal simulation measurements, to find the true fidelity...)"
-                  << std::endl;
-        std::cout << "Measurement sampling time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
 
         // Mirror the circuit
         start = std::chrono::high_resolution_clock::now();
@@ -5461,22 +5463,24 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
             }
         }
 
-        std::cout << "Circuit execution time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const int exeTime =
+            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count();
+        std::cout << "Circuit execution time: " << exeTime << "s" << std::endl;
         std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
         start = std::chrono::high_resolution_clock::now();
-        testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
-        for (size_t i = 0U; i < 1000000U; ++i) {
-            std::cout << results.get()[i] << std::endl;
+        if (exeTime > 360) {
+            testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
+            for (size_t i = 0U; i < 1000000U; ++i) {
+                std::cout << results.get()[i] << std::endl;
+            }
+            std::cout << "(You should apply XEB against ideal simulation measurements, to find the true fidelity...)"
+                      << std::endl;
+            std::cout << "Measurement sampling time: "
+                      << std::chrono::duration_cast<std::chrono::seconds>(
+                             std::chrono::high_resolution_clock::now() - start)
+                             .count()
+                      << "s" << std::endl;
         }
-        std::cout << "(You should apply XEB against ideal simulation measurements, to find the true fidelity...)"
-                  << std::endl;
-        std::cout << "Measurement sampling time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
 
         // Mirror the circuit
         start = std::chrono::high_resolution_clock::now();
@@ -6292,22 +6296,24 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
             }
         }
 
-        std::cout << "Circuit execution time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const int exeTime =
+            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count();
+        std::cout << "Circuit execution time: " << exeTime << "s" << std::endl;
         std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
         start = std::chrono::high_resolution_clock::now();
-        testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
-        for (size_t i = 0U; i < 1000000U; ++i) {
-            std::cout << results.get()[i] << std::endl;
+        if (exeTime > 360) {
+            testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
+            for (size_t i = 0U; i < 1000000U; ++i) {
+                std::cout << results.get()[i] << std::endl;
+            }
+            std::cout << "(You should apply XEB against ideal simulation measurements, to find the true fidelity...)"
+                      << std::endl;
+            std::cout << "Measurement sampling time: "
+                      << std::chrono::duration_cast<std::chrono::seconds>(
+                             std::chrono::high_resolution_clock::now() - start)
+                             .count()
+                      << "s" << std::endl;
         }
-        std::cout << "(You should apply XEB against ideal simulation measurements, to find the true fidelity...)"
-                  << std::endl;
-        std::cout << "Measurement sampling time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
 
         // Mirror the circuit
         start = std::chrono::high_resolution_clock::now();
