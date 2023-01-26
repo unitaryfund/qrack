@@ -3934,7 +3934,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
                          .count()
                   << "s" << std::endl;
 
-        sdrp -= 0.0125;
+        sdrp -= 0.025;
     }
 }
 
@@ -4186,7 +4186,7 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
                          .count()
                   << "s" << std::endl;
 
-        sdrp -= 0.0125;
+        sdrp -= 0.025;
     }
 }
 
@@ -4503,7 +4503,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
                          .count()
                   << "s" << std::endl;
 
-        sdrp -= 0.0125;
+        sdrp -= 0.025;
     }
 }
 
@@ -4767,7 +4767,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                          .count()
                   << "s" << std::endl;
 
-        sdrp -= 0.0125;
+        sdrp -= 0.025;
     }
 }
 
@@ -5019,7 +5019,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
                          .count()
                   << "s" << std::endl;
 
-        sdrp -= 0.0125;
+        sdrp -= 0.025;
     }
 }
 
@@ -5307,6 +5307,6 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
                          .count()
                   << "s" << std::endl;
 
-        sdrp -= 0.0125;
+        sdrp -= 0.025;
     }
 }
