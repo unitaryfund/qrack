@@ -4405,9 +4405,9 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         const int exeTime =
             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count();
         std::cout << "Circuit execution time: " << exeTime << "s" << std::endl;
-        std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         if (exeTime > 360) {
+            std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
             testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
             for (size_t i = 0U; i < 1000000U; ++i) {
                 std::cout << results.get()[i] << std::endl;
@@ -5466,9 +5466,9 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         const int exeTime =
             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count();
         std::cout << "Circuit execution time: " << exeTime << "s" << std::endl;
-        std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         if (exeTime > 360) {
+            std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
             testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
             for (size_t i = 0U; i < 1000000U; ++i) {
                 std::cout << results.get()[i] << std::endl;
@@ -6299,9 +6299,9 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         const int exeTime =
             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count();
         std::cout << "Circuit execution time: " << exeTime << "s" << std::endl;
-        std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         if (exeTime > 360) {
+            std::cout << n << " depth layer random circuit measurement samples:" << std::endl;
             testCase->MultiShotMeasureMask(qPowers, 1000000U, results.get());
             for (size_t i = 0U; i < 1000000U; ++i) {
                 std::cout << results.get()[i] << std::endl;
