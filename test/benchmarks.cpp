@@ -4611,29 +4611,31 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                 // Try to pack 3-qubit gates as "greedily" as we can:
                 int tempGate = 0;
                 int b3 = 0;
-                do {
-                    tempRow = row;
-                    tempCol = col;
 
-                    tempRow += ((tempGate & 2) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
 
-                    b3 = tempRow * colLen + tempCol;
+                if (canBe3Qubit) {
+                    do {
+                        tempRow = row;
+                        tempCol = col;
 
-                    ++tempGate;
-                } while ((tempGate < 4) &&
-                    ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                        (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+                        tempRow += ((tempGate & 2) ? 1 : -1);
+                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
 
-                const bool is3Qubit = (tempGate < 4);
+                        b3 = tempRow * colLen + tempCol;
+
+                        ++tempGate;
+                    } while ((tempGate < 4) &&
+                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                            (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+                }
+
+                const bool is3Qubit = canBe3Qubit && (tempGate < 4);
                 if (is3Qubit) {
                     usedBits.push_back(b3);
-                }
-
-                if ((rng->Rand() * 2) >= ONE_R1) {
-                    std::swap(b1, b2);
-                }
-                if (is3Qubit) {
+                    if ((rng->Rand() * 2) >= ONE_R1) {
+                        std::swap(b1, b2);
+                    }
                     if ((rng->Rand() * 2) >= ONE_R1) {
                         std::swap(b1, b3);
                     }
@@ -4948,29 +4950,31 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
                 // Try to pack 3-qubit gates as "greedily" as we can:
                 int tempGate = 0;
                 int b3 = 0;
-                do {
-                    tempRow = row;
-                    tempCol = col;
 
-                    tempRow += ((tempGate & 2) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
 
-                    b3 = tempRow * colLen + tempCol;
+                if (canBe3Qubit) {
+                    do {
+                        tempRow = row;
+                        tempCol = col;
 
-                    ++tempGate;
-                } while ((tempGate < 4) &&
-                    ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                        (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+                        tempRow += ((tempGate & 2) ? 1 : -1);
+                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
 
-                const bool is3Qubit = (tempGate < 4);
+                        b3 = tempRow * colLen + tempCol;
+
+                        ++tempGate;
+                    } while ((tempGate < 4) &&
+                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                            (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+                }
+
+                const bool is3Qubit = canBe3Qubit && (tempGate < 4);
                 if (is3Qubit) {
                     usedBits.push_back(b3);
-                }
-
-                if ((rng->Rand() * 2) >= ONE_R1) {
-                    std::swap(b1, b2);
-                }
-                if (is3Qubit) {
+                    if ((rng->Rand() * 2) >= ONE_R1) {
+                        std::swap(b1, b2);
+                    }
                     if ((rng->Rand() * 2) >= ONE_R1) {
                         std::swap(b1, b3);
                     }
@@ -5280,29 +5284,31 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                 // Try to pack 3-qubit gates as "greedily" as we can:
                 int tempGate = 0;
                 int b3 = 0;
-                do {
-                    tempRow = row;
-                    tempCol = col;
 
-                    tempRow += ((tempGate & 2) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
 
-                    b3 = tempRow * colLen + tempCol;
+                if (canBe3Qubit) {
+                    do {
+                        tempRow = row;
+                        tempCol = col;
 
-                    ++tempGate;
-                } while ((tempGate < 4) &&
-                    ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                        (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+                        tempRow += ((tempGate & 2) ? 1 : -1);
+                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
 
-                const bool is3Qubit = (tempGate < 4);
+                        b3 = tempRow * colLen + tempCol;
+
+                        ++tempGate;
+                    } while ((tempGate < 4) &&
+                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                            (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+                }
+
+                const bool is3Qubit = canBe3Qubit && (tempGate < 4);
                 if (is3Qubit) {
                     usedBits.push_back(b3);
-                }
-
-                if ((rng->Rand() * 2) >= ONE_R1) {
-                    std::swap(b1, b2);
-                }
-                if (is3Qubit) {
+                    if ((rng->Rand() * 2) >= ONE_R1) {
+                        std::swap(b1, b2);
+                    }
                     if ((rng->Rand() * 2) >= ONE_R1) {
                         std::swap(b1, b3);
                     }
