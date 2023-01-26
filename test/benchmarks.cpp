@@ -4623,7 +4623,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                     ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
                         (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
 
-                const bool is3Qubit = (tempGate < 4) && ((rng->Rand() * 2) >= ONE_R1);
+                const bool is3Qubit = (tempGate < 4);
                 if (is3Qubit) {
                     usedBits.push_back(b3);
                 }
@@ -4960,7 +4960,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
                     ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
                         (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
 
-                const bool is3Qubit = (tempGate < 4) && ((rng->Rand() * 2) >= ONE_R1);
+                const bool is3Qubit = (tempGate < 4);
                 if (is3Qubit) {
                     usedBits.push_back(b3);
                 }
@@ -5292,7 +5292,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                     ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
                         (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
 
-                const bool is3Qubit = (tempGate < 4) && ((rng->Rand() * 2) >= ONE_R1);
+                const bool is3Qubit = (tempGate < 4);
                 if (is3Qubit) {
                     usedBits.push_back(b3);
                 }
