@@ -4579,72 +4579,40 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
-                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
-                int b1, b2;
-                int tempRow, tempCol, tempGate;
+                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                // In this test, the boundaries of the rectangle have no couplers.
+                // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                // awkwardly.)
 
-                if (canBe3Qubit) {
-                    tempGate = 0U;
-                    do {
-                        tempRow = row;
-                        tempCol = col;
+                int b1 = row * colLen + col;
 
-                        tempRow += ((tempGate & 2) ? 1 : -1);
-                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
+                    continue;
+                }
 
-                        b1 = tempRow * colLen + tempCol;
+                int tempRow = row;
+                int tempCol = col;
 
-                        ++tempGate;
-                    } while ((tempGate < 4) &&
-                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                            (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end())));
-                    tempGate = 0U;
-                    do {
-                        tempRow = row;
-                        tempCol = col;
+                tempRow += ((gate & 2U) ? 1 : -1);
+                tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
-                        tempRow += ((tempGate & 2) ? 1 : -1);
-                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                int b2 = tempRow * colLen + tempCol;
 
-                        b2 = tempRow * colLen + tempCol;
-
-                        ++tempGate;
-                    } while ((tempGate < 4) &&
-                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                            (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())));
-                } else {
-                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                    // In this test, the boundaries of the rectangle have no couplers.
-                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
-                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
-                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
-                    // awkwardly.)
-                    b1 = row * colLen + col;
-
-                    if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
-                        continue;
-                    }
-
-                    int tempRow = row;
-                    int tempCol = col;
-
-                    tempRow += ((gate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
-
-                    b2 = tempRow * colLen + tempCol;
-
-                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                        (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
-                        continue;
-                    }
+                if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                    (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                    continue;
                 }
 
                 usedBits.push_back(b1);
                 usedBits.push_back(b2);
 
                 // Try to pack 3-qubit gates as "greedily" as we can:
-                tempGate = 0;
+                int tempGate = 0;
                 int b3 = 0;
+
+                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
 
                 if (canBe3Qubit) {
                     do {
@@ -4950,72 +4918,40 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
-                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
-                int b1, b2;
-                int tempRow, tempCol, tempGate;
+                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                // In this test, the boundaries of the rectangle have no couplers.
+                // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                // awkwardly.)
 
-                if (canBe3Qubit) {
-                    tempGate = 0;
-                    do {
-                        tempRow = row;
-                        tempCol = col;
+                int b1 = row * colLen + col;
 
-                        tempRow += ((tempGate & 2) ? 1 : -1);
-                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
+                    continue;
+                }
 
-                        b1 = tempRow * colLen + tempCol;
+                int tempRow = row;
+                int tempCol = col;
 
-                        ++tempGate;
-                    } while ((tempGate < 4) &&
-                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                            (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end())));
-                    tempGate = 0;
-                    do {
-                        tempRow = row;
-                        tempCol = col;
+                tempRow += ((gate & 2U) ? 1 : -1);
+                tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
-                        tempRow += ((tempGate & 2) ? 1 : -1);
-                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                int b2 = tempRow * colLen + tempCol;
 
-                        b2 = tempRow * colLen + tempCol;
-
-                        ++tempGate;
-                    } while ((tempGate < 4) &&
-                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                            (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())));
-                } else {
-                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                    // In this test, the boundaries of the rectangle have no couplers.
-                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
-                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
-                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
-                    // awkwardly.)
-                    b1 = row * colLen + col;
-
-                    if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
-                        continue;
-                    }
-
-                    int tempRow = row;
-                    int tempCol = col;
-
-                    tempRow += ((gate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
-
-                    b2 = tempRow * colLen + tempCol;
-
-                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                        (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
-                        continue;
-                    }
+                if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                    (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                    continue;
                 }
 
                 usedBits.push_back(b1);
                 usedBits.push_back(b2);
 
                 // Try to pack 3-qubit gates as "greedily" as we can:
-                tempGate = 0;
+                int tempGate = 0;
                 int b3 = 0;
+
+                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
 
                 if (canBe3Qubit) {
                     do {
@@ -5316,72 +5252,40 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
-                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
-                int b1, b2;
-                int tempRow, tempCol, tempGate;
+                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                // In this test, the boundaries of the rectangle have no couplers.
+                // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                // awkwardly.)
 
-                if (canBe3Qubit) {
-                    tempGate = 0;
-                    do {
-                        tempRow = row;
-                        tempCol = col;
+                int b1 = row * colLen + col;
 
-                        tempRow += ((tempGate & 2) ? 1 : -1);
-                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
+                    continue;
+                }
 
-                        b1 = tempRow * colLen + tempCol;
+                int tempRow = row;
+                int tempCol = col;
 
-                        ++tempGate;
-                    } while ((tempGate < 4) &&
-                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                            (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end())));
-                    tempGate = 0;
-                    do {
-                        tempRow = row;
-                        tempCol = col;
+                tempRow += ((gate & 2U) ? 1 : -1);
+                tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
-                        tempRow += ((tempGate & 2) ? 1 : -1);
-                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
+                int b2 = tempRow * colLen + tempCol;
 
-                        b2 = tempRow * colLen + tempCol;
-
-                        ++tempGate;
-                    } while ((tempGate < 4) &&
-                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                            (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())));
-                } else {
-                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                    // In this test, the boundaries of the rectangle have no couplers.
-                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
-                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
-                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
-                    // awkwardly.)
-                    b1 = row * colLen + col;
-
-                    if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
-                        continue;
-                    }
-
-                    int tempRow = row;
-                    int tempCol = col;
-
-                    tempRow += ((gate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
-
-                    b2 = tempRow * colLen + tempCol;
-
-                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                        (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
-                        continue;
-                    }
+                if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                    (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                    continue;
                 }
 
                 usedBits.push_back(b1);
                 usedBits.push_back(b2);
 
                 // Try to pack 3-qubit gates as "greedily" as we can:
-                tempGate = 0;
+                int tempGate = 0;
                 int b3 = 0;
+
+                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
 
                 if (canBe3Qubit) {
                     do {
