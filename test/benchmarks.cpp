@@ -4537,8 +4537,6 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     int d;
     int i;
 
-    int gate;
-
     std::vector<QInterfaceEngine> engineStack;
     if (optimal) {
 #if ENABLE_OPENCL
@@ -4570,10 +4568,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
             layer1QbRands.push_back(gate1qb);
         }
 
-        gate = gateSequence.front();
-        gateSequence.pop_front();
-        gateSequence.push_back(gate);
-
+        int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
@@ -4612,7 +4607,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                 int tempGate = 0;
                 int b3 = 0;
 
-                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
+                const bool canBe3Qubit = (d & 1U);
 
                 if (canBe3Qubit) {
                     do {
@@ -4665,6 +4660,11 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
 
                 layerMultiQbRands.push_back(multiGate);
             }
+        }
+
+        if (d & 1) {
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
         }
     }
 
@@ -4876,8 +4876,6 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
     int d;
     int i;
 
-    int gate;
-
     std::vector<QInterfaceEngine> engineStack;
     if (optimal) {
 #if ENABLE_OPENCL
@@ -4909,10 +4907,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
             layer1QbRands.push_back(gate1qb);
         }
 
-        gate = gateSequence.front();
-        gateSequence.pop_front();
-        gateSequence.push_back(gate);
-
+        int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
@@ -4951,7 +4946,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
                 int tempGate = 0;
                 int b3 = 0;
 
-                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
+                const bool canBe3Qubit = (d & 1U);
 
                 if (canBe3Qubit) {
                     do {
@@ -5004,6 +4999,11 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
 
                 layerMultiQbRands.push_back(multiGate);
             }
+        }
+
+        if (d & 1) {
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
         }
     }
 
@@ -5207,8 +5207,6 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
     int d;
     int i;
 
-    int gate;
-
     std::vector<QInterfaceEngine> engineStack;
     if (optimal) {
 #if ENABLE_OPENCL
@@ -5243,10 +5241,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                       << std::endl;
         }
 
-        gate = gateSequence.front();
-        gateSequence.pop_front();
-        gateSequence.push_back(gate);
-
+        int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
@@ -5285,7 +5280,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                 int tempGate = 0;
                 int b3 = 0;
 
-                const bool canBe3Qubit = ((d / gateSequence.size()) & 1);
+                const bool canBe3Qubit = (d & 1U);
 
                 if (canBe3Qubit) {
                     do {
@@ -5375,6 +5370,11 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                               << (int)multiGate.b3 << ");" << std::endl;
                 }
             }
+        }
+
+        if (d & 1) {
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
         }
     }
 
