@@ -4181,11 +4181,14 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << ", Time:"
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -4499,12 +4502,14 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) mirror fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << std::endl;
-        std::cout << "Inverse circuit execution time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -5169,11 +5174,14 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << ", Time:"
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -5566,12 +5574,14 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) mirror fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << std::endl;
-        std::cout << "Inverse circuit execution time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6048,11 +6058,14 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_mirror", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << ", Time:"
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6333,12 +6346,14 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) mirror fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << std::endl;
-        std::cout << "Inverse circuit execution time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6667,12 +6682,14 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) mirror fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << std::endl;
-        std::cout << "Inverse circuit execution time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -7188,11 +7205,14 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << ", Time:"
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -7479,12 +7499,14 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "(Square root) mirror fidelity for SDRP=" << sdrp << ": " << abs(testCase->GetAmplitude(randPerm))
-                  << std::endl;
-        std::cout << "Inverse circuit execution time: "
-                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
-                         .count()
-                  << "s" << std::endl;
+        const real1_f rawFidelity = abs(testCase->GetAmplitude(randPerm));
+
+        // std::cout << "(Square root of) raw mirror fidelity for SDRP=" << sdrp << ": " << rawFidelity << std::endl;
+
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+
+        std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
+                  << (signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
