@@ -4188,7 +4188,7 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -4509,7 +4509,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -5181,7 +5181,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -5581,7 +5581,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6065,7 +6065,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_mirror", "[mirror]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6353,7 +6353,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6689,7 +6689,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -7212,7 +7212,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
@@ -7506,7 +7506,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Logistic curve, square root adjusted) fidelity for SDRP=" << sdrp << ": "
-                  << (signalFraction * rawFidelity) << std::endl;
+                  << (signalFraction * signalFraction * rawFidelity) << std::endl;
 
         sdrp -= 0.025;
     }
