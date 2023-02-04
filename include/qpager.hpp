@@ -270,18 +270,21 @@ public:
     void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm)
     {
-        bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
-        return qPages[subIndex]->GetAmplitude(perm & (pageMaxQPower() - ONE_BCI));
+        const bitCapIntOcl pmqp = pageMaxQPower();
+        const bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pmqp);
+        return qPages[subIndex]->GetAmplitude(perm & (pmqp - ONE_BCI));
     }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
-        bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
-        qPages[subIndex]->SetAmplitude(perm & (pageMaxQPower() - ONE_BCI), amp);
+        const bitCapIntOcl pmqp = pageMaxQPower();
+        const bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pmqp);
+        qPages[subIndex]->SetAmplitude(perm & (pmqp - ONE_BCI), amp);
     }
-    real1_f ProbAll(bitCapInt fullRegister)
+    real1_f ProbAll(bitCapInt perm)
     {
-        bitCapIntOcl subIndex = (bitCapIntOcl)(fullRegister / pageMaxQPower());
-        return qPages[subIndex]->ProbAll(fullRegister & (pageMaxQPower() - ONE_BCI));
+        const bitCapIntOcl pmqp = pageMaxQPower();
+        const bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pmqp);
+        return qPages[subIndex]->ProbAll(perm & (pmqp - ONE_BCI));
     }
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);

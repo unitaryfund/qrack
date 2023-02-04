@@ -377,6 +377,9 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
     const bitCapIntOcl targetPow = pow2Ocl(target);
     const bitCapIntOcl targetMask = targetPow - ONE_BCI;
     const bitCapIntOcl maxLcv = (bitCapIntOcl)qPages.size() >> ONE_BCI;
+#if ENABLE_PTHREAD
+    std::vector<std::future<void>> futures(maxLcv);
+#endif
     for (bitCapIntOcl i = 0U; i < maxLcv; ++i) {
         bitCapIntOcl j = i & targetMask;
         j |= (i ^ j) << ONE_BCI;
@@ -384,20 +387,34 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
         QEnginePtr engine1 = qPages[j];
         QEnginePtr engine2 = qPages[j + targetPow];
 
-        engine1->ShuffleBuffers(engine2);
-        if (!isSqiCtrl || isAnti) {
-            fn(engine1, sqi);
-        }
-        if (!isSqiCtrl || !isAnti) {
-            fn(engine2, sqi);
-        }
-        engine1->ShuffleBuffers(engine2);
+        const bool doNrm = doNormalize;
 
-        if (doNormalize) {
-            engine1->QueueSetDoNormalize(false);
-            engine2->QueueSetDoNormalize(false);
-        }
+#if ENABLE_PTHREAD
+        futures[i] = std::async(std::launch::async, [engine1, engine2, isSqiCtrl, isAnti, sqi, fn, doNrm]() {
+#endif
+            engine1->ShuffleBuffers(engine2);
+            if (!isSqiCtrl || isAnti) {
+                fn(engine1, sqi);
+            }
+            if (!isSqiCtrl || !isAnti) {
+                fn(engine2, sqi);
+            }
+            engine1->ShuffleBuffers(engine2);
+
+            if (doNrm) {
+                engine1->QueueSetDoNormalize(false);
+                engine2->QueueSetDoNormalize(false);
+            }
+#if ENABLE_PTHREAD
+        });
+#endif
     }
+
+#if ENABLE_PTHREAD
+    for (size_t i = 0U; i < futures.size(); ++i) {
+        futures[i].get();
+    }
+#endif
 }
 
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
@@ -444,6 +461,9 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
     }
 
     const bitCapIntOcl maxLcv = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
+#if ENABLE_PTHREAD
+    std::vector<std::future<void>> futures;
+#endif
     for (bitCapIntOcl i = 0U; i < maxLcv; ++i) {
         bitCapIntOcl jHi = i;
         bitCapIntOcl j = 0U;
@@ -488,15 +508,27 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
             continue;
         }
 
-        engine1->ShuffleBuffers(engine2);
-        if (!isSqiCtrl || anti) {
-            fn(engine1, sqi);
-        }
-        if (!isSqiCtrl || !anti) {
-            fn(engine2, sqi);
-        }
-        engine1->ShuffleBuffers(engine2);
+#if ENABLE_PTHREAD
+        futures.push_back(std::async(std::launch::async, [engine1, engine2, isSqiCtrl, anti, sqi, fn]() {
+#endif
+            engine1->ShuffleBuffers(engine2);
+            if (!isSqiCtrl || anti) {
+                fn(engine1, sqi);
+            }
+            if (!isSqiCtrl || !anti) {
+                fn(engine2, sqi);
+            }
+            engine1->ShuffleBuffers(engine2);
+#if ENABLE_PTHREAD
+        }));
+#endif
     }
+
+#if ENABLE_PTHREAD
+    for (size_t i = 0U; i < futures.size(); ++i) {
+        futures[i].get();
+    }
+#endif
 }
 
 // This is called when control bits are "meta-" but the target bit is below the "meta-" threshold, (low enough to
