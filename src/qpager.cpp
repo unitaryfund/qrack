@@ -706,12 +706,32 @@ QInterfacePtr QPager::Decompose(bitLenInt start, bitLenInt length)
 
 void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 {
-    CombineEngines();
+    if (start) {
+        ROR(start, 0, qubitCount);
+        Decompose(0, dest);
+        ROL(start, 0, qubitCount);
+        return;
+    }
+
+    const bitLenInt length = dest->GetQubitCount();
+    CombineEngines(length + 1U);
     dest->CombineEngines();
-    qPages[0U]->Decompose(start, dest->qPages[0U]);
-    SetQubitCount(qubitCount - dest->qubitCount);
-    SeparateEngines();
-    dest->SeparateEngines();
+
+    bool isDecomposed = false;
+    for (size_t i = 0U; i < qPages.size(); ++i) {
+        if (!isDecomposed && !qPages[i]->IsZeroAmplitude()) {
+            qPages[i]->Decompose(0U, dest->qPages[0U]);
+            dest->qPages[0U]->UpdateRunningNorm();
+            dest->qPages[0U]->NormalizeState();
+            isDecomposed = true;
+        } else {
+            qPages[i]->Dispose(0U, length);
+        }
+    }
+
+    SetQubitCount(qubitCount - length);
+
+    CombineEngines(thresholdQubitsPerPage);
 }
 
 void QPager::Dispose(bitLenInt start, bitLenInt length)
