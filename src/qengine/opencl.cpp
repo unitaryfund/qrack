@@ -184,7 +184,7 @@ void QEngineOCL::SetAmplitudePage(
 
     QEngineOCLPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineOCL>(pageEnginePtr);
 
-    if (isBadPermRange(srcOffset, length, (bitCapIntOcl)pageEnginePtr->GetMaxQPower())) {
+    if (isBadPermRange(srcOffset, length, pageEngineOclPtr->maxQPowerOcl)) {
         throw std::invalid_argument("QEngineOCL::SetAmplitudePage source range is out-of-bounds!");
     }
 

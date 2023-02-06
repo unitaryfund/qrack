@@ -113,7 +113,7 @@ void QEngineCPU::SetAmplitudePage(
 
     QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
 
-    if (isBadPermRange(srcOffset, length, (bitCapIntOcl)pageEngineCpuPtr->GetMaxQPower())) {
+    if (isBadPermRange(srcOffset, length, pageEngineCpuPtr->maxQPowerOcl)) {
         throw std::invalid_argument("QEngineCPU::SetAmplitudePage source range is out-of-bounds!");
     }
 
