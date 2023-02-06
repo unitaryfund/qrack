@@ -373,8 +373,6 @@ public:
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     void ISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, false); }
     void IISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, true); }
-    void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
-    void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     real1_f Prob(bitLenInt qubitIndex);

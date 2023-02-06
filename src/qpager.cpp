@@ -567,11 +567,6 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
 
 template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bits)
 {
-    if (qPages.size() == 1U) {
-        fn(qPages[0U]);
-        return;
-    }
-
     bitLenInt highestBit = 0U;
     for (size_t i = 0U; i < bits.size(); ++i) {
         if (bits[i] > highestBit) {
@@ -579,12 +574,7 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
         }
     }
 
-    if (highestBit >= qubitsPerPage()) {
-        CombineEngines(highestBit + 1U);
-    } else {
-        // Lazy separate: avoid cycling through combine/separate in successive CombineAndOp() calls
-        SeparateEngines(highestBit + 1U);
-    }
+    CombineEngines(highestBit + 1U);
 
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
         fn(qPages[i]);
@@ -1356,22 +1346,6 @@ void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
             qPages[i]->ISwap(qubit1, qubit2);
         }
     }
-}
-void QPager::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOp([&](QEnginePtr engine) { engine->SqrtSwap(qubit1, qubit2); }, { qubit1, qubit2 });
-}
-void QPager::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOp([&](QEnginePtr engine) { engine->ISqrtSwap(qubit1, qubit2); }, { qubit1, qubit2 });
 }
 void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
