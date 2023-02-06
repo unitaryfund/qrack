@@ -108,7 +108,7 @@ void QPager::Init()
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
         maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-        maxPageQubits = (segmentGlobalQb < (maxPageQubits - 2U)) ? maxPageQubits - segmentGlobalQb : 3U;
+        maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 1U;
     }
 
     if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL)) {
@@ -1462,7 +1462,7 @@ real1_f QPager::Prob(bitLenInt qubit)
 
 real1_f QPager::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
-    CombineEngines(log2(mask));
+    CombineEngines(log2(mask) + 1U);
 
     real1_f maskChance = ZERO_R1_F;
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
