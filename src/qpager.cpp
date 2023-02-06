@@ -766,8 +766,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     SeparateEngines(end + 1U, true);
 
     const bitLenInt qpp = qubitsPerPage();
-    const bitLenInt pageDiff = end - qpp;
-    const bitCapIntOcl diffPow = pow2Ocl(pageDiff);
+    const bitCapIntOcl diffPow = pow2Ocl(end - qpp);
     const bitCapIntOcl dP = ((bitCapIntOcl)disposedPerm) >> qpp;
 
     std::vector<QEnginePtr> nQPages;
