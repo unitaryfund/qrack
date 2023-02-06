@@ -733,6 +733,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
     SetQubitCount(qubitCount - length);
 
     CombineEngines(thresholdQubitsPerPage);
+    SeparateEngines();
 }
 
 void QPager::Dispose(bitLenInt start, bitLenInt length)
@@ -753,6 +754,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
     SetQubitCount(qubitCount - length);
 
     CombineEngines(thresholdQubitsPerPage);
+    SeparateEngines();
 }
 
 void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
@@ -773,6 +775,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     SetQubitCount(qubitCount - length);
 
     CombineEngines(thresholdQubitsPerPage);
+    SeparateEngines();
 }
 
 bitLenInt QPager::Allocate(bitLenInt start, bitLenInt length)
