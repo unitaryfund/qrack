@@ -437,7 +437,7 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
         if (!anti) {
             controlMask |= sortedMasks[i];
         }
-        sortedMasks[i]--;
+        --sortedMasks[i];
     }
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
@@ -546,7 +546,7 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
         if (!anti) {
             controlMask |= sortedMasks[i];
         }
-        sortedMasks[i]--;
+        --sortedMasks[i];
     }
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
