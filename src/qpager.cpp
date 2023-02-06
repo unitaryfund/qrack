@@ -26,7 +26,6 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     , useHardwareThreshold(false)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
-    , minPageQubits(0U)
     , thresholdQubitsPerPage(qubitThreshold)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -62,7 +61,6 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     , useHardwareThreshold(false)
     , isSparse(useSparseStateVec)
     , segmentGlobalQb(0U)
-    , minPageQubits(0U)
     , maxPageQubits(-1)
     , thresholdQubitsPerPage(qubitThreshold)
     , devID(deviceId)
@@ -140,13 +138,10 @@ void QPager::Init()
 
 #if ENABLE_PTHREAD
         const unsigned numCores = GetConcurrencyLevel();
-        minPageQubits = pStridePow + ((numCores == 1U) ? 1U : (log2(numCores - 1U) + 1U));
+        thresholdQubitsPerPage = pStridePow + ((numCores == 1U) ? 1U : (log2(numCores - 1U) + 1U));
 #else
-        minPageQubits = pStridePow + 1U;
+        thresholdQubitsPerPage = pStridePow + 1U;
 #endif
-
-        minPageQubits = (segmentGlobalQb < minPageQubits) ? (minPageQubits - segmentGlobalQb) : 1U;
-        thresholdQubitsPerPage = minPageQubits;
     }
 
 #if ENABLE_ENV_VARS
@@ -1205,48 +1200,32 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
 bitCapInt QPager::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     const unsigned char* values, bool ignored)
 {
-    CombineAndOp(
-        [&](QEnginePtr engine) { engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, true); },
-        { static_cast<bitLenInt>(indexStart + indexLength - 1U),
-            static_cast<bitLenInt>(valueStart + valueLength - 1U) });
-
-    return 0;
+    CombineEngines();
+    return qPages[0U]->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, ignored);
 }
 
 bitCapInt QPager::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, const unsigned char* values)
 {
-    CombineAndOp(
-        [&](QEnginePtr engine) {
-            engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-        },
-        { static_cast<bitLenInt>(indexStart + indexLength - 1U), static_cast<bitLenInt>(valueStart + valueLength - 1U),
-            carryIndex });
-
-    return 0;
+    CombineEngines();
+    return qPages[0U]->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 bitCapInt QPager::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, const unsigned char* values)
 {
-    CombineAndOp(
-        [&](QEnginePtr engine) {
-            engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-        },
-        { static_cast<bitLenInt>(indexStart + indexLength - 1U), static_cast<bitLenInt>(valueStart + valueLength - 1U),
-            carryIndex });
-
-    return 0;
+    CombineEngines();
+    return qPages[0U]->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 void QPager::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
-    CombineAndOp([&](QEnginePtr engine) { engine->Hash(start, length, values); },
-        { static_cast<bitLenInt>(start + length - 1U) });
+    CombineEngines();
+    return qPages[0U]->Hash(start, length, values);
 }
 
 void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    CombineAndOp([&](QEnginePtr engine) { engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), flagIndex });
+    CombineEngines();
+    qPages[0U]->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
 }
 void QPager::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {

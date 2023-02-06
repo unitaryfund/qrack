@@ -32,7 +32,6 @@ protected:
     bool isSparse;
     bool useTGadget;
     bitLenInt segmentGlobalQb;
-    bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
