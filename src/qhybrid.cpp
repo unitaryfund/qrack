@@ -39,9 +39,11 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
         const bitLenInt segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-        pagerThresholdQubits = ((pagerThresholdQubits - segmentGlobalQb) > gpuThresholdQubits)
-            ? (pagerThresholdQubits - segmentGlobalQb)
-            : (gpuThresholdQubits + 1U);
+        pagerThresholdQubits =
+            ((pagerThresholdQubits - 2U) > segmentGlobalQb) ? (pagerThresholdQubits - segmentGlobalQb) : 3U;
+        if ((pagerThresholdQubits - 1U) < gpuThresholdQubits) {
+            gpuThresholdQubits = pagerThresholdQubits - 1U;
+        }
     }
 #endif
 

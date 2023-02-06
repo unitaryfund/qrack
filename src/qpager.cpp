@@ -110,7 +110,7 @@ void QPager::Init()
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
         maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-        maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
+        maxPageQubits = (segmentGlobalQb < (maxPageQubits - 2U)) ? maxPageQubits - segmentGlobalQb : 3U;
     }
 
     if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL)) {
@@ -763,23 +763,19 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
         return;
     }
 
+    CombineEngines(end + 1U);
     SeparateEngines(end + 1U, true);
 
-    const bitLenInt pageDiff = end - qubitsPerPage();
-    const bitCapIntOcl diffPow = pow2Ocl(pageDiff);
-    const bitCapIntOcl dP = ((bitCapIntOcl)disposedPerm) << pageDiff;
-
     std::vector<QEnginePtr> nQPages;
-    for (bitCapIntOcl i = 0U; i < diffPow; ++i) {
-        nQPages.push_back(qPages[dP + i]);
-        nQPages.back()->UpdateRunningNorm();
-    }
-    real1_f nrm = ZERO_R1;
-    for (bitCapIntOcl i = 0U; i < diffPow; ++i) {
-        nrm += nQPages[i]->GetRunningNorm();
-    }
-    for (bitCapIntOcl i = 0U; i < diffPow; ++i) {
-        nQPages[i]->NormalizeState(nrm);
+    bitCapIntOcl i = 0U;
+    while ((i < qPages.size()) && !nQPages.size()) {
+        qPages[i]->UpdateRunningNorm();
+        if (qPages[i]->IsZeroAmplitude()) {
+            ++i;
+            continue;
+        }
+        qPages[i]->NormalizeState();
+        nQPages = std::vector<QEnginePtr>(1U, qPages[i]);
     }
     qPages = nQPages;
 
