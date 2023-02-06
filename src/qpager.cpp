@@ -989,14 +989,10 @@ void QPager::ApplyEitherControlledSingleBit(
     }
 
     auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
-        if (intraControls.size()) {
-            if (anti) {
-                engine->MACMtrx(intraControls, mtrx, lTarget);
-            } else {
-                engine->MCMtrx(intraControls, mtrx, lTarget);
-            }
+        if (anti) {
+            engine->MACMtrx(intraControls, mtrx, lTarget);
         } else {
-            engine->Mtrx(mtrx, lTarget);
+            engine->MCMtrx(intraControls, mtrx, lTarget);
         }
     };
 
