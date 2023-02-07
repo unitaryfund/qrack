@@ -382,7 +382,7 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
         j |= (i ^ j) << ONE_BCI;
 
         QEnginePtr engine1 = qPages[j];
-        QEnginePtr engine2 = qPages[j + targetPow];
+        QEnginePtr engine2 = qPages[j | targetPow];
 
         const bool doNrm = doNormalize;
 
@@ -478,11 +478,11 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
         j |= jHi | controlMask;
 
         if (isInvert) {
-            qPages[j].swap(qPages[j + targetPow]);
+            qPages[j].swap(qPages[j | targetPow]);
         }
 
         QEnginePtr engine1 = qPages[j];
-        QEnginePtr engine2 = qPages[j + targetPow];
+        QEnginePtr engine2 = qPages[j | targetPow];
 
         if (isSpecial) {
             if (!IS_NORM_0(ONE_CMPLX - top)) {
@@ -951,14 +951,14 @@ void QPager::ApplySingleEither(bool isInvert, complex top, complex bottom, bitLe
         j |= (i ^ j) << ONE_BCI;
 
         if (isInvert) {
-            qPages[j].swap(qPages[j + targetPow]);
+            qPages[j].swap(qPages[j | targetPow]);
         }
 
         if (!IS_NORM_0(ONE_CMPLX - top)) {
             qPages[j]->Phase(top, top, 0U);
         }
         if (!IS_NORM_0(ONE_CMPLX - bottom)) {
-            qPages[j + targetPow]->Phase(bottom, bottom, 0U);
+            qPages[j | targetPow]->Phase(bottom, bottom, 0U);
         }
     }
 }
@@ -1286,18 +1286,18 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool
         bitCapIntOcl jLo = jHi & qubit2Mask;
         j |= jLo | ((jHi ^ jLo) << ONE_BCI);
 
-        qPages[j + qubit1Pow].swap(qPages[j + qubit2Pow]);
+        qPages[j | qubit1Pow].swap(qPages[j | qubit2Pow]);
 
         if (!isIPhaseFac) {
             continue;
         }
 
         if (isInverse) {
-            qPages[j + qubit1Pow]->Phase(-I_CMPLX, -I_CMPLX, 0U);
-            qPages[j + qubit2Pow]->Phase(-I_CMPLX, -I_CMPLX, 0U);
+            qPages[j | qubit1Pow]->Phase(-I_CMPLX, -I_CMPLX, 0U);
+            qPages[j | qubit2Pow]->Phase(-I_CMPLX, -I_CMPLX, 0U);
         } else {
-            qPages[j + qubit1Pow]->Phase(I_CMPLX, I_CMPLX, 0U);
-            qPages[j + qubit2Pow]->Phase(I_CMPLX, I_CMPLX, 0U);
+            qPages[j | qubit1Pow]->Phase(I_CMPLX, I_CMPLX, 0U);
+            qPages[j | qubit2Pow]->Phase(I_CMPLX, I_CMPLX, 0U);
         }
     }
 }
