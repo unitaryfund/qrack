@@ -23,9 +23,9 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold,
     real1_f sep_thresh)
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
-    , useHardwareThreshold(false)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
+    , maxPageQubits(-1)
     , thresholdQubitsPerPage(qubitThreshold)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -58,7 +58,6 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
-    , useHardwareThreshold(false)
     , isSparse(useSparseStateVec)
     , segmentGlobalQb(0U)
     , maxPageQubits(-1)
@@ -116,7 +115,6 @@ void QPager::Init()
     }
 
     if (!thresholdQubitsPerPage && ((rootEngine == QINTERFACE_OPENCL) || (rootEngine == QINTERFACE_HYBRID))) {
-        useHardwareThreshold = true;
         useGpuThreshold = true;
 
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
@@ -126,7 +124,6 @@ void QPager::Init()
 #endif
 
     if (!thresholdQubitsPerPage) {
-        useHardwareThreshold = true;
         useGpuThreshold = false;
 
 #if ENABLE_ENV_VARS
@@ -142,6 +139,19 @@ void QPager::Init()
 #else
         thresholdQubitsPerPage = pStridePow + 1U;
 #endif
+    }
+
+    SetQubitCount(qubitCount);
+
+    maxQubits = sizeof(bitCapIntOcl) * bitsInByte;
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        maxQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    }
+#endif
+    if (qubitCount > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
 #if ENABLE_ENV_VARS
@@ -233,23 +243,6 @@ void QPager::Init()
     if (!deviceIDs.size()) {
         deviceIDs.push_back(devID);
     }
-
-    SetQubitCount(qubitCount);
-
-    maxQubits = sizeof(bitCapIntOcl) * bitsInByte;
-    if (baseQubitsPerPage > maxQubits) {
-        throw std::invalid_argument(
-            "Cannot instantiate a register with greater capacity than native types on emulating system.");
-    }
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_MAX_PAGING_QB")) {
-        maxQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-    }
-#endif
-    if (qubitCount > maxQubits) {
-        throw std::invalid_argument(
-            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
-    }
 }
 
 QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapIntOcl pageId)
@@ -292,7 +285,7 @@ void QPager::CombineEngines(bitLenInt bit)
         bit = qubitCount;
     }
 
-    if ((qPages.size() == 1U) || (bit <= qubitsPerPage())) {
+    if (bit <= qubitsPerPage()) {
         return;
     }
 
@@ -691,6 +684,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
     SetQubitCount(nQubitCount);
 
     CombineEngines(thresholdQubitsPerPage);
+    SeparateEngines();
 
     return toRet;
 }
@@ -916,13 +910,11 @@ void QPager::Mtrx(complex const* mtrx, bitLenInt target)
         return;
     }
 
-    SeparateEngines();
     SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->Mtrx(mtrx, lTarget); });
 }
 
 void QPager::ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target)
 {
-    SeparateEngines();
     bitLenInt qpp = qubitsPerPage();
 
     if (target < qpp) {
@@ -970,8 +962,6 @@ void QPager::ApplyEitherControlledSingleBit(
         Mtrx(mtrx, target);
         return;
     }
-
-    SeparateEngines(target + 1U);
 
     bitLenInt qpp = qubitsPerPage();
 

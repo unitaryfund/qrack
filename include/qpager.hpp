@@ -27,7 +27,6 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  */
 class QPager : public QEngine, public std::enable_shared_from_this<QEngine> {
 protected:
-    bool useHardwareThreshold;
     bool useGpuThreshold;
     bool isSparse;
     bool useTGadget;
