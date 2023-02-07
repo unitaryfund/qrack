@@ -53,8 +53,15 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 {
 
 #if ENABLE_OPENCL
-    DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-    maxQubitPlusAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
+    if ((engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_OPENCL) ||
+        ((engineTypes[0U] == QINTERFACE_QPAGER) &&
+            ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
+        DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
+        maxQubitPlusAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
+    } else {
+        maxQubitPlusAncillaCount =
+            getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+    }
 #else
     maxQubitPlusAncillaCount =
         getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
