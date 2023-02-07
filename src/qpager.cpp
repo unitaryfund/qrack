@@ -1270,18 +1270,20 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool
     qubit1 -= qpp;
     qubit2 -= qpp;
 
-    std::vector<bitCapIntOcl> sortedMasks(2U);
-    const bitCapIntOcl qubit1Pow = pow2Ocl(qubit1);
-    sortedMasks[0U] = qubit1Pow - ONE_BCI;
-    const bitCapIntOcl qubit2Pow = pow2Ocl(qubit2);
-    sortedMasks[1U] = qubit2Pow - ONE_BCI;
-    std::sort(sortedMasks.begin(), sortedMasks.end());
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
+    }
 
-    bitCapIntOcl maxLcv = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
+    const bitCapIntOcl qubit1Pow = pow2Ocl(qubit1);
+    const bitCapIntOcl qubit1Mask = qubit1Pow - ONE_BCI;
+    const bitCapIntOcl qubit2Pow = pow2Ocl(qubit2);
+    const bitCapIntOcl qubit2Mask = qubit2Pow - ONE_BCI;
+
+    bitCapIntOcl maxLcv = (bitCapIntOcl)qPages.size() >> 2U;
     for (bitCapIntOcl i = 0U; i < maxLcv; ++i) {
-        bitCapIntOcl j = i & sortedMasks[0U];
+        bitCapIntOcl j = i & qubit1Mask;
         bitCapIntOcl jHi = (i ^ j) << ONE_BCI;
-        bitCapIntOcl jLo = jHi & sortedMasks[1U];
+        bitCapIntOcl jLo = jHi & qubit2Mask;
         j |= jLo | ((jHi ^ jLo) << ONE_BCI);
 
         qPages[j + qubit1Pow].swap(qPages[j + qubit2Pow]);
