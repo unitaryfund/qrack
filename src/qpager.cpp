@@ -69,6 +69,7 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
 {
     Init();
     LockEngine(enginePtr);
+    SeparateEngines();
 }
 
 void QPager::Init()
@@ -1071,12 +1072,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
     }
 
-    real1 nrmlzr;
-    if (result) {
-        nrmlzr = oneChance;
-    } else {
-        nrmlzr = ONE_R1 - oneChance;
-    }
+    real1_f nrmlzr = result ? oneChance : (ONE_R1 - oneChance);
 
     if (nrmlzr <= ZERO_R1) {
         throw std::invalid_argument("QPager::ForceM() forced a measurement result with 0 probability");
@@ -1086,19 +1082,21 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         return result;
     }
 
+    const complex nrm = GetNonunitaryPhase() / (real1)std::sqrt((real1_s)nrmlzr);
+
     const bitLenInt qpp = qubitsPerPage();
     if (qubit < qpp) {
-        const complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt((real1_s)nrmlzr);
         const bitCapIntOcl qPower = pow2Ocl(qubit);
         for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            qPages[i]->ApplyM(qPower, result, nrmFac);
+            qPages[i]->ApplyM(qPower, result, nrm);
         }
     } else {
         const bitLenInt metaQubit = qubit - qpp;
         const bitCapIntOcl qPower = pow2Ocl(metaQubit);
         for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             if (!(i & qPower) == !result) {
-                qPages[i]->NormalizeState((real1_f)nrmlzr);
+                qPages[i]->Phase(nrm, nrm, 0U);
+                qPages[i]->UpdateRunningNorm();
             } else {
                 qPages[i]->ZeroAmplitudes();
             }

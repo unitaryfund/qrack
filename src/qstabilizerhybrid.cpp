@@ -42,7 +42,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0)
-    , maxQubitPlusAncillaCount(28)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -55,18 +54,15 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 
 #if ENABLE_OPENCL
     DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-    const bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
-#else
-    const bitLenInt maxPageQubits =
-        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) - 2U : 30U;
-#endif
-
+    maxQubitPlusAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex)) + 2U;
 #if ENABLE_ENV_VARS
-    maxQubitPlusAncillaCount = getenv("QRACK_MAX_PAGING_QB")
-        ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")))
-        : maxPageQubits + 2U;
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        maxQubitPlusAncillaCount = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    }
+#endif
 #else
-    maxQubitPlusAncillaCount = maxPageQubits + 2U;
+    maxQubitPlusAncillaCount =
+        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
 #endif
 
     stabilizer = MakeStabilizer(initState);
