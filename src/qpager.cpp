@@ -1089,6 +1089,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         const bitCapIntOcl qPower = pow2Ocl(qubit);
         for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             qPages[i]->ApplyM(qPower, result, nrm);
+            qPages[i]->UpdateRunningNorm();
         }
     } else {
         const bitLenInt metaQubit = qubit - qpp;
@@ -1328,10 +1329,29 @@ void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
     }
     if (isQubit1Meta || isQubit2Meta) {
         SeparateEngines();
-        if (isInverse) {
-            QInterface::IISwap(qubit1, qubit2);
-        } else {
-            QInterface::ISwap(qubit1, qubit2);
+        QInterface::Swap(qubit1, qubit2);
+    }
+    if (isQubit1Meta) {
+        qubit1 -= baseQubitsPerPage;
+        const complex phaseFac = isInverse ? -I_CMPLX : I_CMPLX;
+        for (size_t i = 0U; i < qPages.size(); ++i) {
+            if ((i >> qubit1) & 1U) {
+                qPages[i]->Phase(phaseFac, ONE_CMPLX, qubit2);
+            } else {
+                qPages[i]->Phase(ONE_CMPLX, phaseFac, qubit2);
+            }
+        }
+        return;
+    }
+    if (isQubit2Meta) {
+        qubit2 -= baseQubitsPerPage;
+        const complex phaseFac = isInverse ? -I_CMPLX : I_CMPLX;
+        for (size_t i = 0U; i < qPages.size(); ++i) {
+            if ((i >> qubit2) & 1U) {
+                qPages[i]->Phase(phaseFac, ONE_CMPLX, qubit1);
+            } else {
+                qPages[i]->Phase(ONE_CMPLX, phaseFac, qubit1);
+            }
         }
         return;
     }
