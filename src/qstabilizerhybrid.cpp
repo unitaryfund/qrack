@@ -57,7 +57,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         ((engineTypes[0U] == QINTERFACE_QPAGER) &&
             ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        maxQubitPlusAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
+        maxQubitPlusAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex)) - 1U;
 #if ENABLE_ENV_VARS
         bitLenInt segmentGlobalQb = 0U;
         if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
