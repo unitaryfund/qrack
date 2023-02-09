@@ -30,7 +30,7 @@ protected:
     bool useGpuThreshold;
     bool isSparse;
     bool useTGadget;
-    bitLenInt segmentGlobalQb;
+    bitLenInt maxPageSetting;
     bitLenInt maxPageQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
@@ -439,7 +439,7 @@ public:
 #if ENABLE_OPENCL
         if (rootEngine != QINTERFACE_CPU) {
             maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-            maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 1U;
+            maxPageQubits = (maxPageSetting < maxPageQubits) ? maxPageSetting : 1U;
         }
 
         if (!useGpuThreshold) {

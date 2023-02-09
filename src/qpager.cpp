@@ -25,6 +25,7 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
+    , maxPageSetting(-1)
     , maxPageQubits(-1)
     , thresholdQubitsPerPage(qubitThreshold)
     , devID(deviceId)
@@ -59,7 +60,7 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
-    , segmentGlobalQb(0U)
+    , maxPageSetting(-1)
     , maxPageQubits(-1)
     , thresholdQubitsPerPage(qubitThreshold)
     , devID(deviceId)
@@ -93,8 +94,8 @@ void QPager::Init()
     }
 
 #if ENABLE_ENV_VARS
-    if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-        segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+    if (getenv("QRACK_MAX_PAGE_QB")) {
+        maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
     }
 #endif
     bitLenInt engineLevel = 0U;
@@ -108,7 +109,7 @@ void QPager::Init()
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
         maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-        maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 1U;
+        maxPageQubits = (maxPageSetting < maxPageQubits) ? maxPageSetting : 1U;
     }
 
     if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL)) {
