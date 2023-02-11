@@ -6563,6 +6563,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_34", "[mirror]")
     REQUIRE(qftReg->MAll() == 13);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_35", "[mirror]")
+{
+    qftReg = MakeEngine(4);
+    qftReg->SetPermutation(10);
+
+    qftReg->H(3);
+    qftReg->CNOT(3, 2);
+    qftReg->CNOT(3, 2);
+    qftReg->H(3);
+
+    std::vector<bitCapInt> qPowers(4);
+    for (int i = 0; i < 4; ++i) {
+        qPowers[i] = pow2(i);
+    }
+    std::map<bitCapInt, int> result = qftReg->MultiShotMeasureMask(qPowers, 100U);
+    REQUIRE(result.size() == 1U);
+    REQUIRE(result.begin()->first == 10U);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
@@ -6959,7 +6978,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             }
         }
 
-        REQUIRE(result.size() == 1U);
         REQUIRE(result.begin()->first == randPerm);
+        REQUIRE(result.size() == 1U);
     }
 }

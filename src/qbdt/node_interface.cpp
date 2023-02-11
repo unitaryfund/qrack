@@ -30,6 +30,7 @@
 
 namespace Qrack {
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 const unsigned numThreads = std::thread::hardware_concurrency() << 1U;
 #if ENABLE_ENV_VARS
 const bitLenInt pStridePow =
@@ -40,6 +41,7 @@ const bitLenInt pStridePow =
 const bitLenInt pStridePow = (PSTRIDEPOW + 1U) >> 1U;
 #endif
 const bitCapInt pStride = pow2(pStridePow);
+#endif
 
 bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
 {
@@ -171,6 +173,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
         --depth;
 
         QBdtNodeInterfacePtr toRet1, toRet2;
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
             ++parDepth;
             std::future<QBdtNodeInterfacePtr> future0 = std::async(
@@ -181,6 +184,10 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
             toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
             toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
         }
+#else
+        toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
+        toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+#endif
 
         return (norm(branches[0U]->scale) > norm(branches[1U]->scale)) ? toRet1 : toRet2;
     }

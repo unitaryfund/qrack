@@ -16,7 +16,7 @@
 
 #include "qbdt_node.hpp"
 
-#if ENABLE_PTHREAD
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #include <future>
 #include <thread>
 #endif
@@ -26,6 +26,7 @@
 
 namespace Qrack {
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 const unsigned numThreads = std::thread::hardware_concurrency() << 1U;
 #if ENABLE_ENV_VARS
 const bitLenInt pStridePow =
@@ -36,6 +37,7 @@ const bitLenInt pStridePow =
 const bitLenInt pStridePow = (PSTRIDEPOW + 1U) >> 1U;
 #endif
 const bitCapInt pStride = pow2(pStridePow);
+#endif
 
 void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 {
@@ -228,6 +230,7 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     b0 = branches[0U];
     b1 = branches[1U];
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if ((depth <= pStridePow) || (pow2(parDepth) > numThreads)) {
         b0->Branch(depth, parDepth);
         b1->Branch(depth, parDepth);
@@ -239,6 +242,10 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     std::future<void> future0 = std::async(std::launch::async, [&] { b0->Branch(depth, parDepth); });
     b1->Branch(depth, parDepth);
     future0.get();
+#else
+    b0->Branch(depth, parDepth);
+    b1->Branch(depth, parDepth);
+#endif
 }
 
 void QBdtNode::Normalize(bitLenInt depth)
