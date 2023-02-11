@@ -1331,8 +1331,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
 
     toCopy->clFinish();
 
-    QueueCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
-    toCopy->wait_refs.emplace_back(device_context->wait_events);
+    WaitCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
+    // toCopy->wait_refs.emplace_back(device_context->wait_events);
 
     stateVec = nStateVec;
     ResetStateBuffer(nStateBuffer);
