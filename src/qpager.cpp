@@ -411,8 +411,6 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
         futures[i].get();
     }
 #endif
-
-    Finish();
 }
 
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
@@ -537,8 +535,6 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
         futures[i].get();
     }
 #endif
-
-    Finish();
 }
 
 // This is called when control bits are "meta-" but the target bit is below the "meta-" threshold, (low enough to
@@ -1094,7 +1090,6 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         const bitCapIntOcl qPower = pow2Ocl(qubit);
         for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             qPages[i]->ApplyM(qPower, result, nrm);
-            qPages[i]->UpdateRunningNorm();
         }
     } else {
         const bitLenInt metaQubit = qubit - qpp;

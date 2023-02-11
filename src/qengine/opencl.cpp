@@ -280,9 +280,9 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     writeArgsEvent.wait();
 
     engineOcl->clFinish();
-    QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
+    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    engineOcl->wait_refs.emplace_back(device_context->wait_events);
+    // engineOcl->wait_refs.emplace_back(device_context->wait_events);
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;
