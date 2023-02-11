@@ -439,12 +439,12 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
 
     bool isSpecial, isInvert;
     complex top, bottom;
-    if (!isIntraCtrled && IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
+    if (!isSqiCtrl && !isIntraCtrled && IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         isSpecial = true;
         isInvert = false;
         top = mtrx[0U];
         bottom = mtrx[3U];
-    } else if (!isIntraCtrled && IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
+    } else if (!isSqiCtrl && !isIntraCtrled && IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         isSpecial = true;
         isInvert = true;
         top = mtrx[1U];
@@ -481,26 +481,10 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
 
         if (isSpecial) {
             if (!IS_NORM_0(ONE_CMPLX - top)) {
-                if (isSqiCtrl) {
-                    if (anti) {
-                        engine1->Phase(top, ONE_CMPLX, sqi);
-                    } else {
-                        engine1->Phase(ONE_CMPLX, top, sqi);
-                    }
-                } else {
-                    engine1->Phase(top, top, 0U);
-                }
+                engine1->Phase(top, top, 0U);
             }
             if (!IS_NORM_0(ONE_CMPLX - bottom)) {
-                if (isSqiCtrl) {
-                    if (anti) {
-                        engine2->Phase(bottom, ONE_CMPLX, sqi);
-                    } else {
-                        engine2->Phase(ONE_CMPLX, bottom, sqi);
-                    }
-                } else {
-                    engine2->Phase(bottom, bottom, 0U);
-                }
+                engine2->Phase(bottom, bottom, 0U);
             }
 
             continue;
