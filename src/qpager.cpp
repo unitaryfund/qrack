@@ -817,7 +817,7 @@ void QPager::SetQuantumState(complex const* inputState)
     }
 
 #if ENABLE_PTHREAD
-    for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
+    for (bitCapIntOcl i = 0U; i < futures.size(); ++i) {
         futures[i].get();
     }
 #endif
@@ -847,7 +847,7 @@ void QPager::GetQuantumState(complex* outputState)
         pagePerm += pagePower;
     }
 #if ENABLE_PTHREAD
-    for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
+    for (bitCapIntOcl i = 0U; i < futures.size(); ++i) {
         futures[i].get();
     }
 #endif
@@ -877,7 +877,7 @@ void QPager::GetProbs(real1* outputProbs)
         pagePerm += pagePower;
     }
 #if ENABLE_PTHREAD
-    for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
+    for (bitCapIntOcl i = 0U; i < futures.size(); ++i) {
         futures[i].get();
     }
 #endif
@@ -1517,7 +1517,7 @@ real1_f QPager::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt
         pagePerm += pagePower;
     }
 #if ENABLE_PTHREAD
-    for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
+    for (bitCapIntOcl i = 0U; i < futures.size(); ++i) {
         expectation += futures[i].get();
     }
 #endif
