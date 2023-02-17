@@ -11,6 +11,7 @@
 // for details.
 
 #include "common/parallel_for.hpp"
+#include "statevector.hpp"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <direct.h>

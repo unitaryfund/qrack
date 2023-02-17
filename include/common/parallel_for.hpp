@@ -12,7 +12,6 @@
 
 #pragma once
 
-/* Needed for bitCapInt typedefs. */
 #include "qrack_types.hpp"
 
 #include <set>

@@ -15,14 +15,6 @@
 #define _USE_MATH_DEFINES
 #include "config.h"
 
-#if ENABLE_COMPLEX_X2
-#if FPPOW == 5
-#include "common/complex8x2simd.hpp"
-#elif FPPOW == 6
-#include "common/complex16x2simd.hpp"
-#endif
-#endif
-
 #include <cfloat>
 #include <cmath>
 #include <complex>
@@ -205,45 +197,6 @@ typedef std::function<void(void)> DispatchFn;
 
 class QEngine;
 typedef std::shared_ptr<QEngine> QEnginePtr;
-
-// This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
-class StateVector {
-protected:
-    bitCapIntOcl capacity;
-
-public:
-    bool isReadLocked;
-
-    StateVector(bitCapIntOcl cap)
-        : capacity(cap)
-        , isReadLocked(true)
-    {
-    }
-    virtual ~StateVector()
-    {
-        // Intentionally left blank.
-    }
-
-    virtual complex read(const bitCapIntOcl& i) = 0;
-#if ENABLE_COMPLEX_X2
-    virtual complex2 read2(const bitCapIntOcl& i1, const bitCapIntOcl& i2) = 0;
-#endif
-    virtual void write(const bitCapIntOcl& i, const complex& c) = 0;
-    /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
-    /// tensor slicing.)
-    virtual void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2) = 0;
-    virtual void clear() = 0;
-    virtual void copy_in(complex const* inArray) = 0;
-    virtual void copy_in(complex const* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
-    virtual void copy_in(StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset,
-        const bitCapIntOcl length) = 0;
-    virtual void copy_out(complex* outArray) = 0;
-    virtual void copy_out(complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
-    virtual void copy(StateVectorPtr toCopy) = 0;
-    virtual void shuffle(StateVectorPtr svp) = 0;
-    virtual void get_probs(real1* outArray) = 0;
-    virtual bool is_sparse() = 0;
-};
 
 inline bitCapInt pow2(const bitLenInt& p) { return (bitCapInt)ONE_BCI << p; }
 inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)ONE_BCI << p; }
