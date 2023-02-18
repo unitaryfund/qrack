@@ -15,14 +15,7 @@
 #define _USE_MATH_DEFINES
 #include "config.h"
 
-#include <cfloat>
-#include <cmath>
-#include <complex>
-#include <functional>
-#include <limits>
-#include <memory>
 #include <random>
-#include <set>
 
 #if UINTPOW < 4
 #define ONE_BCI ((uint8_t)1U)
