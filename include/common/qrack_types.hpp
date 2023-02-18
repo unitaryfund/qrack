@@ -15,8 +15,6 @@
 #define _USE_MATH_DEFINES
 #include "config.h"
 
-#include <random>
-
 #if UINTPOW < 4
 #define ONE_BCI ((uint8_t)1U)
 #define bitCapIntOcl uint8_t

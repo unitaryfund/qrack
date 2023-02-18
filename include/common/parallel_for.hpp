@@ -14,6 +14,7 @@
 
 #include "qrack_types.hpp"
 
+#include <random>
 #include <set>
 #include <vector>
 
