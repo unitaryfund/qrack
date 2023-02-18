@@ -7,6 +7,7 @@
 // for details.
 
 #include "pinvoke_api.hpp"
+#include "common/qrack_types.hpp"
 
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"

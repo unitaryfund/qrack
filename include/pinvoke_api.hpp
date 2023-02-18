@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
 #include "stddef.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -48,8 +47,16 @@ MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq 
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback);
 
-MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ Qrack::real1_f* ket);
-MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ Qrack::real1_f* ket);
+#if FPPOW < 6
+MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ float* ket);
+MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ float* ket);
+#elif FPPOW < 7
+MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ double* ket);
+MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ double* ket);
+#else
+MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ boost::multiprecision::float128* ket);
+MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ boost::multiprecision::float128* ket);
+#endif
 
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ uintq sid, _In_ size_t n, _In_reads_(n) double* p);
 

@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include "config.h"
+
 #define _USE_MATH_DEFINES
 
 #if UINTPOW < 4

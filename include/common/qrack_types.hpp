@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include "config.h"
 #include "qrack_macros.hpp"
 
 #include <complex>
