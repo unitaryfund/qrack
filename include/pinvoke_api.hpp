@@ -28,6 +28,10 @@ typedef bool (*ProbAmpCallback)(size_t, double, double);
 struct _QrackTimeEvolveOpHeader;
 #endif
 
+#if FPPOW > 6
+#include <boost/multiprecision/float128.hpp>
+#endif
+
 extern "C" {
 // non-quantum
 MICROSOFT_QUANTUM_DECL int get_error(_In_ uintq sid);
@@ -55,7 +59,6 @@ MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ float* ket);
 MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ double* ket);
 MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ double* ket);
 #else
-#include <boost/multiprecision/float128.hpp>
 MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ boost::multiprecision::float128* ket);
 MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ boost::multiprecision::float128* ket);
 #endif
