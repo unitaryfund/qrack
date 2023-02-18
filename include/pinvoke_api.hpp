@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "config.h"
 #include "stddef.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -55,7 +56,6 @@ MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ double* ket);
 MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ double* ket);
 #else
 #include <boost/multiprecision/float128.hpp>
-#include <quadmath.h>
 MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ boost::multiprecision::float128* ket);
 MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ boost::multiprecision::float128* ket);
 #endif
