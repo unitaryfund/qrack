@@ -142,7 +142,7 @@ public:
     {
         engine->GetAmplitudePage(pagePtr, offset, length);
     }
-    void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
         engine->SetAmplitudePage(pagePtr, offset, length);
     }
@@ -252,7 +252,7 @@ public:
         return result;
     }
 
-    void SetQuantumState(complex const* inputState) { engine->SetQuantumState(inputState); }
+    void SetQuantumState(const complex* inputState) { engine->SetQuantumState(inputState); }
     void GetQuantumState(complex* outputState) { engine->GetQuantumState(outputState); }
     void GetProbs(real1* outputProbs) { engine->GetProbs(outputProbs); }
     complex GetAmplitude(bitCapInt perm) { return engine->GetAmplitude(perm); }
@@ -262,7 +262,7 @@ public:
         engine->SetPermutation(perm, phaseFac);
     }
 
-    void Mtrx(complex const* mtrx, bitLenInt qubitIndex) { engine->Mtrx(mtrx, qubitIndex); }
+    void Mtrx(const complex* mtrx, bitLenInt qubitIndex) { engine->Mtrx(mtrx, qubitIndex); }
     void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
     {
         engine->Phase(topLeft, bottomRight, qubitIndex);
@@ -271,18 +271,18 @@ public:
     {
         engine->Invert(topRight, bottomLeft, qubitIndex);
     }
-    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         engine->MCMtrx(controls, mtrx, target);
     }
-    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         engine->MACMtrx(controls, mtrx, target);
     }
 
     using QEngine::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        complex const* mtrxs, const std::vector<bitCapInt> mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+        const complex* mtrxs, const std::vector<bitCapInt> mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
     {
         engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
     }
@@ -522,16 +522,16 @@ protected:
         return engine->GetExpectation(valueStart, valueLength);
     }
 
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
     }
-    void ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx)
+    void ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
     {
         engine->ApplyControlled2x2(controls, target, mtrx);
     }
-    void ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx)
+    void ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
     {
         engine->ApplyAntiControlled2x2(controls, target, mtrx);
     }

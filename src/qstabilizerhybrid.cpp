@@ -591,7 +591,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
     return clone->GetAmplitude(perm);
 }
 
-void QStabilizerHybrid::SetQuantumState(complex const* inputState)
+void QStabilizerHybrid::SetQuantumState(const complex* inputState)
 {
     DumpBuffers();
 
@@ -777,7 +777,7 @@ void QStabilizerHybrid::ZMask(bitCapInt mask)
     }
 }
 
-void QStabilizerHybrid::Mtrx(complex const* lMtrx, bitLenInt target)
+void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     const bool wasCached = (bool)shards[target];
     complex mtrx[4U];
@@ -805,7 +805,7 @@ void QStabilizerHybrid::Mtrx(complex const* lMtrx, bitLenInt target)
     }
 }
 
-void QStabilizerHybrid::MCMtrx(const std::vector<bitLenInt>& lControls, complex const* mtrx, bitLenInt target)
+void QStabilizerHybrid::MCMtrx(const std::vector<bitLenInt>& lControls, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         MCPhase(lControls, mtrx[0U], mtrx[3U], target);
@@ -922,7 +922,7 @@ void QStabilizerHybrid::MCInvert(
     }
 }
 
-void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, complex const* mtrx, bitLenInt target)
+void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         MACPhase(lControls, mtrx[0U], mtrx[3U], target);
@@ -1156,7 +1156,7 @@ bitCapInt QStabilizerHybrid::MAll()
 }
 
 void QStabilizerHybrid::UniformlyControlledSingleBit(
-    const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, complex const* mtrxs)
+    const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const complex* mtrxs)
 {
     if (stabilizer) {
         QInterface::UniformlyControlledSingleBit(controls, qubitIndex, mtrxs);

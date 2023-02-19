@@ -156,7 +156,7 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
     DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * offset, sizeof(complex) * length, pagePtr);
 }
 
-void QEngineOCL::SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+void QEngineOCL::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
     if (isBadPermRange(offset, length, maxQPowerOcl)) {
         throw std::invalid_argument("QEngineOCL::SetAmplitudePage range is out-of-bounds!");
@@ -770,7 +770,7 @@ void QEngineOCL::PhaseParity(real1_f radians, bitCapInt mask)
     BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
 }
 
-void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
     const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
 {
     CHECK_ZERO_SKIP();
@@ -1042,7 +1042,7 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
 }
 
 void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-    complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+    const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
     CHECK_ZERO_SKIP();
 
@@ -2928,7 +2928,7 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 #endif
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineOCL::SetQuantumState(complex const* inputState)
+void QEngineOCL::SetQuantumState(const complex* inputState)
 {
     clDump();
 

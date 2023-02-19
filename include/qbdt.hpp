@@ -102,7 +102,7 @@ protected:
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
     void ApplyControlledSingle(
-        complex const* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti);
+        const complex* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
@@ -112,7 +112,7 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    void ApplySingle(complex const* mtrx, bitLenInt target);
+    void ApplySingle(const complex* mtrx, bitLenInt target);
 
     void Init();
 
@@ -177,7 +177,7 @@ public:
 
     void GetQuantumState(complex* state);
     void GetQuantumState(QInterfacePtr eng);
-    void SetQuantumState(complex const* state);
+    void SetQuantumState(const complex* state);
     void SetQuantumState(QInterfacePtr eng);
     void GetProbs(real1* outputProbs);
 
@@ -241,9 +241,9 @@ public:
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
     bitCapInt MAll();
 
-    void Mtrx(complex const* mtrx, bitLenInt target);
-    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
-    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    void Mtrx(const complex* mtrx, bitLenInt target);
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
 

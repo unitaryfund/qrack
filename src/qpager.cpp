@@ -259,7 +259,7 @@ QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapIntOcl pageId)
     return toRet;
 }
 
-void QPager::GetSetAmplitudePage(complex* pagePtr, complex const* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+void QPager::GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
     const bitCapIntOcl pageLength = (bitCapIntOcl)pageMaxQPower();
     bitCapIntOcl perm = 0U;
@@ -417,7 +417,7 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
 // instead of amplitude indices.
 template <typename Qubit1Fn>
 void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
-    complex const* mtrx, bool isSqiCtrl, bool isIntraCtrled)
+    const complex* mtrx, bool isSqiCtrl, bool isIntraCtrled)
 {
     const bitLenInt qpp = qubitsPerPage();
     const bitLenInt sqi = qpp - 1U;
@@ -771,7 +771,7 @@ bitLenInt QPager::Allocate(bitLenInt start, bitLenInt length)
     return Compose(nQubits, start);
 }
 
-void QPager::SetQuantumState(complex const* inputState)
+void QPager::SetQuantumState(const complex* inputState)
 {
     const bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     bitCapIntOcl pagePerm = 0U;
@@ -886,7 +886,7 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
-void QPager::Mtrx(complex const* mtrx, bitLenInt target)
+void QPager::Mtrx(const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         Phase(mtrx[0U], mtrx[3U], target);
@@ -942,7 +942,7 @@ void QPager::ApplySingleEither(bool isInvert, complex top, complex bottom, bitLe
 }
 
 void QPager::ApplyEitherControlledSingleBit(
-    bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx)
+    bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
 {
     if (!controls.size()) {
         Mtrx(mtrx, target);

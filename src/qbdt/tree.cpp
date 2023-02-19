@@ -359,7 +359,7 @@ void QBdt::GetQuantumState(QInterfacePtr eng)
 {
     GetTraversal([eng](bitCapIntOcl i, complex scale) { eng->SetAmplitude(i, scale); });
 }
-void QBdt::SetQuantumState(complex const* state)
+void QBdt::SetQuantumState(const complex* state)
 {
     if (!bdtQubitCount) {
         NODE_TO_QENGINE(root)->SetQuantumState(state);
@@ -835,7 +835,7 @@ bitCapInt QBdt::MAll()
     return result;
 }
 
-void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
+void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 {
     if (target >= qubitCount) {
         throw std::invalid_argument("QBdt::ApplySingle target parameter must be within allocated qubit bounds!");
@@ -898,7 +898,7 @@ void QBdt::ApplySingle(complex const* mtrx, bitLenInt target)
 }
 
 void QBdt::ApplyControlledSingle(
-    complex const* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti)
+    const complex* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti)
 {
     if (target >= qubitCount) {
         throw std::invalid_argument(
@@ -1003,9 +1003,9 @@ void QBdt::ApplyControlledSingle(
     }
 }
 
-void QBdt::Mtrx(complex const* mtrx, bitLenInt target) { ApplySingle(mtrx, target); }
+void QBdt::Mtrx(const complex* mtrx, bitLenInt target) { ApplySingle(mtrx, target); }
 
-void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
 {
     if (!controls.size()) {
         Mtrx(mtrx, target);
@@ -1018,7 +1018,7 @@ void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, b
     }
 }
 
-void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
 {
 
     if (!controls.size()) {

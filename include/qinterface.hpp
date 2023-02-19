@@ -244,7 +244,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void SetQuantumState(complex const* inputState) = 0;
+    virtual void SetQuantumState(const complex* inputState) = 0;
 
     /** Get the pure quantum state representation
      *
@@ -420,17 +420,17 @@ public:
     /**
      * Apply an arbitrary single bit unitary transformation.
      */
-    virtual void Mtrx(complex const* mtrx, bitLenInt qubitIndex) = 0;
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
      */
-    virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target) = 0;
+    virtual void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
      */
-    virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    virtual void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
             MACPhase(controls, mtrx[0U], mtrx[3U], target);
@@ -529,12 +529,12 @@ public:
      */
 
     virtual void UniformlyControlledSingleBit(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, complex const* mtrxs)
+        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const complex* mtrxs)
     {
         UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), 0);
     }
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
+        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
 
     /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
@@ -1473,7 +1473,7 @@ public:
      * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
     virtual void Exp(
-        const std::vector<bitLenInt>& controls, bitLenInt qubit, complex const* matrix2x2, bool antiCtrled = false);
+        const std::vector<bitLenInt>& controls, bitLenInt qubit, const complex* matrix2x2, bool antiCtrled = false);
 
     /**
      * Dyadic fraction (identity) exponentiation gate

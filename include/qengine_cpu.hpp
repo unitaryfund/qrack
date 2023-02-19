@@ -98,7 +98,7 @@ public:
 
     bool IsZeroAmplitude() { return !stateVec; }
     void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
-    void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
+    void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
     void SetAmplitudePage(
         QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length);
     void ShuffleBuffers(QEnginePtr engine);
@@ -115,7 +115,7 @@ public:
         Dispatch(1U, [this, runningNrm] { runningNorm = runningNrm; });
     }
 
-    void SetQuantumState(complex const* inputState);
+    void SetQuantumState(const complex* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm);
@@ -198,7 +198,7 @@ public:
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QEngine::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
+        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
     void UniformParityRZ(bitCapInt mask, real1_f angle);
     void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
 
@@ -245,7 +245,7 @@ protected:
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     using QEngine::ApplyM;

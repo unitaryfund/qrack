@@ -112,7 +112,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
-void QUnit::SetQuantumState(complex const* inputState)
+void QUnit::SetQuantumState(const complex* inputState)
 {
     Dump();
 
@@ -1956,7 +1956,7 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 }
 
 void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-    complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+    const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
     // If there are no controls, this is equivalent to the single bit gate.
     if (!controls.size()) {
@@ -2507,7 +2507,7 @@ void QUnit::MACInvert(const std::vector<bitLenInt>& lControls, complex topRight,
     CTRLED_PHASE_INVERT_WRAP(MACInvert(CTRL_I_ARGS), MACMtrx(CTRL_GEN_ARGS), true, topRight, bottomLeft);
 }
 
-void QUnit::Mtrx(complex const* mtrx, bitLenInt target)
+void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
@@ -2566,7 +2566,7 @@ void QUnit::Mtrx(complex const* mtrx, bitLenInt target)
     ClampShard(target);
 }
 
-void QUnit::MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+void QUnit::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         MCPhase(controls, mtrx[0U], mtrx[3U], target);
@@ -2598,7 +2598,7 @@ void QUnit::MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, 
     CTRLED_GEN_WRAP(MCMtrx(CTRL_GEN_ARGS));
 }
 
-void QUnit::MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+void QUnit::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         MACPhase(controls, mtrx[0U], mtrx[3U], target);

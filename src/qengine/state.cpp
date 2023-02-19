@@ -87,7 +87,7 @@ void QEngineCPU::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
         std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
     }
 }
-void QEngineCPU::SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+void QEngineCPU::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
     if (isBadPermRange(offset, length, maxQPowerOcl)) {
         throw std::invalid_argument("QEngineCPU::SetAmplitudePage range is out-of-bounds!");
@@ -267,7 +267,7 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineCPU::SetQuantumState(complex const* inputState)
+void QEngineCPU::SetQuantumState(const complex* inputState)
 {
     Dump();
 
@@ -348,7 +348,7 @@ void QEngineCPU::GetProbs(real1* outputProbs)
         stateVec->write2(lcv + offset1, qubit.c[0U], lcv + offset2, qubit.c[1U]);                                      \
     };
 
-void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* matrix, const bitLenInt bitCount,
+void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* matrix, const bitLenInt bitCount,
     const bitCapIntOcl* qPowsSorted, bool doCalcNorm, real1_f nrm_thresh)
 {
     CHECK_ZERO_SKIP();
@@ -533,7 +533,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex co
         stateVec->write2(lcv + offset1, qubit[0U], lcv + offset2, qubit[1U]);                                          \
     };
 
-void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* matrix, const bitLenInt bitCount,
+void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* matrix, const bitLenInt bitCount,
     const bitCapIntOcl* qPowsSorted, bool doCalcNorm, real1_f nrm_thresh)
 {
     CHECK_ZERO_SKIP();
@@ -771,7 +771,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
 }
 
 void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-    complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+    const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
     CHECK_ZERO_SKIP();
 

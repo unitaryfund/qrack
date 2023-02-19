@@ -94,7 +94,7 @@ public:
     virtual void SetDevice(int64_t dID);
     virtual int64_t GetDevice() { return devID; }
 
-    virtual void SetQuantumState(complex const* inputState);
+    virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
@@ -176,12 +176,12 @@ public:
         const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
     virtual void MACInvert(
         const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
-    virtual void Mtrx(complex const* mtrx, bitLenInt qubit);
-    virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
-    virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubit);
+    virtual void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
+    virtual void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
     using QInterface::UniformlyControlledSingleBit;
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
+        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
     virtual void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
     virtual void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
     virtual void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
@@ -463,7 +463,7 @@ protected:
         }
     }
 
-    void TransformX2x2(complex const* mtrxIn, complex* mtrxOut)
+    void TransformX2x2(const complex* mtrxIn, complex* mtrxOut)
     {
         mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + mtrxIn[1U] + mtrxIn[2U] + mtrxIn[3U]);
         mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - mtrxIn[1U] + mtrxIn[2U] - mtrxIn[3U]);
@@ -479,7 +479,7 @@ protected:
         mtrxOut[3U] = -mtrxOut[0U];
     }
 
-    void TransformY2x2(complex const* mtrxIn, complex* mtrxOut)
+    void TransformY2x2(const complex* mtrxIn, complex* mtrxOut)
     {
         mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
         mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);

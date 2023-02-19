@@ -185,7 +185,7 @@ public:
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm);
-    void SetQuantumState(complex const* inputState);
+    void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)
     {
         SwitchToEngine();
@@ -212,17 +212,17 @@ public:
 
     bitCapInt MAll();
 
-    void Mtrx(complex const* mtrx, bitLenInt target);
-    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    void Mtrx(const complex* mtrx, bitLenInt target);
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
-    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
     void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
     void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
 
     using QInterface::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, complex const* mtrxs);
+        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const complex* mtrxs);
 
     std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots);
     void MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray);

@@ -70,7 +70,7 @@ protected:
     void SingleBitGate(bitLenInt target, Qubit1Fn fn, bool isSqiCtrl = false, bool isAnti = false);
     template <typename Qubit1Fn>
     void MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
-        complex const* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
+        const complex* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse);
@@ -81,12 +81,12 @@ protected:
 
     void ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target);
     void ApplyEitherControlledSingleBit(
-        bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
+        bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx);
     void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
     void Init();
 
-    void GetSetAmplitudePage(complex* pagePtr, complex const* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
+    void GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
@@ -177,7 +177,7 @@ public:
     {
         GetSetAmplitudePage(pagePtr, NULL, offset, length);
     }
-    void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
         GetSetAmplitudePage(NULL, pagePtr, offset, length);
     }
@@ -236,7 +236,7 @@ public:
         CombineEngines();
         return qPages[0U]->GetExpectation(valueStart, valueLength);
     }
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         CombineEngines();
@@ -263,7 +263,7 @@ public:
         return ZERO_R1_F;
     }
 
-    void SetQuantumState(complex const* inputState);
+    void SetQuantumState(const complex* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm)
@@ -301,7 +301,7 @@ public:
     using QEngine::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
-    void Mtrx(complex const* mtrx, bitLenInt target);
+    void Mtrx(const complex* mtrx, bitLenInt target);
     void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);
@@ -310,11 +310,11 @@ public:
     {
         ApplySingleEither(true, topRight, bottomLeft, qubitIndex);
     }
-    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(false, controls, target, mtrx);
     }
-    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(true, controls, target, mtrx);
     }
