@@ -13,8 +13,10 @@
 #if ENABLE_PTHREAD
 #include <future>
 #endif
+#if ENABLE_ENV_VARS
 #include <regex>
 #include <string>
+#endif
 
 namespace Qrack {
 

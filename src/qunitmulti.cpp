@@ -13,6 +13,11 @@
 
 #include "qfactory.hpp"
 
+#if ENABLE_ENV_VARS
+#include <regex>
+#include <string>
+#endif
+
 namespace Qrack {
 
 QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
@@ -53,6 +58,52 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
     defaultDeviceID = (deviceID < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)deviceID;
+
+#if ENABLE_ENV_VARS
+    if (!devList.size() && getenv("QRACK_QUNITMULTI_DEVICES")) {
+        std::string devListStr = std::string(getenv("QRACK_QUNITMULTI_DEVICES"));
+        devList.clear();
+        if (devListStr.compare("")) {
+            std::stringstream devListStr_stream(devListStr);
+            // See
+            // https://stackoverflow.com/questions/7621727/split-a-string-into-words-by-multiple-delimiters#answer-58164098
+            std::regex re("[.]");
+            while (devListStr_stream.good()) {
+                std::string term;
+                getline(devListStr_stream, term, ',');
+                // the '-1' is what makes the regex split (-1 := what was not matched)
+                std::sregex_token_iterator first{ term.begin(), term.end(), re, -1 }, last;
+                std::vector<std::string> tokens{ first, last };
+                if (tokens.size() == 1U) {
+                    devList.push_back(stoi(term));
+                    if (devList.back() == -2) {
+                        devList.back() = (int)devID;
+                    }
+                    if (devList.back() == -1) {
+                        devList.back() = (int)OCLEngine::Instance().GetDefaultDeviceID();
+                    }
+                    continue;
+                }
+                const unsigned maxI = stoi(tokens[0U]);
+                std::vector<int> ids(tokens.size() - 1U);
+                for (unsigned i = 1U; i < tokens.size(); ++i) {
+                    ids[i - 1U] = stoi(tokens[i]);
+                    if (ids[i - 1U] == -2) {
+                        ids[i - 1U] = (int)devID;
+                    }
+                    if (ids[i - 1U] == -1) {
+                        ids[i - 1U] = (int)OCLEngine::Instance().GetDefaultDeviceID();
+                    }
+                }
+                for (unsigned i = 0U; i < maxI; ++i) {
+                    for (unsigned j = 0U; j < ids.size(); ++j) {
+                        devList.push_back(ids[j]);
+                    }
+                }
+            }
+        }
+    }
+#endif
 
     const size_t devCount = devList.size() ? devList.size() : deviceContext.size();
     for (size_t i = 0; i < devCount; ++i) {
