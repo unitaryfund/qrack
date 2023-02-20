@@ -16,6 +16,10 @@
 
 #define _USE_MATH_DEFINES
 
+#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
+#define IS_OPPOSITE(c1, c2) (IS_NORM_0((c1) + (c2)))
+
 #if UINTPOW < 4
 #define ONE_BCI ((uint8_t)1U)
 #define bitCapIntOcl uint8_t
