@@ -149,7 +149,7 @@ There are two special device IDs that can be specified in these lists: `-1` is g
 `QRACK_QPAGER_DEVICES_HOST_POINTER` corresponds to each device ID in `QRACK_QPAGER_DEVICES`, per sequential item in that other variable, (with the same syntax and list wrapping behavior). If the value of this is `0` for a page, that page attempts OpenCL _device_ RAM allocation; if the value is `1` for a page, that page attempts OpenCL _host_ RAM allocation. `0` value, device RAM, is suggested for GPUs; `1` value, host RAM, is suggested for CPUs and APUs (which use general host RAM, anyway). By default, all devices attempt on-device RAM allocation, if this environment variable is not specified.
 
 ## QUnitMulti device list
-Specify a device list for `QUnitMulti` the same way you would for `QPager`, with environment variable `QRACK_QPAGER_DEVICES`.
+Specify a device list for `QUnitMulti` the same way you would for `QPager`, with environment variable `QRACK_QUNITMULTI_DEVICES`.
 
 ## QBdt options and opt-in for QBdt in default optimal layer stack
 When using "optimal" values from the layer type enum or command line options, Qrack simulators intelligently construct their optimization layer stack. `QBdt` ("quantum binary decision tree") happens to be able to serve an analogous role to `QPager` for single OpenCL devices with multiple max allocation segments, (typically in 4 segments). By default, `QBdt` is preferred. To prefer `QPager` in optimal stack as an alternative to single-device `QBdt`, set the environment variable `QRACK_QPAGER_DEVICES`. To specify that default device choices should be used, including as would work with `QUnitMulti`, set `QRACK_QPAGER_DEVICES=-2`, (as `-2` device ID represents the `QInterface`-local choice).
