@@ -21,7 +21,7 @@
 #include <set>
 #include <vector>
 
-#if QBCAPPOW > 6 && defined(BOOST_AVAILABLE)
+#if QBCAPPOW > 6 && defined(BOOST_AVAILABLE) || QBCAPPOW > 7
 #include <boost/multiprecision/cpp_int.hpp>
 #endif
 
