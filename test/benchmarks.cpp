@@ -5053,7 +5053,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
         _putenv(envVar.c_str());
 #else
         setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
-#endif;
+#endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
