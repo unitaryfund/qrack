@@ -164,6 +164,10 @@ int main(int argc, char* argv[])
     }
 
 #if ENABLE_ENV_VARS
+    if (getenv("QRACK_QUNITMULTI_DEVICES")) {
+        session.config().stream() << "QRACK_QUNITMULTI_DEVICES: " << std::string(getenv("QRACK_QUNITMULTI_DEVICES"))
+                                  << std::endl;
+    }
     if (getenv("QRACK_QPAGER_DEVICES")) {
         session.config().stream() << "QRACK_QPAGER_DEVICES: " << std::string(getenv("QRACK_QPAGER_DEVICES"))
                                   << std::endl;
