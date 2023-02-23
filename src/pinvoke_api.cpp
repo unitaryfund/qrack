@@ -2033,6 +2033,33 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q)
 /**
  * (External API) Get the permutation expectation value, based upon the order of input qubits.
  */
+MICROSOFT_QUANTUM_DECL double PermutationProb(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    bitCapInt mask = 0U;
+    bitCapInt perm = 0U;
+    for (uintq i = 0U; i < n; ++i) {
+        const bitCapInt p = pow2(shards[simulators[sid].get()][q[i]]);
+        mask |= p;
+        if (c[i]) {
+            perm |= p;
+        }
+    }
+
+    try {
+        QInterfacePtr simulator = simulators[sid];
+        return (double)simulator->ProbMask(mask, perm);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+        return (double)REAL1_DEFAULT_ARG;
+    }
+}
+
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ */
 MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)

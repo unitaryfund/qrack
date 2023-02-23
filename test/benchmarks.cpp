@@ -7163,7 +7163,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
     while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
 
- #if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_WIN32) && !defined(__CYGWIN__)
         std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
         _putenv(envVar.c_str());
 #else

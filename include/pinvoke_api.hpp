@@ -49,6 +49,8 @@ MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ uintq sid, _In_ uintq p);
 
 // pseudo-quantum
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q);
+MICROSOFT_QUANTUM_DECL double PermutationProb(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c);
 MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c);
 
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback);
