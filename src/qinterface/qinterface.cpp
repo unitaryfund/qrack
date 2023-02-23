@@ -270,6 +270,10 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
 /// Returns probability of permutation of the mask
 real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
+    if ((maxQPower - 1U) == mask) {
+        return ProbAll(permutation);
+    }
+
     real1 prob = ZERO_R1;
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         if ((lcv & mask) == permutation) {

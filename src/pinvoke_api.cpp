@@ -2050,9 +2050,6 @@ MICROSOFT_QUANTUM_DECL double PermutationProb(
 
     try {
         QInterfacePtr simulator = simulators[sid];
-        if ((simulator->GetMaxQPower() - 1U) == mask) {
-            return (double)simulator->ProbAll(perm);
-        }
         return (double)simulator->ProbMask(mask, perm);
     } catch (...) {
         simulatorErrors[sid] = 1;
