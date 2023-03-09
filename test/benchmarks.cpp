@@ -112,6 +112,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         if (disable_t_injection) {
             qftReg->SetTInjection(false);
         }
+        if (disable_reactive_separation) {
+            qftReg->SetReactiveSeparate(false);
+        }
         avgt = 0.0;
         sampleFailureCount = 0;
         trialClocks.clear();
@@ -161,6 +164,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 if (disable_t_injection) {
                     qftReg->SetTInjection(false);
                 }
+                if (disable_reactive_separation) {
+                    qftReg->SetReactiveSeparate(false);
+                }
 
                 sampleFailureCount++;
                 isTrialSuccessful = false;
@@ -193,6 +199,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
                 if (disable_t_injection) {
                     qftReg->SetTInjection(false);
+                }
+                if (disable_reactive_separation) {
+                    qftReg->SetReactiveSeparate(false);
                 }
 
                 sampleFailureCount++;
@@ -3408,6 +3417,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     if (disable_t_injection) {
         goldStandard->SetTInjection(false);
     }
+    if (disable_reactive_separation) {
+        goldStandard->SetReactiveSeparate(false);
+    }
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -3535,6 +3547,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse);
     if (disable_t_injection) {
         testCase->SetTInjection(false);
+    }
+    if (disable_reactive_separation) {
+        testCase->SetReactiveSeparate(false);
     }
 
     std::map<bitCapInt, int> testCaseResult;
