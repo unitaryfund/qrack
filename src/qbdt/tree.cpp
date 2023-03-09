@@ -589,6 +589,24 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         return;
     }
 
+    if (length > bdtQubitCount) {
+        if (dest) {
+            ExecuteAsStateVector([&](QInterfacePtr eng) {
+                dest->SetStateVector();
+                eng->Decompose(start, NODE_TO_QENGINE(dest->root));
+                SetQubitCount(qubitCount - length);
+                dest->ResetStateVector();
+            });
+        } else {
+            ExecuteAsStateVector([&](QInterfacePtr eng) {
+                eng->Dispose(start, length);
+                SetQubitCount(qubitCount - length);
+            });
+        }
+
+        return;
+    }
+
     if (start && bdtQubitCount && attachedQubitCount) {
         ROR(start, 0U, qubitCount);
         DecomposeDispose(0U, length, dest);
@@ -597,20 +615,15 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         return;
     }
 
-    bitLenInt attachedDiff = 0U;
-    if ((start + length) > bdtQubitCount) {
-        attachedDiff = (start > bdtQubitCount) ? length : (start + length - bdtQubitCount);
-    }
-
     Finish();
 
     if (dest) {
         dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
-        dest->SetQubitCount(length, attachedDiff);
+        dest->SetQubitCount(length);
     } else {
         root->RemoveSeparableAtDepth(start, length);
     }
-    SetQubitCount(qubitCount - length, attachedQubitCount - attachedDiff);
+    SetQubitCount(qubitCount - length, attachedQubitCount);
     root->Prune(bdtQubitCount);
 }
 
