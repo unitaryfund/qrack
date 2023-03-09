@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 8.2.0 DESCRIPTION "High Performance Quantum Bit Simulation")
+project (Qrack VERSION 8.2.1 DESCRIPTION "High Performance Quantum Bit Simulation")
 
 # Installation commands
 include (GNUInstallDirs)
@@ -216,6 +216,7 @@ set_target_properties (qrack_pinvoke PROPERTIES
 install (FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h
     include/common/qrack_types.hpp
+    include/common/qrack_macros.hpp
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
     include/common/oclengine.hpp
