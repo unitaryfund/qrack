@@ -396,10 +396,6 @@ void QBdt::SetStateVector()
         return;
     }
 
-    if (attachedQubitCount) {
-        throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
-    }
-
     QBdtQEngineNodePtr nRoot = MakeQEngineNode(ONE_R1, qubitCount);
     GetQuantumState(NODE_TO_QENGINE(nRoot));
     root = nRoot;
