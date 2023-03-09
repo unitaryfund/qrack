@@ -34,9 +34,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 {
     Init();
 
-    // "Attached" state vector qubits are broken:
     SetQubitCount(qBitCount, (maxPageQubits < qBitCount) ? maxPageQubits : qBitCount);
-    // SetQubitCount(qBitCount, 0U);
 
     SetPermutation(initState);
 }
@@ -80,11 +78,17 @@ void QBdt::Init()
 
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
-        maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
         if (getenv("QRACK_QBDT_THRESHOLD_QB")) {
             const bitLenInt thresh = (bitLenInt)std::stoi(std::string(getenv("QRACK_QBDT_THRESHOLD_QB")));
             if (thresh < maxPageQubits) {
                 maxPageQubits = thresh;
+            }
+        } else {
+            const bitLenInt pref =
+                log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+            if (pref < maxPageQubits) {
+                maxPageQubits = pref;
             }
         }
     }
