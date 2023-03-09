@@ -1501,9 +1501,8 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
     }
 
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
-    bitLenInt length; // c accumulates the total bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
-    for (length = 0U; v; ++length) {
+    while (v) {
         bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);

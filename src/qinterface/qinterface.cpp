@@ -334,7 +334,7 @@ void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
 {
     bitCapInt v = mask; // count the number of bits set in v
     std::vector<bitCapInt> bitPowers;
-    for (bitLenInt length = 0U; v; ++length) {
+    while (v) {
         bitCapInt oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         bitPowers.push_back((v ^ oldV) & oldV);
