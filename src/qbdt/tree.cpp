@@ -77,22 +77,17 @@ void QBdt::Init()
     }
 
 #if ENABLE_OPENCL
-    if (rootEngine != QINTERFACE_CPU) {
+    if ((rootEngine != QINTERFACE_CPU) && !getenv("QRACK_QBDT_THRESHOLD_QB")) {
         maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-        if (getenv("QRACK_QBDT_THRESHOLD_QB")) {
-            const bitLenInt thresh = (bitLenInt)std::stoi(std::string(getenv("QRACK_QBDT_THRESHOLD_QB")));
-            if (thresh < maxPageQubits) {
-                maxPageQubits = thresh;
-            }
-        } else {
-            const bitLenInt pref =
-                log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-            if (pref < maxPageQubits) {
-                maxPageQubits = pref;
-            }
+        const bitLenInt pref = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        if (pref < maxPageQubits) {
+            maxPageQubits = pref;
         }
     }
 #endif
+    if (getenv("QRACK_QBDT_THRESHOLD_QB")) {
+        maxPageQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QBDT_THRESHOLD_QB")));
+    }
 }
 
 QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm)
