@@ -34,9 +34,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 {
     Init();
 
-    // "Attached" state vector qubits are broken:
-    // SetQubitCount(qBitCount, (maxPageQubits < qBitCount) ? maxPageQubits : qBitCount);
-    SetQubitCount(qBitCount, 0U);
+    SetQubitCount(qBitCount, (maxPageQubits < qBitCount) ? maxPageQubits : qBitCount);
 
     SetPermutation(initState);
 }
@@ -80,23 +78,19 @@ void QBdt::Init()
 
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
-        // bitLenInt segmentGlobalQb = -1;
-        // bitLenInt segmentGlobalQb = 5U;
-        // #if ENABLE_ENV_VARS
-        //         if (getenv("QRACK_SEGMENT_QBDT_QB")) {
-        //             segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_QBDT_QB")));
-        //         }
-        // #endif
-        // maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-        const bitLenInt cpuQubits = (bdtStride <= ONE_BCI) ? 0U : (log2(bdtStride - ONE_BCI) + 1U);
-        bitLenInt gpuQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-        if (gpuQubits > cpuQubits) {
-            gpuQubits = cpuQubits;
+        maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+        if (getenv("QRACK_QBDT_THRESHOLD_QB")) {
+            const bitLenInt thresh = (bitLenInt)std::stoi(std::string(getenv("QRACK_QBDT_THRESHOLD_QB")));
+            if (thresh < maxPageQubits) {
+                maxPageQubits = thresh;
+            }
+        } else {
+            const bitLenInt pref =
+                log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+            if (pref < maxPageQubits) {
+                maxPageQubits = pref;
+            }
         }
-        // maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
-        // if ((maxPageQubits < gpuQubits) && !getenv("QRACK_SEGMENT_QBDT_QB")) {
-        maxPageQubits = gpuQubits;
-        // }
     }
 #endif
 }
@@ -406,10 +400,6 @@ void QBdt::SetStateVector()
         return;
     }
 
-    if (attachedQubitCount) {
-        throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
-    }
-
     QBdtQEngineNodePtr nRoot = MakeQEngineNode(ONE_R1, qubitCount);
     GetQuantumState(NODE_TO_QENGINE(nRoot));
     root = nRoot;
@@ -603,6 +593,24 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         return;
     }
 
+    if (length > bdtQubitCount) {
+        if (dest) {
+            ExecuteAsStateVector([&](QInterfacePtr eng) {
+                dest->SetStateVector();
+                eng->Decompose(start, NODE_TO_QENGINE(dest->root));
+                SetQubitCount(qubitCount - length);
+                dest->ResetStateVector();
+            });
+        } else {
+            ExecuteAsStateVector([&](QInterfacePtr eng) {
+                eng->Dispose(start, length);
+                SetQubitCount(qubitCount - length);
+            });
+        }
+
+        return;
+    }
+
     if (start && bdtQubitCount && attachedQubitCount) {
         ROR(start, 0U, qubitCount);
         DecomposeDispose(0U, length, dest);
@@ -611,20 +619,15 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         return;
     }
 
-    bitLenInt attachedDiff = 0U;
-    if ((start + length) > bdtQubitCount) {
-        attachedDiff = (start > bdtQubitCount) ? length : (start + length - bdtQubitCount);
-    }
-
     Finish();
 
     if (dest) {
         dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
-        dest->SetQubitCount(length, attachedDiff);
+        dest->SetQubitCount(length);
     } else {
         root->RemoveSeparableAtDepth(start, length);
     }
-    SetQubitCount(qubitCount - length, attachedQubitCount - attachedDiff);
+    SetQubitCount(qubitCount - length, attachedQubitCount);
     root->Prune(bdtQubitCount);
 }
 
