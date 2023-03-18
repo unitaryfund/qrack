@@ -326,14 +326,16 @@ void QEngineCPU::GetProbs(real1* outputProbs)
                                                                                                                        \
         real1 dotMulRes = norm(qubit.c(0U));                                                                           \
         if (dotMulRes < norm_thresh) {                                                                                 \
-            qubit.set_c(0U, ZERO_CMPLX);                                                                               \
+            qubit.f[0U] = ZERO_R1;                                                                                     \
+            qubit.f[1U] = ZERO_R1;                                                                                     \
         } else {                                                                                                       \
             rngNrm[cpu] += dotMulRes;                                                                                  \
         }                                                                                                              \
                                                                                                                        \
         dotMulRes = norm(qubit.c(1U));                                                                                 \
         if (dotMulRes < norm_thresh) {                                                                                 \
-            qubit.set_c(1U, ZERO_CMPLX);                                                                               \
+            qubit.f[2U] = ZERO_R1;                                                                                     \
+            qubit.f[3U] = ZERO_R1;                                                                                     \
         } else {                                                                                                       \
             rngNrm[cpu] += dotMulRes;                                                                                  \
         }                                                                                                              \

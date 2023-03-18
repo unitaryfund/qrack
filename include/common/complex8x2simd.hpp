@@ -49,10 +49,6 @@ union complex2 {
         c2 = _mm_set_ps(i2, r2, i1, r1);
     }
     inline std::complex<float> c(const size_t& i) const { return complex(f[i << 1U], f[(i << 1U) + 1U]); }
-    inline void set_c(const size_t& i, std::complex<float>rhs) {
-        f[i << 1U] = rhs.imag();
-        f[(i << 1U) + 1U] = rhs.real();
-    }
     inline complex2 operator+(const complex2& other) const { return _mm_add_ps(c2, other.c2); }
     inline complex2 operator+=(const complex2& other)
     {

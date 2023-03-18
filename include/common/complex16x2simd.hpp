@@ -42,10 +42,6 @@ union complex2 {
         c2 = _mm256_set_pd(i2, r2, i1, r1);
     }
     inline std::complex<double> c(const size_t& i) const { return complex(f[i << 1U], f[(i << 1U) + 1U]); }
-    inline void set_c(const size_t& i, std::complex<double>rhs) {
-        f[i << 1U] = rhs.imag();
-        f[(i << 1U) + 1U] = rhs.real();
-    }
     inline complex2 operator+(const complex2& other) const { return _mm256_add_pd(c2, other.c2); }
     inline complex2 operator+=(const complex2& other)
     {
