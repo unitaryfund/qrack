@@ -17,6 +17,7 @@
 #include "hamiltonian.hpp"
 
 #include <map>
+#include <random>
 #include <vector>
 
 #if ENABLE_UINT128
