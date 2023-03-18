@@ -36,7 +36,7 @@ namespace Qrack {
 
 struct AmplitudeEntry {
 #if UINTPOW < 6
-    unsigned long permutation;
+    uint32_t permutation;
 #else
     bitCapIntOcl permutation;
 #endif
