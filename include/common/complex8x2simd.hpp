@@ -81,8 +81,6 @@ union complex2 {
     }
 };
 
-inline complex2 dupeLo(const complex2& cmplx2) { return _mm_shuffle_ps(cmplx2.c2, cmplx2.c2, 68); }
-inline complex2 dupeHi(const complex2& cmplx2) { return _mm_shuffle_ps(cmplx2.c2, cmplx2.c2, 238); }
 inline complex2 matrixMul(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& qubit)
 {
     const __m128& col1 = mtrxCol1.c2;

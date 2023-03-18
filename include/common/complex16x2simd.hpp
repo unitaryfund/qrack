@@ -69,7 +69,7 @@ union complex2 {
         return c2;
     }
     inline complex2 operator*(const double& rhs) const { return _mm256_mul_pd(c2, _mm256_set1_pd(rhs)); }
-    inline complex2 operator-() const { return _mm256_mul_pd(_mm256_set1_pd(1.0), c2); }
+    inline complex2 operator-() const { return _mm256_mul_pd(_mm256_set1_pd(-1.0), c2); }
     inline complex2 operator*=(const double& other)
     {
         c2 = _mm256_mul_pd(c2, _mm256_set1_pd(other));
@@ -77,8 +77,6 @@ union complex2 {
     }
 };
 
-inline complex2 dupeLo(const complex2& cmplx2) { return _mm256_permute2f128_pd(cmplx2.c2, cmplx2.c2, 0); }
-inline complex2 dupeHi(const complex2& cmplx2) { return _mm256_permute2f128_pd(cmplx2.c2, cmplx2.c2, 17); }
 inline complex2 matrixMul(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& qubit)
 {
     const __m256d& col1 = mtrxCol1.c2;
