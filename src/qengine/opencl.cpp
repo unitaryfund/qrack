@@ -1066,8 +1066,8 @@ void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     // Load the integer kernel arguments buffer.
     const bitCapIntOcl maxI = maxQPowerOcl >> ONE_BCI;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxI, pow2Ocl(qubitIndex), (bitCapIntOcl)controls.size(), (bitCapIntOcl)mtrxSkipPowers.size(),
-        (bitCapIntOcl)mtrxSkipValueMask, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxI, pow2Ocl(qubitIndex), (bitCapIntOcl)controls.size(),
+        (bitCapIntOcl)mtrxSkipPowers.size(), (bitCapIntOcl)mtrxSkipValueMask, 0U, 0U, 0U, 0U, 0U };
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 5, bciArgs);
 
     BufferPtr nrmInBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(real1));
@@ -1978,8 +1978,8 @@ real1_f QEngineOCL::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCa
 
     BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bits.size());
     DISPATCH_WRITE(waitVec, *bitMapBuffer, sizeof(bitCapIntOcl) * bits.size(), bitPowers.get());
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U,
-        0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U,
+        0U, 0U, 0U, 0U };
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -2717,7 +2717,8 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)(controls.size() + length)),
-        toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
+        toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart,
+        carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
     AddAlloc(sizeDiff);
@@ -2758,8 +2759,8 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
     }
     std::sort(skipPowers.get(), skipPowers.get() + controls.size() + length);
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask, carryMask,
-        modN, length, inOutStart, carryStart };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask,
+        carryMask, modN, length, inOutStart, carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
     AddAlloc(sizeDiff);

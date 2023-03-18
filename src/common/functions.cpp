@@ -84,12 +84,12 @@ void mul2x2(complex const* left, complex const* right, complex* out)
     const complex2 left1(left[1U], left[3U]);
 
     complex2 col(matrixMul(left0.c2, left1.c2, complex2(right[0U], right[2U]).c2));
-    out[0U] = col.c[0U];
-    out[2U] = col.c[1U];
+    out[0U] = col.c(0U);
+    out[2U] = col.c(1U);
 
     col = complex2(matrixMul(left0.c2, left1.c2, complex2(right[1U], right[3U]).c2));
-    out[1U] = col.c[0U];
-    out[3U] = col.c[1U];
+    out[1U] = col.c(0U);
+    out[3U] = col.c(1U);
 }
 #else
 void mul2x2(complex const* left, complex const* right, complex* out)

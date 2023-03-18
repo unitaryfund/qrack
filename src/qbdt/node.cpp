@@ -497,29 +497,29 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
     QBdtNodeInterfacePtr b0 = branches[0U];
     QBdtNodeInterfacePtr b1 = branches[1U];
 
-    if (IS_NORM_0(mtrxCol2.c[0U]) && IS_NORM_0(mtrxCol1.c[1U])) {
+    if (IS_NORM_0(mtrxCol2.c(0U)) && IS_NORM_0(mtrxCol1.c(1U))) {
         if (true) {
             std::lock(b0->mtx, b1->mtx);
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
-            b0->scale *= mtrxCol1.c[0U];
-            b1->scale *= mtrxCol2.c[1U];
+            b0->scale *= mtrxCol1.c(0U);
+            b1->scale *= mtrxCol2.c(1U);
         }
         Prune();
 
         return;
     }
 
-    if (IS_NORM_0(mtrxCol1.c[0U]) && IS_NORM_0(mtrxCol2.c[1U])) {
+    if (IS_NORM_0(mtrxCol1.c(0U)) && IS_NORM_0(mtrxCol2.c(1U))) {
         if (true) {
             std::lock(b0->mtx, b1->mtx);
             std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
             std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
             branches[0U].swap(branches[1U]);
-            b1->scale *= mtrxCol2.c[0U];
-            b0->scale *= mtrxCol1.c[1U];
+            b1->scale *= mtrxCol2.c(0U);
+            b0->scale *= mtrxCol1.c(1U);
         }
         Prune();
 
@@ -559,18 +559,18 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
     if (isB0Zero || isB1Zero) {
         complex2 qubit(b0->scale, b1->scale);
-        qubit.c2 = matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2);
-        b0->scale = qubit.c[0U];
-        b1->scale = qubit.c[1U];
+        qubit = matrixMul(mtrxCol1, mtrxCol2, qubit);
+        b0->scale = qubit.c(0U);
+        b1->scale = qubit.c(1U);
 
         return;
     }
 
     if (b0->isEqualUnder(b1)) {
         complex2 qubit(b0->scale, b1->scale);
-        qubit.c2 = matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2);
-        b0->scale = qubit.c[0U];
-        b1->scale = qubit.c[1U];
+        qubit = matrixMul(mtrxCol1, mtrxCol2, qubit);
+        b0->scale = qubit.c(0U);
+        b1->scale = qubit.c(1U);
 
         return;
     }
