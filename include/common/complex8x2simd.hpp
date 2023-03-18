@@ -22,10 +22,6 @@
 
 #include <complex>
 
-#if LANGUAGE_STD == 98
-#include <boost/variant.hpp>
-#endif
-
 namespace Qrack {
 
 static const __m128 SIGNMASK = _mm_set_ps(0.0f, -0.0f, 0.0f, -0.0f);

@@ -30,6 +30,7 @@ static const __m256d ZERO_256D = _mm256_set_pd(0, 0, 0, 0);
 union complex2 {
     __m256d c2;
     double f[4];
+
     inline complex2() {}
     inline complex2(const __m256d& cm2) { c2 = cm2; }
     inline complex2(const complex2& cm2) { c2 = cm2.c2; }
