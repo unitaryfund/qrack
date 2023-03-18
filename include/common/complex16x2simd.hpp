@@ -77,32 +77,24 @@ union complex2 {
     }
 };
 
-inline complex2 matrixMul(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& qubit)
+inline complex2 mtrxColShuff(const complex2& mtrxCol) { return _mm256_shuffle_pd(mtrxCol.c2, mtrxCol.c2, 5); }
+inline complex2 matrixMul(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxCol1Shuff,
+    const complex2& mtrxCol2Shuff, const complex2& qubit)
 {
     const __m256d& col1 = mtrxCol1.c2;
     const __m256d& col2 = mtrxCol2.c2;
     const __m256d dupeLo = _mm256_permute2f128_pd(qubit.c2, qubit.c2, 0);
     const __m256d dupeHi = _mm256_permute2f128_pd(qubit.c2, qubit.c2, 17);
-    return _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(col1, col1, 5),
-                                           _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeLo), dupeLo, 15)),
-                             _mm256_mul_pd(col1, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
-        _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(col2, col2, 5),
-                          _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeHi), dupeHi, 15)),
+    return _mm256_add_pd(
+        _mm256_add_pd(_mm256_mul_pd(mtrxCol1Shuff.c2, _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeLo), dupeLo, 15)),
+            _mm256_mul_pd(col1, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
+        _mm256_add_pd(_mm256_mul_pd(mtrxCol2Shuff.c2, _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeHi), dupeHi, 15)),
             _mm256_mul_pd(col2, _mm256_shuffle_pd(dupeHi, dupeHi, 0))));
 }
-inline complex2 matrixMul(const double& nrm, const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& qubit)
+inline complex2 matrixMul(const float& nrm, const complex2& mtrxCol1, const complex2& mtrxCol2,
+    const complex2& mtrxCol1Shuff, const complex2& mtrxCol2Shuff, const complex2& qubit)
 {
-    const __m256d& col1 = mtrxCol1.c2;
-    const __m256d& col2 = mtrxCol2.c2;
-    const __m256d dupeLo = _mm256_permute2f128_pd(qubit.c2, qubit.c2, 0);
-    const __m256d dupeHi = _mm256_permute2f128_pd(qubit.c2, qubit.c2, 17);
-    return _mm256_mul_pd(_mm256_set1_pd(nrm),
-        _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(col1, col1, 5),
-                                        _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeLo), dupeLo, 15)),
-                          _mm256_mul_pd(col1, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
-            _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(col2, col2, 5),
-                              _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeHi), dupeHi, 15)),
-                _mm256_mul_pd(col2, _mm256_shuffle_pd(dupeHi, dupeHi, 0)))));
+    return matrixMul(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubit) * nrm;
 }
 inline complex2 operator*(const double& lhs, const complex2& rhs) { return _mm256_mul_pd(_mm256_set1_pd(lhs), rhs.c2); }
 

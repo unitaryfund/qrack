@@ -81,32 +81,24 @@ union complex2 {
     }
 };
 
-inline complex2 matrixMul(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& qubit)
+inline complex2 mtrxColShuff(const complex2& mtrxCol) { return _mm_shuffle_ps(mtrxCol.c2, mtrxCol.c2, 177); }
+inline complex2 matrixMul(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxCol1Shuff,
+    const complex2& mtrxCol2Shuff, const complex2& qubit)
 {
     const __m128& col1 = mtrxCol1.c2;
     const __m128& col2 = mtrxCol2.c2;
     const __m128 dupeLo = _mm_shuffle_ps(qubit.c2, qubit.c2, 68);
     const __m128 dupeHi = _mm_shuffle_ps(qubit.c2, qubit.c2, 238);
-    return _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(col1, col1, 177),
-                                     _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeLo, dupeLo, 245))),
-                          _mm_mul_ps(col1, _mm_shuffle_ps(dupeLo, dupeLo, 160))),
-        _mm_add_ps(
-            _mm_mul_ps(_mm_shuffle_ps(col2, col2, 177), _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeHi, dupeHi, 245))),
+    return _mm_add_ps(
+        _mm_add_ps(_mm_mul_ps(mtrxCol1Shuff.c2, _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeLo, dupeLo, 245))),
+            _mm_mul_ps(col1, _mm_shuffle_ps(dupeLo, dupeLo, 160))),
+        _mm_add_ps(_mm_mul_ps(mtrxCol2Shuff.c2, _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeHi, dupeHi, 245))),
             _mm_mul_ps(col2, _mm_shuffle_ps(dupeHi, dupeHi, 160))));
 }
-inline complex2 matrixMul(const float& nrm, const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& qubit)
+inline complex2 matrixMul(const float& nrm, const complex2& mtrxCol1, const complex2& mtrxCol2,
+    const complex2& mtrxCol1Shuff, const complex2& mtrxCol2Shuff, const complex2& qubit)
 {
-    const __m128& col1 = mtrxCol1.c2;
-    const __m128& col2 = mtrxCol2.c2;
-    const __m128 dupeLo = _mm_shuffle_ps(qubit.c2, qubit.c2, 68);
-    const __m128 dupeHi = _mm_shuffle_ps(qubit.c2, qubit.c2, 238);
-    return _mm_mul_ps(_mm_set1_ps(nrm),
-        _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(col1, col2, 177),
-                                  _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeLo, dupeLo, 245))),
-                       _mm_mul_ps(mtrxCol1.c2, _mm_shuffle_ps(dupeLo, dupeLo, 160))),
-            _mm_add_ps(
-                _mm_mul_ps(_mm_shuffle_ps(col2, col2, 177), _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeHi, dupeHi, 245))),
-                _mm_mul_ps(col2, _mm_shuffle_ps(dupeHi, dupeHi, 160)))));
+    return matrixMul(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubit) * nrm;
 }
 inline complex2 operator*(const float& lhs, const complex2& rhs) { return _mm_mul_ps(_mm_set1_ps(lhs), rhs.c2); }
 

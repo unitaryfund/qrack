@@ -557,9 +557,11 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         b1->scale = ZERO_CMPLX;
     }
 
+    // TODO: If the shuffled columns are passed in, much work can be avoided.
+
     if (isB0Zero || isB1Zero) {
         complex2 qubit(b0->scale, b1->scale);
-        qubit = matrixMul(mtrxCol1, mtrxCol2, qubit);
+        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff(mtrxCol1), mtrxColShuff(mtrxCol2), qubit);
         b0->scale = qubit.c(0U);
         b1->scale = qubit.c(1U);
 
@@ -568,7 +570,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
     if (b0->isEqualUnder(b1)) {
         complex2 qubit(b0->scale, b1->scale);
-        qubit = matrixMul(mtrxCol1, mtrxCol2, qubit);
+        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff(mtrxCol1), mtrxColShuff(mtrxCol2), qubit);
         b0->scale = qubit.c(0U);
         b1->scale = qubit.c(1U);
 

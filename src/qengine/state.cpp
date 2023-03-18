@@ -396,6 +396,9 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             const complex2 mtrxCol1(mtrx[0U], mtrx[2U]);
             const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 
+            const complex2 mtrxCol1Shuff = mtrxColShuff(mtrxCol1);
+            const complex2 mtrxCol2Shuff = mtrxColShuff(mtrxCol2);
+
             const complex2 mtrxPhase = (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) ? complex2(mtrx[0U], mtrx[3U])
                                                                                     : complex2(mtrx[1U], mtrx[2U]);
 
@@ -417,7 +420,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                 } else {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
                         complex2 qubit = stateVec->read2(lcv + offset1, lcv + offset2);
-                        qubit = matrixMul(mtrxCol1, mtrxCol2, qubit);
+                        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubit);
                         stateVec->write2(lcv + offset1, qubit.c(0U), lcv + offset2, qubit.c(1U));
                     };
                 }
@@ -428,7 +431,8 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
                         fn = NORM_THRESH_KERNEL(offset2, offset1, nrm * mtrxPhase * qubit);
                     } else {
-                        fn = NORM_THRESH_KERNEL(offset1, offset2, matrixMul(nrm, mtrxCol1, mtrxCol2, qubit));
+                        fn = NORM_THRESH_KERNEL(
+                            offset1, offset2, matrixMul(nrm, mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubit));
                     }
                 } else {
                     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
@@ -436,7 +440,8 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
                         fn = NORM_THRESH_KERNEL(offset2, offset1, nrm * mtrxPhase * qubit);
                     } else {
-                        fn = NORM_THRESH_KERNEL(offset1, offset2, matrixMul(mtrxCol1, mtrxCol2, qubit));
+                        fn = NORM_THRESH_KERNEL(
+                            offset1, offset2, matrixMul(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubit));
                     }
                 }
             } else {
@@ -446,7 +451,8 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
                         fn = NORM_CALC_KERNEL(offset2, offset1, nrm * mtrxPhase * qubit);
                     } else {
-                        fn = NORM_CALC_KERNEL(offset1, offset2, matrixMul(nrm, mtrxCol1, mtrxCol2, qubit));
+                        fn = NORM_CALC_KERNEL(
+                            offset1, offset2, matrixMul(nrm, mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubit));
                     }
                 } else {
                     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
@@ -454,7 +460,8 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
                         fn = NORM_CALC_KERNEL(offset2, offset1, mtrxPhase * qubit);
                     } else {
-                        fn = NORM_CALC_KERNEL(offset1, offset2, matrixMul(mtrxCol1, mtrxCol2, qubit));
+                        fn = NORM_CALC_KERNEL(
+                            offset1, offset2, matrixMul(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubit));
                     }
                 }
             }
