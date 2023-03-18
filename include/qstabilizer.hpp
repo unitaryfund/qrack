@@ -35,7 +35,11 @@
 namespace Qrack {
 
 struct AmplitudeEntry {
+#if UINTPOW == 5
+    unsigned long permutation;
+#else
     bitCapIntOcl permutation;
+#endif
     complex amplitude;
 
     AmplitudeEntry(const bitCapInt& p, const complex& a)
