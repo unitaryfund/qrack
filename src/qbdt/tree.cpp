@@ -76,15 +76,6 @@ void QBdt::Init()
         rootEngine = engines[engineLevel];
     }
 
-#if ENABLE_OPENCL
-    if ((rootEngine != QINTERFACE_CPU) && !getenv("QRACK_QBDT_THRESHOLD_QB")) {
-        maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-        const bitLenInt pref = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-        if (pref < maxPageQubits) {
-            maxPageQubits = pref;
-        }
-    }
-#endif
     if (getenv("QRACK_QBDT_THRESHOLD_QB")) {
         maxPageQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QBDT_THRESHOLD_QB")));
     }
@@ -856,11 +847,14 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 #if ENABLE_COMPLEX_X2
     const complex2 mtrxCol1(mtrx[0U], mtrx[2U]);
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
+
+    const complex2 mtrxCol1Shuff = mtrxColShuff(mtrxCol1);
+    const complex2 mtrxCol2Shuff = mtrxColShuff(mtrxCol2);
 #endif
 
     par_for_qbdt(qPower, maxQubit,
 #if ENABLE_COMPLEX_X2
-        [this, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet](const bitCapInt& i) {
+        [this, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, isKet](const bitCapInt& i) {
 #else
         [this, maxQubit, target, mtrx, isKet](const bitCapInt& i) {
 #endif
@@ -885,7 +879,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
                 NODE_TO_QENGINE(leaf)->Mtrx(mtrx, target - bdtQubitCount);
             } else {
 #if ENABLE_COMPLEX_X2
-                leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
+                leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, bdtQubitCount - target);
 #else
                 leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
@@ -946,12 +940,15 @@ void QBdt::ApplyControlledSingle(
 #if ENABLE_COMPLEX_X2
     const complex2 mtrxCol1(mtrx[0U], mtrx[2U]);
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
+
+    const complex2 mtrxCol1Shuff = mtrxColShuff(mtrxCol1);
+    const complex2 mtrxCol2Shuff = mtrxColShuff(mtrxCol2);
 #endif
 
     par_for_qbdt(qPower, maxQubit,
 #if ENABLE_COMPLEX_X2
-        [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, isKet, isAnti,
-            ketControlsVec](const bitCapInt& i) {
+        [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff,
+            isKet, isAnti, ketControlsVec](const bitCapInt& i) {
 #else
         [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, isKet, isAnti, ketControlsVec](const bitCapInt& i) {
 #endif
@@ -985,7 +982,7 @@ void QBdt::ApplyControlledSingle(
                 }
             } else {
 #if ENABLE_COMPLEX_X2
-                leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
+                leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, bdtQubitCount - target);
 #else
                 leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif

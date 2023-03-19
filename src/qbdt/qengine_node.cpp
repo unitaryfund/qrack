@@ -159,7 +159,8 @@ QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, co
 }
 
 #if ENABLE_COMPLEX_X2
-void QBdtQEngineNode::PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b1)
+void QBdtQEngineNode::PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+    const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b1)
 {
     const complex mtrx[4U]{ mtrxCol1.c(0U), mtrxCol2.c(0U), mtrxCol1.c(1U), mtrxCol2.c(1U) };
 #else

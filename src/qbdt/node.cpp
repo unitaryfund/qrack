@@ -487,7 +487,8 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 }
 
 #if ENABLE_COMPLEX_X2
-void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth)
+void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+    const complex2& mtrxColShuff2, bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -526,12 +527,13 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitL
         return;
     }
 
-    PushStateVector(mtrxCol1, mtrxCol2, branches[0U], branches[1U], depth);
+    PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, branches[0U], branches[1U], depth);
     Prune(depth);
 }
 
-void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
-    QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
+void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+    const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
+    bitLenInt parDepth)
 {
     std::lock(b0->mtx, b1->mtx);
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
@@ -561,7 +563,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
     if (isB0Zero || isB1Zero) {
         complex2 qubit(b0->scale, b1->scale);
-        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff(mtrxCol1), mtrxColShuff(mtrxCol2), qubit);
+        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
         b0->scale = qubit.c(0U);
         b1->scale = qubit.c(1U);
 
@@ -570,7 +572,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
     if (b0->isEqualUnder(b1)) {
         complex2 qubit(b0->scale, b1->scale);
-        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff(mtrxCol1), mtrxColShuff(mtrxCol2), qubit);
+        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
         b0->scale = qubit.c(0U);
         b1->scale = qubit.c(1U);
 
@@ -592,7 +594,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     QBdtNodeInterfacePtr b11 = b1->branches[1U];
 
     if (!b00) {
-        b0->PushSpecial(mtrxCol1, mtrxCol2, b1);
+        b0->PushSpecial(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b1);
 
         b0->PopStateVector();
         b1->PopStateVector();
@@ -623,18 +625,23 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
-        std::future<void> future0 = std::async(std::launch::async,
-            [&] { b0->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth); });
-        b1->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth, parDepth);
+        std::future<void> future0 = std::async(std::launch::async, [&] {
+            b0->PushStateVector(
+                mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth, parDepth);
+        });
+        b1->PushStateVector(
+            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth, parDepth);
 
         future0.get();
     } else {
-        b0->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth, parDepth);
-        b1->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth, parDepth);
+        b0->PushStateVector(
+            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth, parDepth);
+        b1->PushStateVector(
+            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth, parDepth);
     }
 #else
-    b0->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[0U], b1->branches[0U], depth);
-    b1->PushStateVector(mtrxCol1, mtrxCol2, b0->branches[1U], b1->branches[1U], depth);
+    b0->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth);
+    b1->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth);
 #endif
 
     b0->PopStateVector();
