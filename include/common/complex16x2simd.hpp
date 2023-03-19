@@ -24,7 +24,7 @@
 
 namespace Qrack {
 
-static const __m256d ZERO_256D = _mm256_set_pd(0, 0, 0, 0);
+static const __m256d SIGNMASK = _mm_set_ps(-0.0, -0.0, -0.0, -0.0);
 
 /** SIMD implementation of the double precision complex vector type of 2 complex numbers, only for AVX Apply2x2. */
 union complex2 {
@@ -58,13 +58,13 @@ union complex2 {
     inline complex2 operator*(const complex2& other) const
     {
         return _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(c2, c2, 5),
-                                 _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, other.c2), other.c2, 15)),
+                                 _mm256_shuffle_pd(_mm256_xor_pd(SIGNMASK, other.c2), other.c2, 15)),
             _mm256_mul_pd(c2, _mm256_shuffle_pd(other.c2, other.c2, 0)));
     }
     inline complex2 operator*=(const complex2& other)
     {
         c2 = _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(c2, c2, 5),
-                               _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, other.c2), other.c2, 15)),
+                               _mm256_shuffle_pd(_mm256_xor_pd(SIGNMASK, other.c2), other.c2, 15)),
             _mm256_mul_pd(c2, _mm256_shuffle_pd(other.c2, other.c2, 0)));
         return c2;
     }
