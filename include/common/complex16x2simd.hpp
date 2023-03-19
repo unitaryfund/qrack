@@ -24,7 +24,7 @@
 
 namespace Qrack {
 
-static const __m256d SIGNMASK = _mm_set_ps(-0.0, -0.0, -0.0, -0.0);
+static const __m256d SIGNMASK = _mm256_set_pd(-0.0, -0.0, -0.0, -0.0);
 
 /** SIMD implementation of the double precision complex vector type of 2 complex numbers, only for AVX Apply2x2. */
 union complex2 {
@@ -86,9 +86,9 @@ inline complex2 matrixMul(const complex2& mtrxCol1, const complex2& mtrxCol2, co
     const __m256d dupeLo = _mm256_permute2f128_pd(qubit.c2, qubit.c2, 0);
     const __m256d dupeHi = _mm256_permute2f128_pd(qubit.c2, qubit.c2, 17);
     return _mm256_add_pd(
-        _mm256_add_pd(_mm256_mul_pd(mtrxCol1Shuff.c2, _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeLo), dupeLo, 15)),
+        _mm256_add_pd(_mm256_mul_pd(mtrxCol1Shuff.c2, _mm256_shuffle_pd(_mm256_xor_pd(SIGNMASK, dupeLo), dupeLo, 15)),
             _mm256_mul_pd(col1, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
-        _mm256_add_pd(_mm256_mul_pd(mtrxCol2Shuff.c2, _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeHi), dupeHi, 15)),
+        _mm256_add_pd(_mm256_mul_pd(mtrxCol2Shuff.c2, _mm256_shuffle_pd(_mm256_xor_pd(SIGNMASK, dupeHi), dupeHi, 15)),
             _mm256_mul_pd(col2, _mm256_shuffle_pd(dupeHi, dupeHi, 0))));
 }
 inline complex2 matrixMul(const float& nrm, const complex2& mtrxCol1, const complex2& mtrxCol2,
