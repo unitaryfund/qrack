@@ -1090,8 +1090,8 @@ public:
      */
     virtual void SqrtW(bitLenInt qubit)
     {
-        const complex mtrx[4]{ complex(SQRT1_2_R1, ZERO_R1), -complex(ONE_R1 / 2, ONE_R1 / 2),
-            complex(ONE_R1 / 2, -ONE_R1 / 2), complex(SQRT1_2_R1, ZERO_R1) };
+        const complex mtrx[4]{ complex(SQRT1_2_R1, ZERO_R1), -complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+            complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex(SQRT1_2_R1, ZERO_R1) };
         Mtrx(mtrx, qubit);
     }
 
@@ -1102,8 +1102,8 @@ public:
      */
     virtual void ISqrtW(bitLenInt qubit)
     {
-        const complex mtrx[4]{ complex(SQRT1_2_R1, ZERO_R1), complex(ONE_R1 / 2, ONE_R1 / 2),
-            -complex(ONE_R1 / 2, -ONE_R1 / 2), complex(SQRT1_2_R1, ZERO_R1) };
+        const complex mtrx[4]{ complex(SQRT1_2_R1, ZERO_R1), complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+            -complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex(SQRT1_2_R1, ZERO_R1) };
         Mtrx(mtrx, qubit);
     }
 

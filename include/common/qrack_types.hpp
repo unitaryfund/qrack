@@ -25,15 +25,19 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #endif
 
+#if (FPPOW < 5) && !defined(__arm__)
+#include "half.hpp"
+#endif
+
 #if FPPOW < 5
 namespace Qrack {
 #ifdef __arm__
-#include "half.hpp"
 typedef std::complex<__fp16> complex;
 typedef __fp16 real1;
 typedef float real1_f;
 typedef float real1_s;
 #else
+#include "half.hpp"
 typedef std::complex<half_float::half> complex;
 typedef half_float::half real1;
 typedef float real1_f;
