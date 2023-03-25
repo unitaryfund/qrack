@@ -4212,7 +4212,7 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
@@ -4535,7 +4535,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
@@ -5219,7 +5219,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
@@ -5621,7 +5621,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
@@ -6117,7 +6117,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_mirror", "[mirror]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
@@ -6407,7 +6407,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
@@ -6750,7 +6750,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
@@ -7285,7 +7285,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
@@ -7586,7 +7586,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
-        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-(ONE_R1_F / 2 + tan(PI_R1 * (ONE_R1_F / 2 - sdrp)))));
+        const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
 
         std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
                   << std::endl;
