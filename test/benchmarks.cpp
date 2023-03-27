@@ -3780,7 +3780,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
     std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
@@ -3964,6 +3964,32 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
     }
 }
 
+real1_f diophantine_fidelity_correction(real1_f sigmoid, real1_f sdrp)
+{
+    // Nonlinear transform for normalized variance of sigmoid levels:
+    sigmoid = pow(sigmoid, 1 - sqrt(sdrp));
+
+    // Found in guess-and-check regression (R^2 = ~94.3%)
+    sigmoid +=
+        -pow(sdrp, 6) + pow(sdrp, 5) / 4 - 3 * pow(sdrp, 4) + 4 * pow(sdrp, 3) - 3 * pow(sdrp, 2) + (7 * sdrp) / 8;
+
+    // Empirical overall bias correction:
+    sigmoid -= (real1_f)0.028203225105041;
+
+    // Reverse variance normalization:
+    sigmoid = pow(sigmoid, 1 / (1 - sqrt(sdrp)));
+    
+    if (isnan(sigmoid)) {
+        return 0;
+    }
+    
+    if (sigmoid > 1) {
+        return 1;
+    }
+    
+    return sigmoid;
+}
+
 TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
 {
     std::cout << ">>> 'test_noisy_fidelity_mirror':" << std::endl;
@@ -4051,7 +4077,7 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
@@ -4213,9 +4239,9 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
@@ -4354,7 +4380,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
     std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
@@ -4536,9 +4562,9 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
@@ -4709,7 +4735,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
     std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
@@ -5058,7 +5084,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
@@ -5220,9 +5246,9 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
@@ -5440,7 +5466,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
     std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
@@ -5622,9 +5648,9 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
@@ -5749,7 +5775,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
     std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
@@ -6004,7 +6030,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_mirror", "[mirror]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
@@ -6118,9 +6144,9 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_mirror", "[mirror]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6274,7 +6300,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
     std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
@@ -6408,9 +6434,9 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6622,7 +6648,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         << "s)" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     while (sdrp > FP_NORM_EPSILON) {
         start = std::chrono::high_resolution_clock::now();
@@ -6751,9 +6777,9 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6897,7 +6923,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
     std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
@@ -7072,7 +7098,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
     int row, col;
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     std::vector<std::vector<int>> gate1QbRands(n);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
@@ -7286,9 +7312,9 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
@@ -7327,7 +7353,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
 
     int row, col;
 
-    double sdrp = 1.0;
+    double sdrp = 1.0 - 0.025;
 
     std::vector<bitCapInt> qPowers;
     for (bitLenInt i = 0U; i < w; ++i) {
@@ -7587,9 +7613,9 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
+        const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Sigmoid-adjusted) fidelity for SDRP=" << sdrp << ": " << (signalFraction * rawFidelity)
-                  << std::endl;
+        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
 
         sdrp -= 0.025;
     }
