@@ -3974,7 +3974,7 @@ real1_f diophantine_fidelity_correction(real1_f sigmoid, real1_f sdrp)
         -pow(sdrp, 6) + pow(sdrp, 5) / 4 - 3 * pow(sdrp, 4) + 4 * pow(sdrp, 3) - 3 * pow(sdrp, 2) + (7 * sdrp) / 8;
 
     // Empirical overall bias correction:
-    sigmoid -= (real1_f)0.0263197950537677;
+    sigmoid -= (real1_f)0.028203225105041;
 
     // Reverse variance normalization:
     sigmoid = pow(sigmoid, 1 / (1 - sqrt(sdrp)));
