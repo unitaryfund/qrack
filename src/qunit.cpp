@@ -39,7 +39,7 @@
 #define CACHED_Z(shard) ((shard.pauliBasis == PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_ZERO(q) (CACHED_Z(shards[q]) && (ProbBase(q) <= FP_NORM_EPSILON))
 #define CACHED_ONE(q) (CACHED_Z(shards[q]) && ((ONE_R1_F - ProbBase(q)) <= FP_NORM_EPSILON))
-#define CACHED_PLUS(q) (CACHED_X(shards[q]) && ((ONE_R1_F - ProbBase(q)) <= FP_NORM_EPSILON))
+#define CACHED_PLUS(q) (CACHED_X(shards[q]) && (ProbBase(q) <= FP_NORM_EPSILON))
 /* "UNSAFE" variants here do not check whether the bit has cached 2-qubit gates.*/
 #define UNSAFE_CACHED_ZERO_OR_ONE(shard)                                                                               \
     (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
@@ -1014,6 +1014,16 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         return (real1_f)norm(shard.amp1);
     }
 
+    if (shard.unit && shard.isProbDirty) {
+        shard.isProbDirty = false;
+
+        QInterfacePtr unit = shard.unit;
+        bitLenInt mapped = shard.mapped;
+        real1_f prob = unit->Prob(mapped);
+        shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
+        shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
+    }
+
     if (IS_NORM_0(shard.amp1)) {
         logFidelity += log(norm(shard.amp1));
         SeparateBit(false, qubit);
@@ -1022,19 +1032,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         SeparateBit(true, qubit);
     }
 
-    if (!shard.unit || !shard.isProbDirty) {
-        return clampProb((real1_f)norm(shard.amp1));
-    }
-
-    shard.isProbDirty = false;
-
-    QInterfacePtr unit = shard.unit;
-    bitLenInt mapped = shard.mapped;
-    real1_f prob = unit->Prob(mapped);
-    shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
-    shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
-
-    return prob;
+    return clampProb((real1_f)norm(shard.amp1));
 }
 
 real1_f QUnit::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
