@@ -127,22 +127,22 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.amp1 = inputState[1U];
         shard.pauliBasis = PauliZ;
         if (IS_AMP_0(shard.amp0 - shard.amp1)) {
-            logFidelity += log(norm(shard.amp0 - shard.amp1));
+            logFidelity += log(abs(shard.amp0 - shard.amp1));
             shard.pauliBasis = PauliX;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_AMP_0(shard.amp0 + shard.amp1)) {
-            logFidelity += log(norm(shard.amp0 + shard.amp1));
+            logFidelity += log(abs(shard.amp0 + shard.amp1));
             shard.pauliBasis = PauliX;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
         } else if (IS_AMP_0((I_CMPLX * inputState[0U]) - inputState[1U])) {
-            logFidelity += log(norm((I_CMPLX * inputState[0U]) - inputState[1U]));
+            logFidelity += log(abs((I_CMPLX * inputState[0U]) - inputState[1U]));
             shard.pauliBasis = PauliY;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_AMP_0((I_CMPLX * inputState[0U]) + inputState[1U])) {
-            logFidelity += log(norm((I_CMPLX * inputState[0U]) - inputState[1U]));
+            logFidelity += log(abs((I_CMPLX * inputState[0U]) - inputState[1U]));
             shard.pauliBasis = PauliY;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
@@ -257,7 +257,7 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 
     if ((shards[0U].GetQubitCount() > 1) && (norm(result) >= (ONE_R1 - FP_NORM_EPSILON)) &&
         (randGlobalPhase || IS_AMP_0(result - ONE_CMPLX))) {
-        logFidelity += log(norm(result - ONE_CMPLX));
+        logFidelity += log(abs(result - ONE_CMPLX));
         SetPermutation(perm);
     }
 
@@ -771,7 +771,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     ShardAI(qubit, azimuth, inclination);
 
     if (r < 1.0) {
-        logFidelity += log(r);
+        logFidelity += log(sqrt(r));
     }
 
     return true;
@@ -983,22 +983,22 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         shard.unit->GetQuantumState(amps);
 
         if (IS_AMP_0(amps[0U] - amps[1U])) {
-            logFidelity += log(norm(amps[0U] - amps[1U]));
+            logFidelity += log(abs(amps[0U] - amps[1U]));
             shard.pauliBasis = PauliX;
             amps[0U] = amps[0U] / abs(amps[0U]);
             amps[1U] = ZERO_CMPLX;
         } else if (IS_AMP_0(amps[0U] + amps[1U])) {
-            logFidelity += log(norm(amps[0U] + amps[1U]));
+            logFidelity += log(abs(amps[0U] + amps[1U]));
             shard.pauliBasis = PauliX;
             amps[1U] = amps[0U] / abs(amps[0U]);
             amps[0U] = ZERO_CMPLX;
         } else if (IS_AMP_0((I_CMPLX * amps[0U]) - amps[1U])) {
-            logFidelity += log(norm((I_CMPLX * amps[0U]) - amps[1U]));
+            logFidelity += log(abs((I_CMPLX * amps[0U]) - amps[1U]));
             shard.pauliBasis = PauliY;
             amps[0U] = amps[0U] / abs(amps[0U]);
             amps[1U] = ZERO_CMPLX;
         } else if (IS_AMP_0((I_CMPLX * amps[0U]) + amps[1U])) {
-            logFidelity += log(norm((I_CMPLX * amps[0U]) + amps[1U]));
+            logFidelity += log(abs((I_CMPLX * amps[0U]) + amps[1U]));
             shard.pauliBasis = PauliY;
             amps[1U] = amps[0U] / abs(amps[0U]);
             amps[0U] = ZERO_CMPLX;
@@ -1028,10 +1028,10 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
     if (IS_NORM_0(shard.amp1)) {
-        logFidelity += log(norm(shard.amp1));
+        logFidelity += log(abs(shard.amp1));
         SeparateBit(false, qubit);
     } else if (IS_NORM_0(shard.amp0)) {
-        logFidelity += log(norm(shard.amp0));
+        logFidelity += log(abs(shard.amp0));
         SeparateBit(true, qubit);
     }
 
