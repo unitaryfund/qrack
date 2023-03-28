@@ -3971,22 +3971,22 @@ real1_f diophantine_fidelity_correction(real1_f sigmoid, real1_f sdrp)
 
     // Found in guess-and-check regression (R^2 = ~94.3%)
     sigmoid +=
-        -pow(sdrp, 6) + pow(sdrp, 5) / 4 - 3 * pow(sdrp, 4) + 4 * pow(sdrp, 3) - 3 * pow(sdrp, 2) + (7 * sdrp) / 8;
+        -pow(sdrp, 6) + pow(sdrp, 5) / 4 - 3 * pow(sdrp, 4) + 4 * pow(sdrp, 3) - 3 * pow(sdrp, 2) + (5 * sdrp) / 6;
 
     // Empirical overall bias correction:
-    sigmoid -= (real1_f)0.028203225105041;
+    sigmoid -= (real1_f)0.00741342570942599;
 
     // Reverse variance normalization:
     sigmoid = pow(sigmoid, 1 / (1 - sqrt(sdrp)));
-    
+
     if (std::isnan(sigmoid)) {
         return 0;
     }
-    
+
     if (sigmoid > 1) {
         return 1;
     }
-    
+
     return sigmoid;
 }
 
