@@ -229,6 +229,7 @@ MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ uintq sid, _In_ uintq qi1);
 MICROSOFT_QUANTUM_DECL bool TrySeparate2Qb(_In_ uintq sid, _In_ uintq qi1, _In_ uintq qi2);
 MICROSOFT_QUANTUM_DECL bool TrySeparateTol(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ double tol);
 MICROSOFT_QUANTUM_DECL double GetFidelity(_In_ uintq sid);
+MICROSOFT_QUANTUM_DECL void ResetFidelity(_In_ uintq sid);
 MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ uintq sid, _In_ bool irs);
 MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool iti);
 
