@@ -2457,9 +2457,12 @@ public:
      */
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
     /**
-     * When "Schmidt-decomposition rounding parameter" is being used, the in-flight fidelity can be known and reported
-     * at all times, without reliance on any heavy computational overhead. (This calculation must be reset manually
-     * to 1.0 by "QInterface::ResetUnitaryFidelity()".)
+     * When "Schmidt-decomposition rounding parameter" ("SDRP") is being used, starting from initial 1.0 fidelity,
+     * we compound the "unitary fidelity" by successive multiplication by the true unitary probability preserved in each
+     * single rounding event. This is a useful metric on fidelity that requires no heavy calculational overhead to
+     * compute, and it likely represents the absolute worst possible case for "unlucky" SDRP application, but it tends
+     * to be extremely pessimistic compared to direct check of cross-entropy fidelity. This calculation must be reset
+     * manually to 1.0 by "QInterface::ResetUnitaryFidelity()".
      */
     virtual real1_f GetUnitaryFidelity() { return 1.0f; }
     /**
