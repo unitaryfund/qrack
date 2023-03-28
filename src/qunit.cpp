@@ -111,6 +111,8 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
         bool bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0U;
         shards.push_back(QEngineShard(bitState, GetNonunitaryPhase()));
     }
+
+    logFidelity = 0.0;
 }
 
 void QUnit::SetQuantumState(const complex* inputState)
@@ -1019,8 +1021,10 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
     if (IS_NORM_0(shard.amp1)) {
+        logFidelity += log(norm(shard.amp1));
         SeparateBit(false, qubit);
     } else if (IS_NORM_0(shard.amp0)) {
+        logFidelity += log(norm(shard.amp0));
         SeparateBit(true, qubit);
     }
 

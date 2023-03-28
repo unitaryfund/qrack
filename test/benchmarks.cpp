@@ -3955,7 +3955,12 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Fidelity for SDRP=" << sdrp << ": " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << ", Time:"
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
                   << "s" << std::endl;
@@ -4241,7 +4246,15 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }
@@ -4564,7 +4577,15 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }
@@ -4909,8 +4930,12 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
 
         testCase->Finish();
 
-        // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Fidelity for SDRP=" << sdrp << ": " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << ", Time:"
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
                   << "s" << std::endl;
@@ -5248,7 +5273,15 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }
@@ -5650,7 +5683,15 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }
@@ -5901,8 +5942,12 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 
         testCase->Finish();
 
-        // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Fidelity for SDRP=" << sdrp << ": " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << ", Time:"
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
                   << "s" << std::endl;
@@ -6146,7 +6191,15 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_mirror", "[mirror]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6436,7 +6489,15 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }
@@ -6779,7 +6840,15 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }
@@ -7051,8 +7120,12 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 
         testCase->Finish();
 
-        // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        std::cout << "Fidelity for SDRP=" << sdrp << ": " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << ", Time:"
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
                   << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
                          .count()
                   << "s" << std::endl;
@@ -7314,7 +7387,15 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }
@@ -7615,7 +7696,15 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
-        std::cout << "(Diophantine-adjusted) fidelity for SDRP=" << sdrp << ": " << fidelity << std::endl;
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+
+        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetFidelity() << std::endl;
+
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
 
         sdrp -= 0.025;
     }

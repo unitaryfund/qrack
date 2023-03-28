@@ -2465,6 +2465,19 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(_In_ uintq sid, _In_ uintq n, _In_rea
     }
 }
 
+MICROSOFT_QUANTUM_DECL double GetFidelity(_In_ uintq sid)
+{
+    SIMULATOR_LOCK_GUARD_BOOL(sid)
+
+    try {
+        QInterfacePtr simulator = simulators[sid];
+        return simulators[sid]->GetFidelity();
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+        return false;
+    }
+}
+
 MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ uintq sid, _In_ bool irs)
 {
     SIMULATOR_LOCK_GUARD(sid)
