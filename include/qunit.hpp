@@ -355,8 +355,8 @@ public:
     virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol);
     virtual bool TrySeparate(bitLenInt qubit);
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
-    virtual real1_f GetFidelity() { return (real1_f)exp(logFidelity); }
-    virtual void ResetFidelity() { logFidelity = 0.0; }
+    virtual real1_f GetUnitaryFidelity() { return (real1_f)exp(logFidelity); }
+    virtual void ResetUnitaryFidelity() { logFidelity = 0.0; }
 
     virtual QInterfacePtr Clone();
 

@@ -2482,13 +2482,13 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(_In_ uintq sid, _In_ uintq n, _In_rea
     }
 }
 
-MICROSOFT_QUANTUM_DECL double GetFidelity(_In_ uintq sid)
+MICROSOFT_QUANTUM_DECL double GetUnitaryFidelity(_In_ uintq sid)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
     try {
         QInterfacePtr simulator = simulators[sid];
-        return simulators[sid]->GetFidelity();
+        return simulators[sid]->GetUnitaryFidelity();
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2496,13 +2496,13 @@ MICROSOFT_QUANTUM_DECL double GetFidelity(_In_ uintq sid)
     }
 }
 
-MICROSOFT_QUANTUM_DECL void ResetFidelity(_In_ uintq sid)
+MICROSOFT_QUANTUM_DECL void ResetUnitaryFidelity(_In_ uintq sid)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
     try {
         QInterfacePtr simulator = simulators[sid];
-        simulators[sid]->ResetFidelity();
+        simulators[sid]->ResetUnitaryFidelity();
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;

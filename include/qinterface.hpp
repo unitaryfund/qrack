@@ -2458,15 +2458,14 @@ public:
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
     /**
      * When "Schmidt-decomposition rounding parameter" is being used, the in-flight fidelity can be known and reported
-     * at all times, without reliance on any heavy computational overhead. (This calculation is automatically reset to
-     * value 1.0 by "QInterface::SetPermutation()" and "QInterface::MAll()," as weill as manually by
-     * "QInterface::ResetFidelity()".)
+     * at all times, without reliance on any heavy computational overhead. (This calculation must be reset manually
+     * to 1.0 by "QInterface::ResetUnitaryFidelity()".)
      */
-    virtual real1_f GetFidelity() { return 1.0f; }
+    virtual real1_f GetUnitaryFidelity() { return 1.0f; }
     /**
      * Reset the internal fidelity calculation tracker to 1.0.
      */
-    virtual void ResetFidelity() {}
+    virtual void ResetUnitaryFidelity() {}
     /**
      *  Set reactive separation option (on by default if available)
      *
