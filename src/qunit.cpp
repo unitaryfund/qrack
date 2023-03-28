@@ -37,16 +37,16 @@
 #define CACHED_X(shard) ((shard.pauliBasis == PauliX) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_X_OR_Y(shard) ((shard.pauliBasis != PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_Z(shard) ((shard.pauliBasis == PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_ZERO(shard) (CACHED_Z(shard) && IS_AMP_0(shard.amp1))
-#define CACHED_ONE(shard) (CACHED_Z(shard) && IS_AMP_0(shard.amp0))
-#define CACHED_PLUS(shard) (CACHED_X(shard) && IS_AMP_0(shard.amp1))
+#define CACHED_ZERO(shard) (CACHED_Z(shard) && IS_NORM_0(shard.amp1))
+#define CACHED_ONE(shard) (CACHED_Z(shard) && IS_NORM_0(shard.amp0))
+#define CACHED_PLUS(shard) (CACHED_X(shard) && IS_NORM_0(shard.amp1))
 /* "UNSAFE" variants here do not check whether the bit has cached 2-qubit gates.*/
 #define UNSAFE_CACHED_ZERO_OR_ONE(shard)                                                                               \
-    (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
+    (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_X(shard)                                                                                         \
-    (!shard.isProbDirty && (shard.pauliBasis == PauliX) && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
-#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && IS_AMP_0(shard.amp0))
-#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && IS_AMP_0(shard.amp1))
+    (!shard.isProbDirty && (shard.pauliBasis == PauliX) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
+#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && IS_NORM_0(shard.amp0))
+#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && IS_NORM_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
     ((engines[0U] == QINTERFACE_STABILIZER_HYBRID) && shard1.isClifford() && shard2.isClifford())
@@ -111,8 +111,6 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
         bool bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0U;
         shards.push_back(QEngineShard(bitState, GetNonunitaryPhase()));
     }
-
-    logFidelity = 0.0;
 }
 
 void QUnit::SetQuantumState(const complex* inputState)
@@ -129,18 +127,22 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.amp1 = inputState[1U];
         shard.pauliBasis = PauliZ;
         if (IS_AMP_0(shard.amp0 - shard.amp1)) {
+            logFidelity += log(norm(shard.amp0 - shard.amp1));
             shard.pauliBasis = PauliX;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_AMP_0(shard.amp0 + shard.amp1)) {
+            logFidelity += log(norm(shard.amp0 + shard.amp1));
             shard.pauliBasis = PauliX;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
         } else if (IS_AMP_0((I_CMPLX * inputState[0U]) - inputState[1U])) {
+            logFidelity += log(norm((I_CMPLX * inputState[0U]) - inputState[1U]));
             shard.pauliBasis = PauliY;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_AMP_0((I_CMPLX * inputState[0U]) + inputState[1U])) {
+            logFidelity += log(norm((I_CMPLX * inputState[0U]) - inputState[1U]));
             shard.pauliBasis = PauliY;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
@@ -255,6 +257,7 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 
     if ((shards[0U].GetQubitCount() > 1) && (norm(result) >= (ONE_R1 - FP_NORM_EPSILON)) &&
         (randGlobalPhase || IS_AMP_0(result - ONE_CMPLX))) {
+        logFidelity += log(norm(result - ONE_CMPLX));
         SetPermutation(perm);
     }
 
@@ -980,18 +983,22 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         shard.unit->GetQuantumState(amps);
 
         if (IS_AMP_0(amps[0U] - amps[1U])) {
+            logFidelity += log(norm(amps[0U] - amps[1U]));
             shard.pauliBasis = PauliX;
             amps[0U] = amps[0U] / abs(amps[0U]);
             amps[1U] = ZERO_CMPLX;
         } else if (IS_AMP_0(amps[0U] + amps[1U])) {
+            logFidelity += log(norm(amps[0U] + amps[1U]));
             shard.pauliBasis = PauliX;
             amps[1U] = amps[0U] / abs(amps[0U]);
             amps[0U] = ZERO_CMPLX;
         } else if (IS_AMP_0((I_CMPLX * amps[0U]) - amps[1U])) {
+            logFidelity += log(norm((I_CMPLX * amps[0U]) - amps[1U]));
             shard.pauliBasis = PauliY;
             amps[0U] = amps[0U] / abs(amps[0U]);
             amps[1U] = ZERO_CMPLX;
         } else if (IS_AMP_0((I_CMPLX * amps[0U]) + amps[1U])) {
+            logFidelity += log(norm((I_CMPLX * amps[0U]) + amps[1U]));
             shard.pauliBasis = PauliY;
             amps[1U] = amps[0U] / abs(amps[0U]);
             amps[0U] = ZERO_CMPLX;
@@ -2699,13 +2706,13 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         ProbBase(controls[i]);
 
         // This might determine that we can just skip out of the whole gate, in which case we return.
-        if (IS_AMP_0(shard.amp1)) {
+        if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
             if (!anti) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
-        } else if (IS_AMP_0(shard.amp0)) {
+        } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
             if (anti) {
                 // This gate does nothing, so return without applying anything.
@@ -2726,13 +2733,13 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         ProbBase(controls[i]);
 
         // This might determine that we can just skip out of the whole gate, in which case we return.
-        if (IS_AMP_0(shard.amp1)) {
+        if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
             if (!anti) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
-        } else if (IS_AMP_0(shard.amp0)) {
+        } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
             if (anti) {
                 // This gate does nothing, so return without applying anything.
@@ -2751,7 +2758,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
 
         bool isEigenstate = false;
         // This might determine that we can just skip out of the whole gate, in which case we return.
-        if (IS_AMP_0(shard.amp1)) {
+        if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
             if (!anti) {
                 // This gate does nothing, so return without applying anything.
@@ -2759,7 +2766,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
             }
             // This control has 100% chance to "fire," so don't entangle it.
             isEigenstate = true;
-        } else if (IS_AMP_0(shard.amp0)) {
+        } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
             if (anti) {
                 // This gate does nothing, so return without applying anything.
