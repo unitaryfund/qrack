@@ -69,6 +69,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
+    , logFidelity(0.0)
     , devID(deviceID)
     , phaseFactor(phaseFac)
     , deviceIDs(devList)
@@ -737,8 +738,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
     }
 
-    const real1_f r = sqrt(x * x + y * y + z * z);
-    if ((ONE_R1 - r) > separabilityThreshold) {
+    const double r = sqrt((double)(x * x + y * y + z * z));
+    if ((1.0 - r) > separabilityThreshold) {
         return false;
     }
 
@@ -763,6 +764,10 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     SeparateBit(false, qubit);
     ShardAI(qubit, azimuth, inclination);
+
+    if (r < 1.0) {
+        logFidelity += log(r);
+    }
 
     return true;
 }
@@ -4088,6 +4093,7 @@ QInterfacePtr QUnit::Clone()
         separabilityThreshold);
 
     copyPtr->SetReactiveSeparate(isReactiveSeparate);
+    copyPtr->logFidelity = logFidelity;
 
     return CloneBody(copyPtr);
 }

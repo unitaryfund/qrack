@@ -38,6 +38,7 @@ protected:
     bool useTGadget;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
+    double logFidelity;
     int64_t devID;
     complex phaseFactor;
     QEngineShardMap shards;
@@ -354,6 +355,8 @@ public:
     virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol);
     virtual bool TrySeparate(bitLenInt qubit);
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
+    virtual real1_f GetFidelity() { return (real1_f)exp(logFidelity); }
+    virtual void ResetFidelity() { logFidelity = 0.0; }
 
     virtual QInterfacePtr Clone();
 
