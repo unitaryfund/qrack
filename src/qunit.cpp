@@ -37,9 +37,9 @@
 #define CACHED_X(shard) ((shard.pauliBasis == PauliX) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_X_OR_Y(shard) ((shard.pauliBasis != PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_Z(shard) ((shard.pauliBasis == PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_ZERO(shard) (CACHED_Z(shard) && IS_NORM_0(shard.amp1))
-#define CACHED_ONE(shard) (CACHED_Z(shard) && IS_NORM_0(shard.amp0))
-#define CACHED_PLUS(shard) (CACHED_X(shard) && IS_NORM_0(shard.amp1))
+#define CACHED_ZERO(q) (CACHED_Z(shards[q]) && (ProbBase(q) <= FP_NORM_EPSILON))
+#define CACHED_ONE(q) (CACHED_Z(shards[q]) && ((ONE_R1_F - ProbBase(q)) <= FP_NORM_EPSILON))
+#define CACHED_PLUS(q) (CACHED_X(shards[q]) && ((ONE_R1_F - ProbBase(q)) <= FP_NORM_EPSILON))
 /* "UNSAFE" variants here do not check whether the bit has cached 2-qubit gates.*/
 #define UNSAFE_CACHED_ZERO_OR_ONE(shard)                                                                               \
     (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
@@ -963,8 +963,7 @@ bool QUnit::CheckBitsPlus(bitLenInt qubitIndex, bitLenInt length)
 {
     bool isHBasis = true;
     for (bitLenInt i = 0U; i < length; ++i) {
-        QEngineShard& shard = shards[qubitIndex + i];
-        if (!CACHED_PLUS(shard)) {
+        if (!CACHED_PLUS(qubitIndex + i)) {
             isHBasis = false;
             break;
         }
@@ -1015,6 +1014,14 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         return (real1_f)norm(shard.amp1);
     }
 
+    if (IS_NORM_0(shard.amp1)) {
+        logFidelity += log(norm(shard.amp1));
+        SeparateBit(false, qubit);
+    } else if (IS_NORM_0(shard.amp0)) {
+        logFidelity += log(norm(shard.amp0));
+        SeparateBit(true, qubit);
+    }
+
     if (!shard.unit || !shard.isProbDirty) {
         return clampProb((real1_f)norm(shard.amp1));
     }
@@ -1026,14 +1033,6 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     real1_f prob = unit->Prob(mapped);
     shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
-
-    if (IS_NORM_0(shard.amp1)) {
-        logFidelity += log(norm(shard.amp1));
-        SeparateBit(false, qubit);
-    } else if (IS_NORM_0(shard.amp0)) {
-        logFidelity += log(norm(shard.amp0));
-        SeparateBit(true, qubit);
-    }
 
     return prob;
 }
@@ -1278,13 +1277,12 @@ void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt 
     std::vector<bitLenInt> eIndices;
     for (size_t i = 0U; i < qIndices.size(); ++i) {
         ToPermBasis(qIndices[i]);
-        QEngineShard& shard = shards[qIndices[i]];
 
-        if (CACHED_ZERO(shard)) {
+        if (CACHED_ZERO(qIndices[i])) {
             continue;
         }
 
-        if (CACHED_ONE(shard)) {
+        if (CACHED_ONE(qIndices[i])) {
             flipResult = !flipResult;
             continue;
         }
@@ -2431,8 +2429,7 @@ void QUnit::MCInvert(const std::vector<bitLenInt>& lControls, complex topRight, 
     }
 
     if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
-        QEngineShard& tShard = shards[target];
-        if (CACHED_PLUS(tShard)) {
+        if (CACHED_PLUS(target)) {
             return;
         }
     }
@@ -2482,8 +2479,7 @@ void QUnit::MACInvert(const std::vector<bitLenInt>& lControls, complex topRight,
     }
 
     if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
-        QEngineShard& tShard = shards[target];
-        if (CACHED_PLUS(tShard)) {
+        if (CACHED_PLUS(target)) {
             return;
         }
     }
@@ -2688,8 +2684,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
 
     // First, no probability checks or buffer flushing.
     for (size_t i = 0U; i < controls.size(); ++i) {
-        QEngineShard& shard = shards[controls[i]];
-        if ((anti && CACHED_ONE(shard)) || (!anti && CACHED_ZERO(shard))) {
+        if ((anti && CACHED_ONE(controls[i])) || (!anti && CACHED_ZERO(controls[i]))) {
             // This gate does nothing, so return without applying anything.
             return true;
         }
