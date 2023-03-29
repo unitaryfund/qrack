@@ -3780,7 +3780,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
     std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
@@ -3870,14 +3870,23 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
 
     start = std::chrono::high_resolution_clock::now();
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -3966,6 +3975,9 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -4082,16 +4094,25 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -4174,6 +4195,9 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -4310,16 +4334,25 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
     std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -4415,6 +4448,9 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         }
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -4583,7 +4619,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
     std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
@@ -4673,14 +4709,23 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
 
     start = std::chrono::high_resolution_clock::now();
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -4768,6 +4813,9 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -4936,16 +4984,25 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -5028,6 +5085,9 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -5243,16 +5303,25 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
     std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -5348,6 +5417,9 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         }
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -5470,7 +5542,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
     std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
@@ -5536,14 +5608,23 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 
     start = std::chrono::high_resolution_clock::now();
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -5607,6 +5688,9 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -5729,16 +5813,25 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -5797,6 +5890,9 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -5948,16 +6044,25 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
     std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -6029,6 +6134,9 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
         }
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -6238,16 +6346,25 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         << "s)" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -6380,6 +6497,9 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -6521,7 +6641,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
     std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
@@ -6588,14 +6708,23 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 
     start = std::chrono::high_resolution_clock::now();
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -6660,6 +6789,9 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -6700,7 +6832,7 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
     int row, col;
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
     std::vector<std::vector<int>> gate1QbRands(n);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
@@ -6803,14 +6935,23 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
         randPerm = pow2Ocl(w) - 1U;
     }
 
-    while (sdrp > FP_NORM_EPSILON) {
+    while (sdrp >= 0) {
         start = std::chrono::high_resolution_clock::now();
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
-        _putenv(envVar.c_str());
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
 #else
-        setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
@@ -6870,6 +7011,9 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
                   << "s" << std::endl;
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
 
@@ -6906,7 +7050,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
 
     int row, col;
 
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
     std::vector<bitCapInt> qPowers;
     for (bitLenInt i = 0U; i < w; ++i) {
@@ -7029,21 +7173,21 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
     while (sdrp >= 0) {
         auto start = std::chrono::high_resolution_clock::now();
 
-        if (sdrp < FP_NORM_EPSILON) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
+        if (sdrp <= FP_NORM_EPSILON) {
             std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
             _putenv(envVar.c_str());
-#else
-            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
-#endif
         } else {
-#if defined(_WIN32) && !defined(__CYGWIN__)
             std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
             _putenv(envVar.c_str());
-#else
-            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
-#endif
         }
+#else
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
+#endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
@@ -7115,5 +7259,8 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         }
 
         sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
     }
 }
