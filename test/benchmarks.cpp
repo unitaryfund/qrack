@@ -3957,7 +3957,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
+        std::cout << "\"Gold standard\" fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -4248,7 +4248,7 @@ TEST_CASE("test_noisy_fidelity_mirror", "[mirror]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -4579,7 +4579,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -4932,7 +4932,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
+        std::cout << "\"Gold standard\" fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -5275,7 +5275,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[mirror]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -5685,7 +5685,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -5944,7 +5944,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
+        std::cout << "\"Gold standard\" fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -6193,7 +6193,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_mirror", "[mirror]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -6491,7 +6491,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -6842,7 +6842,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -7122,7 +7122,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
+        std::cout << "\"Gold standard\" fidelity: " << (ONE_R1 - goldStandard->SumSqrDiff(testCase)) << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -7389,7 +7389,7 @@ TEST_CASE("test_noisy_sycamore_mirror", "[mirror]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
@@ -7698,7 +7698,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
 
-        std::cout << "Cross-entropy fidelity (estimated): " << fidelity << std::endl;
+        std::cout << "\"Gold standard\" fidelity (estimated): " << fidelity << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
 
         std::cout << "Execution time: "
