@@ -355,7 +355,7 @@ public:
     virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol);
     virtual bool TrySeparate(bitLenInt qubit);
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
-    virtual real1_f GetUnitaryFidelity() { return (real1_f)exp(logFidelity); }
+    virtual real1_f GetUnitaryFidelity() { return (real1_f)sqrt(exp(logFidelity)); }
     virtual void ResetUnitaryFidelity() { logFidelity = 0.0; }
 
     virtual QInterfacePtr Clone();
@@ -460,10 +460,10 @@ protected:
         }
 
         if (IS_NORM_0(shard.amp1)) {
-            logFidelity += log(norm(shard.amp1));
+            logFidelity += log(norm(shard.amp0));
             SeparateBit(false, qubit);
         } else if (IS_NORM_0(shard.amp0)) {
-            logFidelity += log(norm(shard.amp0));
+            logFidelity += log(norm(shard.amp1));
             SeparateBit(true, qubit);
         }
     }
