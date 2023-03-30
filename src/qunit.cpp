@@ -105,6 +105,8 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();
 
+    logFidelity = 0.0;
+
     shards = QEngineShardMap();
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
@@ -253,12 +255,6 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         if (IS_AMP_0(result)) {
             break;
         }
-    }
-
-    if ((shards[0U].GetQubitCount() > 1) && (norm(result) >= (ONE_R1 - FP_NORM_EPSILON)) &&
-        (randGlobalPhase || IS_AMP_0(result - ONE_CMPLX))) {
-        logFidelity += log(ONE_R1_F - norm(result - ONE_CMPLX) / 2);
-        SetPermutation(perm);
     }
 
     return result;

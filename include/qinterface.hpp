@@ -2462,7 +2462,8 @@ public:
      * discarded in each single rounding event. Then, an overall square-root is applied to the final fidelity estimate.
      * This is a useful metric on fidelity that requires no heavy calculational overhead to compute, and it tends to be
      * usually only slightly pessimistic compared to random circuit sampling fidelity calculated via the inner product.
-     * This calculation must be reset manually to 1.0 by "QInterface::ResetUnitaryFidelity()".
+     * This calculation is automatically reset to 1.0 by SetPermutation() or MAll() or can be manually reset by
+     * "QInterface::ResetUnitaryFidelity()".
      */
     virtual real1_f GetUnitaryFidelity() { return 1.0f; }
     /**
