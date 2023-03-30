@@ -2465,7 +2465,7 @@ public:
      * This calculation is automatically reset to 1.0 by SetPermutation() or MAll() or can be manually reset by
      * "QInterface::ResetUnitaryFidelity()".
      */
-    virtual real1_f GetUnitaryFidelity() { return 1.0f; }
+    virtual double GetUnitaryFidelity() { return 1.0; }
     /**
      * Reset the internal fidelity calculation tracker to 1.0.
      */
