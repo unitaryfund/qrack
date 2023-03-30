@@ -2484,7 +2484,10 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(_In_ uintq sid, _In_ uintq n, _In_rea
 
 MICROSOFT_QUANTUM_DECL double GetUnitaryFidelity(_In_ uintq sid)
 {
-    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+    SIMULATOR_LOCK_GUARD(sid)
+    if (!simulators[sid]) {
+        return 1.0;
+    }
 
     try {
         QInterfacePtr simulator = simulators[sid];
@@ -2492,7 +2495,7 @@ MICROSOFT_QUANTUM_DECL double GetUnitaryFidelity(_In_ uintq sid)
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
-        return false;
+        return -1.0;
     }
 }
 
