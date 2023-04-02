@@ -3160,7 +3160,7 @@ bool QUnit::INTSCOptimize(
 }
 
 void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
-    std::vector<bitLenInt> controlVec)
+    std::vector<bitLenInt> controls)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QUnit::INT range is out-of-bounds!");
@@ -3170,9 +3170,9 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         throw std::invalid_argument("QUnit::INT carryIndex parameter must be within allocated qubit bounds!");
     }
 
-    if (controlVec.size()) {
-        ThrowIfQbIdArrayIsBad(controlVec, qubitCount,
-            "QUnit::INT parameter controls array values must be within allocated qubit bounds!");
+    if (controls.size()) {
+        ThrowIfQbIdArrayIsBad(
+            controls, qubitCount, "QUnit::INT parameter controls array values must be within allocated qubit bounds!");
     }
 
     // Keep the bits separate, if cheap to do so:
@@ -3187,20 +3187,15 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     }
 
     // All cached classical control bits have been removed from controlVec.
-    const bitLenInt controlLen = controlVec.size();
-    std::vector<bitLenInt> controls(controlLen);
-    std::copy(controlVec.begin(), controlVec.end(), controls.begin());
-
+    const bitLenInt controlLen = controls.size();
     std::vector<bitLenInt> allBits(controlLen + 1U);
-    std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
+    std::copy(controls.begin(), controls.end(), allBits.begin());
     std::sort(allBits.begin(), allBits.begin() + controlLen);
 
     std::vector<bitLenInt*> ebits(allBits.size());
-    for (size_t i = 0; i < (ebits.size() - 1U); ++i) {
+    for (size_t i = 0; i < ebits.size(); ++i) {
         ebits[i] = &allBits[i];
     }
-
-    std::vector<bitLenInt> lControls(controlLen);
 
     // Try ripple addition, to avoid entanglement.
     const bitLenInt origLength = length;
@@ -3281,11 +3276,11 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 EntangleRange(start, partLength);
                 if (controlLen) {
                     allBits[controlLen] = start;
-                    ebits[controlLen] = &allBits[controlLen];
                     DirtyShardIndexVector(allBits);
                     QInterfacePtr unit = Entangle(ebits);
+                    std::vector<bitLenInt> lControls(controlLen);
                     for (bitLenInt cIndex = 0U; cIndex < controlLen; ++cIndex) {
-                        lControls[cIndex] = shards[cIndex].mapped;
+                        lControls[cIndex] = shards[controls[cIndex]].mapped;
                     }
                     unit->CINC(partMod, shards[start].mapped, partLength, lControls);
                 } else {
@@ -3331,11 +3326,11 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         EntangleRange(start, length);
         if (controlLen) {
             allBits[controlLen] = start;
-            ebits[controlLen] = &allBits[controlLen];
-            QInterfacePtr unit = Entangle(ebits);
             DirtyShardIndexVector(allBits);
+            QInterfacePtr unit = Entangle(ebits);
+            std::vector<bitLenInt> lControls(controlLen);
             for (bitLenInt cIndex = 0U; cIndex < controlLen; ++cIndex) {
-                lControls[cIndex] = shards[cIndex].mapped;
+                lControls[cIndex] = shards[controls[cIndex]].mapped;
             }
             unit->CINC(toMod, shards[start].mapped, length, lControls);
         } else {
