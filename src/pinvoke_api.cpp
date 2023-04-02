@@ -2364,7 +2364,6 @@ MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
-            std::cout << ctrlsArray[i] << std::endl;
         }
         QALU(simulator)->CMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
     } catch (const std::exception& ex) {
