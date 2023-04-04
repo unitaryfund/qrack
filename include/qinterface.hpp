@@ -2471,6 +2471,10 @@ public:
      */
     virtual void ResetUnitaryFidelity() {}
     /**
+     * Set the "Schmidt decomposition rounding parameter" value, (between 0 and 1)
+     */
+    virtual void SetSdrp(real1_f sdrp){};
+    /**
      *  Set reactive separation option (on by default if available)
      *
      *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to

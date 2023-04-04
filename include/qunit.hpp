@@ -357,6 +357,7 @@ public:
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
     virtual double GetUnitaryFidelity() { return sqrt(exp(logFidelity)); }
     virtual void ResetUnitaryFidelity() { logFidelity = 0.0; }
+    virtual void SetSdrp(real1_f sdrp) { separabilityThreshold = sdrp; };
 
     virtual QInterfacePtr Clone();
 

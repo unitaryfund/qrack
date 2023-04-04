@@ -2547,6 +2547,19 @@ MICROSOFT_QUANTUM_DECL void ResetUnitaryFidelity(_In_ uintq sid)
     }
 }
 
+MICROSOFT_QUANTUM_DECL void SetSdrp(_In_ uintq sid, _In_ double sdrp)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    try {
+        QInterfacePtr simulator = simulators[sid];
+        simulators[sid]->SetSdrp(sdrp);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
 MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ uintq sid, _In_ bool irs)
 {
     SIMULATOR_LOCK_GUARD(sid)
