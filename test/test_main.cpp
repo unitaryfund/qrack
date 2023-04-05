@@ -42,9 +42,18 @@ int benchmarkDepth = 20;
 int benchmarkMaxMagic = -1;
 std::vector<int64_t> devList;
 
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_CLASS QEngineOCL
+#define QRACK_GPU_ENUM QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_CLASS QEngineCUDA
+#define QRACK_GPU_ENUM QINTERFACE_CUDA
+#endif
 #define SHOW_OCL_BANNER()                                                                                              \
-    if (OCLEngine::Instance().GetDeviceCount()) {                                                                      \
-        CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();                                                       \
+    if (QRACK_GPU_SINGLETON.GetDeviceCount()) {                                                                        \
+        CreateQuantumInterface(QRACK_GPU_ENUM, 1, 0).reset();                                                          \
     }
 
 int main(int argc, char* argv[])
@@ -67,6 +76,7 @@ int main(int argc, char* argv[])
     bool stabilizer = false;
     bool stabilizer_qpager = false;
     bool stabilizer_bdt = false;
+    bool cuda = false;
 
     std::string devListStr;
 
@@ -90,6 +100,7 @@ int main(int argc, char* argv[])
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
         Opt(bdt)["--proc-bdt"]("Enable binary decision tree implementation tests") |
         Opt(stabilizer)["--proc-stabilizer"]("Enable (hybrid) stabilizer implementation tests") |
+        Opt(cuda)["--proc-cuda"]("Enable QEngineCUDA tests") |
         Opt(async_time)["--async-time"]("Time based on asynchronous return") |
         Opt(enable_normalization)["--enable-normalization"](
             "Enable state vector normalization. (Usually not "
@@ -150,9 +161,10 @@ int main(int argc, char* argv[])
         // qunit_multi_qpager = true;
     }
 
-    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt) {
+    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt && !cuda) {
         cpu = true;
         opencl = true;
+        cuda = true;
         hybrid = true;
         stabilizer = true;
         // bdt = true;
@@ -169,7 +181,7 @@ int main(int argc, char* argv[])
         }
     }
 
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL || ENABLE_CUDA
     SHOW_OCL_BANNER();
 #endif
 
@@ -217,7 +229,18 @@ int main(int argc, char* argv[])
             testSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
+#endif
 
+#if ENABLE_CUDA
+        if (num_failed == 0 && cuda) {
+            session.config().stream() << "############ QEngine -> CUDA ############" << std::endl;
+            testEngineType = QINTERFACE_CUDA;
+            testSubEngineType = QINTERFACE_CUDA;
+            num_failed = session.run();
+        }
+#endif
+
+#if ENABLE_OPENCL || ENABLE_CUDA
         if (num_failed == 0 && stabilizer) {
             session.config().stream() << "############ QStabilizerHybrid -> QHybrid ############" << std::endl;
             testEngineType = QINTERFACE_STABILIZER_HYBRID;
@@ -249,6 +272,14 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 #endif
+
+#if ENABLE_CUDA
+        if (num_failed == 0 && cuda) {
+            session.config().stream() << "############ QPager -> QEngine -> CUDA ############" << std::endl;
+            testSubEngineType = QINTERFACE_CUDA;
+            num_failed = session.run();
+        }
+#endif
     }
 
     if (num_failed == 0 && qunit) {
@@ -276,7 +307,17 @@ int main(int argc, char* argv[])
             testSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
+#endif
 
+#if ENABLE_CUDA
+        if (num_failed == 0 && cuda) {
+            session.config().stream() << "############ QUnit -> QEngine -> CUDA ############" << std::endl;
+            testSubEngineType = QINTERFACE_CUDA;
+            num_failed = session.run();
+        }
+#endif
+
+#if ENABLE_OPENCL || ENABLE_CUDA
         if (num_failed == 0 && hybrid) {
             session.config().stream() << "############ QUnit -> QHybrid ############" << std::endl;
             testSubEngineType = QINTERFACE_HYBRID;
@@ -307,6 +348,7 @@ int main(int argc, char* argv[])
     }
 
     if (num_failed == 0 && qunit_multi) {
+#if ENABLE_OPENCL
         if (num_failed == 0 && opencl) {
             session.config().stream() << "############ QUnitMulti -> QEngineOCL ############" << std::endl;
             testEngineType = QINTERFACE_QUNIT_MULTI;
@@ -314,6 +356,17 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
+#endif
+
+#if ENABLE_CUDA
+        if (num_failed == 0 && cuda) {
+            session.config().stream() << "############ QUnitMulti -> QEngineCUDA ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
+            testSubEngineType = QINTERFACE_CUDA;
+            testSubSubEngineType = QINTERFACE_CUDA;
+            num_failed = session.run();
+        }
+#endif
 
         if (num_failed == 0 && hybrid) {
             session.config().stream() << "############ QUnitMulti -> QHybrid ############" << std::endl;
@@ -377,7 +430,17 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
+#endif
 
+#if ENABLE_CUDA
+        if (num_failed == 0 && cuda) {
+            session.config().stream() << "############ QUnit -> QPager -> CUDA ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_CUDA;
+            num_failed = session.run();
+        }
+#endif
+
+#if ENABLE_OPENCL || ENABLE_CUDA
         if (num_failed == 0 && stabilizer_qpager) {
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_QPAGER;

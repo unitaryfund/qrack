@@ -128,6 +128,34 @@
 #define REAL1_EPSILON 2e-129
 #endif
 
+#if ENABLE_CUDA
+#if FPPOW < 5
+#define qCudaReal1 half
+#define qCudaReal2 half2
+#define qCudaReal4 half4
+#define qCudaCmplx half2
+#define qCudaCmplx2 half4
+#define make_qCudaCmplx make_half2
+#define make_qCudaCmplx2 make_half4
+#elif FPPOW < 6
+#define qCudaReal1 float
+#define qCudaReal2 float2
+#define qCudaReal4 float4
+#define qCudaCmplx float2
+#define qCudaCmplx2 float4
+#define make_qCudaCmplx make_float2
+#define make_qCudaCmplx2 make_float4
+#else
+#define qCudaReal1 double
+#define qCudaReal2 double2
+#define qCudaReal4 double4
+#define qCudaCmplx double2
+#define qCudaCmplx2 double4
+#define make_qCudaCmplx make_double2
+#define make_qCudaCmplx2 make_double4
+#endif
+#endif
+
 #define ONE_CMPLX complex(ONE_R1, ZERO_R1)
 #define ZERO_CMPLX complex(ZERO_R1, ZERO_R1)
 #define I_CMPLX complex(ZERO_R1, ONE_R1)

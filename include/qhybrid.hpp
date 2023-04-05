@@ -13,8 +13,14 @@
 
 #include "qengine.hpp"
 
-#if !ENABLE_OPENCL
-#error OpenCL has not been enabled
+#if !ENABLE_OPENCL && !ENABLE_CUDA
+#error OpenCL or CUDA has not been enabled
+#endif
+
+#if ENABLE_OPENCL
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#else
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
 #endif
 
 namespace Qrack {
@@ -103,7 +109,7 @@ public:
     void SwitchPagerMode(bool usePager)
     {
         if (!isPager && usePager) {
-            std::vector<QInterfaceEngine> engines{ isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU };
+            std::vector<QInterfaceEngine> engines = { isGpu ? QRACK_GPU_ENGINE : QINTERFACE_CPU };
             engine = std::make_shared<QPager>(engine, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
                 randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, 0U,
                 separabilityThreshold);

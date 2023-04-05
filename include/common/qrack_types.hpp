@@ -25,6 +25,10 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #endif
 
+#if ENABLE_CUDA
+#include <cuda_runtime.h>
+#endif
+
 #if (FPPOW < 5) && !defined(__arm__)
 #include "half.hpp"
 #endif

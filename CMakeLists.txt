@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 8.4.0 DESCRIPTION "High Performance Quantum Bit Simulation")
+project (Qrack VERSION 8.5.0 DESCRIPTION "High Performance Quantum Bit Simulation")
 
 # Installation commands
 include (GNUInstallDirs)
@@ -115,6 +115,7 @@ if (NOT ENABLE_EMIT_LLVM)
     include ("cmake/Examples.cmake")
 endif (NOT ENABLE_EMIT_LLVM)
 include ("cmake/OpenCL.cmake" )
+include ("cmake/CUDA.cmake")
 
 message ("Qubit capacity power is: ${QBCAPPOW}")
 message ("Floating-point capacity power is: ${FPPOW}")
@@ -135,6 +136,12 @@ message ("Register-spanning API inclusion is: ${ENABLE_REG_GATES}")
 message ("Environment variable usage is: ${ENABLE_ENV_VARS}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
+
+if (QBCAPPOW GREATER 6)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -Xcompiler -fpermissive -Xcompiler -fPIC)
+else (QBCAPPOW GREATER 6)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -Werror all-warnings  -Xcompiler -fPIC)
+endif (QBCAPPOW GREATER 6)
 
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
@@ -195,8 +202,18 @@ if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
 endif (APPLE)
 
-target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS})
+target_compile_options (qrack PUBLIC
+    "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
+    "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
+    -DCATCH_CONFIG_FAST_COMPILE
+    )
+target_compile_options (qrack_pinvoke PUBLIC
+    "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
+    "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
+    -DCATCH_CONFIG_FAST_COMPILE
+    )
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 if (NOT ENABLE_EMIT_LLVM)
     target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
@@ -219,9 +236,13 @@ install (FILES
     include/common/qrack_macros.hpp
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
+    include/common/oclapi.hpp
     include/common/oclengine.hpp
+    include/common/cudaengine.cuh
+    include/common/cuda_kernels.cuh
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
+    include/common/cuda_kernels.cuh
     include/common/dispatchqueue.hpp
     include/common/half.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
@@ -241,6 +262,7 @@ install (FILES
     include/qunit.hpp
     include/qunitmulti.hpp
     include/qengine_opencl.hpp
+    include/qengine_cuda.hpp
     include/qinterface.hpp
     include/qalu.hpp
     include/qparity.hpp
