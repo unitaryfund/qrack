@@ -629,9 +629,9 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl partPower = bitCapIntOclPtr[0];
     const bitCapIntOcl remainderPower = bitCapIntOclPtr[1];
-    const bitLenInt start = (bitLenInt)bitCapIntOclPtr[3];
+    const bitLenInt start = (bitLenInt)bitCapIntOclPtr[2];
     const bitCapIntOcl startMask = (ONE_BCI << start) - ONE_BCI;
-    const bitLenInt len = bitCapIntOclPtr[4];
+    const bitLenInt len = bitCapIntOclPtr[3];
     const qCudaReal1 angleThresh = -8 * PI_R1;
     const qCudaReal1 initAngle = -16 * PI_R1;
 
