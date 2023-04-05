@@ -411,6 +411,9 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
 #if ENABLE_OPENCL
     bool isOcl = oc && (OCLEngine::Instance().GetDeviceCount() > 0);
     bool isOclMulti = oc && md && (OCLEngine::Instance().GetDeviceCount() > 1);
+#elif ENABLE_CUDA
+    bool isOcl = oc && (CUDAEngine::Instance().GetDeviceCount() > 0);
+    bool isOclMulti = oc && md && (CUDAEngine::Instance().GetDeviceCount() > 1);
 #else
     bool isOclMulti = false;
 #endif
@@ -421,6 +424,10 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
 #if ENABLE_OPENCL
     if (!hy || !isOcl) {
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+    }
+#elif ENABLE_CUDA
+    if (!hy || !isOcl) {
+        simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
     }
 #endif
 
@@ -449,6 +456,12 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
             simulatorType.push_back(QINTERFACE_HYBRID);
         } else {
             simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+        }
+#elif ENABLE_CUDA
+        if (hy && isOcl) {
+            simulatorType.push_back(QINTERFACE_HYBRID);
+        } else {
+            simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
         }
 #else
         simulatorType.push_back(QINTERFACE_CPU);
@@ -514,6 +527,9 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
 #if ENABLE_OPENCL
     simulatorType.push_back(
         (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#elif ENABLE_CUDA
+    simulatorType.push_back(
+        (CUDAEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
 #else
     simulatorType.push_back(QINTERFACE_OPTIMAL);
 #endif
@@ -583,6 +599,13 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
         deviceList.push_back(i);
     }
     const size_t defaultDeviceID = OCLEngine::Instance().GetDefaultDeviceID();
+    std::swap(deviceList[0U], deviceList[defaultDeviceID]);
+#elif ENABLE_CUDA
+    std::vector<DeviceContextPtr> deviceContext = CUDAEngine::Instance().GetDeviceContextPtrVector();
+    for (size_t i = 0U; i < deviceContext.size(); ++i) {
+        deviceList.push_back(i);
+    }
+    const size_t defaultDeviceID = CUDAEngine::Instance().GetDefaultDeviceID();
     std::swap(deviceList[0U], deviceList[defaultDeviceID]);
 #endif
 
