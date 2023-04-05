@@ -182,7 +182,7 @@ void QEngineCUDA::SetAmplitudePage(
 
     QEngineCUDAPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineCUDA>(pageEnginePtr);
 
-    if (isBadPermRange(srcOffset, length, maxQPowerOcl)) {
+    if (isBadPermRange(srcOffset, length, pageEngineOclPtr->maxQPowerOcl)) {
         throw std::invalid_argument("QEngineCUDA::SetAmplitudePage source range is out-of-bounds!");
     }
 
@@ -248,7 +248,7 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
     engineOcl->clFinish();
-    QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
+    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
 
     runningNorm = REAL1_DEFAULT_ARG;
@@ -746,6 +746,34 @@ void QEngineCUDA::SetPermutation(bitCapInt perm, complex phaseFac)
     QueueSetRunningNorm(ONE_R1_F);
 }
 
+void QEngineCUDA::XMask(bitCapInt mask)
+{
+    if (!mask) {
+        return;
+    }
+    if (!(mask & (mask - ONE_BCI))) {
+        X(log2(mask));
+        return;
+    }
+
+    BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
+}
+
+void QEngineCUDA::PhaseParity(real1_f radians, bitCapInt mask)
+{
+    if (!mask) {
+        return;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
+        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+        return;
+    }
+
+    BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
+}
+
 /// NOT gate, which is also Pauli x matrix
 void QEngineCUDA::X(bitLenInt qubit)
 {
@@ -819,7 +847,7 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
     // every single permutation amplitude.
     bool doApplyNorm = doNormalize && (bitCount == 1) && (runningNorm > ZERO_R1) && !isXGate && !isZGate &&
         !isInvertGate && !isPhaseGate;
-    doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
+    doCalcNorm &= doApplyNorm || (runningNorm <= ZERO_R1);
     doApplyNorm &= (runningNorm != ONE_R1);
 
     PoolItemPtr poolItem = GetFreePoolItem();
