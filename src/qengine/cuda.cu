@@ -1304,7 +1304,7 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
 
     toCopy->clFinish();
 
-    QueueCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
+    WaitCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
     stateVec = nStateVec;
     ResetStateBuffer(nStateBuffer);
