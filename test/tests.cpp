@@ -2738,6 +2738,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
 {
+    qftReg->Finish();
     if (QINTERFACE_RESTRICTED) {
         // Just check that this doesn't throw execption.
         // (Might be in engine initialization, still, or not.)
