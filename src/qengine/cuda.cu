@@ -240,7 +240,7 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0U, engineOcl->maxQPowerOcl);
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
         0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -779,16 +779,16 @@ void QEngineCUDA::PhaseParity(real1_f radians, bitCapInt mask)
 /// NOT gate, which is also Pauli x matrix
 void QEngineCUDA::X(bitLenInt qubit)
 {
-    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const bitCapIntOcl qPowers[1] = { pow2Ocl(qubit) };
+    const complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const bitCapIntOcl qPowers[1]{ pow2Ocl(qubit) };
     Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::PAULIX);
 }
 
 /// Apply Pauli Z matrix to bit
 void QEngineCUDA::Z(bitLenInt qubit)
 {
-    const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const bitCapIntOcl qPowers[1] = { pow2Ocl(qubit) };
+    const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const bitCapIntOcl qPowers[1]{ pow2Ocl(qubit) };
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PAULIZ);
 }
 
@@ -799,8 +799,8 @@ void QEngineCUDA::Invert(complex topRight, complex bottomLeft, bitLenInt qubitIn
         return;
     }
 
-    const complex pauliX[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    const bitCapIntOcl qPowers[1] = { pow2Ocl(qubitIndex) };
+    const complex pauliX[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    const bitCapIntOcl qPowers[1]{ pow2Ocl(qubitIndex) };
     Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::INVERT);
 }
 
@@ -817,8 +817,8 @@ void QEngineCUDA::Phase(complex topLeft, complex bottomRight, bitLenInt qubitInd
         }
     }
 
-    const complex pauliZ[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    const bitCapIntOcl qPowers[1] = { pow2Ocl(qubitIndex) };
+    const complex pauliZ[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    const bitCapIntOcl qPowers[1]{ pow2Ocl(qubitIndex) };
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PHASE);
 }
 
@@ -858,7 +858,7 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
 
     // Load the integer kernel arguments buffer.
     const bitCapIntOcl maxI = maxQPowerOcl >> bitCount;
-    bitCapIntOcl bciArgs[5] = { offset2, offset1, maxI, bitCount, 0U };
+    bitCapIntOcl bciArgs[5]{ offset2, offset1, maxI, bitCount, 0U };
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
@@ -1042,7 +1042,7 @@ void QEngineCUDA::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, otherMask, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, mask, otherMask, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
 
@@ -1052,7 +1052,7 @@ void QEngineCUDA::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
     const bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
         const complex phaseFac = std::polar(ONE_R1, (real1)(phase / 2));
-        const complex cmplxArray[2] = { phaseFac, ONE_CMPLX / phaseFac };
+        const complex cmplxArray[2]{ phaseFac, ONE_CMPLX / phaseFac };
         DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, 2U * sizeof(complex), cmplxArray);
     }
 
@@ -1086,7 +1086,7 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
 
     // Load the integer kernel arguments buffer.
     const bitCapIntOcl maxI = maxQPowerOcl >> ONE_BCI;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxI, pow2Ocl(qubitIndex), controls.size(), mtrxSkipPowers.size(),
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxI, pow2Ocl(qubitIndex), controls.size(), mtrxSkipPowers.size(),
         (bitCapIntOcl)mtrxSkipValueMask, 0U, 0U, 0U, 0U, 0U };
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 5, bciArgs);
 
@@ -1139,10 +1139,10 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
 
     CHECK_ZERO_SKIP();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)mask, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
-    const complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine),
+    const complex phaseFacs[3]{ complex(cosine, sine), complex(cosine, -sine),
         (runningNorm > ZERO_R1) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1 };
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1184,11 +1184,11 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
         CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controls.size(), controlPowers.get());
     controlPowers.reset();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> controls.size()), (bitCapIntOcl)mask,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), (bitCapIntOcl)mask,
         controlMask, controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
-    const complex phaseFacs[2] = { complex(cosine, sine), complex(cosine, -sine) };
+    const complex phaseFacs[2]{ complex(cosine, sine), complex(cosine, -sine) };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1223,8 +1223,8 @@ void QEngineCUDA::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
     bitCapIntOcl powerTest = result ? (bitCapIntOcl)qPower : 0U;
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), (bitCapIntOcl)qPower,
-        powerTest, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), (bitCapIntOcl)qPower, powerTest,
+        0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
     ApplyMx(OCL_API_APPLYM, bciArgs, nrm);
 }
@@ -1235,8 +1235,8 @@ void QEngineCUDA::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
         throw std::invalid_argument("QEngineCUDA::ApplyM mask out-of-bounds!");
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, (bitCapIntOcl)result, 0U, 0U, 0U, 0U,
-        0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)mask, (bitCapIntOcl)result, 0U, 0U, 0U, 0U, 0U,
+        0U, 0U };
 
     ApplyMx(OCL_API_APPLYMREG, bciArgs, nrm);
 }
@@ -1321,7 +1321,7 @@ bitLenInt QEngineCUDA::Compose(QEngineCUDAPtr toCopy)
     const bitCapIntOcl nMaxQPower = pow2Ocl(nQubitCount);
     const bitCapIntOcl startMask = maxQPowerOcl - ONE_BCI;
     const bitCapIntOcl endMask = (toCopy->maxQPowerOcl - ONE_BCI) << (bitCapIntOcl)qubitCount;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, startMask, endMask, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ nMaxQPower, qubitCount, startMask, endMask, 0U, 0U, 0U, 0U, 0U, 0U };
 
     OCLAPI api_call;
     if (nMaxQPower <= nrmGroupCount) {
@@ -1349,7 +1349,7 @@ bitLenInt QEngineCUDA::Compose(QEngineCUDAPtr toCopy, bitLenInt start)
     const bitCapIntOcl startMask = pow2Ocl(start) - ONE_BCI;
     const bitCapIntOcl midMask = bitRegMaskOcl(start, oQubitCount);
     const bitCapIntOcl endMask = pow2MaskOcl(qubitCount + oQubitCount) & ~(startMask | midMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start,
         0U, 0U, 0U };
 
     Compose(OCL_API_COMPOSE_MID, bciArgs, toCopy);
@@ -1410,7 +1410,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
     const bitCapIntOcl partPower = pow2Ocl(length);
     const bitCapIntOcl remainderPower = pow2Ocl(nLength);
     const bitCapIntOcl oMaxQPower = maxQPowerOcl;
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0U, 0U, 0U, 0U, 0U, 0U };
+    bitCapIntOcl bciArgs[BCI_ARG_LEN]{ partPower, remainderPower, start, length, 0U, 0U, 0U, 0U, 0U, 0U };
 
     const size_t remainderDiff = 2 * sizeof(real1) * remainderPower;
     AddAlloc(remainderDiff);
@@ -1478,7 +1478,9 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
 
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
 
+            destination->clFinish();
             clFinish();
+
             tryCuda("Failed to enqueue buffer copy", [&] {
                 return cudaMemcpy(nSB.get(), destination->stateBuffer.get(), sizeof(complex) * maxQPowerOcl,
                     cudaMemcpyDeviceToDevice);
@@ -1556,7 +1558,7 @@ void QEngineCUDA::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedP
     const bitCapIntOcl skipMask = pow2Ocl(start) - ONE_BCI;
     const bitCapIntOcl disposedRes = (bitCapIntOcl)disposedPerm << (bitCapIntOcl)start;
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { remainderPower, length, skipMask, disposedRes, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ remainderPower, length, skipMask, disposedRes, 0U, 0U, 0U, 0U, 0U, 0U };
 
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
 
@@ -1629,7 +1631,7 @@ real1_f QEngineCUDA::Prob(bitLenInt qubit)
     }
 
     const bitCapIntOcl qPower = pow2Ocl(qubit);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), qPower, 0U, 0U, 0U, 0U, 0U, 0U,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), qPower, 0U, 0U, 0U, 0U, 0U, 0U,
         0U, 0U };
 
     return Probx(OCL_API_PROB, bciArgs);
@@ -1660,7 +1662,7 @@ real1_f QEngineCUDA::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLen
     const bitCapIntOcl qPower = pow2Ocl(target);
     const bitCapIntOcl qControlPower = pow2Ocl(control);
     const bitCapIntOcl qControlMask = controlState ? qControlPower : 0U;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> 2U), qPower, qControlPower, qControlMask,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> 2U), qPower, qControlPower, qControlMask,
         0U, 0U, 0U, 0U, 0U, 0U };
 
     real1_f oneChance = Probx(OCL_API_CPROB, bciArgs);
@@ -1677,7 +1679,7 @@ real1_f QEngineCUDA::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permut
     }
 
     const bitCapIntOcl perm = (bitCapIntOcl)permutation << (bitCapIntOcl)start;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> length), perm, start, length, 0U, 0U, 0U,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> length), perm, start, length, 0U, 0U, 0U,
         0U, 0U, 0U };
 
     return Probx(OCL_API_PROBREG, bciArgs);
@@ -1697,7 +1699,7 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
         return;
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, start, length, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ lengthPower, maxJ, start, length, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1742,7 +1744,7 @@ real1_f QEngineCUDA::ProbMask(bitCapInt mask, bitCapInt permutation)
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> length), (bitCapIntOcl)mask,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> length), (bitCapIntOcl)mask,
         (bitCapIntOcl)permutation, length, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1813,7 +1815,7 @@ void QEngineCUDA::ProbMaskAll(bitCapInt mask, real1* probsArray)
         skipPowersVec.push_back(skipPower);
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, length, skipLength, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ lengthPower, maxJ, length, skipLength, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1867,7 +1869,7 @@ real1_f QEngineCUDA::ProbParity(bitCapInt mask)
         return Prob(log2(mask));
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)mask, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
     return Probx(OCL_API_PROBPARITY, bciArgs);
 }
@@ -1891,7 +1893,7 @@ bool QEngineCUDA::ForceMParity(bitCapInt mask, bool result, bool doForce)
         result = (Rand() <= ProbParity(mask));
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, (bitCapIntOcl)(result ? ONE_BCI : 0U),
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)mask, (bitCapIntOcl)(result ? ONE_BCI : 0U),
         0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
     runningNorm = Probx(OCL_API_FORCEMPARITY, bciArgs);
@@ -1926,7 +1928,7 @@ real1_f QEngineCUDA::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitC
 
     BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bits.size());
     DISPATCH_WRITE(bitMapBuffer, sizeof(bitCapIntOcl) * bits.size(), bitPowers.get());
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U,
         0U };
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
 
@@ -2046,7 +2048,7 @@ void QEngineCUDA::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenI
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl regMask = (lengthPower - ONE_BCI) << start;
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) & (~regMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, regMask, otherMask, lengthPower, start, shift, length, 0U,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, regMask, otherMask, lengthPower, start, shift, length, 0U,
         0U, 0U };
 
     ArithmeticCall(api_call, bciArgs);
@@ -2076,7 +2078,7 @@ void QEngineCUDA::INT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitL
 
     const bitCapIntOcl regMask = lengthMask << start;
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) & ~(regMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, regMask, otherMask, lengthPower, start, toMod, 0U, 0U, 0U,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, regMask, otherMask, lengthPower, start, toMod, 0U, 0U, 0U,
         0U };
 
     ArithmeticCall(api_call, bciArgs);
@@ -2114,7 +2116,7 @@ void QEngineCUDA::CINT(
     std::sort(controlPowers.get(), controlPowers.get() + controls.size());
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (regMask | controlMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> controls.size()), regMask, otherMask,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), regMask, otherMask,
         lengthPower, start, toMod, controls.size(), controlMask, 0U, 0U };
 
     CArithmeticCall(api_call, bciArgs, controlPowers.get(), controls.size());
@@ -2161,8 +2163,8 @@ void QEngineCUDA::INTC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bit
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
     const bitCapIntOcl regMask = (lengthPower - ONE_BCI) << start;
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) & (~(regMask | carryMask));
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), regMask, otherMask,
-        lengthPower, carryMask, start, toMod, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), regMask, otherMask, lengthPower,
+        carryMask, start, toMod, 0U, 0U, 0U };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -2198,8 +2200,8 @@ void QEngineCUDA::INTS(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bit
     const bitCapIntOcl overflowMask = pow2Ocl(overflowIndex);
     const bitCapIntOcl regMask = lengthMask << start;
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ regMask;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, regMask, otherMask, lengthPower, overflowMask, start,
-        toMod, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, regMask, otherMask, lengthPower, overflowMask, start, toMod,
+        0U, 0U, 0U };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -2241,8 +2243,8 @@ void QEngineCUDA::INTSC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bi
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
     const bitCapIntOcl inOutMask = lengthMask << start;
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), inOutMask, otherMask,
-        lengthPower, overflowMask, carryMask, start, toMod, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), inOutMask, otherMask, lengthPower,
+        overflowMask, carryMask, start, toMod, 0U, 0U };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -2269,8 +2271,8 @@ void QEngineCUDA::INTSC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bi
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl inOutMask = (lengthPower - ONE_BCI) << start;
     const bitCapIntOcl otherMask = pow2MaskOcl(qubitCount) ^ (inOutMask | carryMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), inOutMask, otherMask,
-        lengthPower, carryMask, start, toMod, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), inOutMask, otherMask, lengthPower,
+        carryMask, start, toMod, 0U, 0U, 0U };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -2306,8 +2308,8 @@ void QEngineCUDA::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, b
 
     const bitCapIntOcl inOutMask = bitRegMaskOcl(start, length);
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ inOutMask;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, inOutMask, otherMask, start, toMod, nibbleCount, 0U, 0U,
-        0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, inOutMask, otherMask, start, toMod, nibbleCount, 0U, 0U, 0U,
+        0U };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -2347,8 +2349,8 @@ void QEngineCUDA::INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, 
     const bitCapIntOcl inOutMask = bitRegMaskOcl(start, length);
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), inOutMask, otherMask,
-        carryMask, start, toMod, nibbleCount, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), inOutMask, otherMask, carryMask,
+        start, toMod, nibbleCount, 0U, 0U, 0U };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -2434,7 +2436,7 @@ void QEngineCUDA::FullAdx(
 {
     CHECK_ZERO_SKIP();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)2U), pow2Ocl(inputBit1),
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)2U), pow2Ocl(inputBit1),
         pow2Ocl(inputBit2), pow2Ocl(carryInSumOut), pow2Ocl(carryOut), 0U, 0U, 0U, 0U, 0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -2586,7 +2588,7 @@ void QEngineCUDA::MULx(
     const bitCapIntOcl carryMask = lowMask << (bitCapIntOcl)carryStart;
     const bitCapIntOcl skipMask = pow2MaskOcl(carryStart);
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> length), toMod, inOutMask, carryMask,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> length), toMod, inOutMask, carryMask,
         otherMask, length, inOutStart, carryStart, skipMask, 0U };
 
     xMULx(api_call, bciArgs, NULL);
@@ -2613,8 +2615,8 @@ void QEngineCUDA::MULModx(
     const bitCapIntOcl outMask = modMask << (bitCapIntOcl)outStart;
     const bitCapIntOcl skipMask = pow2MaskOcl(outStart);
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inMask | outMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> length), toMod, inMask, outMask,
-        otherMask, length, inStart, outStart, skipMask, modN };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> length), toMod, inMask, outMask, otherMask,
+        length, inStart, outStart, skipMask, modN };
 
     xMULx(api_call, bciArgs, NULL);
 }
@@ -2649,8 +2651,7 @@ void QEngineCUDA::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStar
     std::sort(skipPowers.get(), skipPowers.get() + controls.size() + length);
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >>
-                                                    (bitCapIntOcl)(controls.size() + length)),
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)(controls.size() + length)),
         toMod, controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
@@ -2692,7 +2693,7 @@ void QEngineCUDA::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl mod
     }
     std::sort(skipPowers.get(), skipPowers.get() + controls.size() + length);
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, toMod, controls.size(), controlMask, inOutMask, carryMask,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, controls.size(), controlMask, inOutMask, carryMask,
         modN, length, inOutStart, carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
@@ -2727,7 +2728,7 @@ bitCapInt QEngineCUDA::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, b
 
     const bitLenInt valueBytes = (valueLength + 7) / 8;
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> valueLength), indexStart, inputMask,
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> valueLength), indexStart, inputMask,
         valueStart, valueBytes, valueLength, 0U, 0U, 0U, 0U };
 
     ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, pow2Ocl(indexLength) * valueBytes);
@@ -2776,8 +2777,8 @@ bitCapIntOcl QEngineCUDA::OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLe
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
     const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) & (~(inputMask | outputMask | carryMask));
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), indexStart, inputMask,
-        valueStart, outputMask, otherMask, carryIn, carryMask, lengthPower, valueBytes };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), indexStart, inputMask, valueStart,
+        outputMask, otherMask, carryIn, carryMask, lengthPower, valueBytes };
 
     ArithmeticCall(api_call, bciArgs, values, pow2Ocl(indexLength) * valueBytes);
 
@@ -2807,7 +2808,7 @@ void QEngineCUDA::Hash(bitLenInt start, bitLenInt length, const unsigned char* v
 {
     const bitLenInt bytes = (length + 7) / 8;
     const bitCapIntOcl inputMask = bitRegMaskOcl(start, length);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, start, inputMask, bytes, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, start, inputMask, bytes, 0U, 0U, 0U, 0U, 0U, 0U };
 
     ArithmeticCall(OCL_API_HASH, bciArgs, values, pow2Ocl(length) * bytes);
 }
@@ -2836,7 +2837,7 @@ void QEngineCUDA::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLe
         throw std::invalid_argument("QEngineCUDA::CPhaseFlipIfLess flagIndex is out-of-bounds!");
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), bitRegMaskOcl(start, length),
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), bitRegMaskOcl(start, length),
         pow2Ocl(flagIndex), (bitCapIntOcl)greaterPerm, start, 0U, 0U, 0U, 0U, 0U };
 
     PhaseFlipX(OCL_API_CPHASEFLIPIFLESS, bciArgs);
@@ -2848,7 +2849,7 @@ void QEngineCUDA::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
         throw std::invalid_argument("QEngineCUDA::PhaseFlipIfLess range is out-of-bounds!");
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), bitRegMaskOcl(start, length),
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), bitRegMaskOcl(start, length),
         (bitCapIntOcl)greaterPerm, start, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PhaseFlipX(OCL_API_PHASEFLIPIFLESS, bciArgs);
@@ -2977,7 +2978,7 @@ real1_f QEngineCUDA::SumSqrDiff(QEngineCUDAPtr toCompare)
 
     toCompare->clFinish();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -3075,10 +3076,10 @@ void QEngineCUDA::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phase
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    complex c_args[2] = { complex((real1)norm_thresh, ZERO_R1), std::polar((real1)nrm, (real1)phaseArg) };
+    complex c_args[2]{ complex((real1)norm_thresh, ZERO_R1), std::polar((real1)nrm, (real1)phaseArg) };
     DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, c_args);
 
-    bitCapIntOcl bciArgs[1] = { maxQPowerOcl };
+    bitCapIntOcl bciArgs[1]{ maxQPowerOcl };
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -3108,7 +3109,7 @@ void QEngineCUDA::UpdateRunningNorm(real1_f norm_thresh)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    const real1 r1_args[1] = { (real1)norm_thresh };
+    const real1 r1_args[1]{ (real1)norm_thresh };
     DISPATCH_TEMP_WRITE(poolItem->realBuffer, sizeof(real1), r1_args);
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), &maxQPowerOcl);
 
@@ -3184,7 +3185,7 @@ void QEngineCUDA::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl 
 {
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    bitCapIntOcl bciArgs[2] = { size, offset };
+    bitCapIntOcl bciArgs[2]{ size, offset };
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
 
     const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
