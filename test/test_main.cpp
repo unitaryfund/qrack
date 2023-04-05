@@ -310,7 +310,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if ENABLE_CUDA
-        if (num_failed == 0 && opencl) {
+        if (num_failed == 0 && cuda) {
             session.config().stream() << "############ QUnit -> QEngine -> CUDA ############" << std::endl;
             testSubEngineType = QINTERFACE_CUDA;
             num_failed = session.run();
@@ -359,7 +359,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if ENABLE_CUDA
-        if (num_failed == 0 && opencl) {
+        if (num_failed == 0 && cuda) {
             session.config().stream() << "############ QUnitMulti -> QEngineCUDA ############" << std::endl;
             testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubEngineType = QINTERFACE_CUDA;
@@ -433,7 +433,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if ENABLE_CUDA
-        if (num_failed == 0 && opencl) {
+        if (num_failed == 0 && cuda) {
             session.config().stream() << "############ QUnit -> QPager -> CUDA ############" << std::endl;
             testSubSubEngineType = QINTERFACE_CUDA;
             num_failed = session.run();
