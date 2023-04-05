@@ -305,6 +305,8 @@ void QEngineCUDA::clFinish(bool doHard)
         tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(params_queue); });
         tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
     }
+
+    wait_queue_items.clear();
 }
 
 void QEngineCUDA::clDump() { clFinish(); }
