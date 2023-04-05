@@ -42,7 +42,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0)
-    , maxQubitPlusAncillaCount(28)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -54,19 +53,25 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 {
 
 #if ENABLE_OPENCL
-    DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-    const bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
-#else
-    const bitLenInt maxPageQubits =
-        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) - 2U : 30U;
-#endif
-
+    if ((engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_OPENCL) ||
+        ((engineTypes[0U] == QINTERFACE_QPAGER) &&
+            ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
+        DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
+        maxQubitPlusAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
 #if ENABLE_ENV_VARS
-    maxQubitPlusAncillaCount = getenv("QRACK_MAX_PAGING_QB")
-        ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")))
-        : maxPageQubits + 2U;
+        if (getenv("QRACK_MAX_PAGE_QB")) {
+            bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
+            maxQubitPlusAncillaCount =
+                (maxPageSetting < maxQubitPlusAncillaCount) ? maxPageSetting : maxQubitPlusAncillaCount;
+        }
+#endif
+    } else {
+        maxQubitPlusAncillaCount =
+            getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+    }
 #else
-    maxQubitPlusAncillaCount = maxPageQubits + 2U;
+    maxQubitPlusAncillaCount =
+        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
 #endif
 
     stabilizer = MakeStabilizer(initState);
@@ -345,17 +350,28 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
+    const bool isBdt = engineTypes.size() && (engineTypes[0] == QINTERFACE_BDT);
+
     engine = MakeEngine(0, stabilizer->GetQubitCount());
+    if (isBdt) {
+        std::dynamic_pointer_cast<QBdt>(engine)->SetStateVector();
+    }
     stabilizer->GetQuantumState(engine);
     stabilizer = NULL;
     FlushBuffers();
 
     if (!ancillaCount) {
+        if (isBdt) {
+            std::dynamic_pointer_cast<QBdt>(engine)->ResetStateVector();
+        }
         return;
     }
 
     // When we measure, we act postselection on reverse T-gadgets.
     engine->ForceMReg(qubitCount, ancillaCount, 0, true, true);
+    if (isBdt) {
+        std::dynamic_pointer_cast<QBdt>(engine)->ResetStateVector();
+    }
     // Ancillae are separable after measurement.
     engine->Dispose(qubitCount, ancillaCount);
     // We have extra "gate fusion" shards leftover.
@@ -372,8 +388,7 @@ bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool wil
 
     const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
 
-    if ((nQubits <= maxQubitPlusAncillaCount) &&
-        (nQubits + ancillaCount + toCopy->ancillaCount) > maxQubitPlusAncillaCount) {
+    if ((nQubits + ancillaCount + toCopy->ancillaCount) > maxQubitPlusAncillaCount) {
         SwitchToEngine();
     }
 
@@ -413,7 +428,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
         return qubitCount;
     }
 
-    if (ancillaCount || toCopy->ancillaCount) {
+    if (toCopy->ancillaCount) {
         const bitLenInt origSize = qubitCount;
         ROL(origSize - start, 0, qubitCount);
         const bitLenInt result = Compose(toCopy);
@@ -576,7 +591,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
     return clone->GetAmplitude(perm);
 }
 
-void QStabilizerHybrid::SetQuantumState(complex const* inputState)
+void QStabilizerHybrid::SetQuantumState(const complex* inputState)
 {
     DumpBuffers();
 
@@ -610,7 +625,159 @@ void QStabilizerHybrid::SetQuantumState(complex const* inputState)
     Mtrx(mtrx, 0);
 }
 
-void QStabilizerHybrid::Mtrx(complex const* lMtrx, bitLenInt target)
+void QStabilizerHybrid::SetPermutation(bitCapInt perm, complex phaseFac)
+{
+    DumpBuffers();
+
+    engine = NULL;
+
+    if (stabilizer && !ancillaCount) {
+        stabilizer->SetPermutation(perm);
+    } else {
+        ancillaCount = 0U;
+        stabilizer = MakeStabilizer(perm);
+    }
+}
+
+void QStabilizerHybrid::Swap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (qubit1 == qubit2) {
+        return;
+    }
+
+    std::swap(shards[qubit1], shards[qubit2]);
+
+    if (stabilizer) {
+        stabilizer->Swap(qubit1, qubit2);
+    } else {
+        engine->Swap(qubit1, qubit2);
+    }
+}
+void QStabilizerHybrid::CSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (stabilizer) {
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, controls, false)) {
+            return;
+        }
+        if (!controls.size()) {
+            stabilizer->Swap(qubit1, qubit2);
+            return;
+        }
+        SwitchToEngine();
+    }
+
+    engine->CSwap(lControls, qubit1, qubit2);
+}
+void QStabilizerHybrid::CSqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (stabilizer) {
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, controls, false)) {
+            return;
+        }
+        if (!controls.size()) {
+            QInterface::SqrtSwap(qubit1, qubit2);
+            return;
+        }
+        SwitchToEngine();
+    }
+
+    engine->CSqrtSwap(lControls, qubit1, qubit2);
+}
+void QStabilizerHybrid::AntiCSqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (stabilizer) {
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, controls, true)) {
+            return;
+        }
+        if (!controls.size()) {
+            QInterface::SqrtSwap(qubit1, qubit2);
+            return;
+        }
+        SwitchToEngine();
+    }
+
+    engine->AntiCSqrtSwap(lControls, qubit1, qubit2);
+}
+void QStabilizerHybrid::CISqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (stabilizer) {
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, controls, false)) {
+            return;
+        }
+        if (!controls.size()) {
+            QInterface::ISqrtSwap(qubit1, qubit2);
+            return;
+        }
+        SwitchToEngine();
+    }
+
+    engine->CISqrtSwap(lControls, qubit1, qubit2);
+}
+void QStabilizerHybrid::AntiCISqrtSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (stabilizer) {
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, controls, true)) {
+            return;
+        }
+        if (!controls.size()) {
+            QInterface::ISqrtSwap(qubit1, qubit2);
+            return;
+        }
+        SwitchToEngine();
+    }
+
+    engine->AntiCISqrtSwap(lControls, qubit1, qubit2);
+}
+
+void QStabilizerHybrid::XMask(bitCapInt mask)
+{
+    if (!stabilizer) {
+        engine->XMask(mask);
+        return;
+    }
+
+    bitCapInt v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        X(log2(mask ^ v));
+        mask = v;
+    }
+}
+void QStabilizerHybrid::YMask(bitCapInt mask)
+{
+    if (!stabilizer) {
+        engine->YMask(mask);
+        return;
+    }
+
+    bitCapInt v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        Y(log2(mask ^ v));
+        mask = v;
+    }
+}
+void QStabilizerHybrid::ZMask(bitCapInt mask)
+{
+    if (!stabilizer) {
+        engine->ZMask(mask);
+        return;
+    }
+
+    bitCapInt v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        Z(log2(mask ^ v));
+        mask = v;
+    }
+}
+
+void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     const bool wasCached = (bool)shards[target];
     complex mtrx[4U];
@@ -638,7 +805,7 @@ void QStabilizerHybrid::Mtrx(complex const* lMtrx, bitLenInt target)
     }
 }
 
-void QStabilizerHybrid::MCMtrx(const std::vector<bitLenInt>& lControls, complex const* mtrx, bitLenInt target)
+void QStabilizerHybrid::MCMtrx(const std::vector<bitLenInt>& lControls, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         MCPhase(lControls, mtrx[0U], mtrx[3U], target);
@@ -755,7 +922,7 @@ void QStabilizerHybrid::MCInvert(
     }
 }
 
-void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, complex const* mtrx, bitLenInt target)
+void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         MACPhase(lControls, mtrx[0U], mtrx[3U], target);
@@ -988,6 +1155,17 @@ bitCapInt QStabilizerHybrid::MAll()
     return toRet;
 }
 
+void QStabilizerHybrid::UniformlyControlledSingleBit(
+    const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const complex* mtrxs)
+{
+    if (stabilizer) {
+        QInterface::UniformlyControlledSingleBit(controls, qubitIndex, mtrxs);
+        return;
+    }
+
+    engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs);
+}
+
 std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
 {
     if (!shots) {
@@ -1053,6 +1231,35 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         }
         shotsArray[shot] = (unsigned)sample;
     });
+}
+
+real1_f QStabilizerHybrid::ProbParity(bitCapInt mask)
+{
+    if (!mask) {
+        return ZERO_R1_F;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        return Prob(log2(mask));
+    }
+
+    SwitchToEngine();
+    return QINTERFACE_TO_QPARITY(engine)->ProbParity(mask);
+}
+bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return false;
+    }
+
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return ForceM(log2(mask), result, doForce);
+    }
+
+    SwitchToEngine();
+    return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
 }
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
@@ -1128,6 +1335,51 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     }
 
     return toRet;
+}
+
+void QStabilizerHybrid::ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inverse)
+{
+    if (qubit1 == qubit2) {
+        return;
+    }
+
+    MpsShardPtr shard = shards[qubit1];
+    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+        FlushH(qubit1);
+    }
+    shard = shards[qubit1];
+    if (shard && shard->IsInvert()) {
+        InvertBuffer(qubit1);
+    }
+
+    shard = shards[qubit2];
+    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+        FlushH(qubit2);
+    }
+    shard = shards[qubit2];
+    if (shard && shard->IsInvert()) {
+        InvertBuffer(qubit2);
+    }
+
+    if ((shards[qubit1] && !shards[qubit1]->IsPhase()) || (shards[qubit2] && !shards[qubit2]->IsPhase())) {
+        FlushBuffers();
+    }
+
+    std::swap(shards[qubit1], shards[qubit2]);
+
+    if (stabilizer) {
+        if (inverse) {
+            stabilizer->IISwap(qubit1, qubit2);
+        } else {
+            stabilizer->ISwap(qubit1, qubit2);
+        }
+    } else {
+        if (inverse) {
+            engine->IISwap(qubit1, qubit2);
+        } else {
+            engine->ISwap(qubit1, qubit2);
+        }
+    }
 }
 
 void QStabilizerHybrid::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)

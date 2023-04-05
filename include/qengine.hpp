@@ -39,7 +39,33 @@ protected:
     real1 runningNorm;
     bitCapIntOcl maxQPowerOcl;
 
-    bool IsIdentity(complex const* mtrx, bool isControlled);
+    inline bool IsPhase(complex const* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
+    inline bool IsInvert(complex const* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
+
+    bool IsIdentity(complex const* mtrx, bool isControlled)
+    {
+        // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
+        // operator, then we can discard this buffer without applying it.
+        if (!IS_NORM_0(mtrx[0U] - mtrx[3U]) || !IsPhase(mtrx)) {
+            return false;
+        }
+
+        // Now, we know that mtrx[1] and mtrx[2] are 0 and mtrx[0]==mtrx[3].
+
+        // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
+        // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
+        // the global phase offset.
+
+        if ((isControlled || !randGlobalPhase) && !IS_SAME(ONE_CMPLX, mtrx[0U])) {
+            return false;
+        }
+
+        // If we haven't returned false by now, we're buffering an identity operator (exactly or up to an arbitrary
+        // global phase factor).
+        return true;
+    }
+
+    void EitherMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target, bool isAnti);
 
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
@@ -62,6 +88,11 @@ public:
         , maxQPowerOcl(0U)
     {
         // Intentionally left blank
+    }
+
+    virtual ~QEngine()
+    {
+        // Virtual destructor for inheritance
     }
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -119,8 +150,14 @@ public:
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 
     virtual void Mtrx(complex const* mtrx, bitLenInt qubit);
-    virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
-    virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    {
+        EitherMtrx(controls, mtrx, target, false);
+    }
+    virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    {
+        EitherMtrx(controls, mtrx, target, true);
+    }
     virtual void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
     virtual void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
     virtual void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
@@ -196,10 +233,17 @@ public:
     using QInterface::FSim;
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
+    virtual real1_f ProbAll(bitCapInt fullRegister)
+    {
+        if (doNormalize) {
+            NormalizeState();
+        }
+
+        return clampProb((real1_f)norm(GetAmplitude(fullRegister)));
+    }
     virtual real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target);
     virtual real1_f CProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(true, control, target); }
     virtual real1_f ACProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(false, control, target); }
-    virtual real1_f ProbAll(bitCapInt fullRegister);
     virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation) = 0;
     virtual void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation) = 0;
@@ -212,6 +256,13 @@ public:
     virtual void ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
 
     using QInterface::Decompose;
-    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
+    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
+    {
+        QEnginePtr dest = CloneEmpty();
+        dest->SetQubitCount(length);
+        Decompose(start, dest);
+
+        return dest;
+    }
 };
 } // namespace Qrack

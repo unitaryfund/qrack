@@ -74,6 +74,23 @@ bool QStabilizer::TrimControls(const std::vector<bitLenInt>& lControls, bool isA
     return false;
 }
 
+QInterfacePtr QStabilizer::Clone()
+{
+    Finish();
+
+    QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
+        randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+    clone->Finish();
+
+    clone->x = x;
+    clone->z = z;
+    clone->r = r;
+    clone->phaseOffset = phaseOffset;
+    clone->randomSeed = randomSeed;
+
+    return clone;
+}
+
 void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();
@@ -1172,6 +1189,23 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
     }
 
     return ONE_R1_F - clampProb((real1_f)norm(proj));
+}
+
+void QStabilizer::SetQuantumState(complex const* inputState)
+{
+    if (qubitCount > 1U) {
+        throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
+    }
+
+    SetPermutation(0U);
+
+    const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
+    const real1 sqrtProb = sqrt(prob);
+    const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
+    const complex phase0 = std::polar(ONE_R1, arg(inputState[0U]));
+    const complex phase1 = std::polar(ONE_R1, arg(inputState[1U]));
+    const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
+    Mtrx(mtrx, 0U);
 }
 
 real1_f QStabilizer::Prob(bitLenInt qubit)

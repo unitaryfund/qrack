@@ -2,7 +2,7 @@
 
 
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5812507.svg)](https://doi.org/10.5281/zenodo.5812507) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing) [![Total alerts](https://img.shields.io/lgtm/alerts/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/context:cpp)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5812507.svg)](https://doi.org/10.5281/zenodo.5812507) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
@@ -138,7 +138,7 @@ Setting the environment variable `QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE` to any v
 Preferred concurrency has a tunable offset with default value of `3`, with the environment variable setting `export QRACK_GPU_OFFSET_QB=[m]` for some (positive or negative) integer `m`. For each integer increment of `m`, the preferred concurrency is multiplied by 2. (Preferred concurrency is calculated as `pow2(ceil(log2(([GPU processing element count] * [preferred group size for the single qubit gate kernel, usually warp size])))) << QRACK_GPU_OFFSET_QB`.)
 
 ## QPager distributed simulation options
-`QPager` attempts to smartly allocate low qubit widths for maximum performance. For wider qubit simulations, based on `clinfo`, you can segment your maximum OpenCL accelerator state vector page allocation into global qubits with the environment variable `QRACK_SEGMENT_GLOBAL_QB=n`, where n is an integer >=0. The default n is 0, meaning that maximum allocation segment of your GPU RAM is a single page. (For 1 global qubit, one segment would have 2 pages, akin to 2 single amplitudes, therefore one "global qubit," or 4 pages for n=2, because 2^2=4, etc., by exponent.)
+`QPager` attempts to smartly allocate low qubit widths for maximum performance. For heterogeneous GPU simulation, based on `clinfo`, you can set a ceiling on your maximum OpenCL accelerator state vector page allocation with the environment variable `QRACK_MAX_PAGE_QB=n`, where n is an integer >=0. The default `n` is max integer, meaning that maximum allocation segment of your GPU RAM is always a single hardware page.
 
 To set a maximum on how many qubits can be allocated on a single `QPager` instance, use the environment variable `QRACK_MAX_PAGING_QB`, for example, `export QRACK_MAX_PAGING_QB=30` to cause `QPager` to throw an exception that can be caught if it is asked to allocate 31 or more qubits. 
 
@@ -147,6 +147,9 @@ To set the `QPager` device ID list, use the `QRACK_QPAGER_DEVICES` environment v
 There are two special device IDs that can be specified in these lists: `-1` is global Qrack default device. `-2` indicates that `QInterface`-local constructor-specified device ID should be used. (For example, a device list argument of just `-2` will indicate that distribution choices should defer to those of `QUnitMulti`, if in use.)
 
 `QRACK_QPAGER_DEVICES_HOST_POINTER` corresponds to each device ID in `QRACK_QPAGER_DEVICES`, per sequential item in that other variable, (with the same syntax and list wrapping behavior). If the value of this is `0` for a page, that page attempts OpenCL _device_ RAM allocation; if the value is `1` for a page, that page attempts OpenCL _host_ RAM allocation. `0` value, device RAM, is suggested for GPUs; `1` value, host RAM, is suggested for CPUs and APUs (which use general host RAM, anyway). By default, all devices attempt on-device RAM allocation, if this environment variable is not specified.
+
+## QUnitMulti device list
+Specify a device list for `QUnitMulti` the same way you would for `QPager`, with environment variable `QRACK_QUNITMULTI_DEVICES`.
 
 ## QBdt options and opt-in for QBdt in default optimal layer stack
 When using "optimal" values from the layer type enum or command line options, Qrack simulators intelligently construct their optimization layer stack. `QBdt` ("quantum binary decision tree") happens to be able to serve an analogous role to `QPager` for single OpenCL devices with multiple max allocation segments, (typically in 4 segments). By default, `QBdt` is preferred. To prefer `QPager` in optimal stack as an alternative to single-device `QBdt`, set the environment variable `QRACK_QPAGER_DEVICES`. To specify that default device choices should be used, including as would work with `QUnitMulti`, set `QRACK_QPAGER_DEVICES=-2`, (as `-2` device ID represents the `QInterface`-local choice).
@@ -166,15 +169,21 @@ Set the maximum allowed allocation (in MB) for the global OpenCL pool with `QRAC
 Note that this controls total direct Qrack OpenCL buffer allocation, not total Qrack library allocation. Total OpenCL buffer allocation is **not** fully indicative of total library allocation.
 
 ## Approximation options
-`QUnit` can optionally round qubit subsystems proactively or on-demand to the nearest single or double qubit eigenstate with the `QRACK_QUNIT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]` environment variable, with a value between `0.0` and `0.5`. When trying to find separable subsystems, Qrack will start by making 3-axis (independent or conditional) probability measurements. Based on the probability measurements, under the assumption that the state _is_ separable, an inverse state preparation to |0> procedure is fixed. If inverse state preparation would bring any single qubit probability within parameter range of a |0> eigenstate, then the subsystem will be rounded to that state, normalized, and then "uncomputed" with the corresponding (forward) state preparation, effectively "hyperpolarizing" one and two qubit separable substates by replacing entanglement with local qubit Bloch sphere extent. (If 3-axis probability is _not_ within rounding range, nothing is done directly to the substate.)
+`QUnit` can optionally round qubit subsystems proactively or on-demand to the nearest single or double qubit eigenstate with the `QRACK_QUNIT_SEPARABILITY_THRESHOLD=[0.0 - 1.0]` environment variable, with a value between `0.0` and `1.0`. When trying to find separable subsystems, Qrack will start by making 3-axis (independent or conditional) probability measurements. Based on the probability measurements, under the assumption that the state _is_ separable, an inverse state preparation to |0> procedure is fixed. If inverse state preparation would bring any single qubit Bloch sphere projection within parameter range of the edge of the Bloch sphere, (with unit length, `1.0`,) then the subsystem will be rounded to that state, normalized, and then "uncomputed" with the corresponding (forward) state preparation, effectively "hyperpolarizing" one and two qubit separable substates by replacing entanglement with local qubit Bloch sphere extent. (If 3-axis probability is _not_ within rounding range, nothing is done directly to the substate.)
 
+Similarly functionality to above is available for `QBdt` with `QRACK_QBDT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]`. In the case of this parameter, any branch with less than the parameter value for probability is rounded to 0, and its partner branch is renormalized to unit length.
 ## Vectorization optimization
 
 ```sh
 $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
-Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
+Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 (with optional SSE 3.0) for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
+If `-DENABLE_COMPLEX_X2=ON`, then SSE 3.0 is used by default. Turn off the following option to limit to SSE 1.0 level:
+
+```sh
+$ cmake -DENABLE_SSE3=OFF ..
+```
 ## Random number generation options (on-chip by default)
 
 ```sh
@@ -211,7 +220,7 @@ Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations
 ```sh
 $ cmake [-DFPPOW=n] ..
 ```
-Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 2^5=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels.
+Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 2^5=32 bit floating point precision. "half," "double," and "quad," availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels. "quad" is supported on CPU only, if available.
 
 ## Precompiled OpenCL kernels
 
@@ -256,7 +265,7 @@ Prior to the Qrack v7 API, a larger set of convenience methods were included in 
 
 ## Copyright, License, and Acknowledgements
 
-Copyright (c) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
+Copyright (c) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 
 Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of `QUnit` and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Special thanks go to Aryan Blaauw for his extensive systematic benchmark program, leading to much debugging and design feedback, while he spreads general good will about our community discussion space. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. For unit tests and benchmarks, Qrack uses Catch v2.13.7 under the Boost Software License, Version 1.0. The `QStabilizer` partial simulator "engine" is adapted from CHP by Scott Aaronson, for non-commercial use. Half precision floating point headers are provided by [http://half.sourceforge.net/](http://half.sourceforge.net/), with our thanks. GitHub user [paniash](https://github.com/paniash) has kindly contributed `README.md` styling and standardization. Thank you to all our PR contributors, tracked in GitHub, and thank you to the OSS community in general for supporting code, including [Adam Kelly](https://github.com/libtangle/qcgpu) and the [qulacs team](https://github.com/qulacs/qulacs), for Qiskit and Cirq interfaces. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).)
 

@@ -16,58 +16,36 @@
 
 namespace Qrack {
 
-inline bool IsPhase(complex const* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
-inline bool IsInvert(complex const* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
-
-bool QEngine::IsIdentity(complex const* mtrx, bool isControlled)
+void QEngine::Mtrx(complex const* mtrx, bitLenInt qubit)
 {
-    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
-    // operator, then we can discard this buffer without applying it.
-    if (!IS_NORM_0(mtrx[0U] - mtrx[3U]) || !IsPhase(mtrx)) {
-        return false;
+    if (IsIdentity(mtrx, false)) {
+        return;
     }
 
-    // Now, we know that mtrx[1] and mtrx[2] are 0 and mtrx[0]==mtrx[3].
-
-    // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
-    // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
-    // the global phase offset.
-
-    if ((isControlled || !randGlobalPhase) && !IS_SAME(ONE_CMPLX, mtrx[0U])) {
-        return false;
-    }
-
-    // If we haven't returned false by now, we're buffering an identity operator (exactly or up to an arbitrary global
-    // phase factor).
-    return true;
+    const bitCapIntOcl qPowers[1U]{ pow2Ocl(qubit) };
+    Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx)));
 }
 
-/// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
-real1_f QEngine::ProbAll(bitCapInt fullRegister)
+void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target, bool isAnti)
 {
-    if (doNormalize) {
-        NormalizeState();
+    if (!controls.size()) {
+        Mtrx(mtrx, target);
+        return;
     }
 
-    return clampProb((real1_f)norm(GetAmplitude(fullRegister)));
-}
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
 
-real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
-{
-    real1_f prob;
-    if (controlState) {
-        AntiCNOT(control, target);
+    if (isAnti) {
+        ApplyAntiControlled2x2(controls, target, mtrx);
     } else {
-        CNOT(control, target);
-    }
-    prob = Prob(target);
-    if (controlState) {
-        AntiCNOT(control, target);
-    } else {
-        CNOT(control, target);
+        ApplyControlled2x2(controls, target, mtrx);
     }
 
-    return prob;
+    if (doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx))) {
+        UpdateRunningNorm();
+    }
 }
 
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
@@ -75,10 +53,6 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     if (qubit >= qubitCount) {
         throw std::invalid_argument("QEngine::ForceM qubit index parameter must be within allocated qubit bounds!");
-    }
-
-    if (doNormalize) {
-        NormalizeState();
     }
 
     const real1_f oneChance = Prob(qubit);
@@ -137,10 +111,6 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
         }
     }
 
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[bits.size()]);
     bitCapInt regMask = 0U;
     for (bitCapIntOcl i = 0U; i < bits.size(); ++i) {
@@ -168,15 +138,18 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
         return result;
     }
 
+    if (doNormalize) {
+        NormalizeState();
+    }
+
     const bitCapIntOcl lengthPower = pow2Ocl(bits.size());
     real1_f prob = Rand();
-    std::unique_ptr<real1[]> probArray(new real1[lengthPower]());
+    std::unique_ptr<real1[]> probArray(new real1[lengthPower]);
 
     ProbMaskAll(regMask, probArray.get());
 
     bitCapIntOcl lcv = 0U;
-    real1 lowerProb = ZERO_R1;
-    real1 largestProb = ZERO_R1;
+    real1 lowerProb = probArray[0U];
     result = lengthPower - ONE_BCI;
 
     /*
@@ -185,20 +158,16 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
      * vector.
      */
     while ((lowerProb < prob) && (lcv < lengthPower)) {
+        ++lcv;
         lowerProb += probArray[lcv];
-        if (largestProb <= probArray[lcv]) {
-            largestProb = probArray[lcv];
-            nrmlzr = largestProb;
+        if (probArray[lcv] > ZERO_R1) {
+            nrmlzr = probArray[lcv];
             result = lcv;
         }
-        ++lcv;
     }
     if (lcv < lengthPower) {
-        if (lcv) {
-            --lcv;
-        }
-        result = lcv;
         nrmlzr = probArray[lcv];
+        result = lcv;
     }
 
     probArray.reset();
@@ -222,56 +191,6 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
     return result;
 }
 
-void QEngine::Mtrx(complex const* mtrx, bitLenInt qubit)
-{
-    if (IsIdentity(mtrx, false)) {
-        return;
-    }
-
-    const bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
-
-    const bitCapIntOcl qPowers[1U]{ pow2Ocl(qubit) };
-    Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doCalcNorm);
-}
-
-void QEngine::MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
-{
-    if (!controls.size()) {
-        Mtrx(mtrx, target);
-        return;
-    }
-
-    if (IsIdentity(mtrx, true)) {
-        return;
-    }
-
-    const bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
-
-    ApplyControlled2x2(controls, target, mtrx);
-    if (doCalcNorm) {
-        UpdateRunningNorm();
-    }
-}
-
-void QEngine::MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
-{
-    if (!controls.size()) {
-        Mtrx(mtrx, target);
-        return;
-    }
-
-    if (IsIdentity(mtrx, true)) {
-        return;
-    }
-
-    const bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
-
-    ApplyAntiControlled2x2(controls, target, mtrx);
-    if (doCalcNorm) {
-        UpdateRunningNorm();
-    }
-}
-
 void QEngine::CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controls.size()) {
@@ -281,6 +200,10 @@ void QEngine::CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bi
 
     if (qubit1 == qubit2) {
         return;
+    }
+
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
     }
 
     const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
@@ -308,6 +231,10 @@ void QEngine::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1
         return;
     }
 
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
+    }
+
     const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controls.size() + 2U]);
     for (size_t i = 0U; i < controls.size(); ++i) {
@@ -328,6 +255,10 @@ void QEngine::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1
 
     if (qubit1 == qubit2) {
         return;
+    }
+
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
     }
 
     const complex sqrtX[4]{ complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
@@ -356,6 +287,10 @@ void QEngine::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qu
         return;
     }
 
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
+    }
+
     const complex sqrtX[4]{ complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controls.size() + 2U]);
@@ -377,6 +312,10 @@ void QEngine::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit
 
     if (qubit1 == qubit2) {
         return;
+    }
+
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
     }
 
     const complex iSqrtX[4]{ complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
@@ -403,6 +342,10 @@ void QEngine::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q
 
     if (qubit1 == qubit2) {
         return;
+    }
+
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
     }
 
     const complex iSqrtX[4U]{ complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
@@ -445,93 +388,85 @@ void QEngine::ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bit
     Apply2x2(0U, targetMask, mtrx, controls.size() + 1U, qPowersSorted.get(), false);
 }
 
-/// Swap values of two bits in register
+#define _QRACK_QENGINE_SWAP_PREAMBLE()                                                                                 \
+    if (qubit1 == qubit2) {                                                                                            \
+        return;                                                                                                        \
+    }                                                                                                                  \
+                                                                                                                       \
+    if (qubit2 < qubit1) {                                                                                             \
+        std::swap(qubit1, qubit2);                                                                                     \
+    }
 void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (qubit1 == qubit2) {
-        return;
-    }
-
+    _QRACK_QENGINE_SWAP_PREAMBLE()
     const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-    std::sort(qPowersSorted, qPowersSorted + 2U);
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
-
-/// Swap values of two bits in register, applying a phase factor of i if bits are different
 void QEngine::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (qubit1 == qubit2) {
-        return;
-    }
-
+    _QRACK_QENGINE_SWAP_PREAMBLE()
     const complex pauliX[4U]{ ZERO_CMPLX, I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-    std::sort(qPowersSorted, qPowersSorted + 2U);
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
-
-/// Inverse ISwap - Swap values of two bits in register, applying a phase factor of -i if bits are different
 void QEngine::IISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (qubit1 == qubit2) {
-        return;
-    }
-
+    _QRACK_QENGINE_SWAP_PREAMBLE()
     const complex pauliX[4U]{ ZERO_CMPLX, -I_CMPLX, -I_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-    std::sort(qPowersSorted, qPowersSorted + 2U);
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
-
-/// Square root of swap gate
 void QEngine::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (qubit1 == qubit2) {
-        return;
-    }
-
+    _QRACK_QENGINE_SWAP_PREAMBLE()
     const complex sqrtX[4U]{ complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
-    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-    std::sort(qPowersSorted, qPowersSorted + 2U);
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], sqrtX, 2U, qPowersSorted, false);
 }
-
-/// Inverse of square root of swap gate
 void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (qubit1 == qubit2) {
-        return;
-    }
-
+    _QRACK_QENGINE_SWAP_PREAMBLE()
     const complex iSqrtX[4U]{ complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
-    bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-    std::sort(qPowersSorted, qPowersSorted + 2U);
+    const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], iSqrtX, 2U, qPowersSorted, false);
 }
-
-/// "fSim" gate, (useful in the simulation of particles with fermionic statistics)
 void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    const real1 cosTheta = (real1)cos(theta);
-    const real1 sinTheta = (real1)sin(theta);
-
-    if (abs(ONE_R1 - cosTheta) > REAL1_EPSILON) {
-        const complex fSimSwap[4U]{ complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta), complex(ZERO_R1, sinTheta),
-            complex(cosTheta, ZERO_R1) };
-        bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
-        std::sort(qPowersSorted, qPowersSorted + 2U);
-        Apply2x2(qPowersSorted[0U], qPowersSorted[1U], fSimSwap, 2U, qPowersSorted, false);
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
     }
 
-    if (abs(phi) <= REAL1_EPSILON) {
-        return;
+    const real1 sinTheta = (real1)sin(theta);
+    if ((sinTheta * sinTheta) > FP_NORM_EPSILON) {
+        const real1 cosTheta = (real1)cos(theta);
+        const complex fSimSwap[4U]{ complex(cosTheta, ZERO_R1), complex(ZERO_R1, -sinTheta),
+            complex(ZERO_R1, -sinTheta), complex(cosTheta, ZERO_R1) };
+        const bitCapIntOcl qPowersSorted[2U]{ pow2Ocl(qubit1), pow2Ocl(qubit2) };
+        Apply2x2(qPowersSorted[0U], qPowersSorted[1U], fSimSwap, 2U, qPowersSorted, false);
     }
 
     const std::vector<bitLenInt> controls{ qubit1 };
     MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+}
+
+real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
+{
+    if (controlState) {
+        AntiCNOT(control, target);
+    } else {
+        CNOT(control, target);
+    }
+    const real1_f prob = Prob(target);
+    if (controlState) {
+        AntiCNOT(control, target);
+    } else {
+        CNOT(control, target);
+    }
+
+    return prob;
 }
 
 void QEngine::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray)
@@ -560,10 +495,6 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         }
     }
 
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl regMask = (lengthPower - ONE_BCI) << (bitCapIntOcl)start;
     real1 nrmlzr = ONE_R1;
@@ -572,7 +503,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         nrmlzr = ProbMask(regMask, result << (bitCapIntOcl)start);
     } else {
         bitCapIntOcl lcv = 0;
-        std::unique_ptr<real1[]> probArray(new real1[lengthPower]());
+        std::unique_ptr<real1[]> probArray(new real1[lengthPower]);
         ProbRegAll(start, length, probArray.get());
 
         const real1_f prob = Rand();
@@ -603,15 +534,6 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     }
 
     return result;
-}
-
-QInterfacePtr QEngine::Decompose(bitLenInt start, bitLenInt length)
-{
-    QEnginePtr dest = CloneEmpty();
-    dest->SetQubitCount(length);
-    Decompose(start, dest);
-
-    return dest;
 }
 
 } // namespace Qrack

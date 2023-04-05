@@ -348,7 +348,7 @@ public:
         complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
     void UniformParityRZ(bitCapInt mask, real1_f angle);
     void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
-    
+
     using QEngine::X;
     void X(bitLenInt target);
     using QEngine::Z;
@@ -459,7 +459,10 @@ public:
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp);
 
-    real1_f SumSqrDiff(QInterfacePtr toCompare) { return SumSqrDiff(std::dynamic_pointer_cast<QEngineCUDA>(toCompare)); }
+    real1_f SumSqrDiff(QInterfacePtr toCompare)
+    {
+        return SumSqrDiff(std::dynamic_pointer_cast<QEngineCUDA>(toCompare));
+    }
     real1_f SumSqrDiff(QEngineCUDAPtr toCompare);
 
     void NormalizeState(

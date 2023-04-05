@@ -12,7 +12,6 @@
 
 #pragma once
 
-/* Needed for bitCapInt typedefs. */
 #include "qrack_types.hpp"
 
 #include <set>
@@ -27,8 +26,6 @@ private:
 
 public:
     ParallelFor();
-
-    virtual ~ParallelFor() {}
 
     void SetConcurrencyLevel(unsigned num) { numCores = num; }
     unsigned GetConcurrencyLevel() { return numCores; }
@@ -70,9 +67,6 @@ public:
     /** Iterate over the power set of 2 sparse state vectors. */
     void par_for_sparse_compose(const std::vector<bitCapIntOcl>& lowSet, const std::vector<bitCapIntOcl>& highSet,
         const bitLenInt& highStart, ParallelFunc fn);
-
-    /** Iterate over a QBDT tree */
-    void par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
 
     /** Calculate the normal for the array, (with flooring). */
     real1_f par_norm(const bitCapIntOcl maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1_F);

@@ -21,6 +21,7 @@
 #endif
 
 #if ENABLE_CUDA
+#include "common/cudaengine.cuh"
 #include "qengine_cuda.hpp"
 #endif
 

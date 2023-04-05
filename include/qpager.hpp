@@ -30,12 +30,10 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  */
 class QPager : public QEngine, public std::enable_shared_from_this<QEngine> {
 protected:
-    bool useHardwareThreshold;
     bool useGpuThreshold;
     bool isSparse;
     bool useTGadget;
-    bitLenInt segmentGlobalQb;
-    bitLenInt minPageQubits;
+    bitLenInt maxPageSetting;
     bitLenInt maxPageQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
@@ -75,7 +73,7 @@ protected:
     void SingleBitGate(bitLenInt target, Qubit1Fn fn, bool isSqiCtrl = false, bool isAnti = false);
     template <typename Qubit1Fn>
     void MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
-        complex const* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
+        const complex* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse);
@@ -86,12 +84,12 @@ protected:
 
     void ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target);
     void ApplyEitherControlledSingleBit(
-        bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
+        bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx);
     void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
     void Init();
 
-    void GetSetAmplitudePage(complex* pagePtr, complex const* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
+    void GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
@@ -186,7 +184,7 @@ public:
     {
         GetSetAmplitudePage(pagePtr, NULL, offset, length);
     }
-    void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
         GetSetAmplitudePage(NULL, pagePtr, offset, length);
     }
@@ -245,7 +243,7 @@ public:
         CombineEngines();
         return qPages[0U]->GetExpectation(valueStart, valueLength);
     }
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         CombineEngines();
@@ -272,23 +270,26 @@ public:
         return ZERO_R1_F;
     }
 
-    void SetQuantumState(complex const* inputState);
+    void SetQuantumState(const complex* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm)
     {
-        bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
-        return qPages[subIndex]->GetAmplitude(perm & (pageMaxQPower() - ONE_BCI));
+        const bitCapIntOcl pmqp = pageMaxQPower();
+        const bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pmqp);
+        return qPages[subIndex]->GetAmplitude(perm & (pmqp - ONE_BCI));
     }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
-        bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
-        qPages[subIndex]->SetAmplitude(perm & (pageMaxQPower() - ONE_BCI), amp);
+        const bitCapIntOcl pmqp = pageMaxQPower();
+        const bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pmqp);
+        qPages[subIndex]->SetAmplitude(perm & (pmqp - ONE_BCI), amp);
     }
-    real1_f ProbAll(bitCapInt fullRegister)
+    real1_f ProbAll(bitCapInt perm)
     {
-        bitCapIntOcl subIndex = (bitCapIntOcl)(fullRegister / pageMaxQPower());
-        return qPages[subIndex]->ProbAll(fullRegister & (pageMaxQPower() - ONE_BCI));
+        const bitCapIntOcl pmqp = pageMaxQPower();
+        const bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pmqp);
+        return qPages[subIndex]->ProbAll(perm & (pmqp - ONE_BCI));
     }
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
@@ -307,7 +308,7 @@ public:
     using QEngine::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
-    void Mtrx(complex const* mtrx, bitLenInt target);
+    void Mtrx(const complex* mtrx, bitLenInt target);
     void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);
@@ -316,11 +317,11 @@ public:
     {
         ApplySingleEither(true, topRight, bottomLeft, qubitIndex);
     }
-    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(false, controls, target, mtrx);
     }
-    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(true, controls, target, mtrx);
     }
@@ -377,8 +378,6 @@ public:
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     void ISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, false); }
     void IISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, true); }
-    void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
-    void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     real1_f Prob(bitLenInt qubitIndex);
@@ -447,7 +446,7 @@ public:
 #if ENABLE_OPENCL
         if (rootEngine != QINTERFACE_CPU) {
             maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-            maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
+            maxPageQubits = (maxPageSetting < maxPageQubits) ? maxPageSetting : 1U;
         }
 
         if (!useGpuThreshold) {

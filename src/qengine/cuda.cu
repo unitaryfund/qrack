@@ -1048,8 +1048,7 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
         throw std::invalid_argument("QEngineCUDA::UniformlyControlledSingleBit qubitIndex is out-of-bounds!");
     }
 
-    ThrowIfQbIdArrayIsBad(
-        controls, qubitCount, "QEngineCUDA::UniformlyControlledSingleBit control is out-of-bounds!");
+    ThrowIfQbIdArrayIsBad(controls, qubitCount, "QEngineCUDA::UniformlyControlledSingleBit control is out-of-bounds!");
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1151,8 +1150,8 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
         controlMask |= controlPowers[i];
     }
     std::sort(controlPowers.get(), controlPowers.get() + controls.size());
-    BufferPtr controlBuffer =
-        MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controls.size(), controlPowers.get());
+    BufferPtr controlBuffer = MakeBuffer(
+        CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controls.size(), controlPowers.get());
     controlPowers.reset();
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> controls.size()), (bitCapIntOcl)mask,
@@ -2054,8 +2053,8 @@ void QEngineCUDA::INT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitL
 }
 
 /// Add or Subtract integer (without sign or carry, with controls)
-void QEngineCUDA::CINT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length,
-    const std::vector<bitLenInt>& controls)
+void QEngineCUDA::CINT(
+    OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QEngineCUDA::CINT range is out-of-bounds!");
@@ -2097,8 +2096,7 @@ void QEngineCUDA::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     INT(OCL_API_INC, (bitCapIntOcl)toAdd, start, length);
 }
 
-void QEngineCUDA::CINC(
-    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+void QEngineCUDA::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (!controls.size()) {
         INC(toAdd, inOutStart, length);
@@ -2480,8 +2478,7 @@ void QEngineCUDA::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
         return;
     }
 
-    CMULModx(
-        OCL_API_CMULMODN_OUT, (bitCapIntOcl)toMul, (bitCapIntOcl)modN, inStart, outStart, length, controls);
+    CMULModx(OCL_API_CMULMODN_OUT, (bitCapIntOcl)toMul, (bitCapIntOcl)modN, inStart, outStart, length, controls);
 }
 
 void QEngineCUDA::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
@@ -2514,8 +2511,7 @@ void QEngineCUDA::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart,
 
     SetReg(outStart, length, 0U);
 
-    CMULModx(
-        OCL_API_CPOWMODN_OUT, (bitCapIntOcl)base, (bitCapIntOcl)modN, inStart, outStart, length, controls);
+    CMULModx(OCL_API_CPOWMODN_OUT, (bitCapIntOcl)base, (bitCapIntOcl)modN, inStart, outStart, length, controls);
 }
 
 void QEngineCUDA::xMULx(OCLAPI api_call, const bitCapIntOcl* bciArgs, BufferPtr controlBuffer)
@@ -2623,7 +2619,8 @@ void QEngineCUDA::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStar
     std::sort(skipPowers.get(), skipPowers.get() + controls.size() + length);
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)(controls.size() + length)),
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >>
+                                                    (bitCapIntOcl)(controls.size() + length)),
         toMod, controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);

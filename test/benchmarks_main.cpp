@@ -30,6 +30,7 @@ enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_t_injection = false;
+bool disable_reactive_separation = false;
 bool use_host_dma = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
@@ -121,6 +122,7 @@ int main(int argc, char* argv[])
             "necessary, though might benefit accuracy at very high circuit depth.)") |
         Opt(disable_t_injection)["--disable-t-injection"](
             "Disable reverse t-injection gadget, in stabilizer simulator.") |
+        Opt(disable_reactive_separation)["--disable-reactive-separation"]("Disable QUnit 'reactive' separation") |
         Opt(use_host_dma)["--use-host-dma"](
             "Allocate state vectors as OpenCL host pointers, in an attempt to use Direct Memory Access. This will "
             "probably be slower, and incompatible with OpenCL virtualization, but it can allow greater state vector "
@@ -175,6 +177,10 @@ int main(int argc, char* argv[])
     }
 
 #if ENABLE_ENV_VARS
+    if (getenv("QRACK_QUNITMULTI_DEVICES")) {
+        session.config().stream() << "QRACK_QUNITMULTI_DEVICES: " << std::string(getenv("QRACK_QUNITMULTI_DEVICES"))
+                                  << std::endl;
+    }
     if (getenv("QRACK_QPAGER_DEVICES")) {
         session.config().stream() << "QRACK_QPAGER_DEVICES: " << std::string(getenv("QRACK_QPAGER_DEVICES"))
                                   << std::endl;
@@ -186,6 +192,10 @@ int main(int argc, char* argv[])
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
         session.config().stream() << "QRACK_QUNIT_SEPARABILITY_THRESHOLD: "
                                   << std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) << std::endl;
+    }
+    if (getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")) {
+        session.config().stream() << "QRACK_QBDT_SEPARABILITY_THRESHOLD: "
+                                  << std::string(getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")) << std::endl;
     }
 #endif
 
@@ -499,6 +509,15 @@ int main(int argc, char* argv[])
             testEngineType = QINTERFACE_QUNIT;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_CPU;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_bdt) {
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QBinaryDecisionTree ############"
+                                      << std::endl;
+            testEngineType = QINTERFACE_QUNIT;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT;
             num_failed = session.run();
         }
 #endif

@@ -10,7 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qinterface.hpp"
+#include "qrack_types.hpp"
 
 #if ENABLE_COMPLEX_X2
 #if FPPOW == 5
@@ -82,14 +82,16 @@ void mul2x2(complex const* left, complex const* right, complex* out)
 {
     const complex2 left0(left[0U], left[2U]);
     const complex2 left1(left[1U], left[3U]);
+    const complex2 shuf0 = mtrxColShuff(left0);
+    const complex2 shuf1 = mtrxColShuff(left1);
 
-    complex2 col(matrixMul(left0.c2, left1.c2, complex2(right[0U], right[2U]).c2));
-    out[0U] = col.c[0U];
-    out[2U] = col.c[1U];
+    complex2 col(matrixMul(left0.c2, left1.c2, shuf0.c2, shuf1.c2, complex2(right[0U], right[2U]).c2));
+    out[0U] = col.c(0U);
+    out[2U] = col.c(1U);
 
-    col = complex2(matrixMul(left0.c2, left1.c2, complex2(right[1U], right[3U]).c2));
-    out[1U] = col.c[0U];
-    out[3U] = col.c[1U];
+    col = complex2(matrixMul(left0.c2, left1.c2, shuf0.c2, shuf1.c2, complex2(right[1U], right[3U]).c2));
+    out[1U] = col.c(0U);
+    out[3U] = col.c(1U);
 }
 #else
 void mul2x2(complex const* left, complex const* right, complex* out)

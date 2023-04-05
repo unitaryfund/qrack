@@ -18,6 +18,8 @@
 
 #include "common/qrack_types.hpp"
 
+#include <mutex>
+
 #if ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
@@ -34,18 +36,25 @@ typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 class QBdtNodeInterface {
 protected:
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
-    static void _par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
-#if ENABLE_COMPLEX_X2
-    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
-        QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
-#else
-    virtual void PushStateVector(
-        complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
-#endif
+    static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
 
 public:
+#if ENABLE_COMPLEX_X2
+    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
+        bitLenInt parDepth = 1U)
+#else
+    virtual void PushStateVector(complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
+        bitLenInt depth, bitLenInt parDepth = 1U)
+#endif
+    {
+        throw std::out_of_range("QBdtNodeInterface::PushStateVector() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
+
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
+    std::mutex mtx;
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
@@ -70,42 +79,87 @@ public:
 
     virtual ~QBdtNodeInterface()
     {
-        // Intentionally left blank
+        // Virtual destructor for inheritance
     }
 
-    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size) = 0;
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U)
+    {
+        throw std::out_of_range("QBdtNodeInterface::InsertAtDepth() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
+    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(
+        bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U);
 
     virtual void SetZero()
     {
         scale = ZERO_CMPLX;
-        branches[0U] = NULL;
-        branches[1U] = NULL;
+
+        if (!branches[0U]) {
+            return;
+        }
+
+        if (true) {
+            QBdtNodeInterfacePtr b0 = branches[0U];
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            branches[0U] = NULL;
+        }
+
+        if (true) {
+            QBdtNodeInterfacePtr b1 = branches[1U];
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            branches[1U] = NULL;
+        }
     }
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);
 
     virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
 
-    virtual QBdtNodeInterfacePtr ShallowClone() = 0;
+    virtual QBdtNodeInterfacePtr ShallowClone()
+    {
+        throw std::out_of_range("QBdtNodeInterface::ShallowClone() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual void PopStateVector(bitLenInt depth = 1U) = 0;
+    virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+    {
+        throw std::out_of_range("QBdtNodeInterface::PopStateVector() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual void Branch(bitLenInt depth = 1U) = 0;
+    virtual void Branch(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+    {
+        throw std::out_of_range("QBdtNodeInterface::Branch() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual void Prune(bitLenInt depth = 1U) = 0;
+    virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+    {
+        throw std::out_of_range("QBdtNodeInterface::Prune() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
-    virtual void Normalize(bitLenInt depth) = 0;
+    virtual void Normalize(bitLenInt depth = 1U)
+    {
+        throw std::out_of_range("QBdtNodeInterface::Normalize() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
 #if ENABLE_COMPLEX_X2
-    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth) = 0;
+    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+        const complex2& mtrxColShuff2, bitLenInt depth)
 #else
-    virtual void Apply2x2(complex const* mtrx, bitLenInt depth) = 0;
+    virtual void Apply2x2(complex const* mtrx, bitLenInt depth)
 #endif
+    {
+        throw std::out_of_range("QBdtNodeInterface::Apply2x2() not implemented! (You probably set "
+                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+    }
 
 #if ENABLE_COMPLEX_X2
-    virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b1)
+    virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b1)
 #else
     virtual void PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
 #endif
@@ -115,7 +169,6 @@ public:
     }
 };
 
-bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
-bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
-QBdtNodeInterfacePtr operator-(const QBdtNodeInterfacePtr& t);
+bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs);
+bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs);
 } // namespace Qrack

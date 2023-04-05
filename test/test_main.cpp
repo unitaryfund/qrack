@@ -27,6 +27,7 @@ enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_t_injection = false;
+bool disable_reactive_separation = false;
 bool use_host_dma = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
@@ -104,6 +105,9 @@ int main(int argc, char* argv[])
         Opt(enable_normalization)["--enable-normalization"](
             "Enable state vector normalization. (Usually not "
             "necessary, though might benefit accuracy at very high circuit depth.)") |
+        Opt(disable_t_injection)["--disable-t-injection"](
+            "Disable reverse t-injection gadget, in stabilizer simulator.") |
+        Opt(disable_reactive_separation)["--disable-reactive-separation"]("Disable QUnit 'reactive' separation") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)") |
@@ -179,6 +183,25 @@ int main(int argc, char* argv[])
 
 #if ENABLE_OPENCL || ENABLE_CUDA
     SHOW_OCL_BANNER();
+#endif
+
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QPAGER_DEVICES")) {
+        session.config().stream() << "QRACK_QPAGER_DEVICES: " << std::string(getenv("QRACK_QPAGER_DEVICES"))
+                                  << std::endl;
+    }
+    if (getenv("QRACK_QPAGER_DEVICES_HOST_POINTER")) {
+        session.config().stream() << "QRACK_QPAGER_DEVICES_HOST_POINTER: "
+                                  << std::string(getenv("QRACK_QPAGER_DEVICES_HOST_POINTER")) << std::endl;
+    }
+    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
+        session.config().stream() << "QRACK_QUNIT_SEPARABILITY_THRESHOLD: "
+                                  << std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) << std::endl;
+    }
+    if (getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")) {
+        session.config().stream() << "QRACK_QBDT_SEPARABILITY_THRESHOLD: "
+                                  << std::string(getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")) << std::endl;
+    }
 #endif
 
     int num_failed = 0;
@@ -379,6 +402,15 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
+
+        if (num_failed == 0 && stabilizer_bdt) {
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QBinaryDecisionTree ############"
+                                      << std::endl;
+            testEngineType = QINTERFACE_QUNIT;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT;
+            num_failed = session.run();
+        }
 #endif
     }
 
@@ -444,4 +476,11 @@ QInterfaceTestFixture::QInterfaceTestFixture()
 
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 20, 0, rng, ONE_CMPLX,
         enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+
+    if (disable_t_injection) {
+        qftReg->SetTInjection(false);
+    }
+    if (disable_reactive_separation) {
+        qftReg->SetReactiveSeparate(false);
+    }
 }

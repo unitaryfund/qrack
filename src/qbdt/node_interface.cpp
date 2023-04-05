@@ -16,32 +16,43 @@
 
 #include "qbdt_node_interface.hpp"
 
-#define IS_SAME_AMP(a, b) (norm((a) - (b)) <= (REAL1_EPSILON * REAL1_EPSILON))
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+#include <future>
+#include <thread>
+#endif
+
+#define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
+#define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+#define ATOMIC_ASYNC(...)                                                                                              \
+    std::async(std::launch::async, [__VA_ARGS__]()
+#endif
 
 namespace Qrack {
 
-bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs)
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+const unsigned numThreads = std::thread::hardware_concurrency() << 1U;
+#if ENABLE_ENV_VARS
+const bitLenInt pStridePow =
+    (((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW)) +
+        1U) >>
+    1U;
+#else
+const bitLenInt pStridePow = (PSTRIDEPOW + 1U) >> 1U;
+#endif
+const bitCapInt pStride = pow2(pStridePow);
+#endif
+
+bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
 {
     if (!lhs) {
         return !rhs;
     }
 
-    if (!rhs) {
-        return false;
-    }
-
     return lhs->isEqual(rhs);
 }
 
-bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs) { return !(lhs == rhs); }
-
-QBdtNodeInterfacePtr operator-(const QBdtNodeInterfacePtr& t)
-{
-    QBdtNodeInterfacePtr m = t->ShallowClone();
-    m->scale *= -ONE_CMPLX;
-
-    return m;
-}
+bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs) { return !(lhs == rhs); }
 
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
@@ -57,17 +68,41 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    if (branches[0U] != r->branches[0U]) {
+    if ((!branches[0U]) != (!r->branches[0U])) {
         return false;
     }
 
-    branches[0U] = r->branches[0U];
+    if (branches[0U].get() != r->branches[0U].get()) {
+        QBdtNodeInterfacePtr lLeaf = branches[0U];
+        QBdtNodeInterfacePtr rLeaf = r->branches[0U];
+        std::lock(lLeaf->mtx, rLeaf->mtx);
+        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
 
-    if (branches[1U] != r->branches[1U]) {
+        if (lLeaf != rLeaf) {
+            return false;
+        }
+
+        branches[0U] = r->branches[0U];
+    }
+
+    if ((!branches[1U]) != (!r->branches[1U])) {
         return false;
     }
 
-    branches[1U] = r->branches[1U];
+    if (branches[1U].get() != r->branches[1U].get()) {
+        QBdtNodeInterfacePtr lLeaf = branches[1U];
+        QBdtNodeInterfacePtr rLeaf = r->branches[1U];
+        std::lock(lLeaf->mtx, rLeaf->mtx);
+        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
+
+        if (lLeaf != rLeaf) {
+            return false;
+        }
+
+        branches[1U] = r->branches[1U];
+    }
 
     return true;
 }
@@ -82,37 +117,53 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        return norm(r->scale) <= FP_NORM_EPSILON;
+    if (IS_NODE_0(scale)) {
+        return IS_NODE_0(r->scale);
     }
 
-    if (branches[0U] != r->branches[0U]) {
+    if ((!branches[0U]) != (!r->branches[0U])) {
         return false;
     }
 
-    branches[0U] = r->branches[0U];
+    if (branches[0U].get() != r->branches[0U].get()) {
+        QBdtNodeInterfacePtr lLeaf = branches[0U];
+        QBdtNodeInterfacePtr rLeaf = r->branches[0U];
+        std::lock(lLeaf->mtx, rLeaf->mtx);
+        std::lock_guard<std::mutex> rLock(lLeaf->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lLock(rLeaf->mtx, std::adopt_lock);
 
-    if (branches[1U] != r->branches[1U]) {
+        if (lLeaf != rLeaf) {
+            return false;
+        }
+
+        branches[0U] = r->branches[0U];
+    }
+
+    if ((!branches[0U]) != (!r->branches[0U])) {
         return false;
     }
 
-    branches[1U] = r->branches[1U];
+    if (branches[1U].get() != r->branches[1U].get()) {
+        QBdtNodeInterfacePtr lLeaf = branches[1U];
+        QBdtNodeInterfacePtr rLeaf = r->branches[1U];
+        std::lock(lLeaf->mtx, rLeaf->mtx);
+        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
+
+        if (lLeaf != rLeaf) {
+            return false;
+        }
+
+        branches[1U] = r->branches[1U];
+    }
 
     return true;
 }
 
-void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn)
+QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
+    bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
 {
-    const bitCapInt itemCount = end - begin;
-    const bitCapInt maxLcv = begin + itemCount;
-    for (bitCapInt j = begin; j < maxLcv; ++j) {
-        j |= fn(j, 0U);
-    }
-}
-
-QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
-{
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (IS_NODE_0(scale)) {
         return NULL;
     }
 
@@ -121,9 +172,22 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
     if (depth) {
         --depth;
 
-        QBdtNodeInterfacePtr toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size);
-        QBdtNodeInterfacePtr toRet2 =
-            (branches[0U].get() == branches[1U].get()) ? toRet1 : branches[1U]->RemoveSeparableAtDepth(depth, size);
+        QBdtNodeInterfacePtr toRet1, toRet2;
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+        if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+            ++parDepth;
+            std::future<QBdtNodeInterfacePtr> future0 = std::async(
+                std::launch::async, [&] { return branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth); });
+            toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            toRet1 = future0.get();
+        } else {
+            toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+        }
+#else
+        toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
+        toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+#endif
 
         return (norm(branches[0U]->scale) > norm(branches[1U]->scale)) ? toRet1 : toRet2;
     }
@@ -139,10 +203,70 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
     }
 
     QBdtNodeInterfacePtr temp = toRet->RemoveSeparableAtDepth(size, 0);
-
     branches[0U] = temp->branches[0U];
     branches[1U] = temp->branches[1U];
 
     return toRet;
 }
+
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
+{
+    const bitCapInt Stride = pStride;
+    unsigned threads = (unsigned)(end / pStride);
+    if (threads > numThreads) {
+        threads = numThreads;
+    }
+
+    if (threads <= 1U) {
+        for (bitCapInt j = 0U; j < end; ++j) {
+            j |= fn(j);
+        }
+        return;
+    }
+
+    std::mutex myMutex;
+    bitCapInt idx = 0U;
+    std::vector<std::future<void>> futures(threads);
+    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        futures[cpu] = ATOMIC_ASYNC(&myMutex, &idx, &end, &Stride, fn)
+        {
+            for (;;) {
+                bitCapInt i;
+                if (true) {
+                    std::lock_guard<std::mutex> lock(myMutex);
+                    i = idx++;
+                }
+                const bitCapInt l = i * Stride;
+                if (l >= end) {
+                    break;
+                }
+                const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
+                bitCapInt j;
+                for (j = 0U; j < maxJ; ++j) {
+                    bitCapInt k = j + l;
+                    k |= fn(k);
+                    j = k - l;
+                    if (j >= maxJ) {
+                        std::lock_guard<std::mutex> lock(myMutex);
+                        idx |= j / Stride;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+        futures[cpu].get();
+    }
+}
+#else
+void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
+{
+    for (bitCapInt j = 0U; j < end; ++j) {
+        j |= fn(j);
+    }
+}
+#endif
 } // namespace Qrack

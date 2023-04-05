@@ -17,15 +17,12 @@
 #include "hamiltonian.hpp"
 
 #include <map>
+#include <random>
 #include <vector>
 
 #if ENABLE_UINT128
 #include <ostream>
 #endif
-
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
-#define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
-#define IS_OPPOSITE(c1, c2) (IS_NORM_0((c1) + (c2)))
 
 namespace Qrack {
 
@@ -249,7 +246,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void SetQuantumState(complex const* inputState) = 0;
+    virtual void SetQuantumState(const complex* inputState) = 0;
 
     /** Get the pure quantum state representation
      *
@@ -425,17 +422,17 @@ public:
     /**
      * Apply an arbitrary single bit unitary transformation.
      */
-    virtual void Mtrx(complex const* mtrx, bitLenInt qubitIndex) = 0;
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
      */
-    virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target) = 0;
+    virtual void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
      */
-    virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    virtual void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
             MACPhase(controls, mtrx[0U], mtrx[3U], target);
@@ -534,12 +531,12 @@ public:
      */
 
     virtual void UniformlyControlledSingleBit(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, complex const* mtrxs)
+        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const complex* mtrxs)
     {
         UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), 0);
     }
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
+        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
 
     /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
@@ -593,28 +590,44 @@ public:
      *
      * If both controls are set to 1, the target bit is NOT-ed or X-ed.
      */
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control1, control2 };
+        MCInvert(controls, ONE_CMPLX, ONE_CMPLX, target);
+    }
 
     /**
      * Anti doubly-controlled NOT gate
      *
      * If both controls are set to 0, the target bit is NOT-ed or X-ed.
      */
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control1, control2 };
+        MACInvert(controls, ONE_CMPLX, ONE_CMPLX, target);
+    }
 
     /**
      * Controlled NOT gate
      *
      * If the control is set to 1, the target bit is NOT-ed or X-ed.
      */
-    virtual void CNOT(bitLenInt control, bitLenInt target);
+    virtual void CNOT(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCInvert(controls, ONE_CMPLX, ONE_CMPLX, target);
+    }
 
     /**
      * Anti controlled NOT gate
      *
      * If the control is set to 0, the target bit is NOT-ed or X-ed.
      */
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MACInvert(controls, ONE_CMPLX, ONE_CMPLX, target);
+    }
 
     /**
      * Controlled Y gate
@@ -622,14 +635,22 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
      * to "target."
      */
-    virtual void CY(bitLenInt control, bitLenInt target);
+    virtual void CY(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCInvert(controls, -I_CMPLX, I_CMPLX, target);
+    }
 
     /**
      * Anti controlled Y gate
      *
      * If the control is set to 0, then the Pauli "Y" operator is applied to the target.
      */
-    virtual void AntiCY(bitLenInt control, bitLenInt target);
+    virtual void AntiCY(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MACInvert(controls, -I_CMPLX, I_CMPLX, target);
+    }
 
     /**
      * Doubly-Controlled Y gate
@@ -637,14 +658,22 @@ public:
      * If both "control" bits are set to 1, then the Pauli "Y" operator is applied
      * to "target."
      */
-    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control1, control2 };
+        MCInvert(controls, -I_CMPLX, I_CMPLX, target);
+    }
 
     /**
      * Anti doubly-controlled Y gate
      *
      * If both controls are set to 0, apply Pauli Y operation to target bit.
      */
-    virtual void AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control1, control2 };
+        MACInvert(controls, -I_CMPLX, I_CMPLX, target);
+    }
 
     /**
      * Controlled Z gate
@@ -652,14 +681,22 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
      * to "target."
      */
-    virtual void CZ(bitLenInt control, bitLenInt target);
+    virtual void CZ(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, -ONE_CMPLX, target);
+    }
 
     /**
      * Anti controlled Z gate
      *
      * If the control is set to 0, then the Pauli "Z" operator is applied to the target.
      */
-    virtual void AntiCZ(bitLenInt control, bitLenInt target);
+    virtual void AntiCZ(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, -ONE_CMPLX, target);
+    }
 
     /**
      * Doubly-Controlled Z gate
@@ -667,14 +704,22 @@ public:
      * If both "control" bits are set to 1, then the Pauli "Z" operator is applied
      * to "target."
      */
-    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control1, control2 };
+        MCPhase(controls, ONE_CMPLX, -ONE_CMPLX, target);
+    }
 
     /**
      * Anti doubly-controlled Z gate
      *
      * If both controls are set to 0, apply Pauli Z operation to target bit.
      */
-    virtual void AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control1, control2 };
+        MACPhase(controls, ONE_CMPLX, -ONE_CMPLX, target);
+    }
 
     /**
      * General unitary gate
@@ -771,28 +816,53 @@ public:
      *
      * Applies a Hadamard gate on qubit at "qubitIndex."
      */
-    virtual void H(bitLenInt qubitIndex);
+    virtual void H(bitLenInt qubit)
+    {
+        const complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        const complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
      * Square root of Hadamard gate
      *
      * Applies the square root of the Hadamard gate on qubit at "qubitIndex."
      */
-    virtual void SqrtH(bitLenInt qubitIndex);
+    virtual void SqrtH(bitLenInt qubit)
+    {
+        const complex mtrx[4]{ complex((real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)),
+                                   (real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1))),
+            complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2)),
+            complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2)),
+            complex((real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1))) };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
      * Y-basis transformation gate
      *
      * Converts from Pauli Z basis to Y, (via H then S gates).
      */
-    virtual void SH(bitLenInt qubitIndex);
+    virtual void SH(bitLenInt qubit)
+    {
+        const complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        const complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
+        const complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, -C_I_SQRT1_2 };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
      * Y-basis (inverse) transformation gate
      *
      * Converts from Pauli Y basis to Z, (via IS then H gates).
      */
-    virtual void HIS(bitLenInt qubitIndex);
+    virtual void HIS(bitLenInt qubit)
+    {
+        const complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        const complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
+        const complex mtrx[4]{ C_SQRT1_2, -C_I_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2 };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
      * Measurement gate
@@ -855,42 +925,56 @@ public:
      *
      * Applies a 1/4 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void S(bitLenInt qubitIndex);
+    virtual void S(bitLenInt qubit) { Phase(ONE_CMPLX, I_CMPLX, qubit); }
 
     /**
      * Inverse S gate
      *
      * Applies an inverse 1/4 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void IS(bitLenInt qubitIndex);
+    virtual void IS(bitLenInt qubit) { Phase(ONE_CMPLX, -I_CMPLX, qubit); }
 
     /**
      * T gate
      *
      * Applies a 1/8 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void T(bitLenInt qubitIndex);
+    virtual void T(bitLenInt qubit) { Phase(ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), qubit); }
 
     /**
      * Inverse T gate
      *
      * Applies an inverse 1/8 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void IT(bitLenInt qubitIndex);
+    virtual void IT(bitLenInt qubit) { Phase(ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), qubit); }
 
     /**
      * "PhaseRootN" gate
      *
      * Applies a 1/(2^N) phase rotation to the qubit at "qubitIndex."
      */
-    virtual void PhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+    virtual void PhaseRootN(bitLenInt n, bitLenInt qubit)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), qubit);
+    }
 
     /**
      * Inverse "PhaseRootN" gate
      *
      * Applies an inverse 1/(2^N) phase rotation to the qubit at "qubitIndex."
      */
-    virtual void IPhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+    virtual void IPhaseRootN(bitLenInt n, bitLenInt qubit)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), qubit);
+    }
 
     /**
      * Parity phase gate
@@ -905,7 +989,7 @@ public:
      * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
-    virtual void X(bitLenInt qubitIndex);
+    virtual void X(bitLenInt qubit) { Invert(ONE_CMPLX, ONE_CMPLX, qubit); }
 
     /**
      * Masked X gate
@@ -922,7 +1006,7 @@ public:
      * "Y" operator is similar to a logical "NOT" with permutation phase.
      * effects.
      */
-    virtual void Y(bitLenInt qubitIndex);
+    virtual void Y(bitLenInt qubit) { Invert(-I_CMPLX, I_CMPLX, qubit); }
 
     /**
      * Masked Y gate
@@ -938,7 +1022,7 @@ public:
      * Applies the Pauli "Z" operator to the qubit at "qubitIndex." The Pauli
      * "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
-    virtual void Z(bitLenInt qubitIndex);
+    virtual void Z(bitLenInt qubit) { Phase(ONE_CMPLX, -ONE_CMPLX, qubit); }
 
     /**
      * Masked Z gate
@@ -954,7 +1038,13 @@ public:
      * Applies the square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
-    virtual void SqrtX(bitLenInt qubitIndex);
+    virtual void SqrtX(bitLenInt qubit)
+    {
+        const complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        const complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        const complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
      * Inverse square root of X gate
@@ -962,7 +1052,13 @@ public:
      * Applies the (by convention) inverse square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
-    virtual void ISqrtX(bitLenInt qubitIndex);
+    virtual void ISqrtX(bitLenInt qubit)
+    {
+        const complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        const complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        const complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2 };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
      * Square root of Y gate
@@ -971,16 +1067,50 @@ public:
      * "Y" operator is similar to a logical "NOT" with permutation phase
      * effects.
      */
-    virtual void SqrtY(bitLenInt qubitIndex);
+    virtual void SqrtY(bitLenInt qubit)
+    {
+        const complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        const complex mtrx[4]{ ONE_PLUS_I_DIV_2, -ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
-     * Square root of Y gate
+     * Inverse square root of Y gate
      *
      * Applies the (by convention) inverse square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
      * "Y" operator is similar to a logical "NOT" with permutation phase
      * effects.
      */
-    virtual void ISqrtY(bitLenInt qubitIndex);
+    virtual void ISqrtY(bitLenInt qubit)
+    {
+        const complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        const complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, -ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2 };
+        Mtrx(mtrx, qubit);
+    }
+
+    /**
+     * Square root of W gate
+     *
+     * Per 2019 Arute, Google's "quantum supremacy" experiment
+     */
+    virtual void SqrtW(bitLenInt qubit)
+    {
+        const complex mtrx[4]{ complex(SQRT1_2_R1, ZERO_R1), -complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+            complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex(SQRT1_2_R1, ZERO_R1) };
+        Mtrx(mtrx, qubit);
+    }
+
+    /**
+     * Inverse square root of W gate
+     *
+     * Per 2019 Arute, Google's "quantum supremacy" experiment
+     */
+    virtual void ISqrtW(bitLenInt qubit)
+    {
+        const complex mtrx[4]{ complex(SQRT1_2_R1, ZERO_R1), complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+            -complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex(SQRT1_2_R1, ZERO_R1) };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
      * Controlled H gate
@@ -988,7 +1118,13 @@ public:
      * If the "control" bit is set to 1, then the "H" Walsh-Hadamard transform operator is applied
      * to "target."
      */
-    virtual void CH(bitLenInt control, bitLenInt target);
+    virtual void CH(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        const complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        const complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
+        MCMtrx(controls, mtrx, target);
+    }
 
     /**
      * (Anti-)controlled H gate
@@ -996,7 +1132,13 @@ public:
      * If the "control" bit is set to 1, then the "H" Walsh-Hadamard transform operator is applied
      * to "target."
      */
-    virtual void AntiCH(bitLenInt control, bitLenInt target);
+    virtual void AntiCH(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        const complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        const complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
+        MACMtrx(controls, mtrx, target);
+    }
 
     /**
      * Controlled S gate
@@ -1004,7 +1146,11 @@ public:
      * If the "control" bit is set to 1, then the S gate is applied
      * to "target."
      */
-    virtual void CS(bitLenInt control, bitLenInt target);
+    virtual void CS(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, I_CMPLX, target);
+    }
 
     /**
      * (Anti-)controlled S gate
@@ -1012,7 +1158,11 @@ public:
      * If the "control" bit is set to 1, then the S gate is applied
      * to "target."
      */
-    virtual void AntiCS(bitLenInt control, bitLenInt target);
+    virtual void AntiCS(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, I_CMPLX, target);
+    }
 
     /**
      * Controlled inverse S gate
@@ -1020,7 +1170,11 @@ public:
      * If the "control" bit is set to 1, then the inverse S gate is applied
      * to "target."
      */
-    virtual void CIS(bitLenInt control, bitLenInt target);
+    virtual void CIS(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, -I_CMPLX, target);
+    }
 
     /**
      * (Anti-)controlled inverse S gate
@@ -1028,7 +1182,11 @@ public:
      * If the "control" bit is set to 1, then the inverse S gate is applied
      * to "target."
      */
-    virtual void AntiCIS(bitLenInt control, bitLenInt target);
+    virtual void AntiCIS(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, -I_CMPLX, target);
+    }
 
     /**
      * Controlled T gate
@@ -1036,7 +1194,11 @@ public:
      * If the "control" bit is set to 1, then the T gate is applied
      * to "target."
      */
-    virtual void CT(bitLenInt control, bitLenInt target);
+    virtual void CT(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), target);
+    }
 
     /**
      * Controlled inverse T gate
@@ -1044,7 +1206,11 @@ public:
      * If the "control" bit is set to 1, then the inverse T gate is applied
      * to "target."
      */
-    virtual void CIT(bitLenInt control, bitLenInt target);
+    virtual void CIT(bitLenInt control, bitLenInt target)
+    {
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), target);
+    }
 
     /**
      * Controlled "PhaseRootN" gate
@@ -1052,7 +1218,15 @@ public:
      * If the "control" bit is set to 1, then the "PhaseRootN" gate is applied
      * to "target."
      */
-    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+    }
 
     /**
      * (Anti-)controlled "PhaseRootN" gate
@@ -1060,7 +1234,15 @@ public:
      * If the "control" bit is set to 0, then the "PhaseRootN" gate is applied
      * to "target."
      */
-    virtual void AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+    virtual void AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+    }
 
     /**
      * Controlled inverse "PhaseRootN" gate
@@ -1068,7 +1250,15 @@ public:
      * If the "control" bit is set to 1, then the inverse "PhaseRootN" gate is applied
      * to "target."
      */
-    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        const std::vector<bitLenInt> controls{ control };
+        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+    }
 
     /**
      * (Anti-)controlled inverse "PhaseRootN" gate
@@ -1076,7 +1266,15 @@ public:
      * If the "control" bit is set to 0, then the inverse "PhaseRootN" gate is applied
      * to "target."
      */
-    virtual void AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+    virtual void AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+    {
+        if (n == 0) {
+            return;
+        }
+
+        const std::vector<bitLenInt> controls{ control };
+        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+    }
 
     /** @} */
 
@@ -1277,7 +1475,7 @@ public:
      * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
     virtual void Exp(
-        const std::vector<bitLenInt>& controls, bitLenInt qubit, complex const* matrix2x2, bool antiCtrled = false);
+        const std::vector<bitLenInt>& controls, bitLenInt qubit, const complex* matrix2x2, bool antiCtrled = false);
 
     /**
      * Dyadic fraction (identity) exponentiation gate
@@ -1976,7 +2174,7 @@ public:
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
     /** Phase flip always - equivalent to Z X Z X on any bit in the QInterface */
-    virtual void PhaseFlip();
+    virtual void PhaseFlip() { Phase(-ONE_CMPLX, -ONE_CMPLX, 0); }
 
     /** Set register bits to given permutation */
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
@@ -2051,7 +2249,7 @@ public:
     virtual real1_f CProb(bitLenInt control, bitLenInt target)
     {
         AntiCNOT(control, target);
-        real1_f prob = Prob(target);
+        const real1_f prob = Prob(target);
         AntiCNOT(control, target);
 
         return prob;
@@ -2064,7 +2262,7 @@ public:
     virtual real1_f ACProb(bitLenInt control, bitLenInt target)
     {
         CNOT(control, target);
-        real1_f prob = Prob(target);
+        const real1_f prob = Prob(target);
         CNOT(control, target);
 
         return prob;
@@ -2160,7 +2358,12 @@ public:
      * The state ends up entirely in the "value" state, with a random phase
      * factor.
      */
-    virtual void SetBit(bitLenInt qubitIndex1, bool value);
+    virtual void SetBit(bitLenInt qubit, bool value)
+    {
+        if (value != M(qubit)) {
+            X(qubit);
+        }
+    }
 
     /**
      * Compare state vectors approximately, component by component, to determine whether this state vector is the same
@@ -2258,6 +2461,24 @@ public:
      *  Two-qubit TrySeparate()
      */
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
+    /**
+     * When "Schmidt-decomposition rounding parameter" ("SDRP") is being used, starting from initial 1.0 fidelity, we
+     * compound the "unitary fidelity" by successive multiplication by one minus two times the true unitary probability
+     * discarded in each single rounding event. Then, an overall square-root is applied to the final fidelity estimate.
+     * This is a useful metric on fidelity that requires no heavy calculational overhead to compute, and it tends to be
+     * usually only slightly pessimistic compared to random circuit sampling fidelity calculated via the inner product.
+     * This calculation is automatically reset to 1.0 by SetPermutation() or MAll() or can be manually reset by
+     * "QInterface::ResetUnitaryFidelity()".
+     */
+    virtual double GetUnitaryFidelity() { return 1.0; }
+    /**
+     * Reset the internal fidelity calculation tracker to 1.0.
+     */
+    virtual void ResetUnitaryFidelity() {}
+    /**
+     * Set the "Schmidt decomposition rounding parameter" value, (between 0 and 1)
+     */
+    virtual void SetSdrp(real1_f sdrp){};
     /**
      *  Set reactive separation option (on by default if available)
      *

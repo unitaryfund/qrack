@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 3.25)
-project (Qrack VERSION 8.0.0 DESCRIPTION "High Performance Quantum Bit Simulation")
+cmake_minimum_required (VERSION 3.9)
+project (Qrack VERSION 8.4.0 DESCRIPTION "High Performance Quantum Bit Simulation")
 
 # Installation commands
 include (GNUInstallDirs)
@@ -123,8 +123,10 @@ message ("UInt capacity power is: ${UINTPOW}")
 message ("CPU parallelism is: ${ENABLE_PTHREAD}")
 message ("CPU work item stride power is: ${PSTRIDEPOW}")
 message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
+message ("Parallel QBdt is: ${ENABLE_QBDT_CPU_PARALLEL}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
+message ("SSE3.0 support is: ${ENABLE_SSE3}")
 message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
 message ("Quantum Binary decision tree (QBDT) inclusion is: ${ENABLE_QBDT}")
 message ("General ALU API inclusion is: ${ENABLE_ALU}")
@@ -163,6 +165,10 @@ endif(MSVC)
 if (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
     set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mavx)
 endif (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
+
+if (ENABLE_SSE3)
+    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -msse3)
+endif (ENABLE_SSE3)
 
 if (FPPOW LESS 5)
     if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -227,6 +233,7 @@ set_target_properties (qrack_pinvoke PROPERTIES
 install (FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h
     include/common/qrack_types.hpp
+    include/common/qrack_macros.hpp
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
     include/common/oclapi.hpp
@@ -290,3 +297,10 @@ install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOT
 if (NOT ENABLE_EMIT_LLVM)
     install(TARGETS qrack_cl_precompile DESTINATION bin)
 endif (NOT ENABLE_EMIT_LLVM)
+
+include(InstallRequiredSystemLibraries)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
+set(CPACK_PACKAGE_VERSION_MAJOR "${Qrack_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${Qrack_VERSION_MINOR}")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+include(CPack)

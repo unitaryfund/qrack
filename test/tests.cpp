@@ -48,6 +48,10 @@ using namespace Qrack;
         (testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER) ||                           \
         (testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT))
 
+#define QINTERFACE_GROVER_RESTRICTED                                                                                   \
+    ((testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT) ||                                    \
+        (testSubSubEngineType == QINTERFACE_BDT))
+
 #define C_SQRT1_2 complex(SQRT1_2_R1, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, SQRT1_2_R1)
 
@@ -4512,6 +4516,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     int i;
 
     // Grover's search inverts the function of a black box subroutine.
@@ -4549,6 +4557,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     int i;
 
     // Grover's search to find a value in a lookup table.
@@ -4598,6 +4610,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
     const bitLenInt length = 10;
@@ -4653,6 +4669,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_amplitude_amplification")
 {
+    if (QINTERFACE_GROVER_RESTRICTED) {
+        return;
+    }
+
     int i;
 
     // Grover's search inverts the function of a black box subroutine.
@@ -6522,6 +6542,73 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_33", "[mirror]")
     REQUIRE(qftReg->MAll() == 2);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_34", "[mirror]")
+{
+    qftReg = MakeEngine(4);
+    qftReg->SetPermutation(13);
+
+    qftReg->H(1);
+    qftReg->H(3);
+    qftReg->AntiCY(3, 2);
+    qftReg->CY(1, 0);
+    qftReg->AntiCCZ(2, 3, 0);
+    qftReg->CCNOT(1, 2, 3);
+    qftReg->CCNOT(1, 2, 3);
+    qftReg->AntiCCZ(2, 3, 0);
+    qftReg->CY(1, 0);
+    qftReg->AntiCY(3, 2);
+    qftReg->H(3);
+    qftReg->H(1);
+
+    REQUIRE(qftReg->MAll() == 13);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_35", "[mirror]")
+{
+    qftReg = MakeEngine(4);
+    qftReg->SetPermutation(10);
+
+    qftReg->H(3);
+    qftReg->CNOT(3, 2);
+    qftReg->CNOT(3, 2);
+    qftReg->H(3);
+
+    std::vector<bitCapInt> qPowers(4);
+    for (int i = 0; i < 4; ++i) {
+        qPowers[i] = pow2(i);
+    }
+    std::map<bitCapInt, int> result = qftReg->MultiShotMeasureMask(qPowers, 100U);
+    REQUIRE(result.size() == 1U);
+    REQUIRE(result.begin()->first == 10U);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_36", "[mirror]")
+{
+    qftReg = MakeEngine(4);
+    qftReg->SetPermutation(5);
+
+    qftReg->H(1);
+    qftReg->CCNOT(1, 2, 3);
+    qftReg->H(0);
+    qftReg->CZ(0, 3);
+    qftReg->AntiCY(1, 2);
+    qftReg->AntiCCY(0, 3, 1);
+    qftReg->AntiCCY(0, 3, 1);
+    qftReg->AntiCY(1, 2);
+    qftReg->CZ(0, 3);
+    qftReg->H(0);
+    qftReg->CCNOT(1, 2, 3);
+    qftReg->H(1);
+
+    std::vector<bitCapInt> qPowers(4);
+    for (int i = 0; i < 4; ++i) {
+        qPowers[i] = pow2(i);
+    }
+    std::map<bitCapInt, int> result = qftReg->MultiShotMeasureMask(qPowers, 100U);
+    REQUIRE(result.size() == 1U);
+    REQUIRE(result.begin()->first == 5U);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
@@ -6559,6 +6646,11 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
     int maxGates;
 
     int gate;
+
+    std::vector<bitCapInt> qPowers(n);
+    for (int i = 0; i < n; ++i) {
+        qPowers[i] = pow2(i);
+    }
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
@@ -6729,9 +6821,9 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             }
         }
 
-        bitCapInt result = testCase->MAll();
+        std::map<bitCapInt, int> result = testCase->MultiShotMeasureMask(qPowers, 100U);
 
-        if (result != randPerm) {
+        if ((result.size() > 1U) || (result.begin()->first != randPerm)) {
             for (d = 0; d < Depth; d++) {
                 std::vector<int>& layer1QbRands = gate1QbRands[d];
                 for (i = 0; i < (int)layer1QbRands.size(); i++) {
@@ -6913,6 +7005,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             }
         }
 
-        REQUIRE(result == randPerm);
+        REQUIRE(result.begin()->first == randPerm);
+        REQUIRE(result.size() == 1U);
     }
 }

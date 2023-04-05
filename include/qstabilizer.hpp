@@ -35,7 +35,11 @@
 namespace Qrack {
 
 struct AmplitudeEntry {
+#if UINTPOW < 6
+    unsigned long permutation;
+#else
     bitCapIntOcl permutation;
+#endif
     complex amplitude;
 
     AmplitudeEntry(const bitCapInt& p, const complex& a)
@@ -107,24 +111,9 @@ public:
         bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
         std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
 
-    QInterfacePtr Clone()
-    {
-        Finish();
-
-        QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL);
-        clone->Finish();
-
-        clone->x = x;
-        clone->z = z;
-        clone->r = r;
-        clone->phaseOffset = phaseOffset;
-        clone->randomSeed = randomSeed;
-
-        return clone;
-    }
-
     ~QStabilizer() { Dump(); }
+
+    QInterfacePtr Clone();
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };
@@ -268,22 +257,7 @@ protected:
         QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
 public:
-    void SetQuantumState(complex const* inputState)
-    {
-        if (qubitCount > 1U) {
-            throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
-        }
-
-        SetPermutation(0U);
-
-        const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
-        const real1 sqrtProb = sqrt(prob);
-        const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
-        const complex phase0 = std::polar(ONE_R1, arg(inputState[0U]));
-        const complex phase1 = std::polar(ONE_R1, arg(inputState[1U]));
-        const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
-        Mtrx(mtrx, 0U);
-    }
+    void SetQuantumState(complex const* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)
     {
         throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");

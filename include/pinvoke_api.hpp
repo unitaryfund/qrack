@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+//
+// (Extensively modified and adapted by Daniel Strano in unitaryfund/qrack)
 
 #pragma once
 
-#include "common/qrack_types.hpp"
+#include "config.h"
 #include "stddef.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -28,6 +30,10 @@ typedef bool (*ProbAmpCallback)(size_t, double, double);
 struct _QrackTimeEvolveOpHeader;
 #endif
 
+#if FPPOW > 6
+#include <boost/multiprecision/float128.hpp>
+#endif
+
 extern "C" {
 // non-quantum
 MICROSOFT_QUANTUM_DECL int get_error(_In_ uintq sid);
@@ -43,13 +49,23 @@ MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ uintq sid, _In_ uintq p);
 
 // pseudo-quantum
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q);
+MICROSOFT_QUANTUM_DECL double PermutationProb(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c);
 MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c);
 
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback);
 
-MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ Qrack::real1_f* ket);
-MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ Qrack::real1_f* ket);
+#if FPPOW < 6
+MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ float* ket);
+MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ float* ket);
+#elif FPPOW < 7
+MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ double* ket);
+MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ double* ket);
+#else
+MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ boost::multiprecision::float128* ket);
+MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ boost::multiprecision::float128* ket);
+#endif
 
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ uintq sid, _In_ size_t n, _In_reads_(n) double* p);
 
@@ -212,6 +228,9 @@ MICROSOFT_QUANTUM_DECL void Hash(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ uintq sid, _In_ uintq qi1);
 MICROSOFT_QUANTUM_DECL bool TrySeparate2Qb(_In_ uintq sid, _In_ uintq qi1, _In_ uintq qi2);
 MICROSOFT_QUANTUM_DECL bool TrySeparateTol(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ double tol);
+MICROSOFT_QUANTUM_DECL double GetUnitaryFidelity(_In_ uintq sid);
+MICROSOFT_QUANTUM_DECL void ResetUnitaryFidelity(_In_ uintq sid);
+MICROSOFT_QUANTUM_DECL void SetSdrp(_In_ uintq sid, _In_ double sdrp);
 MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ uintq sid, _In_ bool irs);
 MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool iti);
 

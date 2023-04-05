@@ -270,6 +270,10 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
 /// Returns probability of permutation of the mask
 real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
+    if ((maxQPower - 1U) == mask) {
+        return ProbAll(permutation);
+    }
+
     real1 prob = ZERO_R1;
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         if ((lcv & mask) == permutation) {
@@ -329,19 +333,18 @@ std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr
 void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
 {
     bitCapInt v = mask; // count the number of bits set in v
-    bitLenInt length;
     std::vector<bitCapInt> bitPowers;
-    for (length = 0U; v; ++length) {
+    while (v) {
         bitCapInt oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         bitPowers.push_back((v ^ oldV) & oldV);
     }
 
-    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
+    std::fill(probsArray, probsArray + pow2Ocl(bitPowers.size()), ZERO_R1);
 
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapIntOcl retIndex = 0U;
-        for (bitLenInt p = 0U; p < length; ++p) {
+        for (size_t p = 0U; p < bitPowers.size(); ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2Ocl(p);
             }

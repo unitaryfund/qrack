@@ -37,6 +37,7 @@ protected:
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
     bitLenInt maxPageQubits;
+    bitLenInt bdtStride;
     int64_t devID;
     QBdtNodeInterfacePtr root;
     bitCapInt bdtMaxQPower;
@@ -67,40 +68,41 @@ protected:
         // If the calling function fully deferences our return, it's automatically freed.
         return copyPtr;
     }
-    void SetStateVector()
-    {
-        if (!bdtQubitCount) {
-            return;
-        }
-
-        if (attachedQubitCount) {
-            throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
-        }
-
-        QBdtQEngineNodePtr nRoot = MakeQEngineNode(ONE_R1, qubitCount);
-        GetQuantumState(NODE_TO_QENGINE(nRoot));
-        root = nRoot;
-        SetQubitCount(qubitCount, qubitCount);
-    }
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
+        if (!bdtQubitCount) {
+            operation(NODE_TO_QENGINE(root));
+            return;
+        }
+
         SetStateVector();
         operation(NODE_TO_QENGINE(root));
+        ResetStateVector();
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
+        if (!bdtQubitCount) {
+            return operation(NODE_TO_QENGINE(root));
+        }
+
         SetStateVector();
-        return operation(NODE_TO_QENGINE(root));
+        bitCapInt toRet = operation(NODE_TO_QENGINE(root));
+        ResetStateVector();
+
+        return toRet;
     }
+
+    void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn);
+    void _par_for(const bitCapInt& end, ParallelFuncBdt fn);
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
     void ApplyControlledSingle(
-        complex const* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti);
+        const complex* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
@@ -110,34 +112,9 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    void ApplySingle(complex const* mtrx, bitLenInt target);
+    void ApplySingle(const complex* mtrx, bitLenInt target);
 
     void Init();
-
-    void ResetStateVector(bitLenInt aqb = 0U)
-    {
-        if (attachedQubitCount <= aqb) {
-            return;
-        }
-
-        if (!bdtQubitCount) {
-            QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
-            SetQubitCount(qubitCount, aqb);
-            SetQuantumState(NODE_TO_QENGINE(oRoot));
-        }
-
-        const bitLenInt length = attachedQubitCount - aqb;
-        const bitLenInt oBdtQubitCount = bdtQubitCount;
-        QBdtPtr nQubits =
-            std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
-                -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
-        nQubits->SetQubitCount(length, 0U);
-        nQubits->SetPermutation(0U);
-        root->InsertAtDepth(nQubits->root, oBdtQubitCount, length);
-        SetQubitCount(qubitCount + length, attachedQubitCount);
-        ROR(length, oBdtQubitCount, qubitCount);
-        Dispose(qubitCount - length, length);
-    }
 
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -175,6 +152,9 @@ public:
 
     bool isBinaryDecisionTree() { return true; };
 
+    void SetStateVector();
+    void ResetStateVector(bitLenInt aqb = 0U);
+
     void SetDevice(int64_t dID);
 
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
@@ -197,16 +177,13 @@ public:
 
     void GetQuantumState(complex* state);
     void GetQuantumState(QInterfacePtr eng);
-    void SetQuantumState(complex const* state);
+    void SetQuantumState(const complex* state);
     void SetQuantumState(QInterfacePtr eng);
     void GetProbs(real1* outputProbs);
 
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp)
     {
-        if (perm >= maxQPower) {
-            throw std::domain_error("QBdt::SetAmplitude argument out-of-bounds!");
-        }
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
     }
 
@@ -264,13 +241,11 @@ public:
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
     bitCapInt MAll();
 
-    void Mtrx(complex const* mtrx, bitLenInt target);
-    void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
-    void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target);
+    void Mtrx(const complex* mtrx, bitLenInt target);
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
-    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
-    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
 
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
