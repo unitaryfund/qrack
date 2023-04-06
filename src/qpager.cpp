@@ -18,6 +18,14 @@
 #include <string>
 #endif
 
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 namespace Qrack {
 
 QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
@@ -78,16 +86,16 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
 void QPager::Init()
 {
     if (!engines.size()) {
-#if ENABLE_OPENCL
-        engines.push_back(OCLEngine::Instance().GetDeviceCount() ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+#if ENABLE_OPENCL || ENABLE_CUDA
+        engines.push_back(QRACK_GPU_SINGLETON.GetDeviceCount() ? QRACK_GPU_ENGINE : QINTERFACE_CPU);
 #else
         engines.push_back(QINTERFACE_CPU);
 #endif
     }
 
-    if ((engines[0U] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
-#if ENABLE_OPENCL
-        if (!OCLEngine::Instance().GetDeviceCount()) {
+    if ((engines[0U] == QINTERFACE_HYBRID) || (engines[0] == QRACK_GPU_ENGINE)) {
+#if ENABLE_OPENCL || ENABLE_CUDA
+        if (!QRACK_GPU_SINGLETON.GetDeviceCount()) {
             engines[0U] = QINTERFACE_CPU;
         }
 #else
@@ -102,23 +110,23 @@ void QPager::Init()
 #endif
     bitLenInt engineLevel = 0U;
     rootEngine = engines[0U];
-    while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL) &&
+    while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QRACK_GPU_ENGINE) &&
         (rootEngine != QINTERFACE_HYBRID)) {
         ++engineLevel;
         rootEngine = engines[engineLevel];
     }
 
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL || ENABLE_CUDA
     if (rootEngine != QINTERFACE_CPU) {
-        maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+        maxPageQubits = log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
         maxPageQubits = (maxPageSetting < maxPageQubits) ? maxPageSetting : 1U;
     }
 
-    if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL)) {
+    if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QRACK_GPU_ENGINE)) {
         rootEngine = QINTERFACE_HYBRID;
     }
 
-    if (!thresholdQubitsPerPage && ((rootEngine == QINTERFACE_OPENCL) || (rootEngine == QINTERFACE_HYBRID))) {
+    if (!thresholdQubitsPerPage && ((rootEngine == QRACK_GPU_ENGINE) || (rootEngine == QINTERFACE_HYBRID))) {
         useGpuThreshold = true;
 
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
@@ -179,8 +187,8 @@ void QPager::Init()
                         deviceIDs.back() = (int)devID;
                     }
                     if (deviceIDs.back() == -1) {
-#if ENABLE_OPENCL
-                        deviceIDs.back() = (int)OCLEngine::Instance().GetDefaultDeviceID();
+#if ENABLE_OPENCL || ENABLE_CUDA
+                        deviceIDs.back() = (int)QRACK_GPU_SINGLETON.GetDefaultDeviceID();
 #else
                         deviceIDs.back() = 0;
 #endif
@@ -195,8 +203,8 @@ void QPager::Init()
                         ids[i - 1U] = (int)devID;
                     }
                     if (ids[i - 1U] == -1) {
-#if ENABLE_OPENCL
-                        ids[i - 1U] = (int)OCLEngine::Instance().GetDefaultDeviceID();
+#if ENABLE_OPENCL || ENABLE_CUDA
+                        ids[i - 1U] = (int)QRACK_GPU_SINGLETON.GetDefaultDeviceID();
 #else
                         ids[i - 1U] = 0;
 #endif

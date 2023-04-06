@@ -712,8 +712,16 @@ real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
 
 void QEngineCUDA::InitOCL(int64_t devID)
 {
-    cudaStreamCreate(&queue);
-    cudaStreamCreate(&params_queue);
+    cudaError_t error = cudaStreamCreate(&queue);
+    if (error != cudaSuccess) {
+        throw std::runtime_error("CUDA error code on main stream creation: " + std::to_string(error));
+    }
+
+    error = cudaStreamCreate(&params_queue);
+    if (error != cudaSuccess) {
+        throw std::runtime_error("CUDA error code on parameter stream creation: " + std::to_string(error));
+    }
+
     SetDevice(devID);
 }
 

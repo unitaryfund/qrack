@@ -289,12 +289,8 @@ public:
         FreeAll();
 
         // Theoretically, all user output is blocking, so don't throw in destructor.
-        if (params_queue) {
-            cudaStreamDestroy(params_queue);
-        }
-        if (queue) {
-            cudaStreamDestroy(queue);
-        }
+        cudaStreamDestroy(params_queue);
+        cudaStreamDestroy(queue);
     }
 
     virtual bool isOpenCL() { return true; }
