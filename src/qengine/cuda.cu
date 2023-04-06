@@ -268,7 +268,7 @@ void QEngineCUDA::LockSync(cl_map_flags flags)
         });
     } else {
         unlockHostMem = false;
-        stateVec = AllocStateVec(maxQPowerOcl);
+        stateVec = AllocStateVec(maxQPowerOcl, true);
         if (lockSyncFlags & CL_MAP_READ) {
             DISPATCH_BLOCK_READ(stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, stateVec.get());
         }
