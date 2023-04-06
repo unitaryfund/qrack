@@ -95,7 +95,6 @@ void QEngineCUDA::FreeAll()
 {
     ZeroAmplitudes();
 
-    powersBuffer = NULL;
     nrmBuffer = NULL;
     nrmArray = NULL;
 
@@ -300,10 +299,14 @@ void QEngineCUDA::clFinish(bool doHard)
     }
 
     if (doHard) {
-        tryCuda("Failed to finish device queue", [&] { return cudaDeviceSynchronize(); });
+        cudaDeviceSynchronize();
     } else {
-        tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(params_queue); });
-        tryCuda("Failed to finish simulator queue", [&] { return cudaStreamSynchronize(queue); });
+        if (params_queue) {
+            cudaStreamSynchronize(params_queue);
+        }
+        if (queue) {
+            cudaStreamSynchronize(queue);
+        }
     }
 
     wait_queue_items.clear();
@@ -693,11 +696,6 @@ void QEngineCUDA::SetDevice(int64_t dID)
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>());
-
-    if (!didInit) {
-        AddAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
-    }
-    powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
 }
 
 real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
@@ -714,9 +712,8 @@ real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
 
 void QEngineCUDA::InitOCL(int64_t devID)
 {
-    tryCuda("Failed to create CUDA stream!", [&] { return cudaStreamCreate(&queue); });
-    tryCuda("Failed to create CUDA stream!", [&] { return cudaStreamCreate(&params_queue); });
-
+    cudaStreamCreate(&queue);
+    cudaStreamCreate(&params_queue);
     SetDevice(devID);
 }
 
@@ -906,11 +903,7 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     BufferPtr locPowersBuffer;
     if (bitCount > 2) {
-        if (doCalcNorm) {
-            locPowersBuffer = powersBuffer;
-        } else {
-            locPowersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bitCount);
-        }
+        locPowersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bitCount);
         if (sizeof(bitCapInt) == sizeof(bitCapIntOcl)) {
             DISPATCH_TEMP_WRITE(locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted);
         } else {
@@ -1113,8 +1106,12 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
     const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    const size_t powBuffSize = sizeof(bitCapIntOcl) * (controls.size() + mtrxSkipPowers.size());
+    AddAlloc(powBuffSize);
+    BufferPtr powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, powBuffSize);
+
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
-    DISPATCH_WRITE(powersBuffer, sizeof(bitCapIntOcl) * (controls.size() + mtrxSkipPowers.size()), qPowers.get());
+    DISPATCH_WRITE(powersBuffer, powBuffSize, qPowers.get());
 
     // We call the kernel, with global buffers and one local buffer.
     WaitCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,

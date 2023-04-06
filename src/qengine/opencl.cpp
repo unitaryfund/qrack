@@ -95,7 +95,6 @@ void QEngineOCL::FreeAll()
 {
     ZeroAmplitudes();
 
-    powersBuffer = NULL;
     nrmBuffer = NULL;
     nrmArray = NULL;
 
@@ -610,11 +609,6 @@ void QEngineOCL::SetDevice(int64_t dID)
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
 
-    if (!didInit) {
-        AddAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
-    }
-    powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
-
     // If this is the same context, then all other buffers are valid.
     if (oldContextId == nDeviceContext->context_id) {
         return;
@@ -864,11 +858,7 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     BufferPtr locPowersBuffer;
     cl::Event writeControlsEvent;
     if (bitCount > 2) {
-        if (doCalcNorm) {
-            locPowersBuffer = powersBuffer;
-        } else {
-            locPowersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bitCount);
-        }
+        locPowersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bitCount);
         if (sizeof(bitCapInt) == sizeof(bitCapIntOcl)) {
             DISPATCH_TEMP_WRITE(
                 waitVec, *locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted, writeControlsEvent);
@@ -1094,9 +1084,12 @@ void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
     const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    const size_t powBuffSize = sizeof(bitCapIntOcl) * (controls.size() + mtrxSkipPowers.size());
+    AddAlloc(powBuffSize);
+    BufferPtr powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
+
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
-    DISPATCH_WRITE(
-        waitVec, *powersBuffer, sizeof(bitCapIntOcl) * (controls.size() + mtrxSkipPowers.size()), qPowers.get());
+    DISPATCH_WRITE(waitVec, *powersBuffer, powBuffSize, qPowers.get());
 
     // We call the kernel, with global buffers and one local buffer.
     WaitCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,

@@ -202,7 +202,6 @@ protected:
     // QEngineOCL itself, specifically by QEngineOCLMulti.
     BufferPtr stateBuffer;
     BufferPtr nrmBuffer;
-    BufferPtr powersBuffer;
     DeviceContextPtr device_context;
     std::vector<EventVecPtr> wait_refs;
     std::list<QueueItem> wait_queue_items;

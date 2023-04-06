@@ -218,7 +218,6 @@ protected:
     // QEngineCUDA itself, specifically by QEngineCUDAMulti.
     BufferPtr stateBuffer;
     BufferPtr nrmBuffer;
-    BufferPtr powersBuffer;
     DeviceContextPtr device_context;
     std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
