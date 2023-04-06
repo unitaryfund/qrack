@@ -202,18 +202,29 @@ if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
 endif (APPLE)
 
-target_compile_options (qrack PUBLIC
-    "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
-    "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
-    "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
-    -DCATCH_CONFIG_FAST_COMPILE
-    )
-target_compile_options (qrack_pinvoke PUBLIC
-    "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
-    "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
-    "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
-    -DCATCH_CONFIG_FAST_COMPILE
-    )
+if (ENABLE_CUDA)
+    target_compile_options (qrack PUBLIC
+        "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
+        "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
+        -DCATCH_CONFIG_FAST_COMPILE
+        )
+    target_compile_options (qrack_pinvoke PUBLIC
+        "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
+        "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
+        -DCATCH_CONFIG_FAST_COMPILE
+        )
+else (ENABLE_CUDA)
+    target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+   target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS})
+endif (ENABLE_CUDA)
+target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
+if (NOT ENABLE_EMIT_LLVM)
+    target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
+endif (NOT ENABLE_EMIT_LLVM)
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 if (NOT ENABLE_EMIT_LLVM)
     target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
