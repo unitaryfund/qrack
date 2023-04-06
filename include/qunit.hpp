@@ -355,7 +355,7 @@ public:
     virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol);
     virtual bool TrySeparate(bitLenInt qubit);
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
-    virtual double GetUnitaryFidelity() { return sqrt(exp(logFidelity)); }
+    virtual double GetUnitaryFidelity() { return exp(logFidelity); }
     virtual void ResetUnitaryFidelity() { logFidelity = 0.0; }
     virtual void SetSdrp(real1_f sdrp) { separabilityThreshold = sdrp; };
 

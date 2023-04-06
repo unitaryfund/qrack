@@ -739,8 +739,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
     }
 
-    const double r = sqrt((double)(x * x + y * y + z * z));
-    if ((1.0 - r) > separabilityThreshold) {
+    const double oneMinR = 1.0 - sqrt((double)(x * x + y * y + z * z));
+    if (oneMinR > separabilityThreshold) {
         return false;
     }
 
@@ -766,7 +766,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     SeparateBit(false, qubit);
     ShardAI(qubit, azimuth, inclination);
 
-    logFidelity += log(r);
+    logFidelity += log(1.0 - oneMinR / 2);
 
     return true;
 }
