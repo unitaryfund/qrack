@@ -464,7 +464,7 @@ protected:
             logFidelity += log(ONE_R1_F - norm(shard.amp1) / 2);
             SeparateBit(false, qubit);
         } else if (IS_NORM_0(shard.amp0)) {
-            logFidelity += log(ONE_R1_F - norm(shard.amp1) / 2);
+            logFidelity += log(ONE_R1_F - norm(shard.amp0) / 2);
             SeparateBit(true, qubit);
         }
     }
