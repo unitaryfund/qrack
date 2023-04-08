@@ -88,6 +88,16 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
 
+## Optional CUDA instead of OpenCL
+
+Theoretically, building with CUDA for your native supported architectures is as simple as installing the CUDA toolkit and compiler and using this CMake command:
+
+```sh
+cmake -DENABLE_CUDA=ON [-DENABLE_OPENCL=OFF] [-DQRACK_CUDA_ARCHITECTURES=86]
+```
+
+where `-DENABLE_CUDA=ON` is required to enable CUDA, `-DENABLE_OPENCL=OFF` will cause CUDA to be used in the default optimal simulation layer stack instead of OpenCL, and `-DQRACK_CUDA_ARCHITECTURES` optionally specifies an explicit list of CUDA architectures for which to build. (If `-DQRACK_CUDA_ARCHITECTURES` is not set, Qrack will attempt to detect your native installed GPU architectures and build for exactly that set.)
+
 ## WebAssembly (WASM) builds
 
 By nature of its pure C++11 design, Qrack happens to offer excellent compatibility with Emscripten ("WebAssembly") projects. See [the qrack.net repository](https://github.com/vm6502q/qrack.net) for an example and [qrack.net](https://qrack.net) for a live demo. OpenCL GPU operation is not yet available for WASM builds. While CPU multithreading might be possible in WASM, it is advisable that `pthread` usage and linking is disabled for most conventional Web applications, with `-DENABLE_PTHREAD=OFF` in CMake:
