@@ -13,16 +13,18 @@ if (ENABLE_CUDA)
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${CUDA_INCLUDE_DIRS})
     target_compile_options (qrack PUBLIC ${CUDA_COMPILATION_OPTIONS})
 
-    # See https://stackoverflow.com/questions/68223398/how-can-i-get-cmake-to-automatically-detect-the-value-for-cuda-architectures#answer-68223399
-    if(${CMAKE_VERSION} VERSION_LESS "3.24.0")
-        include(FindCUDA/select_compute_arch)
-        CUDA_DETECT_INSTALLED_GPUS(QRACK_CUDA_ARCHITECTURES)
-        string(STRIP "${QRACK_CUDA_ARCHITECTURES}" QRACK_CUDA_ARCHITECTURES)
-        string(REPLACE " " ";" QRACK_CUDA_ARCHITECTURES "${QRACK_CUDA_ARCHITECTURES}")
-        string(REPLACE "." "" QRACK_CUDA_ARCHITECTURES "${QRACK_CUDA_ARCHITECTURES}")
-    else()
-        set(QRACK_CUDA_ARCHITECTURES native)
-    endif()
+    if (NOT DEFINED QRACK_CUDA_ARCHITECTURES)
+        # See https://stackoverflow.com/questions/68223398/how-can-i-get-cmake-to-automatically-detect-the-value-for-cuda-architectures#answer-68223399
+        if (${CMAKE_VERSION} VERSION_LESS "3.24.0")
+            include(FindCUDA/select_compute_arch)
+            CUDA_DETECT_INSTALLED_GPUS(QRACK_CUDA_ARCHITECTURES)
+            string(STRIP "${QRACK_CUDA_ARCHITECTURES}" QRACK_CUDA_ARCHITECTURES)
+            string(REPLACE " " ";" QRACK_CUDA_ARCHITECTURES "${QRACK_CUDA_ARCHITECTURES}")
+            string(REPLACE "." "" QRACK_CUDA_ARCHITECTURES "${QRACK_CUDA_ARCHITECTURES}")
+        else (${CMAKE_VERSION} VERSION_LESS "3.24.0")
+            set(QRACK_CUDA_ARCHITECTURES native)
+        endif (${CMAKE_VERSION} VERSION_LESS "3.24.0")
+    endif (NOT DEFINED QRACK_CUDA_ARCHITECTURES)
 
     message("QRACK_CUDA_ARCHITECTURES: ${QRACK_CUDA_ARCHITECTURES}")
 
