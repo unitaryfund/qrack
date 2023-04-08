@@ -93,7 +93,7 @@ After CMake, the project must be built in Visual Studio. Once installed, the `qr
 Theoretically, building with CUDA for your native supported architectures is as simple as installing the CUDA toolkit and compiler and using this CMake command:
 
 ```sh
-cmake -DENABLE_CUDA=ON [-DENABLE_OPENCL=OFF] [-DQRACK_CUDA_ARCHITECTURES=86]
+cmake -DENABLE_CUDA=ON [-DENABLE_OPENCL=OFF] [-DQRACK_CUDA_ARCHITECTURES=86] ..
 ```
 
 where `-DENABLE_CUDA=ON` is required to enable CUDA, `-DENABLE_OPENCL=OFF` will cause CUDA to be used in the default optimal simulation layer stack instead of OpenCL, and `-DQRACK_CUDA_ARCHITECTURES` optionally specifies an explicit list of CUDA architectures for which to build. (If `-DQRACK_CUDA_ARCHITECTURES` is not set, Qrack will attempt to detect your native installed GPU architectures and build for exactly that set.)
