@@ -285,8 +285,8 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     // Order the subsystem units contiguously. (They might be entangled at random with bits not involed in the
     // operation.)
     if (length > 1U) {
-        for (auto subunit = subunits.begin(); subunit != subunits.end(); ++subunit) {
-            OrderContiguous(subunit->first);
+        for (const auto& subunit : subunits) {
+            OrderContiguous(subunit.first);
         }
     }
 
@@ -365,7 +365,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
     /* Find the rest of the qubits. */
     for (auto&& shard : shards) {
-        auto subunit = subunits.find(shard.unit);
+        const auto subunit = subunits.find(shard.unit);
         if (subunit != subunits.end() &&
             shard.mapped >= (shards[decomposedUnits[shard.unit]].mapped + subunit->second)) {
             shard.mapped -= subunit->second;
@@ -427,7 +427,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
 
         /* Since each unit will be collapsed in-order, one set of bits at a time. */
         for (auto&& shard : shards) {
-            auto search = offsets.find(shard.unit);
+            const auto search = offsets.find(shard.unit);
             if (search != offsets.end()) {
                 shard.mapped += search->second;
                 shard.unit = offsetPartners[shard.unit];
@@ -1590,18 +1590,18 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
     std::map<bitCapInt, int> combinedResults;
     combinedResults[0U] = (int)shots;
 
-    for (auto subQPowersIt = subQPowers.begin(); subQPowersIt != subQPowers.end(); ++subQPowersIt) {
-        QInterfacePtr unit = subQPowersIt->first;
-        std::map<bitCapInt, int> unitResults = unit->MultiShotMeasureMask(subQPowersIt->second, shots);
+    for (const auto& subQPower : subQPowers) {
+        QInterfacePtr unit = subQPower.first;
+        std::map<bitCapInt, int> unitResults = unit->MultiShotMeasureMask(subQPower.second, shots);
         std::map<bitCapInt, int> topLevelResults;
-        for (auto mapIter = unitResults.begin(); mapIter != unitResults.end(); ++mapIter) {
+        for (const auto& unitResult : unitResults) {
             bitCapInt mask = 0U;
-            for (size_t i = 0U; i < subQPowersIt->second.size(); ++i) {
-                if ((mapIter->first >> i) & 1U) {
+            for (size_t i = 0U; i < subQPower.second.size(); ++i) {
+                if ((unitResult.first >> i) & 1U) {
                     mask |= subIQPowers[unit][i];
                 }
             }
-            topLevelResults[mask] = mapIter->second;
+            topLevelResults[mask] = unitResult.second;
         }
         // Release unitResults memory:
         unitResults = std::map<bitCapInt, int>();
@@ -1625,9 +1625,9 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
 
         // If either map has exactly 1 key, (therefore with `shots` value,) pass it through without a "shuffle."
         if (topLevelResults.size() == 1U) {
-            auto pickIter = topLevelResults.begin();
-            for (auto mapIter = combinedResults.begin(); mapIter != combinedResults.end(); ++mapIter) {
-                nCombinedResults[mapIter->first | pickIter->first] = mapIter->second;
+            const auto pickIter = topLevelResults.begin();
+            for (const auto& combinedResult : combinedResults) {
+                nCombinedResults[combinedResult.first | pickIter->first] = combinedResult.second;
             }
             combinedResults = nCombinedResults;
             continue;
@@ -1636,8 +1636,8 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
         // ... Otherwise, we've committed to simulating a random pairing selection from either side, (but
         // `topLevelResults` has fewer or the same count of keys).
         int shotsLeft = shots;
-        for (auto mapIter = combinedResults.begin(); mapIter != combinedResults.end(); ++mapIter) {
-            for (int shot = 0; shot < mapIter->second; ++shot) {
+        for (const auto& combinedResult : combinedResults) {
+            for (int shot = 0; shot < combinedResult.second; ++shot) {
                 int pick = (int)(shotsLeft * Rand());
                 if (shotsLeft <= pick) {
                     pick = shotsLeft - 1;
@@ -1651,7 +1651,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
                     count += pickIter->second;
                 }
 
-                ++(nCombinedResults[mapIter->first | pickIter->first]);
+                ++(nCombinedResults[combinedResult.first | pickIter->first]);
 
                 --(pickIter->second);
                 if (!pickIter->second) {
@@ -1672,14 +1672,14 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
 
         std::map<bitCapInt, int> nCombinedResults;
         if (prob == ONE_R1) {
-            for (auto mapIter = combinedResults.begin(); mapIter != combinedResults.end(); ++mapIter) {
-                nCombinedResults[mapIter->first | iQPowers[index]] = mapIter->second;
+            for (const auto& combinedResult : combinedResults) {
+                nCombinedResults[combinedResult.first | iQPowers[index]] = combinedResult.second;
             }
         } else {
-            for (auto mapIter = combinedResults.begin(); mapIter != combinedResults.end(); ++mapIter) {
-                bitCapInt zeroPerm = mapIter->first;
-                bitCapInt onePerm = mapIter->first | iQPowers[index];
-                for (int shot = 0; shot < mapIter->second; ++shot) {
+            for (const auto& combinedResult : combinedResults) {
+                bitCapInt zeroPerm = combinedResult.first;
+                bitCapInt onePerm = combinedResult.first | iQPowers[index];
+                for (int shot = 0; shot < combinedResult.second; ++shot) {
                     if (Rand() > prob) {
                         ++(nCombinedResults[zeroPerm]);
                     } else {
@@ -1696,18 +1696,18 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
     }
 
     std::map<bitCapInt, int> toRet;
-    for (auto mapPerm = combinedResults.begin(); mapPerm != combinedResults.end(); ++mapPerm) {
-        bitCapInt perm = mapPerm->first;
+    for (const auto& combinedResult : combinedResults) {
+        bitCapInt perm = combinedResult.first;
 
         for (size_t i = 0U; i < qIndices.size(); ++i) {
             QEngineShard& shard = shards[qIndices[i]];
             ShardToPhaseMap controlsShards = ((perm >> i) & 1U) ? shard.controlsShards : shard.antiControlsShards;
-            for (auto phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); ++phaseShard) {
-                if (!phaseShard->second->isInvert) {
+            for (const auto& phaseShard : controlsShards) {
+                if (!phaseShard.second->isInvert) {
                     continue;
                 }
 
-                QEngineShardPtr partner = phaseShard->first;
+                QEngineShardPtr partner = phaseShard.first;
                 const bitLenInt target = FindShardIndex(partner);
 
                 for (size_t j = 0U; j < qIndices.size(); ++j) {
@@ -1719,7 +1719,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
             }
         }
 
-        toRet[perm] += mapPerm->second;
+        toRet[perm] += combinedResult.second;
     }
 
     return toRet;
@@ -4260,9 +4260,9 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
     ShardToPhaseMap controlsShards = shard.controlsShards;
 
-    for (auto phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
-        QEngineShardPtr partner = phaseShard->first;
+    for (const auto& phaseShard : controlsShards) {
+        PhaseShardPtr buffer = phaseShard.second;
+        QEngineShardPtr partner = phaseShard.first;
 
         if (buffer->isInvert) {
             continue;
@@ -4282,9 +4282,9 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
     controlsShards = shard.antiControlsShards;
 
-    for (auto phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
-        QEngineShardPtr partner = phaseShard->first;
+    for (const auto& phaseShard : controlsShards) {
+        PhaseShardPtr buffer = phaseShard.second;
+        QEngineShardPtr partner = phaseShard.first;
 
         if (buffer->isInvert) {
             continue;
@@ -4306,13 +4306,13 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
-    for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
+    for (const auto& phaseShard : targetOfShards) {
+        PhaseShardPtr buffer = phaseShard.second;
 
         const complex polarDiff = buffer->cmplxDiff;
         const complex polarSame = buffer->cmplxSame;
 
-        QEngineShardPtr partner = phaseShard->first;
+        QEngineShardPtr partner = phaseShard.first;
 
         if (IS_SAME(polarDiff, polarSame)) {
             continue;
@@ -4329,13 +4329,13 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
     targetOfShards = shard.antiTargetOfShards;
 
-    for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
+    for (const auto& phaseShard : targetOfShards) {
+        PhaseShardPtr buffer = phaseShard.second;
 
         const complex polarDiff = buffer->cmplxDiff;
         const complex polarSame = buffer->cmplxSame;
 
-        QEngineShardPtr partner = phaseShard->first;
+        QEngineShardPtr partner = phaseShard.first;
 
         if (IS_SAME(polarDiff, polarSame)) {
             continue;
