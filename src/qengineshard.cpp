@@ -146,15 +146,15 @@ void QEngineShard::OptimizeBuffer(
 {
     ShardToPhaseMap tempLocalMap = localMap;
 
-    for (auto phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
-        QEngineShardPtr partner = phaseShard->first;
+    for (const auto& phaseShard : tempLocalMap) {
+        const PhaseShardPtr& buffer = phaseShard.second;
+        const QEngineShardPtr& partner = phaseShard.first;
 
         if (buffer->isInvert || !IS_ARG_0(buffer->cmplxDiff)) {
             continue;
         }
 
-        ((*phaseShard->first).*remoteMapGet)().erase(this);
+        ((*phaseShard.first).*remoteMapGet)().erase(this);
         localMap.erase(partner);
 
         if (makeThisControl) {
@@ -168,40 +168,40 @@ void QEngineShard::OptimizeBuffer(
 void QEngineShard::OptimizeBothTargets()
 {
     ShardToPhaseMap tempLocalMap = targetOfShards;
-    for (auto phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
-        QEngineShardPtr partner = phaseShard->first;
+    for (const auto& phaseShard : tempLocalMap) {
+        const PhaseShardPtr& buffer = phaseShard.second;
+        const QEngineShardPtr& partner = phaseShard.first;
 
         if (buffer->isInvert) {
             continue;
         }
 
         if (IS_ARG_0(buffer->cmplxDiff)) {
-            phaseShard->first->GetControlsShards().erase(this);
+            phaseShard.first->GetControlsShards().erase(this);
             targetOfShards.erase(partner);
             partner->AddPhaseAngles(this, ONE_CMPLX, buffer->cmplxSame);
         } else if (IS_ARG_0(buffer->cmplxSame)) {
-            phaseShard->first->GetControlsShards().erase(this);
+            phaseShard.first->GetControlsShards().erase(this);
             targetOfShards.erase(partner);
             partner->AddAntiPhaseAngles(this, buffer->cmplxDiff, ONE_CMPLX);
         }
     }
 
     tempLocalMap = antiTargetOfShards;
-    for (auto phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
-        QEngineShardPtr partner = phaseShard->first;
+    for (const auto& phaseShard : tempLocalMap) {
+        const PhaseShardPtr& buffer = phaseShard.second;
+        const QEngineShardPtr& partner = phaseShard.first;
 
         if (buffer->isInvert) {
             continue;
         }
 
         if (IS_ARG_0(buffer->cmplxDiff)) {
-            phaseShard->first->GetAntiControlsShards().erase(this);
+            phaseShard.first->GetAntiControlsShards().erase(this);
             antiTargetOfShards.erase(partner);
             partner->AddAntiPhaseAngles(this, ONE_CMPLX, buffer->cmplxSame);
         } else if (IS_ARG_0(buffer->cmplxSame)) {
-            phaseShard->first->GetAntiControlsShards().erase(this);
+            phaseShard.first->GetAntiControlsShards().erase(this);
             antiTargetOfShards.erase(partner);
             partner->AddPhaseAngles(this, buffer->cmplxDiff, ONE_CMPLX);
         }
@@ -213,16 +213,16 @@ void QEngineShard::CombineBuffers(GetBufferFn targetMapGet, GetBufferFn controlM
     ShardToPhaseMap tempControls = ((*this).*controlMapGet)();
     ShardToPhaseMap tempTargets = ((*this).*targetMapGet)();
 
-    for (auto phaseShard = tempControls.begin(); phaseShard != tempControls.end(); ++phaseShard) {
-        QEngineShardPtr partner = phaseShard->first;
+    for (const auto& phaseShard : tempControls) {
+        const QEngineShardPtr& partner = phaseShard.first;
 
-        auto partnerShard = tempTargets.find(partner);
+        const auto partnerShard = tempTargets.find(partner);
         if (partnerShard == tempTargets.end()) {
             continue;
         }
 
-        PhaseShardPtr buffer1 = phaseShard->second;
-        PhaseShardPtr buffer2 = partnerShard->second;
+        const PhaseShardPtr& buffer1 = phaseShard.second;
+        const PhaseShardPtr& buffer2 = partnerShard->second;
 
         if (!buffer1->isInvert && IS_ARG_0(buffer1->cmplxDiff)) {
             ((*partner).*targetMapGet)().erase(this);
@@ -238,8 +238,8 @@ void QEngineShard::CombineBuffers(GetBufferFn targetMapGet, GetBufferFn controlM
 
 void QEngineShard::SwapTargetAnti(QEngineShardPtr control)
 {
-    auto phaseShard = targetOfShards.find(control);
-    auto antiPhaseShard = antiTargetOfShards.find(control);
+    const auto phaseShard = targetOfShards.find(control);
+    const auto antiPhaseShard = antiTargetOfShards.find(control);
     if (antiPhaseShard == antiTargetOfShards.end()) {
         std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
         antiTargetOfShards[phaseShard->first] = phaseShard->second;
@@ -258,32 +258,30 @@ void QEngineShard::SwapTargetAnti(QEngineShardPtr control)
 void QEngineShard::FlipPhaseAnti()
 {
     std::unordered_set<QEngineShardPtr> toSwap;
-    for (auto ctrlPhaseShard = controlsShards.begin(); ctrlPhaseShard != controlsShards.end(); ++ctrlPhaseShard) {
-        toSwap.insert(ctrlPhaseShard->first);
+    for (const auto& ctrlPhaseShard : controlsShards) {
+        toSwap.insert(ctrlPhaseShard.first);
     }
-    for (auto ctrlPhaseShard = antiControlsShards.begin(); ctrlPhaseShard != antiControlsShards.end();
-         ctrlPhaseShard++) {
-        toSwap.insert(ctrlPhaseShard->first);
+    for (const auto& ctrlPhaseShard : antiControlsShards) {
+        toSwap.insert(ctrlPhaseShard.first);
     }
     std::unordered_set<QEngineShardPtr>::iterator swapShard;
-    for (swapShard = toSwap.begin(); swapShard != toSwap.end(); ++swapShard) {
-        (*swapShard)->SwapTargetAnti(this);
+    for (const auto& swapShard : toSwap) {
+        swapShard->SwapTargetAnti(this);
     }
     std::swap(controlsShards, antiControlsShards);
 
-    for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); ++phaseShard) {
-        std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
+    for (const auto& phaseShard : targetOfShards) {
+        std::swap(phaseShard.second->cmplxDiff, phaseShard.second->cmplxSame);
     }
-
-    for (auto phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); ++phaseShard) {
-        std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
+    for (const auto& phaseShard : antiTargetOfShards) {
+        std::swap(phaseShard.second->cmplxDiff, phaseShard.second->cmplxSame);
     }
 }
 
 void QEngineShard::CommutePhase(complex topLeft, complex bottomRight)
 {
-    for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
+    for (const auto& phaseShard : targetOfShards) {
+        const PhaseShardPtr& buffer = phaseShard.second;
         if (!buffer->isInvert) {
             return;
         }
@@ -292,8 +290,8 @@ void QEngineShard::CommutePhase(complex topLeft, complex bottomRight)
         buffer->cmplxSame *= bottomRight / topLeft;
     }
 
-    for (auto phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
+    for (const auto& phaseShard : antiTargetOfShards) {
+        const PhaseShardPtr& buffer = phaseShard.second;
         if (!buffer->isInvert) {
             return;
         }
@@ -345,8 +343,8 @@ void QEngineShard::RemovePhaseBuffers(ShardToPhaseMap& localMap, GetBufferFn rem
 void QEngineShard::CommuteH()
 {
     // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
-    for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
+    for (const auto& phaseShard : targetOfShards) {
+        const PhaseShardPtr& buffer = phaseShard.second;
         if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
             if (buffer->isInvert) {
                 buffer->isInvert = false;
@@ -364,8 +362,8 @@ void QEngineShard::CommuteH()
 
     RemoveIdentityBuffers(targetOfShards, &QEngineShard::GetControlsShards);
 
-    for (auto phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); ++phaseShard) {
-        PhaseShardPtr buffer = phaseShard->second;
+    for (const auto& phaseShard : antiTargetOfShards) {
+        const PhaseShardPtr& buffer = phaseShard.second;
         if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
             if (buffer->isInvert) {
                 buffer->isInvert = false;
@@ -386,14 +384,14 @@ void QEngineShard::CommuteH()
 
 bool QEngineShard::IsInvertControl()
 {
-    for (auto phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); ++phaseShard) {
-        if (phaseShard->second->isInvert) {
+    for (const auto& phaseShard : controlsShards) {
+        if (phaseShard.second->isInvert) {
             return true;
         }
     }
 
-    for (auto phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); ++phaseShard) {
-        if (phaseShard->second->isInvert) {
+    for (const auto& phaseShard : antiControlsShards) {
+        if (phaseShard.second->isInvert) {
             return true;
         }
     }
@@ -403,14 +401,14 @@ bool QEngineShard::IsInvertControl()
 
 bool QEngineShard::IsInvertTarget()
 {
-    for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); ++phaseShard) {
-        if (phaseShard->second->isInvert) {
+    for (const auto& phaseShard : targetOfShards) {
+        if (phaseShard.second->isInvert) {
             return true;
         }
     }
 
-    for (auto phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); ++phaseShard) {
-        if (phaseShard->second->isInvert) {
+    for (const auto& phaseShard : antiTargetOfShards) {
+        if (phaseShard.second->isInvert) {
             return true;
         }
     }
@@ -420,10 +418,10 @@ bool QEngineShard::IsInvertTarget()
 
 void QEngineShard::ClearMapInvertPhase(ShardToPhaseMap& shards)
 {
-    for (auto phaseShard = shards.begin(); phaseShard != shards.end(); ++phaseShard) {
-        if (phaseShard->second->isInvert) {
-            phaseShard->second->cmplxDiff = ONE_CMPLX;
-            phaseShard->second->cmplxSame = ONE_CMPLX;
+    for (const auto& phaseShard : shards) {
+        if (phaseShard.second->isInvert) {
+            phaseShard.second->cmplxDiff = ONE_CMPLX;
+            phaseShard.second->cmplxSame = ONE_CMPLX;
         }
     }
 }

@@ -4261,15 +4261,15 @@ void QUnit::CommuteH(bitLenInt bitIndex)
     ShardToPhaseMap controlsShards = shard.controlsShards;
 
     for (const auto& phaseShard : controlsShards) {
-        PhaseShardPtr buffer = phaseShard.second;
-        QEngineShardPtr partner = phaseShard.first;
+        const PhaseShardPtr& buffer = phaseShard.second;
+        const QEngineShardPtr& partner = phaseShard.first;
 
         if (buffer->isInvert) {
             continue;
         }
 
-        const complex polarDiff = buffer->cmplxDiff;
-        const complex polarSame = buffer->cmplxSame;
+        const complex& polarDiff = buffer->cmplxDiff;
+        const complex& polarSame = buffer->cmplxSame;
 
         if (IS_ARG_0(polarDiff) && IS_ARG_PI(polarSame)) {
             shard.RemoveTarget(partner);
@@ -4283,15 +4283,15 @@ void QUnit::CommuteH(bitLenInt bitIndex)
     controlsShards = shard.antiControlsShards;
 
     for (const auto& phaseShard : controlsShards) {
-        PhaseShardPtr buffer = phaseShard.second;
-        QEngineShardPtr partner = phaseShard.first;
+        const PhaseShardPtr& buffer = phaseShard.second;
+        const QEngineShardPtr& partner = phaseShard.first;
 
         if (buffer->isInvert) {
             continue;
         }
 
-        const complex polarDiff = buffer->cmplxDiff;
-        const complex polarSame = buffer->cmplxSame;
+        const complex& polarDiff = buffer->cmplxDiff;
+        const complex& polarSame = buffer->cmplxSame;
 
         if (IS_ARG_0(polarDiff) && IS_ARG_PI(polarSame)) {
             shard.RemoveAntiTarget(partner);
@@ -4307,10 +4307,10 @@ void QUnit::CommuteH(bitLenInt bitIndex)
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
     for (const auto& phaseShard : targetOfShards) {
-        PhaseShardPtr buffer = phaseShard.second;
+        const PhaseShardPtr& buffer = phaseShard.second;
 
-        const complex polarDiff = buffer->cmplxDiff;
-        const complex polarSame = buffer->cmplxSame;
+        const complex& polarDiff = buffer->cmplxDiff;
+        const complex& polarSame = buffer->cmplxSame;
 
         QEngineShardPtr partner = phaseShard.first;
 
@@ -4330,10 +4330,10 @@ void QUnit::CommuteH(bitLenInt bitIndex)
     targetOfShards = shard.antiTargetOfShards;
 
     for (const auto& phaseShard : targetOfShards) {
-        PhaseShardPtr buffer = phaseShard.second;
+        const PhaseShardPtr& buffer = phaseShard.second;
 
-        const complex polarDiff = buffer->cmplxDiff;
-        const complex polarSame = buffer->cmplxSame;
+        const complex& polarDiff = buffer->cmplxDiff;
+        const complex& polarSame = buffer->cmplxSame;
 
         QEngineShardPtr partner = phaseShard.first;
 
