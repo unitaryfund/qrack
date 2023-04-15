@@ -78,7 +78,7 @@ InitCUDAResult CUDAEngine::InitCUDA(std::vector<int64_t> maxAllocVec)
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default device: #" << dev << ", " << deviceProps[dev].name << "\n";
     for (int64_t i = 0; i < deviceCount; ++i) {
-        std::cout << "CUDA device #" << i << ": " << deviceProps[dev].name << "\n";
+        std::cout << "CUDA device #" << i << ": " << deviceProps[i].name << "\n";
     }
 
     return InitCUDAResult(all_dev_contexts, all_dev_contexts[dev]);
