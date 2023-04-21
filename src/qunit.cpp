@@ -744,7 +744,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    // Permute axes for logical equivalence.
+    // Adjust the qubit basis to the Pauli-Z basis, if necessary, for logical equivalence.
     if (shard.pauliBasis == PauliX) {
         RevertBasis1Qb(qubit);
     } else if (shard.pauliBasis == PauliY) {
