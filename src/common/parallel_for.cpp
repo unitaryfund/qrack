@@ -185,10 +185,10 @@ void ParallelFor::par_for_inc(
 
     DECLARE_ATOMIC_BITCAPINT();
     idx = 0U;
-    std::vector<std::future<void>> futures(threads);
+    std::vector<std::future<void>> futures;
+    futures.reserve(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, inc, fn)
-        {
+        futures.emplace_back(ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, inc, fn) {
             for (;;) {
                 bitCapIntOcl i;
                 ATOMIC_INC();
@@ -202,7 +202,7 @@ void ParallelFor::par_for_inc(
                     fn(inc(begin + k, cpu), cpu);
                 }
             }
-        });
+        }));
     }
 
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
@@ -237,10 +237,10 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
 
     DECLARE_ATOMIC_BITCAPINT();
     idx = 0U;
-    std::vector<std::future<real1_f>> futures(threads);
+    std::vector<std::future<real1_f>> futures;
+    futures.reserve(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, stateArray, &Stride, &norm_thresh)
-        {
+        futures.emplace_back(ATOMIC_ASYNC(&idx, &itemCount, stateArray, &Stride, &norm_thresh) {
             const real1 nrm_thresh = (real1)norm_thresh;
             real1 sqrNorm = ZERO_R1;
             for (;;) {
@@ -260,7 +260,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
                 }
             }
             return (real1_f)sqrNorm;
-        });
+        }));
     }
 
     real1_f nrmSqr = ZERO_R1_F;
@@ -290,10 +290,10 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
 
     DECLARE_ATOMIC_BITCAPINT();
     idx = 0U;
-    std::vector<std::future<real1_f>> futures(threads);
+    std::vector<std::future<real1_f>> futures;
+    futures.reserve(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, &Stride, stateArray)
-        {
+        futures.emplace_back(ATOMIC_ASYNC(&idx, &itemCount, &Stride, stateArray) {
             real1 sqrNorm = ZERO_R1;
             for (;;) {
                 bitCapIntOcl i;
@@ -308,7 +308,7 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
                 }
             }
             return (real1_f)sqrNorm;
-        });
+        }));
     }
 
     real1_f nrmSqr = ZERO_R1_F;
