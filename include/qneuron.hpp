@@ -47,8 +47,8 @@ public:
         , outputIndex(outputIndx)
         , tolerance(tol)
         , inputIndices(inputIndcs)
+        , qReg(reg)
     {
-        qReg = reg;
         angles = std::unique_ptr<real1>(new real1[inputPower]());
         reverseAngles = std::unique_ptr<real1>(new real1[inputPower]());
     }

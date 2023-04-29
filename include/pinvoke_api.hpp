@@ -247,4 +247,8 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
 
 MICROSOFT_QUANTUM_DECL uintq init_qneuron(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q);
 MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid);
+MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid);
+
+MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ double* angles);
+MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ double* angles);
 }
