@@ -2637,6 +2637,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
     }
 
     QNeuronPtr neuron = std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], (real1_f)tol);
+    neuronSimulators[neuron] = simulator.get();
 
     if (nid == simulators.size()) {
         neuronReservations.push_back(true);
@@ -2647,7 +2648,6 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
         neurons[nid] = neuron;
         neuronErrors[nid] = 0;
     }
-    neuronSimulators[neuron] = simulator.get();
 
     return nid;
 }
@@ -2667,6 +2667,7 @@ MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
     }
 
     QNeuronPtr nNeuron = std::make_shared<QNeuron>(*neuron);
+    neuronSimulators[nNeuron] = neuronSimulators[neuron];
 
     if (nid == simulators.size()) {
         neuronReservations.push_back(true);
@@ -2677,7 +2678,6 @@ MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
         neurons[nid] = nNeuron;
         neuronErrors[nid] = 0;
     }
-    neuronSimulators[nNeuron] = neuronSimulators[neuron];
 
     return toRet;
 }

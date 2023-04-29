@@ -47,10 +47,10 @@ public:
         , outputIndex(outputIndx)
         , tolerance(tol)
         , inputIndices(inputIndcs)
+        , angles(new real1[inputPower]())
+        , reverseAngles(new real1[inputPower]())
         , qReg(reg)
     {
-        angles = std::unique_ptr<real1>(new real1[inputPower]());
-        reverseAngles = std::unique_ptr<real1>(new real1[inputPower]());
     }
 
     /** Create a new QNeuron which is an exact duplicate of another, including its learned state. */
