@@ -92,9 +92,9 @@ public:
 
     /** Predict a binary classification.
      *
-     * Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
-     * categories, if false. "resetInit," if true, resets the result qubit to 0.5/0.5 |0>/|1> superposition before
-     * proceeding to predict.
+     * Feed-forward from the inputs, loaded in "qReg", to a binary categorical classification. "expected" flips the
+     * binary categories, if false. "resetInit," if true, resets the result qubit to 0.5/0.5 |0>/|1> superposition
+     * before proceeding to predict.
      */
     real1_f Predict(bool expected = true, bool resetInit = true)
     {
