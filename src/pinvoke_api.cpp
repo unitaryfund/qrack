@@ -7,7 +7,7 @@
 // for details.
 
 #include "pinvoke_api.hpp"
-#include "common/qrack_types.hpp"
+#include "qneuron.hpp"
 
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
@@ -72,6 +72,8 @@ std::vector<bool> simulatorHostPointer;
 std::map<QInterface*, std::mutex> simulatorMutexes;
 std::vector<bool> simulatorReservations;
 std::map<QInterface*, std::map<uintq, bitLenInt>> shards;
+std::vector<QNeuronPtr> neurons;
+std::vector<bool> neuronReservations;
 bitLenInt _maxShardQubits = 0U;
 bitLenInt MaxShardQubits()
 {
@@ -2630,4 +2632,55 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
     }
 }
 #endif
+
+MICROSOFT_QUANTUM_DECL uintq init_qneuron(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q)
+{
+    MAP_CONTROLS_AND_LOCK(sid, n)
+
+    uintq nid = (uintq)neurons.size();
+
+    for (uintq i = 0U; i < neurons.size(); ++i) {
+        if (neuronReservations[i] == false) {
+            nid = i;
+            neuronReservations[i] = true;
+            break;
+        }
+    }
+
+    QNeuronPtr neuron = std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q]);
+
+    if (nid == simulators.size()) {
+        neuronReservations.push_back(true);
+        neurons.push_back(neuron);
+    } else {
+        neuronReservations[nid] = true;
+        neurons[nid] = neuron;
+    }
+
+    return nid;
+}
+MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
+{
+    uintq toRet = (uintq)neurons.size();
+
+    for (uintq i = 0U; i < neurons.size(); ++i) {
+        if (neuronReservations[i] == false) {
+            toRet = i;
+            neuronReservations[i] = true;
+            break;
+        }
+    }
+
+    QNeuronPtr neuron = std::make_shared<QNeuron>(*(neurons[nid]));
+
+    if (nid == simulators.size()) {
+        neuronReservations.push_back(true);
+        neurons.push_back(neuron);
+    } else {
+        neuronReservations[nid] = true;
+        neurons[nid] = neuron;
+    }
+
+    return toRet;
+}
 }
