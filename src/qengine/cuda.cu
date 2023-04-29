@@ -423,7 +423,7 @@ void QEngineCUDA::DispatchQueue()
         CUDA_KERNEL_3(invertsinglewide, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
         break;
     case OCL_API_UNIFORMLYCONTROLLED:
-        CUDA_KERNEL_6(uniformlycontrolled, qCudaCmplx, bitCapIntOcl, bitCapIntOcl, qCudaReal1, qCudaReal1, qCudaReal1);
+        CUDA_KERNEL_5(uniformlycontrolled, qCudaCmplx, bitCapIntOcl, bitCapIntOcl, qCudaReal1, qCudaReal1);
         break;
     case OCL_API_UNIFORMPARITYRZ:
         CUDA_KERNEL_3(uniformparityrz, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
@@ -1081,14 +1081,15 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
 
     ThrowIfQbIdArrayIsBad(controls, qubitCount, "QEngineCUDA::UniformlyControlledSingleBit control is out-of-bounds!");
 
+    // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     PoolItemPtr poolItem = GetFreePoolItem();
 
     // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
 
     // Load the integer kernel arguments buffer.
     const bitCapIntOcl maxI = maxQPowerOcl >> ONE_BCI;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxI, pow2Ocl(qubitIndex), controls.size(), mtrxSkipPowers.size(),
-        (bitCapIntOcl)mtrxSkipValueMask, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxI, pow2Ocl(qubitIndex), (bitCapIntOcl)controls.size(),
+        (bitCapIntOcl)mtrxSkipPowers.size(), (bitCapIntOcl)mtrxSkipValueMask, 0U, 0U, 0U, 0U, 0U };
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 5, bciArgs);
 
     BufferPtr nrmInBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(real1));
@@ -1102,12 +1103,9 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
     DISPATCH_WRITE(uniformBuffer, sizeof(complex) * 4U * pow2Ocl(controls.size() + mtrxSkipPowers.size()), mtrxs);
 
     std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controls.size() + mtrxSkipPowers.size()]);
-    for (bitLenInt i = 0U; i < controls.size(); ++i) {
-        qPowers[i] = pow2Ocl(controls[i]);
-    }
-    for (bitLenInt i = 0U; i < mtrxSkipPowers.size(); ++i) {
-        qPowers[controls.size() + i] = (bitCapIntOcl)mtrxSkipPowers[i];
-    }
+    std::transform(controls.begin(), controls.end(), qPowers.get(), pow2Ocl);
+    std::transform(mtrxSkipPowers.begin(), mtrxSkipPowers.end(), qPowers.get() + controls.size(),
+        [](bitCapInt i) { return (bitCapIntOcl)i; });
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
@@ -1116,24 +1114,21 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
 
     const size_t powBuffSize = sizeof(bitCapIntOcl) * (controls.size() + mtrxSkipPowers.size());
     AddAlloc(powBuffSize);
-    BufferPtr powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, powBuffSize);
+    BufferPtr powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     DISPATCH_WRITE(powersBuffer, powBuffSize, qPowers.get());
 
     // We call the kernel, with global buffers and one local buffer.
     WaitCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
-        { stateBuffer, poolItem->ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer, nrmBuffer },
-        sizeof(real1) * ngs);
+        { stateBuffer, poolItem->ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer });
 
     uniformBuffer.reset();
     qPowers.reset();
 
-    // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
-    // values into a single normalization constant.
-    WAIT_REAL1_SUM(nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+    SubtractAlloc(sizeDiff + powBuffSize);
 
-    SubtractAlloc(sizeDiff);
+    runningNorm = ONE_R1;
 }
 
 void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)

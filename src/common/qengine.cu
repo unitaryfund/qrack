@@ -394,8 +394,8 @@ __global__ void invertsinglewide(qCudaCmplx* stateVec, qCudaCmplx* qCudaCmplxPtr
     APPLY_INVERT()
 }
 
-__global__ void uniformlycontrolled(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, bitCapIntOcl* qPowers,
-    qCudaReal1* mtrxs, qCudaReal1* nrmIn, qCudaReal1* sumBuffer)
+__global__ void uniformlycontrolled(
+    qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, bitCapIntOcl* qPowers, qCudaReal1* mtrxs, qCudaReal1* nrmIn)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -405,8 +405,6 @@ __global__ void uniformlycontrolled(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIn
     const bitCapIntOcl mtrxSkipLen = bitCapIntOclPtr[3];
     const bitCapIntOcl mtrxSkipValueMask = bitCapIntOclPtr[4];
     const qCudaReal1 nrm = nrmIn[0];
-
-    qCudaReal1 partNrm = ZERO_R1;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl i = lcv & targetMask;
@@ -435,13 +433,9 @@ __global__ void uniformlycontrolled(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIn
 
         qubit = zmatrixmul(nrm, mtrxs + (offset * 8U), qubit);
 
-        partNrm += qCudaDot(qubit, qubit);
-
         stateVec[i] = make_qCudaCmplx(qubit.x, qubit.y);
         stateVec[i | targetPower] = make_qCudaCmplx(qubit.z, qubit.w);
     }
-
-    SUM_LOCAL(partNrm)
 }
 
 __global__ void uniformparityrz(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* qCudaCmplx_ptr)

@@ -102,7 +102,9 @@ void QEngineCPU::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, b
 
     stateVec->copy_in(pagePtr, offset, length);
 
-    runningNorm = REAL1_DEFAULT_ARG;
+    if (doNormalize) {
+        runningNorm = REAL1_DEFAULT_ARG;
+    }
 }
 void QEngineCPU::SetAmplitudePage(
     QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
@@ -798,8 +800,6 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     const bitCapIntOcl targetPower = pow2Ocl(qubitIndex);
 
-    const real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
-
     std::vector<bitCapIntOcl> qPowers(controls.size());
     std::transform(controls.begin(), controls.end(), qPowers.begin(), pow2Ocl);
 
@@ -809,42 +809,82 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     const bitCapIntOcl mtrxSkipValueMaskOcl = (bitCapIntOcl)mtrxSkipValueMask;
 
-    const unsigned numCores = GetConcurrencyLevel();
-    std::unique_ptr<real1[]> rngNrm(new real1[numCores]());
+    const real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
+
+    ParallelFunc fn;
+    if (doNormalize && ((ONE_R1 - nrm) > FP_NORM_EPSILON)) {
+        fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            bitCapIntOcl offset = 0U;
+            for (size_t j = 0U; j < controls.size(); ++j) {
+                if (lcv & qPowers[j]) {
+                    offset |= pow2Ocl(j);
+                }
+            }
+
+            bitCapIntOcl i = 0U;
+            bitCapIntOcl iHigh = offset;
+            for (bitCapIntOcl p = 0U; p < mtrxSkipPowers.size(); ++p) {
+                bitCapIntOcl iLow = iHigh & (mtrxSkipPowersOcl[p] - ONE_BCI);
+                i |= iLow;
+                iHigh = (iHigh ^ iLow) << ONE_BCI;
+            }
+            i |= iHigh;
+
+            // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of
+            // capacity for the unsigned bitCapInt.)
+            offset = (i | mtrxSkipValueMaskOcl) * 4U;
+
+            complex qubit[2U];
+
+            const complex Y0 = stateVec->read(lcv);
+            qubit[1U] = stateVec->read(lcv | targetPower);
+
+            qubit[0U] = nrm * ((mtrxs[0U + offset] * Y0) + (mtrxs[1U + offset] * qubit[1U]));
+            qubit[1U] = nrm * ((mtrxs[2U + offset] * Y0) + (mtrxs[3U + offset] * qubit[1U]));
+
+            stateVec->write2(lcv, qubit[0U], lcv | targetPower, qubit[1U]);
+        };
+    } else {
+        fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            bitCapIntOcl offset = 0U;
+            for (size_t j = 0U; j < controls.size(); ++j) {
+                if (lcv & qPowers[j]) {
+                    offset |= pow2Ocl(j);
+                }
+            }
+
+            bitCapIntOcl i = 0U;
+            bitCapIntOcl iHigh = offset;
+            for (bitCapIntOcl p = 0U; p < mtrxSkipPowers.size(); ++p) {
+                bitCapIntOcl iLow = iHigh & (mtrxSkipPowersOcl[p] - ONE_BCI);
+                i |= iLow;
+                iHigh = (iHigh ^ iLow) << ONE_BCI;
+            }
+            i |= iHigh;
+
+            // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of
+            // capacity for the unsigned bitCapInt.)
+            offset = (i | mtrxSkipValueMaskOcl) * 4U;
+
+            complex qubit[2U];
+
+            const complex Y0 = stateVec->read(lcv);
+            qubit[1U] = stateVec->read(lcv | targetPower);
+
+            qubit[0U] = (mtrxs[0U + offset] * Y0) + (mtrxs[1U + offset] * qubit[1U]);
+            qubit[1U] = (mtrxs[2U + offset] * Y0) + (mtrxs[3U + offset] * qubit[1U]);
+
+            stateVec->write2(lcv, qubit[0U], lcv | targetPower, qubit[1U]);
+        };
+    }
 
     Finish();
 
-    par_for_skip(0U, maxQPowerOcl, targetPower, 1U, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl offset = 0U;
-        for (size_t j = 0U; j < controls.size(); ++j) {
-            if (lcv & qPowers[j]) {
-                offset |= pow2Ocl(j);
-            }
-        }
+    par_for_skip(0U, maxQPowerOcl, targetPower, 1U, fn);
 
-        bitCapIntOcl i = 0U;
-        bitCapIntOcl iHigh = offset;
-        for (bitCapIntOcl p = 0U; p < mtrxSkipPowers.size(); ++p) {
-            bitCapIntOcl iLow = iHigh & (mtrxSkipPowersOcl[p] - ONE_BCI);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << ONE_BCI;
-        }
-        i |= iHigh;
-
-        // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of
-        // capacity for the unsigned bitCapInt.)
-        offset = (i | mtrxSkipValueMaskOcl) * 4U;
-
-        complex qubit[2U];
-
-        const complex Y0 = stateVec->read(lcv);
-        qubit[1U] = stateVec->read(lcv | targetPower);
-
-        qubit[0U] = nrm * ((mtrxs[0U + offset] * Y0) + (mtrxs[1U + offset] * qubit[1U]));
-        qubit[1U] = nrm * ((mtrxs[2U + offset] * Y0) + (mtrxs[3U + offset] * qubit[1U]));
-
-        stateVec->write2(lcv, qubit[0U], lcv | targetPower, qubit[1U]);
-    });
+    if (doNormalize) {
+        runningNorm = ONE_R1;
+    }
 }
 
 void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)

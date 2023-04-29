@@ -1072,12 +1072,9 @@ void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
         waitVec, *uniformBuffer, sizeof(complex) * 4U * pow2Ocl(controls.size() + mtrxSkipPowers.size()), mtrxs);
 
     std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controls.size() + mtrxSkipPowers.size()]);
-    for (size_t i = 0U; i < controls.size(); ++i) {
-        qPowers[i] = pow2Ocl(controls[i]);
-    }
-    for (size_t i = 0U; i < mtrxSkipPowers.size(); ++i) {
-        qPowers[controls.size() + i] = (bitCapIntOcl)mtrxSkipPowers[i];
-    }
+    std::transform(controls.begin(), controls.end(), qPowers.get(), pow2Ocl);
+    std::transform(mtrxSkipPowers.begin(), mtrxSkipPowers.end(), qPowers.get() + controls.size(),
+        [](bitCapInt i) { return (bitCapIntOcl)i; });
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
@@ -1086,24 +1083,21 @@ void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     const size_t powBuffSize = sizeof(bitCapIntOcl) * (controls.size() + mtrxSkipPowers.size());
     AddAlloc(powBuffSize);
-    BufferPtr powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
+    BufferPtr powersBuffer = MakeBuffer(CL_MEM_READ_ONLY, powBuffSize);
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     DISPATCH_WRITE(waitVec, *powersBuffer, powBuffSize, qPowers.get());
 
     // We call the kernel, with global buffers and one local buffer.
     WaitCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
-        { stateBuffer, poolItem->ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer, nrmBuffer },
-        sizeof(real1) * ngs);
+        { stateBuffer, poolItem->ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer });
 
     uniformBuffer.reset();
     qPowers.reset();
 
-    // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
-    // values into a single normalization constant.
-    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+    SubtractAlloc(sizeDiff + powBuffSize);
 
-    SubtractAlloc(sizeDiff);
+    runningNorm = ONE_R1;
 }
 
 void QEngineOCL::UniformParityRZ(bitCapInt mask, real1_f angle)

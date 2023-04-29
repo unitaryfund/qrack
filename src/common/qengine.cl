@@ -378,8 +378,7 @@ void kernel invertsinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, c
 }
 
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
-    constant bitCapIntOcl* qPowers, global cmplx4* mtrxs, constant real1* nrmIn, global real1* sumBuffer,
-    local real1* lBuffer)
+    constant bitCapIntOcl* qPowers, global cmplx4* mtrxs, constant real1* nrmIn)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
@@ -389,8 +388,6 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
     const bitCapIntOcl mtrxSkipLen = bitCapIntOclPtr[3];
     const bitCapIntOcl mtrxSkipValueMask = bitCapIntOclPtr[4];
     const real1 nrm = nrmIn[0];
-
-    real1 partNrm = ZERO_R1;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl i = lcv & targetMask;
@@ -417,13 +414,9 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
 
         qubit = zmatrixmul(nrm, mtrxs[offset], qubit);
 
-        partNrm += dot(qubit, qubit);
-
         stateVec[i] = qubit.lo;
         stateVec[i | targetPower] = qubit.hi;
     }
-
-    SUM_LOCAL(partNrm)
 }
 
 void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
