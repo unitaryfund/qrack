@@ -41,8 +41,8 @@ public:
      * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input).
      */
-    QNeuron(
-        QInterfacePtr reg, const std::vector<bitLenInt>& inputIndcs, bitLenInt outputIndx, real1_f tol = REAL1_EPSILON)
+    QNeuron(QInterfacePtr reg, const std::vector<bitLenInt>& inputIndcs, bitLenInt outputIndx,
+        real1_f tol = FP_NORM_EPSILON)
         : inputPower(pow2Ocl(inputIndcs.size()))
         , outputIndex(outputIndx)
         , tolerance(tol)
