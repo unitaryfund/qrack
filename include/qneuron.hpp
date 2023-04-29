@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -30,7 +30,7 @@ private:
     QInterfacePtr qReg;
 
 public:
-    /** "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition
+    /** "QNeuron" is a "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition.
      *
      * This is a simple "quantum neuron" or "quantum perceptron" class, for use of the Qrack library for machine
      * learning. See https://arxiv.org/abs/1711.11240 for the basis of this class' theoretical concept. (That paper does
@@ -39,7 +39,8 @@ public:
      *
      * An untrained QNeuron (with all 0 variational parameters) will forward all inputs to 1/sqrt(2) * (|0> + |1>). The
      * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
-     * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
+     * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input).
+     */
     QNeuron(
         QInterfacePtr reg, const std::vector<bitLenInt>& inputIndcs, bitLenInt outputIndx, real1_f tol = REAL1_EPSILON)
         : inputPower(pow2Ocl(inputIndcs.size()))
@@ -89,9 +90,12 @@ public:
 
     bitCapInt GetInputPower() { return inputPower; }
 
-    /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
+    /** Predict a binary classification.
+     *
+     * Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
      * categories, if false. "resetInit," if true, resets the result qubit to 0.5/0.5 |0>/|1> superposition before
-     * proceeding to predict. */
+     * proceeding to predict.
+     */
     real1_f Predict(bool expected = true, bool resetInit = true)
     {
         if (resetInit) {
@@ -137,7 +141,7 @@ public:
         return result;
     }
 
-    /** Perform one learning iteration, training all parameters
+    /** Perform one learning iteration, training all parameters.
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
@@ -161,7 +165,7 @@ public:
         }
     }
 
-    /** Perform one learning iteration, measuring the entire QInterface and training the resulting permutation
+    /** Perform one learning iteration, measuring the entire QInterface and training the resulting permutation.
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
