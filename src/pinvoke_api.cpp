@@ -2692,30 +2692,16 @@ MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid)
     neuronReservations[nid] = false;
 }
 
-MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ double* angles)
+MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ real1_f* angles)
 {
     NEURON_LOCK_GUARD_VOID(nid)
-#if FPPOW == 6
     neuron->SetAngles(angles);
-#else
-    const size_t inputPower = (size_t)(neuron->GetInputPower());
-    std::unique_ptr<real1_f> qAngles(new real1_f[inputPower]);
-    std::transform(angles, angles + inputPower, qAngles.get(), [](double a) { return (real1_f)a; });
-    neuron->SetAngles(qAngles.get());
-#endif
 }
 
-MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ double* angles)
+MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ real1_f* angles)
 {
     NEURON_LOCK_GUARD_VOID(nid)
-#if FPPOW == 6
     neuron->SetAngles(angles);
-#else
-    const size_t inputPower = (size_t)(neuron->GetInputPower());
-    std::unique_ptr<real1_f> qAngles(new real1_f[inputPower]);
-    neuron->GetAngles(qAngles.get());
-    std::transform(qAngles.get(), qAngles.get() + inputPower, angles, [](real1_f a) { return (double)a; });
-#endif
 }
 
 MICROSOFT_QUANTUM_DECL double qneuron_predict(_In_ uintq nid, _In_ bool e, _In_ bool r)
