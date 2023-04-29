@@ -49,44 +49,24 @@
     QInterfacePtr simulator = simulators[sid];                                                                         \
     SIMULATOR_LOCK_GUARD(simulator.get())
 
-#define SIMULATOR_LOCK_GUARD_DOUBLE(sid)                                                                               \
+#define SIMULATOR_LOCK_GUARD_TYPED(sid, def)                                                                           \
     if (sid > simulators.size()) {                                                                                     \
         std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
         metaError = 2;                                                                                                 \
-        return 0.0;                                                                                                    \
+        return def;                                                                                                    \
     }                                                                                                                  \
                                                                                                                        \
     QInterfacePtr simulator = simulators[sid];                                                                         \
     SIMULATOR_LOCK_GUARD(simulator.get())                                                                              \
     if (!simulator) {                                                                                                  \
-        return 0.0;                                                                                                    \
+        return def;                                                                                                    \
     }
 
-#define SIMULATOR_LOCK_GUARD_BOOL(sid)                                                                                 \
-    if (sid > simulators.size()) {                                                                                     \
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
-        metaError = 2;                                                                                                 \
-        return false;                                                                                                  \
-    }                                                                                                                  \
-                                                                                                                       \
-    QInterfacePtr simulator = simulators[sid];                                                                         \
-    SIMULATOR_LOCK_GUARD(simulator.get())                                                                              \
-    if (!simulator) {                                                                                                  \
-        return false;                                                                                                  \
-    }
+#define SIMULATOR_LOCK_GUARD_BOOL(sid) SIMULATOR_LOCK_GUARD_TYPED(sid, false)
 
-#define SIMULATOR_LOCK_GUARD_INT(sid)                                                                                  \
-    if (sid > simulators.size()) {                                                                                     \
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
-        metaError = 2;                                                                                                 \
-        return 0U;                                                                                                     \
-    }                                                                                                                  \
-                                                                                                                       \
-    QInterfacePtr simulator = simulators[sid];                                                                         \
-    SIMULATOR_LOCK_GUARD(simulator.get())                                                                              \
-    if (!simulator) {                                                                                                  \
-        return 0U;                                                                                                     \
-    }
+#define SIMULATOR_LOCK_GUARD_DOUBLE(sid) SIMULATOR_LOCK_GUARD_TYPED(sid, 0.0)
+
+#define SIMULATOR_LOCK_GUARD_INT(sid) SIMULATOR_LOCK_GUARD_TYPED(sid, 0U)
 
 #define NEURON_LOCK_GUARD(neuron)                                                                                      \
     std::unique_ptr<const std::lock_guard<std::mutex>> neuronLock;                                                     \
@@ -112,18 +92,22 @@
         return;                                                                                                        \
     }
 
-#define NEURON_LOCK_GUARD_INT(nid)                                                                                     \
+#define NEURON_LOCK_GUARD_TYPED(nid, def)                                                                              \
     if (nid > neurons.size()) {                                                                                        \
         std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
         metaError = 2;                                                                                                 \
-        return 0U;                                                                                                     \
+        return def;                                                                                                    \
     }                                                                                                                  \
                                                                                                                        \
     QNeuronPtr neuron = neurons[nid];                                                                                  \
     NEURON_LOCK_GUARD(neuron)                                                                                          \
     if (!neuron) {                                                                                                     \
-        return 0U;                                                                                                     \
+        return def;                                                                                                    \
     }
+
+#define NEURON_LOCK_GUARD_DOUBLE(nid) NEURON_LOCK_GUARD_TYPED(nid, 0.0)
+
+#define NEURON_LOCK_GUARD_INT(nid) NEURON_LOCK_GUARD_TYPED(nid, 0U)
 
 #define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
@@ -2731,5 +2715,63 @@ MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ double* angl
     neuron->GetAngles(qAngles.get());
     std::transform(qAngles.get(), qAngles.get() + inputPower, angles, [](real1_f a) { return (double)a; });
 #endif
+}
+
+MICROSOFT_QUANTUM_DECL double qneuron_predict(_In_ uintq nid, _In_ bool e, _In_ bool r)
+{
+    NEURON_LOCK_GUARD_DOUBLE(nid)
+    try {
+        return (double)neuron->Predict(e, r);
+    } catch (const std::exception& ex) {
+        neuronErrors[nid] = 1;
+        std::cout << ex.what() << std::endl;
+        return 0.5;
+    }
+}
+
+MICROSOFT_QUANTUM_DECL double qneuron_unpredict(_In_ uintq nid, _In_ bool e)
+{
+    NEURON_LOCK_GUARD_DOUBLE(nid)
+    try {
+        return (double)neuron->Unpredict(e);
+    } catch (const std::exception& ex) {
+        neuronErrors[nid] = 1;
+        std::cout << ex.what() << std::endl;
+        return 0.5;
+    }
+}
+
+MICROSOFT_QUANTUM_DECL double qneuron_learn_cycle(_In_ uintq nid, _In_ bool e)
+{
+    NEURON_LOCK_GUARD_DOUBLE(nid)
+    try {
+        return (double)neuron->LearnCycle(e);
+    } catch (const std::exception& ex) {
+        neuronErrors[nid] = 1;
+        std::cout << ex.what() << std::endl;
+        return 0.5;
+    }
+}
+
+MICROSOFT_QUANTUM_DECL void qneuron_learn(_In_ uintq nid, _In_ double eta, _In_ bool e, _In_ bool r)
+{
+    NEURON_LOCK_GUARD_VOID(nid)
+    try {
+        neuron->Learn(e, eta, r);
+    } catch (const std::exception& ex) {
+        neuronErrors[nid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+MICROSOFT_QUANTUM_DECL void qneuron_learn_permutation(_In_ uintq nid, _In_ double eta, _In_ bool e, _In_ bool r)
+{
+    NEURON_LOCK_GUARD_VOID(nid)
+    try {
+        neuron->LearnPermutation(e, eta, r);
+    } catch (const std::exception& ex) {
+        neuronErrors[nid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
 }
 }
