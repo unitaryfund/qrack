@@ -245,7 +245,8 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
 // AdjPermuteBasis(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ std::size_t table_size,
 // _In_reads_(table_size) std::size_t *permutation_table);
 
-MICROSOFT_QUANTUM_DECL uintq init_qneuron(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q);
+MICROSOFT_QUANTUM_DECL uintq init_qneuron(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ double tol);
 MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid);
 MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid);
 

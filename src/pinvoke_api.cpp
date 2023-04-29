@@ -2617,7 +2617,8 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
 }
 #endif
 
-MICROSOFT_QUANTUM_DECL uintq init_qneuron(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q)
+MICROSOFT_QUANTUM_DECL uintq init_qneuron(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ double tol)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
     std::vector<bitLenInt> ctrlsArray(n);
@@ -2635,7 +2636,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(_In_ uintq sid, _In_ uintq n, _In_read
         }
     }
 
-    QNeuronPtr neuron = std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q]);
+    QNeuronPtr neuron = std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], (real1_f)tol);
 
     if (nid == simulators.size()) {
         neuronReservations.push_back(true);
