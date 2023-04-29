@@ -800,15 +800,12 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     const real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
 
-    std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controls.size()]);
-    for (size_t i = 0U; i < controls.size(); ++i) {
-        qPowers[i] = pow2Ocl(controls[i]);
-    }
+    std::vector<bitCapIntOcl> qPowers(controls.size());
+    std::transform(controls.begin(), controls.end(), qPowers.begin(), pow2Ocl);
 
-    std::unique_ptr<bitCapIntOcl[]> mtrxSkipPowersOcl(new bitCapIntOcl[mtrxSkipPowers.size()]);
-    for (size_t i = 0U; i < mtrxSkipPowers.size(); ++i) {
-        mtrxSkipPowersOcl[i] = (bitCapIntOcl)mtrxSkipPowers[i];
-    }
+    std::vector<bitCapIntOcl> mtrxSkipPowersOcl(mtrxSkipPowers.size());
+    std::transform(mtrxSkipPowers.begin(), mtrxSkipPowers.end(), mtrxSkipPowersOcl.begin(),
+        [](bitCapInt i) { return (bitCapIntOcl)i; });
 
     const bitCapIntOcl mtrxSkipValueMaskOcl = (bitCapIntOcl)mtrxSkipValueMask;
 
@@ -846,15 +843,8 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
         qubit[0U] = nrm * ((mtrxs[0U + offset] * Y0) + (mtrxs[1U + offset] * qubit[1U]));
         qubit[1U] = nrm * ((mtrxs[2U + offset] * Y0) + (mtrxs[3U + offset] * qubit[1U]));
 
-        rngNrm[cpu] += norm(qubit[0U]) + norm(qubit[1U]);
-
         stateVec->write2(lcv, qubit[0U], lcv | targetPower, qubit[1U]);
     });
-
-    runningNorm = ZERO_R1;
-    for (unsigned i = 0U; i < numCores; ++i) {
-        runningNorm += rngNrm[i];
-    }
 }
 
 void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
