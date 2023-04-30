@@ -2746,7 +2746,7 @@ MICROSOFT_QUANTUM_DECL void qneuron_learn(_In_ uintq nid, _In_ double eta, _In_ 
 {
     NEURON_LOCK_GUARD_VOID(nid)
     try {
-        neuron->Learn(e, eta, r);
+        neuron->Learn(eta, e, r);
     } catch (const std::exception& ex) {
         neuronErrors[nid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2757,7 +2757,7 @@ MICROSOFT_QUANTUM_DECL void qneuron_learn_permutation(_In_ uintq nid, _In_ doubl
 {
     NEURON_LOCK_GUARD_VOID(nid)
     try {
-        neuron->LearnPermutation(e, eta, r);
+        neuron->LearnPermutation(eta, e, r);
     } catch (const std::exception& ex) {
         neuronErrors[nid] = 1;
         std::cout << ex.what() << std::endl;
