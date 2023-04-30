@@ -556,7 +556,6 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
         simulatorHostPointer[sid] = hp;
         simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
-    metaError = 0;
 
     if (!q) {
         return sid;
@@ -623,7 +622,6 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
         simulatorHostPointer[sid] = hp;
         simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
-    metaError = 0;
 
     if (!q) {
         return sid;
@@ -700,7 +698,6 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
         simulatorHostPointer[sid] = hp;
         simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
-    metaError = 0;
 
     if (!q) {
         return sid;
@@ -754,7 +751,6 @@ MICROSOFT_QUANTUM_DECL uintq init_clone(_In_ uintq sid)
         simulatorHostPointer[nsid] = simulatorHostPointer[sid];
         simulatorErrors[nsid] = isSuccess ? 0 : 1;
     }
-    metaError = 0;
 
     shards[simulator.get()] = {};
     for (uintq i = 0U; i < simulator->GetQubitCount(); ++i) {
@@ -2639,7 +2635,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
     QNeuronPtr neuron = std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], (real1_f)tol);
     neuronSimulators[neuron] = simulator.get();
 
-    if (nid == simulators.size()) {
+    if (nid == neurons.size()) {
         neuronReservations.push_back(true);
         neurons.push_back(neuron);
         neuronErrors.push_back(0);
@@ -2669,7 +2665,7 @@ MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
     QNeuronPtr nNeuron = std::make_shared<QNeuron>(*neuron);
     neuronSimulators[nNeuron] = neuronSimulators[neuron];
 
-    if (nid == simulators.size()) {
+    if (nid == neurons.size()) {
         neuronReservations.push_back(true);
         neurons.push_back(nNeuron);
         neuronErrors.push_back(0);
@@ -2701,6 +2697,7 @@ MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ real1_f* ang
 MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ real1_f* angles)
 {
     NEURON_LOCK_GUARD_VOID(nid)
+
     neuron->SetAngles(angles);
 }
 
