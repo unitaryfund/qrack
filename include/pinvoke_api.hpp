@@ -239,9 +239,30 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
     _In_reads_(n) _QrackTimeEvolveOpHeader* teos, uintq mn, _In_reads_(mn) double* mtrx);
 #endif
 
-// permutation oracle emulation
-// MICROSOFT_QUANTUM_DECL void PermuteBasis(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_
-// std::size_t table_size, _In_reads_(table_size) std::size_t *permutation_table);  MICROSOFT_QUANTUM_DECL void
-// AdjPermuteBasis(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ std::size_t table_size,
-// _In_reads_(table_size) std::size_t *permutation_table);
+MICROSOFT_QUANTUM_DECL uintq init_qneuron(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ double tol);
+MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid);
+MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid);
+
+#if FPPOW < 6
+MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ float* angles);
+MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ float* angles);
+MICROSOFT_QUANTUM_DECL void get_qneuron_reverse_angles(_In_ uintq nid, _In_ float* angles);
+#elif FPPOW < 7
+MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ double* angles);
+MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ double* angles);
+MICROSOFT_QUANTUM_DECL void get_qneuron_reverse_angles(_In_ uintq nid, _In_ double* angles);
+#else
+MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ boost::multiprecision::float128* angles);
+MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ boost::multiprecision::float128* angles);
+MICROSOFT_QUANTUM_DECL void get_qneuron_reverse_angles(_In_ uintq nid, _In_ boost::multiprecision::float128* angles);
+#endif
+
+MICROSOFT_QUANTUM_DECL double qneuron_predict(_In_ uintq nid, _In_ bool e, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double qneuron_unpredict(_In_ uintq nid, _In_ bool e);
+
+MICROSOFT_QUANTUM_DECL double qneuron_learn_cycle(_In_ uintq nid, _In_ bool e);
+
+MICROSOFT_QUANTUM_DECL void qneuron_learn(_In_ uintq nid, _In_ double eta, _In_ bool e, _In_ bool r);
+MICROSOFT_QUANTUM_DECL void qneuron_learn_permutation(_In_ uintq nid, _In_ double eta, _In_ bool e, _In_ bool r);
 }

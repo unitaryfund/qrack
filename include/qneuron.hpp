@@ -47,10 +47,10 @@ public:
         , outputIndex(outputIndx)
         , tolerance(tol)
         , inputIndices(inputIndcs)
+        , angles(new real1[inputPower]())
+        , reverseAngles(new real1[inputPower]())
+        , qReg(reg)
     {
-        qReg = reg;
-        angles = std::unique_ptr<real1>(new real1[inputPower]());
-        reverseAngles = std::unique_ptr<real1>(new real1[inputPower]());
     }
 
     /** Create a new QNeuron which is an exact duplicate of another, including its learned state. */
@@ -149,7 +149,7 @@ public:
      * In the feedback process of learning, default initial conditions forward untrained predictions to 1/sqrt(2) * (|0>
      * + |1>) for the output bit. If you want to initialize other conditions before "Learn()," set "resetInit" to false.
      */
-    void Learn(bool expected, real1_f eta, bool resetInit = true)
+    void Learn(real1_f eta, bool expected = true, bool resetInit = true)
     {
         real1_f startProb = Predict(expected, resetInit);
         Unpredict(expected);
@@ -174,7 +174,7 @@ public:
      * + |1>) for the output bit. If you want to initialize other conditions before "LearnPermutation()," set
      * "resetInit" to false.
      */
-    void LearnPermutation(bool expected, real1_f eta, bool resetInit = true)
+    void LearnPermutation(real1_f eta, bool expected = true, bool resetInit = true)
     {
         real1_f startProb = Predict(expected, resetInit);
         Unpredict(expected);

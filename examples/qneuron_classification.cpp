@@ -155,11 +155,11 @@ void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QIn
 
         if (permH.size() == 0) {
             for (i = 0; i < outputLayer.size(); i++) {
-                outputLayer[i]->LearnPermutation(row[0], (real1_f)(etas[i] / rowCount));
+                outputLayer[i]->LearnPermutation((real1_f)(etas[i] / rowCount), row[0]);
             }
         } else {
             for (i = 0; i < outputLayer.size(); i++) {
-                outputLayer[i]->Learn(row[0], (real1_f)(etas[i] / (rowCount * pow2Ocl(permH.size()))));
+                outputLayer[i]->Learn((real1_f)(etas[i] / (rowCount * pow2Ocl(permH.size()))), row[0]);
             }
         }
     }

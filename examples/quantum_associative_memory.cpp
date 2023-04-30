@@ -42,27 +42,23 @@ int main()
     }
 
     // Train the network to associate powers of 2 with their log2()
-    bitCapInt perm;
-    bitCapInt comp;
-    bool bit;
     std::cout << "Learning (Two's complement)..." << std::endl;
-    for (perm = 0; perm < InputPower; perm++) {
+    for (bitCapInt perm = 0; perm < InputPower; perm++) {
         std::cout << "Epoch " << (perm + 1U) << " out of " << InputPower << std::endl;
-        comp = (~perm) + 1U;
+        const bitCapInt comp = (~perm) + 1U;
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qReg->SetPermutation(perm);
-            bit = (comp & pow2(i)) != 0;
-            outputLayer[i]->LearnPermutation(bit, (real1_f)eta);
+            outputLayer[i]->LearnPermutation((real1_f)eta, (comp & pow2(i)) != 0);
         }
     }
 
     std::cout << "Should associate each input with its two's complement as output..." << std::endl;
-    for (perm = 0; perm < InputPower; perm++) {
+    for (bitCapInt perm = 0; perm < InputPower; perm++) {
         qReg->SetPermutation(perm);
         for (bitLenInt i = 0; i < OutputCount; i++) {
             outputLayer[i]->Predict();
         }
-        comp = qReg->MReg(InputCount, OutputCount);
+        const bitCapInt comp = qReg->MReg(InputCount, OutputCount);
         std::cout << "Input: " << perm << ", Output: " << comp << std::endl;
     }
 }
