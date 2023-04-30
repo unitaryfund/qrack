@@ -48,7 +48,7 @@ int main()
         const bitCapInt comp = (~perm) + 1U;
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qReg->SetPermutation(perm);
-            outputLayer[i]->LearnPermutation((comp & pow2(i)) != 0, (real1_f)eta);
+            outputLayer[i]->LearnPermutation((real1_f)eta, (comp & pow2(i)) != 0);
         }
     }
 
