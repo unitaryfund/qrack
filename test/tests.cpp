@@ -4923,7 +4923,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qftReg->SetPermutation(perm);
             bit = (comp & pow2(i)) != 0;
-            outputLayer[i]->LearnPermutation(bit, (real1_f)eta);
+            outputLayer[i]->LearnPermutation(eta, bit);
         }
     }
 
