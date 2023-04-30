@@ -149,7 +149,7 @@ public:
      * In the feedback process of learning, default initial conditions forward untrained predictions to 1/sqrt(2) * (|0>
      * + |1>) for the output bit. If you want to initialize other conditions before "Learn()," set "resetInit" to false.
      */
-    void Learn(real1_f eta, bool expected, bool resetInit = true)
+    void Learn(real1_f eta, bool expected = true, bool resetInit = true)
     {
         real1_f startProb = Predict(expected, resetInit);
         Unpredict(expected);
@@ -174,7 +174,7 @@ public:
      * + |1>) for the output bit. If you want to initialize other conditions before "LearnPermutation()," set
      * "resetInit" to false.
      */
-    void LearnPermutation(real1_f eta, bool expected, bool resetInit = true)
+    void LearnPermutation(real1_f eta, bool expected = true, bool resetInit = true)
     {
         real1_f startProb = Predict(expected, resetInit);
         Unpredict(expected);
