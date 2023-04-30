@@ -14,6 +14,8 @@
 
 #include "qinterface.hpp"
 
+#include <algorithm>
+
 namespace Qrack {
 
 class QNeuron;
