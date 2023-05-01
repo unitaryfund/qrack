@@ -110,7 +110,7 @@ public:
     }
 
     /** Set the "alpha" sharpness parameter of this QNeuron */
-    void SetAlpha(real1_f alpha) { alpha = alpha; }
+    void SetAlpha(real1_f a) { alpha = a; }
 
     /** Get the "alpha" sharpness parameter of this QNeuron */
     real1_f GetAlpha() { return alpha; }
