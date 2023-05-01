@@ -22,13 +22,13 @@ namespace Qrack {
  * Enumerated list of Pauli bases
  */
 enum QNeuronActivationFn {
-    /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
+    /// Default
     Sigmoid = 0,
-    /// Pauli X operator. Corresponds to Q# constant "PauliX."
+    /// Rectified linear 
     ReLU = 1,
-    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
+    /// Gaussian linear
     GeLU = 2,
-    /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
+    /// Version of (default) "Sigmoid" with tunable sharpness
     Generalized_Logistic = 3
 };
 
