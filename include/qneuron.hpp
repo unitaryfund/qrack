@@ -25,6 +25,7 @@ class QNeuron {
 protected:
     bitCapIntOcl inputPower;
     bitLenInt outputIndex;
+    bool isRelu;
     real1 sigmoidAlpha;
     real1 tolerance;
     std::vector<bitLenInt> inputIndices;
@@ -35,6 +36,10 @@ protected:
     {
         return pow((abs(angle) / PI_R1), alpha) * PI_R1 * ((angle < 0) ? -1 : 1);
     }
+
+    static real1_f applyRelu(real1_f angle) { return std::max(ZERO_R1_F, angle); }
+
+    static real1_f negApplyRelu(real1_f angle) { return -std::max(ZERO_R1_F, angle); }
 
 public:
     /** "QNeuron" is a "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition.
@@ -48,10 +53,11 @@ public:
      * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input).
      */
-    QNeuron(QInterfacePtr reg, const std::vector<bitLenInt>& inputIndcs, bitLenInt outputIndx, real1_f alpha = ONE_R1_F,
-        real1_f tol = FP_NORM_EPSILON)
+    QNeuron(QInterfacePtr reg, const std::vector<bitLenInt>& inputIndcs, bitLenInt outputIndx, bool relu = false,
+        real1_f alpha = ONE_R1_F, real1_f tol = FP_NORM_EPSILON)
         : inputPower(pow2Ocl(inputIndcs.size()))
         , outputIndex(outputIndx)
+        , isRelu(relu)
         , sigmoidAlpha(alpha)
         , tolerance(tol)
         , inputIndices(inputIndcs)
@@ -85,6 +91,12 @@ public:
     /** Get the "alpha" sharpness parameter of this QNeuron */
     real1_f GetAlpha() { return sigmoidAlpha; }
 
+    /** Turns ReLU activation on/off */
+    void SetRelu(bool r) { isRelu = r; }
+
+    /** Get whether ReLU is on/off. */
+    bool GetRelu() { return isRelu; }
+
     /** Set the angles of this QNeuron */
     void SetAngles(real1* nAngles) { std::copy(nAngles, nAngles + inputPower, angles.get()); }
 
@@ -111,6 +123,10 @@ public:
         if (!inputIndices.size()) {
             // If there are no controls, this "neuron" is actually just a bias.
             qReg->RY((real1_f)(applyAlpha(angles.get()[0U], sigmoidAlpha)), outputIndex);
+        } else if (isRelu) {
+            std::unique_ptr<real1> reluAngles(new real1[inputPower]);
+            std::transform(angles.get(), angles.get() + inputPower, reluAngles.get(), applyRelu);
+            qReg->UniformlyControlledRY(inputIndices, outputIndex, reluAngles.get());
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             if (sigmoidAlpha == ONE_R1) {
@@ -135,12 +151,16 @@ public:
         if (!inputIndices.size()) {
             // If there are no controls, this "neuron" is actually just a bias.
             qReg->RY((real1_f)(-applyAlpha(angles.get()[0U], sigmoidAlpha)), outputIndex);
+        } else if (isRelu) {
+            std::unique_ptr<real1> reluAngles(new real1[inputPower]);
+            std::transform(angles.get(), angles.get() + inputPower, reluAngles.get(), negApplyRelu);
+            qReg->UniformlyControlledRY(inputIndices, outputIndex, reluAngles.get());
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             std::unique_ptr<real1> reverseAlphaAngles(new real1[inputPower]);
             if (sigmoidAlpha == ONE_R1) {
                 std::transform(
-                    angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(), [this](real1 a) { return -a; });
+                    angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(), [](real1 a) { return -a; });
             } else {
                 std::transform(angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(),
                     [this](real1 a) { return -applyAlpha(a, sigmoidAlpha); });
