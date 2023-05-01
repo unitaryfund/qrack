@@ -239,8 +239,8 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
     _In_reads_(n) _QrackTimeEvolveOpHeader* teos, uintq mn, _In_reads_(mn) double* mtrx);
 #endif
 
-MICROSOFT_QUANTUM_DECL uintq init_qneuron(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ bool r, _In_ double a, _In_ double tol);
+MICROSOFT_QUANTUM_DECL uintq init_qneuron(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q,
+    _In_ bool r, _In_ bool g, _In_ double a, _In_ double tol);
 MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid);
 MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid);
 
@@ -260,6 +260,9 @@ MICROSOFT_QUANTUM_DECL double get_qneuron_alpha(_In_ uintq nid);
 
 MICROSOFT_QUANTUM_DECL void set_qneuron_relu(_In_ uintq nid, _In_ bool r);
 MICROSOFT_QUANTUM_DECL bool get_qneuron_relu(_In_ uintq nid);
+
+MICROSOFT_QUANTUM_DECL void set_qneuron_gelu(_In_ uintq nid, _In_ bool g);
+MICROSOFT_QUANTUM_DECL bool get_qneuron_gelu(_In_ uintq nid);
 
 MICROSOFT_QUANTUM_DECL double qneuron_predict(_In_ uintq nid, _In_ bool e, _In_ bool r);
 MICROSOFT_QUANTUM_DECL double qneuron_unpredict(_In_ uintq nid, _In_ bool e);

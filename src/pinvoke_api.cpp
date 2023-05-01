@@ -2613,8 +2613,8 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
 }
 #endif
 
-MICROSOFT_QUANTUM_DECL uintq init_qneuron(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ bool r, _In_ double a, _In_ double tol)
+MICROSOFT_QUANTUM_DECL uintq init_qneuron(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q,
+    _In_ bool r, _In_ bool g, _In_ double a, _In_ double tol)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
     std::vector<bitLenInt> ctrlsArray(n);
@@ -2633,7 +2633,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
     }
 
     QNeuronPtr neuron =
-        std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], r, (real1_f)a, (real1_f)tol);
+        std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], r, g, (real1_f)a, (real1_f)tol);
     neuronSimulators[neuron] = simulator.get();
 
     if (nid == neurons.size()) {
@@ -2723,6 +2723,18 @@ MICROSOFT_QUANTUM_DECL bool get_qneuron_relu(_In_ uintq nid)
 {
     NEURON_LOCK_GUARD_DOUBLE(nid)
     return neuron->GetRelu();
+}
+
+MICROSOFT_QUANTUM_DECL void set_qneuron_gelu(_In_ uintq nid, _In_ bool g)
+{
+    NEURON_LOCK_GUARD_VOID(nid)
+    neuron->SetGelu(g);
+}
+
+MICROSOFT_QUANTUM_DECL bool get_qneuron_gelu(_In_ uintq nid)
+{
+    NEURON_LOCK_GUARD_DOUBLE(nid)
+    return neuron->GetGelu();
 }
 
 MICROSOFT_QUANTUM_DECL double qneuron_predict(_In_ uintq nid, _In_ bool e, _In_ bool r)
