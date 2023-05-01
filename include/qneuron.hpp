@@ -18,6 +18,20 @@
 
 namespace Qrack {
 
+/**
+ * Enumerated list of Pauli bases
+ */
+enum QNeuronActivationFn {
+    /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
+    Sigmoid = 0,
+    /// Pauli X operator. Corresponds to Q# constant "PauliX."
+    ReLU = 1,
+    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
+    GeLU = 2,
+    /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
+    Generalized_Logistic = 3
+};
+
 class QNeuron;
 typedef std::shared_ptr<QNeuron> QNeuronPtr;
 
@@ -25,8 +39,7 @@ class QNeuron {
 protected:
     bitCapIntOcl inputPower;
     bitLenInt outputIndex;
-    bool isRelu;
-    bool isGelu;
+    QNeuronActivationFn activationFn;
     real1 alpha;
     real1 tolerance;
     std::vector<bitLenInt> inputIndices;
@@ -58,12 +71,11 @@ public:
      * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input).
      */
-    QNeuron(QInterfacePtr reg, const std::vector<bitLenInt>& inputIndcs, bitLenInt outputIndx, bool relu = false,
-        bool gelu = false, real1_f alpha = ONE_R1_F, bool exponential = false, real1_f tol = FP_NORM_EPSILON)
+    QNeuron(QInterfacePtr reg, const std::vector<bitLenInt>& inputIndcs, bitLenInt outputIndx,
+        QNeuronActivationFn activationFn = Sigmoid, real1_f alpha = ONE_R1_F, real1_f tol = FP_NORM_EPSILON)
         : inputPower(pow2Ocl(inputIndcs.size()))
         , outputIndex(outputIndx)
-        , isRelu(relu)
-        , isGelu(gelu)
+        , activationFn(activationFn)
         , alpha(alpha)
         , tolerance(tol)
         , inputIndices(inputIndcs)
@@ -74,7 +86,8 @@ public:
 
     /** Create a new QNeuron which is an exact duplicate of another, including its learned state. */
     QNeuron(const QNeuron& toCopy)
-        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.outputIndex, (real1_f)toCopy.tolerance)
+        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.outputIndex, toCopy.activationFn, (real1_f)toCopy.alpha,
+              (real1_f)toCopy.tolerance)
     {
         std::copy(toCopy.angles.get(), toCopy.angles.get() + toCopy.inputPower, angles.get());
     }
@@ -85,6 +98,7 @@ public:
         inputIndices = toCopy.inputIndices;
         std::copy(toCopy.angles.get(), toCopy.angles.get() + toCopy.inputPower, angles.get());
         outputIndex = toCopy.outputIndex;
+        activationFn = toCopy.activationFn;
         alpha = toCopy.alpha;
         tolerance = toCopy.tolerance;
 
@@ -97,17 +111,11 @@ public:
     /** Get the "alpha" sharpness parameter of this QNeuron */
     real1_f GetAlpha() { return alpha; }
 
-    /** Turns ReLU activation on/off */
-    void SetRelu(bool r) { isRelu = r; }
+    /** Sets activation function enum */
+    void SetActivationFn(QNeuronActivationFn f) { activationFn = f; }
 
-    /** Get whether ReLU is on/off. */
-    bool GetRelu() { return isRelu; }
-
-    /** Turns GeLU activation on/off */
-    void SetGelu(bool g) { isGelu = g; }
-
-    /** Get whether GeLU is on/off. */
-    bool GetGelu() { return isGelu; }
+    /** Get activation function enum */
+    QNeuronActivationFn GetActivationFn() { return activationFn; }
 
     /** Set the angles of this QNeuron */
     void SetAngles(real1* nAngles) { std::copy(nAngles, nAngles + inputPower, angles.get()); }
@@ -134,30 +142,43 @@ public:
 
         if (!inputIndices.size()) {
             // If there are no controls, this "neuron" is actually just a bias.
-            if (isRelu) {
+            switch (activationFn) {
+            case ReLU:
                 qReg->RY((real1_f)(applyRelu(angles.get()[0U])), outputIndex);
-            } else if (isGelu) {
+                break;
+            case GeLU:
                 qReg->RY((real1_f)(applyGelu(angles.get()[0U])), outputIndex);
-            } else if (alpha != ONE_R1) {
+                break;
+            case Generalized_Logistic:
                 qReg->RY((real1_f)(applyAlpha(angles.get()[0U], alpha)), outputIndex);
-            } else {
+                break;
+            case Sigmoid:
+            default:
                 qReg->RY((real1_f)(angles.get()[0U]), outputIndex);
             }
-        } else if (isRelu) {
-            std::unique_ptr<real1> nAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), applyRelu);
-            qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
-        } else if (isGelu) {
-            std::unique_ptr<real1> nAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), applyGelu);
-            qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
-        } else if (alpha == ONE_R1) {
-            qReg->UniformlyControlledRY(inputIndices, outputIndex, angles.get());
         } else {
-            std::unique_ptr<real1> alphaAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, alphaAngles.get(),
-                [this](real1 a) { return applyAlpha(a, alpha); });
-            qReg->UniformlyControlledRY(inputIndices, outputIndex, alphaAngles.get());
+            std::unique_ptr<real1> nAngles;
+            switch (activationFn) {
+            case ReLU:
+                nAngles = std::unique_ptr<real1>(new real1[inputPower]);
+                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), applyRelu);
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
+                break;
+            case GeLU:
+                nAngles = std::unique_ptr<real1>(new real1[inputPower]);
+                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), applyGelu);
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
+                break;
+            case Generalized_Logistic:
+                nAngles = std::unique_ptr<real1>(new real1[inputPower]);
+                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(),
+                    [this](real1 a) { return applyAlpha(a, alpha); });
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
+                break;
+            case Sigmoid:
+            default:
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, angles.get());
+            }
         }
         real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
@@ -171,33 +192,41 @@ public:
     {
         if (!inputIndices.size()) {
             // If there are no controls, this "neuron" is actually just a bias.
-            if (isRelu) {
+            switch (activationFn) {
+            case ReLU:
                 qReg->RY((real1_f)(negApplyRelu(angles.get()[0U])), outputIndex);
-            } else if (isGelu) {
+                break;
+            case GeLU:
                 qReg->RY((real1_f)(negApplyGelu(angles.get()[0U])), outputIndex);
-            } else if (alpha != ONE_R1) {
+                break;
+            case 3:
                 qReg->RY((real1_f)(-applyAlpha(angles.get()[0U], alpha)), outputIndex);
-            } else {
+                break;
+            case 0:
+            default:
                 qReg->RY((real1_f)(-angles.get()[0U]), outputIndex);
             }
-        } else if (isRelu) {
-            std::unique_ptr<real1> reluAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, reluAngles.get(), negApplyRelu);
-            qReg->UniformlyControlledRY(inputIndices, outputIndex, reluAngles.get());
-        } else if (isGelu) {
-            std::unique_ptr<real1> reluAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, reluAngles.get(), negApplyRelu);
-            qReg->UniformlyControlledRY(inputIndices, outputIndex, reluAngles.get());
         } else {
-            // Otherwise, the action can always be represented as a uniformly controlled gate.
             std::unique_ptr<real1> nAngles(new real1[inputPower]);
-            if (alpha == ONE_R1) {
-                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), [](real1 a) { return -a; });
-            } else {
+            switch (activationFn) {
+            case ReLU:
+                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), negApplyRelu);
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
+                break;
+            case GeLU:
+                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), negApplyGelu);
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
+                break;
+            case Generalized_Logistic:
                 std::transform(angles.get(), angles.get() + inputPower, nAngles.get(),
                     [this](real1 a) { return -applyAlpha(a, alpha); });
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
+                break;
+            case Sigmoid:
+            default:
+                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), [](real1 a) { return -a; });
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
             }
-            qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
         }
         real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
