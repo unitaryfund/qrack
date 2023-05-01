@@ -88,7 +88,7 @@ public:
     void SetAlpha(real1_f alpha) { sigmoidAlpha = alpha; }
 
     /** Get the "alpha" sharpness parameter of this QNeuron */
-    real1_f GetAlpha(real1_f alpha) { return sigmoidAlpha; }
+    real1_f GetAlpha() { return sigmoidAlpha; }
 
     /** Set the angles of this QNeuron */
     void SetAngles(real1* nAngles) { std::copy(nAngles, nAngles + inputPower, angles.get()); }
@@ -119,7 +119,8 @@ public:
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             std::unique_ptr<real1> alphaAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, alphaAngles.get(), [this](real1 a) { return applyAlpha(a, sigmoidAlpha); });
+            std::transform(angles.get(), angles.get() + inputPower, alphaAngles.get(),
+                [this](real1 a) { return applyAlpha(a, sigmoidAlpha); });
             qReg->UniformlyControlledRY(inputIndices, outputIndex, alphaAngles.get());
         }
         real1_f prob = qReg->Prob(outputIndex);
@@ -138,7 +139,8 @@ public:
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             std::unique_ptr<real1> reverseAlphaAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(), [this](real1 a) { return negApplyAlpha(a, sigmoidAlpha); });
+            std::transform(angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(),
+                [this](real1 a) { return negApplyAlpha(a, sigmoidAlpha); });
             qReg->UniformlyControlledRY(inputIndices, outputIndex, reverseAlphaAngles.get());
         }
         real1_f prob = qReg->Prob(outputIndex);

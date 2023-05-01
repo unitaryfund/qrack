@@ -2632,7 +2632,8 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
         }
     }
 
-    QNeuronPtr neuron = std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], (real1_f)a, (real1_f)tol);
+    QNeuronPtr neuron =
+        std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], (real1_f)a, (real1_f)tol);
     neuronSimulators[neuron] = simulator.get();
 
     if (nid == neurons.size()) {
@@ -2698,6 +2699,18 @@ MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ real1_f* ang
 {
     NEURON_LOCK_GUARD_VOID(nid)
     neuron->GetAngles(angles);
+}
+
+MICROSOFT_QUANTUM_DECL void set_qneuron_alpha(_In_ uintq nid, _In_ double alpha)
+{
+    NEURON_LOCK_GUARD_VOID(nid)
+    neuron->SetAlpha((real1_f)alpha);
+}
+
+MICROSOFT_QUANTUM_DECL double get_qneuron_alpha(_In_ uintq nid)
+{
+    NEURON_LOCK_GUARD_DOUBLE(nid)
+    return (double)neuron->GetAlpha();
 }
 
 MICROSOFT_QUANTUM_DECL double qneuron_predict(_In_ uintq nid, _In_ bool e, _In_ bool r)
