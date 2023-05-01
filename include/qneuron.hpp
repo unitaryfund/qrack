@@ -118,10 +118,14 @@ public:
             qReg->RY((real1_f)(applyAlpha(angles.get()[0U], sigmoidAlpha)), outputIndex);
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
-            std::unique_ptr<real1> alphaAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, alphaAngles.get(),
-                [this](real1 a) { return applyAlpha(a, sigmoidAlpha); });
-            qReg->UniformlyControlledRY(inputIndices, outputIndex, alphaAngles.get());
+            if (sigmoidAlpha == ONE_R1) {
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, angles.get());
+            } else {
+                std::unique_ptr<real1> alphaAngles(new real1[inputPower]);
+                std::transform(angles.get(), angles.get() + inputPower, alphaAngles.get(),
+                    [this](real1 a) { return applyAlpha(a, sigmoidAlpha); });
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, alphaAngles.get());
+            }
         }
         real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
@@ -139,8 +143,13 @@ public:
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             std::unique_ptr<real1> reverseAlphaAngles(new real1[inputPower]);
-            std::transform(angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(),
-                [this](real1 a) { return negApplyAlpha(a, sigmoidAlpha); });
+            if (sigmoidAlpha == ONE_R1) {
+                std::transform(angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(),
+                    [this](real1 a) { return -a; });
+            } else {
+                std::transform(angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(),
+                    [this](real1 a) { return negApplyAlpha(a, sigmoidAlpha); });
+            }
             qReg->UniformlyControlledRY(inputIndices, outputIndex, reverseAlphaAngles.get());
         }
         real1_f prob = qReg->Prob(outputIndex);
