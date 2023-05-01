@@ -36,11 +36,6 @@ protected:
         return pow((abs(angle) / PI_R1), alpha) * PI_R1 * ((angle < 0) ? -1 : 1);
     }
 
-    static real1_f negApplyAlpha(real1_f angle, real1_f alpha)
-    {
-        return pow((abs(angle) / PI_R1), alpha) * PI_R1 * ((angle > 0) ? -1 : 1);
-    }
-
 public:
     /** "QNeuron" is a "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition.
      *
@@ -139,16 +134,16 @@ public:
     {
         if (!inputIndices.size()) {
             // If there are no controls, this "neuron" is actually just a bias.
-            qReg->RY((real1_f)(negApplyAlpha(angles.get()[0U], sigmoidAlpha)), outputIndex);
+            qReg->RY((real1_f)(-applyAlpha(angles.get()[0U], sigmoidAlpha)), outputIndex);
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             std::unique_ptr<real1> reverseAlphaAngles(new real1[inputPower]);
             if (sigmoidAlpha == ONE_R1) {
-                std::transform(angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(),
-                    [this](real1 a) { return -a; });
+                std::transform(
+                    angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(), [this](real1 a) { return -a; });
             } else {
                 std::transform(angles.get(), angles.get() + inputPower, reverseAlphaAngles.get(),
-                    [this](real1 a) { return negApplyAlpha(a, sigmoidAlpha); });
+                    [this](real1 a) { return -applyAlpha(a, sigmoidAlpha); });
             }
             qReg->UniformlyControlledRY(inputIndices, outputIndex, reverseAlphaAngles.get());
         }
