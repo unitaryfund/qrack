@@ -24,12 +24,14 @@ namespace Qrack {
 enum QNeuronActivationFn {
     /// Default
     Sigmoid = 0,
-    /// Rectified linear 
+    /// Rectified linear
     ReLU = 1,
     /// Gaussian linear
     GeLU = 2,
     /// Version of (default) "Sigmoid" with tunable sharpness
-    Generalized_Logistic = 3
+    Generalized_Logistic = 3,
+    /// Leaky rectified linear
+    Leaky_ReLU = 4
 };
 
 class QNeuron;
@@ -46,11 +48,6 @@ protected:
     std::unique_ptr<real1> angles;
     QInterfacePtr qReg;
 
-    static real1_f applyAlpha(real1_f angle, real1_f alpha)
-    {
-        return pow((abs(angle) / PI_R1), alpha) * PI_R1 * ((angle < 0) ? -1 : 1);
-    }
-
     static real1_f applyRelu(real1_f angle) { return std::max(ZERO_R1_F, angle); }
 
     static real1_f negApplyRelu(real1_f angle) { return -std::max(ZERO_R1_F, angle); }
@@ -58,6 +55,13 @@ protected:
     static real1_f applyGelu(real1_f angle) { return angle * (1 + erf(angle * SQRT1_2_R1)); }
 
     static real1_f negApplyGelu(real1_f angle) { return -angle * (1 + erf(angle * SQRT1_2_R1)); }
+
+    static real1_f applyAlpha(real1_f angle, real1_f alpha)
+    {
+        return pow((abs(angle) / PI_R1), alpha) * PI_R1 * ((angle < 0) ? -1 : 1);
+    }
+
+    static real1_f applyLeakyRelu(real1_f angle, real1_f alpha) { return std::max(alpha * angle, angle); }
 
 public:
     /** "QNeuron" is a "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition.
@@ -152,6 +156,9 @@ public:
             case Generalized_Logistic:
                 qReg->RY((real1_f)(applyAlpha(angles.get()[0U], alpha)), outputIndex);
                 break;
+            case Leaky_ReLU:
+                qReg->RY((real1_f)(applyLeakyRelu(angles.get()[0U], alpha)), outputIndex);
+                break;
             case Sigmoid:
             default:
                 qReg->RY((real1_f)(angles.get()[0U]), outputIndex);
@@ -173,6 +180,12 @@ public:
                 nAngles = std::unique_ptr<real1>(new real1[inputPower]);
                 std::transform(angles.get(), angles.get() + inputPower, nAngles.get(),
                     [this](real1 a) { return applyAlpha(a, alpha); });
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
+                break;
+            case Leaky_ReLU:
+                nAngles = std::unique_ptr<real1>(new real1[inputPower]);
+                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(),
+                    [this](real1 a) { return applyLeakyRelu(a, alpha); });
                 qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
                 break;
             case Sigmoid:
@@ -199,10 +212,13 @@ public:
             case GeLU:
                 qReg->RY((real1_f)(negApplyGelu(angles.get()[0U])), outputIndex);
                 break;
-            case 3:
+            case Generalized_Logistic:
                 qReg->RY((real1_f)(-applyAlpha(angles.get()[0U], alpha)), outputIndex);
                 break;
-            case 0:
+            case Leaky_ReLU:
+                qReg->RY((real1_f)(-applyLeakyRelu(angles.get()[0U], alpha)), outputIndex);
+                break;
+            case Sigmoid:
             default:
                 qReg->RY((real1_f)(-angles.get()[0U]), outputIndex);
             }
@@ -220,6 +236,11 @@ public:
             case Generalized_Logistic:
                 std::transform(angles.get(), angles.get() + inputPower, nAngles.get(),
                     [this](real1 a) { return -applyAlpha(a, alpha); });
+                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
+                break;
+            case Leaky_ReLU:
+                std::transform(angles.get(), angles.get() + inputPower, nAngles.get(),
+                    [this](real1 a) { return -applyLeakyRelu(a, alpha); });
                 qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
                 break;
             case Sigmoid:
