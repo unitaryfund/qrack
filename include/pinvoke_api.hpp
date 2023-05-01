@@ -240,23 +240,23 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
 #endif
 
 MICROSOFT_QUANTUM_DECL uintq init_qneuron(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ double tol);
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ double a, _In_ double tol);
 MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid);
 MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid);
 
 #if FPPOW < 6
 MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ float* angles);
 MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ float* angles);
-MICROSOFT_QUANTUM_DECL void get_qneuron_reverse_angles(_In_ uintq nid, _In_ float* angles);
 #elif FPPOW < 7
 MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ double* angles);
 MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ double* angles);
-MICROSOFT_QUANTUM_DECL void get_qneuron_reverse_angles(_In_ uintq nid, _In_ double* angles);
 #else
 MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ boost::multiprecision::float128* angles);
 MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ boost::multiprecision::float128* angles);
-MICROSOFT_QUANTUM_DECL void get_qneuron_reverse_angles(_In_ uintq nid, _In_ boost::multiprecision::float128* angles);
 #endif
+
+MICROSOFT_QUANTUM_DECL void set_qneuron_alpha(_In_ uintq nid, _In_ double alpha);
+MICROSOFT_QUANTUM_DECL double get_qneuron_alpha(_In_ uintq nid);
 
 MICROSOFT_QUANTUM_DECL double qneuron_predict(_In_ uintq nid, _In_ bool e, _In_ bool r);
 MICROSOFT_QUANTUM_DECL double qneuron_unpredict(_In_ uintq nid, _In_ bool e);

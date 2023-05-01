@@ -2614,7 +2614,7 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
 #endif
 
 MICROSOFT_QUANTUM_DECL uintq init_qneuron(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ double tol)
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ double a, _In_ double tol)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
     std::vector<bitLenInt> ctrlsArray(n);
@@ -2632,7 +2632,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
         }
     }
 
-    QNeuronPtr neuron = std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], (real1_f)tol);
+    QNeuronPtr neuron = std::make_shared<QNeuron>(simulator, ctrlsArray, shards[simulator.get()][q], (real1_f)a, (real1_f)tol);
     neuronSimulators[neuron] = simulator.get();
 
     if (nid == neurons.size()) {
@@ -2698,12 +2698,6 @@ MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ real1_f* ang
 {
     NEURON_LOCK_GUARD_VOID(nid)
     neuron->GetAngles(angles);
-}
-
-MICROSOFT_QUANTUM_DECL void get_qneuron_reverse_angles(_In_ uintq nid, _In_ real1_f* angles)
-{
-    NEURON_LOCK_GUARD_VOID(nid)
-    neuron->GetReverseAngles(angles);
 }
 
 MICROSOFT_QUANTUM_DECL double qneuron_predict(_In_ uintq nid, _In_ bool e, _In_ bool r)
