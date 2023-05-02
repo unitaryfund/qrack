@@ -58,7 +58,16 @@ protected:
 
     static real1_f applyAlpha(real1_f angle, real1_f alpha)
     {
-        return pow((2 * abs(angle) / PI_R1), alpha) * (PI_R1 / 2) * ((angle < 0) ? -1 : 1);
+        real1_f toRet = ZERO_R1;
+        if (angle > PI_R1) {
+            angle -= PI_R1;
+            toRet = PI_R1;
+        } else if (angle <= -PI_R1) {
+            angle += PI_R1;
+            toRet = -PI_R1;
+        }
+
+        return toRet + (pow((2 * abs(angle) / PI_R1), alpha) * (PI_R1 / 2) * ((angle < 0) ? -1 : 1));
     }
 
     static real1_f applyLeakyRelu(real1_f angle, real1_f alpha) { return std::max(alpha * angle, angle); }
