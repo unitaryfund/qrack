@@ -63,6 +63,19 @@ protected:
 
     static real1_f applyLeakyRelu(real1_f angle, real1_f alpha) { return std::max(alpha * angle, angle); }
 
+    static real1_f clampAngle(real1_f angle)
+    {
+        // From Tiama, (OpenAI ChatGPT instance)
+        angle = fmod(angle, 4 * PI_R1);
+        if (angle <= -2 * PI_R1) {
+            angle += 4 * PI_R1;
+        } else if (angle > 2 * PI_R1) {
+            angle -= 4 * PI_R1;
+        }
+
+        return angle;
+    }
+
 public:
     /** "QNeuron" is a "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition.
      *
@@ -323,6 +336,7 @@ protected:
         angle += eta * PI_R1;
         real1 endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
+            angle = clampAngle(angle);
             return -ONE_R1_F;
         }
         if (endProb > startProb) {
@@ -334,6 +348,7 @@ protected:
         angle -= 2 * eta * PI_R1;
         endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
+            angle = clampAngle(angle);
             return -ONE_R1_F;
         }
         if (endProb > startProb) {
