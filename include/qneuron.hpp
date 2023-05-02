@@ -19,7 +19,7 @@
 namespace Qrack {
 
 /**
- * Enumerated list of Pauli bases
+ * Enumerated list of activation functions
  */
 enum QNeuronActivationFn {
     /// Default
