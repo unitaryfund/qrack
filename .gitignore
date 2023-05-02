@@ -15,4 +15,7 @@ Makefile
 cmake_install.cmake
 qrack.pc
 _build/
+_cuda_build/
+_wasm_build/
+_ios_build/
 include/OpenCL/
