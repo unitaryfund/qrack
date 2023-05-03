@@ -351,7 +351,7 @@ protected:
 
         // If positive angle increment is not an improvement,
         // try negative angle increment:
-        angle -= 2 * eta * PI_R1;
+        angle = origAngle - eta * PI_R1;
         const real1 minusProb = LearnCycle(expected);
         if ((ONE_R1 - minusProb) <= tolerance) {
             angle = clampAngle(angle);
