@@ -343,32 +343,34 @@ protected:
 
         // Try positive angle increment:
         angle += eta * PI_R1;
-        real1 endProb = LearnCycle(expected);
-        if ((ONE_R1 - endProb) <= tolerance) {
+        const real1 plusProb = LearnCycle(expected);
+        if ((ONE_R1 - plusProb) <= tolerance) {
             angle = clampAngle(angle);
             return -ONE_R1_F;
-        }
-        if (endProb > startProb) {
-            return (real1_f)endProb;
         }
 
         // If positive angle increment is not an improvement,
         // try negative angle increment:
         angle -= 2 * eta * PI_R1;
-        endProb = LearnCycle(expected);
-        if ((ONE_R1 - endProb) <= tolerance) {
+        const real1 minusProb = LearnCycle(expected);
+        if ((ONE_R1 - minusProb) <= tolerance) {
             angle = clampAngle(angle);
             return -ONE_R1_F;
         }
-        if (endProb > startProb) {
-            return (real1_f)endProb;
+
+        if ((startProb >= plusProb) && (startProb >= minusProb)) {
+            // If neither increment is an improvement,
+            // restore the original variational parameter.
+            angle = origAngle;
+            return startProb;
         }
 
-        // If neither increment is an improvement,
-        // restore the original variational parameter.
-        angle = origAngle;
+        if (plusProb > minusProb) {
+            angle += 2 * eta * PI_R1;
+            return plusProb;
+        }
 
-        return (real1_f)startProb;
+        return minusProb;
     }
 };
 } // namespace Qrack
