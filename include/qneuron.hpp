@@ -366,7 +366,7 @@ protected:
         }
 
         if (plusProb > minusProb) {
-            angle += 2 * eta * PI_R1;
+            angle = origAngle + eta * PI_R1;
             return plusProb;
         }
 
