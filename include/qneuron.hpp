@@ -89,9 +89,8 @@ public:
     /** "QNeuron" is a "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition.
      *
      * This is a simple "quantum neuron" or "quantum perceptron" class, for use of the Qrack library for machine
-     * learning. See https://arxiv.org/abs/1711.11240 for the basis of this class' theoretical concept. (That paper does
-     * not use the term "uniformly controlled rotation gate," but "conditioning on all controls" is computationally the
-     * same.)
+     * learning. See https://arxiv.org/abs/quant-ph/0410066 (and https://arxiv.org/abs/1711.11240) for the basis of this
+     * class' theoretical concept.
      *
      * An untrained QNeuron (with all 0 variational parameters) will forward all inputs to 1/sqrt(2) * (|0> + |1>). The
      * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
