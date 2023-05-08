@@ -590,7 +590,8 @@ void QEngineOCL::SetDevice(int64_t dID)
     if (!didInit || doResize) {
         AddAlloc(nrmArrayAllocSize);
 #if defined(__ANDROID__)
-        nrmArray = std::unique_ptr<real1[]>(new real1[nrmArrayAllocSize / sizeof(real1)]);
+        nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
+            new real1[nrmArrayAllocSize / sizeof(real1)], [](real1* r) { delete[] r; });
 #elif defined(__APPLE__)
         nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             _aligned_nrm_array_alloc(nrmArrayAllocSize), [](real1* c) { free(c); });
@@ -639,7 +640,6 @@ void QEngineOCL::SetDevice(int64_t dID)
         stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
     }
-    didInit = true;
 }
 
 real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)

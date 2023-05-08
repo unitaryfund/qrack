@@ -681,7 +681,8 @@ void QEngineCUDA::SetDevice(int64_t dID)
     if (!didInit || doResize) {
         AddAlloc(nrmArrayAllocSize);
 #if defined(__ANDROID__)
-        nrmArray = std::unique_ptr<real1[]>(new real1[nrmArrayAllocSize / sizeof(real1)]);
+        nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
+            new real1[nrmArrayAllocSize / sizeof(real1)], [](real1* r) { delete[] r; });
 #elif defined(_WIN32) && !defined(__CYGWIN__)
         nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             (real1*)_aligned_malloc(nrmArrayAllocSize, QRACK_ALIGN_SIZE), [](real1* c) { _aligned_free(c); });
