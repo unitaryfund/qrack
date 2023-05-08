@@ -151,10 +151,17 @@ public:
 
     size_t GetActiveAllocSize(const int64_t& dev)
     {
+        if (dev > ((int64_t)activeAllocSizes.size())) {
+            return 0U;
+        }
         return (dev < 0) ? activeAllocSizes[GetDefaultDeviceID()] : activeAllocSizes[(size_t)dev];
     }
     size_t AddToActiveAllocSize(const int64_t& dev, size_t size)
     {
+        if (dev > ((int64_t)activeAllocSizes.size())) {
+            throw std::invalid_argument("OCLEngine::AddToActiveAllocSize device ID is too high!");
+        }
+
         size_t lDev = (dev < 0) ? GetDefaultDeviceID() : dev;
 
         if (size == 0) {
@@ -168,6 +175,10 @@ public:
     }
     size_t SubtractFromActiveAllocSize(const int64_t& dev, size_t size)
     {
+        if (dev > ((int64_t)activeAllocSizes.size())) {
+            throw std::invalid_argument("OCLEngine::AddToActiveAllocSize device ID is too high!");
+        }
+
         size_t lDev = (dev < 0) ? GetDefaultDeviceID() : dev;
 
         if (size == 0) {
@@ -184,6 +195,9 @@ public:
     }
     void ResetActiveAllocSize(const int64_t& dev)
     {
+        if (dev > ((int64_t)activeAllocSizes.size())) {
+            throw std::invalid_argument("OCLEngine::AddToActiveAllocSize device ID is too high!");
+        }
         size_t lDev = (dev < 0) ? GetDefaultDeviceID() : dev;
         std::lock_guard<std::mutex> lock(allocMutex);
         // User code should catch std::bad_alloc and reset:
