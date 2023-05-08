@@ -74,11 +74,12 @@ QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_ge
     bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t devID, bool useHardwareRNG, bool ignored,
     real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
+    , didInit(false)
     , unlockHostMem(false)
     , nrmGroupSize(0U)
     , totalOclAllocSize(0U)
     , deviceID(devID)
-    , nrmArray(NULL, [](real1* r) {})
+    , nrmArray(new real1[0], [](real1* r) { delete[] r; })
     , queue(0)
     , params_queue(0)
 {
@@ -623,8 +624,6 @@ void QEngineCUDA::SetDevice(int64_t dID)
         throw std::runtime_error("Tried to initialize QEngineCUDA, but no available OpenCL devices.");
     }
 
-    const bool didInit = (nrmArray != NULL);
-
     clFinish();
 
     const DeviceContextPtr nDeviceContext = CUDAEngine::Instance().GetDeviceContextPtr(dID);
@@ -682,13 +681,12 @@ void QEngineCUDA::SetDevice(int64_t dID)
     if (!didInit || doResize) {
         AddAlloc(nrmArrayAllocSize);
 #if defined(__ANDROID__)
-        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
-            new real1[nrmArrayAllocSize / sizeof(real1)], [](real1* r) { delete r; });
+        nrmArray = std::unique_ptr<real1[]>(new real1[nrmArrayAllocSize / sizeof(real1)]);
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+        nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             (real1*)_aligned_malloc(nrmArrayAllocSize, QRACK_ALIGN_SIZE), [](real1* c) { _aligned_free(c); });
 #else
-        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+        nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmArrayAllocSize), [](real1* c) { free(c); });
 #endif
     }
@@ -696,6 +694,8 @@ void QEngineCUDA::SetDevice(int64_t dID)
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>());
+
+    didInit = true;
 }
 
 real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)

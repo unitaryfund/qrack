@@ -74,13 +74,14 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     bool randomGlobalPhase, bool useHostMem, int64_t devID, bool useHardwareRNG, bool ignored, real1_f norm_thresh,
     std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
+    , didInit(false)
     , unlockHostMem(false)
     , callbackError(CL_SUCCESS)
     , nrmGroupSize(0U)
     , totalOclAllocSize(0U)
     , deviceID(devID)
     , wait_refs()
-    , nrmArray(NULL, [](real1* r) {})
+    , nrmArray(new real1[0], [](real1* r) { delete[] r; })
 {
     InitOCL(devID);
     clFinish();
@@ -529,8 +530,6 @@ void QEngineOCL::SetDevice(int64_t dID)
         throw std::runtime_error("Tried to initialize QEngineOCL, but no available OpenCL devices.");
     }
 
-    const bool didInit = (nrmArray != NULL);
-
     clFinish();
 
     const int64_t oldContextId = device_context ? device_context->context_id : 0;
@@ -591,16 +590,15 @@ void QEngineOCL::SetDevice(int64_t dID)
     if (!didInit || doResize) {
         AddAlloc(nrmArrayAllocSize);
 #if defined(__ANDROID__)
-        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
-            new real1[nrmArrayAllocSize / sizeof(real1)], [](real1* r) { delete r; });
+        nrmArray = std::unique_ptr<real1[]>(new real1[nrmArrayAllocSize / sizeof(real1)]);
 #elif defined(__APPLE__)
-        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+        nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             _aligned_nrm_array_alloc(nrmArrayAllocSize), [](real1* c) { free(c); });
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+        nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             (real1*)_aligned_malloc(nrmArrayAllocSize, QRACK_ALIGN_SIZE), [](real1* c) { _aligned_free(c); });
 #else
-        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+        nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmArrayAllocSize), [](real1* c) { free(c); });
 #endif
     }
@@ -611,6 +609,7 @@ void QEngineOCL::SetDevice(int64_t dID)
 
     // If this is the same context, then all other buffers are valid.
     if (oldContextId == nDeviceContext->context_id) {
+        didInit = true;
         return;
     }
 
@@ -640,6 +639,7 @@ void QEngineOCL::SetDevice(int64_t dID)
         stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
     }
+    didInit = true;
 }
 
 real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)

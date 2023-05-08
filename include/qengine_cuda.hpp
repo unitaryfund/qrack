@@ -200,6 +200,7 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  */
 class QEngineCUDA : public QEngine {
 protected:
+    bool didInit;
     bool usingHostRam;
     bool unlockHostMem;
     size_t nrmGroupCount;
@@ -221,7 +222,7 @@ protected:
     DeviceContextPtr device_context;
     std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
-    std::unique_ptr<real1, void (*)(real1*)> nrmArray;
+    std::unique_ptr<real1[], void (*)(real1*)> nrmArray;
 
     // For std::function, cudaError_t use might discard int qualifiers.
     void tryCuda(std::string message, std::function<cudaError_t()> oclCall)

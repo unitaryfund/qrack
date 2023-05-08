@@ -185,6 +185,7 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  */
 class QEngineOCL : public QEngine {
 protected:
+    bool didInit;
     bool usingHostRam;
     bool unlockHostMem;
     cl_int callbackError;
@@ -206,7 +207,7 @@ protected:
     std::vector<EventVecPtr> wait_refs;
     std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
-    std::unique_ptr<real1, void (*)(real1*)> nrmArray;
+    std::unique_ptr<real1[], void (*)(real1*)> nrmArray;
 
 #if defined(__APPLE__)
     real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)
