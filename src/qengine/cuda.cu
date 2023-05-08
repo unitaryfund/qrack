@@ -620,8 +620,14 @@ void QEngineCUDA::DispatchQueue()
 
 void QEngineCUDA::SetDevice(int64_t dID)
 {
-    if (!(CUDAEngine::Instance().GetDeviceCount())) {
-        throw std::runtime_error("Tried to initialize QEngineCUDA, but no available OpenCL devices.");
+    const size_t deviceCount = CUDAEngine::Instance().GetDeviceCount();
+
+    if (!deviceCount) {
+        throw std::runtime_error("QEngineCUDA::SetDevice(): No available devices.");
+    }
+
+    if (dID > ((int64_t)deviceCount)) {
+        throw std::runtime_error("QEngineCUDA::SetDevice(): Requested device doesn't exist.");
     }
 
     clFinish();

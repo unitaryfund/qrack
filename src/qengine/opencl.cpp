@@ -526,8 +526,14 @@ void QEngineOCL::DispatchQueue()
 
 void QEngineOCL::SetDevice(int64_t dID)
 {
-    if (!(OCLEngine::Instance().GetDeviceCount())) {
-        throw std::runtime_error("Tried to initialize QEngineOCL, but no available OpenCL devices.");
+    const size_t deviceCount = OCLEngine::Instance().GetDeviceCount();
+
+    if (!deviceCount) {
+        throw std::runtime_error("QEngineOCL::SetDevice(): No available devices.");
+    }
+
+    if (dID > ((int64_t)deviceCount)) {
+        throw std::runtime_error("QEngineOCL::SetDevice(): Requested device doesn't exist.");
     }
 
     clFinish();
