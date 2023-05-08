@@ -244,7 +244,7 @@ public:
                 qReg->RY((real1_f)(-angles.get()[0U]), outputIndex);
             }
         } else {
-            std::unique_ptr<real1> nAngles(new real1[inputPower]);
+            std::unique_ptr<real1[]> nAngles(new real1[inputPower]);
             switch (activationFn) {
             case ReLU:
                 std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), negApplyRelu);

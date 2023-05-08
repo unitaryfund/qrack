@@ -172,6 +172,7 @@ void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
     runningNorm = REAL1_DEFAULT_ARG;
     engineCpu->runningNorm = REAL1_DEFAULT_ARG;
 }
+
 void QEngineCPU::CopyStateVec(QEnginePtr src)
 {
     if (qubitCount != src->GetQubitCount()) {
@@ -190,7 +191,7 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
     }
 
     if (isSparse) {
-        std::unique_ptr<complex> sv = std::unique_ptr<complex>(new complex[maxQPowerOcl]);
+        std::unique_ptr<complex[]> sv(new complex[maxQPowerOcl]);
         src->GetQuantumState(sv.get());
         SetQuantumState(sv.get());
     } else {

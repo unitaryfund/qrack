@@ -213,7 +213,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 for (bitLenInt i = 0U; i < numBits; ++i) {
                     qPowers.push_back(pow2(i));
                 }
-                std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
+                std::unique_ptr<unsigned long long[]> results(new unsigned long long[1000000U]);
                 qftReg->MultiShotMeasureMask(qPowers, 1000000U, results.get());
                 for (size_t i = 0U; i < 1000000U; ++i) {
                     mOutputFile << results.get()[i] << std::endl;
@@ -4331,7 +4331,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
     for (bitLenInt i = 0U; i < w; ++i) {
         qPowers.push_back(pow2(i));
     }
-    std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
+    std::unique_ptr<unsigned long long[]> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
     double sdrp = 1.0;
@@ -5300,7 +5300,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
     for (bitLenInt i = 0U; i < w; ++i) {
         qPowers.push_back(pow2(i));
     }
-    std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
+    std::unique_ptr<unsigned long long[]> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
     double sdrp = 1.0;
@@ -6041,7 +6041,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
     for (bitLenInt i = 0U; i < w; ++i) {
         qPowers.push_back(pow2(i));
     }
-    std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
+    std::unique_ptr<unsigned long long[]> results(new unsigned long long[1000000U]);
 
     auto start = std::chrono::high_resolution_clock::now();
     double sdrp = 1.0;
@@ -7056,7 +7056,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
     for (bitLenInt i = 0U; i < w; ++i) {
         qPowers.push_back(pow2(i));
     }
-    std::unique_ptr<unsigned long long> results(new unsigned long long[1000000U]);
+    std::unique_ptr<unsigned long long[]> results(new unsigned long long[1000000U]);
 
     std::vector<std::vector<int>> gate1QbRands(n);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
