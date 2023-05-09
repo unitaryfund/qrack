@@ -229,6 +229,8 @@ public:
             return;
         }
 
+        ForceMReg(start, length, disposedPerm);
+
         DecomposeDispose(start, length, NULL);
     }
 
