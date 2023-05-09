@@ -2692,13 +2692,27 @@ MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid)
 MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ real1_f* angles)
 {
     NEURON_LOCK_GUARD_VOID(nid)
+#if (FPPOW == 5) || (FPPOW == 6)
     neuron->SetAngles(angles);
+#else
+    const bitCapIntOcl inputPower = (bitCapIntOcl)neuron->GetInputPower();
+    std::unique_ptr<real1[]> _angles(new real1[inputPower]);
+    std::copy(angles, angles + inputPower, _angles.get());
+    neuron->SetAngles(_angles.get());
+#endif
 }
 
 MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ real1_f* angles)
 {
     NEURON_LOCK_GUARD_VOID(nid)
+#if (FPPOW == 5) || (FPPOW == 6)
     neuron->GetAngles(angles);
+#else
+    const bitCapIntOcl inputPower = (bitCapIntOcl)neuron->GetInputPower();
+    std::unique_ptr<real1[]> _angles(new real1[inputPower]);
+    neuron->GetAngles(_angles.get());
+    std::copy(_angles.get(), _angles.get() + inputPower, angles);
+#endif
 }
 
 MICROSOFT_QUANTUM_DECL void set_qneuron_alpha(_In_ uintq nid, _In_ double alpha)

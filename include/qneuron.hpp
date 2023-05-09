@@ -42,8 +42,8 @@ protected:
     bitCapIntOcl inputPower;
     bitLenInt outputIndex;
     QNeuronActivationFn activationFn;
-    real1 alpha;
-    real1 tolerance;
+    real1_f alpha;
+    real1_f tolerance;
     std::vector<bitLenInt> inputIndices;
     std::unique_ptr<real1> angles;
     QInterfacePtr qReg;
@@ -342,8 +342,8 @@ protected:
 
         // Try positive angle increment:
         angle += eta * PI_R1;
-        const real1 plusProb = LearnCycle(expected);
-        if ((ONE_R1 - plusProb) <= tolerance) {
+        const real1_f plusProb = LearnCycle(expected);
+        if ((ONE_R1_F - plusProb) <= tolerance) {
             angle = clampAngle(angle);
             return -ONE_R1_F;
         }
@@ -351,8 +351,8 @@ protected:
         // If positive angle increment is not an improvement,
         // try negative angle increment:
         angle = origAngle - eta * PI_R1;
-        const real1 minusProb = LearnCycle(expected);
-        if ((ONE_R1 - minusProb) <= tolerance) {
+        const real1_f minusProb = LearnCycle(expected);
+        if ((ONE_R1_F - minusProb) <= tolerance) {
             angle = clampAngle(angle);
             return -ONE_R1_F;
         }
