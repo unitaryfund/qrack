@@ -264,6 +264,7 @@ install (FILES
     include/hamiltonian.hpp
     include/statevector.hpp
     include/pinvoke_api.hpp
+    include/qcircuit.hpp
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp
