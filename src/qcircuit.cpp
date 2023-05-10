@@ -70,8 +70,13 @@ void QCircuit::Run(QInterfacePtr qsim)
         }
 
         const bitLenInt controlCount = gate->controls.size();
+        std::vector<bitLenInt> controls = gate->GetControlsVector();
+        for (bitLenInt i = 0U; i < controls.size(); ++i) {
+            controls[i] = qubitMap[controls[i]];
+        }
+
         if ((gate->payloads.size() << 1U) >= (1U << controlCount)) {
-            for (bitLenInt control : gate->controls) {
+            for (bitLenInt control : controls) {
                 if (controlStates[control]) {
                     qsim->X(control);
                     controlStates[control] = false;
@@ -82,7 +87,7 @@ void QCircuit::Run(QInterfacePtr qsim)
                 controlStates[t] = false;
             }
             std::unique_ptr<complex[]> payload = gate->MakeUniformlyControlledPayload();
-            qsim->UniformlyControlledSingleBit(gate->GetControlsVector(), gate->target, payload.get());
+            qsim->UniformlyControlledSingleBit(controls, gate->target, payload.get());
 
             continue;
         }
@@ -90,7 +95,7 @@ void QCircuit::Run(QInterfacePtr qsim)
         for (const auto& payload : gate->payloads) {
             std::map<bitLenInt, bool> controlMismatch;
             bitLenInt mismatchCount = 0U;
-            for (const auto& c : gate->controls) {
+            for (const auto& c : controls) {
                 controlMismatch[c] = ((bool)((payload.first >> c) & 1)) != controlStates[c];
                 if (controlMismatch[c]) {
                     ++mismatchCount;
@@ -106,13 +111,13 @@ void QCircuit::Run(QInterfacePtr qsim)
                 }
 
                 if (!controlStates[t]) {
-                    qsim->MACMtrx(gate->GetControlsVector(), payload.second.get(), t);
+                    qsim->MACMtrx(controls, payload.second.get(), t);
 
                     continue;
                 }
 
                 std::unique_ptr<complex[]> mtrx = InvertPayload(payload.second.get());
-                qsim->MACMtrx(gate->GetControlsVector(), mtrx.get(), t);
+                qsim->MACMtrx(controls, mtrx.get(), t);
 
                 continue;
             }
@@ -125,13 +130,13 @@ void QCircuit::Run(QInterfacePtr qsim)
             }
 
             if (!controlStates[t]) {
-                qsim->MCMtrx(gate->GetControlsVector(), payload.second.get(), t);
+                qsim->MCMtrx(controls, payload.second.get(), t);
 
                 continue;
             }
 
             std::unique_ptr<complex[]> mtrx = InvertPayload(payload.second.get());
-            qsim->MCMtrx(gate->GetControlsVector(), mtrx.get(), t);
+            qsim->MCMtrx(controls, mtrx.get(), t);
 
             continue;
         }
