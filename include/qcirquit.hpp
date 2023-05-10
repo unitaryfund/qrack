@@ -159,6 +159,30 @@ struct QCircuitGate {
 
         return IsPhase() && other->IsPhase();
     }
+
+    std::unique_ptr<complex[]> MakeUniformlyControlledPayload()
+    {
+        const bitCapIntOcl maxQPower = (1U << controls.size());
+        std::unique_ptr<complex[]> toRet(new complex[4U * maxQPower]);
+        for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
+            complex* mtrx = toRet.get() + (i << 2U);
+            if (payloads.find(i) == payloads.end()) {
+                mtrx[0] = ONE_CMPLX;
+                mtrx[1] = ZERO_CMPLX;
+                mtrx[2] = ZERO_CMPLX;
+                mtrx[3] = ONE_CMPLX;
+
+                continue;
+            }
+
+            const complex* oMtrx = payloads[i].get();
+            std::copy(oMtrx, oMtrx + 4U, mtrx);
+        }
+
+        return toRet;
+    }
+
+    std::vector<bitLenInt> GetControlsVector() { return std::vector<bitLenInt>(controls.begin(), controls.end()); }
 };
 
 class QCircuit;
@@ -263,7 +287,19 @@ public:
                 continue;
             }
 
-            // TODO: If payload multiplicity is high, just use "uniformly controlled" gate.
+            const bitLenInt controlCount = gate->controls.size();
+            if ((gate->payloads.size() << 1U) >= (1U << controlCount)) {
+                for (bitLenInt control : gate->controls) {
+                    if (controlStates[control]) {
+                        qsim->X(control);
+                        controlStates[control] = false;
+                    }
+                }
+                std::unique_ptr<complex[]> payload = gate->MakeUniformlyControlledPayload();
+                qsim->UniformlyControlledSingleBit(gate->GetControlsVector(), gate->target, payload.get());
+
+                continue;
+            }
 
             for (const auto& payload : gate->payloads) {
                 std::map<bitLenInt, bool> controlMismatch;
@@ -275,7 +311,7 @@ public:
                     }
                 }
 
-                if (((size_t)(mismatchCount << 1U)) < gate->controls.size()) {
+                if (((size_t)(mismatchCount << 1U)) < controlCount) {
                     for (const auto& c : controlMismatch) {
                         if (c.second && controlStates[c.first]) {
                             qsim->X(c.first);
@@ -284,14 +320,13 @@ public:
                     }
 
                     if (!controlStates[t]) {
-                        qsim->MACMtrx(std::vector<bitLenInt>(gate->controls.begin(), gate->controls.end()),
-                            payload.second.get(), t);
+                        qsim->MACMtrx(gate->GetControlsVector(), payload.second.get(), t);
 
                         continue;
                     }
 
                     std::unique_ptr<complex[]> mtrx = InvertPayload(payload.second.get());
-                    qsim->MACMtrx(std::vector<bitLenInt>(gate->controls.begin(), gate->controls.end()), mtrx.get(), t);
+                    qsim->MACMtrx(gate->GetControlsVector(), mtrx.get(), t);
 
                     continue;
                 }
@@ -304,14 +339,13 @@ public:
                 }
 
                 if (!controlStates[t]) {
-                    qsim->MCMtrx(
-                        std::vector<bitLenInt>(gate->controls.begin(), gate->controls.end()), payload.second.get(), t);
+                    qsim->MCMtrx(gate->GetControlsVector(), payload.second.get(), t);
 
                     continue;
                 }
 
                 std::unique_ptr<complex[]> mtrx = InvertPayload(payload.second.get());
-                qsim->MCMtrx(std::vector<bitLenInt>(gate->controls.begin(), gate->controls.end()), mtrx.get(), t);
+                qsim->MCMtrx(gate->GetControlsVector(), mtrx.get(), t);
 
                 continue;
             }
