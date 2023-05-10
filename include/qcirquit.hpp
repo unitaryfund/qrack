@@ -80,7 +80,8 @@ struct QCircuitGate {
     void Combine(QCircuitGatePtr other)
     {
         for (const auto& payload : other->payloads) {
-            if (payloads.find(payload.first) == payloads.end()) {
+            const auto& pit = payloads.find(payload.first);
+            if (pit == payloads.end()) {
                 const std::unique_ptr<complex[]>& p = payloads[payload.first] =
                     std::unique_ptr<complex[]>(new complex[4]);
                 std::copy(payload.second.get(), payload.second.get() + 4U, p.get());
@@ -91,6 +92,21 @@ struct QCircuitGate {
             const std::unique_ptr<complex[]>& p = payloads[payload.first];
             complex out[4];
             mul2x2(payload.second.get(), p.get(), out);
+
+            if (IS_NORM_0(out[1]) && IS_NORM_0(out[2])) {
+                if ((!controls.size() && IS_NORM_0(out[0] - out[3])) ||
+                    (IS_NORM_0(ONE_CMPLX - out[0]) && IS_NORM_0(ONE_CMPLX - out[3]))) {
+                    payloads.erase(pit);
+
+                    if (!payloads.size()) {
+                        target = 0U;
+                        controls.clear();
+                    }
+
+                    continue;
+                }
+            }
+
             std::copy(out, out + 4U, p.get());
         }
     }
