@@ -26,14 +26,20 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         }
     }
 
-    /*for (QCircuitGatePtr gate : gates) {
+    if (!(nGate->payloads.size())) {
+        gates.push_back(nGate);
+
+        return;
+    }
+
+    for (QCircuitGatePtr gate : gates) {
         if (gate->TryCombine(nGate)) {
             return;
         }
         if (!gate->CanPass(nGate)) {
             break;
         }
-    }*/
+    }
     gates.push_back(nGate);
 }
 
@@ -45,6 +51,13 @@ void QCircuit::Run(QInterfacePtr qsim)
 
     for (const QCircuitGatePtr& gate : gates) {
         const bitLenInt& t = gate->target;
+
+        if (!(gate->payloads.size())) {
+            qsim->Swap(t, *(gate->controls.begin()));
+
+            continue;
+        }
+
         if (!gate->controls.size()) {
             qsim->Mtrx(gate->payloads[0].get(), t);
 

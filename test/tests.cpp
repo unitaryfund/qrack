@@ -7139,7 +7139,7 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
                 const std::set<bitLenInt> controls{ multiGate.b1, multiGate.b2 };
                 if (multiGate.gate == 0) {
                     // testCase->Swap(multiGate.b1, multiGate.b2);
-                    // circuit->Swap(multiGate.b1, multiGate.b2);
+                    circuit->Swap(multiGate.b1, multiGate.b2);
                 } else if (multiGate.gate == 1) {
                     // testCase->CNOT(multiGate.b1, multiGate.b2);
                     complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
@@ -7201,7 +7201,7 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
                 const std::set<bitLenInt> controls{ multiGate.b1, multiGate.b2 };
                 if (multiGate.gate == 0) {
                     // testCase->Swap(multiGate.b1, multiGate.b2);
-                    // circuit->Swap(multiGate.b1, multiGate.b2);
+                    circuit->Swap(multiGate.b1, multiGate.b2);
                 } else if (multiGate.gate == 1) {
                     // testCase->CNOT(multiGate.b1, multiGate.b2);
                     complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };

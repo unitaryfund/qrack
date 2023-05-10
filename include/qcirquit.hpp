@@ -24,6 +24,14 @@ struct QCircuitGate {
     std::map<bitCapInt, std::unique_ptr<complex[]>> payloads;
     std::set<bitLenInt> controls;
 
+    QCircuitGate(bitLenInt q1, bitLenInt q2)
+        : target(q1)
+        , payloads()
+        , controls({ q2 })
+    {
+        // Swap gate (dummy)
+    }
+
     QCircuitGate(bitLenInt trgt, complex matrix[])
         : target(trgt)
     {
@@ -211,21 +219,7 @@ public:
 
     bitLenInt GetQubitCount() { return maxQubit; }
 
-    /*void Swap(bitLenInt q1, bitLenInt q2)
-    {
-        bitLenInt nMaxQubit = maxQubit;
-        if (q1 > nMaxQubit) {
-            nMaxQubit = q1;
-        }
-        if (q2 > nMaxQubit) {
-            nMaxQubit = q2;
-        }
-        for (; maxQubit < nMaxQubit; ++maxQubit) {
-            qubitMap[maxQubit] = maxQubit;
-        }
-
-        std::swap(qubitMap[q1], qubitMap[q2]);
-    }*/
+    void Swap(bitLenInt q1, bitLenInt q2) { AppendGate(std::make_shared<QCircuitGate>(q1, q2)); }
 
     void AppendGate(QCircuitGatePtr nGate);
     void Run(QInterfacePtr qsim);
