@@ -295,6 +295,10 @@ public:
                         controlStates[control] = false;
                     }
                 }
+                if (controlStates[t]) {
+                    qsim->X(t);
+                    controlStates[t] = false;
+                }
                 std::unique_ptr<complex[]> payload = gate->MakeUniformlyControlledPayload();
                 qsim->UniformlyControlledSingleBit(gate->GetControlsVector(), gate->target, payload.get());
 
