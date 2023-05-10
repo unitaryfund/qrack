@@ -136,5 +136,11 @@ void QCircuit::Run(QInterfacePtr qsim)
             continue;
         }
     }
+
+    for (bitLenInt i = 0U; i < controlStates.size(); ++i) {
+        if (controlStates[i]) {
+            qsim->X(i);
+        }
+    }
 }
 } // namespace Qrack
