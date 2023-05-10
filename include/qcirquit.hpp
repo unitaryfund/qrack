@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
+#include "qinterface.hpp"
 
 namespace Qrack {
 
@@ -170,6 +170,17 @@ protected:
     std::map<bitLenInt, bitLenInt> qubitMap;
     std::vector<QCircuitGatePtr> gates;
 
+    std::unique_ptr<complex[]> InvertPayload(const complex* m)
+    {
+        std::unique_ptr<complex[]> mtrx(new complex[4]);
+        mtrx[0] = m[2];
+        mtrx[1] = m[3];
+        mtrx[2] = m[0];
+        mtrx[3] = m[1];
+
+        return mtrx;
+    }
+
 public:
     QCircuit()
         : maxQubit(0)
@@ -229,6 +240,82 @@ public:
         }
 
         std::swap(qubitMap[q1], qubitMap[q2]);
+    }
+
+    void Run(QInterfacePtr qsim)
+    {
+        if (qsim->GetQubitCount() < maxQubit) {
+            qsim->Allocate(maxQubit - qsim->GetQubitCount());
+        }
+
+        std::vector<bool> controlStates(maxQubit, false);
+        for (const QCircuitGatePtr& gate : gates) {
+            const bitLenInt& t = gate->target;
+            if (!gate->controls.size()) {
+                const complex* gMtrx = gate->payloads[0].get();
+                if (controlStates[t]) {
+                    std::unique_ptr<complex[]> mtrx = InvertPayload(gMtrx);
+                    qsim->Mtrx(mtrx.get(), t);
+                } else {
+                    qsim->Mtrx(gMtrx, t);
+                }
+
+                continue;
+            }
+
+            // TODO: If payload multiplicity is high, just use "uniformly controlled" gate.
+
+            for (const auto& payload : gate->payloads) {
+                std::map<bitLenInt, bool> controlMismatch;
+                bitLenInt mismatchCount = 0U;
+                for (const auto& c : gate->controls) {
+                    controlMismatch[c] = ((bool)((payload.first >> c) & 1)) != controlStates[c];
+                    if (controlMismatch[c]) {
+                        ++mismatchCount;
+                    }
+                }
+
+                if (((size_t)(mismatchCount << 1U)) < gate->controls.size()) {
+                    for (const auto& c : controlMismatch) {
+                        if (c.second && controlStates[c.first]) {
+                            qsim->X(c.first);
+                            controlStates[c.first] = false;
+                        }
+                    }
+
+                    if (!controlStates[t]) {
+                        qsim->MACMtrx(std::vector<bitLenInt>(gate->controls.begin(), gate->controls.end()),
+                            payload.second.get(), t);
+
+                        continue;
+                    }
+
+                    std::unique_ptr<complex[]> mtrx = InvertPayload(payload.second.get());
+                    qsim->MACMtrx(std::vector<bitLenInt>(gate->controls.begin(), gate->controls.end()), mtrx.get(), t);
+
+                    continue;
+                }
+
+                for (const auto& c : controlMismatch) {
+                    if (!c.second && !controlStates[c.first]) {
+                        qsim->X(c.first);
+                        controlStates[c.first] = true;
+                    }
+                }
+
+                if (!controlStates[t]) {
+                    qsim->MCMtrx(
+                        std::vector<bitLenInt>(gate->controls.begin(), gate->controls.end()), payload.second.get(), t);
+
+                    continue;
+                }
+
+                std::unique_ptr<complex[]> mtrx = InvertPayload(payload.second.get());
+                qsim->MCMtrx(std::vector<bitLenInt>(gate->controls.begin(), gate->controls.end()), mtrx.get(), t);
+
+                continue;
+            }
+        }
     }
 };
 } // namespace Qrack
