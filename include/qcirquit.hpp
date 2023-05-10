@@ -39,6 +39,17 @@ struct QCircuitGate {
         std::copy(matrix, matrix + 4, payloads[perm].get());
     }
 
+    QCircuitGate(
+        bitLenInt trgt, const std::map<bitCapInt, std::unique_ptr<complex[]>>& pylds, const std::set<bitLenInt>& ctrls)
+        : target(trgt)
+        , controls(ctrls)
+    {
+        for (const auto& payload : pylds) {
+            const auto& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
+            std::copy(payload.second.get(), payload.second.get() + 4, p.get());
+        }
+    }
+
     bool CanCombine(QCircuitGatePtr other)
     {
         if (target != other->target) {
@@ -150,23 +161,74 @@ struct QCircuitGate {
     }
 };
 
-struct QCircuit;
+class QCircuit;
 typedef std::shared_ptr<QCircuit> QCircuitPtr;
 
-struct QCircuit {
+class QCircuit {
+protected:
+    bitLenInt maxQubit;
+    std::map<bitLenInt, bitLenInt> qubitMap;
     std::vector<QCircuitGatePtr> gates;
+
+public:
+    QCircuit()
+        : maxQubit(0)
+        , qubitMap()
+        , gates()
+    {
+        // Intentionally left blank
+    }
+
+    bitLenInt GetQubitCount() { return maxQubit; }
 
     void AppendGate(QCircuitGatePtr nGate)
     {
+        bitLenInt nMaxQubit = maxQubit;
+        if (nGate->target > nMaxQubit) {
+            nMaxQubit = nGate->target;
+        }
+        if (!(nGate->controls.empty())) {
+            const bitLenInt q = *(nGate->controls.rbegin());
+            if (q > nMaxQubit) {
+                nMaxQubit = q;
+            }
+        }
+        for (; maxQubit < nMaxQubit; ++maxQubit) {
+            qubitMap[maxQubit] = maxQubit;
+        }
+
+        const bitLenInt nTarget = qubitMap[nGate->target];
+        std::set<bitLenInt> nControls;
+        for (const auto& control : nGate->controls) {
+            nControls.insert(qubitMap[control]);
+        }
+        QCircuitGatePtr lGate = std::make_shared<QCircuitGate>(nTarget, nGate->payloads, nControls);
+
         for (QCircuitGatePtr gate : gates) {
-            if (gate->TryCombine(nGate)) {
+            if (gate->TryCombine(lGate)) {
                 return;
             }
-            if (!gate->CanPass(nGate)) {
+            if (!gate->CanPass(lGate)) {
                 break;
             }
         }
         gates.push_back(nGate);
+    }
+
+    void Swap(bitLenInt q1, bitLenInt q2)
+    {
+        bitLenInt nMaxQubit = maxQubit;
+        if (q1 > nMaxQubit) {
+            nMaxQubit = q1;
+        }
+        if (q2 > nMaxQubit) {
+            nMaxQubit = q2;
+        }
+        for (; maxQubit < nMaxQubit; ++maxQubit) {
+            qubitMap[maxQubit] = maxQubit;
+        }
+
+        std::swap(qubitMap[q1], qubitMap[q2]);
     }
 };
 } // namespace Qrack
