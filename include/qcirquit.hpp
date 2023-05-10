@@ -188,7 +188,6 @@ struct QCircuitGate {
 class QCircuit {
 protected:
     bitLenInt maxQubit;
-    std::map<bitLenInt, bitLenInt> qubitMap;
     std::vector<QCircuitGatePtr> gates;
 
     static std::unique_ptr<complex[]> InvertPayload(const complex* m)
@@ -205,7 +204,6 @@ protected:
 public:
     QCircuit()
         : maxQubit(0)
-        , qubitMap()
         , gates()
     {
         // Intentionally left blank
@@ -213,7 +211,7 @@ public:
 
     bitLenInt GetQubitCount() { return maxQubit; }
 
-    void Swap(bitLenInt q1, bitLenInt q2)
+    /*void Swap(bitLenInt q1, bitLenInt q2)
     {
         bitLenInt nMaxQubit = maxQubit;
         if (q1 > nMaxQubit) {
@@ -227,7 +225,7 @@ public:
         }
 
         std::swap(qubitMap[q1], qubitMap[q2]);
-    }
+    }*/
 
     void AppendGate(QCircuitGatePtr nGate);
     void Run(QInterfacePtr qsim);
