@@ -49,16 +49,32 @@ void QCircuit::Run(QInterfacePtr qsim)
         qsim->Allocate(maxQubit - qsim->GetQubitCount());
     }
 
+    std::vector<bool> controlStates(maxQubit, false);
     for (const QCircuitGatePtr& gate : gates) {
         const bitLenInt& t = gate->target;
 
         if (!(gate->payloads.size())) {
-            qsim->Swap(t, *(gate->controls.begin()));
+            if (controlStates[t]) {
+                qsim->X(t);
+                controlStates[t] = false;
+            }
+            const bitLenInt& c = *(gate->controls.begin());
+            if (controlStates[c]) {
+                qsim->X(c);
+                controlStates[c] = false;
+            }
+            qsim->Swap(t, c);
 
             continue;
         }
 
         if (!gate->controls.size()) {
+            if (controlStates[t]) {
+                qsim->Mtrx(InvertPayload(gate->payloads[0].get()).get(), t);
+
+                continue;
+            }
+
             qsim->Mtrx(gate->payloads[0].get(), t);
 
             continue;
@@ -66,14 +82,13 @@ void QCircuit::Run(QInterfacePtr qsim)
 
         std::vector<bitLenInt> controls = gate->GetControlsVector();
 
-        if ((gate->payloads.size() << 1U) >= (1U << controls.size())) {
-            std::unique_ptr<complex[]> payload = gate->MakeUniformlyControlledPayload();
-            qsim->UniformlyControlledSingleBit(controls, gate->target, payload.get());
+        // if ((gate->payloads.size() == (1U << controls.size())) || (gate->payloads.size() >= 16)) {
+        //     std::unique_ptr<complex[]> payload = gate->MakeUniformlyControlledPayload();
+        //     qsim->UniformlyControlledSingleBit(controls, gate->target, payload.get());
+        //
+        //     continue;
+        // }
 
-            continue;
-        }
-
-        std::vector<bool> controlStates(maxQubit, false);
         for (const auto& payload : gate->payloads) {
             std::map<bitLenInt, bool> controlMismatch;
             size_t mismatchCount = 0;
@@ -111,12 +126,11 @@ void QCircuit::Run(QInterfacePtr qsim)
 
             qsim->MACMtrx(controls, payload.second.get(), t);
         }
+    }
 
-        for (bitLenInt i = 0U; i < controlStates.size(); ++i) {
-            if (controlStates[i]) {
-                qsim->X(i);
-                controlStates[i] = false;
-            }
+    for (bitLenInt i = 0U; i < controlStates.size(); ++i) {
+        if (controlStates[i]) {
+            qsim->X(i);
         }
     }
 }
