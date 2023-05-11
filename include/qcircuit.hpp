@@ -76,6 +76,8 @@ struct QCircuitGate {
         }
     }
 
+    QCircuitGatePtr Clone() { return std::make_shared<QCircuitGate>(target, payloads, controls); }
+
     /**
      * Can I combine myself with gate `other`?
      */
@@ -324,6 +326,18 @@ public:
         , gates()
     {
         // Intentionally left blank
+    }
+
+    QCircuitPtr Clone()
+    {
+        QCircuitPtr clone = std::make_shared<QCircuit>();
+        clone->maxQubit = maxQubit;
+        clone->qubitMap = qubitMap;
+        for (size_t i = 0U; i < gates.size(); ++i) {
+            clone->gates.push_back(clone->gates[i]->Clone());
+        }
+
+        return clone;
     }
 
     /**

@@ -7,6 +7,7 @@
 // for details.
 
 #include "pinvoke_api.hpp"
+#include "qcircuit.hpp"
 #include "qneuron.hpp"
 
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
@@ -109,6 +110,42 @@
 
 #define NEURON_LOCK_GUARD_INT(nid) NEURON_LOCK_GUARD_TYPED(nid, 0U)
 
+#define CIRCUIT_LOCK_GUARD(circuit)                                                                                    \
+    std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock;                                                    \
+    if (true) {                                                                                                        \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                \
+        circuitLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                              \
+            new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()]));                                     \
+    }
+
+#define CIRCUIT_LOCK_GUARD_TYPED(cid, def)                                                                             \
+    if (cid > circuits.size()) {                                                                                       \
+        std::cout << "Invalid argument: circuit ID not found!" << std::endl;                                           \
+        metaError = 2;                                                                                                 \
+        return def;                                                                                                    \
+    }                                                                                                                  \
+                                                                                                                       \
+    QCircuitPtr circuit = circuits[cid];                                                                               \
+    CIRCUIT_LOCK_GUARD(circuit)                                                                                        \
+    if (!circuit) {                                                                                                    \
+        return def;                                                                                                    \
+    }
+
+#define CIRCUIT_LOCK_GUARD_VOID(cid)                                                                                   \
+    if (cid > circuits.size()) {                                                                                       \
+        std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
+        metaError = 2;                                                                                                 \
+        return;                                                                                                        \
+    }                                                                                                                  \
+                                                                                                                       \
+    QCircuitPtr circuit = circuits[cid];                                                                               \
+    CIRCUIT_LOCK_GUARD(circuit)                                                                                        \
+    if (!circuit) {                                                                                                    \
+        return;                                                                                                        \
+    }
+
+#define CIRCUIT_LOCK_GUARD_INT(cid) CIRCUIT_LOCK_GUARD_TYPED(cid, 0U)
+
 #define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
@@ -129,6 +166,9 @@ std::vector<QNeuronPtr> neurons;
 std::map<QNeuronPtr, QInterface*> neuronSimulators;
 std::map<QNeuron*, std::mutex> neuronMutexes;
 std::vector<bool> neuronReservations;
+std::vector<QCircuitPtr> circuits;
+std::map<QCircuit*, std::mutex> circuitMutexes;
+std::vector<bool> circuitReservations;
 bitLenInt _maxShardQubits = 0U;
 bitLenInt MaxShardQubits()
 {
@@ -2616,7 +2656,22 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
 MICROSOFT_QUANTUM_DECL uintq init_qneuron(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ uintq f, _In_ double a, _In_ double tol)
 {
-    SIMULATOR_LOCK_GUARD_INT(sid)
+    META_LOCK_GUARD()
+
+    if (sid > simulators.size()) {
+        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
+        metaError = 2;
+        return -1;
+    }
+    QInterfacePtr simulator = simulators[sid];
+    if (!simulator) {
+        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
+        metaError = 2;
+        return -1;
+    }
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
+        new const std::lock_guard<std::mutex>(simulatorMutexes[simulator.get()]));
+
     std::vector<bitLenInt> ctrlsArray(n);
     for (uintq i = 0; i < n; ++i) {
         ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2795,5 +2850,87 @@ MICROSOFT_QUANTUM_DECL void qneuron_learn_permutation(_In_ uintq nid, _In_ doubl
         neuronErrors[nid] = 1;
         std::cout << ex.what() << std::endl;
     }
+}
+
+MICROSOFT_QUANTUM_DECL uintq init_qcircuit()
+{
+    META_LOCK_GUARD()
+    uintq cid = (uintq)circuits.size();
+
+    for (uintq i = 0U; i < circuits.size(); ++i) {
+        if (circuitReservations[i] == false) {
+            cid = i;
+            circuitReservations[i] = true;
+            break;
+        }
+    }
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
+    if (cid == neurons.size()) {
+        circuitReservations.push_back(true);
+        circuits.push_back(circuit);
+    } else {
+        circuitReservations[cid] = true;
+        circuits[cid] = circuit;
+    }
+
+    return cid;
+}
+
+MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid)
+{
+    CIRCUIT_LOCK_GUARD_INT(cid)
+
+    uintq toRet = (uintq)circuits.size();
+
+    for (uintq i = 0U; i < circuits.size(); ++i) {
+        if (circuitReservations[i] == false) {
+            toRet = i;
+            circuitReservations[i] = true;
+            break;
+        }
+    }
+
+    QCircuitPtr nCircuit = circuit->Clone();
+
+    if (cid == circuits.size()) {
+        circuitReservations.push_back(true);
+        circuits.push_back(nCircuit);
+    } else {
+        circuitReservations[cid] = true;
+        circuits[cid] = nCircuit;
+    }
+
+    return toRet;
+}
+
+MICROSOFT_QUANTUM_DECL uintq get_qcircuit_qubit_count(_In_ uintq cid)
+{
+    CIRCUIT_LOCK_GUARD_INT(cid)
+    return circuit->GetQubitCount();
+}
+MICROSOFT_QUANTUM_DECL void qcircuit_swap(_In_ uintq cid, _In_ uintq q1, _In_ uintq q2)
+{
+    CIRCUIT_LOCK_GUARD_VOID(cid)
+    circuit->Swap(q1, q2);
+}
+MICROSOFT_QUANTUM_DECL void qcircuit_append_1qb(_In_ uintq cid, _In_reads_(8) double* m, _In_ uintq q)
+{
+    CIRCUIT_LOCK_GUARD_VOID(cid)
+    complex mtrx[4] = { complex(m[0], m[1]), complex(m[2], m[3]), complex(m[4], m[5]), complex(m[6], m[7]) };
+    circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx));
+}
+
+MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
+    _In_ uintq cid, _In_reads_(8) double* m, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ uintq p)
+{
+    CIRCUIT_LOCK_GUARD_VOID(cid)
+    std::set<bitLenInt> ctrls;
+    for (bitLenInt i = 0U; i < n; ++i) {
+        ctrls.insert(c[i]);
+    }
+    complex mtrx[4] = { complex(m[0], m[1]), complex(m[2], m[3]), complex(m[4], m[5]), complex(m[6], m[7]) };
+    circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx, ctrls, p));
 }
 }

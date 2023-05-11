@@ -265,4 +265,12 @@ MICROSOFT_QUANTUM_DECL double qneuron_learn_cycle(_In_ uintq nid, _In_ bool e);
 
 MICROSOFT_QUANTUM_DECL void qneuron_learn(_In_ uintq nid, _In_ double eta, _In_ bool e, _In_ bool r);
 MICROSOFT_QUANTUM_DECL void qneuron_learn_permutation(_In_ uintq nid, _In_ double eta, _In_ bool e, _In_ bool r);
+
+MICROSOFT_QUANTUM_DECL uintq init_qcircuit();
+MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid);
+MICROSOFT_QUANTUM_DECL uintq get_qcircuit_qubit_count(_In_ uintq cid);
+MICROSOFT_QUANTUM_DECL void qcircuit_swap(_In_ uintq cid, _In_ uintq q1, _In_ uintq q2);
+MICROSOFT_QUANTUM_DECL void qcircuit_append_1qb(_In_ uintq cid, _In_reads_(8) double* m, _In_ uintq q);
+MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
+    _In_ uintq cid, _In_reads_(8) double* m, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ uintq p);
 }
