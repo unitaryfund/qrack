@@ -48,7 +48,10 @@
         return;                                                                                                        \
     }                                                                                                                  \
     QInterfacePtr simulator = simulators[sid];                                                                         \
-    SIMULATOR_LOCK_GUARD(simulator.get())
+    SIMULATOR_LOCK_GUARD(simulator.get())                                                                              \
+    if (!simulator) {                                                                                                  \
+        return;                                                                                                        \
+    }
 
 #define SIMULATOR_LOCK_GUARD_TYPED(sid, def)                                                                           \
     if (sid > simulators.size()) {                                                                                     \
@@ -145,6 +148,36 @@
     }
 
 #define CIRCUIT_LOCK_GUARD_INT(cid) CIRCUIT_LOCK_GUARD_TYPED(cid, 0U)
+
+#define CIRCUIT_AND_SIMULATOR_LOCK_GUARD_VOID(cid, sid)                                                                \
+    if (sid > simulators.size()) {                                                                                     \
+        std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
+        metaError = 2;                                                                                                 \
+        return;                                                                                                        \
+    }                                                                                                                  \
+    if (cid > circuits.size()) {                                                                                       \
+        std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
+        metaError = 2;                                                                                                 \
+        return;                                                                                                        \
+    }                                                                                                                  \
+                                                                                                                       \
+    QInterfacePtr simulator = simulators[sid];                                                                         \
+    QCircuitPtr circuit = circuits[cid];                                                                               \
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
+    std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock;                                                    \
+    if (true) {                                                                                                        \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                \
+        simulatorLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                            \
+            new const std::lock_guard<std::mutex>(simulatorMutexes[simulator.get()]));                                 \
+        circuitLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                              \
+            new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()]));                                     \
+    }                                                                                                                  \
+    if (!simulator) {                                                                                                  \
+        return;                                                                                                        \
+    }                                                                                                                  \
+    if (!circuit) {                                                                                                    \
+        return;                                                                                                        \
+    }
 
 #define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
@@ -2867,7 +2900,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit()
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    if (cid == neurons.size()) {
+    if (cid == circuits.size()) {
         circuitReservations.push_back(true);
         circuits.push_back(circuit);
     } else {
@@ -2905,6 +2938,15 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid)
     return toRet;
 }
 
+MICROSOFT_QUANTUM_DECL void destroy_qcircuit(_In_ uintq cid)
+{
+    META_LOCK_GUARD()
+
+    circuitMutexes.erase(circuits[cid].get());
+    circuits[cid] = NULL;
+    circuitReservations[cid] = false;
+}
+
 MICROSOFT_QUANTUM_DECL uintq get_qcircuit_qubit_count(_In_ uintq cid)
 {
     CIRCUIT_LOCK_GUARD_INT(cid)
@@ -2932,5 +2974,11 @@ MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
     }
     complex mtrx[4] = { complex(m[0], m[1]), complex(m[2], m[3]), complex(m[4], m[5]), complex(m[6], m[7]) };
     circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx, ctrls, p));
+}
+
+MICROSOFT_QUANTUM_DECL void qcircuit_run(_In_ uintq cid, _In_ uintq sid)
+{
+    CIRCUIT_AND_SIMULATOR_LOCK_GUARD_VOID(cid, sid)
+    circuit->Run(simulator);
 }
 }
