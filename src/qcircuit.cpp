@@ -109,7 +109,7 @@ void QCircuit::Run(QInterfacePtr qsim)
             qsim->MACMtrx(controls, payload.second.get(), t);
         }
 
-        for (bitLenInt i = 0U; i < controlStates.size(); ++i) {
+        for (size_t i = 0U; i < controlStates.size(); ++i) {
             if (controlStates[i]) {
                 qsim->X(i);
             }
