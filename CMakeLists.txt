@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 8.8.4 DESCRIPTION "High Performance Quantum Bit Simulation")
+project (Qrack VERSION 8.9.0 DESCRIPTION "High Performance Quantum Bit Simulation")
 
 # Installation commands
 include (GNUInstallDirs)
@@ -30,6 +30,7 @@ add_library (qrack STATIC
     src/qpager.cpp
     src/qstabilizer.cpp
     src/qstabilizerhybrid.cpp
+    src/qcircuit.cpp
     )
 
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
@@ -264,6 +265,7 @@ install (FILES
     include/hamiltonian.hpp
     include/statevector.hpp
     include/pinvoke_api.hpp
+    include/qcircuit.hpp
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp
