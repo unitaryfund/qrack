@@ -18,6 +18,9 @@
 
 namespace Qrack {
 
+/**
+ * Single gate in `QCircuit` definition
+ */
 struct QCircuitGate;
 typedef std::shared_ptr<QCircuitGate> QCircuitGatePtr;
 
@@ -26,6 +29,9 @@ struct QCircuitGate {
     std::map<bitCapInt, std::unique_ptr<complex[]>> payloads;
     std::set<bitLenInt> controls;
 
+    /**
+     * `Swap` gate constructor
+     */
     QCircuitGate(bitLenInt q1, bitLenInt q2)
         : target(q1)
         , payloads()
@@ -35,6 +41,9 @@ struct QCircuitGate {
         // Swap gate constructor.
     }
 
+    /**
+     * Single-qubit gate constructor
+     */
     QCircuitGate(bitLenInt trgt, complex matrix[])
         : target(trgt)
     {
@@ -42,6 +51,9 @@ struct QCircuitGate {
         std::copy(matrix, matrix + 4, payloads[0].get());
     }
 
+    /**
+     * Controlled gate constructor
+     */
     QCircuitGate(bitLenInt trgt, complex matrix[], const std::set<bitLenInt>& ctrls, bitCapInt perm)
         : target(trgt)
         , controls(ctrls)
@@ -50,6 +62,9 @@ struct QCircuitGate {
         std::copy(matrix, matrix + 4, payloads[perm].get());
     }
 
+    /**
+     * Uniformly controlled gate constructor (that only accepts control qubits is ascending order)
+     */
     QCircuitGate(
         bitLenInt trgt, const std::map<bitCapInt, std::unique_ptr<complex[]>>& pylds, const std::set<bitLenInt>& ctrls)
         : target(trgt)
@@ -61,6 +76,9 @@ struct QCircuitGate {
         }
     }
 
+    /**
+     * Can I combine myself with gate `other`?
+     */
     bool CanCombine(QCircuitGatePtr other)
     {
         if (!payloads.size()) {
@@ -92,6 +110,9 @@ struct QCircuitGate {
         return true;
     }
 
+    /**
+     * Combine myself with gate `other`
+     */
     void Combine(QCircuitGatePtr other)
     {
         if (!payloads.size()) {
@@ -138,6 +159,9 @@ struct QCircuitGate {
         }
     }
 
+    /**
+     * Check if I can combine with gate `other`, and do so, if possible
+     */
     bool TryCombine(QCircuitGatePtr other)
     {
         if (!CanCombine(other)) {
@@ -148,6 +172,9 @@ struct QCircuitGate {
         return true;
     }
 
+    /**
+     * Expand uniformly controlled gate to set of (conventionally) controlled gates
+     */
     std::vector<QCircuitGatePtr> Expand()
     {
         std::vector<QCircuitGatePtr> toRet;
@@ -159,6 +186,9 @@ struct QCircuitGate {
         return toRet;
     }
 
+    /**
+     * Am I an identity gate?
+     */
     bool IsIdentity()
     {
         if (controls.size()) {
@@ -178,6 +208,9 @@ struct QCircuitGate {
         return false;
     }
 
+    /**
+     * Am I a phase gate?
+     */
     bool IsPhase()
     {
         if (!payloads.size()) {
@@ -193,6 +226,9 @@ struct QCircuitGate {
         return true;
     }
 
+    /**
+     * Am I Pauli X plus a phase gate?
+     */
     bool IsInvert()
     {
         if (!payloads.size()) {
@@ -208,6 +244,9 @@ struct QCircuitGate {
         return true;
     }
 
+    /**
+     * Do I commute with gate `other`?
+     */
     bool CanPass(QCircuitGatePtr other)
     {
         if ((controls.find(other->target) == controls.end()) &&
@@ -218,6 +257,9 @@ struct QCircuitGate {
         return false;
     }
 
+    /**
+     * To run as a uniformly controlled gate, generate my payload array.
+     */
     std::unique_ptr<complex[]> MakeUniformlyControlledPayload()
     {
         const bitCapIntOcl maxQPower = (1U << controls.size());
@@ -240,9 +282,15 @@ struct QCircuitGate {
         return toRet;
     }
 
+    /**
+     * Convert my set of qubit indices to a vector
+     */
     std::vector<bitLenInt> GetControlsVector() { return std::vector<bitLenInt>(controls.begin(), controls.end()); }
 };
 
+/**
+ * Define and optimize a circuit, before running on a `QInterface`.
+ */
 class QCircuit;
 typedef std::shared_ptr<QCircuit> QCircuitPtr;
 
@@ -252,6 +300,9 @@ protected:
     std::map<bitLenInt, bitLenInt> qubitMap;
     std::vector<QCircuitGatePtr> gates;
 
+    /**
+     * Reverse truth values of 2x2 complex matrix
+     */
     std::unique_ptr<complex[]> InvertPayload(const complex* m)
     {
         std::unique_ptr<complex[]> mtrx(new complex[4]);
@@ -264,6 +315,9 @@ protected:
     }
 
 public:
+    /**
+     * Default constructor
+     */
     QCircuit()
         : maxQubit(0)
         , qubitMap()
@@ -272,11 +326,23 @@ public:
         // Intentionally left blank
     }
 
+    /**
+     * Get the (automatically calculated) count of qubits in this circuit, so far.
+     */
     bitLenInt GetQubitCount() { return maxQubit; }
 
+    /**
+     * Add a `Swap` gate to the gate sequence.
+     */
     void Swap(bitLenInt q1, bitLenInt q2) { AppendGate(std::make_shared<QCircuitGate>(q1, q2)); }
 
+    /**
+     * Add a gate to the gate sequence.
+     */
     void AppendGate(QCircuitGatePtr nGate);
+    /**
+     * Run this circuit.
+     */
     void Run(QInterfacePtr qsim);
 };
 } // namespace Qrack
