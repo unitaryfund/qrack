@@ -35,9 +35,9 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
     for (size_t i = 0U; i < gates.size(); ++i) {
         QCircuitGatePtr gate = gates[i];
         if (gate->TryCombine(nGate)) {
-            if (!(gate->payloads.size()) && !(gate->controls.size())) {
-                gates.erase(gates.begin() + i);
-            }
+            // if (gate->IsIdentity()) {
+            //     gates.erase(gates.begin() + i);
+            // }
             return;
         }
         if (!gate->CanPass(nGate)) {

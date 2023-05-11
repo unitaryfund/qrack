@@ -14,6 +14,8 @@
 
 #include "qinterface.hpp"
 
+#define amp_leq_0(x) (norm(x) <= FP_NORM_EPSILON)
+
 namespace Qrack {
 
 struct QCircuitGate;
@@ -85,17 +87,36 @@ struct QCircuitGate {
     void Combine(QCircuitGatePtr other)
     {
         for (const auto& payload : other->payloads) {
-            if (payloads.find(payload.first) == payloads.end()) {
+            const auto& pit = payloads.find(payload.first);
+            if (pit == payloads.end()) {
                 const auto& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
                 std::copy(payload.second.get(), payload.second.get() + 4U, p.get());
 
                 continue;
             }
 
-            const auto& p = payloads[payload.first];
+            complex* p = pit->second.get();
             complex out[4];
-            mul2x2(payload.second.get(), p.get(), out);
-            std::copy(out, out + 4U, p.get());
+            mul2x2(payload.second.get(), p, out);
+
+            if (amp_leq_0(out[1]) && amp_leq_0(out[2]) && amp_leq_0(ONE_CMPLX - out[0]) &&
+                amp_leq_0(ONE_CMPLX - out[3])) {
+                payloads.erase(pit);
+
+                continue;
+            }
+
+            std::copy(out, out + 4U, p);
+        }
+
+        if (!payloads.size()) {
+            controls.clear();
+            orderedControls.clear();
+            const auto& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
+            p[0] = ONE_CMPLX;
+            p[1] = ZERO_CMPLX;
+            p[2] = ZERO_CMPLX;
+            p[3] = ONE_CMPLX;
         }
     }
 
@@ -118,6 +139,25 @@ struct QCircuitGate {
         }
 
         return toRet;
+    }
+
+    bool IsIdentity()
+    {
+        if (controls.size()) {
+            return false;
+        }
+
+        if (payloads.size() != 1U) {
+            return false;
+        }
+
+        complex* p = payloads.begin()->second.get();
+
+        if (amp_leq_0(p[1]) && amp_leq_0(p[2]) && amp_leq_0(ONE_CMPLX - p[0]) && amp_leq_0(ONE_CMPLX - p[3])) {
+            return true;
+        }
+
+        return false;
     }
 
     bool IsPhase()
