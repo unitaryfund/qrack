@@ -30,12 +30,6 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         }
     }
 
-    if (!(nGate->payloads.size())) {
-        gates.push_back(nGate);
-
-        return;
-    }
-
     for (size_t i = 0U; i < gates.size(); ++i) {
         QCircuitGatePtr gate = gates[gates.size() - (i + 1U)];
         if (gate->TryCombine(nGate)) {

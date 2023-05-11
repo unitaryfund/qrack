@@ -67,6 +67,18 @@ struct QCircuitGate {
 
     bool CanCombine(QCircuitGatePtr other)
     {
+        if (!payloads.size()) {
+            if (other->payloads.size()) {
+                return false;
+            }
+            if (((target == other->target) || (target == other->controls[0])) &&
+                ((other->target == target) || (other->target == controls[0]))) {
+                return true;
+            }
+
+            return false;
+        }
+
         if (target != other->target) {
             return false;
         }
@@ -86,6 +98,18 @@ struct QCircuitGate {
 
     void Combine(QCircuitGatePtr other)
     {
+        if (!payloads.size()) {
+            controls.clear();
+            orderedControls.clear();
+            const auto& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
+            p[0] = ONE_CMPLX;
+            p[1] = ZERO_CMPLX;
+            p[2] = ZERO_CMPLX;
+            p[3] = ONE_CMPLX;
+
+            return;
+        }
+
         for (const auto& payload : other->payloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
@@ -162,6 +186,10 @@ struct QCircuitGate {
 
     bool IsPhase()
     {
+        if (!payloads.size()) {
+            return false;
+        }
+
         for (const auto& payload : payloads) {
             if ((norm(payload.second[1]) > FP_NORM_EPSILON) || (norm(payload.second[2]) > FP_NORM_EPSILON)) {
                 return false;
@@ -173,6 +201,10 @@ struct QCircuitGate {
 
     bool IsInvert()
     {
+        if (!payloads.size()) {
+            return false;
+        }
+
         for (const auto& payload : payloads) {
             if ((norm(payload.second[0]) > FP_NORM_EPSILON) || (norm(payload.second[3]) > FP_NORM_EPSILON)) {
                 return false;
