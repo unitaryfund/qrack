@@ -120,24 +120,6 @@ struct QCircuitGate {
         return toRet;
     }
 
-    bool HasCommonControl(QCircuitGatePtr other)
-    {
-        std::set<bitLenInt>::iterator first1 = orderedControls.begin();
-        std::set<bitLenInt>::iterator last1 = orderedControls.end();
-        std::set<bitLenInt>::iterator first2 = other->orderedControls.begin();
-        std::set<bitLenInt>::iterator last2 = other->orderedControls.begin();
-        while (first1 != last1 && first2 != last2) {
-            if (*first1 < *first2) {
-                ++first1;
-            } else if (*first2 < *first1) {
-                ++first2;
-            } else {
-                return true;
-            }
-        }
-        return false;
-    }
-
     bool IsPhase()
     {
         for (const auto& payload : payloads) {
@@ -162,17 +144,12 @@ struct QCircuitGate {
 
     bool CanPass(QCircuitGatePtr other)
     {
-        if (HasCommonControl(other) &&
-            !(std::includes(orderedControls.begin(), orderedControls.end(), other->orderedControls.begin(),
-                other->orderedControls.end()))) {
-            return false;
+        if ((orderedControls.find(other->target) == orderedControls.end()) &&
+            (other->orderedControls.find(target) == other->orderedControls.end())) {
+            return (target != other->target) || (IsPhase() && other->IsPhase());
         }
 
-        if (target != other->target) {
-            return true;
-        }
-
-        return IsPhase() && other->IsPhase();
+        return false;
     }
 
     std::unique_ptr<complex[]> MakeUniformlyControlledPayload()
