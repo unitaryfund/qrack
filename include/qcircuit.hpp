@@ -24,8 +24,7 @@ typedef std::shared_ptr<QCircuitGate> QCircuitGatePtr;
 struct QCircuitGate {
     bitLenInt target;
     std::map<bitCapInt, std::unique_ptr<complex[]>> payloads;
-    std::vector<bitLenInt> controls;
-    std::set<bitLenInt> orderedControls;
+    std::set<bitLenInt> controls;
 
     QCircuitGate(bitLenInt q1, bitLenInt q2)
         : target(q1)
@@ -33,8 +32,7 @@ struct QCircuitGate {
         , controls({ q2 })
 
     {
-        orderedControls.insert(q1);
-        orderedControls.insert(q2);
+        // Swap gate constructor.
     }
 
     QCircuitGate(bitLenInt trgt, complex matrix[])
@@ -44,20 +42,18 @@ struct QCircuitGate {
         std::copy(matrix, matrix + 4, payloads[0].get());
     }
 
-    QCircuitGate(bitLenInt trgt, complex matrix[], const std::vector<bitLenInt>& ctrls, bitCapInt perm)
+    QCircuitGate(bitLenInt trgt, complex matrix[], const std::set<bitLenInt>& ctrls, bitCapInt perm)
         : target(trgt)
         , controls(ctrls)
-        , orderedControls(ctrls.begin(), ctrls.end())
     {
         payloads[perm] = std::unique_ptr<complex[]>(new complex[4]);
         std::copy(matrix, matrix + 4, payloads[perm].get());
     }
 
-    QCircuitGate(bitLenInt trgt, const std::map<bitCapInt, std::unique_ptr<complex[]>>& pylds,
-        const std::vector<bitLenInt>& ctrls)
+    QCircuitGate(
+        bitLenInt trgt, const std::map<bitCapInt, std::unique_ptr<complex[]>>& pylds, const std::set<bitLenInt>& ctrls)
         : target(trgt)
         , controls(ctrls)
-        , orderedControls(ctrls.begin(), ctrls.end())
     {
         for (const auto& payload : pylds) {
             const auto& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
@@ -71,8 +67,8 @@ struct QCircuitGate {
             if (other->payloads.size()) {
                 return false;
             }
-            if (((target == other->target) || (target == other->controls[0])) &&
-                ((other->target == target) || (other->target == controls[0]))) {
+            if (((target == other->target) || (target == *(other->controls.begin()))) &&
+                ((other->target == target) || (other->target == *(controls.begin())))) {
                 return true;
             }
 
@@ -83,12 +79,12 @@ struct QCircuitGate {
             return false;
         }
 
-        if (orderedControls.size() != other->orderedControls.size()) {
+        if (controls.size() != other->controls.size()) {
             return false;
         }
 
-        for (const bitLenInt& control : other->orderedControls) {
-            if (orderedControls.find(control) == orderedControls.end()) {
+        for (const bitLenInt& control : other->controls) {
+            if (controls.find(control) == controls.end()) {
                 return false;
             }
         }
@@ -100,7 +96,6 @@ struct QCircuitGate {
     {
         if (!payloads.size()) {
             controls.clear();
-            orderedControls.clear();
             const auto& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
             p[0] = ONE_CMPLX;
             p[1] = ZERO_CMPLX;
@@ -135,7 +130,6 @@ struct QCircuitGate {
 
         if (!payloads.size()) {
             controls.clear();
-            orderedControls.clear();
             const auto& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
             p[0] = ONE_CMPLX;
             p[1] = ZERO_CMPLX;
@@ -216,8 +210,8 @@ struct QCircuitGate {
 
     bool CanPass(QCircuitGatePtr other)
     {
-        if ((orderedControls.find(other->target) == orderedControls.end()) &&
-            (other->orderedControls.find(target) == other->orderedControls.end())) {
+        if ((controls.find(other->target) == controls.end()) &&
+            (other->controls.find(target) == other->controls.end())) {
             return (target != other->target) || (IsPhase() && other->IsPhase());
         }
 
@@ -246,7 +240,7 @@ struct QCircuitGate {
         return toRet;
     }
 
-    std::vector<bitLenInt> GetControlsVector() { return controls; }
+    std::vector<bitLenInt> GetControlsVector() { return std::vector<bitLenInt>(controls.begin(), controls.end()); }
 };
 
 class QCircuit;
