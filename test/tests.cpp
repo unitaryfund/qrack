@@ -7135,8 +7135,8 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
             std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
             for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
                 MultiQubitGate multiGate = layerMultiQbRands[i];
-                const std::set<bitLenInt> control{ multiGate.b1 };
-                const std::set<bitLenInt> controls{ multiGate.b1, multiGate.b2 };
+                const std::vector<bitLenInt> control{ multiGate.b1 };
+                const std::vector<bitLenInt> controls{ multiGate.b1, multiGate.b2 };
                 if (multiGate.gate == 0) {
                     // testCase->Swap(multiGate.b1, multiGate.b2);
                     circuit->Swap(multiGate.b1, multiGate.b2);
@@ -7197,8 +7197,8 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
             std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
             for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
                 MultiQubitGate multiGate = layerMultiQbRands[i];
-                const std::set<bitLenInt> control{ multiGate.b1 };
-                const std::set<bitLenInt> controls{ multiGate.b1, multiGate.b2 };
+                const std::vector<bitLenInt> control{ multiGate.b1 };
+                const std::vector<bitLenInt> controls{ multiGate.b1, multiGate.b2 };
                 if (multiGate.gate == 0) {
                     // testCase->Swap(multiGate.b1, multiGate.b2);
                     circuit->Swap(multiGate.b1, multiGate.b2);

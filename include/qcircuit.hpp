@@ -22,7 +22,8 @@ typedef std::shared_ptr<QCircuitGate> QCircuitGatePtr;
 struct QCircuitGate {
     bitLenInt target;
     std::map<bitCapInt, std::unique_ptr<complex[]>> payloads;
-    std::set<bitLenInt> controls;
+    std::vector<bitLenInt> controls;
+    std::set<bitLenInt> orderedControls;
 
     QCircuitGate(bitLenInt trgt, complex matrix[])
         : target(trgt)
@@ -31,18 +32,20 @@ struct QCircuitGate {
         std::copy(matrix, matrix + 4, payloads[0].get());
     }
 
-    QCircuitGate(bitLenInt trgt, complex matrix[], const std::set<bitLenInt>& ctrls, bitCapInt perm)
+    QCircuitGate(bitLenInt trgt, complex matrix[], const std::vector<bitLenInt>& ctrls, bitCapInt perm)
         : target(trgt)
         , controls(ctrls)
+        , orderedControls(ctrls.begin(), ctrls.end())
     {
         payloads[perm] = std::unique_ptr<complex[]>(new complex[4]);
         std::copy(matrix, matrix + 4, payloads[perm].get());
     }
 
-    QCircuitGate(
-        bitLenInt trgt, const std::map<bitCapInt, std::unique_ptr<complex[]>>& pylds, const std::set<bitLenInt>& ctrls)
+    QCircuitGate(bitLenInt trgt, const std::map<bitCapInt, std::unique_ptr<complex[]>>& pylds,
+        const std::vector<bitLenInt>& ctrls)
         : target(trgt)
         , controls(ctrls)
+        , orderedControls(ctrls.begin(), ctrls.end())
     {
         for (const auto& payload : pylds) {
             const auto& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
@@ -56,12 +59,12 @@ struct QCircuitGate {
             return false;
         }
 
-        if (controls.size() != other->controls.size()) {
+        if (orderedControls.size() != other->orderedControls.size()) {
             return false;
         }
 
-        for (const bitLenInt& control : other->controls) {
-            if (controls.find(control) == controls.end()) {
+        for (const bitLenInt& control : other->orderedControls) {
+            if (orderedControls.find(control) == orderedControls.end()) {
                 return false;
             }
         }
@@ -109,10 +112,10 @@ struct QCircuitGate {
 
     bool HasCommonControl(QCircuitGatePtr other)
     {
-        std::set<bitLenInt>::iterator first1 = controls.begin();
-        std::set<bitLenInt>::iterator last1 = controls.end();
-        std::set<bitLenInt>::iterator first2 = other->controls.begin();
-        std::set<bitLenInt>::iterator last2 = other->controls.begin();
+        std::set<bitLenInt>::iterator first1 = orderedControls.begin();
+        std::set<bitLenInt>::iterator last1 = orderedControls.end();
+        std::set<bitLenInt>::iterator first2 = other->orderedControls.begin();
+        std::set<bitLenInt>::iterator last2 = other->orderedControls.begin();
         while (first1 != last1 && first2 != last2) {
             if (*first1 < *first2) {
                 ++first1;
@@ -182,7 +185,7 @@ struct QCircuitGate {
         return toRet;
     }
 
-    std::vector<bitLenInt> GetControlsVector() { return std::vector<bitLenInt>(controls.begin(), controls.end()); }
+    std::vector<bitLenInt> GetControlsVector() { return controls; }
 };
 
 class QCircuit;
