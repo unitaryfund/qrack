@@ -162,7 +162,9 @@ struct QCircuitGate {
 
     bool CanPass(QCircuitGatePtr other)
     {
-        if (HasCommonControl(other)) {
+        if (HasCommonControl(other) &&
+            !(std::includes(orderedControls.begin(), orderedControls.end(), other->orderedControls.begin(),
+                other->orderedControls.end()))) {
             return false;
         }
 
