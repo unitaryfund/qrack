@@ -57,21 +57,6 @@ void QCircuit::Run(QInterfacePtr qsim)
     for (const QCircuitGatePtr& gate : gates) {
         const bitLenInt& t = gate->target;
 
-        if (!(gate->payloads.size())) {
-            if (controlStates[t]) {
-                qsim->X(t);
-                controlStates[t] = false;
-            }
-            const bitLenInt& c = *(gate->controls.begin());
-            if (controlStates[c]) {
-                qsim->X(c);
-                controlStates[c] = false;
-            }
-            qsim->Swap(t, c);
-
-            continue;
-        }
-
         if (!gate->controls.size()) {
             if (controlStates[t]) {
                 qsim->Mtrx(InvertPayload(gate->payloads[0].get()).get(), t);
