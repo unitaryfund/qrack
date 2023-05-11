@@ -63,7 +63,7 @@ void QCircuit::Run(QInterfacePtr qsim)
 
         std::vector<bitLenInt> controls = gate->GetControlsVector();
 
-        if ((gate->payloads.size() == (1U << controls.size())) || (gate->payloads.size() >= 16)) {
+        if ((gate->payloads.size() == (1U << controls.size())) || (gate->payloads.size() >= 8)) {
             std::unique_ptr<complex[]> payload = gate->MakeUniformlyControlledPayload();
             qsim->UniformlyControlledSingleBit(controls, gate->target, payload.get());
 
