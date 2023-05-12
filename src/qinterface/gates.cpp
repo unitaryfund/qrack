@@ -21,8 +21,8 @@ namespace Qrack {
 void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
     complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
-    for (size_t bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
-        X(controls[bit_pos]);
+    for (const bitLenInt& control : controls) {
+        X(control);
     }
     const bitCapInt maxI = pow2(controls.size()) - ONE_BCI;
     for (bitCapInt lcv = 0U; lcv < maxI; ++lcv) {
@@ -217,8 +217,8 @@ void QInterface::CSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bit
 void QInterface::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (size_t i = 0U; i < controls.size(); ++i) {
-        m |= pow2(controls[i]);
+    for (const bitLenInt& control : controls) {
+        m |= pow2(control);
     }
 
     XMask(m);
@@ -323,8 +323,8 @@ void QInterface::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1
 void QInterface::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (size_t i = 0U; i < controls.size(); ++i) {
-        m |= pow2(controls[i]);
+    for (const bitLenInt& control : controls) {
+        m |= pow2(control);
     }
 
     XMask(m);
@@ -335,8 +335,8 @@ void QInterface::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt
 void QInterface::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     bitCapInt m = 0U;
-    for (size_t i = 0U; i < controls.size(); ++i) {
-        m |= pow2(controls[i]);
+    for (const bitLenInt& control : controls) {
+        m |= pow2(control);
     }
 
     XMask(m);
@@ -381,8 +381,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
     // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(-i * H *
     // t) as e^(-i * H_(N - 1) * t) * e^(-i * H_(N - 2) * t) * ... e^(-i * H_0 * t)
 
-    for (size_t i = 0U; i < h.size(); ++i) {
-        HamiltonianOpPtr op = h[i];
+    for (const HamiltonianOpPtr& op : h) {
         complex* opMtrx = op->matrix.get();
 
         bitCapIntOcl maxJ = 4U;

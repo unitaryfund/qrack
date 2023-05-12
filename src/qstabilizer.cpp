@@ -60,8 +60,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
 
 bool QStabilizer::TrimControls(const std::vector<bitLenInt>& lControls, bool isAnti, std::vector<bitLenInt>& output)
 {
-    for (size_t i = 0U; i < lControls.size(); ++i) {
-        const bitLenInt bit = lControls[i];
+    for (const bitLenInt& bit : lControls) {
         if (!IsSeparableZ(bit)) {
             output.push_back(bit);
             continue;

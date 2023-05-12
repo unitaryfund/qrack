@@ -129,8 +129,8 @@ void QInterface::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const 
         return;
     }
 
-    for (size_t i = 0U; i < controls.size(); ++i) {
-        X(controls[0]);
+    for (const bitLenInt& control : controls) {
+        X(control);
     }
 
     const bitLenInt lengthMin1 = length - 1U;
@@ -151,8 +151,8 @@ void QInterface::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const 
         }
     }
 
-    for (size_t i = 0U; i < controls.size(); ++i) {
-        X(controls[0]);
+    for (const bitLenInt& control : controls) {
+        X(control);
     }
 }
 
