@@ -791,8 +791,6 @@ MICROSOFT_QUANTUM_DECL uintq init_clone(_In_ uintq sid)
 {
     META_LOCK_GUARD()
 
-    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
-        new const std::lock_guard<std::mutex>(simulatorMutexes[simulators[sid].get()]));
     uintq nsid = (uintq)simulators.size();
 
     for (uintq i = 0U; i < simulators.size(); ++i) {
@@ -2747,12 +2745,9 @@ MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
         return 0U;
     }
     QNeuronPtr neuron = neurons[nid];
-    QInterface* simulator = neuronSimulators[neuron];
 
     std::unique_ptr<const std::lock_guard<std::mutex>> neuronLock(
         new const std::lock_guard<std::mutex>(neuronMutexes[neuron.get()]));
-    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
-        new const std::lock_guard<std::mutex>(simulatorMutexes[simulator]));
 
     uintq nnid = (uintq)neurons.size();
 
@@ -2926,7 +2921,17 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit()
 
 MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid)
 {
-    CIRCUIT_LOCK_GUARD_INT(cid)
+    META_LOCK_GUARD()
+
+    if (cid > circuits.size()) {
+        std::cout << "Invalid argument: circuit ID not found!" << std::endl;
+        metaError = 2;
+        return 0U;
+    }
+    QCircuitPtr circuit = circuits[cid];
+
+    std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock(
+        new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()]));
 
     uintq toRet = (uintq)circuits.size();
 
