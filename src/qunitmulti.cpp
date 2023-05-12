@@ -115,7 +115,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
     const size_t devCount = devList.size() ? devList.size() : deviceContext.size();
     for (size_t i = 0; i < devCount; ++i) {
-        if (devList[i] > ((int64_t)deviceContext.size())) {
+        if (devList.size() && (devList[i] >= 0) && (devList[i] > ((int64_t)deviceContext.size()))) {
             throw std::runtime_error("QUnitMulti: Requested device doesn't exist.");
         }
         DeviceInfo deviceInfo;
