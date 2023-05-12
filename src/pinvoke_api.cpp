@@ -2737,7 +2737,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
 
 MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
 {
-    NEURON_LOCK_GUARD_INT(nid)
+    META_LOCK_GUARD()
 
     uintq toRet = (uintq)neurons.size();
 
