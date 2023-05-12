@@ -2702,8 +2702,6 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
         metaError = 2;
         return -1;
     }
-    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
-        new const std::lock_guard<std::mutex>(simulatorMutexes[simulator.get()]));
 
     std::vector<bitLenInt> ctrlsArray(n);
     for (uintq i = 0; i < n; ++i) {
