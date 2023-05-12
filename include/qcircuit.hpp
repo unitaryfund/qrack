@@ -44,7 +44,7 @@ struct QCircuitGate {
     /**
      * Single-qubit gate constructor
      */
-    QCircuitGate(bitLenInt trgt, complex matrix[])
+    QCircuitGate(bitLenInt trgt, const complex matrix[])
         : target(trgt)
     {
         payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
@@ -54,7 +54,7 @@ struct QCircuitGate {
     /**
      * Controlled gate constructor
      */
-    QCircuitGate(bitLenInt trgt, complex matrix[], const std::set<bitLenInt>& ctrls, bitCapInt perm)
+    QCircuitGate(bitLenInt trgt, const complex matrix[], const std::set<bitLenInt>& ctrls, bitCapInt perm)
         : target(trgt)
         , controls(ctrls)
     {
