@@ -115,6 +115,9 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
     const size_t devCount = devList.size() ? devList.size() : deviceContext.size();
     for (size_t i = 0; i < devCount; ++i) {
+        if (devList[i] > ((int64_t)deviceContext.size())) {
+            throw std::runtime_error("QUnitMulti: Requested device doesn't exist.");
+        }
         DeviceInfo deviceInfo;
         deviceInfo.id =
             devList.size() ? ((devList[0U] < 0) ? QRACK_GPU_SINGLETON.GetDefaultDeviceID() : (size_t)devList[i]) : i;
