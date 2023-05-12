@@ -791,6 +791,8 @@ MICROSOFT_QUANTUM_DECL uintq init_clone(_In_ uintq sid)
 {
     META_LOCK_GUARD()
 
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
+        new const std::lock_guard<std::mutex>(simulatorMutexes[simulators[sid].get()]));
     uintq nsid = (uintq)simulators.size();
 
     for (uintq i = 0U; i < simulators.size(); ++i) {
@@ -2737,13 +2739,26 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
 
 MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
 {
-    NEURON_LOCK_GUARD_INT(nid)
+    META_LOCK_GUARD()
 
-    uintq toRet = (uintq)neurons.size();
+    if (nid > neurons.size()) {
+        std::cout << "Invalid argument: neuron ID not found!" << std::endl;
+        metaError = 2;
+        return 0U;
+    }
+    QNeuronPtr neuron = neurons[nid];
+    QInterface* simulator = neuronSimulators[neuron];
+
+    std::unique_ptr<const std::lock_guard<std::mutex>> neuronLock(
+        new const std::lock_guard<std::mutex>(neuronMutexes[neuron.get()]));
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
+        new const std::lock_guard<std::mutex>(simulatorMutexes[simulator]));
+
+    uintq nnid = (uintq)neurons.size();
 
     for (uintq i = 0U; i < neurons.size(); ++i) {
         if (neuronReservations[i] == false) {
-            toRet = i;
+            nnid = i;
             neuronReservations[i] = true;
             break;
         }
@@ -2752,17 +2767,17 @@ MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
     QNeuronPtr nNeuron = std::make_shared<QNeuron>(*neuron);
     neuronSimulators[nNeuron] = neuronSimulators[neuron];
 
-    if (nid == neurons.size()) {
+    if (nnid == neurons.size()) {
         neuronReservations.push_back(true);
         neurons.push_back(nNeuron);
         neuronErrors.push_back(0);
     } else {
-        neuronReservations[nid] = true;
-        neurons[nid] = nNeuron;
-        neuronErrors[nid] = 0;
+        neuronReservations[nnid] = true;
+        neurons[nnid] = nNeuron;
+        neuronErrors[nnid] = 0;
     }
 
-    return toRet;
+    return nnid;
 }
 
 MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid)
