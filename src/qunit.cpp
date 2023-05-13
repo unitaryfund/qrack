@@ -2021,6 +2021,24 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
     unit->UniformlyControlledSingleBit(mappedControls, shards[qubitIndex].mapped, mtrxs, skipPowers, skipValueMask);
 
     shards[qubitIndex].MakeDirty();
+
+    if (!isReactiveSeparate || freezeBasis2Qb) {
+        return;
+    }
+
+    // Skip 2-qubit-at-once check for 2 total qubits.
+    if (bits.size() == 2U) {
+        TrySeparate(bits[0U]);
+        TrySeparate(bits[1U]);
+        return;
+    }
+
+    // Otherwise, we can try all 2-qubit combinations.
+    for (size_t i = 0U; i < (bits.size() - 1U); ++i) {
+        for (size_t j = i + 1U; j < bits.size(); ++j) {
+            TrySeparate(bits[i], bits[j]);
+        }
+    }
 }
 
 void QUnit::H(bitLenInt target)
