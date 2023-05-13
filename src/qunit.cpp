@@ -2830,9 +2830,9 @@ void QUnit::ApplyEitherControlled(
     }
 
     // Otherwise, we can try all 2-qubit combinations.
-    for (size_t i = 0U; i < (allBits.size() - 1U); ++i) {
-        for (size_t j = i + 1U; j < allBits.size(); ++j) {
-            TrySeparate(allBits[i], allBits[j]);
+    for (const bitLenInt& q1 : allBits) {
+        for (const bitLenInt& q2 : allBits) {
+            TrySeparate(q1, q2);
         }
     }
 }
