@@ -4659,25 +4659,33 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
         engineStack.push_back(testSubSubEngineType);
     }
 
+    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
-    std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
-    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
-
     for (d = 0; d < n; d++) {
-        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
         for (i = 0; i < w; i++) {
-            SingleQubitGate gate1qb;
-            gate1qb.th = 4 * PI_R1 * rng->Rand();
-            gate1qb.ph = 4 * PI_R1 * rng->Rand();
-            gate1qb.lm = 4 * PI_R1 * rng->Rand();
-            layer1QbRands.push_back(gate1qb);
+            const real1_f theta = 4 * PI_R1 * rng->Rand();
+            const real1_f phi = 4 * PI_R1 * rng->Rand();
+            const real1_f lambda = 4 * PI_R1 * rng->Rand();
+            const real1 cos0 = (real1)cos(theta / 2);
+            const real1 sin0 = (real1)sin(theta / 2);
+            const complex uGate[4]{ complex(cos0, ZERO_R1),
+                sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+                sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+                cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+            circuit->AppendGate(std::make_shared<QCircuitGate>(i, uGate));
         }
 
         int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
-        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
                 // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
@@ -4745,11 +4753,6 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                     }
                 }
 
-                MultiQubitGate multiGate;
-                multiGate.b1 = b1;
-                multiGate.b2 = b2;
-                multiGate.b3 = b3;
-
                 if (is3Qubit) {
                     gate = (int)(rng->Rand() * (GateCountMultiQb - GateCount2Qb)) + GateCount2Qb;
                     if (gate >= GateCountMultiQb) {
@@ -4762,9 +4765,42 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                     }
                 }
 
-                multiGate.gate = gate;
-
-                layerMultiQbRands.push_back(multiGate);
+                const std::set<bitLenInt> control{ (bitLenInt)b1 };
+                const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
+                if (gate == 0) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
+                } else if (gate == 1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 2) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                } else if (gate == 3) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                } else if (gate == 4) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 5) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                } else if (gate == 6) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                } else if (gate == 7) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                } else if (gate == 8) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
+                } else if (gate == 9) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
+                } else if (gate == 10) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
+                } else if (gate == 11) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                } else if (gate == 12) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                } else {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                }
             }
         }
 
@@ -4792,76 +4828,8 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
-
-    for (d = 0; d < n; d++) {
-        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-        for (i = 0; i < (int)layer1QbRands.size(); i++) {
-            SingleQubitGate gate1Qb = layer1QbRands[i];
-            goldStandard->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-            // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
-            //           << ");" << std::endl;
-        }
-
-        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-        for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-            MultiQubitGate multiGate = layerMultiQbRands[i];
-            if (multiGate.gate == 0) {
-                goldStandard->ISwap(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 1) {
-                goldStandard->IISwap(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 2) {
-                goldStandard->CNOT(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 3) {
-                goldStandard->CY(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-            } else if (multiGate.gate == 4) {
-                goldStandard->CZ(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-            } else if (multiGate.gate == 5) {
-                goldStandard->AntiCNOT(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                //           << std::endl;
-            } else if (multiGate.gate == 6) {
-                goldStandard->AntiCY(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 7) {
-                goldStandard->AntiCZ(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 8) {
-                goldStandard->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                // std::cout << "qReg->CCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                //           << (int)multiGate.b3 << ");" << std::endl;
-            } else if (multiGate.gate == 9) {
-                goldStandard->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                // std::cout << "qReg->CCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                //           << (int)multiGate.b3 << ");" << std::endl;
-            } else if (multiGate.gate == 10) {
-                goldStandard->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                // std::cout << "qReg->CCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                //           << (int)multiGate.b3 << ");" << std::endl;
-            } else if (multiGate.gate == 11) {
-                goldStandard->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                // std::cout << "qReg->AntiCCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                //           << (int)multiGate.b3 << ");" << std::endl;
-            } else if (multiGate.gate == 12) {
-                goldStandard->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                // std::cout << "qReg->AntiCCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                //           << (int)multiGate.b3 << ");" << std::endl;
-            } else {
-                goldStandard->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                // std::cout << "qReg->AntiCCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                //           << (int)multiGate.b3 << ");" << std::endl;
-            }
-        }
-    }
+    circuit->Run(goldStandard);
+    goldStandard->Finish();
 
     std::cout
         << "Done. ("
@@ -4890,77 +4858,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
-
-        for (d = 0; d < n; d++) {
-            std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < (int)layer1QbRands.size(); i++) {
-                SingleQubitGate gate1Qb = layer1QbRands[i];
-                testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-                // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
-                //           << ");" << std::endl;
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->ISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 1) {
-                    testCase->IISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 2) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 3) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 4) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                    //           << std::endl;
-                } else if (multiGate.gate == 6) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 7) {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 8) {
-                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 9) {
-                    testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 10) {
-                    testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 11) {
-                    testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 12) {
-                    testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else {
-                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                }
-            }
-        }
-
+        circuit->Run(testCase);
         testCase->Finish();
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
@@ -5024,25 +4922,33 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
         engineStack.push_back(testSubSubEngineType);
     }
 
+    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
-    std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
-    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
-
     for (d = 0; d < n; d++) {
-        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
         for (i = 0; i < w; i++) {
-            SingleQubitGate gate1qb;
-            gate1qb.th = 4 * PI_R1 * rng->Rand();
-            gate1qb.ph = 4 * PI_R1 * rng->Rand();
-            gate1qb.lm = 4 * PI_R1 * rng->Rand();
-            layer1QbRands.push_back(gate1qb);
+            const real1_f theta = 4 * PI_R1 * rng->Rand();
+            const real1_f phi = 4 * PI_R1 * rng->Rand();
+            const real1_f lambda = 4 * PI_R1 * rng->Rand();
+            const real1 cos0 = (real1)cos(theta / 2);
+            const real1 sin0 = (real1)sin(theta / 2);
+            const complex uGate[4]{ complex(cos0, ZERO_R1),
+                sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+                sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+                cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+            circuit->AppendGate(std::make_shared<QCircuitGate>(i, uGate));
         }
 
         int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
-        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
                 // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
@@ -5110,11 +5016,6 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                     }
                 }
 
-                MultiQubitGate multiGate;
-                multiGate.b1 = b1;
-                multiGate.b2 = b2;
-                multiGate.b3 = b3;
-
                 if (is3Qubit) {
                     gate = (int)(rng->Rand() * (GateCountMultiQb - GateCount2Qb)) + GateCount2Qb;
                     if (gate >= GateCountMultiQb) {
@@ -5127,9 +5028,42 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                     }
                 }
 
-                multiGate.gate = gate;
-
-                layerMultiQbRands.push_back(multiGate);
+                const std::set<bitLenInt> control{ (bitLenInt)b1 };
+                const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
+                if (gate == 0) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
+                } else if (gate == 1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 2) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                } else if (gate == 3) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                } else if (gate == 4) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 5) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                } else if (gate == 6) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                } else if (gate == 7) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                } else if (gate == 8) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
+                } else if (gate == 9) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
+                } else if (gate == 10) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
+                } else if (gate == 11) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                } else if (gate == 12) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                } else {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                }
             }
         }
 
@@ -5167,76 +5101,8 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
-
-        for (d = 0; d < n; d++) {
-            std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < (int)layer1QbRands.size(); i++) {
-                SingleQubitGate gate1Qb = layer1QbRands[i];
-                testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-                // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
-                //           << ");" << std::endl;
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->ISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 1) {
-                    testCase->IISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 2) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 3) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 4) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                    //           << std::endl;
-                } else if (multiGate.gate == 6) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 7) {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 8) {
-                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 9) {
-                    testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 10) {
-                    testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 11) {
-                    testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 12) {
-                    testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else {
-                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                }
-            }
-        }
+        circuit->Run(testCase);
+        testCase->Finish();
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
@@ -5297,28 +5163,33 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         engineStack.push_back(testSubSubEngineType);
     }
 
+    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
-    std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
-    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
-
     for (d = 0; d < n; d++) {
-        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
         for (i = 0; i < w; i++) {
-            SingleQubitGate gate1Qb;
-            gate1Qb.th = 4 * PI_R1 * rng->Rand();
-            gate1Qb.ph = 4 * PI_R1 * rng->Rand();
-            gate1Qb.lm = 4 * PI_R1 * rng->Rand();
-            layer1QbRands.push_back(gate1Qb);
-
-            std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm << ");"
-                      << std::endl;
+            const real1_f theta = 4 * PI_R1 * rng->Rand();
+            const real1_f phi = 4 * PI_R1 * rng->Rand();
+            const real1_f lambda = 4 * PI_R1 * rng->Rand();
+            const real1 cos0 = (real1)cos(theta / 2);
+            const real1 sin0 = (real1)sin(theta / 2);
+            const complex uGate[4]{ complex(cos0, ZERO_R1),
+                sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+                sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+                cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+            circuit->AppendGate(std::make_shared<QCircuitGate>(i, uGate));
         }
 
         int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
-        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
                 // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
@@ -5386,11 +5257,6 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                     }
                 }
 
-                MultiQubitGate multiGate;
-                multiGate.b1 = b1;
-                multiGate.b2 = b2;
-                multiGate.b3 = b3;
-
                 if (is3Qubit) {
                     gate = (int)(rng->Rand() * (GateCountMultiQb - GateCount2Qb)) + GateCount2Qb;
                     if (gate >= GateCountMultiQb) {
@@ -5403,45 +5269,41 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                     }
                 }
 
-                multiGate.gate = gate;
-
-                layerMultiQbRands.push_back(multiGate);
-
-                if (multiGate.gate == 0) {
-                    std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 1) {
-                    std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 2) {
-                    std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 3) {
-                    std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 4) {
-                    std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 5) {
-                    std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                              << std::endl;
-                } else if (multiGate.gate == 6) {
-                    std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 7) {
-                    std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 8) {
-                    std::cout << "qReg->CCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                              << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 9) {
-                    std::cout << "qReg->CCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                              << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 10) {
-                    std::cout << "qReg->CCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                              << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 11) {
-                    std::cout << "qReg->AntiCCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                              << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 12) {
-                    std::cout << "qReg->AntiCCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                              << (int)multiGate.b3 << ");" << std::endl;
+                const std::set<bitLenInt> control{ (bitLenInt)b1 };
+                const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
+                if (gate == 0) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
+                } else if (gate == 1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 2) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                } else if (gate == 3) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                } else if (gate == 4) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 5) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                } else if (gate == 6) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                } else if (gate == 7) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                } else if (gate == 8) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
+                } else if (gate == 9) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
+                } else if (gate == 10) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
+                } else if (gate == 11) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                } else if (gate == 12) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
                 } else {
-                    std::cout << "qReg->AntiCCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                              << (int)multiGate.b3 << ");" << std::endl;
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
                 }
             }
         }
@@ -5486,76 +5348,8 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
-
-        for (d = 0; d < n; d++) {
-            std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < (int)layer1QbRands.size(); i++) {
-                SingleQubitGate gate1Qb = layer1QbRands[i];
-                testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-                // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
-                //           << ");" << std::endl;
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->ISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 1) {
-                    testCase->IISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 2) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 3) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 4) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                    //           << std::endl;
-                } else if (multiGate.gate == 6) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 7) {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 8) {
-                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 9) {
-                    testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 10) {
-                    testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->CCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 11) {
-                    testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else if (multiGate.gate == 12) {
-                    testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                } else {
-                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    // std::cout << "qReg->AntiCCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ", "
-                    //           << (int)multiGate.b3 << ");" << std::endl;
-                }
-            }
-        }
+        circuit->Run(testCase);
+        testCase->Finish();
 
         const int exeTime =
             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count();
@@ -5627,25 +5421,33 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
         engineStack.push_back(testSubSubEngineType);
     }
 
+    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
-    std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
-    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
-
     for (d = 0; d < n; d++) {
-        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
         for (i = 0; i < w; i++) {
-            SingleQubitGate gate1qb;
-            gate1qb.th = 4 * PI_R1 * rng->Rand();
-            gate1qb.ph = 4 * PI_R1 * rng->Rand();
-            gate1qb.lm = 4 * PI_R1 * rng->Rand();
-            layer1QbRands.push_back(gate1qb);
+            const real1_f theta = 4 * PI_R1 * rng->Rand();
+            const real1_f phi = 4 * PI_R1 * rng->Rand();
+            const real1_f lambda = 4 * PI_R1 * rng->Rand();
+            const real1 cos0 = (real1)cos(theta / 2);
+            const real1 sin0 = (real1)sin(theta / 2);
+            const complex uGate[4]{ complex(cos0, ZERO_R1),
+                sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+                sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+                cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+            circuit->AppendGate(std::make_shared<QCircuitGate>(i, uGate));
         }
 
         int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
-        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
                 // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
@@ -5677,24 +5479,41 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
                 usedBits.push_back(b1);
                 usedBits.push_back(b2);
 
-                MultiQubitGate multiGate;
-                multiGate.b1 = b1;
-                multiGate.b2 = b2;
-                multiGate.b3 = 0;
-
                 gate = (int)(rng->Rand() * GateCount2Qb);
                 if (gate >= GateCount2Qb) {
                     gate = GateCount2Qb - 1U;
                 }
 
-                multiGate.gate = gate;
-
-                layerMultiQbRands.push_back(multiGate);
+                const std::set<bitLenInt> control{ (bitLenInt)b1 };
+                if (gate == 0) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
+                } else if (gate == 1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 2) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                } else if (gate == 3) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                } else if (gate == 4) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 5) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                } else if (gate == 6) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                } else {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                }
             }
         }
 
-        gateSequence.pop_front();
-        gateSequence.push_back(gate);
+        if (d & 1) {
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+        }
     }
 
     bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(w));
@@ -5715,52 +5534,8 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
     QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
-
-    for (d = 0; d < n; d++) {
-        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-        for (i = 0; i < (int)layer1QbRands.size(); i++) {
-            SingleQubitGate gate1Qb = layer1QbRands[i];
-            goldStandard->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-            // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
-            //           << ");" << std::endl;
-        }
-
-        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-        for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-            MultiQubitGate multiGate = layerMultiQbRands[i];
-            if (multiGate.gate == 0) {
-                goldStandard->ISwap(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 1) {
-                goldStandard->IISwap(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 2) {
-                goldStandard->CNOT(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 3) {
-                goldStandard->CY(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-            } else if (multiGate.gate == 4) {
-                goldStandard->CZ(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-            } else if (multiGate.gate == 5) {
-                goldStandard->AntiCNOT(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                //           << std::endl;
-            } else if (multiGate.gate == 6) {
-                goldStandard->AntiCY(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            } else if (multiGate.gate == 7) {
-                goldStandard->AntiCZ(multiGate.b1, multiGate.b2);
-                // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                // std::endl;
-            }
-        }
-    }
+    circuit->Run(goldStandard);
+    goldStandard->Finish();
 
     std::cout
         << "Done. ("
@@ -5789,53 +5564,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
-
-        for (d = 0; d < n; d++) {
-            std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < (int)layer1QbRands.size(); i++) {
-                SingleQubitGate gate1Qb = layer1QbRands[i];
-                testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-                // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
-                //           << ");" << std::endl;
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->ISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 1) {
-                    testCase->IISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 2) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 3) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 4) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                    //           << std::endl;
-                } else if (multiGate.gate == 6) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 7) {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                }
-            }
-        }
-
+        circuit->Run(testCase);
         testCase->Finish();
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
@@ -5898,25 +5627,33 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
         engineStack.push_back(testSubSubEngineType);
     }
 
+    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
-    std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
-    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
-
     for (d = 0; d < n; d++) {
-        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
         for (i = 0; i < w; i++) {
-            SingleQubitGate gate1qb;
-            gate1qb.th = 4 * PI_R1 * rng->Rand();
-            gate1qb.ph = 4 * PI_R1 * rng->Rand();
-            gate1qb.lm = 4 * PI_R1 * rng->Rand();
-            layer1QbRands.push_back(gate1qb);
+            const real1_f theta = 4 * PI_R1 * rng->Rand();
+            const real1_f phi = 4 * PI_R1 * rng->Rand();
+            const real1_f lambda = 4 * PI_R1 * rng->Rand();
+            const real1 cos0 = (real1)cos(theta / 2);
+            const real1 sin0 = (real1)sin(theta / 2);
+            const complex uGate[4]{ complex(cos0, ZERO_R1),
+                sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+                sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+                cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+            circuit->AppendGate(std::make_shared<QCircuitGate>(i, uGate));
         }
 
         int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
-        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
                 // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
@@ -5948,24 +5685,41 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
                 usedBits.push_back(b1);
                 usedBits.push_back(b2);
 
-                MultiQubitGate multiGate;
-                multiGate.b1 = b1;
-                multiGate.b2 = b2;
-                multiGate.b3 = 0;
-
                 gate = (int)(rng->Rand() * GateCount2Qb);
                 if (gate >= GateCount2Qb) {
                     gate = GateCount2Qb - 1U;
                 }
 
-                multiGate.gate = gate;
-
-                layerMultiQbRands.push_back(multiGate);
+                const std::set<bitLenInt> control{ (bitLenInt)b1 };
+                if (gate == 0) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
+                } else if (gate == 1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 2) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                } else if (gate == 3) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                } else if (gate == 4) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 5) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                } else if (gate == 6) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                } else {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                }
             }
         }
 
-        gateSequence.pop_front();
-        gateSequence.push_back(gate);
+        if (d & 1) {
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+        }
     }
 
     bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(w));
@@ -5996,52 +5750,8 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
-
-        for (d = 0; d < n; d++) {
-            std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < (int)layer1QbRands.size(); i++) {
-                SingleQubitGate gate1Qb = layer1QbRands[i];
-                testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-                // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
-                //           << ");" << std::endl;
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->ISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 1) {
-                    testCase->IISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 2) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 3) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 4) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                    //           << std::endl;
-                } else if (multiGate.gate == 6) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 7) {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                }
-            }
-        }
+        circuit->Run(testCase);
+        testCase->Finish();
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
         std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
@@ -6101,28 +5811,33 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
         engineStack.push_back(testSubSubEngineType);
     }
 
+    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
-    std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
-    std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
-
     for (d = 0; d < n; d++) {
-        std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
         for (i = 0; i < w; i++) {
-            SingleQubitGate gate1Qb;
-            gate1Qb.th = 4 * PI_R1 * rng->Rand();
-            gate1Qb.ph = 4 * PI_R1 * rng->Rand();
-            gate1Qb.lm = 4 * PI_R1 * rng->Rand();
-            layer1QbRands.push_back(gate1Qb);
-
-            std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm << ");"
-                      << std::endl;
+            const real1_f theta = 4 * PI_R1 * rng->Rand();
+            const real1_f phi = 4 * PI_R1 * rng->Rand();
+            const real1_f lambda = 4 * PI_R1 * rng->Rand();
+            const real1 cos0 = (real1)cos(theta / 2);
+            const real1 sin0 = (real1)sin(theta / 2);
+            const complex uGate[4]{ complex(cos0, ZERO_R1),
+                sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+                sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+                cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+            circuit->AppendGate(std::make_shared<QCircuitGate>(i, uGate));
         }
 
         int gate = gateSequence.front();
         std::vector<bitLenInt> usedBits;
 
-        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         for (int row = 1; row < rowLen; row += 2) {
             for (int col = 0; col < colLen; col++) {
                 // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
@@ -6154,43 +5869,41 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
                 usedBits.push_back(b1);
                 usedBits.push_back(b2);
 
-                MultiQubitGate multiGate;
-                multiGate.b1 = b1;
-                multiGate.b2 = b2;
-                multiGate.b3 = 0;
-
                 gate = (int)(rng->Rand() * GateCount2Qb);
                 if (gate >= GateCount2Qb) {
                     gate = GateCount2Qb - 1U;
                 }
 
-                multiGate.gate = gate;
-
-                layerMultiQbRands.push_back(multiGate);
-
-                if (multiGate.gate == 0) {
-                    std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 1) {
-                    std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 2) {
-                    std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 3) {
-                    std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 4) {
-                    std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 5) {
-                    std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                              << std::endl;
-                } else if (multiGate.gate == 6) {
-                    std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 7) {
-                    std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
+                const std::set<bitLenInt> control{ (bitLenInt)b1 };
+                if (gate == 0) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
+                } else if (gate == 1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 2) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                } else if (gate == 3) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                } else if (gate == 4) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 5) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                } else if (gate == 6) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                } else {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
                 }
             }
         }
 
-        gateSequence.pop_front();
-        gateSequence.push_back(gate);
+        if (d & 1) {
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+        }
     }
 
     bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(w));
@@ -6227,52 +5940,8 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
-
-        for (d = 0; d < n; d++) {
-            std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < (int)layer1QbRands.size(); i++) {
-                SingleQubitGate gate1Qb = layer1QbRands[i];
-                testCase->U(i, gate1Qb.th, gate1Qb.ph, gate1Qb.lm);
-                // std::cout << "qReg->U(" << (int)i << ", " << gate1Qb.th << ", " << gate1Qb.ph << ", " << gate1Qb.lm
-                //           << ");" << std::endl;
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->ISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->ISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 1) {
-                    testCase->IISwap(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->IISwap(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 2) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 3) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 4) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->CZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" << std::endl;
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCNOT(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");"
-                    //           << std::endl;
-                } else if (multiGate.gate == 6) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCY(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                } else if (multiGate.gate == 7) {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                    // std::cout << "qReg->AntiCZ(" << (int)multiGate.b1 << ", " << (int)multiGate.b2 << ");" <<
-                    // std::endl;
-                }
-            }
-        }
+        circuit->Run(testCase);
+        testCase->Finish();
 
         const int exeTime =
             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count();
