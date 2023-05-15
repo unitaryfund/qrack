@@ -253,13 +253,11 @@ struct QCircuitGate {
      */
     bool CanPass(QCircuitGatePtr other)
     {
-        std::set<bitLenInt>::iterator c = other->controls.find(target);
-        if (c != other->controls.end()) {
+        if (other->controls.find(target) != other->controls.end()) {
             return IsPhase();
         }
 
-        c = controls.find(other->target);
-        if (c != controls.end()) {
+        if (controls.find(other->target) != controls.end()) {
             return other->IsPhase();
         }
 
