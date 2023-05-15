@@ -255,12 +255,12 @@ struct QCircuitGate {
     {
         std::set<bitLenInt>::iterator c = other->controls.find(target);
         if (c != other->controls.end()) {
-            return IsPhase() && other->IsPhase();
+            return IsPhase();
         }
 
         c = controls.find(other->target);
         if (c != controls.end()) {
-            return IsPhase() && other->IsPhase();
+            return other->IsPhase();
         }
 
         return (target != other->target) || (IsPhase() && other->IsPhase());
