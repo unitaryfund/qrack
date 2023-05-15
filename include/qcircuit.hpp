@@ -261,23 +261,12 @@ struct QCircuitGate {
     {
         std::set<bitLenInt>::iterator c = other->controls.find(target);
         if (c != other->controls.end()) {
-            return false;
+            return IsPhase() && other->IsPhase();
         }
 
         c = controls.find(other->target);
         if (c != controls.end()) {
-            if (other->controls.size() || !other->IsInvert()) {
-                return false;
-            }
-
-            const bitCapInt pow = pow2(std::distance(controls.begin(), c));
-            std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
-            for (const auto& payload : payloads) {
-                nPayloads.emplace(std::make_pair(payload.first ^ pow, payload.second));
-            }
-            payloads = nPayloads;
-
-            return true;
+            return IsPhase() && other->IsPhase();
         }
 
         return (target != other->target) || (IsPhase() && other->IsPhase());
