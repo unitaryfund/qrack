@@ -44,7 +44,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         }
     }
 
-    gates.push_back(nGate);
+    gates.push_front(nGate);
 }
 
 void QCircuit::Run(QInterfacePtr qsim)
