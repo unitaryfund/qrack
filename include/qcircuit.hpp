@@ -299,8 +299,7 @@ typedef std::shared_ptr<QCircuit> QCircuitPtr;
 class QCircuit {
 protected:
     bitLenInt maxQubit;
-    std::map<bitLenInt, bitLenInt> qubitMap;
-    std::vector<QCircuitGatePtr> gates;
+    std::list<QCircuitGatePtr> gates;
 
     /**
      * Reverse truth values of 2x2 complex matrix
@@ -322,7 +321,6 @@ public:
      */
     QCircuit()
         : maxQubit(0)
-        , qubitMap()
         , gates()
     {
         // Intentionally left blank
@@ -332,9 +330,8 @@ public:
     {
         QCircuitPtr clone = std::make_shared<QCircuit>();
         clone->maxQubit = maxQubit;
-        clone->qubitMap = qubitMap;
-        for (size_t i = 0U; i < gates.size(); ++i) {
-            clone->gates.push_back(clone->gates[i]->Clone());
+        for (const QCircuitGatePtr& gate : gates) {
+            clone->gates.push_back(gate->Clone());
         }
 
         return clone;
