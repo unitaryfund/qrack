@@ -60,7 +60,7 @@ struct QCircuitGate {
         : target(trgt)
         , controls(ctrls)
     {
-        const std::unique_ptr<complex[]>& p =  payloads[perm] = std::unique_ptr<complex[]>(new complex[4]);
+        const std::unique_ptr<complex[]>& p = payloads[perm] = std::unique_ptr<complex[]>(new complex[4]);
         std::copy(matrix, matrix + 4, p.get());
     }
 
@@ -85,12 +85,12 @@ struct QCircuitGate {
      */
     bool CanCombine(QCircuitGatePtr other)
     {
-        if (!payloads.size()) {
+        if (IsSwap()) {
             if (other->payloads.size()) {
                 return false;
             }
             if (((target == other->target) && (*(controls.begin()) == *(other->controls.begin()))) ||
-                ((target == *(other->controls.begin())) || (*(controls.begin()) == other->target))) {
+                ((target == *(other->controls.begin())) && (*(controls.begin()) == other->target))) {
                 return true;
             }
 
@@ -119,7 +119,7 @@ struct QCircuitGate {
      */
     void Combine(QCircuitGatePtr other)
     {
-        if (!payloads.size()) {
+        if (IsSwap()) {
             controls.clear();
             const std::unique_ptr<complex[]>& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
             p[0] = ONE_CMPLX;
@@ -133,7 +133,8 @@ struct QCircuitGate {
         for (const auto& payload : other->payloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
-                const std::unique_ptr<complex[]>& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
+                const std::unique_ptr<complex[]>& p = payloads[payload.first] =
+                    std::unique_ptr<complex[]>(new complex[4]);
                 std::copy(payload.second.get(), payload.second.get() + 4U, p.get());
 
                 continue;
@@ -244,11 +245,15 @@ struct QCircuitGate {
      */
     bool CanPass(QCircuitGatePtr other)
     {
+        if (IsSwap()) {
+            return false;
+        }
+
         if (other->controls.find(target) != other->controls.end()) {
             if (!IsPhase()) {
                 return false;
             }
-            
+
             if (controls.find(other->target) != controls.end()) {
                 return other->IsPhase();
             }
