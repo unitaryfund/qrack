@@ -203,7 +203,7 @@ struct QCircuitGate {
      */
     bool IsPhase()
     {
-        if (!payloads.size()) {
+        if (IsSwap()) {
             return false;
         }
 
@@ -221,7 +221,7 @@ struct QCircuitGate {
      */
     bool IsInvert()
     {
-        if (!payloads.size()) {
+        if (IsSwap()) {
             return false;
         }
 
@@ -233,6 +233,11 @@ struct QCircuitGate {
 
         return true;
     }
+
+    /**
+     * Am I a swap gate?
+     */
+    bool IsSwap() { return !payloads.size(); }
 
     /**
      * Do I commute with gate `other`?
@@ -332,6 +337,11 @@ public:
      * Get the (automatically calculated) count of qubits in this circuit, so far.
      */
     bitLenInt GetQubitCount() { return maxQubit; }
+
+    /**
+     * Return the raw list of gates.
+     */
+    std::list<QCircuitGatePtr> GetGateList() { return gates; }
 
     /**
      * Add a `Swap` gate to the gate sequence.
