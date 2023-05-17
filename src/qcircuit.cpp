@@ -53,10 +53,15 @@ void QCircuit::Run(QInterfacePtr qsim)
         qsim->Allocate(maxQubit - qsim->GetQubitCount());
     }
 
+    std::vector<bool> controlStates(maxQubit, false);
     for (const QCircuitGatePtr& gate : gates) {
         const bitLenInt& t = gate->target;
 
         if (!gate->controls.size()) {
+            if (controlStates[t]) {
+                qsim->X(t);
+                controlStates[t] = false;
+            }
             qsim->Mtrx(gate->payloads[0].get(), t);
 
             continue;
@@ -65,13 +70,23 @@ void QCircuit::Run(QInterfacePtr qsim)
         std::vector<bitLenInt> controls = gate->GetControlsVector();
 
         if ((gate->payloads.size() == (1U << controls.size())) || (gate->payloads.size() >= 8)) {
+            for (const auto& c : controls) {
+                if (controlStates[c]) {
+                    qsim->X(c);
+                    controlStates[c] = false;
+                }
+            }
+            if (controlStates[t]) {
+                qsim->X(t);
+                controlStates[t] = false;
+            }
+
             std::unique_ptr<complex[]> payload = gate->MakeUniformlyControlledPayload();
-            qsim->UniformlyControlledSingleBit(controls, gate->target, payload.get());
+            qsim->UniformlyControlledSingleBit(controls, t, payload.get());
 
             continue;
         }
 
-        std::vector<bool> controlStates(maxQubit, false);
         for (const auto& payload : gate->payloads) {
             std::map<bitLenInt, bool> controlMismatch;
             size_t mismatchCount = 0;
@@ -109,11 +124,11 @@ void QCircuit::Run(QInterfacePtr qsim)
 
             qsim->MACMtrx(controls, payload.second.get(), t);
         }
+    }
 
-        for (size_t i = 0U; i < controlStates.size(); ++i) {
-            if (controlStates[i]) {
-                qsim->X(i);
-            }
+    for (size_t i = 0U; i < controlStates.size(); ++i) {
+        if (controlStates[i]) {
+            qsim->X(i);
         }
     }
 }
