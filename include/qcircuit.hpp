@@ -370,7 +370,18 @@ public:
     /**
      * Add a `Swap` gate to the gate sequence.
      */
-    void Swap(bitLenInt q1, bitLenInt q2) { AppendGate(std::make_shared<QCircuitGate>(q1, q2)); }
+    void Swap(bitLenInt q1, bitLenInt q2)
+    {
+        // TODO: Broken:
+        // AppendGate(std::make_shared<QCircuitGate>(q1, q2));
+
+        const complex m[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        const std::set<bitLenInt> s1 = { q1 };
+        const std::set<bitLenInt> s2 = { q2 };
+        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
+        AppendGate(std::make_shared<QCircuitGate>(q2, m, s1, 1U));
+        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
+    }
 
     /**
      * Add a gate to the gate sequence.
