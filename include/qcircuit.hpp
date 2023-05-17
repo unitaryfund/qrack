@@ -245,7 +245,15 @@ struct QCircuitGate {
     bool CanPass(QCircuitGatePtr other)
     {
         if (other->controls.find(target) != other->controls.end()) {
-            return IsPhase();
+            if (!IsPhase()) {
+                return false;
+            }
+            
+            if (controls.find(other->target) != controls.end()) {
+                return other->IsPhase();
+            }
+
+            return true;
         }
 
         if (controls.find(other->target) != controls.end()) {
