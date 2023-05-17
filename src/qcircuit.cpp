@@ -72,7 +72,7 @@ void QCircuit::Run(QInterfacePtr qsim)
         std::vector<bitLenInt> controls = gate->GetControlsVector();
 
         if ((gate->payloads.size() == (1U << controls.size())) || (gate->payloads.size() >= 8)) {
-            for (const auto& c : controls) {
+            for (const bitLenInt& c : controls) {
                 if (controlStates[c]) {
                     qsim->X(c);
                     controlStates[c] = false;
@@ -92,7 +92,7 @@ void QCircuit::Run(QInterfacePtr qsim)
         for (const auto& payload : gate->payloads) {
             std::map<bitLenInt, bool> controlMismatch;
             size_t mismatchCount = 0;
-            for (const auto& c : controls) {
+            for (const bitLenInt& c : controls) {
                 controlMismatch[c] = (((bool)((payload.first >> c) & 1)) != controlStates[c]);
                 if (controlMismatch[c]) {
                     ++mismatchCount;
@@ -105,7 +105,7 @@ void QCircuit::Run(QInterfacePtr qsim)
             }
 
             if ((mismatchCount << 1U) > controls.size()) {
-                for (const auto& c : controls) {
+                for (const bitLenInt& c : controls) {
                     if (!controlMismatch[c]) {
                         qsim->X(c);
                         controlStates[c] = !controlStates[c];
@@ -117,7 +117,7 @@ void QCircuit::Run(QInterfacePtr qsim)
                 continue;
             }
 
-            for (const auto& c : controls) {
+            for (const bitLenInt& c : controls) {
                 if (controlMismatch[c]) {
                     qsim->X(c);
                     controlStates[c] = !controlStates[c];

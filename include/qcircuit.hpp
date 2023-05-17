@@ -73,7 +73,7 @@ struct QCircuitGate {
         , controls(ctrls)
     {
         for (const auto& payload : pylds) {
-            const auto& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
+            const std::unique_ptr<complex[]>& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
             std::copy(payload.second.get(), payload.second.get() + 4, p.get());
         }
     }
@@ -121,7 +121,7 @@ struct QCircuitGate {
     {
         if (!payloads.size()) {
             controls.clear();
-            const auto& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
+            const std::unique_ptr<complex[]>& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
             p[0] = ONE_CMPLX;
             p[1] = ZERO_CMPLX;
             p[2] = ZERO_CMPLX;
@@ -133,7 +133,7 @@ struct QCircuitGate {
         for (const auto& payload : other->payloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
-                const auto& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
+                const std::unique_ptr<complex[]>& p = payloads[payload.first] = std::unique_ptr<complex[]>(new complex[4]);
                 std::copy(payload.second.get(), payload.second.get() + 4U, p.get());
 
                 continue;
@@ -155,7 +155,7 @@ struct QCircuitGate {
 
         if (!payloads.size()) {
             controls.clear();
-            const auto& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
+            const std::unique_ptr<complex[]>& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
             p[0] = ONE_CMPLX;
             p[1] = ZERO_CMPLX;
             p[2] = ZERO_CMPLX;
