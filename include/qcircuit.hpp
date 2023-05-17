@@ -89,10 +89,10 @@ struct QCircuitGate {
             if (other->payloads.size()) {
                 return false;
             }
-            if (((target == other->target) && (*(controls.begin()) == *(other->controls.begin()))) ||
+            /*if (((target == other->target) && (*(controls.begin()) == *(other->controls.begin()))) ||
                 ((target == *(other->controls.begin())) && (*(controls.begin()) == other->target))) {
                 return true;
-            }
+            }*/
 
             return false;
         }
@@ -115,18 +115,27 @@ struct QCircuitGate {
     }
 
     /**
+     * Set this gate to the identity operator.
+     */
+    void Clear()
+    {
+        controls.clear();
+        payloads.clear();
+
+        const std::unique_ptr<complex[]>& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
+        p[0] = ONE_CMPLX;
+        p[1] = ZERO_CMPLX;
+        p[2] = ZERO_CMPLX;
+        p[3] = ONE_CMPLX;
+    }
+
+    /**
      * Combine myself with gate `other`
      */
     void Combine(QCircuitGatePtr other)
     {
         if (IsSwap()) {
-            controls.clear();
-            const std::unique_ptr<complex[]>& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
-            p[0] = ONE_CMPLX;
-            p[1] = ZERO_CMPLX;
-            p[2] = ZERO_CMPLX;
-            p[3] = ONE_CMPLX;
-
+            Clear();
             return;
         }
 
@@ -155,12 +164,8 @@ struct QCircuitGate {
         }
 
         if (!payloads.size()) {
-            controls.clear();
-            const std::unique_ptr<complex[]>& p = payloads[0] = std::unique_ptr<complex[]>(new complex[4]);
-            p[0] = ONE_CMPLX;
-            p[1] = ZERO_CMPLX;
-            p[2] = ZERO_CMPLX;
-            p[3] = ONE_CMPLX;
+            Clear();
+            return;
         }
     }
 
@@ -245,10 +250,6 @@ struct QCircuitGate {
      */
     bool CanPass(QCircuitGatePtr other)
     {
-        if (IsSwap()) {
-            return false;
-        }
-
         if (other->controls.find(target) != other->controls.end()) {
             if (!IsPhase()) {
                 return false;
