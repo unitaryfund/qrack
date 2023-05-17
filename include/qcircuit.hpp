@@ -89,8 +89,8 @@ struct QCircuitGate {
             if (other->payloads.size()) {
                 return false;
             }
-            if (((target == other->target) || (target == *(other->controls.begin()))) &&
-                ((other->target == target) || (other->target == *(controls.begin())))) {
+            if (((target == other->target) && (*(controls.begin()) == *(other->controls.begin()))) ||
+                ((target == *(other->controls.begin())) || (*(controls.begin()) == other->target))) {
                 return true;
             }
 
@@ -321,7 +321,7 @@ public:
     {
         // Intentionally left blank
     }
-    
+
     /**
      * Manual constructor
      */
