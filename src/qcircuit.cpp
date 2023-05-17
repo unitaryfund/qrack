@@ -20,13 +20,13 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         return;
     }
 
-    if (nGate->target > maxQubit) {
-        maxQubit = nGate->target;
+    if ((nGate->target + 1U) > qubitCount) {
+        qubitCount = nGate->target + 1U;
     }
     if (!(nGate->controls.empty())) {
         const bitLenInt q = *(nGate->controls.rbegin());
-        if (q > maxQubit) {
-            maxQubit = q;
+        if ((q + 1U) > qubitCount) {
+            qubitCount = (q + 1U);
         }
     }
 
@@ -49,11 +49,11 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
 
 void QCircuit::Run(QInterfacePtr qsim)
 {
-    if (qsim->GetQubitCount() < maxQubit) {
-        qsim->Allocate(maxQubit - qsim->GetQubitCount());
+    if (qsim->GetQubitCount() < qubitCount) {
+        qsim->Allocate(qubitCount - qsim->GetQubitCount());
     }
 
-    std::vector<bool> controlStates(maxQubit, false);
+    std::vector<bool> controlStates(qubitCount, false);
     for (const QCircuitGatePtr& gate : gates) {
         const bitLenInt& t = gate->target;
 

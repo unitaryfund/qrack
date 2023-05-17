@@ -294,7 +294,7 @@ typedef std::shared_ptr<QCircuit> QCircuitPtr;
 
 class QCircuit {
 protected:
-    bitLenInt maxQubit;
+    bitLenInt qubitCount;
     std::list<QCircuitGatePtr> gates;
 
     /**
@@ -316,8 +316,18 @@ public:
      * Default constructor
      */
     QCircuit()
-        : maxQubit(0)
+        : qubitCount(0)
         , gates()
+    {
+        // Intentionally left blank
+    }
+    
+    /**
+     * Manual constructor
+     */
+    QCircuit(bitLenInt qbCount, std::list<QCircuitGatePtr> g)
+        : qubitCount(qbCount)
+        , gates(g)
     {
         // Intentionally left blank
     }
@@ -325,7 +335,7 @@ public:
     QCircuitPtr Clone()
     {
         QCircuitPtr clone = std::make_shared<QCircuit>();
-        clone->maxQubit = maxQubit;
+        clone->qubitCount = qubitCount;
         for (const QCircuitGatePtr& gate : gates) {
             clone->gates.push_back(gate->Clone());
         }
@@ -336,7 +346,7 @@ public:
     /**
      * Get the (automatically calculated) count of qubits in this circuit, so far.
      */
-    bitLenInt GetQubitCount() { return maxQubit; }
+    bitLenInt GetQubitCount() { return qubitCount; }
 
     /**
      * Return the raw list of gates.
