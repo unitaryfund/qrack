@@ -292,6 +292,20 @@ protected:
     bitLenInt maxQubit;
     std::list<QCircuitGatePtr> gates;
 
+    /**
+     * Reverse truth values of 2x2 complex matrix
+     */
+    static std::unique_ptr<complex[]> InvertPayload(const complex* m)
+    {
+        std::unique_ptr<complex[]> mtrx(new complex[4]);
+        mtrx[0] = m[3];
+        mtrx[1] = m[2];
+        mtrx[2] = m[1];
+        mtrx[3] = m[0];
+
+        return mtrx;
+    }
+
 public:
     /**
      * Default constructor

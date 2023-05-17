@@ -59,10 +59,11 @@ void QCircuit::Run(QInterfacePtr qsim)
 
         if (!gate->controls.size()) {
             if (controlStates[t]) {
-                qsim->X(t);
-                controlStates[t] = false;
+                const std::unique_ptr<complex[]> m = InvertPayload(gate->payloads[0].get());
+                qsim->Mtrx(m.get(), t);
+            } else {
+                qsim->Mtrx(gate->payloads[0].get(), t);
             }
-            qsim->Mtrx(gate->payloads[0].get(), t);
 
             continue;
         }
