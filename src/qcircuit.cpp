@@ -92,8 +92,9 @@ void QCircuit::Run(QInterfacePtr qsim)
         for (const auto& payload : gate->payloads) {
             std::map<bitLenInt, bool> controlMismatch;
             size_t mismatchCount = 0;
-            for (const bitLenInt& c : controls) {
-                controlMismatch[c] = (((bool)((payload.first >> c) & 1)) != controlStates[c]);
+            for (bitLenInt i = 0; i < controls.size(); ++i) {
+                const bitLenInt c = controls[i];
+                controlMismatch[c] = (((bool)((payload.first >> i) & 1)) != controlStates[c]);
                 if (controlMismatch[c]) {
                     ++mismatchCount;
                 }

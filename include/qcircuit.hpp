@@ -60,8 +60,8 @@ struct QCircuitGate {
         : target(trgt)
         , controls(ctrls)
     {
-        payloads[perm] = std::unique_ptr<complex[]>(new complex[4]);
-        std::copy(matrix, matrix + 4, payloads[perm].get());
+        const std::unique_ptr<complex[]>& p =  payloads[perm] = std::unique_ptr<complex[]>(new complex[4]);
+        std::copy(matrix, matrix + 4, p.get());
     }
 
     /**
