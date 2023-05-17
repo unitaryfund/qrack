@@ -298,10 +298,10 @@ protected:
     static std::unique_ptr<complex[]> InvertPayload(const complex* m)
     {
         std::unique_ptr<complex[]> mtrx(new complex[4]);
-        mtrx[0] = m[3];
-        mtrx[1] = m[2];
-        mtrx[2] = m[1];
-        mtrx[3] = m[0];
+        mtrx[0] = m[1];
+        mtrx[1] = m[0];
+        mtrx[2] = m[3];
+        mtrx[3] = m[2];
 
         return mtrx;
     }

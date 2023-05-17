@@ -61,6 +61,7 @@ void QCircuit::Run(QInterfacePtr qsim)
             if (controlStates[t]) {
                 const std::unique_ptr<complex[]> m = InvertPayload(gate->payloads[0].get());
                 qsim->Mtrx(m.get(), t);
+                controlStates[t] = false;
             } else {
                 qsim->Mtrx(gate->payloads[0].get(), t);
             }
