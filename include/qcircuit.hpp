@@ -251,7 +251,8 @@ struct QCircuitGate {
         std::unique_ptr<complex[]> toRet(new complex[4U * maxQPower]);
         for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
             complex* mtrx = toRet.get() + (i << 2U);
-            if (payloads.find(i) == payloads.end()) {
+            const auto p = payloads.find(i);
+            if (p == payloads.end()) {
                 mtrx[0] = ONE_CMPLX;
                 mtrx[1] = ZERO_CMPLX;
                 mtrx[2] = ZERO_CMPLX;
@@ -260,7 +261,7 @@ struct QCircuitGate {
                 continue;
             }
 
-            const complex* oMtrx = payloads[i].get();
+            const complex* oMtrx = p->second.get();
             std::copy(oMtrx, oMtrx + 4U, mtrx);
         }
 
