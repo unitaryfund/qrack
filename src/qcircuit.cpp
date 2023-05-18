@@ -164,7 +164,7 @@ void QCircuit::Run(QInterfacePtr qsim)
         }
         nGates.push_back(std::make_shared<QCircuitGate>((*gate)->target, *((*gate)->controls.begin())));
         gate = adv;
-        if (std::distance(gate, gates.end()) < 3U) {
+        if (std::distance(gate, gates.end()) < 3) {
             ++gate;
             break;
         }
