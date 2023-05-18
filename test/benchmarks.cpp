@@ -210,15 +210,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
 
             if (mOutputFileName.compare("") && isTrialSuccessful) {
-                std::vector<bitCapInt> qPowers;
-                for (bitLenInt i = 0U; i < numBits; ++i) {
-                    qPowers.push_back(pow2(i));
-                }
-                std::unique_ptr<unsigned long long[]> results(new unsigned long long[1000000U]);
-                qftReg->MultiShotMeasureMask(qPowers, 1000000U, results.get());
-                for (size_t i = 0U; i < 1000000U; ++i) {
-                    mOutputFile << results.get()[i] << std::endl;
-                }
+                mOutputFile << qftReg->MAll() << std::endl;
             }
         }
 
