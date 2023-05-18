@@ -61,8 +61,40 @@ void QCircuit::Run(QInterfacePtr qsim)
         qsim->Allocate(qubitCount - qsim->GetQubitCount());
     }
 
+    std::list<QCircuitGatePtr>::iterator end = gates.begin();
+    std::advance(end, gates.size() - 2U);
+    std::list<QCircuitGatePtr> nGates;
+    std::list<QCircuitGatePtr>::iterator gate;
+    for (gate = gates.begin(); gate != end; ++gate) {
+        if (!(*gate)->IsCnot()) {
+            nGates.push_back(*gate);
+            continue;
+        }
+        std::list<QCircuitGatePtr>::iterator adv = gate;
+        ++adv;
+        if (!(*adv)->IsCnot() || ((*adv)->target != *((*gate)->controls.begin())) ||
+            ((*gate)->target != *((*adv)->controls.begin()))) {
+            nGates.push_back(*gate);
+            continue;
+        }
+        ++adv;
+        if (!(*adv)->IsCnot() || ((*adv)->target != (*gate)->target) ||
+            (*((*gate)->controls.begin()) != *((*adv)->controls.begin()))) {
+            nGates.push_back(*gate);
+            continue;
+        }
+        nGates.push_back(std::make_shared<QCircuitGate>((*gate)->target, *((*gate)->controls.begin())));
+        gate = adv;
+        if (std::distance(gate, gates.end()) < 3U) {
+            ++gate;
+            break;
+        }
+    }
+    for (; gate != gates.end(); ++gate) {
+        nGates.push_back(*gate);
+    }
     std::vector<bool> controlStates(qubitCount, false);
-    for (const QCircuitGatePtr& gate : gates) {
+    for (const QCircuitGatePtr& gate : nGates) {
         const bitLenInt& t = gate->target;
 
         if (!gate->controls.size()) {
@@ -78,6 +110,22 @@ void QCircuit::Run(QInterfacePtr qsim)
         }
 
         std::vector<bitLenInt> controls = gate->GetControlsVector();
+
+        if (!gate->payloads.size()) {
+            const bitLenInt c = controls[0U];
+            if (controlStates[c] != controlStates[t]) {
+                if (controlStates[c]) {
+                    qsim->X(c);
+                    controlStates[c] = false;
+                } else {
+                    qsim->X(t);
+                    controlStates[t] = false;
+                }
+            }
+            qsim->Swap(c, t);
+
+            continue;
+        }
 
         if ((gate->payloads.size() == (1U << controls.size())) || (gate->payloads.size() >= 8)) {
             for (const bitLenInt& c : controls) {

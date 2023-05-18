@@ -32,6 +32,18 @@ struct QCircuitGate {
     std::set<bitLenInt> controls;
 
     /**
+     * `Swap` gate constructor
+     */
+    QCircuitGate(bitLenInt q1, bitLenInt q2)
+        : target(q1)
+        , payloads()
+        , controls({ q2 })
+
+    {
+        // Swap gate constructor.
+    }
+
+    /**
      * Single-qubit gate constructor
      */
     QCircuitGate(bitLenInt trgt, const complex matrix[])
@@ -194,7 +206,7 @@ struct QCircuitGate {
     }
 
     /**
-     * Am I Pauli X plus a phase gate?
+     * Am I a Pauli X plus a phase gate?
      */
     bool IsInvert()
     {
@@ -203,6 +215,23 @@ struct QCircuitGate {
             if ((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON)) {
                 return false;
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Am I a CNOT gate?
+     */
+    bool IsCnot()
+    {
+        if ((controls.size() != 1U) || (payloads.size() != 1U) || (payloads.find(1U) == payloads.end())) {
+            return false;
+        }
+        complex* p = payloads[1U].get();
+        if ((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON) ||
+            (norm(ONE_CMPLX - p[1]) > FP_NORM_EPSILON) || (norm(ONE_CMPLX - p[2]) > FP_NORM_EPSILON)) {
+            return false;
         }
 
         return true;
@@ -248,16 +277,13 @@ struct QCircuitGate {
     std::unique_ptr<complex[]> MakeUniformlyControlledPayload()
     {
         const bitCapIntOcl maxQPower = (1U << controls.size());
-        std::unique_ptr<complex[]> toRet(new complex[4U * maxQPower]);
+        std::unique_ptr<complex[]> toRet(new complex[maxQPower << 2U]);
+        complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
             complex* mtrx = toRet.get() + (i << 2U);
             const auto p = payloads.find(i);
             if (p == payloads.end()) {
-                mtrx[0] = ONE_CMPLX;
-                mtrx[1] = ZERO_CMPLX;
-                mtrx[2] = ZERO_CMPLX;
-                mtrx[3] = ONE_CMPLX;
-
+                std::copy(identity, identity + 4, mtrx);
                 continue;
             }
 
