@@ -20,6 +20,7 @@
 #include <set>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 #include "catch.hpp"
 
@@ -120,6 +121,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         sampleFailureCount = 0;
         trialClocks.clear();
 
+        std::vector<bitCapInt> qPowers;
+        for (bitLenInt i = 0U; i < numBits; ++i) {
+            qPowers.push_back(pow2(i));
+        }
+
         for (sample = 0; sample < benchmarkSamples; sample++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
@@ -175,8 +181,23 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
             // Collect interval data
             if (isTrialSuccessful) {
+                if (benchmarkShots == 1) {
+                    const bitCapInt result = qftReg->MAll();
+                    if (mOutputFileName.compare("")) {
+                        mOutputFile << result << std::endl;
+                    }
+                } else if (benchmarkShots) {
+                    std::unique_ptr<unsigned long long[]> results(new unsigned long long[benchmarkShots]);
+                    qftReg->MultiShotMeasureMask(qPowers, benchmarkShots, results.get());
+                    for (int i = 0U; i < benchmarkShots; ++i) {
+                        mOutputFile << results.get()[i] << std::endl;
+                    }
+                }
+
+                // Clock stops after benchmark definition plus measurement sampling.
                 auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::high_resolution_clock::now() - iterClock);
+
                 if (tClock.count() < 0) {
                     trialClocks.push_back(0);
                 } else if (logNormal) {
@@ -207,10 +228,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
                 sampleFailureCount++;
                 isTrialSuccessful = false;
-            }
-
-            if (mOutputFileName.compare("") && isTrialSuccessful) {
-                mOutputFile << qftReg->MAll() << std::endl;
             }
         }
 
@@ -649,8 +666,6 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
                     }
                 }
             }
-
-            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -708,8 +723,6 @@ TEST_CASE("test_stabilizer", "[supreme]")
                     }
                 }
             }
-
-            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -849,8 +862,6 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                 // else - identity
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -1022,8 +1033,6 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -1210,8 +1219,6 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -1400,8 +1407,6 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -1513,8 +1518,6 @@ TEST_CASE("test_dense", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -1774,8 +1777,6 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -1935,7 +1936,6 @@ TEST_CASE("test_circuit_t_nn", "[supreme]")
         }
 
         circuit->Run(qReg);
-        qReg->MAll();
     });
 }
 
@@ -2108,7 +2108,6 @@ TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
         }
 
         // circuit->Run(qReg);
-        // qReg->MAll();
 
         std::ofstream ofile;
         std::string nstr = std::to_string(n);
@@ -2139,7 +2138,6 @@ TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
         if (iter == benchmarkSamples) {
             iter = 0;
         }
-        qReg->MAll();
     });
 }
 
@@ -2429,8 +2427,6 @@ TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -2640,8 +2636,6 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -2862,8 +2856,6 @@ TEST_CASE("test_noisy_dense_cc_nn", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -3093,8 +3085,6 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                 }
             }
         }
-
-        qReg->MAll();
     });
 }
 
@@ -3139,8 +3129,6 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
                     }
                 }
             }
-
-            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -3197,8 +3185,6 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
                     }
                 }
             }
-
-            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -3268,8 +3254,6 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
                     }
                 }
             }
-
-            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -3344,8 +3328,6 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                     }
                 }
             }
-
-            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -3414,8 +3396,6 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
                     }
                 }
             }
-
-            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }

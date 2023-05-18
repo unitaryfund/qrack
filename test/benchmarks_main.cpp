@@ -44,6 +44,7 @@ bool isBinaryOutput = false;
 int benchmarkSamples = 100;
 int benchmarkDepth = 20;
 int benchmarkMaxMagic = -1;
+int benchmarkShots = 1;
 int timeout = -1;
 std::vector<int64_t> devList;
 bool optimal = false;
@@ -137,6 +138,10 @@ int main(int argc, char* argv[])
             "Specifies a file name for bit measurement outputs. If specificed, benchmark iterations will always be "
             "concluded with a full measurement and written to the given file name, as human-readable or raw integral "
             "binary depending on --binary-output") |
+        Opt(benchmarkShots, "measure-shots")["--measure-shots"](
+            "Specifies the number of shots during terminal measurement. The sampling time for shot count is included "
+            "in the benchmark time. The default is 1 shot.") |
+
         Opt(isBinaryOutput)["--binary-output"]("If included, specifies that the --measure-output file "
                                                "type should be binary. (By default, it is "
                                                "human-readable.)") |
