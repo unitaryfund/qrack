@@ -1947,6 +1947,210 @@ TEST_CASE("test_circuit_t_nn", "[supreme]")
     });
 }
 
+TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
+{
+    const int DimCount1Qb = 4;
+    const int GateCountMultiQb = 4;
+
+    const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+
+    int iter = 0;
+
+    const std::string path = "circuit_t_nn";
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    int err = _mkdir(path.c_str());
+#else
+    int err = mkdir(path.c_str(), 0700);
+#endif
+    if (err != -1) {
+        std::cout << "Making directory: " << path << std::endl;
+    }
+
+    std::cout << "Generating optimized circuits..." << std::endl;
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        real1_f gateRand;
+        bitLenInt gate;
+
+        // The test runs 2 bit gates according to a tiling sequence.
+        // The 1 bit indicates +/- column offset.
+        // The 2 bit indicates +/- row offset.
+        // This is the "ABCDCDAB" pattern, from the Cirq definition of "Sycamore circuits."
+        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+
+        // We factor the qubit count into two integers, as close to a perfect square as we can.
+        int colLen = std::sqrt(n);
+        while (((n / colLen) * colLen) != n) {
+            colLen--;
+        }
+        int rowLen = n / colLen;
+
+        QCircuitPtr circuit = std::make_shared<QCircuit>();
+
+        for (int d = 0; d < n; d++) {
+            for (bitLenInt i = 0; i < n; i++) {
+                // "Phase" transforms:
+                gateRand = DimCount1Qb * qReg->Rand();
+                if ((2 * qReg->Rand()) < ONE_R1) {
+                    if (gateRand < ONE_R1) {
+                        // qReg->H(i);
+                        circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        // qReg->S(i);
+                        circuit->AppendGate(std::make_shared<QCircuitGate>(i, s));
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        // qReg->H(i);
+                        // qReg->S(i);
+                        circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
+                        circuit->AppendGate(std::make_shared<QCircuitGate>(i, s));
+                    }
+                    // else - identity
+                } else {
+                    gateRand = DimCount1Qb * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        // qReg->H(i);
+                        circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        // qReg->IS(i);
+                        circuit->AppendGate(std::make_shared<QCircuitGate>(i, is));
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        // qReg->IS(i);
+                        // qReg->H(i);
+                        circuit->AppendGate(std::make_shared<QCircuitGate>(i, is));
+                        circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
+                    }
+                    // else - identity
+                }
+
+                //"Position" transforms:
+
+                // Continuous Z root gates option:
+                gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
+                const complex p[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, (real1)gateRand) };
+                circuit->AppendGate(std::make_shared<QCircuitGate>(i, p));
+            }
+
+            gate = gateSequence.front();
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+
+            std::vector<bitLenInt> usedBits;
+
+            for (int row = 1; row < rowLen; row += 2) {
+                for (int col = 0; col < colLen; col++) {
+                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                    // In this test, the boundaries of the rectangle have no couplers.
+                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                    // awkwardly.)
+
+                    bitLenInt b1 = row * colLen + col;
+                    if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
+                        continue;
+                    }
+
+                    int tempRow = row;
+                    int tempCol = col;
+
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
+
+                    bitLenInt b2 = tempRow * colLen + tempCol;
+
+                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                        (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                        continue;
+                    }
+
+                    usedBits.push_back(b1);
+                    usedBits.push_back(b2);
+
+                    gateRand = GateCountMultiQb * qReg->Rand();
+
+                    if (gateRand >= (3 * ONE_R1)) {
+                        // 1/4 chance of identity
+                        continue;
+                    }
+
+                    if ((4 * qReg->Rand()) < ONE_R1) {
+                        // In 3 CNOT(a,b) sequence, for example, 1/4 of sequences on average are equivalent to SWAP.
+                        circuit->Swap(b1, b2);
+                        continue;
+                    }
+
+                    if ((qReg->Rand() * 2) < ONE_R1) {
+                        std::swap(b1, b2);
+                    }
+
+                    const std::set<bitLenInt> controls{ b1 };
+                    if ((2 * qReg->Rand()) < ONE_R1) {
+                        if (gateRand < ONE_R1) {
+                            // qReg->AntiCNOT(b1, b2);
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 0U));
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            // qReg->AntiCY(b1, b2);
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 0U));
+                        } else {
+                            // qReg->AntiCZ(b1, b2);
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 0U));
+                        }
+                    } else {
+                        if (gateRand < ONE_R1) {
+                            // qReg->CNOT(b1, b2);
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 1U));
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            // qReg->CY(b1, b2);
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 1U));
+                        } else {
+                            // qReg->CZ(b1, b2);
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 1U));
+                        }
+                    }
+                }
+            }
+        }
+
+        // circuit->Run(qReg);
+        // qReg->MAll();
+
+        std::ofstream ofile;
+        std::string nstr = std::to_string(n);
+        std::string istr = std::to_string(iter);
+        ofile.open(path + "/qcircuit_test_" + nstr + "_" + istr + ".qgc");
+        ofile << circuit;
+        ofile.close();
+
+        ++iter;
+        if (iter == benchmarkSamples) {
+            iter = 0;
+        }
+    });
+
+    std::cout << std::endl << "Loading optimized circuits from disk and running..." << std::endl;
+    iter = 0;
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        std::ifstream ifile;
+        std::string nstr = std::to_string(n);
+        std::string istr = std::to_string(iter);
+        ifile.open(path + "/qcircuit_test_" + nstr + "_" + istr + ".qgc");
+        QCircuitPtr circuit = std::make_shared<QCircuit>();
+        ifile >> circuit;
+        ifile.close();
+
+        circuit->Run(qReg);
+        ++iter;
+        if (iter == benchmarkSamples) {
+            iter = 0;
+        }
+        qReg->MAll();
+    });
+}
+
 void inject_1qb_u3_noise(QInterfacePtr qReg, bitLenInt qubit, real1_f distance)
 {
     distance = 2 * PI_R1 * distance * qReg->Rand();
