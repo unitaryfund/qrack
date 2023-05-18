@@ -1971,7 +1971,7 @@ TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
         std::cout << "Making directory: " << path << std::endl;
     }
 
-    std::cout << "Generating optimized circuits..." << std::endl;
+    std::cout << std::endl << "Generating optimized circuits..." << std::endl;
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         real1_f gateRand;
         bitLenInt gate;
