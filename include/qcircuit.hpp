@@ -32,18 +32,6 @@ struct QCircuitGate {
     std::set<bitLenInt> controls;
 
     /**
-     * `Swap` gate constructor
-     */
-    QCircuitGate(bitLenInt q1, bitLenInt q2)
-        : target(q1)
-        , payloads()
-        , controls({ q2 })
-
-    {
-        // Swap gate constructor.
-    }
-
-    /**
      * Single-qubit gate constructor
      */
     QCircuitGate(bitLenInt trgt, const complex matrix[])
@@ -85,18 +73,6 @@ struct QCircuitGate {
      */
     bool CanCombine(QCircuitGatePtr other)
     {
-        if (IsSwap()) {
-            if (other->payloads.size()) {
-                return false;
-            }
-            /*if (((target == other->target) && (*(controls.begin()) == *(other->controls.begin()))) ||
-                ((target == *(other->controls.begin())) && (*(controls.begin()) == other->target))) {
-                return true;
-            }*/
-
-            return false;
-        }
-
         if (target != other->target) {
             return false;
         }
@@ -134,11 +110,6 @@ struct QCircuitGate {
      */
     void Combine(QCircuitGatePtr other)
     {
-        if (IsSwap()) {
-            Clear();
-            return;
-        }
-
         for (const auto& payload : other->payloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
@@ -209,10 +180,6 @@ struct QCircuitGate {
      */
     bool IsPhase()
     {
-        if (IsSwap()) {
-            return false;
-        }
-
         for (const auto& payload : payloads) {
             if ((norm(payload.second[1]) > FP_NORM_EPSILON) || (norm(payload.second[2]) > FP_NORM_EPSILON)) {
                 return false;
@@ -227,10 +194,6 @@ struct QCircuitGate {
      */
     bool IsInvert()
     {
-        if (IsSwap()) {
-            return false;
-        }
-
         for (const auto& payload : payloads) {
             if ((norm(payload.second[0]) > FP_NORM_EPSILON) || (norm(payload.second[3]) > FP_NORM_EPSILON)) {
                 return false;
@@ -239,11 +202,6 @@ struct QCircuitGate {
 
         return true;
     }
-
-    /**
-     * Am I a swap gate?
-     */
-    bool IsSwap() { return !payloads.size(); }
 
     /**
      * Do I commute with gate `other`?
@@ -375,9 +333,6 @@ public:
         if (q1 == q2) {
             return;
         }
-
-        // TODO: Broken:
-        // AppendGate(std::make_shared<QCircuitGate>(q1, q2));
 
         // If all swap gates are constructed in the same order, between high and low qubits, then the chances of
         // combining them might be higher.

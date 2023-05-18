@@ -4768,7 +4768,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->Swap(b1, b2);
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
@@ -5031,7 +5031,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->Swap(b1, b2);
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
@@ -5272,7 +5272,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->Swap(b1, b2);
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
@@ -5486,7 +5486,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->Swap(b1, b2);
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
@@ -5692,7 +5692,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
 
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->Swap(b1, b2);
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
@@ -5876,7 +5876,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
 
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, b2));
+                    circuit->Swap(b1, b2);
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));

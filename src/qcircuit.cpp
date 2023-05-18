@@ -79,23 +79,6 @@ void QCircuit::Run(QInterfacePtr qsim)
 
         std::vector<bitLenInt> controls = gate->GetControlsVector();
 
-        if (gate->IsSwap()) {
-            const bitLenInt c = controls[0];
-            if (controlStates[t] != controlStates[c]) {
-                if (controlStates[t]) {
-                    qsim->X(t);
-                    controlStates[t] = false;
-                } else {
-                    qsim->X(c);
-                    controlStates[c] = false;
-                }
-            }
-
-            qsim->Swap(c, t);
-
-            continue;
-        }
-
         if ((gate->payloads.size() == (1U << controls.size())) || (gate->payloads.size() >= 8)) {
             for (const bitLenInt& c : controls) {
                 if (controlStates[c]) {
