@@ -14,6 +14,7 @@
 
 #include "qinterface.hpp"
 
+#include <iostream>
 #include <list>
 
 #define amp_leq_0(x) (norm(x) <= FP_NORM_EPSILON)
@@ -30,6 +31,18 @@ struct QCircuitGate {
     bitLenInt target;
     std::map<bitCapInt, std::shared_ptr<complex>> payloads;
     std::set<bitLenInt> controls;
+
+    /**
+     * Identity gate constructor
+     */
+    QCircuitGate()
+        : target(0)
+        , payloads()
+        , controls()
+
+    {
+        Clear();
+    }
 
     /**
      * `Swap` gate constructor
@@ -242,7 +255,7 @@ struct QCircuitGate {
      */
     bool CanPass(QCircuitGatePtr other)
     {
-        const std::set<bitLenInt>::iterator c = other->controls.find(target);
+        std::set<bitLenInt>::iterator c = other->controls.find(target);
         if (c != other->controls.end()) {
             if (controls.find(other->target) != controls.end()) {
                 return IsPhase() && other->IsPhase();
@@ -299,6 +312,9 @@ struct QCircuitGate {
      */
     std::vector<bitLenInt> GetControlsVector() { return std::vector<bitLenInt>(controls.begin(), controls.end()); }
 };
+
+std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g);
+std::istream& operator>>(std::istream& os, QCircuitGatePtr& g);
 
 /**
  * Define and optimize a circuit, before running on a `QInterface`.
@@ -363,9 +379,19 @@ public:
     bitLenInt GetQubitCount() { return qubitCount; }
 
     /**
+     * Set the count of qubits in this circuit, so far.
+     */
+    void SetQubitCount(bitLenInt n) { qubitCount = n; }
+
+    /**
      * Return the raw list of gates.
      */
     std::list<QCircuitGatePtr> GetGateList() { return gates; }
+
+    /**
+     * Set the raw list of gates.
+     */
+    void SetGateList(std::list<QCircuitGatePtr> gl) { gates = gl; }
 
     /**
      * Add a `Swap` gate to the gate sequence.
@@ -399,4 +425,7 @@ public:
      */
     void Run(QInterfacePtr qsim);
 };
+
+std::ostream& operator<<(std::ostream& os, const QCircuitPtr g);
+std::istream& operator>>(std::istream& os, QCircuitPtr& g);
 } // namespace Qrack

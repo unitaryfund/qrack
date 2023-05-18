@@ -7192,6 +7192,21 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
             }
         }
 
+        // std::cout <<"Out to file..." << std::endl;
+        // std::ofstream ofile;
+        // ofile.open ("qcircuit_test.qgc");
+        // ofile << circuit;
+        // ofile.close();
+
+        // std::cout <<"In from file..." << std::endl;
+        // std::ifstream ifile ("qcircuit_test.qgc");
+        // std::string line;
+        // std::getline(ifile, line);
+        // ifile >> line;
+        // ifile.close();
+
+        // std::cout <<"Done." << std::endl;
+
         circuit->Run(testCase);
 
         // Mirror the circuit
