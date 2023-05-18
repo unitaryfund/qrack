@@ -16,18 +16,18 @@ namespace Qrack {
 
 std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
 {
-    os << g->target;
+    os << g->target << " ";
 
-    os << g->controls.size();
+    os << g->controls.size() << " ";
     for (const bitLenInt& c : g->controls) {
-        os << c;
+        os << c << " ";
     }
 
-    os << g->payloads.size();
+    os << g->payloads.size() << " ";
     for (const auto& p : g->payloads) {
         os << p.first;
         for (size_t i = 0U; i < 4U; ++i) {
-            os << p.second.get()[i];
+            os << p.second.get()[i] << " ";
         }
     }
 
@@ -63,10 +63,10 @@ std::istream& operator>>(std::istream& os, QCircuitGatePtr& g)
 
 std::ostream& operator<<(std::ostream& os, const QCircuitPtr c)
 {
-    os << c->GetQubitCount();
+    os << c->GetQubitCount() << " ";
 
     std::list<QCircuitGatePtr> gates = c->GetGateList();
-    os << gates.size();
+    os << gates.size() << " ";
     for (const QCircuitGatePtr& g : gates) {
         os << g;
     }
@@ -88,7 +88,7 @@ std::istream& operator>>(std::istream& os, QCircuitPtr& c)
         os >> g;
         gl.push_back(g);
     }
-    c->SetGateList(gl);
+    // c->SetGateList(gl);
 
     return os;
 }

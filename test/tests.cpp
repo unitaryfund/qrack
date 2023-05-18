@@ -7199,10 +7199,9 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
         // ofile.close();
 
         // std::cout <<"In from file..." << std::endl;
-        // std::ifstream ifile ("qcircuit_test.qgc");
-        // std::string line;
-        // std::getline(ifile, line);
-        // ifile >> line;
+        // std::ifstream ifile;
+        // ifile.open("qcircuit_test.qgc");
+        // ifile >> circuit;
         // ifile.close();
 
         // std::cout <<"Done." << std::endl;

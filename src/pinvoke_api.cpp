@@ -17,6 +17,7 @@
 #include "hamiltonian.hpp"
 #endif
 
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <mutex>
@@ -3000,5 +3001,24 @@ MICROSOFT_QUANTUM_DECL void qcircuit_run(_In_ uintq cid, _In_ uintq sid)
 {
     CIRCUIT_AND_SIMULATOR_LOCK_GUARD_VOID(cid, sid)
     circuit->Run(simulator);
+}
+
+MICROSOFT_QUANTUM_DECL void qcircuit_out_to_file(_In_ uintq cid, _In_ char* f)
+{
+    CIRCUIT_LOCK_GUARD_VOID(cid)
+    std::ofstream ofile;
+    std::string filename(f);
+    ofile.open(f);
+    ofile << circuit;
+    ofile.close();
+}
+MICROSOFT_QUANTUM_DECL void qcircuit_in_from_file(_In_ uintq cid, _In_ char* f)
+{
+    CIRCUIT_LOCK_GUARD_VOID(cid)
+    std::ifstream ifile;
+    std::string filename(f);
+    ifile.open(f);
+    ifile >> circuit;
+    ifile.close();
 }
 }
