@@ -372,8 +372,18 @@ public:
      */
     void Swap(bitLenInt q1, bitLenInt q2)
     {
+        if (q1 == q2) {
+            return;
+        }
+
         // TODO: Broken:
         // AppendGate(std::make_shared<QCircuitGate>(q1, q2));
+
+        // If all swap gates are constructed in the same order, between high and low qubits, then the chances of
+        // combining them might be higher.
+        if (q1 > q2) {
+            std::swap(q1, q2);
+        }
 
         const complex m[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         const std::set<bitLenInt> s1 = { q1 };
