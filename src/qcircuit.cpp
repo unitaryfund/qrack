@@ -33,8 +33,16 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
     for (std::list<QCircuitGatePtr>::reverse_iterator gate = gates.rbegin(); gate != gates.rend(); ++gate) {
         if ((*gate)->TryCombine(nGate)) {
             if ((*gate)->IsIdentity()) {
-                ++gate;
-                gates.erase(gate.base());
+                std::list<QCircuitGatePtr>::reverse_iterator _gate = gate++;
+                std::list<QCircuitGatePtr> head(_gate.base(), gates.end());
+                gates.erase(gate.base(), gates.end());
+                for (std::list<QCircuitGatePtr>::iterator g = head.begin(); g != head.end(); ++g) {
+                    if (!nGate->CanCombine(*g) && !nGate->CanPass(*g)) {
+                        gates.push_back(*g);
+                    } else {
+                        AppendGate(*g);
+                    }
+                }
             }
             return;
         }
