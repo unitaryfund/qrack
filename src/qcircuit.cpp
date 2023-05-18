@@ -25,7 +25,7 @@ std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
 
     os << g->payloads.size() << " ";
     for (const auto& p : g->payloads) {
-        os << p.first;
+        os << p.first << " ";
         for (size_t i = 0U; i < 4U; ++i) {
             os << p.second.get()[i] << " ";
         }
