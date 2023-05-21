@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <list>
 
 #define amp_leq_0(x) (norm(x) <= FP_NORM_EPSILON)
@@ -230,6 +231,10 @@ struct QCircuitGate {
      */
     void Combine(QCircuitGatePtr other)
     {
+        std::set<bitLenInt> ctrlsToTest;
+        std::set_intersection(controls.begin(), controls.end(), other->controls.begin(), other->controls.end(),
+            std::inserter(ctrlsToTest, ctrlsToTest.begin()));
+
         if (controls.size() < other->controls.size()) {
             for (const bitLenInt& oc : other->controls) {
                 AddControl(oc);
@@ -269,8 +274,7 @@ struct QCircuitGate {
             return;
         }
 
-        const std::set<bitLenInt> ctrls = controls;
-        for (const bitLenInt& c : ctrls) {
+        for (const bitLenInt& c : ctrlsToTest) {
             TryRemoveControl(c);
         }
     }
