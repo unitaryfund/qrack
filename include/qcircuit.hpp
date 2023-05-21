@@ -14,6 +14,7 @@
 
 #include "qinterface.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <list>
 
@@ -104,15 +105,12 @@ struct QCircuitGate {
             return false;
         }
 
-        if (controls.size() != other->controls.size()) {
-            return false;
+        if (std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end()) ||
+            std::includes(controls.begin(), controls.end(), other->controls.begin(), other->controls.end())) {
+            return true;
         }
 
-        if (!std::includes(controls.begin(), controls.end(), other->controls.begin(), other->controls.end())) {
-            return false;
-        }
-
-        return true;
+        return false;
     }
 
     /**
@@ -132,10 +130,50 @@ struct QCircuitGate {
     }
 
     /**
+     * Add control qubit.
+     */
+    void AddControl(bitLenInt c)
+    {
+        if (controls.find(c) != controls.end()) {
+            return;
+        }
+
+        controls.insert(c);
+
+        const size_t cpos = std::distance(controls.begin(), controls.find(c));
+        const bitCapInt midPow = pow2(cpos);
+        const bitCapInt lowMask = midPow - 1U;
+        const bitCapInt highMask = !lowMask;
+
+        std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
+        for (const auto& payload : payloads) {
+            const bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) << 1U);
+
+            nPayloads.emplace(nKey, payload.second);
+
+            std::shared_ptr<complex> np = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
+            std::copy(payload.second.get(), payload.second.get() + 4U, np.get());
+            nPayloads.emplace(nKey | midPow, np);
+        }
+
+        payloads = nPayloads;
+    }
+
+    /**
      * Combine myself with gate `other`
      */
     void Combine(QCircuitGatePtr other)
     {
+        if (controls.size() < other->controls.size()) {
+            for (const auto& oc : other->controls) {
+                AddControl(oc);
+            }
+        } else if (controls.size() > other->controls.size()) {
+            for (const auto& c : controls) {
+                other->AddControl(c);
+            }
+        }
+
         for (const auto& payload : other->payloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
