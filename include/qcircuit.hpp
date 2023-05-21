@@ -395,22 +395,21 @@ struct QCircuitGate {
                 return false;
             }
 
-            std::vector<bitCapInt> pfPows;
-            pfPows.reserve(controls.size());
+            std::vector<bitCapInt> opfPows;
+            opfPows.reserve(controls.size());
             for (const bitLenInt& ctrl : controls) {
-                pfPows.emplace_back(pow2(std::distance(other->controls.begin(), other->controls.find(ctrl))));
+                opfPows.emplace_back(pow2(std::distance(other->controls.begin(), other->controls.find(ctrl))));
             }
             const bitCapInt p = pow2(std::distance(other->controls.begin(), c));
             std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
             for (const auto& payload : other->payloads) {
-                bitCapInt opf = 0;
-                for (const bitCapInt& pfPow : pfPows) {
-                    opf <<= 1U;
-                    if (payload.first & pfPow) {
-                        opf |= 1U;
+                bitCapInt pf = 0U;
+                for (bitLenInt i = 0U; i < opfPows.size(); ++i) {
+                    if (payload.first & opfPows[i]) {
+                        pf |= pow2(i);
                     }
                 }
-                const auto poi = payloads.find(opf);
+                const auto poi = payloads.find(pf);
                 if ((poi == payloads.end()) || (norm(poi->second.get()[0]) > FP_NORM_EPSILON)) {
                     nPayloads[payload.first] = payload.second;
                 } else {
