@@ -345,6 +345,22 @@ struct QCircuitGate {
     }
 
     /**
+     * Am I a combination of "phase" and "invert" payloads?
+     */
+    bool IsPhaseInvert()
+    {
+        for (const auto& payload : payloads) {
+            complex* p = payload.second.get();
+            if (((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON)) &&
+                ((norm(p[1]) > FP_NORM_EPSILON) || (norm(p[2]) > FP_NORM_EPSILON))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Am I a CNOT gate?
      */
     bool IsCnot()
@@ -374,7 +390,7 @@ struct QCircuitGate {
             if (IsPhase()) {
                 return true;
             }
-            if (!IsInvert() ||
+            if (!IsPhaseInvert() ||
                 !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
                 return false;
             }
@@ -394,7 +410,8 @@ struct QCircuitGate {
                         opf |= 1U;
                     }
                 }
-                if (payloads.find(opf) == payloads.end()) {
+                const auto poi = payloads.find(opf);
+                if ((poi == payloads.end()) || (norm(poi->second.get()[0]) > FP_NORM_EPSILON)) {
                     nPayloads[payload.first] = payload.second;
                 } else {
                     nPayloads[payload.first ^ p] = payload.second;
