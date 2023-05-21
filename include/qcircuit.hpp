@@ -108,10 +108,8 @@ struct QCircuitGate {
             return false;
         }
 
-        for (const bitLenInt& control : other->controls) {
-            if (controls.find(control) == controls.end()) {
-                return false;
-            }
+        if (!std::includes(controls.begin(), controls.end(), other->controls.begin(), other->controls.end())) {
+            return false;
         }
 
         return true;
