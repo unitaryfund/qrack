@@ -143,7 +143,7 @@ struct QCircuitGate {
         const size_t cpos = std::distance(controls.begin(), controls.find(c));
         const bitCapInt midPow = pow2(cpos);
         const bitCapInt lowMask = midPow - 1U;
-        const bitCapInt highMask = !lowMask;
+        const bitCapInt highMask = ~lowMask;
 
         std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
         for (const auto& payload : payloads) {
@@ -160,16 +160,82 @@ struct QCircuitGate {
     }
 
     /**
+     * Check if a control qubit can be removed.
+     */
+    bool CanRemoveControl(bitLenInt c)
+    {
+        const size_t cpos = std::distance(controls.begin(), controls.find(c));
+        const bitCapInt midPow = pow2(cpos);
+
+        for (const auto& payload : payloads) {
+            const bitCapInt nKey = payload.first & ~midPow;
+
+            if (nKey == payload.first) {
+                if (payloads.find(nKey | midPow) == payloads.end()) {
+                    return false;
+                }
+            } else {
+                if (payloads.find(nKey) == payloads.end()) {
+                    return false;
+                }
+            }
+
+            const complex* l = payloads[nKey].get();
+            const complex* h = payloads[nKey | midPow].get();
+            if (amp_leq_0(l[0] - h[0]) && amp_leq_0(l[1] - h[1]) && amp_leq_0(l[2] - h[2]) && amp_leq_0(l[3] - h[3])) {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Remove control qubit.
+     */
+    void RemoveControl(bitLenInt c)
+    {
+        const size_t cpos = std::distance(controls.begin(), controls.find(c));
+        const bitCapInt midPow = pow2(cpos);
+        const bitCapInt lowMask = midPow - 1U;
+        const bitCapInt highMask = ~(lowMask | midPow);
+
+        std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
+        for (const auto& payload : payloads) {
+            const bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) >> 1U);
+            nPayloads.emplace(nKey, payload.second);
+        }
+
+        payloads = nPayloads;
+        controls.erase(c);
+    }
+
+    /**
+     * Check if I can remove control, and do so, if possible
+     */
+    bool TryRemoveControl(bitLenInt c)
+    {
+        if (!CanRemoveControl(c)) {
+            return false;
+        }
+        RemoveControl(c);
+
+        return true;
+    }
+
+    /**
      * Combine myself with gate `other`
      */
     void Combine(QCircuitGatePtr other)
     {
         if (controls.size() < other->controls.size()) {
-            for (const auto& oc : other->controls) {
+            for (const bitLenInt& oc : other->controls) {
                 AddControl(oc);
             }
         } else if (controls.size() > other->controls.size()) {
-            for (const auto& c : controls) {
+            for (const bitLenInt& c : controls) {
                 other->AddControl(c);
             }
         }
@@ -201,6 +267,11 @@ struct QCircuitGate {
         if (!payloads.size()) {
             Clear();
             return;
+        }
+
+        const std::set<bitLenInt> ctrls = controls;
+        for (const bitLenInt& c : ctrls) {
+            TryRemoveControl(c);
         }
     }
 
