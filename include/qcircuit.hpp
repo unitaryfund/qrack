@@ -405,7 +405,7 @@ struct QCircuitGate {
             for (const auto& payload : other->payloads) {
                 bitCapInt opf = 0;
                 for (const bitCapInt& pfPow : pfPows) {
-                    opf << 1U;
+                    opf <<= 1U;
                     if (payload.first & pfPow) {
                         opf |= 1U;
                     }
