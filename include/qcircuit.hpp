@@ -374,14 +374,31 @@ struct QCircuitGate {
             if (IsPhase()) {
                 return true;
             }
-            if (controls.size() || !IsInvert()) {
+            if (!IsInvert() ||
+                !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
                 return false;
             }
 
+            std::vector<bitCapInt> pfPows;
+            pfPows.reserve(controls.size());
+            for (const bitLenInt& ctrl : controls) {
+                pfPows.emplace_back(pow2(std::distance(other->controls.begin(), other->controls.find(ctrl))));
+            }
             const bitCapInt p = pow2(std::distance(other->controls.begin(), c));
             std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
             for (const auto& payload : other->payloads) {
-                nPayloads[payload.first ^ p] = payload.second;
+                bitCapInt opf = 0;
+                for (const bitCapInt& pfPow : pfPows) {
+                    opf << 1U;
+                    if (payload.first & pfPow) {
+                        opf |= 1U;
+                    }
+                }
+                if (payloads.find(opf) == payloads.end()) {
+                    nPayloads[payload.first] = payload.second;
+                } else {
+                    nPayloads[payload.first ^ p] = payload.second;
+                }
             }
             other->payloads = nPayloads;
 
