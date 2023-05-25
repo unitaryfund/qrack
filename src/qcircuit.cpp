@@ -88,7 +88,7 @@ std::istream& operator>>(std::istream& os, QCircuitPtr& c)
         os >> g;
         gl.push_back(g);
     }
-    // c->SetGateList(gl);
+    c->SetGateList(gl);
 
     return os;
 }
