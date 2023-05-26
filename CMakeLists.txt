@@ -274,6 +274,7 @@ install (FILES
     include/mpsshard.hpp
     include/qunit.hpp
     include/qunitmulti.hpp
+    include/qengine_gpu_util.hpp
     include/qengine_opencl.hpp
     include/qengine_cuda.hpp
     include/qinterface.hpp

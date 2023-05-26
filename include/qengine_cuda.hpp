@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
+#include "qengine_gpu_util.hpp"
 
 #if !ENABLE_CUDA
 #error CUDA has not been enabled
@@ -44,26 +44,9 @@ typedef unsigned long cl_mem_flags;
 #define CL_MEM_COPY_HOST_PTR                        (1 << 5)
 // clang-format on
 
-enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
-
-class bad_alloc : public std::bad_alloc {
-private:
-    std::string m;
-
-public:
-    bad_alloc(std::string message)
-        : m(message)
-    {
-        // Intentionally left blank.
-    }
-
-    const char* what() const noexcept { return m.c_str(); }
-};
-
 typedef std::shared_ptr<void> BufferPtr;
 
 class QEngineCUDA;
-
 typedef std::shared_ptr<QEngineCUDA> QEngineCUDAPtr;
 
 struct QueueItem {
@@ -451,12 +434,11 @@ public:
 protected:
     void AddAlloc(size_t size)
     {
-        CUDAEngine::Instance().AddToActiveAllocSize(deviceID, size);
-        // size_t currentAlloc = CUDAEngine::Instance().AddToActiveAllocSize(deviceID, size);
-        // if (device_context && (currentAlloc > device_context->GetGlobalAllocLimit())) {
-        //     CUDAEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
-        //     throw bad_alloc("VRAM limits exceeded in QEngineCUDA::AddAlloc()");
-        // }
+        size_t currentAlloc = CUDAEngine::Instance().AddToActiveAllocSize(deviceID, size);
+        if (device_context && (currentAlloc > device_context->GetGlobalAllocLimit())) {
+            CUDAEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
+            throw bad_alloc("VRAM limits exceeded in QEngineCUDA::AddAlloc()");
+        }
         totalOclAllocSize += size;
     }
     void SubtractAlloc(size_t size)

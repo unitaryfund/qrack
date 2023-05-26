@@ -210,10 +210,10 @@ void QEngineCUDA::SetAmplitudePage(
 
     pageEngineOclPtr->clFinish();
 
-    clFinish();
     tryCuda("Failed to enqueue buffer copy", [&] {
         return cudaMemcpy(oStateBuffer.get(), stateBuffer.get(), sizeof(complex) * srcOffset, cudaMemcpyDeviceToDevice);
     });
+    clFinish();
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -689,6 +689,9 @@ void QEngineCUDA::SetDevice(int64_t dID)
 #if defined(__ANDROID__)
         nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             new real1[nrmArrayAllocSize / sizeof(real1)], [](real1* r) { delete[] r; });
+#elif defined(__APPLE__)
+        nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
+            _aligned_nrm_array_alloc(nrmArrayAllocSize), [](real1* c) { free(c); });
 #elif defined(_WIN32) && !defined(__CYGWIN__)
         nrmArray = std::unique_ptr<real1[], void (*)(real1*)>(
             (real1*)_aligned_malloc(nrmArrayAllocSize, QRACK_ALIGN_SIZE), [](real1* c) { _aligned_free(c); });
@@ -701,6 +704,11 @@ void QEngineCUDA::SetDevice(int64_t dID)
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>());
+
+    if (!didInit) {
+        stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
+        stateBuffer = MakeStateVecBuffer(stateVec);
+    }
 
     didInit = true;
 }
@@ -760,34 +768,6 @@ void QEngineCUDA::SetPermutation(bitCapInt perm, complex phaseFac)
     QueueSetRunningNorm(ONE_R1_F);
 }
 
-void QEngineCUDA::XMask(bitCapInt mask)
-{
-    if (!mask) {
-        return;
-    }
-    if (!(mask & (mask - ONE_BCI))) {
-        X(log2(mask));
-        return;
-    }
-
-    BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
-}
-
-void QEngineCUDA::PhaseParity(real1_f radians, bitCapInt mask)
-{
-    if (!mask) {
-        return;
-    }
-
-    if (!(mask & (mask - ONE_BCI))) {
-        complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
-        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
-        return;
-    }
-
-    BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
-}
-
 /// NOT gate, which is also Pauli x matrix
 void QEngineCUDA::X(bitLenInt qubit)
 {
@@ -832,6 +812,34 @@ void QEngineCUDA::Phase(complex topLeft, complex bottomRight, bitLenInt qubitInd
     const complex pauliZ[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     const bitCapIntOcl qPowers[1]{ pow2Ocl(qubitIndex) };
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PHASE);
+}
+
+void QEngineCUDA::XMask(bitCapInt mask)
+{
+    if (!mask) {
+        return;
+    }
+    if (!(mask & (mask - ONE_BCI))) {
+        X(log2(mask));
+        return;
+    }
+
+    BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
+}
+
+void QEngineCUDA::PhaseParity(real1_f radians, bitCapInt mask)
+{
+    if (!mask) {
+        return;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
+        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+        return;
+    }
+
+    BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
 }
 
 void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
@@ -1002,6 +1010,8 @@ void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const com
         throw std::runtime_error("Invalid APPLY2X2 kernel selected!");
     }
 
+    cudaStreamSynchronize(params_queue);
+
     if (isXGate || isZGate) {
         QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
     } else if (doCalcNorm) {
@@ -1063,6 +1073,8 @@ void QEngineCUDA::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
         const complex cmplxArray[2]{ phaseFac, ONE_CMPLX / phaseFac };
         DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, 2U * sizeof(complex), cmplxArray);
     }
+
+    cudaStreamSynchronize(params_queue);
 
     if (isPhaseParity) {
         QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
@@ -1160,6 +1172,8 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    cudaStreamSynchronize(params_queue);
+
     QueueCall((abs(ONE_R1 - runningNorm) <= FP_NORM_EPSILON) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM,
         ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
     QueueSetRunningNorm(ONE_R1_F);
@@ -1202,6 +1216,8 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
     DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, &phaseFacs);
 
+    cudaStreamSynchronize(params_queue);
+
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
     QueueCall(OCL_API_CUNIFORMPARITYRZ, ngc, ngs,
@@ -1221,6 +1237,8 @@ void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex 
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    cudaStreamSynchronize(params_queue);
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
     QueueSetRunningNorm(ONE_R1_F);
@@ -1274,6 +1292,7 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
             return cudaMemcpy(
                 stateBuffer.get(), toCopy->stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
         });
+        cudaStreamSynchronize(params_queue);
 
         return;
     }
@@ -1305,6 +1324,8 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    cudaStreamSynchronize(params_queue);
 
     std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
@@ -1613,6 +1634,8 @@ real1_f QEngineCUDA::Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs)
     const bitCapIntOcl maxI = bciArgs[0];
     const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    cudaStreamSynchronize(params_queue);
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
 
@@ -2453,6 +2476,8 @@ void QEngineCUDA::FullAdx(
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    cudaStreamSynchronize(params_queue);
+
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
 }
 
@@ -2831,6 +2856,8 @@ void QEngineCUDA::PhaseFlipX(OCLAPI api_call, const bitCapIntOcl* bciArgs)
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    cudaStreamSynchronize(params_queue);
+
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
 }
 
@@ -3036,6 +3063,7 @@ QInterfacePtr QEngineCUDA::Clone()
         return cudaMemcpy(
             copyPtr->stateBuffer.get(), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
     });
+    cudaStreamSynchronize(params_queue);
 
     copyPtr->runningNorm = runningNorm;
 
@@ -3092,6 +3120,8 @@ void QEngineCUDA::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phase
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    cudaStreamSynchronize(params_queue);
+
     OCLAPI api_call;
     if (maxQPowerOcl == ngc) {
         api_call = OCL_API_NORMALIZE_WIDE;
@@ -3122,6 +3152,8 @@ void QEngineCUDA::UpdateRunningNorm(real1_f norm_thresh)
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    cudaStreamSynchronize(params_queue);
 
     QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->realBuffer, nrmBuffer },
         sizeof(real1) * ngs);
@@ -3197,6 +3229,8 @@ void QEngineCUDA::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl 
 
     const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    cudaStreamSynchronize(params_queue);
 
     QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
 }

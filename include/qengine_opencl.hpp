@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
+#include "qengine_gpu_util.hpp"
 
 #if !ENABLE_OPENCL
 #error OpenCL has not been enabled
@@ -30,26 +30,9 @@
 
 namespace Qrack {
 
-enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
-
-class bad_alloc : public std::bad_alloc {
-private:
-    std::string m;
-
-public:
-    bad_alloc(std::string message)
-        : m(message)
-    {
-        // Intentionally left blank.
-    }
-
-    const char* what() const noexcept { return m.c_str(); }
-};
-
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
 class QEngineOCL;
-
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 
 struct QueueItem {
