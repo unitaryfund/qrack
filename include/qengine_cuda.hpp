@@ -315,6 +315,7 @@ public:
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U, size_t deallocSize = 0U)
     {
+        cudaStreamSynchronize(params_queue);
         AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
     }
 
