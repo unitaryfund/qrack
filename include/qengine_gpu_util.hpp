@@ -31,4 +31,4 @@ public:
 
     const char* what() const noexcept { return m.c_str(); }
 };
-}
+} // namespace Qrack

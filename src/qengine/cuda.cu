@@ -213,7 +213,6 @@ void QEngineCUDA::SetAmplitudePage(
     tryCuda("Failed to enqueue buffer copy", [&] {
         return cudaMemcpy(oStateBuffer.get(), stateBuffer.get(), sizeof(complex) * srcOffset, cudaMemcpyDeviceToDevice);
     });
-    clFinish();
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -246,6 +245,7 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
+    cudaStreamSynchronize(params_queue);
 
     engineOcl->clFinish();
     WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
@@ -280,8 +280,8 @@ void QEngineCUDA::UnlockSync()
     if (unlockHostMem) {
         clFinish();
         tryCuda("Failed to unmap buffer", [&] {
-            return cudaMemcpyAsync(stateBuffer.get(), (void*)(stateVec.get()), sizeof(complex) * maxQPowerOcl,
-                cudaMemcpyHostToDevice, queue);
+            return cudaMemcpy(
+                stateBuffer.get(), (void*)(stateVec.get()), sizeof(complex) * maxQPowerOcl, cudaMemcpyHostToDevice);
         });
     } else {
         if (lockSyncFlags & CL_MAP_WRITE) {
@@ -761,8 +761,8 @@ void QEngineCUDA::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 
     tryCuda("Failed to enqueue buffer write", [&] {
-        return cudaMemcpyAsync((void*)((complex*)(stateBuffer.get()) + (size_t)perm), (void*)&permutationAmp,
-            sizeof(complex), cudaMemcpyHostToDevice, queue);
+        return cudaMemcpy((void*)((complex*)(stateBuffer.get()) + (size_t)perm), (void*)&permutationAmp,
+            sizeof(complex), cudaMemcpyHostToDevice);
     });
 
     QueueSetRunningNorm(ONE_R1_F);
@@ -1287,12 +1287,10 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
         stateVec = AllocStateVec(toCopy->maxQPowerOcl);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
-        clFinish();
         tryCuda("Failed to enqueue buffer copy", [&] {
             return cudaMemcpy(
                 stateBuffer.get(), toCopy->stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
         });
-        cudaStreamSynchronize(params_queue);
 
         return;
     }
@@ -2026,8 +2024,8 @@ void QEngineCUDA::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)
 
     if (controlLen) {
         tryCuda("Failed to enqueue buffer copy", [&] {
-            return cudaMemcpyAsync(
-                nStateBuffer.get(), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice, queue);
+            return cudaMemcpy(
+                nStateBuffer.get(), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
         });
     } else {
         ClearBuffer(nStateBuffer, 0U, maxQPowerOcl);
@@ -2943,8 +2941,8 @@ void QEngineCUDA::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     tryCuda("Failed to enqueue buffer write", [&] {
-        return cudaMemcpyAsync((void*)((complex*)(stateBuffer.get()) + maxQPowerOcl), (void*)&permutationAmp,
-            sizeof(complex), cudaMemcpyHostToDevice, queue);
+        return cudaMemcpy((void*)((complex*)(stateBuffer.get()) + maxQPowerOcl), (void*)&permutationAmp,
+            sizeof(complex), cudaMemcpyHostToDevice);
     });
 }
 
@@ -3063,7 +3061,6 @@ QInterfacePtr QEngineCUDA::Clone()
         return cudaMemcpy(
             copyPtr->stateBuffer.get(), stateBuffer.get(), sizeof(complex) * maxQPowerOcl, cudaMemcpyDeviceToDevice);
     });
-    cudaStreamSynchronize(params_queue);
 
     copyPtr->runningNorm = runningNorm;
 
