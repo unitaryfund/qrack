@@ -455,6 +455,44 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticy")
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ucmtrx")
+{
+    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const std::vector<bitLenInt> controls{ 0, 1 };
+
+    qftReg->SetPermutation(0x00);
+    qftReg->UCMtrx(controls, pauliX, 2, 0U);
+    REQUIRE_THAT(qftReg, HasProbability(0x04));
+
+    qftReg->SetPermutation(0x01);
+    qftReg->UCMtrx(controls, pauliX, 2, 1U);
+    REQUIRE_THAT(qftReg, HasProbability(0x05));
+
+    qftReg->SetPermutation(0x02);
+    qftReg->UCMtrx(controls, pauliX, 2, 2U);
+    REQUIRE_THAT(qftReg, HasProbability(0x06));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->UCMtrx(controls, pauliX, 2, 3U);
+    REQUIRE_THAT(qftReg, HasProbability(0x07));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->UCMtrx(controls, pauliX, 2, 1U);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+
+    qftReg->SetPermutation(0x01);
+    qftReg->UCMtrx(controls, pauliX, 2, 2U);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x02);
+    qftReg->UCMtrx(controls, pauliX, 2, 3U);
+    REQUIRE_THAT(qftReg, HasProbability(0x02));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->UCMtrx(controls, pauliX, 2, 0U);
+    REQUIRE_THAT(qftReg, HasProbability(0x03));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
 {
     const std::vector<bitLenInt> controls{ 0, 1 };

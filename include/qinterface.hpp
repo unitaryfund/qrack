@@ -444,6 +444,13 @@ public:
     }
 
     /**
+     * Apply an arbitrary single bit unitary transformation, with arbitrary control bits, with arbitary control
+     * permutation.
+     */
+    virtual void UCMtrx(
+        const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm);
+
+    /**
      * Apply a single bit transformation that only effects phase.
      */
     virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
@@ -514,6 +521,32 @@ public:
         MACWrapper(controls, [this, topRight, bottomLeft, target](const std::vector<bitLenInt>& lc) {
             MCInvert(lc, topRight, bottomLeft, target);
         });
+    }
+
+    /**
+     * Apply a single bit transformation that only effects phase, with arbitrary control bits, with arbitrary control
+     * permutation.
+     */
+    virtual void UCPhase(
+        const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target, bitCapInt perm)
+    {
+        if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
+            return;
+        }
+
+        const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        UCMtrx(controls, mtrx, target, perm);
+    }
+
+    /**
+     * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary control
+     * bits, with arbitrary control permutation.
+     */
+    virtual void UCInvert(
+        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target, bitCapInt perm)
+    {
+        const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        UCMtrx(controls, mtrx, target, perm);
     }
 
     /**

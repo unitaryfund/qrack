@@ -18,6 +18,45 @@
 
 namespace Qrack {
 
+void QInterface::UCMtrx(
+    const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
+{
+    size_t setCount = 0U;
+    for (size_t i = 0U; i < controls.size(); ++i) {
+        if ((controlPerm >> i) & 1U) {
+            ++setCount;
+        }
+    }
+
+    if ((setCount << 1U) > controls.size()) {
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            if (!((controlPerm >> i) & 1U)) {
+                X(controls[i]);
+            }
+        }
+        MCMtrx(controls, mtrx, target);
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            if (!((controlPerm >> i) & 1U)) {
+                X(controls[i]);
+            }
+        }
+
+        return;
+    }
+
+    for (size_t i = 0U; i < controls.size(); ++i) {
+        if ((controlPerm >> i) & 1U) {
+            X(controls[i]);
+        }
+    }
+    MACMtrx(controls, mtrx, target);
+    for (size_t i = 0U; i < controls.size(); ++i) {
+        if ((controlPerm >> i) & 1U) {
+            X(controls[i]);
+        }
+    }
+}
+
 void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
     complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {

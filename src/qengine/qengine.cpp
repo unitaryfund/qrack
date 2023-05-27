@@ -48,6 +48,34 @@ void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, complex const* 
     }
 }
 
+void QEngine::UCMtrx(
+    const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
+{
+    if (!controls.size()) {
+        Mtrx(mtrx, target);
+        return;
+    }
+
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
+
+    std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controls.size() + 1U]);
+    const bitCapIntOcl targetMask = pow2Ocl(target);
+    bitCapIntOcl fullMask = 0U;
+    for (size_t i = 0U; i < controls.size(); ++i) {
+        qPowersSorted[i] = pow2Ocl(controls[i]);
+        if ((controlPerm >> i) & 1) {
+            fullMask |= qPowersSorted[i];
+        }
+    }
+    const bitCapIntOcl controlMask = fullMask;
+    qPowersSorted[controls.size()] = targetMask;
+    fullMask |= targetMask;
+    std::sort(qPowersSorted.get(), qPowersSorted.get() + controls.size() + 1U);
+    Apply2x2(controlMask, fullMask, mtrx, controls.size() + 1U, qPowersSorted.get(), false);
+}
+
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
