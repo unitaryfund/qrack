@@ -176,6 +176,7 @@ void QCircuit::Run(QInterfacePtr qsim)
     for (; gate != gates.end(); ++gate) {
         nGates.push_back(*gate);
     }
+
     for (const QCircuitGatePtr& gate : nGates) {
         const bitLenInt& t = gate->target;
 

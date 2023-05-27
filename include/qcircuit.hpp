@@ -433,9 +433,9 @@ struct QCircuitGate {
      */
     std::unique_ptr<complex[]> MakeUniformlyControlledPayload()
     {
-        const bitCapIntOcl maxQPower = (1U << controls.size());
+        const bitCapIntOcl maxQPower = pow2Ocl(controls.size());
         std::unique_ptr<complex[]> toRet(new complex[maxQPower << 2U]);
-        complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
+        const complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
             complex* mtrx = toRet.get() + (i << 2U);
             const auto& p = payloads.find(i);
@@ -470,20 +470,6 @@ class QCircuit {
 protected:
     bitLenInt qubitCount;
     std::list<QCircuitGatePtr> gates;
-
-    /**
-     * Reverse truth values of 2x2 complex matrix
-     */
-    static std::unique_ptr<complex[]> InvertPayload(const complex* m)
-    {
-        std::unique_ptr<complex[]> mtrx(new complex[4]);
-        mtrx[0] = m[1];
-        mtrx[1] = m[0];
-        mtrx[2] = m[3];
-        mtrx[3] = m[2];
-
-        return mtrx;
-    }
 
 public:
     /**
