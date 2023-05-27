@@ -16,16 +16,16 @@ namespace Qrack {
 
 std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
 {
-    os << g->target << " ";
+    os << (size_t)g->target << " ";
 
     os << g->controls.size() << " ";
     for (const bitLenInt& c : g->controls) {
-        os << c << " ";
+        os << (size_t)c << " ";
     }
 
     os << g->payloads.size() << " ";
     for (const auto& p : g->payloads) {
-        os << p.first << " ";
+        os << (size_t)p.first << " ";
         for (size_t i = 0U; i < 4U; ++i) {
             os << p.second.get()[i] << " ";
         }
@@ -36,25 +36,29 @@ std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
 
 std::istream& operator>>(std::istream& os, QCircuitGatePtr& g)
 {
-    os >> g->target;
+    g->payloads.clear();
+
+    size_t target;
+    os >> target;
+    g->target = (bitLenInt)target;
 
     size_t cSize;
     os >> cSize;
     for (size_t i = 0U; i < cSize; ++i) {
-        bitLenInt c;
+        size_t c;
         os >> c;
-        g->controls.insert(c);
+        g->controls.insert((bitLenInt)c);
     }
 
     size_t pSize;
     os >> pSize;
     for (size_t i = 0U; i < pSize; ++i) {
-        bitLenInt k;
+        size_t k;
         os >> k;
 
-        g->payloads[k] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
+        g->payloads[(bitCapInt)k] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
         for (size_t j = 0U; j < 4U; ++j) {
-            os >> g->payloads[k].get()[j];
+            os >> g->payloads[(bitCapInt)k].get()[j];
         }
     }
 
@@ -63,7 +67,7 @@ std::istream& operator>>(std::istream& os, QCircuitGatePtr& g)
 
 std::ostream& operator<<(std::ostream& os, const QCircuitPtr c)
 {
-    os << c->GetQubitCount() << " ";
+    os << (size_t)c->GetQubitCount() << " ";
 
     std::list<QCircuitGatePtr> gates = c->GetGateList();
     os << gates.size() << " ";
@@ -76,9 +80,9 @@ std::ostream& operator<<(std::ostream& os, const QCircuitPtr c)
 
 std::istream& operator>>(std::istream& os, QCircuitPtr& c)
 {
-    bitLenInt qubitCount;
+    size_t qubitCount;
     os >> qubitCount;
-    c->SetQubitCount(qubitCount);
+    c->SetQubitCount((bitLenInt)qubitCount);
 
     size_t gSize;
     os >> gSize;
