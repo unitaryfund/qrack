@@ -1254,7 +1254,8 @@ void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt 
         "QUnit::CUniformParityRZ parameter controls array values must be within allocated qubit bounds!");
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(cControls, controls, false)) {
+    bitCapInt _perm = pow2(cControls.size()) - 1U;
+    if (TrimControls(cControls, controls, &_perm)) {
         return;
     }
 
@@ -2214,7 +2215,8 @@ void QUnit::ZBase(bitLenInt target)
         return;                                                                                                        \
     }                                                                                                                  \
     std::vector<bitLenInt> controlVec;                                                                                 \
-    if (TrimControls(controls, controlVec, anti)) {                                                                    \
+    bitCapInt _perm = anti ? 0U : (pow2(controls.size()) - 1U);                                                        \
+    if (TrimControls(controls, controlVec, &_perm)) {                                                                  \
         return;                                                                                                        \
     }                                                                                                                  \
     if (!controlVec.size()) {                                                                                          \
@@ -2224,10 +2226,10 @@ void QUnit::ZBase(bitLenInt target)
     ApplyEitherControlled(                                                                                             \
         controlVec, { qubit1, qubit2 },                                                                                \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, false)
-#define CTRL_GEN_ARGS mappedControls, trnsMtrx, shards[target].mapped
+#define CTRL_GEN_ARGS mappedControls, trnsMtrx, shards[target].mapped, controlPerm
 #define CTRL_S_ARGS mappedControls, shards[qubit1].mapped, shards[qubit2].mapped
-#define CTRL_P_ARGS mappedControls, topLeft, bottomRight, shards[target].mapped
-#define CTRL_I_ARGS mappedControls, topRight, bottomLeft, shards[target].mapped
+#define CTRL_P_ARGS mappedControls, topLeft, bottomRight, shards[target].mapped, controlPerm
+#define CTRL_I_ARGS mappedControls, topRight, bottomLeft, shards[target].mapped, controlPerm
 
 void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
@@ -2327,17 +2329,18 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     ClampShard(target);
 }
 
-void QUnit::MCPhase(const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
+void QUnit::UCPhase(const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target,
+    bitCapInt controlPerm)
 {
     ThrowIfQbIdArrayIsBad(
-        lControls, qubitCount, "QUnit::MCPhase parameter controls array values must be within allocated qubit bounds!");
+        lControls, qubitCount, "QUnit::UCPhase parameter controls array values must be within allocated qubit bounds!");
 
     if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(bottomRight)) {
         return;
     }
 
     std::vector<bitLenInt> controlVec;
-    if (TrimControls(lControls, controlVec, false)) {
+    if (TrimControls(lControls, controlVec, &controlPerm)) {
         return;
     }
 
@@ -2347,12 +2350,16 @@ void QUnit::MCPhase(const std::vector<bitLenInt>& lControls, complex topLeft, co
     }
 
     if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
-        Phase(ONE_CMPLX, bottomRight, controlVec[0U]);
+        if (controlPerm) {
+            Phase(ONE_CMPLX, bottomRight, controlVec[0U]);
+        } else {
+            Phase(topLeft, ONE_CMPLX, controlVec[0U]);
+        }
         return;
     }
 
     if (target >= qubitCount) {
-        throw std::invalid_argument("QUnit::MCPhase qubit index parameter must be within allocated qubit bounds!");
+        throw std::invalid_argument("QUnit::UCPhase qubit index parameter must be within allocated qubit bounds!");
     }
 
     if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
@@ -2361,81 +2368,42 @@ void QUnit::MCPhase(const std::vector<bitLenInt>& lControls, complex topLeft, co
         QEngineShard& tShard = shards[target];
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL, {}, { control });
+
+        if (controlPerm) {
+            RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
+            RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL, {}, { control });
+        } else {
+            RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
+            RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI, {}, { control });
+        }
 
         if (!IS_SAME_UNIT(cShard, tShard) &&
             (!ARE_CLIFFORD(cShard, tShard) ||
                 !((IS_SAME(ONE_CMPLX, topLeft) || IS_SAME(-ONE_CMPLX, topLeft)) &&
                     (IS_SAME(ONE_CMPLX, bottomRight) || IS_SAME(-ONE_CMPLX, bottomRight))))) {
-            tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
-            OptimizePairBuffers(control, target, false);
+            if (controlPerm) {
+                tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
+                OptimizePairBuffers(control, target, false);
+            } else {
+                tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
+                OptimizePairBuffers(control, target, true);
+            }
 
             return;
         }
     }
 
-    CTRLED_PHASE_INVERT_WRAP(MCPhase(CTRL_P_ARGS), MCMtrx(CTRL_GEN_ARGS), false, topLeft, bottomRight);
+    CTRLED_PHASE_INVERT_WRAP(UCPhase(CTRL_P_ARGS), UCMtrx(CTRL_GEN_ARGS), false, topLeft, bottomRight);
 }
 
-void QUnit::MACPhase(const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
+void QUnit::UCInvert(const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target,
+    bitCapInt controlPerm)
 {
     ThrowIfQbIdArrayIsBad(lControls, qubitCount,
-        "QUnit::MACPhase parameter controls array values must be within allocated qubit bounds!");
-
-    if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(bottomRight)) {
-        return;
-    }
-
-    std::vector<bitLenInt> controlVec;
-    if (TrimControls(lControls, controlVec, true)) {
-        return;
-    }
-
-    if (!controlVec.size()) {
-        Phase(topLeft, bottomRight, target);
-        return;
-    }
-
-    if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
-        Phase(topLeft, ONE_CMPLX, controlVec[0U]);
-        return;
-    }
+        "QUnit::UCInvert parameter controls array values must be within allocated qubit bounds!");
 
     if (target >= qubitCount) {
-        throw std::invalid_argument("QUnit::MACPhase qubit index parameter must be within allocated qubit bounds!");
-    }
-
-    if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
-        bitLenInt control = controlVec[0U];
-        QEngineShard& cShard = shards[control];
-        QEngineShard& tShard = shards[target];
-
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI, {}, { control });
-
-        if (!IS_SAME_UNIT(cShard, tShard) &&
-            (!ARE_CLIFFORD(cShard, tShard) ||
-                !((IS_SAME(ONE_CMPLX, topLeft) || IS_SAME(-ONE_CMPLX, topLeft)) &&
-                    (IS_SAME(ONE_CMPLX, bottomRight) || IS_SAME(-ONE_CMPLX, bottomRight))))) {
-            tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
-            OptimizePairBuffers(control, target, true);
-
-            return;
-        }
-    }
-
-    CTRLED_PHASE_INVERT_WRAP(MACPhase(CTRL_P_ARGS), MACMtrx(CTRL_GEN_ARGS), false, topLeft, bottomRight);
-}
-
-void QUnit::MCInvert(const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
-{
-    ThrowIfQbIdArrayIsBad(lControls, qubitCount,
-        "QUnit::MCInvert parameter controls array values must be within allocated qubit bounds!");
-
-    if (target >= qubitCount) {
-        throw std::invalid_argument("QUnit::MCInvert qubit index parameter must be within allocated qubit bounds!");
+        throw std::invalid_argument("QUnit::UCInvert qubit index parameter must be within allocated qubit bounds!");
     }
 
     if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
@@ -2445,7 +2413,7 @@ void QUnit::MCInvert(const std::vector<bitLenInt>& lControls, complex topRight, 
     }
 
     std::vector<bitLenInt> controlVec;
-    if (TrimControls(lControls, controlVec, false)) {
+    if (TrimControls(lControls, controlVec, &controlPerm)) {
         return;
     }
 
@@ -2460,8 +2428,13 @@ void QUnit::MCInvert(const std::vector<bitLenInt>& lControls, complex topRight, 
         QEngineShard& tShard = shards[target];
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
+        if (controlPerm) {
+            RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+            RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
+        } else {
+            RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
+            RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI, {}, { control });
+        }
 
         if (!IS_SAME_UNIT(cShard, tShard) &&
             (!ARE_CLIFFORD(cShard, tShard) ||
@@ -2469,64 +2442,19 @@ void QUnit::MCInvert(const std::vector<bitLenInt>& lControls, complex topRight, 
                       (IS_SAME(ONE_CMPLX, bottomLeft) || IS_SAME(-ONE_CMPLX, bottomLeft))) ||
                     (((IS_SAME(I_CMPLX, topRight) || IS_SAME(-I_CMPLX, topRight)) &&
                         (IS_SAME(I_CMPLX, bottomLeft) || IS_SAME(-I_CMPLX, bottomLeft))))))) {
-            tShard.AddInversionAngles(&cShard, topRight, bottomLeft);
-            OptimizePairBuffers(control, target, false);
+            if (controlPerm) {
+                tShard.AddInversionAngles(&cShard, topRight, bottomLeft);
+                OptimizePairBuffers(control, target, false);
+            } else {
+                tShard.AddAntiInversionAngles(&cShard, bottomLeft, topRight);
+                OptimizePairBuffers(control, target, true);
+            }
 
             return;
         }
     }
 
-    CTRLED_PHASE_INVERT_WRAP(MCInvert(CTRL_I_ARGS), MCMtrx(CTRL_GEN_ARGS), true, topRight, bottomLeft);
-}
-
-void QUnit::MACInvert(const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
-{
-    ThrowIfQbIdArrayIsBad(lControls, qubitCount,
-        "QUnit::MACInvert parameter controls array values must be within allocated qubit bounds!");
-
-    if (target >= qubitCount) {
-        throw std::invalid_argument("QUnit::MACInvert qubit index parameter must be within allocated qubit bounds!");
-    }
-
-    if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
-        if (CACHED_PLUS(target)) {
-            return;
-        }
-    }
-
-    std::vector<bitLenInt> controlVec;
-    if (TrimControls(lControls, controlVec, true)) {
-        return;
-    }
-
-    if (!controlVec.size()) {
-        Invert(topRight, bottomLeft, target);
-        return;
-    }
-
-    if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
-        const bitLenInt control = controlVec[0U];
-        QEngineShard& cShard = shards[control];
-        QEngineShard& tShard = shards[target];
-
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI, {}, { control });
-
-        if (!IS_SAME_UNIT(cShard, tShard) &&
-            (!ARE_CLIFFORD(cShard, tShard) ||
-                !(((IS_SAME(ONE_CMPLX, topRight) || IS_SAME(-ONE_CMPLX, topRight)) &&
-                      (IS_SAME(ONE_CMPLX, bottomLeft) || IS_SAME(-ONE_CMPLX, bottomLeft))) ||
-                    (((IS_SAME(I_CMPLX, topRight) || IS_SAME(-I_CMPLX, topRight)) &&
-                        (IS_SAME(I_CMPLX, bottomLeft) || IS_SAME(-I_CMPLX, bottomLeft))))))) {
-            tShard.AddAntiInversionAngles(&cShard, bottomLeft, topRight);
-            OptimizePairBuffers(control, target, true);
-
-            return;
-        }
-    }
-
-    CTRLED_PHASE_INVERT_WRAP(MACInvert(CTRL_I_ARGS), MACMtrx(CTRL_GEN_ARGS), true, topRight, bottomLeft);
+    CTRLED_PHASE_INVERT_WRAP(UCInvert(CTRL_I_ARGS), UCMtrx(CTRL_GEN_ARGS), true, topRight, bottomLeft);
 }
 
 void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
@@ -2588,23 +2516,23 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     ClampShard(target);
 }
 
-void QUnit::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
+void QUnit::UCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-        MCPhase(controls, mtrx[0U], mtrx[3U], target);
+        UCPhase(controls, mtrx[0U], mtrx[3U], target, controlPerm);
         return;
     }
 
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-        MCInvert(controls, mtrx[1U], mtrx[2U], target);
+        UCInvert(controls, mtrx[1U], mtrx[2U], target, controlPerm);
         return;
     }
 
     ThrowIfQbIdArrayIsBad(
-        controls, qubitCount, "QUnit::MCMtrx parameter controls array values must be within allocated qubit bounds!");
+        controls, qubitCount, "QUnit::UCMtrx parameter controls array values must be within allocated qubit bounds!");
 
     std::vector<bitLenInt> controlVec;
-    if (TrimControls(controls, controlVec, false)) {
+    if (TrimControls(controls, controlVec, &controlPerm)) {
         return;
     }
 
@@ -2617,39 +2545,7 @@ void QUnit::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
         throw std::invalid_argument("QUnit::MCMtrx qubit index parameter must be within allocated qubit bounds!");
     }
 
-    CTRLED_GEN_WRAP(MCMtrx(CTRL_GEN_ARGS));
-}
-
-void QUnit::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
-{
-    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-        MACPhase(controls, mtrx[0U], mtrx[3U], target);
-        return;
-    }
-
-    if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-        MACInvert(controls, mtrx[1U], mtrx[2U], target);
-        return;
-    }
-
-    ThrowIfQbIdArrayIsBad(
-        controls, qubitCount, "QUnit::MACMtrx parameter controls array values must be within allocated qubit bounds!");
-
-    std::vector<bitLenInt> controlVec;
-    if (TrimControls(controls, controlVec, true)) {
-        return;
-    }
-
-    if (!controlVec.size()) {
-        Mtrx(mtrx, target);
-        return;
-    }
-
-    if (target >= qubitCount) {
-        throw std::invalid_argument("QUnit::MACMtrx qubit index parameter must be within allocated qubit bounds!");
-    }
-
-    CTRLED_GEN_WRAP(MACMtrx(CTRL_GEN_ARGS));
+    CTRLED_GEN_WRAP(UCMtrx(CTRL_GEN_ARGS));
 }
 
 void QUnit::CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
@@ -2682,7 +2578,7 @@ void QUnit::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qub
     CTRLED_SWAP_WRAP(AntiCISqrtSwap(CTRL_S_ARGS), ISqrtSwap(qubit1, qubit2), true);
 }
 
-bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bitLenInt>& controlVec, bool anti)
+bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bitLenInt>& controlVec, bitCapInt* perm)
 {
     // If the controls start entirely separated from the targets, it's probably worth checking to see if the have
     // total or no probability of altering the targets, such that we can still keep them separate.
@@ -2694,6 +2590,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
 
     // First, no probability checks or buffer flushing.
     for (size_t i = 0U; i < controls.size(); ++i) {
+        const bool anti = !((*perm >> i) & 1U);
         if ((anti && CACHED_ONE(controls[i])) || (!anti && CACHED_ZERO(controls[i]))) {
             // This gate does nothing, so return without applying anything.
             return true;
@@ -2713,13 +2610,13 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
-            if (!anti) {
+            if ((*perm >> i) & 1U) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
         } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
-            if (anti) {
+            if (!((*perm >> i) & 1U)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
@@ -2740,13 +2637,13 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
-            if (!anti) {
+            if ((*perm >> i) & 1U) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
         } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
-            if (anti) {
+            if (!((*perm >> i) & 1U)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
@@ -2754,6 +2651,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
     }
 
     // Finally, full buffer flushing, (last resort).
+    bitCapInt outPerm = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
         QEngineShard& shard = shards[controls[i]];
 
@@ -2765,7 +2663,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
-            if (!anti) {
+            if ((*perm >> i) & 1U) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
@@ -2773,7 +2671,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
             isEigenstate = true;
         } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
-            if (anti) {
+            if (!((*perm >> i) & 1U)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
@@ -2782,9 +2680,12 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         }
 
         if (!isEigenstate) {
+            outPerm |= ((*perm >> i) & 1U) << controlVec.size();
             controlVec.push_back(controls[i]);
         }
     }
+
+    *perm = outPerm;
 
     return false;
 }
@@ -2823,8 +2724,9 @@ void QUnit::ApplyEitherControlled(
     QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     for (size_t i = 0U; i < controlVec.size(); ++i) {
-        shards[controlVec[i]].isPhaseDirty = true;
-        controlVec[i] = shards[controlVec[i]].mapped;
+        bitLenInt& c = controlVec[i];
+        shards[c].isPhaseDirty = true;
+        c = shards[c].mapped;
     }
     for (size_t i = 0U; i < targets.size(); ++i) {
         QEngineShard& shard = shards[targets[i]];
@@ -3060,7 +2962,8 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, const std::
 
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (TrimControls(controls, controlVec, false)) {
+    bitCapInt _perm = pow2(controls.size()) - 1U;
+    if (TrimControls(controls, controlVec, &_perm)) {
         return;
     }
 
@@ -3665,7 +3568,8 @@ void QUnit::CMUL(
 
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (TrimControls(controls, controlVec, false)) {
+    bitCapInt _perm = pow2(controls.size()) - 1U;
+    if (TrimControls(controls, controlVec, &_perm)) {
         return;
     }
 
@@ -3693,7 +3597,8 @@ void QUnit::CDIV(
 
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (TrimControls(controls, controlVec, false)) {
+    bitCapInt _perm = pow2(controls.size()) - 1U;
+    if (TrimControls(controls, controlVec, &_perm)) {
         return;
     }
 
@@ -3724,7 +3629,8 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (TrimControls(controls, controlVec, false)) {
+    bitCapInt _perm = pow2(controls.size()) - 1U;
+    if (TrimControls(controls, controlVec, &_perm)) {
         return;
     }
 

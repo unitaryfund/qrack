@@ -169,17 +169,40 @@ public:
 
     virtual void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex);
     virtual void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex);
-    virtual void MCPhase(
-        const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+    {
+        UCPhase(controls, topLeft, bottomRight, target, pow2(controls.size()) - 1U);
+    }
     virtual void MCInvert(
-        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
+        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+    {
+        UCInvert(controls, topRight, bottomLeft, target, pow2(controls.size()) - 1U);
+    }
     virtual void MACPhase(
-        const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
+        const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+    {
+        UCPhase(controls, topLeft, bottomRight, target, 0U);
+    }
     virtual void MACInvert(
-        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
+        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+    {
+        UCInvert(controls, topRight, bottomLeft, target, 0U);
+    }
+    virtual void UCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target,
+        bitCapInt controlPerm);
+    virtual void UCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft,
+        bitLenInt target, bitCapInt controlPerm);
     virtual void Mtrx(const complex* mtrx, bitLenInt qubit);
-    virtual void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
-    virtual void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
+    virtual void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
+    {
+        UCMtrx(controls, mtrx, target, pow2(controls.size()) - 1U);
+    }
+    virtual void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
+    {
+        UCMtrx(controls, mtrx, target, 0U);
+    }
+    virtual void UCMtrx(
+        const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm);
     using QInterface::UniformlyControlledSingleBit;
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
         const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
@@ -447,7 +470,7 @@ protected:
     };
     void SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high);
 
-    bool TrimControls(const std::vector<bitLenInt>& controls, std::vector<bitLenInt>& output, bool anti);
+    bool TrimControls(const std::vector<bitLenInt>& controls, std::vector<bitLenInt>& controlVec, bitCapInt* perm);
 
     template <typename CF>
     void ApplyEitherControlled(
