@@ -426,8 +426,8 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
 // instead of amplitude indices.
 template <typename Qubit1Fn>
-void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
-    const complex* mtrx, bool isSqiCtrl, bool isIntraCtrled)
+void QPager::MetaControlled(bitCapInt controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target,
+    Qubit1Fn fn, const complex* mtrx, bool isSqiCtrl, bool isIntraCtrled)
 {
     const bitLenInt qpp = qubitsPerPage();
     const bitLenInt sqi = qpp - 1U;
@@ -440,7 +440,7 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
     bitCapIntOcl controlMask = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
         sortedMasks[i] = pow2Ocl(controls[i] - qpp);
-        if (!anti) {
+        if ((controlPerm >> i) & 1U) {
             controlMask |= sortedMasks[i];
         }
         --sortedMasks[i];
@@ -500,18 +500,20 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
             continue;
         }
 
+        const bool isAnti = !(controlPerm >> controls.size() & 1U);
+
 #if ENABLE_PTHREAD
         const bitCapIntOcl iF = i % fCount;
         if (i != iF) {
             futures[iF].get();
         }
-        futures[iF] = std::async(std::launch::async, [engine1, engine2, isSqiCtrl, anti, sqi, fn]() {
+        futures[iF] = std::async(std::launch::async, [engine1, engine2, isSqiCtrl, isAnti, sqi, fn]() {
 #endif
             engine1->ShuffleBuffers(engine2);
-            if (!isSqiCtrl || anti) {
+            if (!isSqiCtrl || isAnti) {
                 fn(engine1, sqi);
             }
-            if (!isSqiCtrl || !anti) {
+            if (!isSqiCtrl || !isAnti) {
                 fn(engine2, sqi);
             }
             engine1->ShuffleBuffers(engine2);
@@ -534,7 +536,7 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
 // This is called when control bits are "meta-" but the target bit is below the "meta-" threshold, (low enough to
 // fit in sub-engines).
 template <typename Qubit1Fn>
-void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn)
+void QPager::SemiMetaControlled(bitCapInt controlPerm, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn)
 {
     const bitLenInt qpp = qubitsPerPage();
 
@@ -543,7 +545,7 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
     bitCapIntOcl controlMask = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
         sortedMasks[i] = pow2Ocl(controls[i] - qpp);
-        if (!anti) {
+        if ((controlPerm >> i) & 1U) {
             controlMask |= sortedMasks[i];
         }
         --sortedMasks[i];
@@ -952,7 +954,7 @@ void QPager::ApplySingleEither(bool isInvert, complex top, complex bottom, bitLe
 }
 
 void QPager::ApplyEitherControlledSingleBit(
-    bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
+    bitCapInt controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
 {
     if (!controls.size()) {
         Mtrx(mtrx, target);
@@ -964,30 +966,38 @@ void QPager::ApplyEitherControlledSingleBit(
     std::vector<bitLenInt> metaControls;
     std::vector<bitLenInt> intraControls;
     bool isSqiCtrl = false;
+    bitLenInt sqiIndex = 0U;
+    bitCapInt intraCtrlPerm = 0U;
+    bitCapInt metaCtrlPerm = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
         if ((target >= qpp) && (controls[i] == (qpp - 1U))) {
             isSqiCtrl = true;
+            sqiIndex = i;
         } else if (controls[i] < qpp) {
+            intraCtrlPerm |= ((controlPerm >> i) & 1U) << intraControls.size();
             intraControls.push_back(controls[i]);
         } else {
+            metaCtrlPerm |= ((controlPerm >> i) & 1U) << metaControls.size();
             metaControls.push_back(controls[i]);
         }
     }
 
-    auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
-        if (anti) {
-            engine->MACMtrx(intraControls, mtrx, lTarget);
-        } else {
-            engine->MCMtrx(intraControls, mtrx, lTarget);
-        }
+    bool isAnti = !((controlPerm >> sqiIndex) & 1U);
+    if (isSqiCtrl && !isAnti) {
+        intraCtrlPerm |= pow2(intraControls.size());
+        metaCtrlPerm |= pow2(metaControls.size());
+    }
+
+    auto sg = [intraCtrlPerm, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
+        engine->UCMtrx(intraControls, mtrx, lTarget, intraCtrlPerm);
     };
 
     if (!metaControls.size()) {
-        SingleBitGate(target, sg, isSqiCtrl, anti);
+        SingleBitGate(target, sg, isSqiCtrl, isAnti);
     } else if (target < qpp) {
-        SemiMetaControlled(anti, metaControls, target, sg);
+        SemiMetaControlled(metaCtrlPerm, metaControls, target, sg);
     } else {
-        MetaControlled(anti, metaControls, target, sg, mtrx, isSqiCtrl, intraControls.size());
+        MetaControlled(metaCtrlPerm, metaControls, target, sg, mtrx, isSqiCtrl, intraControls.size());
     }
 }
 

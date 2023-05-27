@@ -72,10 +72,10 @@ protected:
     template <typename Qubit1Fn>
     void SingleBitGate(bitLenInt target, Qubit1Fn fn, bool isSqiCtrl = false, bool isAnti = false);
     template <typename Qubit1Fn>
-    void MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
+    void MetaControlled(bitCapInt controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
         const complex* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
     template <typename Qubit1Fn>
-    void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
+    void SemiMetaControlled(bitCapInt controlPerm, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse);
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
@@ -84,7 +84,7 @@ protected:
 
     void ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target);
     void ApplyEitherControlledSingleBit(
-        bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx);
+        bitCapInt controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx);
     void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
     void Init();
@@ -319,11 +319,11 @@ public:
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
-        ApplyEitherControlledSingleBit(false, controls, target, mtrx);
+        ApplyEitherControlledSingleBit(pow2(controls.size()) - 1U, controls, target, mtrx);
     }
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
-        ApplyEitherControlledSingleBit(true, controls, target, mtrx);
+        ApplyEitherControlledSingleBit(0U, controls, target, mtrx);
     }
 
     void UniformParityRZ(bitCapInt mask, real1_f angle);
