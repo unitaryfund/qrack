@@ -23,14 +23,7 @@
 #include <mutex>
 #include <vector>
 
-#define META_LOCK_GUARD()                                                                                              \
-    const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                    \
-    std::map<QInterface*, std::mutex>::iterator mutexLockIt;                                                           \
-    std::vector<std::unique_ptr<const std::lock_guard<std::mutex>>> simulatorLocks;                                    \
-    for (mutexLockIt = simulatorMutexes.begin(); mutexLockIt != simulatorMutexes.end(); ++mutexLockIt) {               \
-        simulatorLocks.push_back(std::unique_ptr<const std::lock_guard<std::mutex>>(                                   \
-            new const std::lock_guard<std::mutex>(mutexLockIt->second)));                                              \
-    }
+#define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
 // SIMULATOR_LOCK_GUARD variants will lock simulatorMutexes[NULL], if the requested simulator doesn't exist.
 // This is CORRECT behavior. This will effectively emplace a mutex for NULL key.
@@ -796,6 +789,15 @@ MICROSOFT_QUANTUM_DECL uintq init_clone(_In_ uintq sid)
 {
     META_LOCK_GUARD()
 
+    if (sid > simulators.size()) {
+        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
+        metaError = 2;
+        return 0U;
+    }
+    QInterfacePtr oSimulator = simulators[sid];
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
+        new const std::lock_guard<std::mutex>(simulatorMutexes[oSimulator.get()]));
+
     uintq nsid = (uintq)simulators.size();
 
     for (uintq i = 0U; i < simulators.size(); ++i) {
@@ -809,7 +811,7 @@ MICROSOFT_QUANTUM_DECL uintq init_clone(_In_ uintq sid)
     bool isSuccess = true;
     QInterfacePtr simulator;
     try {
-        simulator = simulators[sid]->Clone();
+        simulator = oSimulator->Clone();
     } catch (const std::exception& ex) {
         std::cout << ex.what() << std::endl;
         isSuccess = false;
@@ -1039,6 +1041,12 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ uintq sid, _In_ uintq qid)
 {
     META_LOCK_GUARD()
 
+    if (sid > simulators.size()) {
+        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
+        metaError = 2;
+        return;
+    }
+
     QInterfacePtr nQubit = CreateQuantumInterface(
         simulatorTypes[sid], 1U, 0U, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
 
@@ -1050,9 +1058,13 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ uintq sid, _In_ uintq qid)
         return;
     }
 
+    QInterfacePtr oSimulator = simulators[sid];
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
+        new const std::lock_guard<std::mutex>(simulatorMutexes[oSimulator.get()]));
+
     bitLenInt qubitCount = -1;
     try {
-        simulators[sid]->Compose(nQubit);
+        oSimulator->Compose(nQubit);
         qubitCount = simulators[sid]->GetQubitCount();
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -1069,7 +1081,14 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ uintq sid, _In_ uintq q)
 {
     META_LOCK_GUARD()
 
+    if (sid > simulators.size()) {
+        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
+        metaError = 2;
+        return 0U;
+    }
     QInterfacePtr simulator = simulators[sid];
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
+        new const std::lock_guard<std::mutex>(simulatorMutexes[simulator.get()]));
 
     // Check that the qubit is in the |0> state, to within a small tolerance.
     bool toRet = simulator->Prob(shards[simulator.get()][q]) < (ONE_R1 / 100);
@@ -2699,9 +2718,11 @@ MICROSOFT_QUANTUM_DECL uintq init_qneuron(
     if (sid > simulators.size()) {
         std::cout << "Invalid argument: simulator ID not found!" << std::endl;
         metaError = 2;
-        return -1;
+        return 0U;
     }
     QInterfacePtr simulator = simulators[sid];
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
+        new const std::lock_guard<std::mutex>(simulatorMutexes[simulator.get()]));
     if (!simulator) {
         std::cout << "Invalid argument: simulator ID not found!" << std::endl;
         metaError = 2;
@@ -2750,7 +2771,6 @@ MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
         return 0U;
     }
     QNeuronPtr neuron = neurons[nid];
-
     std::unique_ptr<const std::lock_guard<std::mutex>> neuronLock(
         new const std::lock_guard<std::mutex>(neuronMutexes[neuron.get()]));
 
@@ -2934,7 +2954,6 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid)
         return 0U;
     }
     QCircuitPtr circuit = circuits[cid];
-
     std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock(
         new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()]));
 
