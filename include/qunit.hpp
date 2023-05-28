@@ -484,10 +484,10 @@ protected:
         }
 
         if (IS_NORM_0(shard.amp1)) {
-            logFidelity += log(ONE_R1_F - norm(shard.amp1));
+            logFidelity += log(clampProb(ONE_R1_F - norm(shard.amp1)));
             SeparateBit(false, qubit);
         } else if (IS_NORM_0(shard.amp0)) {
-            logFidelity += log(ONE_R1_F - norm(shard.amp0));
+            logFidelity += log(clampProb(ONE_R1_F - norm(shard.amp0)));
             SeparateBit(true, qubit);
         }
     }
