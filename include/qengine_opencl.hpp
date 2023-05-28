@@ -201,14 +201,10 @@ protected:
     }
 #endif
 
-    void checkCallbackError(bool unlockWaitEvents = false)
+    void checkCallbackError()
     {
         if (callbackError == CL_SUCCESS) {
             return;
-        }
-
-        if (unlockWaitEvents) {
-            device_context->UnlockWaitEvents();
         }
 
         wait_queue_items.clear();
@@ -218,9 +214,9 @@ protected:
     }
 
     // For std::function, cl_int use might discard int qualifiers.
-    void tryOcl(std::string message, std::function<int()> oclCall, bool unlockWaitEvents = false)
+    void tryOcl(std::string message, std::function<int()> oclCall)
     {
-        checkCallbackError(unlockWaitEvents);
+        checkCallbackError();
 
         if (oclCall() == CL_SUCCESS) {
             // Success
@@ -242,10 +238,6 @@ protected:
         if (error == CL_SUCCESS) {
             // Success after clearing all queues for the OpenCL device
             return;
-        }
-
-        if (unlockWaitEvents) {
-            device_context->UnlockWaitEvents();
         }
 
         wait_queue_items.clear();

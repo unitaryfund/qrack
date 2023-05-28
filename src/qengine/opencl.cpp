@@ -43,16 +43,10 @@ namespace Qrack {
         [&] { return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array, NULL, &clEvent); });
 
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
-    device_context->LockWaitEvents();                                                                                  \
-    device_context->wait_events->emplace_back();                                                                       \
-    tryOcl(                                                                                                            \
-        "Failed to enqueue buffer write",                                                                              \
-        [&] {                                                                                                          \
-            return queue.enqueueWriteBuffer(                                                                           \
-                buff, CL_FALSE, 0U, size, array, waitVec.get(), &(device_context->wait_events->back()));               \
-        },                                                                                                             \
-        true);                                                                                                         \
-    device_context->UnlockWaitEvents();
+    device_context->EmplaceEvent([&](cl::Event& event) {                                                               \
+        tryOcl("Failed to enqueue buffer write",                                                                       \
+            [&] { return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array, waitVec.get(), &event); });         \
+    });
 
 #define DISPATCH_BLOCK_READ(waitVec, buff, offset, length, array)                                                      \
     tryOcl("Failed to read buffer",                                                                                    \
@@ -498,15 +492,15 @@ void QEngineOCL::DispatchQueue()
 
     // Dispatch the primary kernel, to apply the gate.
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
-    device_context->LockWaitEvents();
-    device_context->wait_events->emplace_back();
-    device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
-    cl_int error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(item.workItemCount), // global number of work items
-        cl::NDRange(item.localGroupSize), // local number (per group)
-        kernelWaitVec.get(), // vector of events to wait for
-        &(device_context->wait_events->back())); // handle to wait for the kernel
-    device_context->UnlockWaitEvents();
+    cl_int error = CL_SUCCESS;
+    device_context->EmplaceEvent([&](cl::Event& event) {
+        event.setCallback(CL_COMPLETE, _PopQueue, this);
+        error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+            cl::NDRange(item.workItemCount), // global number of work items
+            cl::NDRange(item.localGroupSize), // local number (per group)
+            kernelWaitVec.get(), // vector of events to wait for
+            &event); // handle to wait for the kernel
+    });
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
         callbackError = error;
@@ -683,16 +677,12 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    device_context->LockWaitEvents();
-    device_context->wait_events->emplace_back();
-    tryOcl(
-        "Failed to enqueue buffer write",
-        [&] {
+    device_context->EmplaceEvent([&](cl::Event& event) {
+        tryOcl("Failed to enqueue buffer write", [&] {
             return queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm,
-                sizeof(complex), &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
-        },
-        true);
-    device_context->UnlockWaitEvents();
+                sizeof(complex), &permutationAmp, waitVec.get(), &event);
+        });
+    });
 
     QueueSetRunningNorm(ONE_R1_F);
 }
@@ -2040,16 +2030,12 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[
     nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     if (controlLen) {
-        device_context->LockWaitEvents();
-        device_context->wait_events->emplace_back();
-        tryOcl(
-            "Failed to enqueue buffer copy",
-            [&] {
-                return queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0U, 0U, sizeof(complex) * maxQPowerOcl,
-                    waitVec.get(), &(device_context->wait_events->back()));
-            },
-            true);
-        device_context->UnlockWaitEvents();
+        device_context->EmplaceEvent([&](cl::Event& event) {
+            tryOcl("Failed to enqueue buffer copy", [&] {
+                return queue.enqueueCopyBuffer(
+                    *stateBuffer, *nStateBuffer, 0U, 0U, sizeof(complex) * maxQPowerOcl, waitVec.get(), &event);
+            });
+        });
     } else {
         ClearBuffer(nStateBuffer, 0U, maxQPowerOcl);
     }
@@ -2976,16 +2962,12 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    device_context->LockWaitEvents();
-    device_context->wait_events->emplace_back();
-    tryOcl(
-        "Failed to enqueue buffer write",
-        [&] {
+    device_context->EmplaceEvent([&](cl::Event& event) {
+        tryOcl("Failed to enqueue buffer write", [&] {
             return queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm,
-                sizeof(complex), &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
-        },
-        true);
-    device_context->UnlockWaitEvents();
+                sizeof(complex), &permutationAmp, waitVec.get(), &event);
+        });
+    });
 }
 
 /// Get pure quantum state, in unsigned int permutation basis

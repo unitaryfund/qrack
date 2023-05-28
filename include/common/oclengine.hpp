@@ -148,9 +148,12 @@ public:
         return waitVec;
     }
 
-    void LockWaitEvents() { waitEventsMutex.lock(); }
-
-    void UnlockWaitEvents() { waitEventsMutex.unlock(); }
+    template <typename Fn> void EmplaceEvent(Fn fn)
+    {
+        std::lock_guard<std::mutex> guard(waitEventsMutex);
+        wait_events->emplace_back();
+        fn(wait_events->back());
+    }
 
     void WaitOnAllEvents()
     {
