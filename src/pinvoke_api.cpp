@@ -37,9 +37,10 @@
 #define SIMULATOR_LOCK_GUARD(simulator)                                                                                \
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
     if (true) {                                                                                                        \
-        const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                \
+        std::lock(metaOperationMutex, simulatorMutexes[simulator]);                                                    \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex, std::adopt_lock);                               \
         simulatorLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                            \
-            new const std::lock_guard<std::mutex>(simulatorMutexes[simulator]));                                       \
+            new const std::lock_guard<std::mutex>(simulatorMutexes[simulator], std::adopt_lock));                      \
     }
 
 #define SIMULATOR_LOCK_GUARD_VOID(sid)                                                                                 \
@@ -77,11 +78,12 @@
     std::unique_ptr<const std::lock_guard<std::mutex>> neuronLock;                                                     \
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
     if (true) {                                                                                                        \
-        const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                \
+        std::lock(metaOperationMutex, simulatorMutexes[neuronSimulators[neuron]], neuronMutexes[neuron.get()]);        \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex, std::adopt_lock);                               \
         neuronLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                               \
-            new const std::lock_guard<std::mutex>(neuronMutexes[neuron.get()]));                                       \
+            new const std::lock_guard<std::mutex>(neuronMutexes[neuron.get()], std::adopt_lock));                      \
         simulatorLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                            \
-            new const std::lock_guard<std::mutex>(simulatorMutexes[neuronSimulators[neuron]]));                        \
+            new const std::lock_guard<std::mutex>(simulatorMutexes[neuronSimulators[neuron]], std::adopt_lock));       \
     }
 
 #define NEURON_LOCK_GUARD_VOID(nid)                                                                                    \
@@ -117,9 +119,10 @@
 #define CIRCUIT_LOCK_GUARD(circuit)                                                                                    \
     std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock;                                                    \
     if (true) {                                                                                                        \
-        const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                \
+        std::lock(metaOperationMutex, circuitMutexes[circuit.get()]);                                                  \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex, std::adopt_lock);                               \
         circuitLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                              \
-            new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()]));                                     \
+            new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()], std::adopt_lock));                    \
     }
 
 #define CIRCUIT_LOCK_GUARD_TYPED(cid, def)                                                                             \
@@ -167,11 +170,12 @@
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
     std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock;                                                    \
     if (true) {                                                                                                        \
-        const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                \
+        std::lock(metaOperationMutex, simulatorMutexes[simulator.get()], circuitMutexes[circuit.get()]);               \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex, std::adopt_lock);                               \
         simulatorLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                            \
-            new const std::lock_guard<std::mutex>(simulatorMutexes[simulator.get()]));                                 \
+            new const std::lock_guard<std::mutex>(simulatorMutexes[simulator.get()], std::adopt_lock));                \
         circuitLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                              \
-            new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()]));                                     \
+            new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()], std::adopt_lock));                    \
     }                                                                                                                  \
     if (!simulator) {                                                                                                  \
         return;                                                                                                        \
