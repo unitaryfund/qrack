@@ -194,6 +194,13 @@ void QCircuit::Run(QInterfacePtr qsim)
             continue;
         }
 
+        if (gate->payloads.size() == 1U) {
+            const auto& payload = gate->payloads.begin();
+            qsim->UCMtrx(controls, payload->second.get(), t, payload->first);
+
+            continue;
+        }
+
         std::unique_ptr<complex[]> payload = gate->MakeUniformlyControlledPayload();
         qsim->UniformlyControlledSingleBit(controls, t, payload.get());
     }
