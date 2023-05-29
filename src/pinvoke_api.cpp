@@ -1578,6 +1578,24 @@ MICROSOFT_QUANTUM_DECL void MACMtrx(
     }
 }
 
+/**
+ * (External API) Controlled 2x2 complex matrix unitary gate with arbitrary control permutation
+ */
+MICROSOFT_QUANTUM_DECL void UCMtrx(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_reads_(8) double* m, _In_ uintq q, _In_ uintq p)
+{
+    complex mtrx[4U]{ complex((real1)m[0U], (real1)m[1U]), complex((real1)m[2U], (real1)m[3U]),
+        complex((real1)m[4U], (real1)m[5U]), complex((real1)m[6U], (real1)m[7U]) };
+
+    MAP_CONTROLS_AND_LOCK(sid, n)
+    try {
+        simulator->UCMtrx(ctrlsArray, mtrx, shards[simulator.get()][q], p);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
 MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, double* m)
 {
