@@ -3029,13 +3029,21 @@ MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
     _In_ uintq cid, _In_reads_(8) double* m, _In_ uintq n, _In_reads_(n) uintq* c, _In_ uintq q, _In_ uintq p)
 {
     CIRCUIT_LOCK_GUARD_VOID(cid)
+
+    std::vector<bitLenInt> indices(n);
+    std::iota(indices.begin(), indices.end(), 0);
+    std::sort(indices.begin(), indices.end(), [&](bitLenInt a, bitLenInt b) -> bool { return c[a] < c[b]; });
+
+    bitCapInt _p = 0U;
     std::set<bitLenInt> ctrls;
     for (bitLenInt i = 0U; i < n; ++i) {
+        _p |= ((p >> i) & 1U) << indices[i];
         ctrls.insert(c[i]);
     }
+
     complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
-    circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx, ctrls, p));
+    circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx, ctrls, _p));
 }
 
 MICROSOFT_QUANTUM_DECL void qcircuit_run(_In_ uintq cid, _In_ uintq sid)
