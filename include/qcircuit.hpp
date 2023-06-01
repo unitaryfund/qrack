@@ -404,7 +404,7 @@ struct QCircuitGate {
             std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
             for (const auto& payload : other->payloads) {
                 bitCapInt pf = 0U;
-                for (bitLenInt i = 0U; i < opfPows.size(); ++i) {
+                for (size_t i = 0U; i < opfPows.size(); ++i) {
                     if (payload.first & opfPows[i]) {
                         pf |= pow2(i);
                     }

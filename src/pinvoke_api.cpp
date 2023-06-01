@@ -3105,7 +3105,7 @@ MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
 
     bitCapInt _p = 0U;
     std::set<bitLenInt> ctrls;
-    for (bitLenInt i = 0U; i < n; ++i) {
+    for (uintq i = 0U; i < n; ++i) {
         _p |= ((p >> i) & 1U) << indices[i];
         ctrls.insert(c[i]);
     }
