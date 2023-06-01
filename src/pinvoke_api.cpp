@@ -27,6 +27,16 @@
 
 // SIMULATOR_LOCK_GUARD variants will lock simulatorMutexes[NULL], if the requested simulator doesn't exist.
 // This is CORRECT behavior. This will effectively emplace a mutex for NULL key.
+#if CPP_STD > 13
+#define SIMULATOR_LOCK_GUARD(simulator)                                                                                \
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
+    if (true) {                                                                                                        \
+        std::lock(metaOperationMutex, simulatorMutexes[simulator]);                                                    \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex, std::adopt_lock);                               \
+        simulatorLock =                                                                                                \
+            std::make_unique<const std::lock_guard<std::mutex>>(simulatorMutexes[simulator], std::adopt_lock);         \
+    }
+#else
 #define SIMULATOR_LOCK_GUARD(simulator)                                                                                \
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
     if (true) {                                                                                                        \
@@ -35,6 +45,7 @@
         simulatorLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                            \
             new const std::lock_guard<std::mutex>(simulatorMutexes[simulator], std::adopt_lock));                      \
     }
+#endif
 
 #define SIMULATOR_LOCK_GUARD_VOID(sid)                                                                                 \
     if (sid > simulators.size()) {                                                                                     \
@@ -67,6 +78,19 @@
 
 #define SIMULATOR_LOCK_GUARD_INT(sid) SIMULATOR_LOCK_GUARD_TYPED(sid, 0U)
 
+#if CPP_STD > 13
+#define NEURON_LOCK_GUARD(neuron)                                                                                      \
+    std::unique_ptr<const std::lock_guard<std::mutex>> neuronLock;                                                     \
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
+    if (true) {                                                                                                        \
+        std::lock(metaOperationMutex, simulatorMutexes[neuronSimulators[neuron]], neuronMutexes[neuron.get()]);        \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex, std::adopt_lock);                               \
+        neuronLock =                                                                                                   \
+            std::make_unique<const std::lock_guard<std::mutex>>(neuronMutexes[neuron.get()], std::adopt_lock);         \
+        simulatorLock = std::make_unique<const std::lock_guard<std::mutex>>(                                           \
+            simulatorMutexes[neuronSimulators[neuron]], std::adopt_lock);                                              \
+    }
+#else
 #define NEURON_LOCK_GUARD(neuron)                                                                                      \
     std::unique_ptr<const std::lock_guard<std::mutex>> neuronLock;                                                     \
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
@@ -78,6 +102,7 @@
         simulatorLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                            \
             new const std::lock_guard<std::mutex>(simulatorMutexes[neuronSimulators[neuron]], std::adopt_lock));       \
     }
+#endif
 
 #define NEURON_LOCK_GUARD_VOID(nid)                                                                                    \
     if (nid > neurons.size()) {                                                                                        \
@@ -109,6 +134,16 @@
 
 #define NEURON_LOCK_GUARD_INT(nid) NEURON_LOCK_GUARD_TYPED(nid, 0U)
 
+#if CPP_STD > 13
+#define CIRCUIT_LOCK_GUARD(circuit)                                                                                    \
+    std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock;                                                    \
+    if (true) {                                                                                                        \
+        std::lock(metaOperationMutex, circuitMutexes[circuit.get()]);                                                  \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex, std::adopt_lock);                               \
+        circuitLock =                                                                                                  \
+            std::make_unique<const std::lock_guard<std::mutex>>(circuitMutexes[circuit.get()], std::adopt_lock);       \
+    }
+#else
 #define CIRCUIT_LOCK_GUARD(circuit)                                                                                    \
     std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock;                                                    \
     if (true) {                                                                                                        \
@@ -117,6 +152,7 @@
         circuitLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                              \
             new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()], std::adopt_lock));                    \
     }
+#endif
 
 #define CIRCUIT_LOCK_GUARD_TYPED(cid, def)                                                                             \
     if (cid > circuits.size()) {                                                                                       \
@@ -146,6 +182,38 @@
 
 #define CIRCUIT_LOCK_GUARD_INT(cid) CIRCUIT_LOCK_GUARD_TYPED(cid, 0U)
 
+#if CPP_STD > 13
+#define CIRCUIT_AND_SIMULATOR_LOCK_GUARD_VOID(cid, sid)                                                                \
+    if (sid > simulators.size()) {                                                                                     \
+        std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
+        metaError = 2;                                                                                                 \
+        return;                                                                                                        \
+    }                                                                                                                  \
+    if (cid > circuits.size()) {                                                                                       \
+        std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
+        metaError = 2;                                                                                                 \
+        return;                                                                                                        \
+    }                                                                                                                  \
+                                                                                                                       \
+    QInterfacePtr simulator = simulators[sid];                                                                         \
+    QCircuitPtr circuit = circuits[cid];                                                                               \
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
+    std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock;                                                    \
+    if (true) {                                                                                                        \
+        std::lock(metaOperationMutex, simulatorMutexes[simulator.get()], circuitMutexes[circuit.get()]);               \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex, std::adopt_lock);                               \
+        simulatorLock =                                                                                                \
+            std::make_unique<const std::lock_guard<std::mutex>>(simulatorMutexes[simulator.get()], std::adopt_lock);   \
+        circuitLock =                                                                                                  \
+            std::make_unique<const std::lock_guard<std::mutex>>(circuitMutexes[circuit.get()], std::adopt_lock);       \
+    }                                                                                                                  \
+    if (!simulator) {                                                                                                  \
+        return;                                                                                                        \
+    }                                                                                                                  \
+    if (!circuit) {                                                                                                    \
+        return;                                                                                                        \
+    }
+#else
 #define CIRCUIT_AND_SIMULATOR_LOCK_GUARD_VOID(cid, sid)                                                                \
     if (sid > simulators.size()) {                                                                                     \
         std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
@@ -176,6 +244,7 @@
     if (!circuit) {                                                                                                    \
         return;                                                                                                        \
     }
+#endif
 
 #define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
