@@ -119,6 +119,7 @@ endif (NOT ENABLE_EMIT_LLVM)
 include ("cmake/OpenCL.cmake" )
 include ("cmake/CUDA.cmake")
 
+message ("C++ standard year is (at least): ${CPP_STD}")
 message ("Qubit capacity power is: ${QBCAPPOW}")
 message ("Floating-point capacity power is: ${FPPOW}")
 message ("UInt capacity power is: ${UINTPOW}")
