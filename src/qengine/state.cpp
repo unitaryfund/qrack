@@ -1216,6 +1216,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     std::unique_ptr<real1[]> partStateProb;
     std::unique_ptr<real1[]> partStateAngle;
     if (destination) {
+        // Note that the extra parentheses mean to init as 0:
         partStateProb = std::unique_ptr<real1[]>(new real1[partPower]());
         partStateAngle = std::unique_ptr<real1[]>(new real1[partPower]());
     }

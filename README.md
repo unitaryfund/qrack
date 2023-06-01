@@ -88,6 +88,16 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
 
+## C++ language standard
+
+To change the C++ language standard language with which Qrack is applied, use `-DCPP_STD=n`, where "`n`" is the two-digit standard year:
+
+```sh
+cmake -DCPP_SIM=14 ..
+```
+
+By default, Qrack builds for C++11. For minimum support for all optional dependencies, C++14 or later might be required.
+
 ## Optional CUDA instead of OpenCL
 
 Theoretically, building with CUDA for your native supported architectures is as simple as installing the CUDA toolkit and compiler and using this CMake command:

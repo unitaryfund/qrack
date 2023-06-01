@@ -83,7 +83,7 @@ public:
 
 class StateVectorArray : public StateVector {
 public:
-    std::unique_ptr<complex, void (*)(complex*)> amplitudes;
+    std::unique_ptr<complex[], void (*)(complex*)> amplitudes;
 
 protected:
     static real1_f normHelper(const complex& c) { return (real1_f)norm(c); }
@@ -97,10 +97,10 @@ protected:
     }
 #endif
 
-    std::unique_ptr<complex, void (*)(complex*)> Alloc(bitCapIntOcl elemCount)
+    std::unique_ptr<complex[], void (*)(complex*)> Alloc(bitCapIntOcl elemCount)
     {
 #if defined(__ANDROID__)
-        return std::unique_ptr<complex, void (*)(complex*)>(new complex[elemCount], [](complex* c) { delete c; });
+        return std::unique_ptr<complex[], void (*)(complex*)>(new complex[elemCount], [](complex* c) { delete c; });
 #else
         // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
         size_t allocSize = sizeof(complex) * elemCount;
@@ -108,13 +108,13 @@ protected:
             allocSize = QRACK_ALIGN_SIZE;
         }
 #if defined(__APPLE__)
-        return std::unique_ptr<complex, void (*)(complex*)>(
+        return std::unique_ptr<complex[], void (*)(complex*)>(
             _aligned_state_vec_alloc(allocSize), [](complex* c) { free(c); });
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        return std::unique_ptr<complex, void (*)(complex*)>(
+        return std::unique_ptr<complex[], void (*)(complex*)>(
             (complex*)_aligned_malloc(allocSize, QRACK_ALIGN_SIZE), [](complex* c) { _aligned_free(c); });
 #else
-        return std::unique_ptr<complex, void (*)(complex*)>(
+        return std::unique_ptr<complex[], void (*)(complex*)>(
             (complex*)aligned_alloc(QRACK_ALIGN_SIZE, allocSize), [](complex* c) { free(c); });
 #endif
 #endif

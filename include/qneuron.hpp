@@ -45,7 +45,7 @@ protected:
     real1_f alpha;
     real1_f tolerance;
     std::vector<bitLenInt> inputIndices;
-    std::unique_ptr<real1> angles;
+    std::unique_ptr<real1[]> angles;
     QInterfacePtr qReg;
 
     static real1_f applyRelu(real1_f angle) { return std::max(ZERO_R1_F, angle); }
