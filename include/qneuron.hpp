@@ -184,35 +184,30 @@ public:
             default:
                 qReg->RY((real1_f)(angles.get()[0U]), outputIndex);
             }
+        } else if (activationFn == Sigmoid) {
+            qReg->UniformlyControlledRY(inputIndices, outputIndex, angles.get());
         } else {
-            std::unique_ptr<real1> nAngles;
+            std::unique_ptr<real1[]> nAngles(new real1[inputPower]);
             switch (activationFn) {
             case ReLU:
-                nAngles = std::unique_ptr<real1>(new real1[inputPower]);
                 std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), applyRelu);
-                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
                 break;
             case GeLU:
-                nAngles = std::unique_ptr<real1>(new real1[inputPower]);
                 std::transform(angles.get(), angles.get() + inputPower, nAngles.get(), applyGelu);
-                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
                 break;
             case Generalized_Logistic:
-                nAngles = std::unique_ptr<real1>(new real1[inputPower]);
                 std::transform(angles.get(), angles.get() + inputPower, nAngles.get(),
                     [this](real1 a) { return applyAlpha(a, alpha); });
-                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
                 break;
             case Leaky_ReLU:
-                nAngles = std::unique_ptr<real1>(new real1[inputPower]);
                 std::transform(angles.get(), angles.get() + inputPower, nAngles.get(),
                     [this](real1 a) { return applyLeakyRelu(a, alpha); });
-                qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
                 break;
             case Sigmoid:
             default:
-                qReg->UniformlyControlledRY(inputIndices, outputIndex, angles.get());
+                break;
             }
+            qReg->UniformlyControlledRY(inputIndices, outputIndex, nAngles.get());
         }
         real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {

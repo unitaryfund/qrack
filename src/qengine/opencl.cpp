@@ -546,7 +546,11 @@ void QEngineOCL::SetDevice(int64_t dID)
         return;
     } else if (stateBuffer && !stateVec) {
         // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
+#if CPP_STD > 13
+        copyVec = std::make_unique<complex[]>(maxQPowerOcl);
+#else
         copyVec = std::unique_ptr<complex[]>(new complex[maxQPowerOcl]);
+#endif
         GetQuantumState(copyVec.get());
     }
 
