@@ -17,9 +17,10 @@
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 
-#include <algorithm> // std::random_shuffle
+#include <algorithm> // std::shuffle
 #include <cstddef> // size_t
 #include <iostream> // std::cout
+#include <random> // std::default_random_engine
 
 using namespace Qrack;
 
@@ -94,7 +95,8 @@ int main()
     for (i = 0; i < TABLE_SIZE; i++) {
         T[i] = i;
     }
-    std::random_shuffle(T, T + TABLE_SIZE);
+    auto rng = std::default_random_engine{};
+    std::shuffle(T, T + TABLE_SIZE, rng);
 
     unsigned char x[KEY_SIZE];
     for (i = 0; i < KEY_SIZE; i++) {

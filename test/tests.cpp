@@ -4539,7 +4539,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    std::random_shuffle(testPage, testPage + 256);
+    auto rng = std::default_random_engine{};
+    std::shuffle(testPage, testPage + 256, rng);
 
     QALU(qftReg)->Hash(0, 8, testPage);
 
