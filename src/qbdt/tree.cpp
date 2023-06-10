@@ -857,7 +857,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 
     par_for_qbdt(qPower, maxQubit,
 #if ENABLE_COMPLEX_X2
-        [this, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, isKet](const bitCapInt& i) {
+        [this, maxQubit, target, mtrx, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff, isKet](const bitCapInt& i) {
 #else
         [this, maxQubit, target, mtrx, isKet](const bitCapInt& i) {
 #endif
@@ -950,7 +950,7 @@ void QBdt::ApplyControlledSingle(
 
     par_for_qbdt(qPower, maxQubit,
 #if ENABLE_COMPLEX_X2
-        [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff,
+        [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff,
             isKet, isAnti, ketControlsVec](const bitCapInt& i) {
 #else
         [this, lowControlMask, lowControlPerm, maxQubit, target, mtrx, isKet, isAnti, ketControlsVec](const bitCapInt& i) {
