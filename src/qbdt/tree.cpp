@@ -64,6 +64,9 @@ void QBdt::Init()
 #endif
 
     bdtStride = (GetStride() + 1U) >> 1U;
+    if (!bdtStride) {
+        bdtStride = 1U;
+    }
 
     bitLenInt engineLevel = 0U;
     if (!engines.size()) {
