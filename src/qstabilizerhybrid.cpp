@@ -567,7 +567,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
         return;
     }
 
-    if (!ancillaCount && !IsProbBuffered()) {
+    if (!IsProbBuffered()) {
         stabilizer->GetProbs(outputProbs);
         return;
     }
@@ -582,7 +582,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return engine->GetAmplitude(perm);
     }
 
-    if (!ancillaCount && !IsBuffered()) {
+    if (!IsBuffered()) {
         return stabilizer->GetAmplitude(perm);
     }
 
