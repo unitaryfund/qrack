@@ -130,29 +130,40 @@
 
 #if ENABLE_CUDA
 #if FPPOW < 5
-#define qCudaReal1 half
-#define qCudaReal2 half2
-#define qCudaReal4 half4
-#define qCudaCmplx half2
-#define qCudaCmplx2 half4
+#define qCudaReal1 __half
+#define qCudaReal2 __half2
+#define qCudaReal4 __half2*
+#define qCudaCmplx __half2
+#define qCudaCmplx2 __half2*
+#define qCudaReal1_f float
 #define make_qCudaCmplx make_half2
-#define make_qCudaCmplx2 make_half4
+#define ZERO_R1_CUDA ((qCudaReal1)0.0f)
+#define REAL1_EPSILON_CUDA 2e-17f
+#define PI_R1_CUDA M_PI
 #elif FPPOW < 6
 #define qCudaReal1 float
 #define qCudaReal2 float2
 #define qCudaReal4 float4
 #define qCudaCmplx float2
 #define qCudaCmplx2 float4
+#define qCudaReal1_f float
 #define make_qCudaCmplx make_float2
 #define make_qCudaCmplx2 make_float4
+#define ZERO_R1_CUDA 0.0f
+#define REAL1_EPSILON_CUDA REAL1_EPSILON
+#define PI_R1_CUDA PI_R1
 #else
 #define qCudaReal1 double
 #define qCudaReal2 double2
 #define qCudaReal4 double4
 #define qCudaCmplx double2
 #define qCudaCmplx2 double4
+#define qCudaReal1_f double
 #define make_qCudaCmplx make_double2
 #define make_qCudaCmplx2 make_double4
+#define ZERO_R1_CUDA 0.0
+#define REAL1_EPSILON_CUDA REAL1_EPSILON
+#define PI_R1_CUDA PI_R1
 #endif
 #endif
 

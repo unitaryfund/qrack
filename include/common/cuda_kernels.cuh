@@ -12,6 +12,10 @@
 
 #include "common/qrack_types.hpp"
 
+#if FPPOW < 5
+#include "cuda_fp16.h"
+#endif
+
 namespace Qrack {
 __global__ void apply2x2(
     qCudaCmplx* stateVec, qCudaReal1* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr, bitCapIntOcl* qPowersSorted);

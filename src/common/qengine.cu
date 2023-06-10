@@ -19,6 +19,7 @@ __device__ inline qCudaCmplx zmul(const qCudaCmplx lhs, const qCudaCmplx rhs)
     return make_qCudaCmplx((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
 }
 
+#if FPPOW > 4
 __device__ inline qCudaCmplx2 zmatrixmul(const qCudaReal1 nrm, const qCudaReal1* lhs, const qCudaCmplx2 rhs)
 {
     return (make_qCudaCmplx2(nrm * ((lhs[0] * rhs.x) - (lhs[1] * rhs.y) + (lhs[2] * rhs.z) - (lhs[3] * rhs.w)),
@@ -26,19 +27,34 @@ __device__ inline qCudaCmplx2 zmatrixmul(const qCudaReal1 nrm, const qCudaReal1*
         nrm * ((lhs[4] * rhs.x) - (lhs[5] * rhs.y) + (lhs[6] * rhs.z) - (lhs[7] * rhs.w)),
         nrm * ((lhs[4] * rhs.y) + (lhs[5] * rhs.x) + (lhs[6] * rhs.w) + (lhs[7] * rhs.z))));
 }
+#else
+__device__ inline void zmatrixmul(const qCudaReal1 nrm, const qCudaReal1* lhs, const qCudaCmplx2 rhs, qCudaCmplx2 o)
+{
+    o[0] =
+        (make_qCudaCmplx(nrm * ((lhs[0] * rhs[0].x) - (lhs[1] * rhs[0].y) + (lhs[2] * rhs[1].x) - (lhs[3] * rhs[1].y)),
+            nrm * ((lhs[0] * rhs[0].y) + (lhs[1] * rhs[0].x) + (lhs[2] * rhs[1].y) + (lhs[3] * rhs[1].x))));
+    o[1] =
+        (make_qCudaCmplx(nrm * ((lhs[4] * rhs[0].x) - (lhs[5] * rhs[0].y) + (lhs[6] * rhs[1].x) - (lhs[7] * rhs[1].y)),
+            nrm * ((lhs[4] * rhs[0].y) + (lhs[5] * rhs[0].x) + (lhs[6] * rhs[1].y) + (lhs[7] * rhs[1].x))));
+}
+#endif
 
 __device__ inline qCudaReal1 qCudaArg(const qCudaCmplx cmp)
 {
-    if (cmp.x == ZERO_R1 && cmp.y == ZERO_R1)
-        return ZERO_R1;
-    return atan2(cmp.y, cmp.x);
+    if (cmp.x == (qCudaReal1)0.0f && cmp.y == (qCudaReal1)0.0f)
+        return (qCudaReal1)0.0f;
+    return (qCudaReal1)atan2((qCudaReal1_f)cmp.y, (qCudaReal1_f)cmp.x);
 }
 
 __device__ inline qCudaReal1 qCudaDot(qCudaReal2 a, qCudaReal2 b) { return a.x * b.x + a.y * b.y; }
 
 __device__ inline qCudaReal1 qCudaDot(qCudaReal4 a, qCudaReal4 b)
 {
+#if FPPOW > 4
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+#else
+    return a[0].x * b[0].x + a[0].y * b[0].y + a[1].x * b[1].x + a[1].y * b[1].y;
+#endif
 }
 
 __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.x, -a.y); }
@@ -81,6 +97,7 @@ __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.
     bitCapIntOcl iLow = iHigh & qMask2;                                                                                \
     i |= iLow | ((iHigh ^ iLow) << ONE_BCI);
 
+#if FPPOW > 4
 #define APPLY_AND_OUT()                                                                                                \
     qCudaCmplx2 mulRes = make_qCudaCmplx2(stateVec[i | OFFSET1_ARG].x, stateVec[i | OFFSET1_ARG].y,                    \
         stateVec[i | OFFSET2_ARG].x, stateVec[i | OFFSET2_ARG].y);                                                     \
@@ -89,6 +106,16 @@ __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.
                                                                                                                        \
     stateVec[i | OFFSET1_ARG] = make_qCudaCmplx(mulRes.x, mulRes.y);                                                   \
     stateVec[i | OFFSET2_ARG] = make_qCudaCmplx(mulRes.z, mulRes.w);
+#else
+#define APPLY_AND_OUT()                                                                                                \
+    __half2 mulIn[2] = { stateVec[i | OFFSET1_ARG], stateVec[i | OFFSET2_ARG] };                                       \
+                                                                                                                       \
+    __half2 mulRes[2];                                                                                                 \
+    zmatrixmul(nrm, mtrx, mulIn, mulRes);                                                                              \
+                                                                                                                       \
+    stateVec[i | OFFSET1_ARG] = mulRes[0];                                                                             \
+    stateVec[i | OFFSET2_ARG] = mulRes[1];
+#endif
 
 #define APPLY_X()                                                                                                      \
     const qCudaCmplx Y0 = stateVec[i];                                                                                 \
@@ -107,6 +134,7 @@ __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.
     stateVec[i] = zmul(topRight, stateVec[i | OFFSET2_ARG]);                                                           \
     stateVec[i | OFFSET2_ARG] = zmul(bottomLeft, Y0);
 
+#if FPPOW > 4
 #define NORM_BODY_2X2()                                                                                                \
     qCudaCmplx mulResLo = stateVec[i | OFFSET1_ARG];                                                                   \
     qCudaCmplx mulResHi = stateVec[i | OFFSET2_ARG];                                                                   \
@@ -136,6 +164,38 @@ __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.
                                                                                                                        \
     stateVec[i | OFFSET1_ARG] = make_qCudaCmplx(mulRes.x, mulRes.y);                                                   \
     stateVec[i | OFFSET2_ARG] = make_qCudaCmplx(mulRes.z, mulRes.w);
+#else
+#define NORM_BODY_2X2()                                                                                                \
+    qCudaCmplx mulResLo = stateVec[i | OFFSET1_ARG];                                                                   \
+    qCudaCmplx mulResHi = stateVec[i | OFFSET2_ARG];                                                                   \
+    __half2 mulIn[2] = { mulResLo, mulResHi };                                                                         \
+                                                                                                                       \
+    __half2 mulRes[2];                                                                                                 \
+    zmatrixmul(nrm, mtrx, mulIn, mulRes);                                                                              \
+                                                                                                                       \
+    qCudaCmplx mulResPart = mulRes[0];                                                                                 \
+                                                                                                                       \
+    qCudaReal1 dotMulRes = qCudaDot(mulResPart, mulResPart);                                                           \
+    if (dotMulRes < norm_thresh) {                                                                                     \
+        mulRes[0].x = ZERO_R1_CUDA;                                                                                    \
+        mulRes[0].y = ZERO_R1_CUDA;                                                                                    \
+    } else {                                                                                                           \
+        partNrm += dotMulRes;                                                                                          \
+    }                                                                                                                  \
+                                                                                                                       \
+    mulResPart = mulRes[1];                                                                                            \
+                                                                                                                       \
+    dotMulRes = qCudaDot(mulResPart, mulResPart);                                                                      \
+    if (dotMulRes < norm_thresh) {                                                                                     \
+        mulRes[1].x = ZERO_R1_CUDA;                                                                                    \
+        mulRes[1].y = ZERO_R1_CUDA;                                                                                    \
+    } else {                                                                                                           \
+        partNrm += dotMulRes;                                                                                          \
+    }                                                                                                                  \
+                                                                                                                       \
+    stateVec[i | OFFSET1_ARG] = mulRes[0];                                                                             \
+    stateVec[i | OFFSET2_ARG] = mulRes[1];
+#endif
 
 #define SUM_LOCAL(part)                                                                                                \
     extern __shared__ qCudaReal1 lBuffer[];                                                                            \
@@ -232,7 +292,7 @@ __global__ void apply2x2normsingle(
 
     const bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
-    real1 partNrm = ZERO_R1;
+    qCudaReal1 partNrm = ZERO_R1_CUDA;
     for (bitCapIntOcl lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1()
         NORM_BODY_2X2()
@@ -250,7 +310,7 @@ __global__ void apply2x2normsinglewide(
     const bitCapIntOcl qMask = bitCapIntOclPtr[2];
     const bitCapIntOcl lcv = ID;
 
-    real1 partNrm = ZERO_R1;
+    qCudaReal1 partNrm = ZERO_R1_CUDA;
     PUSH_APART_1()
     NORM_BODY_2X2()
 
@@ -429,12 +489,22 @@ __global__ void uniformlycontrolled(
 
         const qCudaCmplx qubitLo = stateVec[i];
         const qCudaCmplx qubitHi = stateVec[i | targetPower];
+#if FPPOW > 4
         qCudaCmplx2 qubit = make_qCudaCmplx2(qubitLo.x, qubitLo.y, qubitHi.x, qubitHi.y);
-
         qubit = zmatrixmul(nrm, mtrxs + (offset * 8U), qubit);
+#else
+        __half2 qubitIn[2] = { qubitLo, qubitHi };
+        __half2 qubit[2];
+        zmatrixmul(nrm, mtrxs + (offset * 8U), qubitIn, qubit);
+#endif
 
+#if FPPOW > 4
         stateVec[i] = make_qCudaCmplx(qubit.x, qubit.y);
         stateVec[i | targetPower] = make_qCudaCmplx(qubit.z, qubit.w);
+#else
+        stateVec[i] = qubit[0];
+        stateVec[i | targetPower] = qubit[1];
+#endif
     }
 }
 
@@ -565,16 +635,16 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
         bitCapIntOcl j = lcv & startMask;
         j |= (lcv ^ j) << len;
 
-        real1 partProb = ZERO_R1;
+        qCudaReal1_f partProb = ZERO_R1_CUDA;
 
         for (bitCapIntOcl k = 0U; k < partPower; k++) {
             bitCapIntOcl l = j | (k << start);
 
             qCudaCmplx amp = stateVec[l];
-            real1 nrm = qCudaDot(amp, amp);
+            qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
 
-            if (nrm >= REAL1_EPSILON) {
+            if (nrm >= REAL1_EPSILON_CUDA) {
                 partStateAngle[k] = qCudaArg(amp);
             }
         }
@@ -585,7 +655,7 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
     for (bitCapIntOcl lcv = ID; lcv < partPower; lcv += Nthreads) {
         const bitCapIntOcl j = lcv << start;
 
-        real1 partProb = ZERO_R1;
+        qCudaReal1 partProb = ZERO_R1_CUDA;
 
         for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
             bitCapIntOcl l = k & startMask;
@@ -593,10 +663,10 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             l = j | l;
 
             qCudaCmplx amp = stateVec[l];
-            real1 nrm = qCudaDot(amp, amp);
+            qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
 
-            if (nrm >= REAL1_EPSILON) {
+            if (nrm >= REAL1_EPSILON_CUDA) {
                 remainderStateAngle[k] = qCudaArg(amp);
             }
         }
@@ -612,8 +682,9 @@ __global__ void decomposeamp(
     const bitCapIntOcl maxQPower = bitCapIntOclPtr[0];
     for (bitCapIntOcl lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         const qCudaReal1 angle = stateAngle[lcv];
-        const qCudaReal1 probSqrt = sqrt(stateProb[lcv]);
-        nStateVec[lcv] = make_qCudaCmplx(probSqrt * cos(angle), probSqrt * sin(angle));
+        const qCudaReal1 probSqrt = (qCudaReal1)sqrt((qCudaReal1_f)stateProb[lcv]);
+        nStateVec[lcv] = make_qCudaCmplx(
+            probSqrt * (qCudaReal1)cos((qCudaReal1_f)angle), probSqrt * (qCudaReal1)sin((qCudaReal1_f)angle));
     }
 }
 
@@ -626,20 +697,20 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
     const bitLenInt start = (bitLenInt)bitCapIntOclPtr[2];
     const bitCapIntOcl startMask = (ONE_BCI << start) - ONE_BCI;
     const bitLenInt len = bitCapIntOclPtr[3];
-    const qCudaReal1 angleThresh = -8 * PI_R1;
-    const qCudaReal1 initAngle = -16 * PI_R1;
+    const qCudaReal1_f angleThresh = -8 * PI_R1_CUDA;
+    const qCudaReal1_f initAngle = -16 * PI_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         bitCapIntOcl j = lcv & startMask;
         j |= (lcv ^ j) << len;
 
-        real1 partProb = ZERO_R1;
+        qCudaReal1 partProb = ZERO_R1_CUDA;
 
         for (bitCapIntOcl k = 0U; k < partPower; k++) {
             bitCapIntOcl l = j | (k << start);
 
             qCudaCmplx amp = stateVec[l];
-            real1 nrm = qCudaDot(amp, amp);
+            qCudaReal1 nrm = qCudaDot(amp, amp);
             partProb += nrm;
         }
 
@@ -649,7 +720,7 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
     for (bitCapIntOcl lcv = ID; lcv < partPower; lcv += Nthreads) {
         const bitCapIntOcl j = lcv << start;
 
-        real1 firstAngle = initAngle;
+        qCudaReal1_f firstAngle = initAngle;
 
         for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
             bitCapIntOcl l = k & startMask;
@@ -657,14 +728,14 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
             l = j | l;
 
             qCudaCmplx amp = stateVec[l];
-            real1 nrm = qCudaDot(amp, amp);
+            qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
 
-            if (nrm >= REAL1_EPSILON) {
-                real1 currentAngle = qCudaArg(amp);
+            if (nrm >= REAL1_EPSILON_CUDA) {
+                qCudaReal1 currentAngle = qCudaArg(amp);
                 if (firstAngle < angleThresh) {
                     firstAngle = currentAngle;
                 }
-                remainderStateAngle[k] = currentAngle - firstAngle;
+                remainderStateAngle[k] = currentAngle - (qCudaReal1)firstAngle;
             }
         }
     }
@@ -691,7 +762,7 @@ __global__ void prob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaR
     const bitCapIntOcl qPower = bitCapIntOclPtr[1];
     const bitCapIntOcl qMask = qPower - ONE_BCI;
 
-    real1 oneChancePart = ZERO_R1;
+    qCudaReal1 oneChancePart = ZERO_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl i = lcv & qMask;
@@ -719,7 +790,7 @@ __global__ void cprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCuda
         qMask2 = qPower - ONE_BCI;
     }
 
-    real1 oneChancePart = ZERO_R1;
+    qCudaReal1 oneChancePart = ZERO_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         PUSH_APART_2()
@@ -740,7 +811,7 @@ __global__ void probreg(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCu
     const bitLenInt len = (bitLenInt)bitCapIntOclPtr[3];
     const bitCapIntOcl qMask = (ONE_BCI << start) - ONE_BCI;
 
-    real1 oneChancePart = ZERO_R1;
+    qCudaReal1 oneChancePart = ZERO_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl i = lcv & qMask;
@@ -763,7 +834,7 @@ __global__ void probregall(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, 
 
     for (bitCapIntOcl lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
         const bitCapIntOcl perm = lcv1 << start;
-        real1 oneChancePart = ZERO_R1;
+        qCudaReal1 oneChancePart = ZERO_R1_CUDA;
         for (bitCapIntOcl lcv2 = 0U; lcv2 < maxJ; lcv2++) {
             bitCapIntOcl i = lcv2 & qMask;
             i |= ((lcv2 ^ i) << len);
@@ -783,7 +854,7 @@ __global__ void probmask(
     const bitCapIntOcl perm = bitCapIntOclPtr[2];
     const bitLenInt len = (bitLenInt)bitCapIntOclPtr[3];
 
-    real1 oneChancePart = ZERO_R1;
+    qCudaReal1 oneChancePart = ZERO_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl iHigh = lcv;
@@ -821,7 +892,7 @@ __global__ void probmaskall(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
         }
         perm |= iHigh;
 
-        real1 oneChancePart = ZERO_R1;
+        qCudaReal1 oneChancePart = ZERO_R1_CUDA;
         for (bitCapIntOcl lcv2 = 0U; lcv2 < maxJ; lcv2++) {
             iHigh = lcv2;
             bitCapIntOcl i = 0U;
@@ -846,7 +917,7 @@ __global__ void probparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, 
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
     const bitCapIntOcl mask = bitCapIntOclPtr[1];
 
-    real1 oneChancePart = ZERO_R1;
+    qCudaReal1 oneChancePart = ZERO_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bool parity = false;
@@ -872,7 +943,7 @@ __global__ void forcemparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr
     const bitCapIntOcl mask = bitCapIntOclPtr[1];
     const bool result = (bitCapIntOclPtr[2] == ONE_BCI);
 
-    real1 oneChancePart = ZERO_R1;
+    qCudaReal1 oneChancePart = ZERO_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bool parity = false;
@@ -886,7 +957,7 @@ __global__ void forcemparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr
             const qCudaCmplx amp = stateVec[lcv];
             oneChancePart += qCudaDot(amp, amp);
         } else {
-            stateVec[lcv] = make_qCudaCmplx(ZERO_R1, ZERO_R1);
+            stateVec[lcv] = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
         }
     }
 
@@ -901,7 +972,7 @@ __global__ void expperm(
     const bitLenInt len = (bitLenInt)bitCapIntOclPtr[1];
     const bitCapIntOcl offset = bitCapIntOclPtr[2];
 
-    real1 expectation = 0;
+    qCudaReal1 expectation = 0;
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl retIndex = 0;
         for (bitLenInt p = 0; p < len; p++) {
@@ -910,7 +981,7 @@ __global__ void expperm(
             }
         }
         const qCudaCmplx amp = stateVec[lcv];
-        expectation += (offset + retIndex) * qCudaDot(amp, amp);
+        expectation += (qCudaReal1)((offset + retIndex) * (qCudaReal1_f)qCudaDot(amp, amp));
     }
 
     SUM_LOCAL(expectation)
@@ -926,7 +997,7 @@ __global__ void nrmlze(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCud
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         qCudaCmplx amp = stateVec[lcv];
         if (qCudaDot(amp, amp) < norm_thresh) {
-            amp = make_qCudaCmplx(ZERO_R1, ZERO_R1);
+            amp = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
         }
         stateVec[lcv] = zmul(nrm, amp);
     }
@@ -940,7 +1011,7 @@ __global__ void nrmlzewide(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, 
 
     qCudaCmplx amp = stateVec[lcv];
     if (qCudaDot(amp, amp) < norm_thresh) {
-        amp = make_qCudaCmplx(ZERO_R1, ZERO_R1);
+        amp = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
     }
     stateVec[lcv] = zmul(nrm, amp);
 }
@@ -951,13 +1022,13 @@ __global__ void updatenorm(
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
     const qCudaReal1 norm_thresh = args_ptr[0];
-    real1 partNrm = ZERO_R1;
+    qCudaReal1 partNrm = ZERO_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         const qCudaCmplx amp = stateVec[lcv];
-        real1 nrm = qCudaDot(amp, amp);
+        qCudaReal1 nrm = qCudaDot(amp, amp);
         if (nrm < norm_thresh) {
-            nrm = ZERO_R1;
+            nrm = ZERO_R1_CUDA;
         }
         partNrm += nrm;
     }
@@ -970,7 +1041,7 @@ __global__ void approxcompare(
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    qCudaCmplx partInner = make_qCudaCmplx(ZERO_R1, ZERO_R1);
+    qCudaCmplx partInner = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         const qCudaCmplx prod = zmul(qCudaConj(stateVec1[lcv]), stateVec2[lcv]);
@@ -1010,7 +1081,7 @@ __global__ void applym(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCud
         const bitCapIntOcl i = iLow | ((lcv ^ iLow) << ONE_BCI);
 
         stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
-        stateVec[i | discardPower] = make_qCudaCmplx(ZERO_R1, ZERO_R1);
+        stateVec[i | discardPower] = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
     }
 }
 
@@ -1023,7 +1094,8 @@ __global__ void applymreg(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, q
     const qCudaCmplx nrm = qCudaCmplx_ptr[0];
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        stateVec[lcv] = ((lcv & mask) == result) ? zmul(nrm, stateVec[lcv]) : make_qCudaCmplx(ZERO_R1, ZERO_R1);
+        stateVec[lcv] =
+            ((lcv & mask) == result) ? zmul(nrm, stateVec[lcv]) : make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
     }
 }
 
@@ -1032,7 +1104,7 @@ __global__ void clearbuffer(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
     const bitCapIntOcl maxI = bitCapIntOclPtr[0] + bitCapIntOclPtr[1];
     const bitCapIntOcl offset = bitCapIntOclPtr[1];
-    const qCudaCmplx amp0 = make_qCudaCmplx(ZERO_R1, ZERO_R1);
+    const qCudaCmplx amp0 = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
     for (bitCapIntOcl lcv = (ID + offset); lcv < maxI; lcv += Nthreads) {
         stateVec[lcv] = amp0;
     }
