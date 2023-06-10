@@ -1105,6 +1105,10 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
 bitCapInt QStabilizerHybrid::MAll()
 {
+    if (ancillaCount) {
+        SwitchToEngine();
+    }
+
     if (engine) {
         const bitCapInt toRet = engine->MAll();
         SetPermutation(toRet);
