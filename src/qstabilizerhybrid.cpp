@@ -190,21 +190,6 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     Mtrx(shard->gate, ancillaIndex);
     H(ancillaIndex);
 
-    ancilla = std::make_shared<QStabilizer>(
-        1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
-
-    // Form potentially entangled representation, with this.
-    ancillaIndex = stabilizer->Compose(ancilla);
-    ++ancillaCount;
-    shards.push_back(NULL);
-    syndrome.push_back(false);
-
-    // Use reverse t-injection gadget.
-    stabilizer->CNOT(target, ancillaIndex);
-    // This gate currently adds an identity operation;
-    // we'll use it to inject a Z if the first ancilla fails.
-    H(ancillaIndex);
-
     // When we measure, we act postselection, but not yet.
     // ForceM(ancillaIndex, false, true, true);
     // Ancilla is separable after measurement.
@@ -1150,16 +1135,10 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         } catch (...) {
             // Error syndrome detected
 
-            // Is this a primary or backup ancilla?
-            if (!(i & 1U)) {
-                // Primary ancilla:
-                ++index;
-            }
-
             // If this state collapses into the opposite of its intended syndrome, it applies the originally
             // intended gate divided by Z. Since the ancilla has not been locally acted upon since preparation, we
-            // can invert the original preparation of the second ancilla and use it to inject Z onto the original
-            // target qubit at time of ancilla preparation, (in the past).
+            // can "uncompute" the original preparation and use the original channel to inject an additional Z onto the
+            // original target qubit at time of ancilla preparation, (in the past).
 
             // Undo the last local H gate:
             H(index);
