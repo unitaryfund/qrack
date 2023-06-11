@@ -1038,9 +1038,11 @@ void QStabilizerHybrid::MACInvert(
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
     if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->Prob(qubit);
+        std::unique_ptr<complex[]> dMtrx = GetQubitReducedDensityMatrix(qubit);
+        const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        complex pMtrx[4];
+        mul2x2(dMtrx.get(), pauliZ, pMtrx);
+        return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;
     }
 
     if (engine) {
