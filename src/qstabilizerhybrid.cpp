@@ -1161,10 +1161,10 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
                     ++index;
                 }
 
-                // If this state collapses into the opposite of its intended syndrome, the originally intended gate
-                // divided by Z. Since the ancilla has not been locally acted upon since preparation, we can invert the
-                // original preparation of the second ancilla and use it to inject Z onto the original target qubit at
-                // time of ancilla preparation, (in the past).
+                // If this state collapses into the opposite of its intended syndrome, it applies the originally
+                // intended gate divided by Z. Since the ancilla has not been locally acted upon since preparation, we
+                // can invert the original preparation of the second ancilla and use it to inject Z onto the original
+                // target qubit at time of ancilla preparation, (in the past).
 
                 // Undo the last local H gate:
                 H(index);
