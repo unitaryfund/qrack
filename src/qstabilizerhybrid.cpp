@@ -1037,6 +1037,30 @@ void QStabilizerHybrid::MACInvert(
 
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
+    if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
+        // Form the reduced density matrix of the single qubit.
+        const real1 probZ = (real1)(ONE_R1_F - 2 * stabilizer->Prob(qubit));
+        stabilizer->H(qubit);
+        const real1 probX = (real1)(ONE_R1_F - 2 * stabilizer->Prob(qubit));
+        stabilizer->S(qubit);
+        const real1 probY = (real1)(ONE_R1_F - 2 * stabilizer->Prob(qubit));
+        stabilizer->IS(qubit);
+        stabilizer->H(qubit);
+
+        complex dMtrx[4]{ ONE_R1 / 2 + probZ, probX - I_CMPLX * probY, probX + I_CMPLX * probY, ONE_R1 / 2 - probZ };
+        if (shards[qubit]) {
+            complex out[4], inv[4];
+            inv2x2(shards[qubit]->gate, inv);
+            mul2x2(dMtrx, shards[qubit]->gate, out);
+            mul2x2(inv, out, dMtrx);
+        }
+        const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        complex pMtrx[4];
+        mul2x2(dMtrx, pauliZ, pMtrx);
+
+        return (real1_f)std::real(pMtrx[0] + pMtrx[1]);
+    }
+
     if (engine) {
         return engine->Prob(qubit);
     }
