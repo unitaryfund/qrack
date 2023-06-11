@@ -1161,16 +1161,18 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
                     throw std::runtime_error("QStabilizerHybrid::ForceM() ran out of ancillae!");
                 }
 
-                // If this state collapses into the opposite of its intended syndrome, we end up applying the inverse of
-                // the originally intended gate. Since the ancilla has not been locally acted upon since preparation, we
-                // can invert the original preparation, then repeat it for the inverse non-Clifford gate.
+                // If this state collapses into the opposite of its intended syndrome, the originally intended gate
+                // divided by Z. Since the ancilla has not been locally acted upon since preparation, we can invert the
+                // original preparation of the second ancilla and use it to inject Z onto the original target qubit at
+                // time of ancilla preparation, (in the past).
+                ++index;
 
                 // Undo the last local H gate:
-                H(index + 1U);
+                H(index);
                 // We add a Z gate to the original non-Clifford gate (on the qubit).
-                Z(index + 1U);
+                Z(index);
                 // Finish the new ancilla preparation:
-                H(index + 1U);
+                H(index);
 
                 // Record that we took corrective action for the syndrome:
                 syndrome[i] = !syndrome[i];
