@@ -190,6 +190,21 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     Mtrx(shard->gate, ancillaIndex);
     H(ancillaIndex);
 
+    ancilla = std::make_shared<QStabilizer>(
+        1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+
+    // Form potentially entangled representation, with this.
+    ancillaIndex = stabilizer->Compose(ancilla);
+    ++ancillaCount;
+    shards.push_back(NULL);
+    syndrome.push_back(false);
+
+    // Use reverse t-injection gadget.
+    stabilizer->CNOT(target, ancillaIndex);
+    // This gate currently adds an identity operation;
+    // we'll use it to inject a Z if the first ancilla fails.
+    H(ancillaIndex);
+
     // When we measure, we act postselection, but not yet.
     // ForceM(ancillaIndex, false, true, true);
     // Ancilla is separable after measurement.
@@ -1115,7 +1130,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     }
     shards[qubit] = NULL;
 
-    if (stabilizer->IsSeparableZ(qubit)) {
+    if (stabilizer->IsSeparable(qubit)) {
         return stabilizer->ForceM(qubit, result, doForce, doApply);
     }
 
@@ -1131,37 +1146,38 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
                 clone->stabilizer->M(index);
                 continue;
             }
+            clone->CacheEigenstate(index);
 
             // Ancilla is separable - check syndrome
-            if ((syndrome[i] && (clone->Prob(index) > FP_NORM_EPSILON)) ||
-                (!syndrome[i] && ((ONE_R1_F - clone->Prob(index)) > FP_NORM_EPSILON))) {
-                clone->M(index);
+            try {
+                clone->ForceM(index, syndrome[i]);
                 continue;
+            } catch (...) {
+                // Error syndrome detected
+
+                // Is this a backup ancilla?
+                if (i & 1U) {
+                    // The backup was already "consumed."
+                    throw std::runtime_error("QStabilizerHybrid::ForceM() ran out of ancillae!");
+                }
+
+                // If this state collapses into the opposite of its intended syndrome, we end up applying the inverse of
+                // the originally intended gate. Since the ancilla has not been locally acted upon since preparation, we
+                // can invert the original preparation, then repeat it for the inverse non-Clifford gate.
+
+                // Undo the last local H gate:
+                H(index + 1U);
+                // We add a Z gate to the original non-Clifford gate (on the qubit).
+                Z(index + 1U);
+                // Finish the new ancilla preparation:
+                H(index + 1U);
+
+                // Record that we took corrective action for the syndrome:
+                syndrome[i] = !syndrome[i];
+
+                // Start the syndrome check over:
+                break;
             }
-
-            // Error syndrome detected
-
-            // If this state collapses into the opposite of its intended syndrome, we end up applying the inverse of
-            // the originally intended gate. Since the ancilla has not been locally acted upon since preparation, we
-            // can invert the original preparation, then repeat it for the inverse non-Clifford gate.
-
-            // Undo the local preparation:
-            H(index);
-            complex invGate[4];
-            inv2x2(shards[index]->gate, invGate);
-            Mtrx(invGate, index);
-
-            // Turn the original phase gate into its inverse:
-            Mtrx(invGate, index);
-
-            // Finish the new ancilla preparation:
-            H(index);
-
-            // Record that we took corrective action for the syndrome:
-            syndrome[i] = !syndrome[i];
-
-            // Start the syndrome check over:
-            break;
         }
     }
 
