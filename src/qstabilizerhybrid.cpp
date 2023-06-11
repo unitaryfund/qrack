@@ -1134,51 +1134,42 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         return stabilizer->ForceM(qubit, result, doForce, doApply);
     }
 
-    bool toRet = result;
-    bitLenInt i = 0U;
-    while (i < ancillaCount) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        toRet = clone->stabilizer->ForceM(qubit, result, doForce, doApply);
-        for (i = 0U; i < ancillaCount; ++i) {
-            bitLenInt index = qubitCount + i;
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    bool toRet = clone->stabilizer->ForceM(qubit, result, doForce, doApply);
+    for (bitLenInt i = 0U; i < ancillaCount; ++i) {
+        if (clone->engine) {
+            SwitchToEngine();
+            return engine->ForceM(qubit, toRet, doForce, doApply);
+        }
 
-            if (!clone->stabilizer->IsSeparable(index)) {
-                clone->stabilizer->M(index);
-                continue;
+        bitLenInt index = qubitCount + i;
+        // Check syndrome
+        try {
+            clone->ForceM(index, syndrome[i]);
+            continue;
+        } catch (...) {
+            // Error syndrome detected
+
+            // Is this a primary or backup ancilla?
+            if (!(i & 1U)) {
+                // Primary ancilla:
+                ++index;
             }
-            clone->CacheEigenstate(index);
 
-            // Ancilla is separable - check syndrome
-            try {
-                clone->ForceM(index, syndrome[i]);
-                continue;
-            } catch (...) {
-                // Error syndrome detected
+            // If this state collapses into the opposite of its intended syndrome, it applies the originally
+            // intended gate divided by Z. Since the ancilla has not been locally acted upon since preparation, we
+            // can invert the original preparation of the second ancilla and use it to inject Z onto the original
+            // target qubit at time of ancilla preparation, (in the past).
 
-                // Is this a primary or backup ancilla?
-                if (!(i & 1U)) {
-                    // Primary ancilla:
-                    ++index;
-                }
+            // Undo the last local H gate:
+            H(index);
+            // We add a Z gate to the original non-Clifford gate (on the qubit).
+            Z(index);
+            // Finish the new ancilla preparation:
+            H(index);
 
-                // If this state collapses into the opposite of its intended syndrome, it applies the originally
-                // intended gate divided by Z. Since the ancilla has not been locally acted upon since preparation, we
-                // can invert the original preparation of the second ancilla and use it to inject Z onto the original
-                // target qubit at time of ancilla preparation, (in the past).
-
-                // Undo the last local H gate:
-                H(index);
-                // We add a Z gate to the original non-Clifford gate (on the qubit).
-                Z(index);
-                // Finish the new ancilla preparation:
-                H(index);
-
-                // Record that we took corrective action for the syndrome:
-                syndrome[i] = !syndrome[i];
-
-                // Start the syndrome check over:
-                break;
-            }
+            // Record that we took corrective action for the syndrome:
+            syndrome[i] = !syndrome[i];
         }
     }
 
