@@ -1046,6 +1046,12 @@ void QStabilizerHybrid::MACInvert(
 
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
+    if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        return clone->Prob(qubit);
+    }
+
     if (engine) {
         return engine->Prob(qubit);
     }
@@ -1109,42 +1115,53 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     }
     shards[qubit] = NULL;
 
-    bitLenInt i = 0U;
+    if (stabilizer->IsSeparableZ(qubit)) {
+        return stabilizer->ForceM(qubit, result, doForce, doApply);
+    }
+
     bool toRet = result;
+    bitLenInt i = 0U;
     while (i < ancillaCount) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         toRet = clone->stabilizer->ForceM(qubit, result, doForce, doApply);
         for (i = 0U; i < ancillaCount; ++i) {
             bitLenInt index = qubitCount + i;
 
-            if ((!syndrome[i] && (clone->stabilizer->Prob(index) > (real1)0.75f)) ||
-                (syndrome[i] && (clone->stabilizer->Prob(index) < (real1)0.25f))) {
-                // Error syndrome detected
-
-                // If this state collapses into the opposite of its intended syndrome, we end up applying the inverse of
-                // the originally intended gate. Since the ancilla has not been locally acted upon since preparation, we
-                // can invert the original preparation, them repeat it for the inverse non-Clifford gate.
-
-                // Undo the local preparation:
-                H(index);
-                complex invGate[4];
-                inv2x2(shards[index]->gate, invGate);
-                Mtrx(invGate, index);
-
-                // Turn the original phase gate into its inverse:
-                Mtrx(invGate, index);
-
-                // Finish the new ancilla preparation:
-                H(index);
-
-                // Record that we took corrective action for the syndrome:
-                syndrome[i] = !syndrome[i];
-
-                // Start the syndrome checking over.
-                break;
+            if (!clone->stabilizer->IsSeparable(index)) {
+                clone->stabilizer->M(index);
+                continue;
             }
 
-            clone->stabilizer->ForceM(index, syndrome[i], true, true);
+            // Ancilla is separable - check syndrome
+            if ((syndrome[i] && (clone->Prob(index) > FP_NORM_EPSILON)) ||
+                (!syndrome[i] && ((ONE_R1_F - clone->Prob(index)) > FP_NORM_EPSILON))) {
+                clone->M(index);
+                continue;
+            }
+
+            // Error syndrome detected
+
+            // If this state collapses into the opposite of its intended syndrome, we end up applying the inverse of
+            // the originally intended gate. Since the ancilla has not been locally acted upon since preparation, we
+            // can invert the original preparation, then repeat it for the inverse non-Clifford gate.
+
+            // Undo the local preparation:
+            H(index);
+            complex invGate[4];
+            inv2x2(shards[index]->gate, invGate);
+            Mtrx(invGate, index);
+
+            // Turn the original phase gate into its inverse:
+            Mtrx(invGate, index);
+
+            // Finish the new ancilla preparation:
+            H(index);
+
+            // Record that we took corrective action for the syndrome:
+            syndrome[i] = !syndrome[i];
+
+            // Start the syndrome check over:
+            break;
         }
     }
 
