@@ -91,6 +91,32 @@ protected:
 
         return false;
     }
+    std::unique_ptr<complex[]> GetQubitReducedDensityMatrix(bitLenInt qubit)
+    {
+        // Form the reduced density matrix of the single qubit.
+        const real1 z = (real1)(ONE_R1_F - 2 * stabilizer->Prob(qubit));
+        stabilizer->H(qubit);
+        const real1 x = (real1)(ONE_R1_F - 2 * stabilizer->Prob(qubit));
+        stabilizer->S(qubit);
+        const real1 y = (real1)(ONE_R1_F - 2 * stabilizer->Prob(qubit));
+        stabilizer->IS(qubit);
+        stabilizer->H(qubit);
+
+        std::unique_ptr<complex[]> dMtrx(new complex[4]);
+        dMtrx[0] = (ONE_R1 + z) / 2;
+        dMtrx[1] = x / 2 - I_CMPLX * (y / 2);
+        dMtrx[2] = x / 2 + I_CMPLX * (y / 2);
+        dMtrx[3] = (ONE_R1 + z) / 2;
+        if (shards[qubit]) {
+            complex adj[4]{ std::conj(shards[qubit]->gate[0]), std::conj(shards[qubit]->gate[2]),
+                std::conj(shards[qubit]->gate[1]), std::conj(shards[qubit]->gate[3]) };
+            complex out[4];
+            mul2x2(dMtrx.get(), adj, out);
+            mul2x2(shards[qubit]->gate, out, dMtrx.get());
+        }
+
+        return dMtrx;
+    }
 
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
