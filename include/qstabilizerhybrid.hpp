@@ -49,6 +49,7 @@ protected:
     std::vector<QInterfaceEngine> engineTypes;
     std::vector<QInterfaceEngine> cloneEngineTypes;
     std::vector<MpsShardPtr> shards;
+    std::vector<bool> syndrome;
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0U);
     QInterfacePtr MakeEngine(bitCapInt perm = 0U);

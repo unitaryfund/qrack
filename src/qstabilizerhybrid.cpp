@@ -183,6 +183,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
     ++ancillaCount;
     shards.push_back(NULL);
+    syndrome.push_back(false);
 
     // Use reverse t-injection gadget.
     stabilizer->CNOT(target, ancillaIndex);
@@ -335,6 +336,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
+    c->syndrome = syndrome;
     for (size_t i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
             c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
@@ -368,7 +370,9 @@ void QStabilizerHybrid::SwitchToEngine()
     }
 
     // When we measure, we act postselection on reverse T-gadgets.
-    engine->ForceMReg(qubitCount, ancillaCount, 0, true, true);
+    for (size_t i = 0U; i < syndrome.size(); ++i) {
+        engine->ForceM(qubitCount + i, syndrome[i], true, true);
+    }
     if (isBdt) {
         std::dynamic_pointer_cast<QBdt>(engine)->ResetStateVector();
     }
@@ -378,6 +382,7 @@ void QStabilizerHybrid::SwitchToEngine()
     shards.erase(shards.begin() + qubitCount, shards.end());
     // We're done with ancillae.
     ancillaCount = 0;
+    syndrome.clear();
 }
 
 bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool willDestroy)
@@ -402,6 +407,7 @@ bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool wil
     } else {
         toRet = stabilizer->Compose(toCopy->stabilizer, qubitCount);
         ancillaCount += toCopy->ancillaCount;
+        syndrome.insert(syndrome.end(), toCopy->syndrome.begin(), toCopy->syndrome.end());
     }
 
     // Resize the shards buffer.
@@ -597,6 +603,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
 
     if (qubitCount > 1U) {
         ancillaCount = 0;
+        syndrome.clear();
         if (stabilizer) {
             engine = MakeEngine();
             stabilizer = NULL;
@@ -613,6 +620,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
         stabilizer->SetPermutation(0U);
     } else {
         ancillaCount = 0;
+        syndrome.clear();
         stabilizer = MakeStabilizer(0U);
     }
 
@@ -635,6 +643,7 @@ void QStabilizerHybrid::SetPermutation(bitCapInt perm, complex phaseFac)
         stabilizer->SetPermutation(perm);
     } else {
         ancillaCount = 0U;
+        syndrome.clear();
         stabilizer = MakeStabilizer(perm);
     }
 }
@@ -1100,15 +1109,50 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     }
     shards[qubit] = NULL;
 
-    return stabilizer->ForceM(qubit, result, doForce, doApply);
+    bitLenInt i = 0U;
+    bool toRet = result;
+    while (i < ancillaCount) {
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        toRet = clone->stabilizer->ForceM(qubit, result, doForce, doApply);
+        for (i = 0U; i < ancillaCount; ++i) {
+            bitLenInt index = qubitCount + i;
+
+            if ((!syndrome[i] && (clone->stabilizer->Prob(index) > (real1)0.75f)) ||
+                (syndrome[i] && (clone->stabilizer->Prob(index) < (real1)0.25f))) {
+                // Error syndrome detected
+
+                // If this state collapses into the opposite of its intended syndrome, we end up applying the inverse of
+                // the originally intended gate. Since the ancilla has not been locally acted upon since preparation, we
+                // can invert the original preparation, them repeat it for the inverse non-Clifford gate.
+
+                // Undo the local preparation:
+                H(index);
+                complex invGate[4];
+                inv2x2(shards[index]->gate, invGate);
+                Mtrx(invGate, index);
+
+                // Turn the original phase gate into its inverse:
+                Mtrx(invGate, index);
+
+                // Finish the new ancilla preparation:
+                H(index);
+
+                // Record that we took corrective action for the syndrome:
+                syndrome[i] = !syndrome[i];
+
+                // Start the syndrome checking over.
+                break;
+            }
+
+            clone->stabilizer->ForceM(index, syndrome[i], true, true);
+        }
+    }
+
+    return stabilizer->ForceM(qubit, toRet, doForce, doApply);
 }
 
 bitCapInt QStabilizerHybrid::MAll()
 {
-    if (ancillaCount) {
-        SwitchToEngine();
-    }
-
     if (engine) {
         const bitCapInt toRet = engine->MAll();
         SetPermutation(toRet);
@@ -1135,7 +1179,7 @@ bitCapInt QStabilizerHybrid::MAll()
         }
         shards[i] = NULL;
 
-        if (stabilizer->M(i)) {
+        if (M(i)) {
             toRet |= pow2(i);
         }
     }
@@ -1311,6 +1355,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
         shards.resize(toCompare->shards.size());
         ancillaCount = toCompare->ancillaCount;
+        syndrome = toCompare->syndrome;
         for (size_t i = 0U; i < shards.size(); ++i) {
             shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
         }
@@ -1319,6 +1364,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
         toCompare->shards.resize(shards.size());
         toCompare->ancillaCount = ancillaCount;
+        toCompare->syndrome = syndrome;
         for (size_t i = 0U; i < shards.size(); ++i) {
             toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
         }
