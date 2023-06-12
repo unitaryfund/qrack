@@ -1108,6 +1108,11 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     }
     shards[qubit] = NULL;
 
+    if (ancillaCount) {
+        SwitchToEngine();
+        return engine->ForceM(qubit, result, doForce, doApply);
+    }
+
     return stabilizer->ForceM(qubit, result, doForce, doApply);
 }
 
@@ -1118,9 +1123,7 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
     if (engine) {
-        const bitCapInt toRet = engine->MAll();
-        SetPermutation(toRet);
-        return toRet;
+        return engine->MAll();
     }
 
     bitCapInt toRet = 0U;
@@ -1133,9 +1136,7 @@ bitCapInt QStabilizerHybrid::MAll()
             if (!stabilizer->IsSeparableZ(i)) {
                 // Otherwise, we have non-Clifford measurement.
                 SwitchToEngine();
-                bitCapInt toRet = engine->MAll();
-                SetPermutation(toRet);
-                return toRet;
+                return engine->MAll();
             }
 
             // Bit was already rotated to Z basis, if separable.
@@ -1143,12 +1144,14 @@ bitCapInt QStabilizerHybrid::MAll()
         }
         shards[i] = NULL;
 
-        if (stabilizer->M(i)) {
+        if (M(i)) {
             toRet |= pow2(i);
         }
-    }
 
-    SetPermutation(toRet);
+        if (engine) {
+            return engine->MAll();
+        }
+    }
 
     return toRet;
 }
