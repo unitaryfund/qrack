@@ -1189,13 +1189,13 @@ bitCapInt QStabilizerHybrid::MAll()
         }
 
         if (clone->M(i)) {
-            toRet |= pow2(i);
+            toRet |= pow2(inseparableIndices[i]);
         }
 
         if (clone->engine) {
             clone->SwitchToEngine();
             const bitCapInt partM = clone->MAll();
-            for (bitLenInt j = i; j < clone->GetQubitCount(); ++j) {
+            for (bitLenInt j = i + 1U; j < clone->GetQubitCount(); ++j) {
                 if ((partM >> j) & 1U) {
                     toRet |= pow2(inseparableIndices[j]);
                 }
