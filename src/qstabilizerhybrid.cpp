@@ -550,7 +550,7 @@ void QStabilizerHybrid::GetQuantumState(complex* outputState)
         return;
     }
 
-    if (!ancillaCount && !IsBuffered()) {
+    if (!IsBuffered()) {
         stabilizer->GetQuantumState(outputState);
         return;
     }
@@ -838,6 +838,11 @@ void QStabilizerHybrid::MCPhase(
         return;
     }
 
+    if (engine) {
+        engine->MCPhase(lControls, topLeft, bottomRight, target);
+        return;
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, controls)) {
         return;
@@ -848,7 +853,7 @@ void QStabilizerHybrid::MCPhase(
         return;
     }
 
-    if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
+    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
         real1_f prob = Prob(target);
         if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
             return;
@@ -882,6 +887,11 @@ void QStabilizerHybrid::MCPhase(
 void QStabilizerHybrid::MCInvert(
     const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
 {
+    if (engine) {
+        engine->MCInvert(lControls, topRight, bottomLeft, target);
+        return;
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, controls)) {
         return;
@@ -892,7 +902,7 @@ void QStabilizerHybrid::MCInvert(
         return;
     }
 
-    if (stabilizer && (controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
+    if ((controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
         H(target);
         const real1_f prob = Prob(target);
         H(target);
@@ -951,6 +961,11 @@ void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, const c
 void QStabilizerHybrid::MACPhase(
     const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (engine) {
+        engine->MACPhase(lControls, topLeft, bottomRight, target);
+        return;
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, controls, true)) {
         return;
@@ -961,7 +976,7 @@ void QStabilizerHybrid::MACPhase(
         return;
     }
 
-    if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
+    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
         real1_f prob = Prob(target);
         if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
             return;
@@ -995,6 +1010,11 @@ void QStabilizerHybrid::MACPhase(
 void QStabilizerHybrid::MACInvert(
     const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
 {
+    if (engine) {
+        engine->MACInvert(lControls, topRight, bottomLeft, target);
+        return;
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, controls, true)) {
         return;
@@ -1005,7 +1025,7 @@ void QStabilizerHybrid::MACInvert(
         return;
     }
 
-    if (stabilizer && (controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
+    if ((controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
         H(target);
         const real1_f prob = Prob(target);
         H(target);
@@ -1452,7 +1472,13 @@ void QStabilizerHybrid::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f
 
 bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
 {
-    if ((qubitCount == 1U) && !ancillaCount) {
+    if (qubitCount == 1U) {
+        if (ancillaCount) {
+            SwitchToEngine();
+            complex sv[2];
+            engine->GetQuantumState(sv);
+            SetQuantumState(sv);
+        }
         return true;
     }
 
