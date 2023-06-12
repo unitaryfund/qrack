@@ -1190,7 +1190,7 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
     return ONE_R1_F - clampProb((real1_f)norm(proj));
 }
 
-void QStabilizer::SetQuantumState(complex const* inputState)
+void QStabilizer::SetQuantumState(const complex* inputState)
 {
     if (qubitCount > 1U) {
         throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
@@ -1217,7 +1217,7 @@ real1_f QStabilizer::Prob(bitLenInt qubit)
     return ONE_R1_F / 2;
 }
 
-void QStabilizer::Mtrx(complex const* mtrx, bitLenInt target)
+void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         Phase(mtrx[0U], mtrx[3U], target);
