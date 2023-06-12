@@ -346,7 +346,7 @@ real1_f QStabilizer::FirstNonzeroPhase()
         return (real1_f)std::arg(entry0.amplitude);
     }
     for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        bitCapIntOcl t2 = t ^ (t + 1U);
+        const bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);

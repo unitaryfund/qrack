@@ -124,36 +124,32 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         return;
     }
 
-    MpsShardPtr shard = shards[control];
-    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+    const MpsShardPtr& cshard = shards[control];
+    if (cshard && (cshard->IsHPhase() || cshard->IsHInvert())) {
         FlushH(control);
     }
-    shard = shards[control];
-    if (shard && shard->IsInvert()) {
+    if (cshard && cshard->IsInvert()) {
         InvertBuffer(control);
     }
-    shard = shards[control];
-    if (shard && !shard->IsPhase()) {
+    if (cshard && !cshard->IsPhase()) {
         SwitchToEngine();
         return;
     }
 
-    shard = shards[target];
-    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+    const MpsShardPtr& tshard = shards[target];
+    if (tshard && (tshard->IsHPhase() || tshard->IsHInvert())) {
         FlushH(target);
     }
-    shard = shards[target];
-    if (shard && shard->IsInvert()) {
+    if (tshard && tshard->IsInvert()) {
         InvertBuffer(target);
     }
 
-    shard = shards[target];
-    if (!shard) {
+    if (!tshard) {
         return;
     }
     // Shard is definitely non-NULL.
 
-    if (!(shard->IsPhase())) {
+    if (!(tshard->IsPhase())) {
         SwitchToEngine();
         return;
     }
@@ -174,6 +170,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         return;
     }
 
+    const MpsShardPtr shard = shards[target];
     shards[target] = NULL;
 
     QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
@@ -230,7 +227,7 @@ void QStabilizerHybrid::FlushBuffers()
     }
 
     for (size_t i = 0U; i < shards.size(); ++i) {
-        MpsShardPtr shard = shards[i];
+        const MpsShardPtr shard = shards[i];
         if (shard) {
             shards[i] = NULL;
             engine->Mtrx(shard->gate, i);
@@ -253,15 +250,16 @@ bool QStabilizerHybrid::TrimControls(const std::vector<bitLenInt>& lControls, st
             continue;
         }
 
-        if (shards[bit]) {
-            if (shards[bit]->IsInvert()) {
+        const MpsShardPtr& shard = shards[bit];
+        if (shard) {
+            if (shard->IsInvert()) {
                 if (anti != stabilizer->M(bit)) {
                     return true;
                 }
                 continue;
             }
 
-            if (shards[bit]->IsPhase()) {
+            if (shard->IsPhase()) {
                 if (anti == stabilizer->M(bit)) {
                     return true;
                 }
@@ -310,11 +308,11 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
         return;
     }
 
-    if (shards[target]) {
-        toRet->Compose(shards[target]->gate);
+    MpsShardPtr& shard = shards[target];
+    if (shard) {
+        toRet->Compose(shard->gate);
     }
-
-    shards[target] = toRet;
+    shard = toRet;
 }
 
 QInterfacePtr QStabilizerHybrid::Clone()
@@ -779,12 +777,13 @@ void QStabilizerHybrid::ZMask(bitCapInt mask)
 
 void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
-    const bool wasCached = (bool)shards[target];
+    MpsShardPtr& shard = shards[target];
+    const bool wasCached = (bool)shard;
     complex mtrx[4U];
     if (wasCached) {
-        shards[target]->Compose(lMtrx);
-        std::copy(shards[target]->gate, shards[target]->gate + 4U, mtrx);
-        shards[target] = NULL;
+        shard->Compose(lMtrx);
+        std::copy(shard->gate, shard->gate + 4U, mtrx);
+        shard = NULL;
     } else {
         std::copy(lMtrx, lMtrx + 4U, mtrx);
     }
@@ -799,7 +798,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    shards[target] = std::make_shared<MpsShard>(mtrx);
+    shard = std::make_shared<MpsShard>(mtrx);
     if (!wasCached) {
         CacheEigenstate(target);
     }
@@ -1069,17 +1068,19 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         return engine->Prob(qubit);
     }
 
-    if (shards[qubit] && shards[qubit]->IsInvert()) {
+    const MpsShardPtr& shard = shards[qubit];
+
+    if (shard && shard->IsInvert()) {
         InvertBuffer(qubit);
     }
 
-    if (shards[qubit] && !shards[qubit]->IsPhase()) {
+    if (shard && !shard->IsPhase()) {
         // Bit was already rotated to Z basis, if separable.
         if (stabilizer->IsSeparableZ(qubit)) {
             if (stabilizer->M(qubit)) {
-                return (real1_f)norm(shards[qubit]->gate[3U]);
+                return (real1_f)norm(shard->gate[3U]);
             }
-            return (real1_f)norm(shards[qubit]->gate[2U]);
+            return (real1_f)norm(shard->gate[2U]);
         }
 
         // Otherwise, buffer will not change the fact that state appears maximally mixed.
@@ -1100,11 +1101,13 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
-    if (shards[qubit] && shards[qubit]->IsInvert()) {
+    MpsShardPtr& shard = shards[qubit];
+
+    if (shard && shard->IsInvert()) {
         InvertBuffer(qubit);
     }
 
-    if (shards[qubit] && !shards[qubit]->IsPhase()) {
+    if (shard && !shard->IsPhase()) {
         if (stabilizer->IsSeparableZ(qubit)) {
             if (doForce) {
                 if (doApply) {
@@ -1113,7 +1116,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
                         throw std::invalid_argument(
                             "QStabilizerHybrid::ForceM() forced a measurement result with 0 probability!");
                     }
-                    shards[qubit] = NULL;
+                    shard = NULL;
                 }
 
                 return result;
@@ -1126,7 +1129,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         SwitchToEngine();
         return engine->ForceM(qubit, result, doForce, doApply);
     }
-    shards[qubit] = NULL;
+    shard = NULL;
 
     if (stabilizer->IsSeparable(qubit)) {
         return stabilizer->ForceM(qubit, result, doForce, doApply);
@@ -1157,11 +1160,12 @@ bitCapInt QStabilizerHybrid::MAll()
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
     bitCapInt toRet = 0U;
     for (int i = qubitCount - 1U; i >= 0; --i) {
-        if (clone->shards[i] && clone->shards[i]->IsInvert()) {
+        MpsShardPtr& shard = clone->shards[i];
+        if (shard && shard->IsInvert()) {
             clone->InvertBuffer(i);
         }
 
-        if (clone->shards[i] && !clone->shards[i]->IsPhase()) {
+        if (shard && !shard->IsPhase()) {
             if (!clone->stabilizer->IsSeparableZ(i)) {
                 // Otherwise, we have non-Clifford measurement.
                 continue;
@@ -1170,7 +1174,7 @@ bitCapInt QStabilizerHybrid::MAll()
             // Bit was already rotated to Z basis, if separable.
             clone->CollapseSeparableShard(i);
         }
-        clone->shards[i] = NULL;
+        shard = NULL;
 
         if (clone->stabilizer->IsSeparable(i)) {
             if (clone->M(i)) {
@@ -1194,7 +1198,8 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
     for (bitLenInt i = 0U; i < clone->GetQubitCount(); ++i) {
-        if (clone->shards[i] && !clone->shards[i]->IsPhase() && !clone->stabilizer->IsSeparableZ(i)) {
+        const MpsShardPtr& shard = clone->shards[i];
+        if (shard && !shard->IsPhase() && !clone->stabilizer->IsSeparableZ(i)) {
             // Otherwise, we have non-Clifford measurement.
             clone->SwitchToEngine();
             const bitCapInt partM = clone->MAll();
@@ -1418,29 +1423,27 @@ void QStabilizerHybrid::ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inv
         return;
     }
 
-    MpsShardPtr shard = shards[qubit1];
-    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+    MpsShardPtr& shard1 = shards[qubit1];
+    if (shard1 && (shard1->IsHPhase() || shard1->IsHInvert())) {
         FlushH(qubit1);
     }
-    shard = shards[qubit1];
-    if (shard && shard->IsInvert()) {
+    if (shard1 && shard1->IsInvert()) {
         InvertBuffer(qubit1);
     }
 
-    shard = shards[qubit2];
-    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+    MpsShardPtr& shard2 = shards[qubit2];
+    if (shard2 && (shard2->IsHPhase() || shard2->IsHInvert())) {
         FlushH(qubit2);
     }
-    shard = shards[qubit2];
-    if (shard && shard->IsInvert()) {
+    if (shard2 && shard2->IsInvert()) {
         InvertBuffer(qubit2);
     }
 
-    if ((shards[qubit1] && !shards[qubit1]->IsPhase()) || (shards[qubit2] && !shards[qubit2]->IsPhase())) {
+    if ((shard1 && !shard1->IsPhase()) || (shard2 && !shard2->IsPhase())) {
         FlushBuffers();
     }
 
-    std::swap(shards[qubit1], shards[qubit2]);
+    std::swap(shard1, shard2);
 
     if (stabilizer) {
         if (inverse) {
