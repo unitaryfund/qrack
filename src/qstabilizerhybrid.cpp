@@ -1108,6 +1108,10 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     }
     shards[qubit] = NULL;
 
+    if (stabilizer->IsSeparable(qubit)) {
+        return stabilizer->ForceM(qubit, result, doForce, doApply);
+    }
+
     if (ancillaCount) {
         SwitchToEngine();
         return engine->ForceM(qubit, result, doForce, doApply);
