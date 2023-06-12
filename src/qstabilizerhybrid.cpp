@@ -1127,35 +1127,85 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
     if (engine) {
-        return engine->MAll();
+        const bitCapInt toRet = engine->MAll();
+        SetPermutation(toRet);
+
+        return toRet;
     }
 
+    std::vector<bitLenInt> struckBits;
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
     bitCapInt toRet = 0U;
-    for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        if (shards[i] && shards[i]->IsInvert()) {
-            InvertBuffer(i);
+    for (int i = qubitCount - 1U; i >= 0; --i) {
+        if (clone->shards[i] && clone->shards[i]->IsInvert()) {
+            clone->InvertBuffer(i);
         }
 
-        if (shards[i] && !shards[i]->IsPhase()) {
-            if (!stabilizer->IsSeparableZ(i)) {
+        if (clone->shards[i] && !clone->shards[i]->IsPhase()) {
+            if (!clone->stabilizer->IsSeparableZ(i)) {
                 // Otherwise, we have non-Clifford measurement.
-                SwitchToEngine();
-                return engine->MAll();
+                continue;
             }
 
             // Bit was already rotated to Z basis, if separable.
-            CollapseSeparableShard(i);
+            clone->CollapseSeparableShard(i);
         }
-        shards[i] = NULL;
+        clone->shards[i] = NULL;
 
-        if (M(i)) {
+        if (clone->stabilizer->IsSeparable(i)) {
+            if (clone->M(i)) {
+                toRet |= pow2(i);
+            }
+            struckBits.push_back(i);
+            clone->Dispose(i, 1U);
+        }
+    }
+
+    std::reverse(struckBits.begin(), struckBits.end());
+    std::map<bitLenInt, bitLenInt> inseparableIndices;
+    bitLenInt currentIndex = 0U;
+    bitLenInt struckIndex = 0U;
+    for (bitLenInt i = 0U; i < clone->GetQubitCount(); ++i) {
+        while (currentIndex == struckBits[struckIndex]) {
+            ++currentIndex;
+            ++struckIndex;
+        }
+        inseparableIndices[i] = currentIndex;
+    }
+
+    for (bitLenInt i = 0U; i < clone->GetQubitCount(); ++i) {
+        if (clone->shards[i] && !clone->shards[i]->IsPhase() && !clone->stabilizer->IsSeparableZ(i)) {
+            // Otherwise, we have non-Clifford measurement.
+            clone->SwitchToEngine();
+            const bitCapInt partM = clone->MAll();
+            for (bitLenInt j = i; j < clone->GetQubitCount(); ++j) {
+                if ((partM >> j) & 1U) {
+                    toRet |= pow2(inseparableIndices[j]);
+                }
+            }
+            SetPermutation(toRet);
+
+            return toRet;
+        }
+
+        if (clone->M(i)) {
             toRet |= pow2(i);
         }
 
-        if (engine) {
-            return engine->MAll();
+        if (clone->engine) {
+            clone->SwitchToEngine();
+            const bitCapInt partM = clone->MAll();
+            for (bitLenInt j = i; j < clone->GetQubitCount(); ++j) {
+                if ((partM >> j) & 1U) {
+                    toRet |= pow2(inseparableIndices[j]);
+                }
+            }
+            SetPermutation(toRet);
+
+            return toRet;
         }
     }
+    SetPermutation(toRet);
 
     return toRet;
 }
