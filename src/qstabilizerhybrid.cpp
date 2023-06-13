@@ -41,7 +41,8 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , isSparse(useSparseStateVec)
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
-    , ancillaCount(0)
+    , ancillaCount(0U)
+    , maxQubitPlusAncillaCount(30U)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -64,12 +65,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
             maxQubitPlusAncillaCount =
                 (maxPageSetting < maxQubitPlusAncillaCount) ? maxPageSetting : maxQubitPlusAncillaCount;
         }
-#endif
     } else {
         maxQubitPlusAncillaCount =
             getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+
+#endif
     }
-#else
+#elif ENABLE_ENV_VARS
     maxQubitPlusAncillaCount =
         getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
 #endif
