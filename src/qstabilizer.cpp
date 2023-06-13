@@ -24,6 +24,7 @@
 
 #include "qstabilizer.hpp"
 
+#include <algorithm>
 #include <chrono>
 
 #if SEED_DEVRAND
