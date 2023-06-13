@@ -580,27 +580,31 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return engine->GetAmplitude(perm);
     }
 
-    if (IsBuffered()) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->GetAmplitude(perm);
-    }
-
-    if (!ancillaCount) {
+    if (!ancillaCount && !IsBuffered()) {
         return stabilizer->GetAmplitude(perm);
     }
 
+    std::vector<bitLenInt> indices;
     std::vector<bitCapInt> perms{ perm };
     const bitLenInt maxLcv = qubitCount + ancillaCount;
-    for (bitLenInt i = qubitCount; i < maxLcv; ++i) {
-        perms.push_back(perm | pow2(i));
+    for (bitLenInt i = 0U; i < maxLcv; ++i) {
+        if (!shards[i]) {
+            continue;
+        }
+        indices.push_back(i);
+        perms.push_back(perm ^ pow2(i));
     }
     std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
 
     complex amp = amps[0U];
-    for (bitLenInt i = 0U; i < ancillaCount; ++i) {
-        const complex* mtrx = shards[qubitCount + i]->gate;
-        amp = SQRT2_R1 * (mtrx[0U] * amp + mtrx[1U] * amps[i]);
+    for (bitLenInt i = 1U; i < amps.size(); ++i) {
+        const bitLenInt j = indices[i - 1U];
+        const complex* mtrx = shards[j]->gate;
+        if ((perm >> j) & 1U) {
+            amp = mtrx[2U] * amps[i] + mtrx[3U] * amp;
+        } else {
+            amp = mtrx[0U] * amp + mtrx[1U] * amps[i];
+        }
     }
 
     return amp;
