@@ -219,7 +219,7 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
 void QStabilizerHybrid::FlushBuffers()
 {
     if (stabilizer) {
-        if (ancillaCount || IsBuffered()) {
+        if (IsBuffered()) {
             // This will call FlushBuffers() again after no longer stabilizer.
             SwitchToEngine();
         }
@@ -548,7 +548,7 @@ void QStabilizerHybrid::GetQuantumState(complex* outputState)
         return;
     }
 
-    if (!ancillaCount && !IsBuffered()) {
+    if (!IsBuffered()) {
         stabilizer->GetQuantumState(outputState);
         return;
     }
@@ -580,7 +580,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return engine->GetAmplitude(perm);
     }
 
-    if (!ancillaCount && !IsBuffered()) {
+    if (!IsBuffered()) {
         return stabilizer->GetAmplitude(perm);
     }
 
@@ -604,6 +604,9 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
             amp = mtrx[2U] * amps[i] + mtrx[3U] * amp;
         } else {
             amp = mtrx[0U] * amp + mtrx[1U] * amps[i];
+        }
+        if (j >= qubitCount) {
+            amp *= SQRT2_R1;
         }
     }
 

@@ -69,7 +69,7 @@ protected:
     }
     bool IsBuffered()
     {
-        for (size_t i = 0U; i < qubitCount; ++i) {
+        for (size_t i = 0U; i < shards.size(); ++i) {
             if (shards[i]) {
                 // We have a cached non-Clifford operation.
                 return true;
