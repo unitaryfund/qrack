@@ -554,6 +554,12 @@ public:
      * Run this circuit.
      */
     void Run(QInterfacePtr qsim);
+
+    #if ENABLE_ALU
+    /** Add integer (without sign) */
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    #endif
+
 };
 
 std::ostream& operator<<(std::ostream& os, const QCircuitPtr g);

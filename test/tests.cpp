@@ -7074,6 +7074,36 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
     }
 }
 
+TEST_CASE("test_qcircuit_ALU_INC", "[ALU]")
+{
+    std::cout << ">>> test_qcircuit_ALU_INC:" << std::endl;
+
+    QInterfacePtr qftReg =
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
+
+    qftReg->SetPermutation(0);
+
+    // create a QCircuit instance 
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
+    // execute single control test
+    circuit->INC(1, 0, 1);
+
+    circuit->Run(qftReg);
+
+    REQUIRE(qftReg->MAll() == 1);
+
+    // multi qbit
+     qftReg->SetPermutation(0);
+
+     // execute multi control test
+    circuit->INC(1, 0, 8);
+
+    circuit->Run(qftReg);
+
+    REQUIRE(qftReg->MAll() == 2);
+}
+
 TEST_CASE("test_mirror_qcircuit", "[mirror]")
 {
     std::cout << ">>> 'test_mirror_qcircuit':" << std::endl;
