@@ -26,7 +26,7 @@ void QCircuit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
         return;
     }
 
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
 
     if (length == 1U) {
         if (toAdd & 1U) {
@@ -46,22 +46,18 @@ void QCircuit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
         if (!((toAdd >> i) & 1U)) {
             continue;
         }
-        const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };;
+        const complex x[4] { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         AppendGate(std::make_shared<QCircuitGate>(start + i, x));
         for (bitLenInt j = 0U; j < (lengthMin1 - i); ++j) {
-            
+
             // gather up arguments for QCircuitGate creation
             bitCapInt permutationOfControlsToActivateGate = 0;
             bitLenInt targetQubitIndex = start + ((i + j + 1U) % length);
             const std::set<bitLenInt> controlQubitIndices{ bits.begin() + i, bits.begin() + i + j + 1U };
 
-            AppendGate(std::make_shared<QCircuitGate>(targetQubitIndex, 
-                                                      x, 
-                                                      controlQubitIndices, 
-                                                      permutationOfControlsToActivateGate));
-
+            AppendGate(std::make_shared<QCircuitGate>(
+                targetQubitIndex, x, controlQubitIndices, permutationOfControlsToActivateGate));
         }
     }
 }
 } // namespace Qrack
-

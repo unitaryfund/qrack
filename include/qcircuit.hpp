@@ -555,11 +555,10 @@ public:
      */
     void Run(QInterfacePtr qsim);
 
-    #if ENABLE_ALU
+#if ENABLE_ALU
     /** Add integer (without sign) */
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    #endif
-
+#endif
 };
 
 std::ostream& operator<<(std::ostream& os, const QCircuitPtr g);
