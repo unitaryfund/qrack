@@ -1193,68 +1193,26 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    std::vector<bitLenInt> struckBits;
-    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    bitCapInt toRet = 0U;
-    for (int i = qubitCount - 1U; i >= 0; --i) {
-        MpsShardPtr& shard = clone->shards[i];
-        if (shard && shard->IsInvert()) {
-            clone->InvertBuffer(i);
-        }
+    if (!IsBuffered()) {
+        const bitCapInt toRet = stabilizer->MAll();
+        SetPermutation(toRet);
 
-        if (shard && !shard->IsPhase()) {
-            if (!clone->stabilizer->IsSeparableZ(i)) {
-                // Otherwise, we have non-Clifford measurement.
-                continue;
-            }
-
-            // Bit was already rotated to Z basis, if separable.
-            clone->CollapseSeparableShard(i);
-        }
-        shard = NULL;
-
-        if (clone->stabilizer->IsSeparable(i)) {
-            if (clone->M(i)) {
-                toRet |= pow2(i);
-            }
-            struckBits.push_back(i);
-            clone->Dispose(i, 1U);
-        }
-    }
-
-    std::reverse(struckBits.begin(), struckBits.end());
-    std::map<bitLenInt, bitLenInt> inseparableIndices;
-    bitLenInt currentIndex = 0U;
-    bitLenInt struckIndex = 0U;
-    for (bitLenInt i = 0U; i < clone->GetQubitCount(); ++i) {
-        while (currentIndex == struckBits[struckIndex]) {
-            ++currentIndex;
-            ++struckIndex;
-        }
-        inseparableIndices[i] = currentIndex;
+        return toRet;
     }
 
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
-    bitCapInt partM;
-    for (partM = 0U; partM < clone->GetMaxQPower(); ++partM) {
-        partProb += norm(clone->GetAmplitude(partM));
+    bitCapInt m;
+    for (m = 0U; m < maxQPower; ++m) {
+        partProb += norm(GetAmplitude(m));
         if (resProb <= partProb) {
             break;
         }
     }
 
-    for (bitLenInt i = 0U; i < clone->GetQubitCount(); ++i) {
-        if ((partM >> i) & 1U) {
-            toRet |= pow2(inseparableIndices[i]);
-        }
-    }
+    SetPermutation(m);
 
-    clone = NULL;
-
-    SetPermutation(toRet);
-
-    return toRet;
+    return m;
 }
 
 void QStabilizerHybrid::UniformlyControlledSingleBit(
@@ -1284,15 +1242,13 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         return engine->MultiShotMeasureMask(qPowers, shots);
     }
 
-    std::vector<bitLenInt> bits(qPowers.size());
-    std::transform(qPowers.begin(), qPowers.end(), bits.begin(), log2);
-
     std::map<bitCapInt, int> results;
     for (unsigned shot = 0U; shot < shots; ++shot) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        const bitCapInt rawSample = clone->MAll();
         bitCapInt sample = 0U;
         for (size_t i = 0U; i < qPowers.size(); ++i) {
-            if (clone->M(bits[i])) {
+            if (rawSample & qPowers[i]) {
                 sample |= pow2(i);
             }
         }
@@ -1320,14 +1276,12 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    std::vector<bitLenInt> bits(qPowers.size());
-    std::transform(qPowers.begin(), qPowers.end(), bits.begin(), log2);
-
     par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        const bitCapInt rawSample = clone->MAll();
         bitCapInt sample = 0U;
         for (size_t i = 0U; i < qPowers.size(); ++i) {
-            if (clone->M(bits[i])) {
+            if (rawSample & qPowers[i]) {
                 sample |= pow2(i);
             }
         }
