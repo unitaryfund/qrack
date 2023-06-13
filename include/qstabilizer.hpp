@@ -322,6 +322,9 @@ public:
     /// Get a single basis state amplitude
     complex GetAmplitude(bitCapInt perm);
 
+    /// Get a single basis state amplitude
+    std::vector<complex> GetAmplitudes(std::vector<bitCapInt> perms);
+
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
      */

@@ -219,7 +219,7 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
 void QStabilizerHybrid::FlushBuffers()
 {
     if (stabilizer) {
-        if (IsBuffered()) {
+        if (ancillaCount || IsBuffered()) {
             // This will call FlushBuffers() again after no longer stabilizer.
             SwitchToEngine();
         }
@@ -548,7 +548,7 @@ void QStabilizerHybrid::GetQuantumState(complex* outputState)
         return;
     }
 
-    if (!IsBuffered()) {
+    if (!ancillaCount && !IsBuffered()) {
         stabilizer->GetQuantumState(outputState);
         return;
     }
@@ -580,13 +580,30 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return engine->GetAmplitude(perm);
     }
 
-    if (!IsBuffered()) {
+    if (IsBuffered()) {
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        return clone->GetAmplitude(perm);
+    }
+
+    if (!ancillaCount) {
         return stabilizer->GetAmplitude(perm);
     }
 
-    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    clone->SwitchToEngine();
-    return clone->GetAmplitude(perm);
+    std::vector<bitCapInt> perms{ perm };
+    const bitLenInt maxLcv = qubitCount + ancillaCount;
+    for (bitLenInt i = qubitCount; i < maxLcv; ++i) {
+        perms.push_back(perm | pow2(i));
+    }
+    std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
+
+    complex amp = amps[0U];
+    for (bitLenInt i = 1U; i < perms.size(); ++i) {
+        const complex* mtrx = shards[qubitCount + i - 1U]->gate;
+        amp = SQRT2_R1 * (mtrx[0U] * amp + mtrx[1U] * amps[i]);
+    }
+
+    return amp;
 }
 
 void QStabilizerHybrid::SetQuantumState(const complex* inputState)

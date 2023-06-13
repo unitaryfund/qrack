@@ -483,6 +483,54 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
     return ZERO_CMPLX;
 }
 
+/// Convert the state to ket notation (warning: could be huge!)
+std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
+{
+    std::vector<bitLenInt> indices(perms.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::sort(indices.begin(), indices.end(), [&](bitLenInt a, bitLenInt b) -> bool { return perms[a] < perms[b]; });
+    std::sort(perms.begin(), perms.end());
+    std::vector<complex> amps(perms.size());
+
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
+    size_t p = 0U;
+
+    seed(g);
+
+    AmplitudeEntry entry = getBasisAmp(nrm);
+    if (entry.permutation == perms[0]) {
+        amps[0] = entry.amplitude;
+        ++p;
+    }
+    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
+        const bitCapIntOcl t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        if (entry.permutation == perms[p]) {
+            amps[p] = entry.amplitude;
+            ++p;
+        }
+    }
+
+    std::vector<complex> toRet(perms.size());
+    for (size_t i = 0U; i < perms.size(); ++i) {
+        toRet[indices[i]] = amps[i];
+    }
+
+    return toRet;
+}
+
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 {
