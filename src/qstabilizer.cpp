@@ -487,11 +487,8 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
 /// Convert the state to ket notation (warning: could be huge!)
 std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
 {
-    std::vector<bitLenInt> indices(perms.size());
-    std::iota(indices.begin(), indices.end(), 0);
-    std::sort(indices.begin(), indices.end(), [&](bitLenInt a, bitLenInt b) -> bool { return perms[a] < perms[b]; });
-    std::sort(perms.begin(), perms.end());
-    std::vector<complex> amps(perms.size());
+    std::set<bitCapInt> prms{ perms.begin(), perms.end() };
+    std::map<bitCapInt, complex> amps;
 
     Finish();
 
@@ -501,14 +498,12 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
     const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
     const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
-    size_t p = 0U;
 
     seed(g);
 
     AmplitudeEntry entry = getBasisAmp(nrm);
-    if (entry.permutation == perms[0]) {
-        amps[0] = entry.amplitude;
-        ++p;
+    if (prms.find(entry.permutation) != prms.end()) {
+        amps[entry.permutation] = entry.amplitude;
     }
     for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
         const bitCapIntOcl t2 = t ^ (t + 1U);
@@ -518,15 +513,14 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
             }
         }
         const AmplitudeEntry entry = getBasisAmp(nrm);
-        if (entry.permutation == perms[p]) {
-            amps[p] = entry.amplitude;
-            ++p;
+        if (prms.find(entry.permutation) != prms.end()) {
+            amps[entry.permutation] = entry.amplitude;
         }
     }
 
     std::vector<complex> toRet(perms.size());
     for (size_t i = 0U; i < perms.size(); ++i) {
-        toRet[indices[i]] = amps[i];
+        toRet[i] = amps[perms[i]];
     }
 
     return toRet;

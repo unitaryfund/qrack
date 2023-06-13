@@ -584,12 +584,6 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return stabilizer->GetAmplitude(perm);
     }
 
-    if (ancillaCount) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->GetAmplitude(perm);
-    }
-
     std::vector<bitLenInt> indices;
     std::vector<bitCapInt> perms{ perm };
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
@@ -599,20 +593,57 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         indices.push_back(i);
         perms.push_back(perm ^ pow2(i));
     }
-    std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
 
-    complex amp = amps[0U];
-    for (bitLenInt i = 1U; i < amps.size(); ++i) {
-        const bitLenInt j = indices[i - 1U];
-        const complex* mtrx = shards[j]->gate;
-        if ((perm >> j) & 1U) {
-            amp = mtrx[2U] * amps[i] + mtrx[3U] * amp;
-        } else {
-            amp = mtrx[0U] * amp + mtrx[1U] * amps[i];
+    if (!ancillaCount) {
+        std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
+        complex amp = amps[0U];
+        for (bitLenInt i = 1U; i < amps.size(); ++i) {
+            const bitLenInt j = indices[i - 1U];
+            const complex* mtrx = shards[j]->gate;
+            if ((perm >> j) & 1U) {
+                amp = mtrx[2U] * amps[i] + mtrx[3U] * amp;
+            } else {
+                amp = mtrx[0U] * amp + mtrx[1U] * amps[i];
+            }
+        }
+
+        return amp;
+    }
+
+    const bitLenInt aStride = indices.size() + 1U;
+    const bitCapIntOcl ancillaPow = pow2Ocl(ancillaCount);
+    for (bitCapIntOcl i = 1U; i < ancillaPow; ++i) {
+        for (size_t j = 0U; j < aStride; ++j) {
+            perms.push_back(perms[j] | (i << qubitCount));
         }
     }
 
-    return amp;
+    std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
+
+    QEnginePtr aEngine = std::dynamic_pointer_cast<QEngine>(
+        CreateQuantumInterface(engineTypes, ancillaCount, 0U, rand_generator, ONE_CMPLX, false, false, useHostRam,
+            devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
+
+    for (bitCapIntOcl a = 0U; a < ancillaPow; ++a) {
+        const bitCapIntOcl offset = a * aStride;
+        complex amp = amps[offset];
+        for (bitLenInt i = 1U; i < aStride; ++i) {
+            const bitLenInt j = indices[i - 1U];
+            const complex* mtrx = shards[j]->gate;
+            if ((perm >> j) & 1U) {
+                amp = mtrx[2U] * amps[i + offset] + mtrx[3U] * amp;
+            } else {
+                amp = mtrx[0U] * amp + mtrx[1U] * amps[i + offset];
+            }
+        }
+        aEngine->SetAmplitude(a, amp);
+    }
+
+    for (bitLenInt i = 0U; i < ancillaCount; ++i) {
+        aEngine->Mtrx(shards[i + qubitCount]->gate, i);
+    }
+
+    return pow(SQRT2_R1, (real1_f)ancillaCount) * aEngine->GetAmplitude(0U);
 }
 
 void QStabilizerHybrid::SetQuantumState(const complex* inputState)
@@ -1182,10 +1213,6 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
 bitCapInt QStabilizerHybrid::MAll()
 {
-    if (ancillaCount) {
-        SwitchToEngine();
-    }
-
     if (engine) {
         const bitCapInt toRet = engine->MAll();
         SetPermutation(toRet);
@@ -1232,12 +1259,6 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         return std::map<bitCapInt, int>();
     }
 
-    if (ancillaCount) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->MultiShotMeasureMask(qPowers, shots);
-    }
-
     if (engine) {
         return engine->MultiShotMeasureMask(qPowers, shots);
     }
@@ -1263,12 +1284,6 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 {
     if (!shots) {
         return;
-    }
-
-    if (ancillaCount) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->MultiShotMeasureMask(qPowers, shots, shotsArray);
     }
 
     if (engine) {
