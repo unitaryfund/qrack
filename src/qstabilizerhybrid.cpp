@@ -580,37 +580,13 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return engine->GetAmplitude(perm);
     }
 
-    if (!IsBuffered()) {
-        return stabilizer->GetAmplitude(perm);
+    if (IsBuffered()) {
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        return clone->GetAmplitude(perm);
     }
 
-    std::vector<bitLenInt> indices;
-    std::vector<bitCapInt> perms{ perm };
-    const bitLenInt maxLcv = qubitCount + ancillaCount;
-    for (bitLenInt i = 0U; i < maxLcv; ++i) {
-        if (!shards[i]) {
-            continue;
-        }
-        indices.push_back(i);
-        perms.push_back(perm ^ pow2(i));
-    }
-    std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
-
-    complex amp = amps[0U];
-    for (bitLenInt i = 1U; i < amps.size(); ++i) {
-        const bitLenInt j = indices[i - 1U];
-        const complex* mtrx = shards[j]->gate;
-        if ((perm >> j) & 1U) {
-            amp = mtrx[2U] * amps[i] + mtrx[3U] * amp;
-        } else {
-            amp = mtrx[0U] * amp + mtrx[1U] * amps[i];
-        }
-        if (j >= qubitCount) {
-            amp *= SQRT2_R1;
-        }
-    }
-
-    return amp;
+    return stabilizer->GetAmplitude(perm);
 }
 
 void QStabilizerHybrid::SetQuantumState(const complex* inputState)
@@ -822,7 +798,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (useTGadget && ((qubitCount + ancillaCount) < maxQubitPlusAncillaCount) && IS_PHASE(mtrx)) {
+    if (useTGadget && (target < qubitCount) && ((qubitCount + ancillaCount) < maxQubitPlusAncillaCount) &&
+        IS_PHASE(mtrx)) {
         QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
             1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 
