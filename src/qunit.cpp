@@ -4010,6 +4010,7 @@ QInterfacePtr QUnit::Clone()
         separabilityThreshold);
 
     copyPtr->SetReactiveSeparate(isReactiveSeparate);
+    copyPtr->SetTInjection(useTGadget);
     copyPtr->logFidelity = logFidelity;
 
     return CloneBody(copyPtr);

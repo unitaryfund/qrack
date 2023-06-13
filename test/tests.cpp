@@ -75,8 +75,18 @@ void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std
 
 QInterfacePtr MakeEngine(bitLenInt qubitCount)
 {
-    return CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, qubitCount, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+    QInterfacePtr toRet = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType },
+        qubitCount, 0, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse,
+        REAL1_EPSILON, devList);
+
+    if (disable_t_injection) {
+        toRet->SetTInjection(false);
+    }
+    if (disable_reactive_separation) {
+        toRet->SetReactiveSeparate(false);
+    }
+
+    return toRet;
 }
 
 TEST_CASE("test_complex")
@@ -6697,6 +6707,13 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
 
+        if (disable_t_injection) {
+            testCase->SetTInjection(false);
+        }
+        if (disable_reactive_separation) {
+            testCase->SetReactiveSeparate(false);
+        }
+
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
 
@@ -7077,6 +7094,13 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
+
+        if (disable_t_injection) {
+            testCase->SetTInjection(false);
+        }
+        if (disable_reactive_separation) {
+            testCase->SetReactiveSeparate(false);
+        }
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
