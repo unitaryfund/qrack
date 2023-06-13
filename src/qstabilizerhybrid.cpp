@@ -643,7 +643,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         aEngine->Mtrx(shards[i + qubitCount]->gate, i);
     }
 
-    return pow(SQRT2_R1, (real1_f)ancillaCount) * aEngine->GetAmplitude(0U);
+    return ((real1_f)pow(SQRT2_R1, (real1_f)ancillaCount)) * aEngine->GetAmplitude(0U);
 }
 
 void QStabilizerHybrid::SetQuantumState(const complex* inputState)
