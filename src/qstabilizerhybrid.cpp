@@ -598,8 +598,8 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
     std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
 
     complex amp = amps[0U];
-    for (bitLenInt i = 1U; i < perms.size(); ++i) {
-        const complex* mtrx = shards[qubitCount + i - 1U]->gate;
+    for (bitLenInt i = 0U; i < ancillaCount; ++i) {
+        const complex* mtrx = shards[qubitCount + i]->gate;
         amp = SQRT2_R1 * (mtrx[0U] * amp + mtrx[1U] * amps[i]);
     }
 
