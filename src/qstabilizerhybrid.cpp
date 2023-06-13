@@ -1234,39 +1234,24 @@ bitCapInt QStabilizerHybrid::MAll()
         inseparableIndices[i] = currentIndex;
     }
 
-    for (bitLenInt i = 0U; i < clone->GetQubitCount(); ++i) {
-        const MpsShardPtr& shard = clone->shards[i];
-        if (shard && !shard->IsPhase() && !clone->stabilizer->IsSeparableZ(i)) {
-            // Otherwise, we have non-Clifford measurement.
-            clone->SwitchToEngine();
-            const bitCapInt partM = clone->MAll();
-            for (bitLenInt j = i; j < clone->GetQubitCount(); ++j) {
-                if ((partM >> j) & 1U) {
-                    toRet |= pow2(inseparableIndices[j]);
-                }
-            }
-            SetPermutation(toRet);
-
-            return toRet;
-        }
-
-        if (clone->M(i)) {
-            toRet |= pow2(inseparableIndices[i]);
-        }
-
-        if (clone->engine) {
-            clone->SwitchToEngine();
-            const bitCapInt partM = clone->MAll();
-            for (bitLenInt j = i + 1U; j < clone->GetQubitCount(); ++j) {
-                if ((partM >> j) & 1U) {
-                    toRet |= pow2(inseparableIndices[j]);
-                }
-            }
-            SetPermutation(toRet);
-
-            return toRet;
+    real1_f partProb = ZERO_R1;
+    real1_f resProb = Rand();
+    bitCapInt partM;
+    for (partM = 0U; partM < clone->GetMaxQPower(); ++partM) {
+        partProb += norm(clone->GetAmplitude(partM));
+        if (resProb <= partProb) {
+            break;
         }
     }
+
+    for (bitLenInt i = 0U; i < clone->GetQubitCount(); ++i) {
+        if ((partM >> i) & 1U) {
+            toRet |= pow2(inseparableIndices[i]);
+        }
+    }
+
+    clone = NULL;
+
     SetPermutation(toRet);
 
     return toRet;
