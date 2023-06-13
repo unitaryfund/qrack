@@ -870,7 +870,7 @@ void QStabilizerHybrid::MCPhase(
     }
 
     if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        real1_f prob = Prob(target);
+        real1_f prob = ProbRdm(target);
         if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
             return;
         }
@@ -920,7 +920,7 @@ void QStabilizerHybrid::MCInvert(
 
     if ((controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
         H(target);
-        const real1_f prob = Prob(target);
+        const real1_f prob = ProbRdm(target);
         H(target);
         if (prob <= FP_NORM_EPSILON) {
             return;
@@ -993,7 +993,7 @@ void QStabilizerHybrid::MACPhase(
     }
 
     if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        real1_f prob = Prob(target);
+        real1_f prob = ProbRdm(target);
         if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
             return;
         }
@@ -1043,7 +1043,7 @@ void QStabilizerHybrid::MACInvert(
 
     if ((controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
         H(target);
-        const real1_f prob = Prob(target);
+        const real1_f prob = ProbRdm(target);
         H(target);
         if (prob <= FP_NORM_EPSILON) {
             return;
@@ -1108,6 +1108,19 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 
     // Otherwise, state appears locally maximally mixed.
     return ONE_R1_F / 2;
+}
+
+real1_f QStabilizerHybrid::ProbRdm(bitLenInt qubit)
+{
+    if (!ancillaCount || stabilizer->IsSeparable(qubit)) {
+        return Prob(qubit);
+    }
+
+    std::unique_ptr<complex[]> dMtrx = GetQubitReducedDensityMatrix(qubit);
+    const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    complex pMtrx[4];
+    mul2x2(dMtrx.get(), pauliZ, pMtrx);
+    return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;
 }
 
 bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
