@@ -1200,23 +1200,30 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#if 0
     const bitCapIntOcl stride = GetPreferredConcurrencyPower();
 
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
-    bitCapInt m = maxQPower - 1U;
+    bitCapInt m = maxQPower;
+    bitCapInt d = 0U;
+    bool foundM = false;
 
     if (stride <= pow2Ocl(ancillaCount)) {
         for (m = 0U; m < maxQPower; ++m) {
-            partProb += norm(GetAmplitude(m));
+            const real1_f prob = norm(GetAmplitude(m));
+            if (prob) {
+                d = m;
+            }
+            partProb += prob;
             if (resProb <= partProb) {
+                foundM = true;
                 break;
             }
         }
 
-        if (m == maxQPower) {
-            --m;
+        if (!foundM) {
+            m = d;
         }
 
         SetPermutation(m);
@@ -1225,7 +1232,6 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
     const unsigned numCores = GetConcurrencyLevel();
-    bool foundM = false;
 
     if (maxQPower < numCores) {
         const unsigned maxLcv = (unsigned)maxQPower;
@@ -1238,11 +1244,19 @@ bitCapInt QStabilizerHybrid::MAll()
             futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });
         }
         for (unsigned j = 0U; j < maxLcv; ++j) {
-            partProb += futures[j].get();
+            const real1_f prob = futures[j].get();
+            if (prob) {
+                d = m;
+            }
+            partProb += prob;
             if (!foundM && (resProb <= partProb)) {
                 m = j;
                 foundM = true;
             }
+        }
+        
+        if (!foundM) {
+            m = d;
         }
 
         SetPermutation(m);
@@ -1263,7 +1277,11 @@ bitCapInt QStabilizerHybrid::MAll()
                 std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); });
         }
         for (unsigned j = 0U; j < numCores; ++j) {
-            partProb += futures[j].get();
+            const real1_f prob = futures[j].get();
+            if (prob) {
+                d = m;
+            }
+            partProb += prob;
             if (!foundM && (resProb <= partProb)) {
                 m = j + p;
                 foundM = true;
@@ -1273,6 +1291,10 @@ bitCapInt QStabilizerHybrid::MAll()
             break;
         }
     }
+    
+    if (!foundM) {
+        m = d;
+    }
 
     SetPermutation(m);
 
@@ -1280,16 +1302,23 @@ bitCapInt QStabilizerHybrid::MAll()
 #else
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
+    bitCapInt d = 0U;
     bitCapInt m;
+    bool foundM = false;
     for (m = 0U; m < maxQPower; ++m) {
-        partProb += norm(GetAmplitude(m));
+        const real1_f prob = norm(GetAmplitude(m));
+        if (prob) {
+            d = m;
+        }
+        partProb += prob;
         if (resProb <= partProb) {
+            foundM = true;
             break;
         }
     }
 
-    if (m == maxQPower) {
-        --m;
+    if (!foundM) {
+        m = d;
     }
 
     SetPermutation(m);
