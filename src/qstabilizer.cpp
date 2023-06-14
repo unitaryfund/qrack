@@ -324,6 +324,8 @@ real1_f QStabilizer::FirstNonzeroPhase()
 {
     Finish();
 
+    resetscratch();
+
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapIntOcl permCount = pow2Ocl(g);
@@ -358,6 +360,8 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 {
     Finish();
 
+    resetscratch();
+
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapIntOcl permCount = pow2Ocl(g);
@@ -386,6 +390,8 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 void QStabilizer::GetQuantumState(QInterfacePtr eng)
 {
     Finish();
+
+    resetscratch();
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
@@ -417,6 +423,8 @@ void QStabilizer::GetProbs(real1* outputProbs)
 {
     Finish();
 
+    resetscratch();
+
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapIntOcl permCount = pow2Ocl(g);
@@ -445,6 +453,8 @@ void QStabilizer::GetProbs(real1* outputProbs)
 complex QStabilizer::GetAmplitude(bitCapInt perm)
 {
     Finish();
+
+    resetscratch();
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
@@ -482,6 +492,8 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
     std::map<bitCapInt, complex> amps;
 
     Finish();
+
+    resetscratch();
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
