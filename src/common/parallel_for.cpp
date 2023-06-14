@@ -329,7 +329,7 @@ void ParallelFor::par_for_inc(
 {
     const bitCapIntOcl maxLcv = begin + itemCount;
     for (bitCapIntOcl j = begin; j < maxLcv; ++j) {
-        fn(inc(j, 0U), 0U);
+        fn(inc(j), 0U);
     }
 }
 
