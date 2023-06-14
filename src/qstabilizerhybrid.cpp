@@ -933,6 +933,16 @@ void QStabilizerHybrid::MCPhase(
         return;
     }
 
+    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        real1_f prob = ProbRdm(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob <= FP_NORM_EPSILON)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && ((ONE_R1 - prob) <= FP_NORM_EPSILON)) {
+            return;
+        }
+    }
+
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
         SwitchToEngine();
     } else {
@@ -970,6 +980,15 @@ void QStabilizerHybrid::MCInvert(
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
         return;
+    }
+
+    if ((controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
+        H(target);
+        const real1_f prob = ProbRdm(target);
+        H(target);
+        if (prob <= FP_NORM_EPSILON) {
+            return;
+        }
     }
 
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
@@ -1035,6 +1054,16 @@ void QStabilizerHybrid::MACPhase(
     if (!controls.size()) {
         Phase(topLeft, bottomRight, target);
         return;
+    }
+
+    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        real1_f prob = ProbRdm(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob <= FP_NORM_EPSILON)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && ((ONE_R1 - prob) <= FP_NORM_EPSILON)) {
+            return;
+        }
     }
 
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {

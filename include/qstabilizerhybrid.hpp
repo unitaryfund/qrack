@@ -117,6 +117,19 @@ protected:
         return dMtrx;
     }
 
+    real1_f ProbRdm(bitLenInt qubit)
+    {
+        if (!ancillaCount || stabilizer->IsSeparable(qubit)) {
+            return Prob(qubit);
+        }
+
+        std::unique_ptr<complex[]> dMtrx = GetQubitReducedDensityMatrix(qubit);
+        const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        complex pMtrx[4];
+        mul2x2(dMtrx.get(), pauliZ, pMtrx);
+        return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;
+    }
+
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
     void ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inverse);
