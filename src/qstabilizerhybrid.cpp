@@ -1229,13 +1229,46 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
+    const bitCapIntOcl stride = GetPreferredConcurrencyPower();
+
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
     bitCapInt m;
-    for (m = 0U; m < maxQPower; ++m) {
-        partProb += norm(GetAmplitude(m));
-        if (resProb <= partProb) {
-            break;
+
+    if (stride <= pow2Ocl(ancillaCount)) {
+        for (m = 0U; m < maxQPower; ++m) {
+            partProb += norm(GetAmplitude(m));
+            if (resProb <= partProb) {
+                break;
+            }
+        }
+
+        SetPermutation(m);
+
+        return m;
+    }
+
+    const unsigned numCores = GetConcurrencyLevel();
+    std::vector<QStabilizerHybridPtr> clones;
+    for (unsigned i = 0U; i < numCores; ++i) {
+        clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+    }
+
+    const bitCapIntOcl rPower = ((bitCapIntOcl)maxQPower) / stride;
+    bool foundM = false;
+    for (bitCapIntOcl i = 0U; i < rPower; ++i) {
+        const bitCapIntOcl p = i * stride;
+        std::vector<std::future<real1_f>> futures(numCores);
+        for (unsigned j = 0U; j < numCores; ++j) {
+            futures[j] =
+                std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); });
+        }
+        for (unsigned j = 0U; j < numCores; ++j) {
+            partProb += futures[j].get();
+            if (!foundM && (resProb <= partProb)) {
+                m = j + p;
+                foundM = true;
+            }
         }
     }
 

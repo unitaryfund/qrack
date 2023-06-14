@@ -39,19 +39,10 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , isSparse(useSparseStateVec)
     , maxQubits(-1)
 {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
-    const bitLenInt pStridePow =
-        (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
     if (getenv("QRACK_MAX_CPU_QB")) {
         maxQubits = std::stoi(std::string(getenv("QRACK_MAX_CPU_QB")));
     }
-#else
-    const bitLenInt pStridePow = PSTRIDEPOW;
-#endif
-    const unsigned numCores = GetConcurrencyLevel();
-    const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;
-    dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 #endif
 
     if (qBitCount > maxQubits) {

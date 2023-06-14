@@ -46,7 +46,7 @@ void QCircuit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
         if (!((toAdd >> i) & 1U)) {
             continue;
         }
-        const complex x[4] { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         AppendGate(std::make_shared<QCircuitGate>(start + i, x));
         for (bitLenInt j = 0U; j < (lengthMin1 - i); ++j) {
 

@@ -57,7 +57,6 @@ protected:
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    bitLenInt dispatchThreshold;
     DispatchQueue dispatchQueue;
 #endif
     complex phaseOffset;
@@ -76,7 +75,7 @@ protected:
     void Dispatch(DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if (qubitCount >= dispatchThreshold) {
+        if (qubitCount >= GetPreferredConcurrencyPower()) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();

@@ -39,7 +39,6 @@ protected:
     StateVectorPtr stateVec;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     DispatchQueue dispatchQueue;
-    bitLenInt dispatchThreshold;
 #endif
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
@@ -233,7 +232,7 @@ protected:
     void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((workItemCount >= pow2Ocl(dispatchThreshold)) && (workItemCount < GetStride())) {
+        if ((workItemCount >= pow2Ocl(GetPreferredConcurrencyPower())) && (workItemCount < GetStride())) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();

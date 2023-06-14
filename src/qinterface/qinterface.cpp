@@ -90,8 +90,6 @@ QInterface::QInterface(
     } else {
         rand_generator = rgp;
     }
-
-    SetConcurrencyLevel(std::thread::hardware_concurrency());
 }
 
 /// Set to a specific permutation of all qubits

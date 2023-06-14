@@ -47,15 +47,6 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     , x((n << 1U) + 1U, BoolVector(n, false))
     , z((n << 1U) + 1U, BoolVector(n, false))
 {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-#if ENABLE_ENV_VARS
-    dispatchThreshold =
-        (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
-#else
-    dispatchThreshold = PSTRIDEPOW;
-#endif
-#endif
-
     SetPermutation(perm);
 }
 

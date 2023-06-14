@@ -39,8 +39,11 @@ ParallelFor::ParallelFor()
 #else
     : pStride((bitCapIntOcl)ONE_BCI << PSTRIDEPOW)
 #endif
-    , numCores(1)
+    , numCores(std::thread::hardware_concurrency())
 {
+    const bitLenInt pStridePow = log2(pStride);
+    const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;
+    dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 }
 
 void ParallelFor::par_for(const bitCapIntOcl begin, const bitCapIntOcl end, ParallelFunc fn)

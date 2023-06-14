@@ -22,14 +22,25 @@ namespace Qrack {
 class ParallelFor {
 private:
     const bitCapIntOcl pStride;
+    bitLenInt dispatchThreshold;
     unsigned numCores;
 
 public:
     ParallelFor();
 
-    void SetConcurrencyLevel(unsigned num) { numCores = num; }
+    void SetConcurrencyLevel(unsigned num)
+    {
+        if (numCores == num) {
+            return;
+        }
+        numCores = num;
+        const bitLenInt pStridePow = log2(pStride);
+        const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;
+        dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
+    }
     unsigned GetConcurrencyLevel() { return numCores; }
     bitCapIntOcl GetStride() { return pStride; }
+    bitLenInt GetPreferredConcurrencyPower() { return dispatchThreshold; }
     /*
      * Parallelization routines for spreading work across multiple cores.
      */
