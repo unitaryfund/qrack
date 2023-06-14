@@ -865,9 +865,17 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     if (!wasCached) {
         std::copy(lMtrx, lMtrx + 4U, mtrx);
     } else if (!engine && useTGadget && (target < qubitCount) && (ancillaCount < maxAncillaCount) && !IS_PHASE(lMtrx) &&
-        !IS_INVERT(lMtrx) && (shard->IsPhase() || shard->IsInvert())) {
+        !IS_INVERT(lMtrx) && (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
 
-        if (shard->IsInvert()) {
+        if (shard->IsHPhase() || shard->IsHInvert()) {
+            complex hGate[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+            MpsShardPtr hShard = std::make_shared<MpsShard>(hGate);
+            hShard->Compose(shard->gate);
+            shard = hShard->IsIdentity() ? NULL : hShard;
+            stabilizer->H(target);
+        }
+
+        if (shard && shard->IsInvert()) {
             complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
             MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
             pauliShard->Compose(shard->gate);
