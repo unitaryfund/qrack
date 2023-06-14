@@ -1205,7 +1205,7 @@ bitCapInt QStabilizerHybrid::MAll()
 
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
-    bitCapInt m = 0U;
+    bitCapInt m = maxQPower - 1U;
 
     if (stride <= pow2Ocl(ancillaCount)) {
         for (m = 0U; m < maxQPower; ++m) {
@@ -1213,6 +1213,10 @@ bitCapInt QStabilizerHybrid::MAll()
             if (resProb <= partProb) {
                 break;
             }
+        }
+
+        if (m == maxQPower) {
+            --m;
         }
 
         SetPermutation(m);
@@ -1282,6 +1286,10 @@ bitCapInt QStabilizerHybrid::MAll()
         if (resProb <= partProb) {
             break;
         }
+    }
+
+    if (m == maxQPower) {
+        --m;
     }
 
     SetPermutation(m);
