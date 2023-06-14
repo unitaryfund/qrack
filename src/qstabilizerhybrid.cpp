@@ -1250,7 +1250,7 @@ bitCapInt QStabilizerHybrid::MAll()
     if (stride <= pow2Ocl(ancillaCount)) {
         for (m = 0U; m < maxQPower; ++m) {
             const real1_f prob = norm(GetAmplitude(m));
-            if (prob) {
+            if (prob > FP_NORM_EPSILON) {
                 d = m;
             }
             partProb += prob;
@@ -1286,7 +1286,7 @@ bitCapInt QStabilizerHybrid::MAll()
             if (foundM) {
                 continue;
             }
-            if (prob) {
+            if (prob > FP_NORM_EPSILON) {
                 d = j;
             }
             partProb += prob;
@@ -1326,7 +1326,7 @@ bitCapInt QStabilizerHybrid::MAll()
             if (foundM) {
                 continue;
             }
-            if (prob) {
+            if (prob > FP_NORM_EPSILON) {
                 d = j + p;
             }
             partProb += prob;
@@ -1355,7 +1355,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bool foundM = false;
     for (m = 0U; m < maxQPower; ++m) {
         const real1_f prob = norm(GetAmplitude(m));
-        if (prob) {
+        if (prob > FP_NORM_EPSILON) {
             d = m;
         }
         partProb += prob;
