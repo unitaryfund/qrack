@@ -1229,11 +1229,12 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const bitCapIntOcl stride = GetPreferredConcurrencyPower();
 
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
-    bitCapInt m;
+    bitCapInt m = 0U;
 
     if (stride <= pow2Ocl(ancillaCount)) {
         for (m = 0U; m < maxQPower; ++m) {
@@ -1254,7 +1255,7 @@ bitCapInt QStabilizerHybrid::MAll()
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
     }
 
-    const bitCapIntOcl rPower = ((bitCapIntOcl)maxQPower) / stride;
+    const bitCapIntOcl rPower = (((bitCapIntOcl)maxQPower) / stride) ? (((bitCapIntOcl)maxQPower) / stride) : 1U;
     bool foundM = false;
     for (bitCapIntOcl i = 0U; i < rPower; ++i) {
         const bitCapIntOcl p = i * stride;
@@ -1275,6 +1276,21 @@ bitCapInt QStabilizerHybrid::MAll()
     SetPermutation(m);
 
     return m;
+#else
+    real1_f partProb = ZERO_R1;
+    real1_f resProb = Rand();
+    bitCapInt m;
+    for (m = 0U; m < maxQPower; ++m) {
+        partProb += norm(GetAmplitude(m));
+        if (resProb <= partProb) {
+            break;
+        }
+    }
+
+    SetPermutation(m);
+
+    return m;
+#endif
 }
 
 void QStabilizerHybrid::UniformlyControlledSingleBit(
