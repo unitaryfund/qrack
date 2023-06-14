@@ -39,7 +39,11 @@ ParallelFor::ParallelFor()
 #else
     : pStride((bitCapIntOcl)ONE_BCI << PSTRIDEPOW)
 #endif
+#if ENABLE_PTHREAD
     , numCores(std::thread::hardware_concurrency())
+#else
+    , numCores(1)
+#endif
 {
     const bitLenInt pStridePow = log2(pStride);
     const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;

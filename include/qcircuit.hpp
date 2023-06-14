@@ -557,7 +557,7 @@ public:
 
 #if ENABLE_ALU
     /** Add integer (without sign) */
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 #endif
 };
 
