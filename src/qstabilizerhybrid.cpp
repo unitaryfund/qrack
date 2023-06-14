@@ -42,7 +42,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
-    , maxQubitPlusAncillaCount(30U)
+    , maxAncillaCount(30U)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -58,22 +58,20 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         ((engineTypes[0U] == QINTERFACE_QPAGER) &&
             ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        maxQubitPlusAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
+        maxAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_MAX_PAGE_QB")) {
             bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
-            maxQubitPlusAncillaCount =
-                (maxPageSetting < maxQubitPlusAncillaCount) ? maxPageSetting : maxQubitPlusAncillaCount;
+            maxAncillaCount = (maxPageSetting < maxAncillaCount) ? maxPageSetting : maxAncillaCount;
         }
     } else {
-        maxQubitPlusAncillaCount =
+        maxAncillaCount =
             getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
 
 #endif
     }
 #elif ENABLE_ENV_VARS
-    maxQubitPlusAncillaCount =
-        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+    maxAncillaCount = getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
 #endif
 
     stabilizer = MakeStabilizer(initState);
@@ -166,7 +164,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
     // PRX Quantum 3, 020361 – Published 23 June 2022
 
-    if (!useTGadget || ((qubitCount + ancillaCount) >= maxQubitPlusAncillaCount)) {
+    if (!useTGadget || (ancillaCount >= maxAncillaCount)) {
         // The option to optimize this case is off.
         SwitchToEngine();
         return;
@@ -352,6 +350,30 @@ void QStabilizerHybrid::SwitchToEngine()
 
     const bool isBdt = engineTypes.size() && (engineTypes[0] == QINTERFACE_BDT);
 
+    if ((qubitCount + ancillaCount) > maxAncillaCount) {
+        QInterfacePtr e = MakeEngine(0);
+        if (isBdt) {
+            std::dynamic_pointer_cast<QBdt>(e)->SetStateVector();
+        }
+        for (bitCapInt i = 0U; i < maxQPower; ++i) {
+            e->SetAmplitude(i, GetAmplitude(i));
+        }
+        stabilizer = NULL;
+        engine = e;
+
+        engine->UpdateRunningNorm();
+        if (!doNormalize) {
+            engine->NormalizeState();
+        }
+
+        // We have extra "gate fusion" shards leftover.
+        shards.erase(shards.begin() + qubitCount, shards.end());
+        // We're done with ancillae.
+        ancillaCount = 0;
+
+        return;
+    }
+
     engine = MakeEngine(0, stabilizer->GetQubitCount());
     if (isBdt) {
         std::dynamic_pointer_cast<QBdt>(engine)->SetStateVector();
@@ -388,7 +410,7 @@ bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool wil
 
     const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
 
-    if ((nQubits + ancillaCount + toCopy->ancillaCount) > maxQubitPlusAncillaCount) {
+    if ((ancillaCount + toCopy->ancillaCount) > maxAncillaCount) {
         SwitchToEngine();
     }
 
@@ -1249,15 +1271,40 @@ bitCapInt QStabilizerHybrid::MAll()
         return m;
     }
 
-    const unsigned numCores = (maxQPower < GetConcurrencyLevel()) ? (unsigned)maxQPower : GetConcurrencyLevel();
+    const unsigned numCores = GetConcurrencyLevel();
+    bool foundM = false;
+
+    if (maxQPower < numCores) {
+        const unsigned maxLcv = (unsigned)maxQPower;
+        std::vector<QStabilizerHybridPtr> clones;
+        for (unsigned i = 0U; i < maxLcv; ++i) {
+            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+            clones.back()->stabilizer->SetIsAsync(false);
+        }
+        std::vector<std::future<real1_f>> futures((size_t)maxQPower);
+        for (unsigned j = 0U; j < maxLcv; ++j) {
+            futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });
+        }
+        for (unsigned j = 0U; j < maxLcv; ++j) {
+            partProb += futures[j].get();
+            if (!foundM && (resProb <= partProb)) {
+                m = j;
+                foundM = true;
+            }
+        }
+
+        SetPermutation(m);
+
+        return m;
+    }
+
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+        clones.back()->stabilizer->SetIsAsync(false);
     }
-
-    const bitCapIntOcl rPower = (((bitCapIntOcl)maxQPower) / stride) ? (((bitCapIntOcl)maxQPower) / stride) : 1U;
-    bool foundM = false;
-    for (bitCapIntOcl i = 0U; i < rPower; ++i) {
+    const bitCapIntOcl maxLcv = ((bitCapIntOcl)maxQPower) / numCores;
+    for (bitCapIntOcl i = 0U; i < maxLcv; ++i) {
         const bitCapIntOcl p = i * stride;
         std::vector<std::future<real1_f>> futures(numCores);
         for (unsigned j = 0U; j < numCores; ++j) {
@@ -1270,6 +1317,9 @@ bitCapInt QStabilizerHybrid::MAll()
                 m = j + p;
                 foundM = true;
             }
+        }
+        if (foundM) {
+            break;
         }
     }
 

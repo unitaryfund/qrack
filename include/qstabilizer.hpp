@@ -54,6 +54,7 @@ typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
 class QStabilizer : public QInterface {
 protected:
+    bool isAsync;
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -75,7 +76,7 @@ protected:
     void Dispatch(DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if (qubitCount >= GetPreferredConcurrencyPower()) {
+        if (isAsync && (qubitCount >= GetPreferredConcurrencyPower())) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();
@@ -116,6 +117,12 @@ public:
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };
+    void SetIsAsync(bool a) {
+        isAsync = a;
+        if (!isAsync) {
+            Finish();
+        }
+    }
 
     void Finish()
     {
