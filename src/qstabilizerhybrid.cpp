@@ -858,15 +858,42 @@ void QStabilizerHybrid::ZMask(bitCapInt mask)
 
 void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
-    MpsShardPtr& shard = shards[target];
+    MpsShardPtr shard = shards[target];
+    shards[target] = NULL;
     const bool wasCached = (bool)shard;
     complex mtrx[4U];
-    if (wasCached) {
+    if (!wasCached) {
+        std::copy(lMtrx, lMtrx + 4U, mtrx);
+    } else if (!engine && useTGadget && (target < qubitCount) && (ancillaCount < maxAncillaCount) && !IS_PHASE(lMtrx) &&
+        !IS_INVERT(lMtrx) && (shard->IsPhase() || shard->IsInvert())) {
+
+        if (shard->IsInvert()) {
+            complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
+            pauliShard->Compose(shard->gate);
+            shard = pauliShard->IsIdentity() ? NULL : pauliShard;
+            stabilizer->X(target);
+        }
+
+        if (shard) {
+            QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
+                1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+
+            // Form potentially entangled representation, with this.
+            bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+            ++ancillaCount;
+            shards.push_back(NULL);
+
+            // Use reverse t-injection gadget.
+            stabilizer->CNOT(target, ancillaIndex);
+            Mtrx(shard->gate, ancillaIndex);
+            H(ancillaIndex);
+        }
+
+        std::copy(lMtrx, lMtrx + 4U, mtrx);
+    } else {
         shard->Compose(lMtrx);
         std::copy(shard->gate, shard->gate + 4U, mtrx);
-        shard = NULL;
-    } else {
-        std::copy(lMtrx, lMtrx + 4U, mtrx);
     }
 
     if (engine) {
@@ -879,7 +906,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    shard = std::make_shared<MpsShard>(mtrx);
+    shards[target] = std::make_shared<MpsShard>(mtrx);
     if (!wasCached) {
         CacheEigenstate(target);
     }
