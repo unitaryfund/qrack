@@ -26,10 +26,6 @@
 
 #include "qinterface.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-#include "common/dispatchqueue.hpp"
-#endif
-
 #include <cstdint>
 
 namespace Qrack {
@@ -57,9 +53,6 @@ protected:
     bool isAsync;
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    DispatchQueue dispatchQueue;
-#endif
     complex phaseOffset;
 
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
@@ -73,19 +66,7 @@ protected:
 
     typedef std::function<void(const bitLenInt&)> StabilizerParallelFunc;
     typedef std::function<void(void)> DispatchFn;
-    void Dispatch(DispatchFn fn)
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if (isAsync && (qubitCount >= GetPreferredConcurrencyPower())) {
-            dispatchQueue.dispatch(fn);
-        } else {
-            Finish();
-            fn();
-        }
-#else
-        fn();
-#endif
-    }
+    void Dispatch(DispatchFn fn) { fn(); }
 
     void ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits)
     {
@@ -117,35 +98,6 @@ public:
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };
-    void SetIsAsync(bool a) {
-        isAsync = a;
-        if (!isAsync) {
-            Finish();
-        }
-    }
-
-    void Finish()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        dispatchQueue.finish();
-#endif
-    };
-
-    bool isFinished()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        return dispatchQueue.isFinished();
-#else
-        return true;
-#endif
-    }
-
-    void Dump()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        dispatchQueue.dump();
-#endif
-    }
 
     bitLenInt GetQubitCount() { return qubitCount; }
 

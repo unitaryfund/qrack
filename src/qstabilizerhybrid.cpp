@@ -933,16 +933,6 @@ void QStabilizerHybrid::MCPhase(
         return;
     }
 
-    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        real1_f prob = ProbRdm(target);
-        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
-            return;
-        }
-        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
-            return;
-        }
-    }
-
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
         SwitchToEngine();
     } else {
@@ -980,15 +970,6 @@ void QStabilizerHybrid::MCInvert(
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
         return;
-    }
-
-    if ((controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
-        H(target);
-        const real1_f prob = ProbRdm(target);
-        H(target);
-        if (prob <= FP_NORM_EPSILON) {
-            return;
-        }
     }
 
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
@@ -1056,16 +1037,6 @@ void QStabilizerHybrid::MACPhase(
         return;
     }
 
-    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        real1_f prob = ProbRdm(target);
-        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
-            return;
-        }
-        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
-            return;
-        }
-    }
-
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
         SwitchToEngine();
     } else {
@@ -1103,15 +1074,6 @@ void QStabilizerHybrid::MACInvert(
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
         return;
-    }
-
-    if ((controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
-        H(target);
-        const real1_f prob = ProbRdm(target);
-        H(target);
-        if (prob <= FP_NORM_EPSILON) {
-            return;
-        }
     }
 
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
@@ -1172,19 +1134,6 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 
     // Otherwise, state appears locally maximally mixed.
     return ONE_R1_F / 2;
-}
-
-real1_f QStabilizerHybrid::ProbRdm(bitLenInt qubit)
-{
-    if (!ancillaCount || stabilizer->IsSeparable(qubit)) {
-        return Prob(qubit);
-    }
-
-    std::unique_ptr<complex[]> dMtrx = GetQubitReducedDensityMatrix(qubit);
-    const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    complex pMtrx[4];
-    mul2x2(dMtrx.get(), pauliZ, pMtrx);
-    return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;
 }
 
 bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
@@ -1279,7 +1228,6 @@ bitCapInt QStabilizerHybrid::MAll()
         std::vector<QStabilizerHybridPtr> clones;
         for (unsigned i = 0U; i < maxLcv; ++i) {
             clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
-            clones.back()->stabilizer->SetIsAsync(false);
         }
         std::vector<std::future<real1_f>> futures((size_t)maxQPower);
         for (unsigned j = 0U; j < maxLcv; ++j) {
@@ -1301,7 +1249,6 @@ bitCapInt QStabilizerHybrid::MAll()
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
-        clones.back()->stabilizer->SetIsAsync(false);
     }
     const bitCapIntOcl maxLcv = ((bitCapIntOcl)maxQPower) / numCores;
     for (bitCapIntOcl i = 0U; i < maxLcv; ++i) {
