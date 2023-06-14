@@ -324,6 +324,8 @@ real1_f QStabilizer::FirstNonzeroPhase()
 {
     Finish();
 
+    resetscratch();
+
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapIntOcl permCount = pow2Ocl(g);
@@ -358,6 +360,8 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 {
     Finish();
 
+    resetscratch();
+
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapIntOcl permCount = pow2Ocl(g);
@@ -386,6 +390,8 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 void QStabilizer::GetQuantumState(QInterfacePtr eng)
 {
     Finish();
+
+    resetscratch();
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
@@ -417,6 +423,8 @@ void QStabilizer::GetProbs(real1* outputProbs)
 {
     Finish();
 
+    resetscratch();
+
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapIntOcl permCount = pow2Ocl(g);
@@ -445,6 +453,8 @@ void QStabilizer::GetProbs(real1* outputProbs)
 complex QStabilizer::GetAmplitude(bitCapInt perm)
 {
     Finish();
+
+    resetscratch();
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
@@ -483,29 +493,39 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
 
     Finish();
 
+    resetscratch();
+
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapIntOcl permCount = pow2Ocl(g);
     const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
     const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
+    size_t pCount = 0U;
 
     seed(g);
 
     AmplitudeEntry entry = getBasisAmp(nrm);
     if (prms.find(entry.permutation) != prms.end()) {
         amps[entry.permutation] = entry.amplitude;
+        ++pCount;
     }
-    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        const bitCapIntOcl t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
-                rowmult(elemCount, qubitCount + i);
+    if (pCount < perms.size()) {
+        for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
+            const bitCapIntOcl t2 = t ^ (t + 1U);
+            for (bitLenInt i = 0U; i < g; ++i) {
+                if ((t2 >> i) & 1U) {
+                    rowmult(elemCount, qubitCount + i);
+                }
             }
-        }
-        const AmplitudeEntry entry = getBasisAmp(nrm);
-        if (prms.find(entry.permutation) != prms.end()) {
-            amps[entry.permutation] = entry.amplitude;
+            const AmplitudeEntry entry = getBasisAmp(nrm);
+            if (prms.find(entry.permutation) != prms.end()) {
+                amps[entry.permutation] = entry.amplitude;
+                ++pCount;
+                if (pCount >= perms.size()) {
+                    break;
+                }
+            }
         }
     }
 
