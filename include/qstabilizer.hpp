@@ -50,7 +50,6 @@ typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
 class QStabilizer : public QInterface {
 protected:
-    bool isAsync;
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
     complex phaseOffset;
