@@ -1248,7 +1248,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return m;
     }
 
-    const unsigned numCores = GetConcurrencyLevel();
+    const unsigned numCores = (maxQPower < GetConcurrencyLevel()) ? (unsigned)maxQPower : GetConcurrencyLevel();
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
