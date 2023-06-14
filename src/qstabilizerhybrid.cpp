@@ -1105,6 +1105,15 @@ void QStabilizerHybrid::MACInvert(
         return;
     }
 
+    if ((controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
+        H(target);
+        const real1_f prob = ProbRdm(target);
+        H(target);
+        if (prob <= FP_NORM_EPSILON) {
+            return;
+        }
+    }
+
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
         SwitchToEngine();
     } else {
