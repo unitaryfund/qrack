@@ -3346,7 +3346,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
     qftReg->H(0);
     qftReg->T(0);
     REQUIRE(abs(norm(qftReg->GetAmplitude(0x00)) - 0.5f) < 0.01);
-    REQUIRE(norm(qftReg->GetAmplitude(0x00) + sqrt(I_CMPLX) * I_CMPLX * qftReg->GetAmplitude(0x01)) < 0.01);
+    REQUIRE(norm(qftReg->GetAmplitude(0x00) + complex(SQRT1_2_R1, SQRT1_2_R1) * I_CMPLX * qftReg->GetAmplitude(0x01)) < 0.01);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")

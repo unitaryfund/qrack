@@ -103,10 +103,10 @@ protected:
         stabilizer->H(qubit);
 
         std::unique_ptr<complex[]> dMtrx(new complex[4]);
-        dMtrx[0] = (ONE_R1 + z) / 2;
-        dMtrx[1] = x / 2 - I_CMPLX * (y / 2);
-        dMtrx[2] = x / 2 + I_CMPLX * (y / 2);
-        dMtrx[3] = (ONE_R1 + z) / 2;
+        dMtrx[0] = (ONE_CMPLX + z) / complex((real1)2, ZERO_R1);
+        dMtrx[1] = x / complex((real1)2, ZERO_R1) - I_CMPLX * (y / complex((real1)2, ZERO_R1));
+        dMtrx[2] = x / complex((real1)2, ZERO_R1) + I_CMPLX * (y / complex((real1)2, ZERO_R1));
+        dMtrx[3] = (ONE_CMPLX + z) / complex((real1)2, ZERO_R1);
         if (shards[qubit]) {
             complex adj[4]{ std::conj(shards[qubit]->gate[0]), std::conj(shards[qubit]->gate[2]),
                 std::conj(shards[qubit]->gate[1]), std::conj(shards[qubit]->gate[3]) };

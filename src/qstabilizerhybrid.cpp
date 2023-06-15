@@ -709,7 +709,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         aEngine->Mtrx(shards[i + qubitCount]->gate, i);
     }
 
-    return ((real1_f)pow(SQRT2_R1, (real1_f)ancillaCount)) * aEngine->GetAmplitude(0U);
+    return pow(SQRT2_R1, (real1)ancillaCount) * aEngine->GetAmplitude(0U);
 }
 
 void QStabilizerHybrid::SetQuantumState(const complex* inputState)
@@ -1354,12 +1354,12 @@ bitCapInt QStabilizerHybrid::MAll()
         for (unsigned i = 0U; i < maxLcv; ++i) {
             clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
         }
-        std::vector<std::future<real1_f>> futures((size_t)maxQPower);
+        std::vector<std::future<real1>> futures((size_t)maxQPower);
         for (unsigned j = 0U; j < maxLcv; ++j) {
             futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });
         }
         for (unsigned j = 0U; j < maxLcv; ++j) {
-            const real1_f prob = futures[j].get();
+            const real1 prob = futures[j].get();
             if (foundM) {
                 continue;
             }
@@ -1389,7 +1389,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bitCapInt i = 0U;
     while (i < maxQPower) {
         const bitCapInt p = i;
-        std::vector<std::future<real1_f>> futures;
+        std::vector<std::future<real1>> futures;
         for (unsigned j = 0U; j < numCores; ++j) {
             futures.push_back(
                 std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); }));
@@ -1399,7 +1399,7 @@ bitCapInt QStabilizerHybrid::MAll()
             }
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
-            const real1_f prob = futures[j].get();
+            const real1 prob = futures[j].get();
             if (foundM) {
                 continue;
             }
@@ -1425,13 +1425,13 @@ bitCapInt QStabilizerHybrid::MAll()
 
     return m;
 #else
-    real1_f partProb = ZERO_R1;
-    real1_f resProb = Rand();
+    real1 partProb = ZERO_R1;
+    real1 resProb = (real1)Rand();
     bitCapInt d = 0U;
     bitCapInt m;
     bool foundM = false;
     for (m = 0U; m < maxQPower; ++m) {
-        const real1_f prob = norm(GetAmplitude(m));
+        const real1 prob = norm(GetAmplitude(m));
         if (prob > FP_NORM_EPSILON) {
             d = m;
         }
