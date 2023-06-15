@@ -42,6 +42,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
+    , maxEngineQubitCount(27U)
     , maxAncillaCount(30U)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
@@ -58,20 +59,27 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         ((engineTypes[0U] == QINTERFACE_QPAGER) &&
             ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        maxAncillaCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
+        maxEngineQubitCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
+        maxAncillaCount = maxEngineQubitCount + 2U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_MAX_PAGE_QB")) {
             bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
+            maxEngineQubitCount = (maxPageSetting < maxEngineQubitCount) ? maxPageSetting : maxEngineQubitCount;
+        }
+        if (getenv("QRACK_MAX_PAGING_QB")) {
+            bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
             maxAncillaCount = (maxPageSetting < maxAncillaCount) ? maxPageSetting : maxAncillaCount;
         }
     } else {
-        maxAncillaCount =
+        maxEngineQubitCount =
             getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
-
+        maxAncillaCount = maxEngineQubitCount;
 #endif
     }
 #elif ENABLE_ENV_VARS
-    maxAncillaCount = getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+    maxEngineQubitCount =
+        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+    maxAncillaCount = maxEngineQubitCount;
 #endif
 
     stabilizer = MakeStabilizer(initState);
@@ -350,20 +358,51 @@ void QStabilizerHybrid::SwitchToEngine()
 
     const bool isBdt = engineTypes.size() && (engineTypes[0] == QINTERFACE_BDT);
 
-    if ((qubitCount + ancillaCount) > maxAncillaCount) {
+    if ((qubitCount + ancillaCount) > maxEngineQubitCount) {
         QInterfacePtr e = MakeEngine(0);
         if (isBdt) {
             std::dynamic_pointer_cast<QBdt>(e)->SetStateVector();
         }
+
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        const unsigned numCores = GetConcurrencyLevel();
+        std::vector<QStabilizerHybridPtr> clones;
+        for (unsigned i = 0U; i < numCores; ++i) {
+            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+        }
+        bitCapInt i = 0U;
+        while (i < maxQPower) {
+            const bitCapInt p = i;
+            std::vector<std::future<complex>> futures;
+            for (unsigned j = 0U; j < numCores; ++j) {
+                futures.push_back(
+                    std::async(std::launch::async, [j, p, &clones]() { return clones[j]->GetAmplitude(j + p); }));
+                ++i;
+                if (i >= maxQPower) {
+                    break;
+                }
+            }
+            for (size_t j = 0U; j < futures.size(); ++j) {
+                e->SetAmplitude(j + p, futures[j].get());
+            }
+        }
+        clones.clear();
+#else
         for (bitCapInt i = 0U; i < maxQPower; ++i) {
             e->SetAmplitude(i, GetAmplitude(i));
         }
+#endif
+
         stabilizer = NULL;
         engine = e;
 
         engine->UpdateRunningNorm();
         if (!doNormalize) {
             engine->NormalizeState();
+        }
+
+        if (isBdt) {
+            std::dynamic_pointer_cast<QBdt>(engine)->ResetStateVector();
         }
 
         // We have extra "gate fusion" shards leftover.

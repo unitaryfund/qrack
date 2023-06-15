@@ -39,6 +39,7 @@ protected:
     bool useTGadget;
     bitLenInt thresholdQubits;
     bitLenInt ancillaCount;
+    bitLenInt maxEngineQubitCount;
     bitLenInt maxAncillaCount;
     real1_f separabilityThreshold;
     int64_t devID;
