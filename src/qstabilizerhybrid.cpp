@@ -60,7 +60,11 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
             ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
         maxEngineQubitCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
-        maxAncillaCount = maxEngineQubitCount + 2U;
+        if ((engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_QPAGER)) {
+            maxAncillaCount = maxEngineQubitCount + 2U;
+        } else {
+            maxAncillaCount = maxEngineQubitCount;
+        }
 #if ENABLE_ENV_VARS
         if ((engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_QPAGER)) {
             if (getenv("QRACK_MAX_PAGE_QB")) {
