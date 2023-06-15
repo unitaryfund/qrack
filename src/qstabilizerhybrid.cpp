@@ -62,13 +62,15 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         maxEngineQubitCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
         maxAncillaCount = maxEngineQubitCount + 2U;
 #if ENABLE_ENV_VARS
-        if (getenv("QRACK_MAX_PAGE_QB")) {
-            bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
-            maxEngineQubitCount = (maxPageSetting < maxEngineQubitCount) ? maxPageSetting : maxEngineQubitCount;
-        }
-        if (getenv("QRACK_MAX_PAGING_QB")) {
-            bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-            maxAncillaCount = (maxPageSetting < maxAncillaCount) ? maxPageSetting : maxAncillaCount;
+        if ((engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_QPAGER)) {
+            if (getenv("QRACK_MAX_PAGE_QB")) {
+                bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
+                maxEngineQubitCount = (maxPageSetting < maxEngineQubitCount) ? maxPageSetting : maxEngineQubitCount;
+            }
+            if (getenv("QRACK_MAX_PAGING_QB")) {
+                bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+                maxAncillaCount = (maxPageSetting < maxAncillaCount) ? maxPageSetting : maxAncillaCount;
+            }
         }
     } else {
         maxEngineQubitCount =
