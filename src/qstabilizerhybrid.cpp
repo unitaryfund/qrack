@@ -55,18 +55,15 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 {
 
 #if ENABLE_OPENCL
-    if ((engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_OPENCL) ||
+    const bool isQPager = (engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_OPENCL);
+    if (isQPager ||
         ((engineTypes[0U] == QINTERFACE_QPAGER) &&
             ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
         maxEngineQubitCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
-        if ((engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_QPAGER)) {
-            maxAncillaCount = maxEngineQubitCount + 2U;
-        } else {
-            maxAncillaCount = maxEngineQubitCount;
-        }
+        maxAncillaCount = isQPager ? (maxEngineQubitCount + 2U) : maxEngineQubitCount;
 #if ENABLE_ENV_VARS
-        if ((engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_QPAGER)) {
+        if (isQPager) {
             if (getenv("QRACK_MAX_PAGE_QB")) {
                 bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
                 maxEngineQubitCount = (maxPageSetting < maxEngineQubitCount) ? maxPageSetting : maxEngineQubitCount;
