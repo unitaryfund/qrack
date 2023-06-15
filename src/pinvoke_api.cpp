@@ -2897,7 +2897,11 @@ MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid)
     neuronReservations[nid] = false;
 }
 
-MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ real1_f* angles)
+#if FPPOW < 6
+MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ float* angles)
+#else
+MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ double* angles)
+#endif
 {
     NEURON_LOCK_GUARD_VOID(nid)
 #if (FPPOW == 5) || (FPPOW == 6)
@@ -2905,12 +2909,20 @@ MICROSOFT_QUANTUM_DECL void set_qneuron_angles(_In_ uintq nid, _In_ real1_f* ang
 #else
     const bitCapIntOcl inputPower = (bitCapIntOcl)neuron->GetInputPower();
     std::unique_ptr<real1[]> _angles(new real1[inputPower]);
+#if (FPPOW == 4)
     std::copy(angles, angles + inputPower, _angles.get());
+#else
+    std::transform(angles, angles + inputPower, _angles.get(), [](double d) { return (real1)d; });
+#endif
     neuron->SetAngles(_angles.get());
 #endif
 }
 
-MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ real1_f* angles)
+#if FPPOW < 6
+MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ float* angles)
+#else
+MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ double* angles)
+#endif
 {
     NEURON_LOCK_GUARD_VOID(nid)
 #if (FPPOW == 5) || (FPPOW == 6)
@@ -2919,7 +2931,11 @@ MICROSOFT_QUANTUM_DECL void get_qneuron_angles(_In_ uintq nid, _In_ real1_f* ang
     const bitCapIntOcl inputPower = (bitCapIntOcl)neuron->GetInputPower();
     std::unique_ptr<real1[]> _angles(new real1[inputPower]);
     neuron->GetAngles(_angles.get());
+#if (FPPOW == 4)
     std::copy(_angles.get(), _angles.get() + inputPower, angles);
+#else
+    std::transform(_angles.get(), _angles.get() + inputPower, angles, [](real1 d) { return (double)d; });
+#endif
 #endif
 }
 

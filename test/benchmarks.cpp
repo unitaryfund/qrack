@@ -4517,7 +4517,7 @@ real1_f diophantine_fidelity_correction(real1_f sigmoid, real1_f sdrp)
     // Reverse variance normalization:
     sigmoid = pow(sigmoid, 1 / (1 - sqrt(sdrp)));
 
-    if (std::isnan(sigmoid)) {
+    if (std::isnan((real1_s)sigmoid)) {
         return 0;
     }
 

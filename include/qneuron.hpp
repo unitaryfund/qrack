@@ -48,13 +48,13 @@ protected:
     std::unique_ptr<real1[]> angles;
     QInterfacePtr qReg;
 
-    static real1_f applyRelu(real1_f angle) { return std::max(ZERO_R1_F, angle); }
+    static real1_f applyRelu(real1_f angle) { return std::max((real1_f)ZERO_R1_F, (real1_f)angle); }
 
-    static real1_f negApplyRelu(real1_f angle) { return -std::max(ZERO_R1_F, angle); }
+    static real1_f negApplyRelu(real1_f angle) { return -std::max((real1_f)ZERO_R1_F, (real1_f)angle); }
 
-    static real1_f applyGelu(real1_f angle) { return angle * (1 + erf(angle * SQRT1_2_R1)); }
+    static real1_f applyGelu(real1_f angle) { return angle * (1 + erf((real1_s)(angle * SQRT1_2_R1))); }
 
-    static real1_f negApplyGelu(real1_f angle) { return -angle * (1 + erf(angle * SQRT1_2_R1)); }
+    static real1_f negApplyGelu(real1_f angle) { return -angle * (1 + erf((real1_s)(angle * SQRT1_2_R1))); }
 
     static real1_f applyAlpha(real1_f angle, real1_f alpha)
     {
