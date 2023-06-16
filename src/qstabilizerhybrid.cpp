@@ -1299,6 +1299,17 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     return stabilizer->ForceM(qubit, result, doForce, doApply);
 }
 
+#define DISPATCH_SHOT_CLONES()                                                                                         \
+    const unsigned maxLcv = (unsigned)maxQPower;                                                                       \
+    std::vector<QStabilizerHybridPtr> clones;                                                                          \
+    for (unsigned i = 0U; i < maxLcv; ++i) {                                                                           \
+        clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));                                       \
+    }                                                                                                                  \
+    std::vector<std::future<real1>> futures((size_t)maxQPower);                                                        \
+    for (unsigned j = 0U; j < maxLcv; ++j) {                                                                           \
+        futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });      \
+    }
+
 #define CHECK_NARROW_SHOT()                                                                                            \
     const real1_f prob = norm(GetAmplitude(m));                                                                        \
     if (prob > FP_NORM_EPSILON) {                                                                                      \
@@ -1308,6 +1319,20 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     if (resProb < partProb) {                                                                                          \
         foundM = true;                                                                                                 \
         break;                                                                                                         \
+    }
+
+#define CHECK_WIDE_SHOT(j, k)                                                                                          \
+    const real1 prob = futures[j].get();                                                                               \
+    if (foundM) {                                                                                                      \
+        continue;                                                                                                      \
+    }                                                                                                                  \
+    if (prob > FP_NORM_EPSILON) {                                                                                      \
+        d = (k);                                                                                                       \
+    }                                                                                                                  \
+    partProb += prob;                                                                                                  \
+    if (resProb < partProb) {                                                                                          \
+        m = (k);                                                                                                       \
+        foundM = true;                                                                                                 \
     }
 
 bitCapInt QStabilizerHybrid::MAll()
@@ -1352,28 +1377,9 @@ bitCapInt QStabilizerHybrid::MAll()
     const unsigned numCores = GetConcurrencyLevel();
 
     if (maxQPower < numCores) {
-        const unsigned maxLcv = (unsigned)maxQPower;
-        std::vector<QStabilizerHybridPtr> clones;
-        for (unsigned i = 0U; i < maxLcv; ++i) {
-            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
-        }
-        std::vector<std::future<real1>> futures((size_t)maxQPower);
+        DISPATCH_SHOT_CLONES()
         for (unsigned j = 0U; j < maxLcv; ++j) {
-            futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });
-        }
-        for (unsigned j = 0U; j < maxLcv; ++j) {
-            const real1 prob = futures[j].get();
-            if (foundM) {
-                continue;
-            }
-            if (prob > FP_NORM_EPSILON) {
-                d = j;
-            }
-            partProb += prob;
-            if (resProb < partProb) {
-                m = j;
-                foundM = true;
-            }
+            CHECK_WIDE_SHOT(j, j)
         }
 
         if (!foundM) {
@@ -1402,18 +1408,7 @@ bitCapInt QStabilizerHybrid::MAll()
             }
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
-            const real1 prob = futures[j].get();
-            if (foundM) {
-                continue;
-            }
-            if (prob > FP_NORM_EPSILON) {
-                d = j + p;
-            }
-            partProb += prob;
-            if (resProb < partProb) {
-                m = j + p;
-                foundM = true;
-            }
+            CHECK_WIDE_SHOT(j, j + p)
         }
         if (foundM) {
             break;
@@ -1514,15 +1509,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     const unsigned numCores = GetConcurrencyLevel();
 
     if (maxQPower < numCores) {
-        const unsigned maxLcv = (unsigned)maxQPower;
-        std::vector<QStabilizerHybridPtr> clones;
-        for (unsigned i = 0U; i < maxLcv; ++i) {
-            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
-        }
-        std::vector<std::future<real1>> futures((size_t)maxQPower);
-        for (unsigned j = 0U; j < maxLcv; ++j) {
-            futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });
-        }
+        DISPATCH_SHOT_CLONES()
         for (unsigned j = 0U; j < maxLcv; ++j) {
             const real1 prob = futures[j].get();
             if (!rng.size()) {
@@ -1651,15 +1638,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     const unsigned numCores = GetConcurrencyLevel();
 
     if (maxQPower < numCores) {
-        const unsigned maxLcv = (unsigned)maxQPower;
-        std::vector<QStabilizerHybridPtr> clones;
-        for (unsigned i = 0U; i < maxLcv; ++i) {
-            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
-        }
-        std::vector<std::future<real1>> futures((size_t)maxQPower);
-        for (unsigned j = 0U; j < maxLcv; ++j) {
-            futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });
-        }
+        DISPATCH_SHOT_CLONES()
         for (unsigned j = 0U; j < maxLcv; ++j) {
             const real1 prob = futures[j].get();
             if (!rng.size()) {
