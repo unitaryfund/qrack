@@ -1478,15 +1478,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     if (!IsProbBuffered()) {
         std::mutex resultsMutex;
         par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
-            QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-            const bitCapInt rawSample = clone->MAll();
-            bitCapInt sample = 0U;
-            for (size_t i = 0U; i < qPowers.size(); ++i) {
-                if (rawSample & qPowers[i]) {
-                    sample |= pow2(i);
-                }
-            }
-
+            const bitCapInt sample = SampleClone(qPowers);
             std::lock_guard<std::mutex> lock(resultsMutex);
             ++(results[sample]);
         });
@@ -1628,17 +1620,8 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     std::map<bitCapInt, int> results;
 
     if (!IsProbBuffered()) {
-        par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
-            QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-            const bitCapInt rawSample = clone->MAll();
-            bitCapInt sample = 0U;
-            for (size_t i = 0U; i < qPowers.size(); ++i) {
-                if (rawSample & qPowers[i]) {
-                    sample |= pow2(i);
-                }
-            }
-            shotsArray[shot] = (unsigned)sample;
-        });
+        par_for(0U, shots,
+            [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
 
         return;
     }

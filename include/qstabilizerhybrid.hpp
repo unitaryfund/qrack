@@ -153,6 +153,20 @@ protected:
         }
     }
 
+    bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
+    {
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        const bitCapInt rawSample = clone->MAll();
+        bitCapInt sample = 0U;
+        for (size_t i = 0U; i < qPowers.size(); ++i) {
+            if (rawSample & qPowers[i]) {
+                sample |= pow2(i);
+            }
+        }
+
+        return sample;
+    }
+
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
     void ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inverse);
