@@ -1299,6 +1299,17 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     return stabilizer->ForceM(qubit, result, doForce, doApply);
 }
 
+#define CHECK_NARROW_SHOT()                                                                                            \
+    const real1_f prob = norm(GetAmplitude(m));                                                                        \
+    if (prob > FP_NORM_EPSILON) {                                                                                      \
+        d = m;                                                                                                         \
+    }                                                                                                                  \
+    partProb += prob;                                                                                                  \
+    if (resProb < partProb) {                                                                                          \
+        foundM = true;                                                                                                 \
+        break;                                                                                                         \
+    }
+
 bitCapInt QStabilizerHybrid::MAll()
 {
     if (engine) {
@@ -1326,15 +1337,7 @@ bitCapInt QStabilizerHybrid::MAll()
 
     if (stride <= pow2Ocl(ancillaCount)) {
         for (m = 0U; m < maxQPower; ++m) {
-            const real1_f prob = norm(GetAmplitude(m));
-            if (prob > FP_NORM_EPSILON) {
-                d = m;
-            }
-            partProb += prob;
-            if (resProb < partProb) {
-                foundM = true;
-                break;
-            }
+            CHECK_NARROW_SHOT()
         }
 
         if (!foundM) {
@@ -1431,15 +1434,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bitCapInt m;
     bool foundM = false;
     for (m = 0U; m < maxQPower; ++m) {
-        const real1 prob = norm(GetAmplitude(m));
-        if (prob > FP_NORM_EPSILON) {
-            d = m;
-        }
-        partProb += prob;
-        if (resProb < partProb) {
-            foundM = true;
-            break;
-        }
+        CHECK_NARROW_SHOT()
     }
 
     if (!foundM) {
@@ -1476,6 +1471,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     std::map<bitCapInt, int> results;
 
     if (!IsProbBuffered()) {
+        std::mutex resultsMutex;
         par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
             QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
             const bitCapInt rawSample = clone->MAll();
@@ -1485,6 +1481,8 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
                     sample |= pow2(i);
                 }
             }
+
+            std::lock_guard<std::mutex> lock(resultsMutex);
             ++(results[sample]);
         });
 
