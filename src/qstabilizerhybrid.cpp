@@ -1450,7 +1450,13 @@ void QStabilizerHybrid::UniformlyControlledSingleBit(
     }                                                                                                                  \
     ADD_SHOT_PROB(m)
 
-#define CHECK_SHOTS(m, lm)
+#define CHECK_SHOTS(m, lm)                                                                                             \
+    ADD_SHOT_PROB(m)                                                                                                   \
+    CheckShots(shots, m, partProb, qPowers, rng, lm);
+
+#define CHECK_SHOTS_IF_ANY(m, lm)                                                                                      \
+    ADD_SHOTS_PROB(m)                                                                                                  \
+    CheckShots(shots, m, partProb, qPowers, rng, lm);
 
 std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
 {
@@ -1486,8 +1492,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     if (stride <= pow2Ocl(ancillaCount)) {
         for (bitCapInt m = 0U; m < maxQPower; ++m) {
             const real1_f prob = norm(GetAmplitude(m));
-            ADD_SHOT_PROB(m)
-            CheckShots(shots, m, partProb, qPowers, rng, shotFunc);
+            CHECK_SHOTS(m, shotFunc);
         }
 
         FILL_REMAINING_MAP_SHOTS()
@@ -1501,8 +1506,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         DISPATCH_SHOT_CLONES()
         for (unsigned j = 0U; j < maxLcv; ++j) {
             const real1 prob = futures[j].get();
-            ADD_SHOTS_PROB(j)
-            CheckShots(shots, j, partProb, qPowers, rng, shotFunc);
+            CHECK_SHOTS_IF_ANY(j, shotFunc);
         }
 
         FILL_REMAINING_MAP_SHOTS()
@@ -1528,8 +1532,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
             const real1 prob = futures[j].get();
-            ADD_SHOTS_PROB(j + p)
-            CheckShots(shots, j + p, partProb, qPowers, rng, shotFunc);
+            CHECK_SHOTS_IF_ANY(j + p, shotFunc);
         }
         if (!rng.size()) {
             break;
@@ -1542,8 +1545,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 #else
     for (bitCapInt m = 0U; m < maxQPower; ++m) {
         const real1 prob = norm(GetAmplitude(m));
-        ADD_SHOT_PROB(m)
-        CheckShots(shots, m, partProb, qPowers, rng, shotFunc);
+        CHECK_SHOTS(m, shotFunc);
     }
 
     FILL_REMAINING_MAP_SHOTS()
@@ -1571,8 +1573,6 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    std::map<bitCapInt, int> results;
-
     if (!IsProbBuffered()) {
         par_for(0U, shots,
             [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
@@ -1593,8 +1593,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     if (stride <= pow2Ocl(ancillaCount)) {
         for (bitCapInt m = 0U; m < maxQPower; ++m) {
             const real1_f prob = norm(GetAmplitude(m));
-            ADD_SHOT_PROB(m)
-            CheckShots(shots, m, partProb, qPowers, rng, shotFunc);
+            CHECK_SHOTS(m, shotFunc);
         }
 
         FILL_REMAINING_ARRAY_SHOTS()
@@ -1608,8 +1607,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         DISPATCH_SHOT_CLONES()
         for (unsigned j = 0U; j < maxLcv; ++j) {
             const real1 prob = futures[j].get();
-            ADD_SHOTS_PROB(j)
-            CheckShots(shots, j, partProb, qPowers, rng, shotFunc);
+            CHECK_SHOTS_IF_ANY(j, shotFunc);
         }
 
         FILL_REMAINING_ARRAY_SHOTS()
@@ -1635,8 +1633,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
             const real1 prob = futures[j].get();
-            ADD_SHOTS_PROB(j + p)
-            CheckShots(shots, j + p, partProb, qPowers, rng, shotFunc);
+            CHECK_SHOTS_IF_ANY(j + p, shotFunc);
         }
         if (!rng.size()) {
             break;
@@ -1647,8 +1644,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 #else
     for (bitCapInt m = 0U; m < maxQPower; ++m) {
         const real1 prob = norm(GetAmplitude(m));
-        ADD_SHOT_PROB(m)
-        CheckShots(shots, m, partProb, qPowers, rng, shotFunc);
+        CHECK_SHOTS(m, shotFunc);
     }
 
     FILL_REMAINING_ARRAY_SHOTS()
