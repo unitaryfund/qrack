@@ -1486,10 +1486,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         return results;
     }
 
-    std::vector<real1_f> rng(shots);
-    for (unsigned shot = 0U; shot < shots; ++shot) {
-        rng[shot] = Rand();
-    }
+    std::vector<real1_f> rng = GenerateShotProbs(shots);
 
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;
@@ -1626,10 +1623,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    std::vector<real1_f> rng(shots);
-    for (unsigned shot = 0U; shot < shots; ++shot) {
-        rng[shot] = Rand();
-    }
+    std::vector<real1_f> rng = GenerateShotProbs(shots);
 
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;

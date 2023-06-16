@@ -167,6 +167,17 @@ protected:
         return sample;
     }
 
+    std::vector<real1_f> GenerateShotProbs(unsigned shots)
+    {
+        std::vector<real1_f> rng;
+        rng.reserve(shots);
+        for (unsigned shot = 0U; shot < shots; ++shot) {
+            rng.push_back(Rand());
+        }
+
+        return rng;
+    }
+
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
     void ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inverse);
