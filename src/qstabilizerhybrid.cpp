@@ -1335,6 +1335,11 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         foundM = true;                                                                                                 \
     }
 
+#define FIX_OVERPROB_SHOT_AND_FINISH()                                                                                 \
+    if (!foundM) {                                                                                                     \
+        m = d;                                                                                                         \
+    }                                                                                                                  \
+    SetPermutation(m);
 bitCapInt QStabilizerHybrid::MAll()
 {
     if (engine) {
@@ -1364,12 +1369,7 @@ bitCapInt QStabilizerHybrid::MAll()
         for (m = 0U; m < maxQPower; ++m) {
             CHECK_NARROW_SHOT()
         }
-
-        if (!foundM) {
-            m = d;
-        }
-
-        SetPermutation(m);
+        FIX_OVERPROB_SHOT_AND_FINISH()
 
         return m;
     }
@@ -1381,12 +1381,7 @@ bitCapInt QStabilizerHybrid::MAll()
         for (unsigned j = 0U; j < maxLcv; ++j) {
             CHECK_WIDE_SHOT(j, j)
         }
-
-        if (!foundM) {
-            m = d;
-        }
-
-        SetPermutation(m);
+        FIX_OVERPROB_SHOT_AND_FINISH()
 
         return m;
     }
@@ -1415,11 +1410,7 @@ bitCapInt QStabilizerHybrid::MAll()
         }
     }
 
-    if (!foundM) {
-        m = d;
-    }
-
-    SetPermutation(m);
+    FIX_OVERPROB_SHOT_AND_FINISH()
 
     return m;
 #else
@@ -1431,12 +1422,7 @@ bitCapInt QStabilizerHybrid::MAll()
     for (m = 0U; m < maxQPower; ++m) {
         CHECK_NARROW_SHOT()
     }
-
-    if (!foundM) {
-        m = d;
-    }
-
-    SetPermutation(m);
+    FIX_OVERPROB_SHOT_AND_FINISH()
 
     return m;
 #endif
