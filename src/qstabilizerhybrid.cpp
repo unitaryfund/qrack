@@ -1310,12 +1310,15 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });      \
     }
 
+#define ADD_SHOT_PROB(m)                                                                                               \
+    if (prob > FP_NORM_EPSILON) {                                                                                      \
+        d = (m);                                                                                                       \
+    }                                                                                                                  \
+    partProb += prob;
+
 #define CHECK_NARROW_SHOT()                                                                                            \
     const real1_f prob = norm(GetAmplitude(m));                                                                        \
-    if (prob > FP_NORM_EPSILON) {                                                                                      \
-        d = m;                                                                                                         \
-    }                                                                                                                  \
-    partProb += prob;                                                                                                  \
+    ADD_SHOT_PROB(m)                                                                                                   \
     if (resProb < partProb) {                                                                                          \
         foundM = true;                                                                                                 \
         break;                                                                                                         \
@@ -1326,10 +1329,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     if (foundM) {                                                                                                      \
         continue;                                                                                                      \
     }                                                                                                                  \
-    if (prob > FP_NORM_EPSILON) {                                                                                      \
-        d = (k);                                                                                                       \
-    }                                                                                                                  \
-    partProb += prob;                                                                                                  \
+    ADD_SHOT_PROB(k)                                                                                                   \
     if (resProb < partProb) {                                                                                          \
         m = (k);                                                                                                       \
         foundM = true;                                                                                                 \
@@ -1444,6 +1444,12 @@ void QStabilizerHybrid::UniformlyControlledSingleBit(
         results[d] += shots - rng.size();                                                                              \
     }
 
+#define ADD_SHOTS_PROB(m)                                                                                              \
+    if (!rng.size()) {                                                                                                 \
+        continue;                                                                                                      \
+    }                                                                                                                  \
+    ADD_SHOT_PROB(m)
+
 std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
 {
     if (!shots) {
@@ -1478,11 +1484,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     if (stride <= pow2Ocl(ancillaCount)) {
         for (bitCapInt m = 0U; m < maxQPower; ++m) {
             const real1_f prob = norm(GetAmplitude(m));
-            if (prob > FP_NORM_EPSILON) {
-                d = m;
-            }
-            partProb += prob;
-
+            ADD_SHOT_PROB(m)
             CheckShots(
                 shots, m, partProb, qPowers, rng, [&](bitCapInt sample, unsigned unused) { ++(results[sample]); });
         }
@@ -1498,14 +1500,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         DISPATCH_SHOT_CLONES()
         for (unsigned j = 0U; j < maxLcv; ++j) {
             const real1 prob = futures[j].get();
-            if (!rng.size()) {
-                continue;
-            }
-            if (prob > FP_NORM_EPSILON) {
-                d = j;
-            }
-            partProb += prob;
-
+            CHECK_SHOTS_PROB(j)
             CheckShots(
                 shots, j, partProb, qPowers, rng, [&](bitCapInt sample, unsigned unused) { ++(results[sample]); });
         }
@@ -1533,14 +1528,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
             const real1 prob = futures[j].get();
-            if (!rng.size()) {
-                continue;
-            }
-            if (prob > FP_NORM_EPSILON) {
-                d = j + p;
-            }
-            partProb += prob;
-
+            CHECK_SHOTS_PROB(j + p)
             CheckShots(
                 shots, j + p, partProb, qPowers, rng, [&](bitCapInt sample, unsigned unused) { ++(results[sample]); });
         }
@@ -1555,10 +1543,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 #else
     for (bitCapInt m = 0U; m < maxQPower; ++m) {
         const real1 prob = norm(GetAmplitude(m));
-        if (prob > FP_NORM_EPSILON) {
-            d = m;
-        }
-        partProb += prob;
+        ADD_SHOT_PROB(m)
         CheckShots(shots, m, partProb, qPowers, rng, [&](bitCapInt sample, unsigned unused) { ++(results[sample]); });
     }
 
@@ -1607,11 +1592,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     if (stride <= pow2Ocl(ancillaCount)) {
         for (bitCapInt m = 0U; m < maxQPower; ++m) {
             const real1_f prob = norm(GetAmplitude(m));
-            if (prob > FP_NORM_EPSILON) {
-                d = m;
-            }
-            partProb += prob;
-
+            ADD_SHOT_PROB(m)
             CheckShots(shots, m, partProb, qPowers, rng,
                 [&](bitCapInt sample, unsigned shot) { shotsArray[shot + (shots - rng.size())] = (unsigned)sample; });
         }
@@ -1627,14 +1608,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         DISPATCH_SHOT_CLONES()
         for (unsigned j = 0U; j < maxLcv; ++j) {
             const real1 prob = futures[j].get();
-            if (!rng.size()) {
-                continue;
-            }
-            if (prob > FP_NORM_EPSILON) {
-                d = j;
-            }
-            partProb += prob;
-
+            CHECK_SHOTS_PROB(j)
             CheckShots(shots, j, partProb, qPowers, rng,
                 [&](bitCapInt sample, unsigned shot) { shotsArray[shot + (shots - rng.size())] = (unsigned)sample; });
         }
@@ -1662,14 +1636,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
             const real1 prob = futures[j].get();
-            if (!rng.size()) {
-                continue;
-            }
-            if (prob > FP_NORM_EPSILON) {
-                d = j + p;
-            }
-            partProb += prob;
-
+            CHECK_SHOTS_PROB(j + p)
             CheckShots(shots, j + p, partProb, qPowers, rng,
                 [&](bitCapInt sample, unsigned shot) { shotsArray[shot + (shots - rng.size())] = (unsigned)sample; });
         }
@@ -1682,10 +1649,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 #else
     for (bitCapInt m = 0U; m < maxQPower; ++m) {
         const real1 prob = norm(GetAmplitude(m));
-        if (prob > FP_NORM_EPSILON) {
-            d = m;
-        }
-        partProb += prob;
+        ADD_SHOT_PROB(m)
         CheckShots(shots, m, partProb, qPowers, rng,
             [&](bitCapInt sample, unsigned shot) { shotsArray[shot + (shots - rng.size())] = (unsigned)sample; });
     }
