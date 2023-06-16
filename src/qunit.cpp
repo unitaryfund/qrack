@@ -2255,6 +2255,10 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
+    if (shard.unit && shard.unit->isClifford()) {
+        RevertBasis1Qb(target);
+    }
+
     shard.CommutePhase(topLeft, bottomRight);
 
     if (shard.pauliBasis == PauliZ) {
@@ -2292,6 +2296,10 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     }
 
     QEngineShard& shard = shards[target];
+
+    if (shard.unit && shard.unit->isClifford()) {
+        RevertBasis1Qb(target);
+    }
 
     shard.FlipPhaseAnti();
     shard.CommutePhase(topRight, bottomLeft);
