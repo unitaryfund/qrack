@@ -1476,7 +1476,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     std::map<bitCapInt, int> results;
 
     if (!IsProbBuffered()) {
-        for (unsigned shot = 0U; shot < shots; ++shot) {
+        par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
             QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
             const bitCapInt rawSample = clone->MAll();
             bitCapInt sample = 0U;
@@ -1486,7 +1486,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
                 }
             }
             ++(results[sample]);
-        }
+        });
 
         return results;
     }
@@ -1680,17 +1680,203 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        const bitCapInt rawSample = clone->MAll();
-        bitCapInt sample = 0U;
-        for (size_t i = 0U; i < qPowers.size(); ++i) {
-            if (rawSample & qPowers[i]) {
-                sample |= pow2(i);
+    std::map<bitCapInt, int> results;
+
+    if (!IsProbBuffered()) {
+        par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
+            QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+            const bitCapInt rawSample = clone->MAll();
+            bitCapInt sample = 0U;
+            for (size_t i = 0U; i < qPowers.size(); ++i) {
+                if (rawSample & qPowers[i]) {
+                    sample |= pow2(i);
+                }
+            }
+            shotsArray[shot] = (unsigned)sample;
+        });
+
+        return;
+    }
+
+    std::vector<real1_f> rng(shots);
+    for (unsigned shot = 0U; shot < shots; ++shot) {
+        rng[shot] = Rand();
+    }
+
+    real1 partProb = ZERO_R1;
+    bitCapInt d = 0U;
+
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+    const bitCapIntOcl stride = GetPreferredConcurrencyPower();
+
+    if (stride <= pow2Ocl(ancillaCount)) {
+        for (bitCapInt m = 0U; m < maxQPower; ++m) {
+            const real1_f prob = norm(GetAmplitude(m));
+            if (prob > FP_NORM_EPSILON) {
+                d = m;
+            }
+            partProb += prob;
+
+            for (int64_t shot = rng.size() - 1U; shot >= 0; --shot) {
+                if (rng[shot] < partProb) {
+                    bitCapInt sample = 0U;
+                    for (size_t i = 0U; i < qPowers.size(); ++i) {
+                        if (m & qPowers[i]) {
+                            sample |= pow2(i);
+                        }
+                    }
+                    shotsArray[shot + (shots - rng.size())] = (unsigned)sample;
+
+                    rng.erase(rng.begin() + shot);
+                    if (!rng.size()) {
+                        break;
+                    }
+                }
             }
         }
-        shotsArray[shot] = (unsigned)sample;
-    });
+
+        if (rng.size()) {
+            for (unsigned shot = 0U; shot < rng.size(); ++shot) {
+                shotsArray[shot + (shots - rng.size())] = (unsigned)d;
+            }
+        }
+
+        return;
+    }
+
+    const unsigned numCores = GetConcurrencyLevel();
+
+    if (maxQPower < numCores) {
+        const unsigned maxLcv = (unsigned)maxQPower;
+        std::vector<QStabilizerHybridPtr> clones;
+        for (unsigned i = 0U; i < maxLcv; ++i) {
+            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+        }
+        std::vector<std::future<real1>> futures((size_t)maxQPower);
+        for (unsigned j = 0U; j < maxLcv; ++j) {
+            futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });
+        }
+        for (unsigned j = 0U; j < maxLcv; ++j) {
+            const real1 prob = futures[j].get();
+            if (!rng.size()) {
+                continue;
+            }
+            if (prob > FP_NORM_EPSILON) {
+                d = j;
+            }
+            partProb += prob;
+
+            for (int64_t shot = rng.size() - 1U; shot >= 0; --shot) {
+                if (rng[shot] < partProb) {
+                    bitCapInt sample = 0U;
+                    for (size_t i = 0U; i < qPowers.size(); ++i) {
+                        if (j & qPowers[i]) {
+                            sample |= pow2(i);
+                        }
+                    }
+                    shotsArray[shot + (shots - rng.size())] = (unsigned)sample;
+
+                    rng.erase(rng.begin() + shot);
+                    if (!rng.size()) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (rng.size()) {
+            for (unsigned shot = 0U; shot < rng.size(); ++shot) {
+                shotsArray[shot + (shots - rng.size())] = (unsigned)d;
+            }
+        }
+
+        return;
+    }
+
+    std::vector<QStabilizerHybridPtr> clones;
+    for (unsigned i = 0U; i < numCores; ++i) {
+        clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+    }
+    bitCapInt i = 0U;
+    while (i < maxQPower) {
+        const bitCapInt p = i;
+        std::vector<std::future<real1>> futures;
+        for (unsigned j = 0U; j < numCores; ++j) {
+            futures.push_back(
+                std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); }));
+            ++i;
+            if (i >= maxQPower) {
+                break;
+            }
+        }
+        for (size_t j = 0U; j < futures.size(); ++j) {
+            const real1 prob = futures[j].get();
+            if (!rng.size()) {
+                continue;
+            }
+            if (prob > FP_NORM_EPSILON) {
+                d = j + p;
+            }
+            partProb += prob;
+
+            for (int64_t shot = rng.size() - 1U; shot >= 0; --shot) {
+                if (rng[shot] < partProb) {
+                    bitCapInt sample = 0U;
+                    for (size_t i = 0U; i < qPowers.size(); ++i) {
+                        if ((j + p) & qPowers[i]) {
+                            sample |= pow2(i);
+                        }
+                    }
+                    shotsArray[shot + (shots - rng.size())] = (unsigned)sample;
+
+                    rng.erase(rng.begin() + shot);
+                    if (!rng.size()) {
+                        break;
+                    }
+                }
+            }
+        }
+        if (!rng.size()) {
+            break;
+        }
+    }
+
+    if (rng.size()) {
+        for (unsigned shot = 0U; shot < rng.size(); ++shot) {
+            shotsArray[shot + (shots - rng.size())] = (unsigned)d;
+        }
+    }
+#else
+    for (bitCapInt m = 0U; m < maxQPower; ++m) {
+        const real1 prob = norm(GetAmplitude(m));
+        if (prob > FP_NORM_EPSILON) {
+            d = m;
+        }
+        partProb += prob;
+        for (int64_t shot = rng.size() - 1U; shot >= 0; --shot) {
+            if (rng[shot] < partProb) {
+                bitCapInt sample = 0U;
+                for (size_t i = 0U; i < qPowers.size(); ++i) {
+                    if (m & qPowers[i]) {
+                        sample |= pow2(i);
+                    }
+                }
+                shotsArray[shot + (shots - rng.size())] = (unsigned)sample;
+
+                rng.erase(rng.begin() + shot);
+                if (!rng.size()) {
+                    break;
+                }
+            }
+        }
+    }
+
+    if (rng.size()) {
+        for (unsigned shot = 0U; shot < rng.size(); ++shot) {
+            shotsArray[shot + (shots - rng.size())] = (unsigned)d;
+        }
+    }
+#endif
 }
 
 real1_f QStabilizerHybrid::ProbParity(bitCapInt mask)
