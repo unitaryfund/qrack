@@ -181,16 +181,18 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
             // Collect interval data
             if (isTrialSuccessful) {
-                if (benchmarkShots == 1) {
-                    const bitCapInt result = qftReg->MAll();
-                    if (mOutputFileName.compare("")) {
-                        mOutputFile << result << std::endl;
-                    }
-                } else if (benchmarkShots) {
-                    std::unique_ptr<unsigned long long[]> results(new unsigned long long[benchmarkShots]);
-                    qftReg->MultiShotMeasureMask(qPowers, benchmarkShots, results.get());
-                    for (int i = 0U; i < benchmarkShots; ++i) {
-                        mOutputFile << results.get()[i] << std::endl;
+                if (!disable_terminal_measurement) {
+                    if (benchmarkShots == 1) {
+                        const bitCapInt result = qftReg->MAll();
+                        if (mOutputFileName.compare("")) {
+                            mOutputFile << result << std::endl;
+                        }
+                    } else if (benchmarkShots) {
+                        std::unique_ptr<unsigned long long[]> results(new unsigned long long[benchmarkShots]);
+                        qftReg->MultiShotMeasureMask(qPowers, benchmarkShots, results.get());
+                        for (int i = 0U; i < benchmarkShots; ++i) {
+                            mOutputFile << results.get()[i] << std::endl;
+                        }
                     }
                 }
 
