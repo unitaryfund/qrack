@@ -1877,7 +1877,9 @@ std::istream& operator>>(std::istream& is, const QStabilizerPtr s)
             zRow[i] = y;
         }
 
-        is >> s->r[row];
+        size_t _r;
+        is >> _r;
+        s->r[row] = (uint8_t)r;
     }
 
     return is;
