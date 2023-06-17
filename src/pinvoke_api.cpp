@@ -2824,6 +2824,17 @@ MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool irs)
     }
 }
 
+MICROSOFT_QUANTUM_DECL void SetStabilizerHardwareEncoded(_In_ uintq sid, _In_ bool she)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    try {
+        simulator->SetStabilizerHardwareEncoded(she);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
 #if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 /**
  * (External API) Simulate a Hamiltonian

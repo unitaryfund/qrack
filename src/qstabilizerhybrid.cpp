@@ -40,6 +40,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
+    , isHardwareEncoded(false)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
     , maxEngineQubitCount(27U)
@@ -175,7 +176,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
     // PRX Quantum 3, 020361 – Published 23 June 2022
 
-    if (!useTGadget || (ancillaCount >= maxAncillaCount)) {
+    if (!useTGadget || ((ancillaCount + isHardwareEncoded) >= maxAncillaCount)) {
         // The option to optimize this case is off.
         SwitchToEngine();
         return;
@@ -201,6 +202,25 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // ForceM(ancillaIndex, false, true, true);
     // Ancilla is separable after measurement.
     // Dispose(ancillaIndex, 1U);
+
+    if (!isHardwareEncoded) {
+        return;
+    }
+
+    // For the benefit of hardware, we entangle an auxiliary channel with an identity gate.
+    // Post selection is then unnecessary, expontially reducing the hardware shot count.
+    ancilla = std::make_shared<QStabilizer>(
+        1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+
+    // Form potentially entangled representation, with this.
+    ancillaIndex = stabilizer->Compose(ancilla);
+    ++ancillaCount;
+    shards.push_back(NULL);
+
+    // Use reverse t-injection gadget.
+    stabilizer->CNOT(target, ancillaIndex);
+    // Encoded gate is identity
+    H(ancillaIndex);
 }
 
 bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
@@ -706,7 +726,10 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
     }
 
     for (bitLenInt i = 0U; i < ancillaCount; ++i) {
-        aEngine->Mtrx(shards[i + qubitCount]->gate, i);
+        const MpsShardPtr& shard = shards[i + qubitCount];
+        if (shard) {
+            aEngine->Mtrx(shard->gate, i);
+        }
     }
 
     return (real1)pow(SQRT2_R1, (real1)ancillaCount) * aEngine->GetAmplitude(0U);
@@ -906,8 +929,9 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     complex mtrx[4U];
     if (!wasCached) {
         std::copy(lMtrx, lMtrx + 4U, mtrx);
-    } else if (!engine && useTGadget && (target < qubitCount) && (ancillaCount < maxAncillaCount) && !IS_PHASE(lMtrx) &&
-        !IS_INVERT(lMtrx) && (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
+    } else if (!engine && useTGadget && (target < qubitCount) &&
+        ((ancillaCount + isHardwareEncoded) < maxAncillaCount) && !IS_PHASE(lMtrx) && !IS_INVERT(lMtrx) &&
+        (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
 
         if (shard->IsHPhase() || shard->IsHInvert()) {
             complex hGate[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
@@ -938,6 +962,23 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             stabilizer->CNOT(target, ancillaIndex);
             Mtrx(shard->gate, ancillaIndex);
             H(ancillaIndex);
+
+            if (isHardwareEncoded) {
+                // For the benefit of hardware, we entangle an auxiliary channel with an identity gate.
+                // Post selection is then unnecessary, expontially reducing the hardware shot count.
+                ancilla = std::make_shared<QStabilizer>(
+                    1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+
+                // Form potentially entangled representation, with this.
+                bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+                ++ancillaCount;
+                shards.push_back(NULL);
+
+                // Use reverse t-injection gadget.
+                stabilizer->CNOT(target, ancillaIndex);
+                // Encoded gate is identity
+                H(ancillaIndex);
+            }
         }
 
         std::copy(lMtrx, lMtrx + 4U, mtrx);

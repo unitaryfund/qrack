@@ -37,6 +37,7 @@ protected:
     bool doNormalize;
     bool isSparse;
     bool useTGadget;
+    bool isHardwareEncoded;
     bitLenInt thresholdQubits;
     bitLenInt ancillaCount;
     bitLenInt maxEngineQubitCount;
@@ -202,6 +203,8 @@ public:
 
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
+    void SetStabilizerHardwareEncoded(bool isEncoded) { isHardwareEncoded = isEncoded; }
+    bool GetStabilizerHardwareEncoded() { return isHardwareEncoded; }
 
     void Finish()
     {

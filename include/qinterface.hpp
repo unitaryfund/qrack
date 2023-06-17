@@ -2544,6 +2544,22 @@ public:
      * helps.
      */
     virtual bool GetTInjection() { return false; }
+    /**
+     *  Set the option to encode "hybrid stabilizer" states to encode for physical hardware.
+     *
+     *  For the benefit of hardware, we entangle an auxiliary channel with an identity gate. Post selection is then
+     * unnecessary, expontially reducing the hardware shot count. Instead of post-selection, if we measure an error
+     * syndrome on any hybrid stabilizer ancillae, we can code a completely corrective Z gate into the identity channel.
+     */
+    virtual void SetStabilizerHardwareEncoded(bool isHardwareEncoded) {}
+    /**
+     *  Get the option to encode "hybrid stabilizer" states to encode for physical hardware.
+     *
+     *  For the benefit of hardware, we entangle an auxiliary channel with an identity gate. Post selection is then
+     * unnecessary, expontially reducing the hardware shot count. Instead of post-selection, if we measure an error
+     * syndrome on any hybrid stabilizer ancillae, we can code a completely corrective Z gate into the identity channel.
+     */
+    virtual bool GetStabilizerHardwareEncoded() { return false; }
 
     /**
      *  Clone this QInterface
