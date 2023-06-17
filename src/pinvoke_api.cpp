@@ -998,6 +998,11 @@ MICROSOFT_QUANTUM_DECL void qstabilizer_in_from_file(_In_ uintq sid, _In_ char* 
     }
 
     ifile.close();
+
+    shards[simulator.get()] = {};
+    for (uintq i = 0U; i < simulator->GetQubitCount(); ++i) {
+        shards[simulator.get()][i] = (bitLenInt)i;
+    }
 }
 
 /**
