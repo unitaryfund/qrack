@@ -415,5 +415,8 @@ public:
 
         return toRet;
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const QStabilizerPtr s);
+    friend std::istream& operator>>(std::istream& is, const QStabilizerPtr s);
 };
 } // namespace Qrack

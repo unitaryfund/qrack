@@ -1873,4 +1873,54 @@ bool QStabilizerHybrid::TrySeparate(const std::vector<bitLenInt>& qubits, real1_
 
     return toRet;
 }
+
+std::ostream& operator<<(std::ostream& os, const QStabilizerHybridPtr s)
+{
+    if (s->engine) {
+        throw std::logic_error("QStabilizerHybrid can only stream out when in Clifford format!");
+    }
+
+    os << (size_t)s->qubitCount << std::endl;
+
+    os << s->stabilizer;
+
+    const complex id[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
+    const std::vector<MpsShardPtr>& shards = s->shards;
+    for (size_t i = 0U; i < shards.size(); ++i) {
+        const complex* mtrx = !shards[i] ? id : shards[i]->gate;
+        for (size_t j = 0U; j < 3U; ++j) {
+            os << mtrx[j] << " ";
+        }
+        os << mtrx[3U] << std::endl;
+    }
+
+    return os;
+}
+
+std::istream& operator>>(std::istream& is, const QStabilizerHybridPtr s)
+{
+    s->SetPermutation(0);
+
+    size_t qbCount;
+    is >> qbCount;
+    s->qubitCount = qbCount;
+
+    is >> s->stabilizer;
+
+    s->ancillaCount = s->stabilizer->GetQubitCount() - qbCount;
+    s->shards.resize(s->stabilizer->GetQubitCount());
+
+    std::vector<MpsShardPtr>& shards = s->shards;
+    for (size_t i = 0U; i < shards.size(); ++i) {
+        MpsShardPtr shard = std::make_shared<MpsShard>();
+        for (size_t j = 0U; j < 4U; ++j) {
+            is >> shard->gate[j];
+        }
+        if (!shard->IsIdentity()) {
+            shards[i] = shard;
+        }
+    }
+
+    return is;
+}
 } // namespace Qrack

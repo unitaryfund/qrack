@@ -619,5 +619,8 @@ public:
 
         return engine->GetMaxSize();
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const QStabilizerHybridPtr s);
+    friend std::istream& operator>>(std::istream& is, const QStabilizerHybridPtr s);
 };
 } // namespace Qrack

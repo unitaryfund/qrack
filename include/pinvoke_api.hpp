@@ -46,6 +46,7 @@ MICROSOFT_QUANTUM_DECL uintq init_clone(_In_ uintq sid);
 MICROSOFT_QUANTUM_DECL void destroy(_In_ uintq sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ uintq sid, _In_ uintq s);
 MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ uintq sid, _In_ uintq p);
+MICROSOFT_QUANTUM_DECL void qstabilizer_out_to_file(_In_ uintq cid, _In_ char* f);
 
 // pseudo-quantum
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q);

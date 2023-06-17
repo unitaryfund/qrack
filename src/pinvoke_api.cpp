@@ -953,6 +953,53 @@ MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ uintq sid, _In_ uintq p)
     }
 }
 
+MICROSOFT_QUANTUM_DECL void qstabilizer_out_to_file(_In_ uintq sid, _In_ char* f)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    if (simulatorTypes[sid][0] != QINTERFACE_STABILIZER_HYBRID) {
+        simulatorErrors[sid] = 1;
+        std::cout << "Cannot write any simulator but QStabilizerHybrid out to file!" << std::endl;
+        return;
+    }
+
+    std::ofstream ofile;
+    std::string filename(f);
+    ofile.open(f);
+
+    try {
+        ofile << std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+
+    ofile.close();
+}
+MICROSOFT_QUANTUM_DECL void qstabilizer_in_from_file(_In_ uintq sid, _In_ char* f)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    if (simulatorTypes[sid][0] != QINTERFACE_STABILIZER_HYBRID) {
+        simulatorErrors[sid] = 1;
+        std::cout << "Cannot read any simulator but QStabilizerHybrid in from file!" << std::endl;
+        return;
+    }
+
+    std::ifstream ifile;
+    std::string filename(f);
+    ifile.open(f);
+
+    try {
+        ifile >> std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+
+    ifile.close();
+}
+
 /**
  * (External API) "Dump" all IDs from the selected simulator ID into the callback
  */

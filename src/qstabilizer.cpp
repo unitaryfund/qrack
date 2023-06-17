@@ -1828,4 +1828,58 @@ bool QStabilizer::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f igno
 
     return toRet;
 }
+
+std::ostream& operator<<(std::ostream& os, const QStabilizerPtr s)
+{
+    const size_t qubitCount = (size_t)s->GetQubitCount();
+    os << qubitCount << std::endl;
+
+    const size_t rows = qubitCount << 1U;
+    for (size_t row = 0U; row < rows; ++row) {
+        const std::vector<bool>& xRow = s->x[row];
+        for (size_t i = 0U; i < xRow.size(); ++i) {
+            os << xRow[i] << " ";
+        }
+
+        const std::vector<bool>& zRow = s->z[row];
+        for (size_t i = 0U; i < zRow.size(); ++i) {
+            os << zRow[i] << " ";
+        }
+
+        os << (int)s->r[row] << std::endl;
+    }
+
+    return os;
+}
+std::istream& operator>>(std::istream& is, const QStabilizerPtr s)
+{
+    size_t n;
+    is >> n;
+    s->qubitCount = n;
+
+    s->r = std::vector<uint8_t>((n << 1U) + 1U);
+    s->x = std::vector<std::vector<bool>>((n << 1U) + 1U, std::vector<bool>(n, false));
+    s->z = std::vector<std::vector<bool>>((n << 1U) + 1U, std::vector<bool>(n, false));
+
+    const size_t rows = n << 1U;
+    for (size_t row = 0U; row < rows; ++row) {
+        std::vector<bool>& xRow = s->x[row];
+        for (size_t i = 0U; i < xRow.size(); ++i) {
+            bool x;
+            is >> x;
+            xRow[i] = x;
+        }
+
+        std::vector<bool>& zRow = s->z[row];
+        for (size_t i = 0U; i < zRow.size(); ++i) {
+            bool y;
+            is >> y;
+            zRow[i] = y;
+        }
+
+        is >> s->r[row];
+    }
+
+    return is;
+}
 } // namespace Qrack
