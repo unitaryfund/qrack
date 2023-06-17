@@ -1879,7 +1879,7 @@ std::istream& operator>>(std::istream& is, const QStabilizerPtr s)
 
         size_t _r;
         is >> _r;
-        s->r[row] = (uint8_t)r;
+        s->r[row] = (uint8_t)_r;
     }
 
     return is;
