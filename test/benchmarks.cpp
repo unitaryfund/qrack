@@ -1412,6 +1412,127 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
     });
 }
 
+TEST_CASE("test_stabilizer_rz", "[supreme]")
+{
+    // Try with environment variable
+    // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
+    // for clamping of single bit states to Pauli basis axes.
+
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    if (benchmarkMaxMagic >= 0) {
+        std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
+    } else {
+        std::cout << "(max quantum \"magic\": default, ceiling equal to qubit count +2)";
+    }
+
+    const int DimCount1Qb = 4;
+    const int GateCountMultiQb = 3;
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        real1_f gateRand;
+        bitLenInt b1, b2;
+
+        const int tMax = (benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2);
+        int tCount = 0U;
+
+        for (int d = 0; d < benchmarkDepth; d++) {
+            bitCapInt zMask = 0U;
+            for (bitLenInt i = 0; i < n; i++) {
+                // "Phase" transforms:
+                gateRand = DimCount1Qb * qReg->Rand();
+                if (gateRand < ONE_R1) {
+                    qReg->H(i);
+                } else if (gateRand < (2 * ONE_R1)) {
+                    gateRand = 2 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->S(i);
+                    } else {
+                        qReg->IS(i);
+                    }
+                } else if (gateRand < (3 * ONE_R1)) {
+                    gateRand = 2 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->H(i);
+                        qReg->S(i);
+                    } else {
+                        qReg->IS(i);
+                        qReg->H(i);
+                    }
+                }
+                // else - identity
+
+                // "Position transforms:
+                // Discrete Z root gates option:
+                gateRand = DimCount1Qb * qReg->Rand();
+                if (gateRand < ONE_R1) {
+                    // Z^(1/2)
+                    qReg->S(i);
+                } else if (gateRand < (2 * ONE_R1)) {
+                    // Z
+                    zMask |= pow2(i);
+                } else if (gateRand < (3 * ONE_R1)) {
+                    // Z^(-1/2)
+                    qReg->IS(i);
+                }
+                // else - identity
+
+                if (tCount < tMax) {
+                    gateRand = n * benchmarkDepth * qReg->Rand() / benchmarkMaxMagic;
+                    if (gateRand < ONE_R1) {
+                        qReg->RZ(4 * PI_R1 * qReg->Rand(), i);
+                        tCount++;
+                    }
+                }
+            }
+            qReg->ZMask(zMask);
+
+            std::set<bitLenInt> unusedBits;
+            for (bitLenInt i = 0; i < n; i++) {
+                unusedBits.insert(unusedBits.end(), i);
+            }
+
+            while (unusedBits.size() > 1) {
+                b1 = pickRandomBit(qReg, &unusedBits);
+                b2 = pickRandomBit(qReg, &unusedBits);
+
+                gateRand = GateCountMultiQb * qReg->Rand();
+
+                if (gateRand < ONE_R1) {
+                    gateRand = 2 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->CNOT(b1, b2);
+                    } else {
+                        qReg->AntiCNOT(b1, b2);
+                    }
+                } else if (gateRand < (2 * ONE_R1)) {
+                    gateRand = 2 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->CY(b1, b2);
+                    } else {
+                        qReg->AntiCY(b1, b2);
+                    }
+                } else if (gateRand < (3 * ONE_R1)) {
+                    gateRand = 2 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->CZ(b1, b2);
+                    } else {
+                        qReg->AntiCZ(b1, b2);
+                    }
+                } else {
+                    gateRand = 3 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        qReg->ISwap(b1, b2);
+                    } else {
+                        qReg->IISwap(b1, b2);
+                    }
+                }
+            }
+        }
+    });
+}
+
 TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
 {
     // Try with environment variable
