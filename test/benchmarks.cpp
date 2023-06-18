@@ -1435,59 +1435,47 @@ TEST_CASE("test_stabilizer_rz", "[supreme]")
         const int tMax = (benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2);
         int tCount = 0U;
 
-        for (int d = 0; d < benchmarkDepth; d++) {
+        for (int d = 0; d < benchmarkDepth; ++d) {
             bitCapInt zMask = 0U;
-            for (bitLenInt i = 0; i < n; i++) {
-                // "Phase" transforms:
-                gateRand = DimCount1Qb * qReg->Rand();
-                if (gateRand < ONE_R1) {
-                    qReg->H(i);
-                } else if (gateRand < (2 * ONE_R1)) {
-                    gateRand = 2 * qReg->Rand();
-                    if (gateRand < ONE_R1) {
-                        qReg->S(i);
-                    } else {
-                        qReg->IS(i);
-                    }
-                } else if (gateRand < (3 * ONE_R1)) {
-                    gateRand = 2 * qReg->Rand();
-                    if (gateRand < ONE_R1) {
+            for (bitLenInt i = 0; i < n; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    // "Position transforms:
+                    if (j == 0) {
                         qReg->H(i);
+                    } else if (j == 1) {
                         qReg->S(i);
                     } else {
                         qReg->IS(i);
                         qReg->H(i);
                     }
-                }
-                // else - identity
 
-                // "Position transforms:
-                // Discrete Z root gates option:
-                gateRand = DimCount1Qb * qReg->Rand();
-                if (gateRand < ONE_R1) {
-                    // Z^(1/2)
-                    qReg->S(i);
-                } else if (gateRand < (2 * ONE_R1)) {
-                    // Z
-                    zMask |= pow2(i);
-                } else if (gateRand < (3 * ONE_R1)) {
-                    // Z^(-1/2)
-                    qReg->IS(i);
-                }
-                // else - identity
-
-                if (tCount < tMax) {
-                    gateRand = n * benchmarkDepth * qReg->Rand() / benchmarkMaxMagic;
+                    // "Phase transforms:"
+                    gateRand = DimCount1Qb * qReg->Rand();
                     if (gateRand < ONE_R1) {
-                        qReg->RZ(4 * PI_R1 * qReg->Rand(), i);
-                        tCount++;
+                        // Z^(1/2)
+                        qReg->S(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        // Z
+                        zMask |= pow2(i);
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        // Z^(-1/2)
+                        qReg->IS(i);
+                    }
+                    // else - identity
+
+                    if (tCount < tMax) {
+                        gateRand = n * benchmarkDepth * qReg->Rand() / (benchmarkMaxMagic * 3);
+                        if (gateRand < ONE_R1) {
+                            qReg->RZ(4 * PI_R1 * qReg->Rand(), i);
+                            tCount++;
+                        }
                     }
                 }
             }
             qReg->ZMask(zMask);
 
             std::set<bitLenInt> unusedBits;
-            for (bitLenInt i = 0; i < n; i++) {
+            for (bitLenInt i = 0; i < n; ++i) {
                 unusedBits.insert(unusedBits.end(), i);
             }
 
