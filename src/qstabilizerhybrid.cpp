@@ -1418,7 +1418,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bitCapInt m;
     bool foundM = false;
 
-    if (stride > pow2Ocl(ancillaCount)) {
+    if (stride <= pow2Ocl(ancillaCount)) {
         for (m = 0U; m < maxQPower; ++m) {
             CHECK_NARROW_SHOT()
         }
@@ -1542,7 +1542,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const bitCapIntOcl stride = GetPreferredConcurrencyPower();
 
-    if (stride > pow2Ocl(ancillaCount)) {
+    if (stride <= pow2Ocl(ancillaCount)) {
         for (bitCapInt m = 0U; m < maxQPower; ++m) {
             const real1_f prob = norm(GetAmplitude(m));
             CHECK_SHOTS(m, shotFunc);
@@ -1643,7 +1643,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const bitCapIntOcl stride = GetPreferredConcurrencyPower();
 
-    if (stride > pow2Ocl(ancillaCount)) {
+    if (stride <= pow2Ocl(ancillaCount)) {
         for (bitCapInt m = 0U; m < maxQPower; ++m) {
             const real1_f prob = norm(GetAmplitude(m));
             CHECK_SHOTS(m, shotFunc);
