@@ -710,7 +710,11 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         CreateQuantumInterface(engineTypes, ancillaCount, 0U, rand_generator, ONE_CMPLX, false, false, useHostRam,
             devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
 
-    for (bitCapIntOcl a = 0U; a < ancillaPow; ++a) {
+    std::unique_ptr<complex[]> oclAmps;
+    if (aEngine->isOpenCL()) {
+        oclAmps = std::unique_ptr<complex[]>(new complex[ancillaPow]);
+    }
+    par_for(0U, ancillaPow, [&](const bitCapIntOcl& a, const unsigned& cpu) {
         const bitCapIntOcl offset = a * aStride;
         complex amp = amps[offset];
         for (bitLenInt i = 1U; i < aStride; ++i) {
@@ -722,7 +726,15 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
                 amp = mtrx[0U] * amp + mtrx[1U] * amps[i + offset];
             }
         }
-        aEngine->SetAmplitude(a, amp);
+        if (aEngine->isOpenCL()) {
+            oclAmps[a] = amp;
+        } else {
+            aEngine->SetAmplitude(a, amp);
+        }
+    });
+    if (aEngine->isOpenCL()) {
+        aEngine->SetQuantumState(oclAmps.get());
+        oclAmps = NULL;
     }
 
     for (bitLenInt i = 0U; i < ancillaCount; ++i) {
