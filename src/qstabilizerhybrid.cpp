@@ -1974,6 +1974,14 @@ std::istream& operator>>(std::istream& is, const QStabilizerHybridPtr s)
         }
     }
 
+    const int64_t minLcv = (int64_t)qbCount;
+    for (int64_t i = shards.size() - 1U; i >= minLcv; --i) {
+        if (s->stabilizer->TrySeparate(i)) {
+            s->stabilizer->Dispose(i, 1U);
+            shards.erase(shards.begin() + i);
+        }
+    }
+
     return is;
 }
 } // namespace Qrack
