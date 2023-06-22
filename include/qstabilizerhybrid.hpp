@@ -157,6 +157,14 @@ protected:
     bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
     {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+
+        if (clone->ancillaCount) {
+            for (size_t i = clone->qubitCount; i < clone->shards.size(); ++i) {
+                shards[i] = NULL;
+                clone->stabilizer->ForceM(i, false);
+            }
+        }
+
         const bitCapInt rawSample = clone->MAll();
         bitCapInt sample = 0U;
         for (size_t i = 0U; i < qPowers.size(); ++i) {

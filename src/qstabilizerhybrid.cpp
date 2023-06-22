@@ -1403,6 +1403,13 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
     if (!IsProbBuffered()) {
+        if (ancillaCount) {
+            for (size_t i = qubitCount; i < shards.size(); ++i) {
+                shards[i] = NULL;
+                stabilizer->ForceM(i, false);
+            }
+        }
+
         const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
 
