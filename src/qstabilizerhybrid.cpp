@@ -1402,7 +1402,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (!IsBuffered()) {
+    if (!IsProbBuffered()) {
         const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
 
