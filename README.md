@@ -60,7 +60,7 @@ cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF -DENABLE_S
 
 [Emscripten (WASM)](https://qrack.net/):
 ```
-emcmake cmake -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DQBCAPPOW=12 ..
+emcmake cmake -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DQBCAPPOW=12 -DCPP_STD=14 ..
 ```
 
 Windows-based systems are more specific, but there is a bit more information about them further below.
