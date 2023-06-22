@@ -1,7 +1,5 @@
 # Qrack
 
-
-
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5812507.svg)](https://doi.org/10.5281/zenodo.5812507) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
@@ -35,6 +33,37 @@ Instantiate a `Qrack::QUnit`, specifying the desired number of qubits. (Optional
 For distributed simulation, the `Qrack::QPager` layer will segment a single register into a power-of-two count of equal length pages, running on an arbitrary number of OpenCL accelerators. The `QPager` layer also scales to arbitrarily small as well as large qubit counts, such that it can be appropriate for use on a single accelerator for small width simulations. The `QPager` layer is also compatible with Clifford set preamble circuits simulated with `QStabilizerHybrid`, as a layer over `QPager`, and `QHybrid` for CPU/GPU switching can be used as the "engine" layer under it. For Qrack in a cluster environment, we support the SnuCL and VirtualCL OpenCL virtualization layers, with OpenCL v1.1 compliant host code without required "host pointers."
 
 For more information, compile the `doxygen.config` in the root folder, and then check the `doc` folder.
+
+## PyQrack Source Build
+
+The CMake settings for default build of [PyQrack](https://github.com/unitaryfund/pyqrack) are as follows, (assuming you are in a build directory created inside the top-level directory of the repo clone):
+
+x86-64 Linux (OpenCL):
+```
+cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
+```
+
+x86-64 Linux (CUDA):
+```
+cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_OPENCL=OFF -DENABLE_CUDA=ON ..
+```
+
+x86-64 Mac (might need `-Werror`, "warning to error," disabled in CMake files):
+```
+cmake -DQBCAPPOW=12 -DCPP_STD=14 ..
+```
+
+RISC (ARM) Linux:
+```
+cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF -DENABLE_SSE3=OFF -DQBCAPPOW=12 -DCPP_STD=14 ..
+```
+
+[Emscripten (WASM)](https://qrack.net/):
+```
+emcmake cmake -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DQBCAPPOW=12 ..
+```
+
+Windows-based systems are more specific, but there is a bit more information about them further below.
 
 ## Documentation
 
