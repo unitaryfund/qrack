@@ -1946,6 +1946,11 @@ std::ostream& operator<<(std::ostream& os, const QStabilizerHybridPtr s)
 
     const complex id[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
     const std::vector<MpsShardPtr>& shards = s->shards;
+#if FPPOW > 6
+    os << std::setprecision(36);
+#elif FPPOW > 5
+    os << std::setprecision(17);
+#endif
     for (size_t i = 0U; i < shards.size(); ++i) {
         const complex* mtrx = !shards[i] ? id : shards[i]->gate;
         for (size_t j = 0U; j < 3U; ++j) {

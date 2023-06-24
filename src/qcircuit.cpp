@@ -24,6 +24,11 @@ std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
     }
 
     os << g->payloads.size() << " ";
+#if FPPOW > 6
+    os << std::setprecision(36);
+#elif FPPOW > 5
+    os << std::setprecision(17);
+#endif
     for (const auto& p : g->payloads) {
         os << p.first << " ";
         for (size_t i = 0U; i < 4U; ++i) {
@@ -34,35 +39,35 @@ std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
     return os;
 }
 
-std::istream& operator>>(std::istream& os, QCircuitGatePtr& g)
+std::istream& operator>>(std::istream& is, QCircuitGatePtr& g)
 {
     g->payloads.clear();
 
     size_t target;
-    os >> target;
+    is >> target;
     g->target = (bitLenInt)target;
 
     size_t cSize;
-    os >> cSize;
+    is >> cSize;
     for (size_t i = 0U; i < cSize; ++i) {
         size_t c;
-        os >> c;
+        is >> c;
         g->controls.insert((bitLenInt)c);
     }
 
     size_t pSize;
-    os >> pSize;
+    is >> pSize;
     for (size_t i = 0U; i < pSize; ++i) {
         bitCapInt k;
-        os >> k;
+        is >> k;
 
         g->payloads[k] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
         for (size_t j = 0U; j < 4U; ++j) {
-            os >> g->payloads[k].get()[j];
+            is >> g->payloads[k].get()[j];
         }
     }
 
-    return os;
+    return is;
 }
 
 std::ostream& operator<<(std::ostream& os, const QCircuitPtr c)
@@ -78,23 +83,23 @@ std::ostream& operator<<(std::ostream& os, const QCircuitPtr c)
     return os;
 }
 
-std::istream& operator>>(std::istream& os, QCircuitPtr& c)
+std::istream& operator>>(std::istream& is, QCircuitPtr& c)
 {
     size_t qubitCount;
-    os >> qubitCount;
+    is >> qubitCount;
     c->SetQubitCount((bitLenInt)qubitCount);
 
     size_t gSize;
-    os >> gSize;
+    is >> gSize;
     std::list<QCircuitGatePtr> gl;
     for (size_t i = 0U; i < gSize; ++i) {
         QCircuitGatePtr g = std::make_shared<QCircuitGate>();
-        os >> g;
+        is >> g;
         gl.push_back(g);
     }
     c->SetGateList(gl);
 
-    return os;
+    return is;
 }
 
 void QCircuit::AppendGate(QCircuitGatePtr nGate)
