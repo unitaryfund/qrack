@@ -104,6 +104,11 @@ std::istream& operator>>(std::istream& is, QCircuitPtr& c)
 
 void QCircuit::AppendGate(QCircuitGatePtr nGate)
 {
+    if (!isCollapsed) {
+        gates.push_back(nGate);
+        return;
+    }
+
     if (nGate->IsIdentity()) {
         return;
     }

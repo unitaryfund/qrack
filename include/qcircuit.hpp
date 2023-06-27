@@ -468,6 +468,7 @@ typedef std::shared_ptr<QCircuit> QCircuitPtr;
 
 class QCircuit {
 protected:
+    bool isCollapsed;
     bitLenInt qubitCount;
     std::list<QCircuitGatePtr> gates;
 
@@ -475,8 +476,9 @@ public:
     /**
      * Default constructor
      */
-    QCircuit()
-        : qubitCount(0)
+    QCircuit(bool collapse = true)
+        : isCollapsed(collapse)
+        , qubitCount(0)
         , gates()
     {
         // Intentionally left blank
@@ -485,8 +487,9 @@ public:
     /**
      * Manual constructor
      */
-    QCircuit(bitLenInt qbCount, std::list<QCircuitGatePtr> g)
-        : qubitCount(qbCount)
+    QCircuit(bitLenInt qbCount, std::list<QCircuitGatePtr> g, bool collapse = true)
+        : isCollapsed(collapse)
+        , qubitCount(qbCount)
         , gates(g)
     {
         // Intentionally left blank
@@ -494,7 +497,7 @@ public:
 
     QCircuitPtr Clone()
     {
-        QCircuitPtr clone = std::make_shared<QCircuit>();
+        QCircuitPtr clone = std::make_shared<QCircuit>(isCollapsed);
         clone->qubitCount = qubitCount;
         for (const QCircuitGatePtr& gate : gates) {
             clone->gates.push_back(gate->Clone());
