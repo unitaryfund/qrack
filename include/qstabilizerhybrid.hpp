@@ -137,19 +137,21 @@ protected:
         std::vector<real1_f>& rng, F fn)
     {
         for (int64_t shot = rng.size() - 1U; shot >= 0; --shot) {
-            if (rng[shot] < partProb) {
-                bitCapInt sample = 0U;
-                for (size_t i = 0U; i < qPowers.size(); ++i) {
-                    if (m & qPowers[i]) {
-                        sample |= pow2(i);
-                    }
-                }
-                fn(sample, shot + (shots - rng.size()));
+            if (rng[shot] >= partProb) {
+                break;
+            }
 
-                rng.erase(rng.begin() + shot);
-                if (!rng.size()) {
-                    break;
+            bitCapInt sample = 0U;
+            for (size_t i = 0U; i < qPowers.size(); ++i) {
+                if (m & qPowers[i]) {
+                    sample |= pow2(i);
                 }
+            }
+            fn(sample, shot);
+
+            rng.erase(rng.begin() + shot);
+            if (!rng.size()) {
+                break;
             }
         }
     }
@@ -183,6 +185,8 @@ protected:
         for (unsigned shot = 0U; shot < shots; ++shot) {
             rng.push_back(Rand());
         }
+        std::sort(rng.begin(), rng.end());
+        std::reverse(rng.begin(), rng.end());
 
         return rng;
     }

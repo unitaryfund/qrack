@@ -1353,13 +1353,13 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 }
 
 #define DISPATCH_SHOT_CLONES()                                                                                         \
-    const unsigned maxLcv = (unsigned)maxQPower;                                                                       \
+    const size_t maxLcv = (size_t)maxQPower;                                                                           \
     std::vector<QStabilizerHybridPtr> clones;                                                                          \
-    for (unsigned i = 0U; i < maxLcv; ++i) {                                                                           \
+    for (size_t i = 0U; i < maxLcv; ++i) {                                                                             \
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));                                       \
     }                                                                                                                  \
     std::vector<std::future<real1>> futures((size_t)maxQPower);                                                        \
-    for (unsigned j = 0U; j < maxLcv; ++j) {                                                                           \
+    for (size_t j = 0U; j < futures.size(); ++j) {                                                                     \
         futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });      \
     }
 
@@ -1438,7 +1438,7 @@ bitCapInt QStabilizerHybrid::MAll()
 
     if (maxQPower < numCores) {
         DISPATCH_SHOT_CLONES()
-        for (unsigned j = 0U; j < maxLcv; ++j) {
+        for (unsigned j = 0U; j < futures.size(); ++j) {
             CHECK_WIDE_SHOT(j, j)
         }
         FIX_OVERPROB_SHOT_AND_FINISH()
@@ -1564,7 +1564,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
     if (maxQPower < numCores) {
         DISPATCH_SHOT_CLONES()
-        for (unsigned j = 0U; j < maxLcv; ++j) {
+        for (size_t j = 0U; j < futures.size(); ++j) {
             const real1 prob = futures[j].get();
             CHECK_SHOTS_IF_ANY(j, shotFunc);
         }
@@ -1619,7 +1619,9 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         for (unsigned shot = 0U; shot < rng.size(); ++shot) {                                                          \
             shotsArray[shot + (shots - rng.size())] = (unsigned)d;                                                     \
         }                                                                                                              \
-    }
+    }                                                                                                                  \
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();                                       \
+    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));
 
 void QStabilizerHybrid::MultiShotMeasureMask(
     const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
@@ -1641,9 +1643,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     std::vector<real1_f> rng = GenerateShotProbs(shots);
-    const auto shotFunc = [&](bitCapInt sample, unsigned shot) {
-        shotsArray[shot + (shots - rng.size())] = (unsigned)sample;
-    };
+    const auto shotFunc = [&](bitCapInt sample, unsigned shot) { shotsArray[shot] = (unsigned)sample; };
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;
 
@@ -1665,7 +1665,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
     if (maxQPower < numCores) {
         DISPATCH_SHOT_CLONES()
-        for (unsigned j = 0U; j < maxLcv; ++j) {
+        for (size_t j = 0U; j < futures.size(); ++j) {
             const real1 prob = futures[j].get();
             CHECK_SHOTS_IF_ANY(j, shotFunc);
         }

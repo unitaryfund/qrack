@@ -3084,7 +3084,7 @@ MICROSOFT_QUANTUM_DECL void qneuron_learn_permutation(_In_ uintq nid, _In_ doubl
     }
 }
 
-MICROSOFT_QUANTUM_DECL uintq init_qcircuit()
+MICROSOFT_QUANTUM_DECL uintq init_qcircuit(_In_ bool collapse)
 {
     META_LOCK_GUARD()
     uintq cid = (uintq)circuits.size();
@@ -3097,7 +3097,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit()
         }
     }
 
-    QCircuitPtr circuit = std::make_shared<QCircuit>();
+    QCircuitPtr circuit = std::make_shared<QCircuit>(collapse);
 
     if (cid == circuits.size()) {
         circuitReservations.push_back(true);
