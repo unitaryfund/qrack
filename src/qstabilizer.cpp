@@ -256,10 +256,12 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 {
     const bitLenInt elemCount = qubitCount << 1U;
     uint8_t e = r[elemCount];
+    const BoolVector& xRow = x[elemCount];
+    const BoolVector& zRow = z[elemCount];
 
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         // Pauli operator is "Y"
-        if (x[elemCount][j] && z[elemCount][j]) {
+        if (xRow[j] && zRow[j]) {
             e = (e + 1U) & 0x3U;
         }
     }
@@ -275,7 +277,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 
     bitCapIntOcl perm = 0U;
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
-        if (x[elemCount][j]) {
+        if (xRow[j]) {
             perm |= pow2Ocl(j);
         }
     }
