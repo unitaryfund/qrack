@@ -493,16 +493,14 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
     const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
     const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
-    size_t pCount = 0U;
 
     seed(g);
 
     AmplitudeEntry entry = getBasisAmp(nrm);
     if (prms.find(entry.permutation) != prms.end()) {
         amps[entry.permutation] = entry.amplitude;
-        ++pCount;
     }
-    if (pCount < perms.size()) {
+    if (amps.size() < perms.size()) {
         for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
             const bitCapIntOcl t2 = t ^ (t + 1U);
             for (bitLenInt i = 0U; i < g; ++i) {
@@ -513,8 +511,7 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
             const AmplitudeEntry entry = getBasisAmp(nrm);
             if (prms.find(entry.permutation) != prms.end()) {
                 amps[entry.permutation] = entry.amplitude;
-                ++pCount;
-                if (pCount >= perms.size()) {
+                if (amps.size() >= perms.size()) {
                     break;
                 }
             }
