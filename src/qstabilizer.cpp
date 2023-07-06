@@ -95,12 +95,8 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
     std::fill(r.begin(), r.end(), 0U);
 
     for (bitLenInt i = 0; i < rowCount; ++i) {
-        // Dealloc, first
-        x[i] = BoolVector();
-        z[i] = BoolVector();
-
-        x[i] = BoolVector(qubitCount, false);
-        z[i] = BoolVector(qubitCount, false);
+        std::fill(x[i].begin(), x[i].end(), false);
+        std::fill(z[i].begin(), z[i].end(), false);
 
         if (i < qubitCount) {
             x[i][i] = true;
@@ -233,12 +229,8 @@ void QStabilizer::seed(const bitLenInt& g)
     // Wipe the scratch space clean
     r[elemCount] = 0U;
 
-    // Dealloc, first
-    x[elemCount] = BoolVector();
-    z[elemCount] = BoolVector();
-
-    x[elemCount] = BoolVector(qubitCount, false);
-    z[elemCount] = BoolVector(qubitCount, false);
+    std::fill(x[elemCount].begin(), x[elemCount].end(), false);
+    std::fill(z[elemCount].begin(), z[elemCount].end(), false);
 
     for (int i = elemCount - 1; i >= (int)(qubitCount + g); i--) {
         int f = r[i];
