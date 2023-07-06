@@ -681,7 +681,20 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
     }
 
     if (!ancillaCount) {
-        std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
+        std::vector<complex> amps;
+        amps.reserve(perms.size());
+        if (stateMapCache.size()) {
+            for (size_t i = 0U; i < perms.size(); ++i) {
+                const auto it = stateMapCache.find(perms[i]);
+                if (it == stateMapCache.end()) {
+                    amps.push_back(ZERO_CMPLX);
+                } else {
+                    amps.push_back(it->second);
+                }
+            }
+        } else {
+            amps = stabilizer->GetAmplitudes(perms);
+        }
         complex amp = amps[0U];
         for (size_t i = 1U; i < amps.size(); ++i) {
             const bitLenInt j = indices[i - 1U];
@@ -704,7 +717,20 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         }
     }
 
-    std::vector<complex> amps = stabilizer->GetAmplitudes(perms);
+    std::vector<complex> amps;
+    amps.reserve(perms.size());
+    if (stateMapCache.size()) {
+        for (size_t i = 0U; i < perms.size(); ++i) {
+            const auto it = stateMapCache.find(perms[i]);
+            if (it == stateMapCache.end()) {
+                amps.push_back(ZERO_CMPLX);
+            } else {
+                amps.push_back(it->second);
+            }
+        }
+    } else {
+        amps = stabilizer->GetAmplitudes(perms);
+    }
 
     QEnginePtr aEngine = std::dynamic_pointer_cast<QEngine>(
         CreateQuantumInterface(engineTypes, ancillaCount, 0U, rand_generator, ONE_CMPLX, false, false, useHostRam,
@@ -1392,7 +1418,8 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     if (!foundM) {                                                                                                     \
         m = d;                                                                                                         \
     }                                                                                                                  \
-    SetPermutation(m);
+    SetPermutation(m);                                                                                                 \
+    stateMapCache.clear();
 bitCapInt QStabilizerHybrid::MAll()
 {
     if (engine) {
@@ -1414,6 +1441,10 @@ bitCapInt QStabilizerHybrid::MAll()
         SetPermutation(toRet);
 
         return toRet;
+    }
+
+    if (stabilizer->gaussian() < maxEngineQubitCount) {
+        stateMapCache = stabilizer->GetQuantumState();
     }
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD

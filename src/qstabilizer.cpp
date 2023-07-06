@@ -308,6 +308,15 @@ void QStabilizer::setBasisState(const real1_f& nrm, QInterfacePtr eng)
     }
 }
 
+/// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
+void QStabilizer::setBasisState(const real1_f& nrm, std::map<bitCapInt, complex>& stateMap)
+{
+    const AmplitudeEntry entry = getBasisAmp(nrm);
+    if (entry.amplitude != ZERO_CMPLX) {
+        stateMap[entry.permutation] = entry.amplitude;
+    }
+}
+
 /// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
 void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
 {
@@ -409,6 +418,36 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
         }
         setBasisState(nrm, eng);
     }
+}
+
+/// Convert the state to ket notation (warning: could be huge!)
+std::map<bitCapInt, complex> QStabilizer::GetQuantumState()
+{
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
+
+    seed(g);
+
+    std::map<bitCapInt, complex> stateMap;
+
+    setBasisState(nrm, stateMap);
+    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
+        const bitCapIntOcl t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        setBasisState(nrm, stateMap);
+    }
+
+    return stateMap;
 }
 
 /// Get all probabilities corresponding to ket notation

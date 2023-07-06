@@ -178,14 +178,6 @@ protected:
     uint8_t clifford(const bitLenInt& i, const bitLenInt& k);
 
     /**
-     * Do Gaussian elimination to put the stabilizer generators in the following form:
-     * At the top, a minimal set of generators containing X's and Y's, in "quasi-upper-triangular" form.
-     * (Return value = number of such generators = log_2 of number of nonzero basis states)
-     * At the bottom, generators containing Z's only in quasi-upper-triangular form.
-     */
-    bitLenInt gaussian();
-
-    /**
      * Finds a Pauli operator P such that the basis state P|0...0> occurs with nonzero amplitude in q, and
      * writes P to the scratch space of q.  For this to work, Gaussian elimination must already have been
      * performed on q.  g is the return value from gaussian(q).
@@ -201,6 +193,9 @@ protected:
     /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
     void setBasisState(const real1_f& nrm, QInterfacePtr eng);
 
+    /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
+    void setBasisState(const real1_f& nrm, std::map<bitCapInt, complex>& stateMap);
+
     /// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
     void setBasisProb(const real1_f& nrm, real1* outputProbs);
 
@@ -210,6 +205,14 @@ protected:
         QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
 public:
+    /**
+     * Do Gaussian elimination to put the stabilizer generators in the following form:
+     * At the top, a minimal set of generators containing X's and Y's, in "quasi-upper-triangular" form.
+     * (Return value = number of such generators = log_2 of number of nonzero basis states)
+     * At the bottom, generators containing Z's only in quasi-upper-triangular form.
+     */
+    bitLenInt gaussian();
+
     void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)
     {
@@ -268,6 +271,9 @@ public:
 
     /// Convert the state to ket notation, directly into another QInterface
     void GetQuantumState(QInterfacePtr eng);
+
+    /// Convert the state to sparse ket notation
+    std::map<bitCapInt, complex> GetQuantumState();
 
     /// Get all probabilities corresponding to ket notation
     void GetProbs(real1* outputProbs);
