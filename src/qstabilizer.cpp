@@ -120,30 +120,35 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 /// Return the phase (0,1,2,3) when row i is LEFT-multiplied by row k
 uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
 {
+    const BoolVector& xi = x[i];
+    const BoolVector& zi = z[i];
+    const BoolVector& xk = x[k];
+    const BoolVector& zk = z[k];
+
     // Power to which i is raised
     bitLenInt e = 0U;
 
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         // X
-        if (x[k][j] && !z[k][j]) {
+        if (xk[j] && !zk[j]) {
             // XY=iZ
-            e += x[i][j] && z[i][j];
+            e += xi[j] && zi[j];
             // XZ=-iY
-            e -= !x[i][j] && z[i][j];
+            e -= !xi[j] && zi[j];
         }
         // Y
-        if (x[k][j] && z[k][j]) {
+        if (xk[j] && zk[j]) {
             // YZ=iX
-            e += !x[i][j] && z[i][j];
+            e += !xi[j] && zi[j];
             // YX=-iZ
-            e -= x[i][j] && !z[i][j];
+            e -= xi[j] && !zi[j];
         }
         // Z
-        if (!x[k][j] && z[k][j]) {
+        if (!xk[j] && zk[j]) {
             // ZX=iY
-            e += x[i][j] && !z[i][j];
+            e += xi[j] && !zi[j];
             // ZY=-iX
-            e -= x[i][j] && z[i][j];
+            e -= xi[j] && zi[j];
         }
     }
 
