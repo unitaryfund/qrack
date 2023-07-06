@@ -42,6 +42,7 @@ protected:
     bitLenInt ancillaCount;
     bitLenInt maxEngineQubitCount;
     bitLenInt maxAncillaCount;
+    bitLenInt maxStateMapCacheQubitCount;
     real1_f separabilityThreshold;
     int64_t devID;
     complex phaseFactor;

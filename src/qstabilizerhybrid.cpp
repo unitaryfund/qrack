@@ -86,6 +86,8 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     maxAncillaCount = maxEngineQubitCount;
 #endif
 
+    maxStateMapCacheQubitCount = maxEngineQubitCount - (log2(pow2(QBCAPPOW) / pow2(FPPOW)) + 1);
+
     stabilizer = MakeStabilizer(initState);
 }
 
@@ -1443,7 +1445,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (stabilizer->gaussian() < maxEngineQubitCount) {
+    if (stabilizer->gaussian() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
@@ -1533,7 +1535,8 @@ void QStabilizerHybrid::UniformlyControlledSingleBit(
 #define FILL_REMAINING_MAP_SHOTS()                                                                                     \
     if (rng.size()) {                                                                                                  \
         results[d] += shots - rng.size();                                                                              \
-    }
+    }                                                                                                                  \
+    stateMapCache.clear();
 
 #define ADD_SHOTS_PROB(m)                                                                                              \
     if (!rng.size()) {                                                                                                 \
@@ -1576,6 +1579,10 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     const auto shotFunc = [&](bitCapInt sample, unsigned unused) { ++(results[sample]); };
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;
+
+    if (stabilizer->gaussian() < maxStateMapCacheQubitCount) {
+        stateMapCache = stabilizer->GetQuantumState();
+    }
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const bitCapIntOcl stride = GetPreferredConcurrencyPower();
@@ -1652,7 +1659,8 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         }                                                                                                              \
     }                                                                                                                  \
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();                                       \
-    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));
+    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));                                    \
+    stateMapCache.clear();
 
 void QStabilizerHybrid::MultiShotMeasureMask(
     const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
@@ -1677,6 +1685,10 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     const auto shotFunc = [&](bitCapInt sample, unsigned shot) { shotsArray[shot] = (unsigned)sample; };
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;
+
+    if (stabilizer->gaussian() < maxStateMapCacheQubitCount) {
+        stateMapCache = stabilizer->GetQuantumState();
+    }
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const bitCapIntOcl stride = GetPreferredConcurrencyPower();
