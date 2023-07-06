@@ -175,12 +175,10 @@ bitLenInt QStabilizer::gaussian()
 
         // Find a generator containing X in jth column
         for (k = i; k < maxLcv; ++k) {
-            if (x[k][j]) {
-                break;
+            if (!x[k][j]) {
+                continue;
             }
-        }
 
-        if (k < maxLcv) {
             rowswap(i, k);
             rowswap(i - n, k - n);
             for (bitLenInt k2 = i + 1U; k2 < maxLcv; ++k2) {
@@ -191,6 +189,8 @@ bitLenInt QStabilizer::gaussian()
                 }
             }
             ++i;
+
+            break;
         }
     }
 
@@ -200,12 +200,10 @@ bitLenInt QStabilizer::gaussian()
 
         // Find a generator containing Z in jth column
         for (k = i; k < maxLcv; ++k) {
-            if (z[k][j]) {
-                break;
+            if (!z[k][j]) {
+                continue;
             }
-        }
 
-        if (k < maxLcv) {
             rowswap(i, k);
             rowswap(i - n, k - n);
             for (bitLenInt k2 = i + 1U; k2 < maxLcv; ++k2) {
@@ -215,6 +213,8 @@ bitLenInt QStabilizer::gaussian()
                 }
             }
             ++i;
+
+            break;
         }
     }
 
