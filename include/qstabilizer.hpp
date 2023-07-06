@@ -129,13 +129,6 @@ public:
     }
 
 protected:
-    void resetscratch()
-    {
-        const size_t i = ((size_t)qubitCount) << 1U;
-        r[i] = 0U;
-        x[i] = BoolVector(qubitCount, false);
-        z[i] = BoolVector(qubitCount, false);
-    }
     /// Sets row i equal to row k
     void rowcopy(const bitLenInt& i, const bitLenInt& k)
     {
@@ -161,12 +154,8 @@ protected:
     /// Sets row i equal to the bth observable (X_1,...X_n,Z_1,...,Z_n)
     void rowset(const bitLenInt& i, bitLenInt b)
     {
-        // Dealloc, first
-        x[i] = BoolVector();
-        z[i] = BoolVector();
-
-        x[i] = BoolVector(qubitCount, false);
-        z[i] = BoolVector(qubitCount, false);
+        std::fill(x[i].begin(), x[i].end(), false);
+        std::fill(z[i].begin(), z[i].end(), false);
         r[i] = 0;
 
         if (b < qubitCount) {
