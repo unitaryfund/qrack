@@ -86,7 +86,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     maxAncillaCount = maxEngineQubitCount;
 #endif
 
-    maxStateMapCacheQubitCount = maxEngineQubitCount - (log2(pow2(QBCAPPOW) / pow2(FPPOW)) + 1);
+    maxStateMapCacheQubitCount = maxEngineQubitCount - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
 
     stabilizer = MakeStabilizer(initState);
 }
