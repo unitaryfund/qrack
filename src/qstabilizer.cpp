@@ -294,27 +294,21 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    if (entry.amplitude != ZERO_CMPLX) {
-        stateVec[entry.permutation] = entry.amplitude;
-    }
+    stateVec[entry.permutation] = entry.amplitude;
 }
 
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
 void QStabilizer::setBasisState(const real1_f& nrm, QInterfacePtr eng)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    if (entry.amplitude != ZERO_CMPLX) {
-        eng->SetAmplitude(entry.permutation, entry.amplitude);
-    }
+    eng->SetAmplitude(entry.permutation, entry.amplitude);
 }
 
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
 void QStabilizer::setBasisState(const real1_f& nrm, std::map<bitCapInt, complex>& stateMap)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    if (entry.amplitude != ZERO_CMPLX) {
-        stateMap[entry.permutation] = entry.amplitude;
-    }
+    stateMap[entry.permutation] = entry.amplitude;
 }
 
 /// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
