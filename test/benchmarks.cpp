@@ -1414,10 +1414,6 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
 
 TEST_CASE("test_stabilizer_rz", "[supreme]")
 {
-    // Try with environment variable
-    // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
-    // for clamping of single bit states to Pauli basis axes.
-
     std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
     if (benchmarkMaxMagic >= 0) {
         std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
@@ -1523,10 +1519,6 @@ TEST_CASE("test_stabilizer_rz", "[supreme]")
 
 TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
 {
-    // Try with environment variable
-    // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
-    // for clamping of single bit states to Pauli basis axes.
-
     std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
     if (benchmarkMaxMagic >= 0) {
         std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
