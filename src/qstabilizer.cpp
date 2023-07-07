@@ -280,7 +280,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     }
     amp *= phaseOffset;
 
-    bitCapIntOcl perm = 0U;
+    bitCapInt perm = 0U;
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         if (xRow[j]) {
             perm |= pow2Ocl(j);
@@ -294,7 +294,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    stateVec[entry.permutation] = entry.amplitude;
+    stateVec[(size_t)entry.permutation] = entry.amplitude;
 }
 
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
@@ -315,7 +315,7 @@ void QStabilizer::setBasisState(const real1_f& nrm, std::map<bitCapInt, complex>
 void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    outputProbs[entry.permutation] = norm(entry.amplitude);
+    outputProbs[(size_t)entry.permutation] = norm(entry.amplitude);
 }
 
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
@@ -339,8 +339,8 @@ real1_f QStabilizer::FirstNonzeroPhase()
     if (entry0.amplitude != ZERO_CMPLX) {
         return (real1_f)std::arg(entry0.amplitude);
     }
-    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        const bitCapIntOcl t2 = t ^ (t + 1U);
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -373,8 +373,8 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
     setBasisState(nrm, stateVec);
-    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        const bitCapIntOcl t2 = t ^ (t + 1U);
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -403,8 +403,8 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     eng->SetAmplitude(0U, ZERO_CMPLX);
 
     setBasisState(nrm, eng);
-    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        const bitCapIntOcl t2 = t ^ (t + 1U);
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -431,8 +431,8 @@ std::map<bitCapInt, complex> QStabilizer::GetQuantumState()
     std::map<bitCapInt, complex> stateMap;
 
     setBasisState(nrm, stateMap);
-    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        const bitCapIntOcl t2 = t ^ (t + 1U);
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -462,8 +462,8 @@ void QStabilizer::GetProbs(real1* outputProbs)
     std::fill(outputProbs, outputProbs + pow2Ocl(qubitCount), ZERO_R1);
 
     setBasisProb(nrm, outputProbs);
-    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        const bitCapIntOcl t2 = t ^ (t + 1U);
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -491,8 +491,8 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
     if (entry.permutation == perm) {
         return entry.amplitude;
     }
-    for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        const bitCapIntOcl t2 = t ^ (t + 1U);
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -529,8 +529,8 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
         amps[entry.permutation] = entry.amplitude;
     }
     if (amps.size() < perms.size()) {
-        for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-            const bitCapIntOcl t2 = t ^ (t + 1U);
+        for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+            const bitCapInt t2 = t ^ (t + 1U);
             for (bitLenInt i = 0U; i < g; ++i) {
                 if ((t2 >> i) & 1U) {
                     rowmult(elemCount, qubitCount + i);
