@@ -37,9 +37,15 @@
 #define CACHED_X(shard) ((shard.pauliBasis == PauliX) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_X_OR_Y(shard) ((shard.pauliBasis != PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_Z(shard) ((shard.pauliBasis == PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_ZERO(q) (CACHED_Z(shards[q]) && (ProbBase(q) <= FP_NORM_EPSILON))
-#define CACHED_ONE(q) (CACHED_Z(shards[q]) && ((ONE_R1_F - ProbBase(q)) <= FP_NORM_EPSILON))
-#define CACHED_PLUS(q) (CACHED_X(shards[q]) && (ProbBase(q) <= FP_NORM_EPSILON))
+#define CACHED_ZERO(q)                                                                                                 \
+    (CACHED_Z(shards[q]) && !(shards[q].unit && shards[q].unit->isClifford() && shards[q].unit->GetTInjection()) &&    \
+        (ProbBase(q) <= FP_NORM_EPSILON))
+#define CACHED_ONE(q)                                                                                                  \
+    (CACHED_Z(shards[q]) && !(shards[q].unit && shards[q].unit->isClifford() && shards[q].unit->GetTInjection()) &&    \
+        ((ONE_R1_F - ProbBase(q)) <= FP_NORM_EPSILON))
+#define CACHED_PLUS(q)                                                                                                 \
+    (CACHED_X(shards[q]) && !(shards[q].unit && shards[q].unit->isClifford() && shards[q].unit->GetTInjection()) &&    \
+        (ProbBase(q) <= FP_NORM_EPSILON))
 /* "UNSAFE" variants here do not check whether the bit has cached 2-qubit gates.*/
 #define UNSAFE_CACHED_ZERO_OR_ONE(shard)                                                                               \
     (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
@@ -2255,7 +2261,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
-    if (shard.unit && shard.unit->isClifford()) {
+    if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
         RevertBasis1Qb(target);
     }
 
@@ -2297,7 +2303,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
-    if (shard.unit && shard.unit->isClifford()) {
+    if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
         RevertBasis1Qb(target);
     }
 
@@ -2613,6 +2619,10 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
             continue;
         }
 
+        if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
+            continue;
+        }
+
         ProbBase(controls[i]);
 
         // This might determine that we can just skip out of the whole gate, in which case we return.
@@ -2638,6 +2648,11 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         if ((shard.pauliBasis == PauliZ) || shard.IsInvertTarget()) {
             continue;
         }
+
+        if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
+            continue;
+        }
+
         RevertBasis1Qb(controls[i]);
 
         ProbBase(controls[i]);
@@ -2662,6 +2677,10 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
     bitCapInt outPerm = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
         QEngineShard& shard = shards[controls[i]];
+
+        if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
+            continue;
+        }
 
         ToPermBasisProb(controls[i]);
 
