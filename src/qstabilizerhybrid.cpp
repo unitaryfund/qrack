@@ -1284,9 +1284,71 @@ void QStabilizerHybrid::MACInvert(
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
     if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->Prob(qubit);
+        if (qubitCount <= maxEngineQubitCount) {
+            QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+            clone->SwitchToEngine();
+            return clone->Prob(qubit);
+        }
+
+        const bitCapInt qPower = pow2(qubit);
+        const size_t maxLcv = (size_t)(maxQPower >> 1U);
+        real1_f partProb = ZERO_R1_F;
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        const unsigned numCores = GetConcurrencyLevel();
+        if (maxLcv < numCores) {
+            std::vector<QStabilizerHybridPtr> clones;
+            for (size_t i = 0U; i < maxLcv; ++i) {
+                clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+            }
+            std::vector<std::future<real1>> futures(maxLcv);
+            for (size_t j = 0U; j < futures.size(); ++j) {
+                futures[j] = std::async(std::launch::async, [j, qPower, &clones]() {
+                    bitCapInt k = j & (qPower - 1U);
+                    k |= (j ^ k) << ONE_BCI;
+                    return norm(clones[j]->GetAmplitude(k | qPower));
+                });
+            }
+            for (unsigned j = 0U; j < futures.size(); ++j) {
+                partProb += futures[j].get();
+            }
+
+            return partProb;
+        }
+
+        std::vector<QStabilizerHybridPtr> clones;
+        for (unsigned i = 0U; i < numCores; ++i) {
+            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+        }
+        bitCapInt i = 0U;
+        while (i < maxLcv) {
+            const bitCapInt p = i;
+            std::vector<std::future<real1>> futures;
+            for (unsigned j = 0U; j < numCores; ++j) {
+                futures.push_back(std::async(std::launch::async, [j, p, qPower, &clones]() {
+                    bitCapInt k = (j + p) & (qPower - 1U);
+                    k |= ((j + p) ^ k) << ONE_BCI;
+                    return norm(clones[j]->GetAmplitude(k | qPower));
+                }));
+                ++i;
+                if (i >= maxLcv) {
+                    break;
+                }
+            }
+            for (unsigned j = 0U; j < futures.size(); ++j) {
+                partProb += futures[j].get();
+            }
+        }
+
+        return partProb;
+#else
+        for (bitCapInt i = 0U; i < maxLcv; ++i) {
+            bitCapInt j = i & (qPower - 1U);
+            j |= (i ^ j) << ONE_BCI;
+            partProb += norm(GetAmplitude(j | qPower));
+        }
+
+        return partProb;
+#endif
     }
 
     if (engine) {
@@ -1374,7 +1436,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     for (size_t i = 0U; i < maxLcv; ++i) {                                                                             \
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));                                       \
     }                                                                                                                  \
-    std::vector<std::future<real1>> futures((size_t)maxQPower);                                                        \
+    std::vector<std::future<real1>> futures(maxLcv);                                                                   \
     for (size_t j = 0U; j < futures.size(); ++j) {                                                                     \
         futures[j] = std::async(std::launch::async, [j, &clones]() { return norm(clones[j]->GetAmplitude(j)); });      \
     }
