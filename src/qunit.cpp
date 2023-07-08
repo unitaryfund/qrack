@@ -2619,10 +2619,6 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
             continue;
         }
 
-        if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
-            continue;
-        }
-
         ProbBase(controls[i]);
 
         // This might determine that we can just skip out of the whole gate, in which case we return.
@@ -2646,10 +2642,6 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         QEngineShard& shard = shards[controls[i]];
 
         if ((shard.pauliBasis == PauliZ) || shard.IsInvertTarget()) {
-            continue;
-        }
-
-        if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
             continue;
         }
 
@@ -2677,10 +2669,6 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
     bitCapInt outPerm = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
         QEngineShard& shard = shards[controls[i]];
-
-        if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
-            continue;
-        }
 
         ToPermBasisProb(controls[i]);
 
