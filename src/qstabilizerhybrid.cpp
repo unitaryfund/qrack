@@ -738,11 +738,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         CreateQuantumInterface(engineTypes, ancillaCount, 0U, rand_generator, ONE_CMPLX, false, false, useHostRam,
             devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
 
-    std::unique_ptr<complex[]> oclAmps;
-    if (aEngine->isOpenCL()) {
-        oclAmps = std::unique_ptr<complex[]>(new complex[ancillaPow]);
-    }
-    par_for(0U, ancillaPow, [&](const bitCapIntOcl& a, const unsigned& cpu) {
+    for (bitCapIntOcl a = 0U; a < ancillaPow; ++a) {
         const bitCapIntOcl offset = a * aStride;
         complex amp = amps[offset];
         for (bitLenInt i = 1U; i < aStride; ++i) {
@@ -754,15 +750,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
                 amp = mtrx[0U] * amp + mtrx[1U] * amps[i + offset];
             }
         }
-        if (aEngine->isOpenCL()) {
-            oclAmps[a] = amp;
-        } else {
-            aEngine->SetAmplitude(a, amp);
-        }
-    });
-    if (aEngine->isOpenCL()) {
-        aEngine->SetQuantumState(oclAmps.get());
-        oclAmps = NULL;
+        aEngine->SetAmplitude(a, amp);
     }
 
     for (bitLenInt i = 0U; i < ancillaCount; ++i) {
@@ -1450,22 +1438,11 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    const bitCapIntOcl stride = GetPreferredConcurrencyPower();
-
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
     bitCapInt d = 0U;
     bitCapInt m;
     bool foundM = false;
-
-    if (stride <= pow2Ocl(ancillaCount)) {
-        for (m = 0U; m < maxQPower; ++m) {
-            CHECK_NARROW_SHOT()
-        }
-        FIX_OVERPROB_SHOT_AND_FINISH()
-
-        return m;
-    }
 
     const unsigned numCores = GetConcurrencyLevel();
 
@@ -1585,19 +1562,6 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     }
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    const bitCapIntOcl stride = GetPreferredConcurrencyPower();
-
-    if (stride <= pow2Ocl(ancillaCount)) {
-        for (bitCapInt m = 0U; m < maxQPower; ++m) {
-            const real1_f prob = norm(GetAmplitude(m));
-            CHECK_SHOTS(m, shotFunc);
-        }
-
-        FILL_REMAINING_MAP_SHOTS()
-
-        return results;
-    }
-
     const unsigned numCores = GetConcurrencyLevel();
 
     if (maxQPower < numCores) {
@@ -1691,19 +1655,6 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    const bitCapIntOcl stride = GetPreferredConcurrencyPower();
-
-    if (stride <= pow2Ocl(ancillaCount)) {
-        for (bitCapInt m = 0U; m < maxQPower; ++m) {
-            const real1_f prob = norm(GetAmplitude(m));
-            CHECK_SHOTS(m, shotFunc);
-        }
-
-        FILL_REMAINING_ARRAY_SHOTS()
-
-        return;
-    }
-
     const unsigned numCores = GetConcurrencyLevel();
 
     if (maxQPower < numCores) {
