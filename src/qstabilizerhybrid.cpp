@@ -1290,6 +1290,10 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             return clone->Prob(qubit);
         }
 
+        if (stabilizer->gaussian() < maxStateMapCacheQubitCount) {
+            stateMapCache = stabilizer->GetQuantumState();
+        }
+
         const bitCapInt qPower = pow2(qubit);
         const size_t maxLcv = (size_t)(maxQPower >> 1U);
         real1_f partProb = ZERO_R1_F;
@@ -1311,6 +1315,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             for (unsigned j = 0U; j < futures.size(); ++j) {
                 partProb += futures[j].get();
             }
+            stateMapCache.clear();
 
             return partProb;
         }
@@ -1338,6 +1343,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
                 partProb += futures[j].get();
             }
         }
+        stateMapCache.clear();
 
         return partProb;
 #else
@@ -1346,6 +1352,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             j |= (i ^ j) << ONE_BCI;
             partProb += norm(GetAmplitude(j | qPower));
         }
+        stateMapCache.clear();
 
         return partProb;
 #endif
