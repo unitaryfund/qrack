@@ -677,14 +677,13 @@ std::ostream& operator<<(std::ostream& os, const QUnitCliffordPtr s)
         CliffordShard& shard = s->shards[i];
         indexMap[shard.unit][i] = shard.mapped;
     }
-    os << std::endl;
     os << indexMap.size() << std::endl;
     for (const auto& m : indexMap) {
         os << m.second.size() << std::endl;
         for (const auto& p : m.second) {
-            os << p.first << " " << p.second << std::endl;
+            os << (size_t)p.first << " " << (size_t)p.second << std::endl;
         }
-        os << m.first << std::endl;
+        os << m.first;
     }
 
     return os;
@@ -693,12 +692,11 @@ std::istream& operator>>(std::istream& is, const QUnitCliffordPtr s)
 {
     size_t n;
     is >> n;
-    s->qubitCount = n;
+    s->SetQubitCount(n);
+    s->SetPermutation(0);
 
     size_t sCount;
     is >> sCount;
-
-    std::map<QStabilizerPtr, std::map<bitLenInt, bitLenInt>> indexMap;
     for (size_t i = 0U; i < sCount; ++i) {
         size_t mapSize;
         is >> mapSize;
@@ -709,13 +707,11 @@ std::istream& operator>>(std::istream& is, const QUnitCliffordPtr s)
             is >> m;
             indices[t] = m;
         }
-        QStabilizerPtr sp;
+        QStabilizerPtr sp = std::make_shared<QStabilizer>(0U, 0U, s->rand_generator, CMPLX_DEFAULT_ARG, false, s->randGlobalPhase, false, -1, s->useRDRAND);
         is >> sp;
 
         for (const auto& index : indices) {
-            CliffordShard& shard = s->shards[index.first];
-            shard.mapped = index.second;
-            shard.unit = sp;
+            s->shards[index.first] = CliffordShard(index.second, sp);
         }
     }
 

@@ -1872,7 +1872,7 @@ std::istream& operator>>(std::istream& is, const QStabilizerPtr s)
 {
     size_t n;
     is >> n;
-    s->qubitCount = n;
+    s->SetQubitCount(n);
 
     s->r = std::vector<uint8_t>((n << 1U) + 1U);
     s->x = std::vector<std::vector<bool>>((n << 1U) + 1U, std::vector<bool>(n, false));

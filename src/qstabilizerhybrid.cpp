@@ -1940,7 +1940,7 @@ std::istream& operator>>(std::istream& is, const QStabilizerHybridPtr s)
 
     size_t qbCount;
     is >> qbCount;
-    s->qubitCount = qbCount;
+    s->SetQubitCount(qbCount);
 
     is >> s->stabilizer;
 
