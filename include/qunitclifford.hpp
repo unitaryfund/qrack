@@ -622,7 +622,7 @@ public:
                 "QUnitClifford::FSim target qubit index parameter must be within allocated qubit bounds!");
         }
 
-        const complex mtrx[4]{ theta, phi, ZERO_CMPLX, ZERO_CMPLX };
+        const complex mtrx[4]{ (real1)theta, (real1)phi, ZERO_CMPLX, ZERO_CMPLX };
         CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
             unit->FSim((real1_f)std::real(mtrx[0U]), (real1_f)std::real(mtrx[1U]), c, t);
         });
