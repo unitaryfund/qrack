@@ -2051,11 +2051,20 @@ void QUnit::H(bitLenInt target)
         throw std::invalid_argument("QUnit::H qubit index parameter must be within allocated qubit bounds!");
     }
 
-    RevertBasisY(target);
-    CommuteH(target);
+    if (useTGadget && shards[target].isClifford()) {
+        RevertBasis1Qb(target);
+        RevertBasis2Qb(target);
+    } else {
+        RevertBasisY(target);
+        CommuteH(target);
+    }
 
     QEngineShard& shard = shards[target];
     shard.pauliBasis = (shard.pauliBasis == PauliZ) ? PauliX : PauliZ;
+
+    if (useTGadget && shards[target].isClifford()) {
+        RevertBasis1Qb(target);
+    }
 }
 
 void QUnit::S(bitLenInt target)
@@ -2066,11 +2075,17 @@ void QUnit::S(bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
-    shard.CommutePhase(ONE_CMPLX, I_CMPLX);
+    if (useTGadget && shards[target].isClifford()) {
+        RevertBasis1Qb(target);
+        RevertBasis2Qb(target);
+    } else {
+        shard.CommutePhase(ONE_CMPLX, I_CMPLX);
+    }
 
     if (shard.pauliBasis == PauliY) {
         shard.pauliBasis = PauliX;
         XBase(target);
+
         return;
     }
 
@@ -2094,7 +2109,12 @@ void QUnit::IS(bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
-    shard.CommutePhase(ONE_CMPLX, -I_CMPLX);
+    if (useTGadget && shards[target].isClifford()) {
+        RevertBasis1Qb(target);
+        RevertBasis2Qb(target);
+    } else {
+        shard.CommutePhase(ONE_CMPLX, -I_CMPLX);
+    }
 
     if (shard.pauliBasis == PauliY) {
         shard.pauliBasis = PauliX;
@@ -2258,8 +2278,9 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
-    if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
+    if (useTGadget && shards[target].isClifford()) {
         RevertBasis1Qb(target);
+        RevertBasis2Qb(target);
     }
 
     shard.CommutePhase(topLeft, bottomRight);
@@ -2300,8 +2321,9 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
-    if (shard.unit && shard.unit->isClifford() && shard.unit->GetTInjection()) {
+    if (useTGadget && shards[target].isClifford()) {
         RevertBasis1Qb(target);
+        RevertBasis2Qb(target);
     }
 
     shard.FlipPhaseAnti();
