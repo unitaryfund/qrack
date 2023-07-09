@@ -91,9 +91,9 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     stabilizer = MakeStabilizer(initState);
 }
 
-QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
+QUnitCliffordPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
 {
-    return std::make_shared<QStabilizer>(qubitCount + ancillaCount, perm, rand_generator, CMPLX_DEFAULT_ARG, false,
+    return std::make_shared<QUnitClifford>(qubitCount + ancillaCount, perm, rand_generator, CMPLX_DEFAULT_ARG, false,
         randGlobalPhase, false, -1, useRDRAND);
 }
 QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
@@ -187,7 +187,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     const MpsShardPtr shard = shards[target];
     shards[target] = NULL;
 
-    QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
+    QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
         1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 
     // Form potentially entangled representation, with this.
@@ -211,7 +211,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
 
     // For the benefit of hardware, we entangle an auxiliary channel with an identity gate.
     // Post selection is then unnecessary, expontially reducing the hardware shot count.
-    ancilla = std::make_shared<QStabilizer>(
+    ancilla = std::make_shared<QUnitClifford>(
         1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 
     // Form potentially entangled representation, with this.
@@ -363,7 +363,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
 
     // Otherwise, stabilizer
     c->engine = NULL;
-    c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
+    c->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
     for (size_t i = 0U; i < shards.size(); ++i) {
@@ -978,7 +978,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         }
 
         if (shard) {
-            QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
+            QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
                 1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 
             // Form potentially entangled representation, with this.
@@ -994,7 +994,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             if (isHardwareEncoded) {
                 // For the benefit of hardware, we entangle an auxiliary channel with an identity gate.
                 // Post selection is then unnecessary, expontially reducing the hardware shot count.
-                ancilla = std::make_shared<QStabilizer>(
+                ancilla = std::make_shared<QUnitClifford>(
                     1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 
                 // Form potentially entangled representation, with this.
@@ -1290,7 +1290,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             return clone->Prob(qubit);
         }
 
-        if (stabilizer->gaussian() < maxStateMapCacheQubitCount) {
+        if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
             stateMapCache = stabilizer->GetQuantumState();
         }
 
@@ -1467,7 +1467,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (stabilizer->gaussian() < maxStateMapCacheQubitCount) {
+    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
@@ -1581,7 +1581,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;
 
-    if (stabilizer->gaussian() < maxStateMapCacheQubitCount) {
+    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
@@ -1662,7 +1662,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;
 
-    if (stabilizer->gaussian() < maxStateMapCacheQubitCount) {
+    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
@@ -1790,7 +1790,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
 
     if (!stabilizer && toCompare->stabilizer) {
         SetPermutation(0U);
-        stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
+        stabilizer = std::dynamic_pointer_cast<QUnitClifford>(toCompare->stabilizer->Clone());
         shards.resize(toCompare->shards.size());
         ancillaCount = toCompare->ancillaCount;
         for (size_t i = 0U; i < shards.size(); ++i) {
@@ -1798,7 +1798,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         }
     } else if (stabilizer && !toCompare->stabilizer) {
         toCompare->SetPermutation(0U);
-        toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
+        toCompare->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
         toCompare->shards.resize(shards.size());
         toCompare->ancillaCount = ancillaCount;
         for (size_t i = 0U; i < shards.size(); ++i) {
@@ -1878,7 +1878,7 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
     }
 
     if (stabilizer) {
-        return stabilizer->CanDecomposeDispose(qubit, 1U);
+        return stabilizer->TrySeparate(qubit);
     }
 
     return engine->TrySeparate(qubit);
@@ -1893,15 +1893,7 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return engine->TrySeparate(qubit1, qubit2);
     }
 
-    if (qubit2 < qubit1) {
-        std::swap(qubit1, qubit2);
-    }
-
-    stabilizer->Swap(qubit1 + 1U, qubit2);
-
-    const bool toRet = stabilizer->CanDecomposeDispose(qubit1, 2U);
-
-    stabilizer->Swap(qubit1 + 1U, qubit2);
+    const bool toRet = stabilizer->TrySeparate(qubit1, qubit2);
 
     return toRet;
 }
@@ -1911,21 +1903,7 @@ bool QStabilizerHybrid::TrySeparate(const std::vector<bitLenInt>& qubits, real1_
         return engine->TrySeparate(qubits, error_tol);
     }
 
-    std::vector<bitLenInt> q(qubits.size());
-    std::copy(qubits.begin(), qubits.end(), q.begin());
-    std::sort(q.begin(), q.end());
-
-    for (size_t i = 1U; i < q.size(); ++i) {
-        Swap(q[0U] + i, q[i]);
-    }
-
-    const bool toRet = stabilizer->CanDecomposeDispose(q[0U], q.size());
-
-    for (size_t i = 1U; i < q.size(); ++i) {
-        Swap(q[0U] + i, q[i]);
-    }
-
-    return toRet;
+    return stabilizer->TrySeparate(qubits, error_tol);
 }
 
 std::ostream& operator<<(std::ostream& os, const QStabilizerHybridPtr s)

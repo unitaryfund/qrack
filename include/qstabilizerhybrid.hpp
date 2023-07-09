@@ -13,7 +13,7 @@
 
 #include "mpsshard.hpp"
 #include "qengine.hpp"
-#include "qstabilizer.hpp"
+#include "qunitclifford.hpp"
 
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
@@ -47,14 +47,14 @@ protected:
     int64_t devID;
     complex phaseFactor;
     QInterfacePtr engine;
-    QStabilizerPtr stabilizer;
+    QUnitCliffordPtr stabilizer;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engineTypes;
     std::vector<QInterfaceEngine> cloneEngineTypes;
     std::vector<MpsShardPtr> shards;
     std::map<bitCapInt, complex> stateMapCache;
 
-    QStabilizerPtr MakeStabilizer(bitCapInt perm = 0U);
+    QUnitCliffordPtr MakeStabilizer(bitCapInt perm = 0U);
     QInterfacePtr MakeEngine(bitCapInt perm = 0U);
     QInterfacePtr MakeEngine(bitCapInt perm, bitLenInt qbCount);
 

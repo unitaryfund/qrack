@@ -51,6 +51,8 @@ QInterfacePtr CreateQuantumInterface(
         return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_STABILIZER:
         return std::make_shared<QStabilizer>(args...);
+    case QINTERFACE_QUNIT_CLIFFORD:
+        return std::make_shared<QUnitClifford>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(engines, args...);
@@ -91,6 +93,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
         return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_STABILIZER:
         return std::make_shared<QStabilizer>(args...);
+    case QINTERFACE_QUNIT_CLIFFORD:
+        return std::make_shared<QUnitClifford>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(engines, args...);
@@ -127,6 +131,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_STABILIZER:
         return std::make_shared<QStabilizer>(args...);
+    case QINTERFACE_QUNIT_CLIFFORD:
+        return std::make_shared<QUnitClifford>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(args...);
@@ -166,6 +172,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
         return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_STABILIZER:
         return std::make_shared<QStabilizer>(args...);
+    case QINTERFACE_QUNIT_CLIFFORD:
+        return std::make_shared<QUnitClifford>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         if (engines.size()) {

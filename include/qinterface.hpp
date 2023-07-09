@@ -105,6 +105,11 @@ enum QInterfaceEngine {
      */
     QINTERFACE_QUNIT_MULTI,
 
+    /**
+     * Clifford-specialized QUnit
+     */
+    QINTERFACE_QUNIT_CLIFFORD,
+
 #if ENABLE_OPENCL
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_QPAGER,
 

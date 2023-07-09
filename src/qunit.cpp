@@ -251,12 +251,12 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         if (perms.find(shard.unit) == perms.end()) {
             perms[shard.unit] = 0U;
         }
-        if ((perm >> (bitCapIntOcl)i) & ONE_BCI) {
+        if ((perm >> i) & 1U) {
             perms[shard.unit] |= pow2(shard.mapped);
         }
     }
 
-    for (auto&& qi : perms) {
+    for (const auto& qi : perms) {
         result *= qi.first->GetAmplitude(qi.second);
         if (IS_AMP_0(result)) {
             break;
@@ -1525,9 +1525,6 @@ bitCapInt QUnit::MAll()
     }
 
     bitCapInt toRet = 0U;
-
-    std::vector<QInterfacePtr> units;
-    std::map<QInterfacePtr, bitCapInt> partResult;
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         QInterfacePtr toFind = shards[i].unit;
