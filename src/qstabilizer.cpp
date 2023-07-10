@@ -1848,6 +1848,7 @@ bool QStabilizer::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f igno
 
 std::ostream& operator<<(std::ostream& os, const QStabilizerPtr s)
 {
+    s->gaussian();
     const size_t qubitCount = (size_t)s->GetQubitCount();
     os << qubitCount << std::endl;
 
