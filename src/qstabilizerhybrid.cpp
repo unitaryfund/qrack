@@ -10,6 +10,7 @@
 
 #include "qfactory.hpp"
 
+#include <iomanip>
 #include <thread>
 
 #define IS_REAL_1(r) (abs(ONE_CMPLX - r) <= FP_NORM_EPSILON)

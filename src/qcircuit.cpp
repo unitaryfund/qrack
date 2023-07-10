@@ -12,6 +12,8 @@
 
 #include "qcircuit.hpp"
 
+#include <iomanip>
+
 namespace Qrack {
 
 std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
