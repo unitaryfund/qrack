@@ -2051,7 +2051,11 @@ void QUnit::H(bitLenInt target)
         throw std::invalid_argument("QUnit::H qubit index parameter must be within allocated qubit bounds!");
     }
 
-    if (useTGadget && shards[target].isClifford()) {
+    QEngineShard& shard = shards[target];
+    const bool isClifford =
+        useTGadget && (engines[0U] == QINTERFACE_STABILIZER_HYBRID) && (!shard.unit || shard.unit->isClifford());
+
+    if (isClifford) {
         RevertBasis1Qb(target);
         RevertBasis2Qb(target);
     } else {
@@ -2059,10 +2063,9 @@ void QUnit::H(bitLenInt target)
         CommuteH(target);
     }
 
-    QEngineShard& shard = shards[target];
     shard.pauliBasis = (shard.pauliBasis == PauliZ) ? PauliX : PauliZ;
 
-    if (useTGadget && shards[target].isClifford()) {
+    if (isClifford) {
         RevertBasis1Qb(target);
     }
 }
@@ -2074,8 +2077,10 @@ void QUnit::S(bitLenInt target)
     }
 
     QEngineShard& shard = shards[target];
+    const bool isClifford =
+        useTGadget && (engines[0U] == QINTERFACE_STABILIZER_HYBRID) && (!shard.unit || shard.unit->isClifford());
 
-    if (useTGadget && shards[target].isClifford()) {
+    if (isClifford) {
         RevertBasis1Qb(target);
         RevertBasis2Qb(target);
     } else {
@@ -2108,8 +2113,10 @@ void QUnit::IS(bitLenInt target)
     }
 
     QEngineShard& shard = shards[target];
+    const bool isClifford =
+        useTGadget && (engines[0U] == QINTERFACE_STABILIZER_HYBRID) && (!shard.unit || shard.unit->isClifford());
 
-    if (useTGadget && shards[target].isClifford()) {
+    if (isClifford) {
         RevertBasis1Qb(target);
         RevertBasis2Qb(target);
     } else {
@@ -2277,13 +2284,15 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
     }
 
     QEngineShard& shard = shards[target];
+    const bool isClifford =
+        useTGadget && (engines[0U] == QINTERFACE_STABILIZER_HYBRID) && (!shard.unit || shard.unit->isClifford());
 
-    if (useTGadget && shards[target].isClifford()) {
+    if (isClifford) {
         RevertBasis1Qb(target);
         RevertBasis2Qb(target);
+    } else {
+        shard.CommutePhase(topLeft, bottomRight);
     }
-
-    shard.CommutePhase(topLeft, bottomRight);
 
     if (shard.pauliBasis == PauliZ) {
         if (shard.unit) {
@@ -2320,14 +2329,16 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     }
 
     QEngineShard& shard = shards[target];
+    const bool isClifford =
+        useTGadget && (engines[0U] == QINTERFACE_STABILIZER_HYBRID) && (!shard.unit || shard.unit->isClifford());
 
-    if (useTGadget && shards[target].isClifford()) {
+    if (isClifford) {
         RevertBasis1Qb(target);
         RevertBasis2Qb(target);
+    } else {
+        shard.FlipPhaseAnti();
+        shard.CommutePhase(topRight, bottomLeft);
     }
-
-    shard.FlipPhaseAnti();
-    shard.CommutePhase(topRight, bottomLeft);
 
     if (shard.pauliBasis == PauliZ) {
         if (shard.unit) {
