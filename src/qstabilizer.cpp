@@ -44,8 +44,8 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     , rawRandBoolsRemaining(0U)
     , phaseOffset(ONE_CMPLX)
     , r((n << 1U) + 1U)
-    , x((n << 1U) + 1U, BoolVector(n, false))
-    , z((n << 1U) + 1U, BoolVector(n, false))
+    , x((n << 1U) + 1U, BoolVector(n))
+    , z((n << 1U) + 1U, BoolVector(n))
 {
     SetPermutation(perm);
 }
@@ -1874,21 +1874,21 @@ std::istream& operator>>(std::istream& is, const QStabilizerPtr s)
     is >> n;
     s->SetQubitCount(n);
 
-    s->r = std::vector<uint8_t>((n << 1U) + 1U);
-    s->x = std::vector<std::vector<bool>>((n << 1U) + 1U, std::vector<bool>(n, false));
-    s->z = std::vector<std::vector<bool>>((n << 1U) + 1U, std::vector<bool>(n, false));
-
     const size_t rows = n << 1U;
+    s->r = std::vector<uint8_t>(rows + 1U);
+    s->x = std::vector<std::vector<bool>>(rows + 1U, std::vector<bool>(n));
+    s->z = std::vector<std::vector<bool>>(rows + 1U, std::vector<bool>(n));
+
     for (size_t row = 0U; row < rows; ++row) {
         std::vector<bool>& xRow = s->x[row];
-        for (size_t i = 0U; i < xRow.size(); ++i) {
+        for (size_t i = 0U; i < n; ++i) {
             bool x;
             is >> x;
             xRow[i] = x;
         }
 
         std::vector<bool>& zRow = s->z[row];
-        for (size_t i = 0U; i < zRow.size(); ++i) {
+        for (size_t i = 0U; i < n; ++i) {
             bool y;
             is >> y;
             zRow[i] = y;

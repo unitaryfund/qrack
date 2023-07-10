@@ -702,12 +702,13 @@ std::istream& operator>>(std::istream& is, const QUnitCliffordPtr s)
         is >> mapSize;
         std::map<bitLenInt, bitLenInt> indices;
         for (size_t j = 0U; j < mapSize; ++j) {
-            bitLenInt t, m;
+            size_t t, m;
             is >> t;
             is >> m;
-            indices[t] = m;
+            indices[(bitLenInt)t] = (bitLenInt)m;
         }
-        QStabilizerPtr sp = std::make_shared<QStabilizer>(0U, 0U, s->rand_generator, CMPLX_DEFAULT_ARG, false, s->randGlobalPhase, false, -1, s->useRDRAND);
+        QStabilizerPtr sp = std::make_shared<QStabilizer>(
+            0U, 0U, s->rand_generator, CMPLX_DEFAULT_ARG, false, s->randGlobalPhase, false, -1, s->useRDRAND);
         is >> sp;
 
         for (const auto& index : indices) {
