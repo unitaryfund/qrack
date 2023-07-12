@@ -216,31 +216,6 @@ protected:
 
         bitLenInt shardCount = 0U;
 
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            const MpsShardPtr& shard = shards[i];
-            if (!shard) {
-                continue;
-            }
-            if (shard->IsHPhase() || shard->IsHInvert()) {
-                FlushH(i);
-            }
-            if (shard && shard->IsInvert()) {
-                InvertBuffer(i);
-            }
-            if (!shard || shard->IsPhase()) {
-                continue;
-            }
-
-            QUnitCliffordPtr amp0 = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-            QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-            amp0->ForceM(i, false);
-            amp1->ForceM(i, true);
-            lowRankCache.emplace_back(shard->gate[0] + shard->gate[2], amp0);
-            lowRankCache.emplace_back(shard->gate[1] + shard->gate[3], amp1);
-
-            ++shardCount;
-        }
-
         for (bitLenInt i = 0; i < ancillaCount; ++i) {
             const MpsShardPtr& shard = shards[qubitCount + i];
             if (!shard) {
