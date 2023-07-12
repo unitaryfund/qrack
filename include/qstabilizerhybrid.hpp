@@ -20,6 +20,18 @@
 
 namespace Qrack {
 
+struct QUnitCliffordAmp {
+    complex amp;
+    QUnitCliffordPtr stabilizer;
+
+    QUnitCliffordAmp(complex a, QUnitCliffordPtr s)
+        : amp(a)
+        , stabilizer(s)
+    {
+        // Intentionally left blank.
+    }
+};
+
 class QStabilizerHybrid;
 typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
 
@@ -53,6 +65,7 @@ protected:
     std::vector<QInterfaceEngine> cloneEngineTypes;
     std::vector<MpsShardPtr> shards;
     std::map<bitCapInt, complex> stateMapCache;
+    std::vector<QUnitCliffordAmp> lowRankCache;
 
     QUnitCliffordPtr MakeStabilizer(bitCapInt perm = 0U);
     QInterfacePtr MakeEngine(bitCapInt perm = 0U);
@@ -82,9 +95,10 @@ protected:
 
         return false;
     }
-    bool IsProbBuffered()
+    bool EitherIsProbBuffered(bool logical)
     {
-        for (size_t i = 0U; i < shards.size(); ++i) {
+        const size_t maxLcv = logical ? (size_t)qubitCount : shards.size();
+        for (size_t i = 0U; i < maxLcv; ++i) {
             MpsShardPtr shard = shards[i];
             if (shard && !((norm(shard->gate[1]) <= FP_NORM_EPSILON) && (norm(shard->gate[2]) <= FP_NORM_EPSILON))) {
                 // We have a cached non-Clifford operation.
@@ -94,6 +108,9 @@ protected:
 
         return false;
     }
+    bool IsProbBuffered() { return EitherIsProbBuffered(false); }
+    bool IsLogicalProbBuffered() { return EitherIsProbBuffered(true); }
+
     std::unique_ptr<complex[]> GetQubitReducedDensityMatrix(bitLenInt qubit)
     {
         // Form the reduced density matrix of the single qubit.
@@ -193,8 +210,73 @@ protected:
         return rng;
     }
 
+    void PrepareSamplingCache()
+    {
+        lowRankCache.clear();
+
+        bitLenInt shardCount = 0U;
+
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            const MpsShardPtr& shard = shards[i];
+            if (!shard) {
+                continue;
+            }
+            if (shard->IsHPhase() || shard->IsHInvert()) {
+                FlushH(i);
+            }
+            if (shard && shard->IsInvert()) {
+                InvertBuffer(i);
+            }
+            if (!shard || shard->IsPhase()) {
+                continue;
+            }
+
+            QUnitCliffordPtr amp0 = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+            QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+            amp0->ForceM(i, false);
+            amp1->ForceM(i, true);
+            lowRankCache.emplace_back(shard->gate[0] + shard->gate[2], amp0);
+            lowRankCache.emplace_back(shard->gate[1] + shard->gate[3], amp1);
+
+            ++shardCount;
+        }
+
+        for (bitLenInt i = 0; i < ancillaCount; ++i) {
+            const MpsShardPtr& shard = shards[qubitCount + i];
+            if (!shard) {
+                continue;
+            }
+
+            QUnitCliffordPtr amp0 = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+            QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+            amp0->ForceM(qubitCount + i, false);
+            amp1->ForceM(qubitCount + i, true);
+
+            lowRankCache.emplace_back(SQRT2_R1 * shard->gate[0], amp0);
+            lowRankCache.emplace_back(SQRT2_R1 * shard->gate[1], amp1);
+
+            ++shardCount;
+        }
+
+        const real1 nrm = sqrt(ONE_R1 / (shardCount << 1U));
+        for (QUnitCliffordAmp& samp : lowRankCache) {
+            samp.amp *= nrm;
+        }
+    }
+
+    real1_f SamplingCacheProb(bitLenInt qubit)
+    {
+        real1 toRet = ZERO_R1;
+        for (const QUnitCliffordAmp& samp : lowRankCache) {
+            toRet += norm(samp.amp) * samp.stabilizer->Prob(qubit);
+        }
+
+        return (real1_f)toRet;
+    }
+
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
+
     void ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inverse);
 
 public:
