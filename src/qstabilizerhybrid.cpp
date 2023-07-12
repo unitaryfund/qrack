@@ -1476,6 +1476,23 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
+    if (IsLogicalProbBuffered()) {
+        PrepareSamplingCache();
+        bitCapInt toRet = 0U;
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            const bool r = std::max(Rand(), ONE_R1_F - FP_NORM_EPSILON) < SamplingCacheProb(i);
+            if (r) {
+                toRet |= pow2(i);
+            }
+            for (QUnitCliffordAmp& samp : lowRankCache) {
+                samp.stabilizer->ForceM(i, r);
+            }
+        }
+        lowRankCache.clear();
+
+        return toRet;
+    }
+
     if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
     }
