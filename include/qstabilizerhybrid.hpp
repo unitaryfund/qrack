@@ -84,9 +84,10 @@ protected:
             shards[i] = NULL;
         }
     }
-    bool IsBuffered()
+    bool EitherIsBuffered(bool logical)
     {
-        for (size_t i = 0U; i < shards.size(); ++i) {
+        const size_t maxLcv = logical ? (size_t)qubitCount : shards.size();
+        for (size_t i = 0U; i < maxLcv; ++i) {
             if (shards[i]) {
                 // We have a cached non-Clifford operation.
                 return true;
@@ -95,6 +96,8 @@ protected:
 
         return false;
     }
+    bool IsBuffered() { return EitherIsBuffered(false); }
+    bool IsLogicalBuffered() { return EitherIsBuffered(true); }
     bool EitherIsProbBuffered(bool logical)
     {
         const size_t maxLcv = logical ? (size_t)qubitCount : shards.size();
