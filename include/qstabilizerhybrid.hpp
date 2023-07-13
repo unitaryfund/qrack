@@ -217,10 +217,6 @@ protected:
 
         for (size_t i = qubitCount; i < shards.size(); ++i) {
             const MpsShardPtr& shard = shards[i];
-            if (!shard) {
-                continue;
-            }
-
             std::vector<QUnitCliffordAmp> nLowRankCache;
             for (const QUnitCliffordAmp& samp : lowRankCache) {
                 if (abs(ONE_R1 / 2 - samp.stabilizer->Prob(i)) > FP_NORM_EPSILON) {
