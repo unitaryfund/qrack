@@ -242,18 +242,17 @@ protected:
 
     real1_f SamplingCacheProb(bitLenInt qubit)
     {
+        const real1_f allProb = lowRankCache[0U].stabilizer->Prob(qubit);
+        if (allProb <= FP_NORM_EPSILON) {
+            return ZERO_R1;
+        }
+        if ((ONE_R1 - allProb) <= FP_NORM_EPSILON) {
+            return ONE_R1;
+        }
+
         real1 toRet = ZERO_R1;
         for (const QUnitCliffordAmp& samp : lowRankCache) {
-            const real1_f prob = samp.stabilizer->Prob(qubit);
-            if (prob <= FP_NORM_EPSILON) {
-                toRet = ZERO_R1;
-                break;
-            }
-            if ((ONE_R1 - prob) <= FP_NORM_EPSILON) {
-                toRet = ONE_R1;
-                break;
-            }
-            toRet += norm(samp.amp) * prob;
+            toRet += norm(samp.amp) * samp.stabilizer->Prob(qubit);
         }
 
         return (real1_f)toRet;
