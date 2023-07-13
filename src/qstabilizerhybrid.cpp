@@ -1774,6 +1774,48 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
 }
 
+void QStabilizerHybrid::PrepareSamplingCache()
+{
+    lowRankCache.clear();
+    lowRankCache.emplace_back(ONE_CMPLX, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
+
+    for (size_t i = qubitCount; i < shards.size(); ++i) {
+        const MpsShardPtr& shard = shards[i];
+        std::vector<QUnitCliffordAmp> nLowRankCache;
+        real1 discardedProb = ZERO_R1;
+        for (const QUnitCliffordAmp& samp : lowRankCache) {
+            if (samp.stabilizer->Prob(i) <= FP_NORM_EPSILON) {
+                nLowRankCache.emplace_back(shard->gate[0] * samp.amp, samp.stabilizer);
+                discardedProb += norm(shard->gate[1] * samp.amp);
+                continue;
+            }
+            if ((ONE_R1 - samp.stabilizer->Prob(i)) <= FP_NORM_EPSILON) {
+                nLowRankCache.emplace_back(shard->gate[1] * samp.amp, samp.stabilizer);
+                discardedProb += norm(shard->gate[0] * samp.amp);
+                continue;
+            }
+
+            QUnitCliffordPtr amp0 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
+            QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
+            amp0->ForceM(i, false);
+            amp1->ForceM(i, true);
+
+            nLowRankCache.emplace_back(shard->gate[0] * samp.amp, amp0);
+            nLowRankCache.emplace_back(shard->gate[1] * samp.amp, amp1);
+        }
+        lowRankCache = nLowRankCache;
+
+        if (discardedProb == ZERO_R1) {
+            continue;
+        }
+
+        const real1 nrm = ONE_R1 / sqrt(ONE_R1 - discardedProb);
+        for (QUnitCliffordAmp& samp : lowRankCache) {
+            samp.amp *= nrm;
+        }
+    }
+}
+
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
 {
     if (!toCompare) {
