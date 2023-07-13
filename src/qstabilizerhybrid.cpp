@@ -1847,8 +1847,7 @@ void QStabilizerHybrid::CombineAncillae()
     const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
 
     for (const std::vector<bitLenInt>& subCombine : toCombine) {
-        const bitLenInt base = subCombine[0U];
-        MpsShardPtr& baseShard = shards[base];
+        const MpsShardPtr& baseShard = shards[subCombine[0U]];
         baseShard->Compose(h);
         for (size_t i = 1U; i < subCombine.size(); ++i) {
             const bitLenInt combo = subCombine[i];
