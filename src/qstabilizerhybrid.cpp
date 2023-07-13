@@ -1737,19 +1737,15 @@ void QStabilizerHybrid::CombineAncillae()
         return;
     }
 
-    std::vector<std::vector<bitLenInt>> toCombine;
+    std::map<bitLenInt, bitLenInt> toCombine;
     for (size_t i = qubitCount; i < shards.size(); ++i) {
-        std::vector<bitLenInt> subCombine{ (bitLenInt)i };
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
         clone->ForceM(i, false);
         for (size_t j = i + 1U; j < shards.size(); ++j) {
             if (clone->Prob(j) <= FP_NORM_EPSILON) {
-                subCombine.push_back((bitLenInt)j);
+                toCombine[i] = j;
+                break;
             }
-        }
-
-        if (subCombine.size() > 1U) {
-            toCombine.push_back(subCombine);
         }
     }
 
@@ -1759,20 +1755,19 @@ void QStabilizerHybrid::CombineAncillae()
 
     const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
 
-    for (const std::vector<bitLenInt>& subCombine : toCombine) {
-        const MpsShardPtr& baseShard = shards[subCombine[0U]];
+    for (const auto& subCombine : toCombine) {
+        const MpsShardPtr& baseShard = shards[subCombine.first];
         baseShard->Compose(h);
-        for (size_t i = 1U; i < subCombine.size(); ++i) {
-            const bitLenInt combo = subCombine[i];
-            MpsShardPtr& shard = shards[combo];
 
-            shard->Compose(h);
-            baseShard->Compose(shard->gate);
-            shard = NULL;
+        const bitLenInt combo = subCombine.second;
+        MpsShardPtr& shard = shards[combo];
 
-            stabilizer->H(combo);
-            stabilizer->ForceM(combo, false);
-        }
+        shard->Compose(h);
+        baseShard->Compose(shard->gate);
+        shard = NULL;
+
+        stabilizer->H(combo);
+        stabilizer->ForceM(combo, false);
         baseShard->Compose(h);
     }
 
