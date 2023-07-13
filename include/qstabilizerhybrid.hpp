@@ -223,6 +223,11 @@ protected:
 
             std::vector<QUnitCliffordAmp> nLowRankCache;
             for (const QUnitCliffordAmp& samp : lowRankCache) {
+                if (abs(ONE_R1 / 2 - samp.stabilizer->Prob(qubitCount + i)) > FP_NORM_EPSILON) {
+                    nLowRankCache.push_back(samp);
+                    continue;
+                }
+
                 QUnitCliffordPtr amp0 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
                 QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
                 amp0->ForceM(qubitCount + i, false);
