@@ -1469,6 +1469,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
+    /*FlushForSamplingCache();
     if (ancillaCount && !IsLogicalBuffered()) {
         PrepareSamplingCache();
         bitCapInt toRet = 0U;
@@ -1505,7 +1506,7 @@ bitCapInt QStabilizerHybrid::MAll()
         SetPermutation(toRet);
 
         return toRet;
-    }
+    }*/
 
     if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
