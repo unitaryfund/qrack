@@ -1469,7 +1469,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    /*if (!IsLogicalProbBuffered()) {
+    if (ancillaCount && !IsLogicalBuffered()) {
         PrepareSamplingCache();
         bitCapInt toRet = 0U;
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
@@ -1505,7 +1505,7 @@ bitCapInt QStabilizerHybrid::MAll()
         SetPermutation(toRet);
 
         return toRet;
-    }*/
+    }
 
     if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
@@ -1799,7 +1799,6 @@ void QStabilizerHybrid::PrepareSamplingCache()
             QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
             amp0->ForceM(i, false);
             amp1->ForceM(i, true);
-
             nLowRankCache.emplace_back(shard->gate[0] * samp.amp, amp0);
             nLowRankCache.emplace_back(shard->gate[1] * samp.amp, amp1);
         }
