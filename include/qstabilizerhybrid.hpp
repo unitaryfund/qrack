@@ -244,6 +244,15 @@ protected:
     {
         real1 toRet = ZERO_R1;
         for (const QUnitCliffordAmp& samp : lowRankCache) {
+            const real1_f prob = samp.stabilizer->Prob(qubit);
+            if (prob <= FP_NORM_EPSILON) {
+                toRet = ZERO_R1;
+                break;
+            }
+            if ((ONE_R1 - prob) <= FP_NORM_EPSILON) {
+                toRet = ONE_R1;
+                break;
+            }
             toRet += norm(samp.amp) * samp.stabilizer->Prob(qubit);
         }
 

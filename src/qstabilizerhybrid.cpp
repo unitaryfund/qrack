@@ -1480,7 +1480,9 @@ bitCapInt QStabilizerHybrid::MAll()
         PrepareSamplingCache();
         bitCapInt toRet = 0U;
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            const bool r = std::min(Rand(), ONE_R1_F - FP_NORM_EPSILON) < SamplingCacheProb(i);
+            const real1_f prob = SamplingCacheProb(i);
+            const bool r =
+                (prob <= FP_NORM_EPSILON) ? false : (((ONE_R1_F - prob) <= FP_NORM_EPSILON) ? true : (Rand() < prob));
             if (r) {
                 toRet |= pow2(i);
             }
