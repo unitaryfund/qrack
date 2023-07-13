@@ -228,8 +228,8 @@ protected:
                 amp0->ForceM(qubitCount + i, false);
                 amp1->ForceM(qubitCount + i, true);
 
-                lowRankCache.emplace_back(shard->gate[0] * samp.amp, amp0);
-                lowRankCache.emplace_back(shard->gate[1] * samp.amp, amp1);
+                nLowRankCache.emplace_back(shard->gate[0] * samp.amp, amp0);
+                nLowRankCache.emplace_back(shard->gate[1] * samp.amp, amp1);
             }
             lowRankCache = nLowRankCache;
         }
