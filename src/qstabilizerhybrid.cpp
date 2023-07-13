@@ -1489,6 +1489,7 @@ bitCapInt QStabilizerHybrid::MAll()
             }
         }
         lowRankCache.clear();
+        SetPermutation(toRet);
 
         return toRet;
     }*/
