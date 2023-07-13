@@ -909,7 +909,7 @@ void QStabilizerHybrid::AntiCISqrtSwap(const std::vector<bitLenInt>& lControls, 
 
 void QStabilizerHybrid::XMask(bitCapInt mask)
 {
-    if (!stabilizer) {
+    if (engine) {
         engine->XMask(mask);
         return;
     }
@@ -923,7 +923,7 @@ void QStabilizerHybrid::XMask(bitCapInt mask)
 }
 void QStabilizerHybrid::YMask(bitCapInt mask)
 {
-    if (!stabilizer) {
+    if (engine) {
         engine->YMask(mask);
         return;
     }
@@ -937,7 +937,7 @@ void QStabilizerHybrid::YMask(bitCapInt mask)
 }
 void QStabilizerHybrid::ZMask(bitCapInt mask)
 {
-    if (!stabilizer) {
+    if (engine) {
         engine->ZMask(mask);
         return;
     }
@@ -1835,7 +1835,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         return toRet;
     }
 
-    if (!stabilizer && toCompare->stabilizer) {
+    if (engine && toCompare->stabilizer) {
         SetPermutation(0U);
         stabilizer = std::dynamic_pointer_cast<QUnitClifford>(toCompare->stabilizer->Clone());
         shards.resize(toCompare->shards.size());
