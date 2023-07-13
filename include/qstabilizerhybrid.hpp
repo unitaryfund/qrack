@@ -213,8 +213,7 @@ protected:
     void PrepareSamplingCache()
     {
         lowRankCache.clear();
-
-        bitLenInt shardCount = 0U;
+        lowRankCache.emplace_back(ONE_CMPLX, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
 
         for (bitLenInt i = 0; i < ancillaCount; ++i) {
             const MpsShardPtr& shard = shards[qubitCount + i];
@@ -222,20 +221,17 @@ protected:
                 continue;
             }
 
-            QUnitCliffordPtr amp0 = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-            QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-            amp0->ForceM(qubitCount + i, false);
-            amp1->ForceM(qubitCount + i, true);
+            std::vector<QUnitCliffordAmp> nLowRankCache;
+            for (const QUnitCliffordAmp& samp : lowRankCache) {
+                QUnitCliffordPtr amp0 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
+                QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
+                amp0->ForceM(qubitCount + i, false);
+                amp1->ForceM(qubitCount + i, true);
 
-            lowRankCache.emplace_back(SQRT2_R1 * shard->gate[0], amp0);
-            lowRankCache.emplace_back(SQRT2_R1 * shard->gate[1], amp1);
-
-            ++shardCount;
-        }
-
-        const real1 nrm = sqrt(ONE_R1 / (shardCount << 1U));
-        for (QUnitCliffordAmp& samp : lowRankCache) {
-            samp.amp *= nrm;
+                lowRankCache.emplace_back(shard->gate[0] * samp.amp, amp0);
+                lowRankCache.emplace_back(shard->gate[1] * samp.amp, amp1);
+            }
+            lowRankCache = nLowRankCache;
         }
     }
 
