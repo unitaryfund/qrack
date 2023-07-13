@@ -1294,14 +1294,6 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             return clone->Prob(qubit);
         }
 
-        /*if (!IsLogicalProbBuffered()) {
-            PrepareSamplingCache();
-            const real1_f toRet = SamplingCacheProb(qubit);
-            lowRankCache.clear();
-
-            return toRet;
-        }*/
-
         if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
             stateMapCache = stabilizer->GetQuantumState();
         }
@@ -1471,44 +1463,6 @@ bitCapInt QStabilizerHybrid::MAll()
 
         return toRet;
     }
-
-    /*if (ancillaCount && !IsLogicalProbBuffered()) {
-        PrepareSamplingCache();
-        bitCapInt toRet = 0U;
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            const real1_f prob = SamplingCacheProb(i);
-            const bool r =
-                (prob <= FP_NORM_EPSILON) ? false : (((ONE_R1_F - prob) <= FP_NORM_EPSILON) ? true : (Rand() < prob));
-            if (r) {
-                toRet |= pow2(i);
-            }
-            real1 discardedProb = ZERO_R1;
-            std::vector<QUnitCliffordAmp> nLowRankCache;
-            for (const QUnitCliffordAmp& samp : lowRankCache) {
-                const real1_f sProb = samp.stabilizer->Prob(i);
-                if ((r && (sProb <= FP_NORM_EPSILON)) || (!r && ((ONE_R1 - sProb) <= FP_NORM_EPSILON))) {
-                    discardedProb += norm(samp.amp);
-                } else {
-                    samp.stabilizer->ForceM(i, r);
-                    nLowRankCache.push_back(samp);
-                }
-            }
-            lowRankCache = nLowRankCache;
-
-            if (discardedProb == ZERO_R1) {
-                continue;
-            }
-
-            const real1 nrm = ONE_R1 / sqrt(ONE_R1 - discardedProb);
-            for (QUnitCliffordAmp& samp : lowRankCache) {
-                samp.amp *= nrm;
-            }
-        }
-        lowRankCache.clear();
-        SetPermutation(toRet);
-
-        return toRet;
-    }*/
 
     if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
@@ -1775,47 +1729,6 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
     SwitchToEngine();
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
-}
-
-void QStabilizerHybrid::PrepareSamplingCache()
-{
-    lowRankCache.clear();
-    lowRankCache.emplace_back(ONE_CMPLX, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
-
-    for (size_t i = qubitCount; i < shards.size(); ++i) {
-        const MpsShardPtr& shard = shards[i];
-        std::vector<QUnitCliffordAmp> nLowRankCache;
-        real1 discardedProb = ZERO_R1;
-        for (const QUnitCliffordAmp& samp : lowRankCache) {
-            if (samp.stabilizer->Prob(i) <= FP_NORM_EPSILON) {
-                nLowRankCache.emplace_back(shard->gate[0] * samp.amp, samp.stabilizer);
-                discardedProb += norm(shard->gate[1] * samp.amp);
-                continue;
-            }
-            if ((ONE_R1 - samp.stabilizer->Prob(i)) <= FP_NORM_EPSILON) {
-                nLowRankCache.emplace_back(shard->gate[1] * samp.amp, samp.stabilizer);
-                discardedProb += norm(shard->gate[0] * samp.amp);
-                continue;
-            }
-
-            QUnitCliffordPtr amp0 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
-            QUnitCliffordPtr amp1 = std::dynamic_pointer_cast<QUnitClifford>(samp.stabilizer->Clone());
-            amp0->ForceM(i, false);
-            amp1->ForceM(i, true);
-            nLowRankCache.emplace_back(shard->gate[0] * samp.amp, amp0);
-            nLowRankCache.emplace_back(shard->gate[1] * samp.amp, amp1);
-        }
-        lowRankCache = nLowRankCache;
-
-        if (discardedProb == ZERO_R1) {
-            continue;
-        }
-
-        const real1 nrm = ONE_R1 / sqrt(ONE_R1 - discardedProb);
-        for (QUnitCliffordAmp& samp : lowRankCache) {
-            samp.amp *= nrm;
-        }
-    }
 }
 
 void QStabilizerHybrid::CombineAncillae()

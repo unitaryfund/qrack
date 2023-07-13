@@ -213,18 +213,6 @@ protected:
         return rng;
     }
 
-    void PrepareSamplingCache();
-
-    real1_f SamplingCacheProb(bitLenInt qubit)
-    {
-        real1 toRet = ZERO_R1;
-        for (const QUnitCliffordAmp& samp : lowRankCache) {
-            toRet += norm(samp.amp) * samp.stabilizer->Prob(qubit);
-        }
-
-        return (real1_f)toRet;
-    }
-
     void CombineAncillae();
 
     real1_f ApproxCompareHelper(
