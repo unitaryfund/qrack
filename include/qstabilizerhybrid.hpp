@@ -253,7 +253,7 @@ protected:
                 toRet = ONE_R1;
                 break;
             }
-            toRet += norm(samp.amp) * samp.stabilizer->Prob(qubit);
+            toRet += norm(samp.amp) * prob;
         }
 
         return (real1_f)toRet;
