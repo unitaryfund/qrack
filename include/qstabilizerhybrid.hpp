@@ -218,9 +218,16 @@ protected:
         for (size_t i = qubitCount; i < shards.size(); ++i) {
             const MpsShardPtr& shard = shards[i];
             std::vector<QUnitCliffordAmp> nLowRankCache;
+            real1 discardedProb = ZERO_R1;
             for (const QUnitCliffordAmp& samp : lowRankCache) {
-                if (abs(ONE_R1 / 2 - samp.stabilizer->Prob(i)) > FP_NORM_EPSILON) {
-                    nLowRankCache.push_back(samp);
+                if (samp.stabilizer->Prob(i) <= FP_NORM_EPSILON) {
+                    nLowRankCache.emplace_back(shard->gate[0] * samp.amp, samp.stabilizer);
+                    discardedProb += norm(shard->gate[1] * samp.amp);
+                    continue;
+                }
+                if ((ONE_R1 - samp.stabilizer->Prob(i)) <= FP_NORM_EPSILON) {
+                    nLowRankCache.emplace_back(shard->gate[1] * samp.amp, samp.stabilizer);
+                    discardedProb += norm(shard->gate[0] * samp.amp);
                     continue;
                 }
 
@@ -233,6 +240,15 @@ protected:
                 nLowRankCache.emplace_back(shard->gate[1] * samp.amp, amp1);
             }
             lowRankCache = nLowRankCache;
+
+            if (discardedProb == ZERO_R1) {
+                continue;
+            }
+
+            const real1 nrm = ONE_R1 / sqrt(ONE_R1 - discardedProb);
+            for (QUnitCliffordAmp& samp : lowRankCache) {
+                samp.amp *= nrm;
+            }
         }
     }
 
