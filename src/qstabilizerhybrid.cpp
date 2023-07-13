@@ -1469,8 +1469,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    /*FlushForSamplingCache();
-    if (ancillaCount && !IsLogicalBuffered()) {
+    /*if (ancillaCount && !IsLogicalProbBuffered()) {
         PrepareSamplingCache();
         bitCapInt toRet = 0U;
         for (bitLenInt i = 0U; i < qubitCount; ++i) {

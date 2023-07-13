@@ -213,34 +213,6 @@ protected:
         return rng;
     }
 
-    void FlushForSamplingCache()
-    {
-        if (!useTGadget || IsLogicalProbBuffered()) {
-            return;
-        }
-
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            const MpsShardPtr shard = shards[i];
-            if (!shard) {
-                continue;
-            }
-            shards[i] = NULL;
-
-            QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
-                1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
-
-            // Form potentially entangled representation, with this.
-            bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
-            ++ancillaCount;
-            shards.push_back(NULL);
-
-            // Use reverse t-injection gadget.
-            stabilizer->CNOT(i, ancillaIndex);
-            Mtrx(shard->gate, ancillaIndex);
-            H(ancillaIndex);
-        }
-    }
-
     void PrepareSamplingCache();
 
     real1_f SamplingCacheProb(bitLenInt qubit)
