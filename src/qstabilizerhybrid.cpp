@@ -1291,13 +1291,13 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             return clone->Prob(qubit);
         }
 
-        if (!IsLogicalProbBuffered()) {
+        /*if (!IsLogicalProbBuffered()) {
             PrepareSamplingCache();
             const real1_f toRet = SamplingCacheProb(qubit);
             lowRankCache.clear();
 
             return toRet;
-        }
+        }*/
 
         if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
             stateMapCache = stabilizer->GetQuantumState();
