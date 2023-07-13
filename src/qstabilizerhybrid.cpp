@@ -1481,7 +1481,7 @@ bitCapInt QStabilizerHybrid::MAll()
             }
             real1 discardedProb = ZERO_R1;
             std::vector<QUnitCliffordAmp> nLowRankCache;
-            for (QUnitCliffordAmp& samp : lowRankCache) {
+            for (const QUnitCliffordAmp& samp : lowRankCache) {
                 if ((r && (samp.stabilizer->Prob(i) <= FP_NORM_EPSILON)) ||
                     (!r && ((ONE_R1 - samp.stabilizer->Prob(i)) <= FP_NORM_EPSILON))) {
                     discardedProb += norm(samp.amp);
