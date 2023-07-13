@@ -207,6 +207,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Dispose(ancillaIndex, 1U);
 
     if (!isHardwareEncoded) {
+        CombineAncillae();
         return;
     }
 
@@ -1007,6 +1008,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
                 stabilizer->CNOT(target, ancillaIndex);
                 // Encoded gate is identity
                 H(ancillaIndex);
+            } else {
+                CombineAncillae();
             }
         }
 
@@ -1811,6 +1814,61 @@ void QStabilizerHybrid::PrepareSamplingCache()
         const real1 nrm = ONE_R1 / sqrt(ONE_R1 - discardedProb);
         for (QUnitCliffordAmp& samp : lowRankCache) {
             samp.amp *= nrm;
+        }
+    }
+}
+
+void QStabilizerHybrid::CombineAncillae()
+{
+    if (engine || isHardwareEncoded) {
+        return;
+    }
+
+    std::vector<std::vector<bitLenInt>> toCombine;
+    for (size_t i = qubitCount; i < shards.size(); ++i) {
+        std::vector<bitLenInt> subCombine{ (bitLenInt)i };
+        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+        clone->ForceM(i, false);
+        for (size_t j = i + 1U; j < shards.size(); ++j) {
+            if (clone->Prob(j) <= FP_NORM_EPSILON) {
+                subCombine.push_back((bitLenInt)j);
+            }
+        }
+
+        if (subCombine.size() > 1U) {
+            toCombine.push_back(subCombine);
+        }
+    }
+
+    if (!toCombine.size()) {
+        return;
+    }
+
+    const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+
+    for (const std::vector<bitLenInt>& subCombine : toCombine) {
+        const bitLenInt base = subCombine[0U];
+        MpsShardPtr& baseShard = shards[base];
+        baseShard->Compose(h);
+        for (size_t i = 1U; i < subCombine.size(); ++i) {
+            const bitLenInt combo = subCombine[i];
+            MpsShardPtr& shard = shards[combo];
+
+            shard->Compose(h);
+            baseShard->Compose(shard->gate);
+            shard = NULL;
+
+            stabilizer->H(combo);
+            stabilizer->ForceM(combo, false);
+        }
+        baseShard->Compose(h);
+    }
+
+    for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
+        if (!shards[i]) {
+            stabilizer->Dispose(i, 1U);
+            shards.erase(shards.begin() + i);
+            --ancillaCount;
         }
     }
 }
