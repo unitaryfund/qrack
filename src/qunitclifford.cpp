@@ -57,13 +57,9 @@ QInterfacePtr QUnitClifford::CloneBody(QUnitCliffordPtr copyPtr)
 {
     std::map<QStabilizerPtr, QStabilizerPtr> dupeEngines;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        copyPtr->shards[i] = CliffordShard(shards[i]);
+        copyPtr->shards[i].mapped = shards[i].mapped;
 
         QStabilizerPtr unit = shards[i].unit;
-        if (!unit) {
-            continue;
-        }
-
         if (dupeEngines.find(unit) == dupeEngines.end()) {
             dupeEngines[unit] = std::dynamic_pointer_cast<QStabilizer>(unit->Clone());
         }
