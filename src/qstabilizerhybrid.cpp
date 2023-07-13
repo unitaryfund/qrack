@@ -1737,6 +1737,9 @@ void QStabilizerHybrid::CombineAncillae()
         return;
     }
 
+    // The ancillae sometimes end up in Bell pairs (with identical ends).
+    // In this case, we can combine the phase factors and eliminate one Bell pair end.
+
     std::map<bitLenInt, bitLenInt> toCombine;
     for (size_t i = qubitCount; i < shards.size(); ++i) {
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
@@ -1768,6 +1771,7 @@ void QStabilizerHybrid::CombineAncillae()
 
         stabilizer->H(combo);
         stabilizer->ForceM(combo, false);
+
         baseShard->Compose(h);
     }
 
