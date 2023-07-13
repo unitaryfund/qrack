@@ -1499,7 +1499,7 @@ bitCapInt QStabilizerHybrid::MAll()
             }
             lowRankCache = nLowRankCache;
 
-            if (discardedProb <= FP_NORM_EPSILON) {
+            if (discardedProb == ZERO_R1) {
                 continue;
             }
 
