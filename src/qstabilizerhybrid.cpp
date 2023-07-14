@@ -1771,11 +1771,10 @@ void QStabilizerHybrid::CombineAncillae()
         shard->Compose(h);
         baseShard->Compose(shard->gate);
         shard = NULL;
+        baseShard->Compose(h);
 
         stabilizer->H(combo);
         stabilizer->ForceM(combo, false);
-
-        baseShard->Compose(h);
     }
 
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
