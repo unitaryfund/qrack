@@ -1739,7 +1739,7 @@ void QStabilizerHybrid::CombineAncillae()
 
     // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
     // If so, we can combine (or cancel) the phase effect on the earlier ancilla and completely separate the later.
-    // We must preserve the earlier ancilla's entanglement, besides partial collapse with the later ancillae.
+    // We must preserve the earlier ancilla's entanglement, besides partial collapse with the later ancilla.
     // (It might be possible to change convention to preserve the later ancilla and separate the earlier.)
 
     std::map<bitLenInt, bitLenInt> toCombine;
