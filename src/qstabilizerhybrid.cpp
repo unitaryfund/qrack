@@ -1763,11 +1763,13 @@ void QStabilizerHybrid::CombineAncillae()
 
     for (const auto& subCombine : toCombine) {
         const MpsShardPtr& baseShard = shards[subCombine.first];
-        baseShard->Compose(h);
-
         const bitLenInt combo = subCombine.second;
         MpsShardPtr& shard = shards[combo];
+        if (!baseShard || !shard) {
+            continue;
+        }
 
+        baseShard->Compose(h);
         shard->Compose(h);
         baseShard->Compose(shard->gate);
         shard = NULL;
