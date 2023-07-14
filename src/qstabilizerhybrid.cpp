@@ -1737,8 +1737,8 @@ void QStabilizerHybrid::CombineAncillae()
         return;
     }
 
-    // The ancillae sometimes end up in Bell pairs (with identical ends).
-    // In this case, we can combine the phase factors and eliminate one Bell pair end.
+    // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
+    // If so, we can combine (or cancel) the phase effect on the earlier ancilla and completely separate the later.
 
     std::map<bitLenInt, bitLenInt> toCombine;
     for (size_t i = qubitCount; i < shards.size(); ++i) {
