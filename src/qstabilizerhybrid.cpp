@@ -1757,7 +1757,7 @@ void QStabilizerHybrid::CombineAncillae()
                 }
             } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->ForceM(i, false);
+                clone->ForceM(i, true);
                 if (clone->Prob(j) <= FP_NORM_EPSILON) {
                     toCombineAdj[i] = j;
                     break;
