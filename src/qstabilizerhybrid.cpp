@@ -716,8 +716,9 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
     const bitLenInt aStride = indices.size() + 1U;
     const bitCapIntOcl ancillaPow = pow2Ocl(ancillaCount);
     for (bitCapIntOcl i = 1U; i < ancillaPow; ++i) {
+        const bitCapInt ancillaPerm = i << qubitCount;
         for (size_t j = 0U; j < aStride; ++j) {
-            perms.push_back(perms[j] | (i << qubitCount));
+            perms.push_back(perms[j] | ancillaPerm);
         }
     }
 
