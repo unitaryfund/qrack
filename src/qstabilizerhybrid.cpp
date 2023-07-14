@@ -1755,6 +1755,7 @@ void QStabilizerHybrid::CombineAncillae()
     }
 
     if (!toCombine.size()) {
+        // We fail to find any toCombine entries, and recursion exits.
         return;
     }
 
@@ -1784,6 +1785,9 @@ void QStabilizerHybrid::CombineAncillae()
             --ancillaCount;
         }
     }
+
+    // We should fail to find any toCombine entries before exit.
+    CombineAncillae();
 }
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
