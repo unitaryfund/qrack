@@ -213,9 +213,9 @@ protected:
         return rng;
     }
 
-    real1 FractionalRzAngleWithFlush(bitLenInt i, real1 angle)
+    real1_f FractionalRzAngleWithFlush(bitLenInt i, real1_f angle)
     {
-        constexpr real1 Period = 2 * PI_R1;
+        const real1_f Period = 2 * PI_R1;
         while (angle < 0) {
             angle += Period;
         }

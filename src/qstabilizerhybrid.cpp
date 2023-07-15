@@ -199,7 +199,8 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Use reverse t-injection gadget.
     stabilizer->CNOT(target, ancillaIndex);
 
-    const real1 angle = FractionalRzAngleWithFlush(ancillaIndex, std::arg(shard->gate[3U] / shard->gate[0U])) / 2;
+    const real1 angle =
+        (real1)(FractionalRzAngleWithFlush(ancillaIndex, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
     const real1 angleCos = cos(angle);
     const real1 angleSin = sin(angle);
     shard->gate[0U] = complex(angleCos, -angleSin);
@@ -1000,7 +1001,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             stabilizer->CNOT(target, ancillaIndex);
 
             const real1 angle =
-                FractionalRzAngleWithFlush(ancillaIndex, std::arg(shard->gate[3U] / shard->gate[0U])) / 2;
+                (real1)(FractionalRzAngleWithFlush(ancillaIndex, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
             const real1 angleCos = cos(angle);
             const real1 angleSin = sin(angle);
             shard->gate[0U] = complex(angleCos, -angleSin);
