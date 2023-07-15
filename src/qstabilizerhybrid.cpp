@@ -1742,7 +1742,6 @@ void QStabilizerHybrid::CombineAncillae()
                 clone->ForceM(i, true);
                 if (clone->Prob(j) <= FP_NORM_EPSILON) {
                     toCombineAdj[i].push_back(j);
-                    break;
                 }
             }
         }
