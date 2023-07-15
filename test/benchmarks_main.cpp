@@ -31,7 +31,7 @@ qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_t_injection = false;
 bool disable_reactive_separation = false;
-bool enable_approx_sampling = true;
+bool enable_approx_sampling = false;
 bool disable_terminal_measurement = false;
 bool use_host_dma = false;
 bool disable_hardware_rng = false;
