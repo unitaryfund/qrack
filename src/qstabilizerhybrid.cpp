@@ -1818,6 +1818,90 @@ void QStabilizerHybrid::CombineAncillae()
     CombineAncillae();
 }
 
+void QStabilizerHybrid::WeakSampleAncillae()
+{
+    const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    while (ancillaCount) {
+        CombineAncillae();
+
+        const bitLenInt i = qubitCount;
+        MpsShardPtr& shard = shards[i];
+        shard->Compose(h);
+
+        const real1 correctionProb =
+            (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
+        if (correctionProb < 0) {
+            if (Rand() < -correctionProb) {
+                stabilizer->IS(i);
+            }
+        } else {
+            if (Rand() < correctionProb) {
+                stabilizer->S(i);
+            }
+        }
+
+        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+        clone->H(i);
+        clone->ForceM(i, false);
+
+        std::vector<bitLenInt> toCombine;
+        std::vector<bitLenInt> toCombineAdj;
+        for (size_t j = i + 1U; j < shards.size(); ++j) {
+            if (clone->Prob(j) <= FP_NORM_EPSILON) {
+                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->ForceM(i, true);
+                if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
+                    toCombine.push_back(j);
+                }
+            } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
+                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->ForceM(i, true);
+                if (clone->Prob(j) <= FP_NORM_EPSILON) {
+                    toCombineAdj.push_back(j);
+                }
+            }
+        }
+
+        for (const bitLenInt& combo : toCombine) {
+            MpsShardPtr& oShard = shards[combo];
+            if (!oShard) {
+                continue;
+            }
+
+            oShard->Compose(h);
+            shard->Compose(oShard->gate);
+            oShard = NULL;
+
+            stabilizer->H(combo);
+            stabilizer->ForceM(combo, false);
+        }
+
+        for (const bitLenInt& combo : toCombineAdj) {
+            MpsShardPtr& oShard = shards[combo];
+            if (!oShard) {
+                continue;
+            }
+
+            oShard->Compose(h);
+            complex mtrx[4U];
+            inv2x2(oShard->gate, mtrx);
+            shard->Compose(oShard->gate);
+            oShard = NULL;
+
+            stabilizer->H(combo);
+            stabilizer->ForceM(combo, false);
+        }
+
+        for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
+            if (!shards[i]) {
+                stabilizer->Dispose(i, 1U);
+                shards.erase(shards.begin() + i);
+                --ancillaCount;
+            }
+        }
+    }
+}
+
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
 {
     if (!toCompare) {

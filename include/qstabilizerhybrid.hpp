@@ -178,36 +178,6 @@ protected:
         }
     }
 
-    void WeakSampleAncillae()
-    {
-        const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-        while (ancillaCount) {
-            CombineAncillae();
-
-            const bitLenInt i = qubitCount;
-            MpsShardPtr& shard = shards[i];
-            shard->Compose(h);
-
-            const real1 correctionProb =
-                (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
-            if (correctionProb < 0) {
-                if (Rand() < -correctionProb) {
-                    stabilizer->IS(i);
-                }
-            } else {
-                if (Rand() < correctionProb) {
-                    stabilizer->S(i);
-                }
-            }
-
-            stabilizer->H(i);
-            stabilizer->ForceM(i, false);
-            stabilizer->Dispose(i, 1U);
-            shards.erase(shards.begin() + i);
-            --ancillaCount;
-        }
-    }
-
     bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
     {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
@@ -273,6 +243,7 @@ protected:
     }
 
     void CombineAncillae();
+    void WeakSampleAncillae();
 
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
