@@ -1486,6 +1486,12 @@ bitCapInt QStabilizerHybrid::MAll()
                     ++sector;
                 }
             }
+            if (sector < 0) {
+                sector += 4;
+            }
+            if (sector > 3) {
+                sector -= 4;
+            }
             switch (sector) {
             case 1U:
                 stabilizer->S(i);
