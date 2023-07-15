@@ -1821,10 +1821,22 @@ void QStabilizerHybrid::CombineAncillae()
 void QStabilizerHybrid::WeakSampleAncillae()
 {
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    const bitLenInt i = qubitCount;
     while (ancillaCount) {
-        const bitLenInt i = qubitCount;
-        MpsShardPtr& shard = shards[i];
+        const MpsShardPtr& shard = shards[i];
         shard->Compose(h);
+
+        const real1 correctionProb =
+            (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
+        if (correctionProb < 0) {
+            if (Rand() < (ONE_R1 + correctionProb)) {
+                stabilizer->IS(i);
+            }
+        } else {
+            if (Rand() < (ONE_R1 - correctionProb)) {
+                stabilizer->S(i);
+            }
+        }
 
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
         clone->H(i);
@@ -1878,31 +1890,21 @@ void QStabilizerHybrid::WeakSampleAncillae()
             stabilizer->ForceM(combo, false);
         }
 
-        const real1 correctionProb =
-            (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
-        if (correctionProb < 0) {
-            if (Rand() < -correctionProb) {
-                stabilizer->IS(i);
-            }
-        } else {
-            if (Rand() < correctionProb) {
-                stabilizer->S(i);
-            }
-        }
-
         stabilizer->H(i);
         stabilizer->ForceM(i, false);
         stabilizer->Dispose(i, 1U);
         shards.erase(shards.begin() + i);
         --ancillaCount;
 
-        for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
-            if (!shards[i]) {
-                stabilizer->Dispose(i, 1U);
-                shards.erase(shards.begin() + i);
+        for (size_t j = shards.size() - 1U; j >= qubitCount; --j) {
+            if (!shards[j]) {
+                stabilizer->Dispose(j, 1U);
+                shards.erase(shards.begin() + j);
                 --ancillaCount;
             }
         }
+
+        shard->Compose(h);
     }
 }
 
