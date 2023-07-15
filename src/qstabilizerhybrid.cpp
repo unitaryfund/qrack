@@ -1800,7 +1800,7 @@ void QStabilizerHybrid::CombineAncillae()
             shard = NULL;
 
             stabilizer->H(combo);
-            stabilizer->ForceM(combo, false);
+            stabilizer->ForceM(combo, true);
         }
 
         baseShard->Compose(h);
