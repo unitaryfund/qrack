@@ -1828,18 +1828,6 @@ void QStabilizerHybrid::WeakSampleAncillae()
         MpsShardPtr& shard = shards[i];
         shard->Compose(h);
 
-        const real1 correctionProb =
-            (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
-        if (correctionProb < 0) {
-            if (Rand() < -correctionProb) {
-                stabilizer->IS(i);
-            }
-        } else {
-            if (Rand() < correctionProb) {
-                stabilizer->S(i);
-            }
-        }
-
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
         clone->H(i);
         clone->ForceM(i, false);
@@ -1891,6 +1879,24 @@ void QStabilizerHybrid::WeakSampleAncillae()
             stabilizer->H(combo);
             stabilizer->ForceM(combo, false);
         }
+
+        const real1 correctionProb =
+            (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
+        if (correctionProb < 0) {
+            if (Rand() < -correctionProb) {
+                stabilizer->IS(i);
+            }
+        } else {
+            if (Rand() < correctionProb) {
+                stabilizer->S(i);
+            }
+        }
+
+        stabilizer->H(i);
+        stabilizer->ForceM(i, false);
+        stabilizer->Dispose(i, 1U);
+        shards.erase(shards.begin() + i);
+        --ancillaCount;
 
         for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
             if (!shards[i]) {
