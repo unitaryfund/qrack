@@ -1831,10 +1831,18 @@ void QStabilizerHybrid::WeakSampleAncillae()
         if (correctionProb < 0) {
             if (Rand() < -correctionProb) {
                 stabilizer->IS(i);
+                const real1 angleCos = cos(PI_R1 / 8);
+                const real1 angleSin = sin(PI_R1 / 8);
+                shard->gate[0U] *= complex(angleCos, angleSin);
+                shard->gate[3U] *= complex(angleCos, -angleSin);
             }
         } else {
             if (Rand() < correctionProb) {
                 stabilizer->S(i);
+                const real1 angleCos = cos(PI_R1 / 8);
+                const real1 angleSin = sin(PI_R1 / 8);
+                shard->gate[0U] *= complex(angleCos, -angleSin);
+                shard->gate[3U] *= complex(angleCos, angleSin);
             }
         }
 
@@ -1890,12 +1898,6 @@ void QStabilizerHybrid::WeakSampleAncillae()
             stabilizer->ForceM(combo, false);
         }
 
-        stabilizer->H(i);
-        stabilizer->ForceM(i, false);
-        stabilizer->Dispose(i, 1U);
-        shards.erase(shards.begin() + i);
-        --ancillaCount;
-
         for (size_t j = shards.size() - 1U; j >= qubitCount; --j) {
             if (!shards[j]) {
                 stabilizer->Dispose(j, 1U);
@@ -1905,6 +1907,16 @@ void QStabilizerHybrid::WeakSampleAncillae()
         }
 
         shard->Compose(h);
+
+        if (toCombine.size() || toCombineAdj.size()) {
+            continue;
+        }
+
+        stabilizer->H(i);
+        stabilizer->ForceM(i, false);
+        stabilizer->Dispose(i, 1U);
+        shards.erase(shards.begin() + i);
+        --ancillaCount;
     }
 }
 
