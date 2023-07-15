@@ -2550,19 +2550,21 @@ public:
      */
     virtual bool GetTInjection() { return false; }
     /**
-     *  Set the option to encode "hybrid stabilizer" states to encode for physical hardware.
+     *  Set option to allow QStabilizerHybrid to sample approximately.
      *
-     *  For the benefit of hardware, we entangle an auxiliary channel with an identity gate. Post selection is then
-     * unnecessary, expontially reducing the hardware shot count. Instead of post-selection, if we measure an error
-     * syndrome on any hybrid stabilizer ancillae, we can code a completely corrective Z gate into the identity channel.
+     *  If approximate sampling is enabled during use of special gate set Clifford+RZ with QStabilizerHybrid, then
+     * terminal measurement and sampling approximate the effect of buffered RZ gates with the closest Clifford phase
+     * gate, plus a probabilistic 'correction' gate, for difference between requested phase angle and closest Clifford
+     * phase transformation.
      */
     virtual void SetStabilizerApproxSampling(bool isApprox) {}
     /**
-     *  Get the option to encode "hybrid stabilizer" states to encode for physical hardware.
+     *  Get option to allow QStabilizerHybrid to sample approximately.
      *
-     *  For the benefit of hardware, we entangle an auxiliary channel with an identity gate. Post selection is then
-     * unnecessary, expontially reducing the hardware shot count. Instead of post-selection, if we measure an error
-     * syndrome on any hybrid stabilizer ancillae, we can code a completely corrective Z gate into the identity channel.
+     *  If approximate sampling is enabled during use of special gate set Clifford+RZ with QStabilizerHybrid, then
+     * terminal measurement and sampling approximate the effect of buffered RZ gates with the closest Clifford phase
+     * gate, plus a probabilistic 'correction' gate, for difference between requested phase angle and closest Clifford
+     * phase transformation.
      */
     virtual bool GetStabilizerApproxSampling() { return false; }
 
