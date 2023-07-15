@@ -117,6 +117,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         if (disable_reactive_separation) {
             qftReg->SetReactiveSeparate(false);
         }
+        if (enable_approx_sampling) {
+            qftReg->SetStabilizerApproxSampling(true);
+        }
         avgt = 0.0;
         sampleFailureCount = 0;
         trialClocks.clear();
@@ -174,6 +177,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 if (disable_reactive_separation) {
                     qftReg->SetReactiveSeparate(false);
                 }
+                if (enable_approx_sampling) {
+                    qftReg->SetStabilizerApproxSampling(true);
+                }
 
                 sampleFailureCount++;
                 isTrialSuccessful = false;
@@ -226,6 +232,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 }
                 if (disable_reactive_separation) {
                     qftReg->SetReactiveSeparate(false);
+                }
+                if (enable_approx_sampling) {
+                    qftReg->SetStabilizerApproxSampling(true);
                 }
 
                 sampleFailureCount++;
@@ -4044,6 +4053,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     if (disable_reactive_separation) {
         goldStandard->SetReactiveSeparate(false);
     }
+    if (enable_approx_sampling) {
+        goldStandard->SetStabilizerApproxSampling(true);
+    }
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -4174,6 +4186,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     }
     if (disable_reactive_separation) {
         testCase->SetReactiveSeparate(false);
+    }
+    if (enable_approx_sampling) {
+        testCase->SetStabilizerApproxSampling(true);
     }
 
     std::map<bitCapInt, int> testCaseResult;

@@ -33,6 +33,7 @@ extern qrack_rand_gen_ptr rng;
 extern bool enable_normalization;
 extern bool disable_t_injection;
 extern bool disable_reactive_separation;
+extern bool enable_approx_sampling;
 extern bool disable_terminal_measurement;
 extern bool use_host_dma;
 extern bool disable_hardware_rng;
