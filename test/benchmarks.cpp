@@ -189,8 +189,31 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             if (isTrialSuccessful) {
                 if (!disable_terminal_measurement) {
                     if (benchmarkShots == 1) {
-                        const bitCapInt result = qftReg->MAll();
-                        if (mOutputFileName.compare("")) {
+                        bitCapInt result;
+                        try {
+                            result = qftReg->MAll();
+                        } catch (const std::exception& e) {
+                            // Release before re-alloc:
+                            qftReg = NULL;
+
+                            // Re-alloc:
+                            qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
+                                enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
+                                REAL1_EPSILON, devList);
+                            if (disable_t_injection) {
+                                qftReg->SetTInjection(false);
+                            }
+                            if (disable_reactive_separation) {
+                                qftReg->SetReactiveSeparate(false);
+                            }
+                            if (enable_approx_sampling) {
+                                qftReg->SetStabilizerApproxSampling(true);
+                            }
+
+                            sampleFailureCount++;
+                            isTrialSuccessful = false;
+                        }
+                        if (isTrialSuccessful && mOutputFileName.compare("")) {
                             mOutputFile << result << std::endl;
                         }
                     } else if (benchmarkShots) {
