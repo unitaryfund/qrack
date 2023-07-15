@@ -2556,7 +2556,7 @@ public:
      * unnecessary, expontially reducing the hardware shot count. Instead of post-selection, if we measure an error
      * syndrome on any hybrid stabilizer ancillae, we can code a completely corrective Z gate into the identity channel.
      */
-    virtual void SetStabilizerHardwareEncoded(bool isHardwareEncoded) {}
+    virtual void SetStabilizerApproxSampling(bool isApprox) {}
     /**
      *  Get the option to encode "hybrid stabilizer" states to encode for physical hardware.
      *
@@ -2564,7 +2564,7 @@ public:
      * unnecessary, expontially reducing the hardware shot count. Instead of post-selection, if we measure an error
      * syndrome on any hybrid stabilizer ancillae, we can code a completely corrective Z gate into the identity channel.
      */
-    virtual bool GetStabilizerHardwareEncoded() { return false; }
+    virtual bool GetStabilizerApproxSampling() { return false; }
 
     /**
      *  Clone this QInterface
