@@ -213,6 +213,40 @@ protected:
         return rng;
     }
 
+    real1 FractionalRzAngleWithFlush(bitLenInt i, real1 angle)
+    {
+        constexpr real1 Period = 2 * PI_R1;
+        while (angle < 0) {
+            angle += Period;
+        }
+        while (angle >= Period) {
+            angle -= Period;
+        }
+        int sector = std::round(2 * angle / PI_R1);
+        if (sector < 0) {
+            sector += 4;
+        }
+        if (sector > 3) {
+            sector -= 4;
+        }
+        switch (sector) {
+        case 1U:
+            stabilizer->S(i);
+            break;
+        case 2U:
+            stabilizer->Z(i);
+            break;
+        case 3U:
+            stabilizer->IS(i);
+            break;
+        case 0U:
+        default:
+            break;
+        }
+
+        return angle - sector * PI_R1 / 2;
+    }
+
     void CombineAncillae();
 
     real1_f ApproxCompareHelper(
