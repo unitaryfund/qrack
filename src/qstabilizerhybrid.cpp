@@ -1447,8 +1447,8 @@ bitCapInt QStabilizerHybrid::MAll()
             MpsShardPtr& shard = shards[i];
             shard->Compose(h);
 
-            const real1_f correctionProb =
-                2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
+            const real1 correctionProb =
+                (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
             if (correctionProb < 0) {
                 if (Rand() < -correctionProb) {
                     stabilizer->IS(i);
