@@ -1822,8 +1822,6 @@ void QStabilizerHybrid::WeakSampleAncillae()
 {
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     while (ancillaCount) {
-        CombineAncillae();
-
         const bitLenInt i = qubitCount;
         MpsShardPtr& shard = shards[i];
         shard->Compose(h);
