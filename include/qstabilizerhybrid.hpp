@@ -242,7 +242,6 @@ protected:
         return angle - sector * PI_R1 / 2;
     }
 
-    void CombineAncillae();
     void WeakSampleAncillae();
 
     real1_f ApproxCompareHelper(
