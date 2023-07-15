@@ -1458,6 +1458,56 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
+    if (ancillaCount && !IsLogicalProbBuffered()) {
+        const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+        while (ancillaCount) {
+            CombineAncillae();
+
+            const bitLenInt i = qubitCount;
+            MpsShardPtr& shard = shards[i];
+            shard->Compose(h);
+
+            real1 angle = std::arg(shard->gate[3U] / shard->gate[0U]);
+            if (angle < 0) {
+                angle += 2 * PI_R1;
+            }
+            int sector = std::round(2 * angle / PI_R1);
+            const real1 correctionProb = (2 * angle / PI_R1 - sector);
+            if ((ONE_R1 / 2 + correctionProb) <= FP_NORM_EPSILON) {
+                --sector;
+            } else if ((ONE_R1 / 2 - correctionProb) <= FP_NORM_EPSILON) {
+                ++sector;
+            } else if (correctionProb < 0) {
+                if (Rand() < -correctionProb) {
+                    --sector;
+                }
+            } else {
+                if (Rand() < correctionProb) {
+                    ++sector;
+                }
+            }
+            switch (sector) {
+            case 1U:
+                stabilizer->S(i);
+                break;
+            case 2U:
+                stabilizer->Z(i);
+                break;
+            case 3U:
+                stabilizer->IS(i);
+            case 0U:
+            default:
+                break;
+            }
+
+            stabilizer->H(i);
+            stabilizer->ForceM(i, false);
+            stabilizer->Dispose(i, 1U);
+            shards.erase(shards.begin() + i);
+            --ancillaCount;
+        }
+    }
+
     if (!IsProbBuffered()) {
         const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
