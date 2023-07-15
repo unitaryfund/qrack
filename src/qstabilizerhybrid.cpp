@@ -41,7 +41,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
-    , isHardwareEncoded(false)
+    , isApproxSampling(false)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
     , maxEngineQubitCount(27U)
@@ -179,7 +179,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
     // PRX Quantum 3, 020361 – Published 23 June 2022
 
-    if (!useTGadget || ((ancillaCount + isHardwareEncoded) >= maxAncillaCount)) {
+    if (!useTGadget || (ancillaCount >= maxAncillaCount)) {
         // The option to optimize this case is off.
         SwitchToEngine();
         return;
@@ -187,6 +187,13 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
 
     const MpsShardPtr shard = shards[target];
     shards[target] = NULL;
+
+    /*const real1 angle =
+        (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
+    const real1 angleCos = cos(angle);
+    const real1 angleSin = sin(angle);
+    shard->gate[0U] = complex(angleCos, -angleSin);
+    shard->gate[3U] = complex(angleCos, angleSin);*/
 
     QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
         1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
@@ -198,14 +205,6 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
 
     // Use reverse t-injection gadget.
     stabilizer->CNOT(target, ancillaIndex);
-
-    const real1 angle =
-        (real1)(FractionalRzAngleWithFlush(ancillaIndex, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-    const real1 angleCos = cos(angle);
-    const real1 angleSin = sin(angle);
-    shard->gate[0U] = complex(angleCos, -angleSin);
-    shard->gate[3U] = complex(angleCos, angleSin);
-
     Mtrx(shard->gate, ancillaIndex);
     H(ancillaIndex);
 
@@ -214,25 +213,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Ancilla is separable after measurement.
     // Dispose(ancillaIndex, 1U);
 
-    if (!isHardwareEncoded) {
-        CombineAncillae();
-        return;
-    }
-
-    // For the benefit of hardware, we entangle an auxiliary channel with an identity gate.
-    // Post selection is then unnecessary, expontially reducing the hardware shot count.
-    ancilla = std::make_shared<QUnitClifford>(
-        1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
-
-    // Form potentially entangled representation, with this.
-    ancillaIndex = stabilizer->Compose(ancilla);
-    ++ancillaCount;
-    shards.push_back(NULL);
-
-    // Use reverse t-injection gadget.
-    stabilizer->CNOT(target, ancillaIndex);
-    // Encoded gate is identity
-    H(ancillaIndex);
+    CombineAncillae();
 }
 
 bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
@@ -968,9 +949,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     complex mtrx[4U];
     if (!wasCached) {
         std::copy(lMtrx, lMtrx + 4U, mtrx);
-    } else if (!engine && useTGadget && (target < qubitCount) &&
-        ((ancillaCount + isHardwareEncoded) < maxAncillaCount) && !IS_PHASE(lMtrx) && !IS_INVERT(lMtrx) &&
-        (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
+    } else if (!engine && useTGadget && (target < qubitCount) && (ancillaCount < maxAncillaCount) && !IS_PHASE(lMtrx) &&
+        !IS_INVERT(lMtrx) && (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
 
         if (shard->IsHPhase() || shard->IsHInvert()) {
             complex hGate[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
@@ -989,6 +969,13 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         }
 
         if (shard) {
+            /*const real1 angle =
+                (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
+            const real1 angleCos = cos(angle);
+            const real1 angleSin = sin(angle);
+            shard->gate[0U] = complex(angleCos, -angleSin);
+            shard->gate[3U] = complex(angleCos, angleSin);*/
+
             QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
                 1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 
@@ -999,35 +986,10 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 
             // Use reverse t-injection gadget.
             stabilizer->CNOT(target, ancillaIndex);
-
-            const real1 angle =
-                (real1)(FractionalRzAngleWithFlush(ancillaIndex, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-            const real1 angleCos = cos(angle);
-            const real1 angleSin = sin(angle);
-            shard->gate[0U] = complex(angleCos, -angleSin);
-            shard->gate[3U] = complex(angleCos, angleSin);
-
             Mtrx(shard->gate, ancillaIndex);
             H(ancillaIndex);
 
-            if (isHardwareEncoded) {
-                // For the benefit of hardware, we entangle an auxiliary channel with an identity gate.
-                // Post selection is then unnecessary, expontially reducing the hardware shot count.
-                ancilla = std::make_shared<QUnitClifford>(
-                    1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
-
-                // Form potentially entangled representation, with this.
-                bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
-                ++ancillaCount;
-                shards.push_back(NULL);
-
-                // Use reverse t-injection gadget.
-                stabilizer->CNOT(target, ancillaIndex);
-                // Encoded gate is identity
-                H(ancillaIndex);
-            } else {
-                CombineAncillae();
-            }
+            CombineAncillae();
         }
 
         std::copy(lMtrx, lMtrx + 4U, mtrx);
@@ -1474,6 +1436,35 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
+    if (isApproxSampling && ancillaCount && !IsLogicalProbBuffered()) {
+        const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+        while (ancillaCount) {
+            CombineAncillae();
+
+            const bitLenInt i = qubitCount;
+            MpsShardPtr& shard = shards[i];
+            shard->Compose(h);
+
+            const real1 correctionProb =
+                (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
+            if (correctionProb < 0) {
+                if (Rand() < -correctionProb) {
+                    stabilizer->IS(i);
+                }
+            } else {
+                if (Rand() < correctionProb) {
+                    stabilizer->S(i);
+                }
+            }
+
+            stabilizer->H(i);
+            stabilizer->ForceM(i, false);
+            stabilizer->Dispose(i, 1U);
+            shards.erase(shards.begin() + i);
+            --ancillaCount;
+        }
+    }
+
     if (!IsProbBuffered()) {
         const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
@@ -1579,7 +1570,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
     std::map<bitCapInt, int> results;
 
-    if (!IsProbBuffered()) {
+    if (!IsProbBuffered() || (isApproxSampling && !IsLogicalProbBuffered())) {
         std::mutex resultsMutex;
         par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
             const bitCapInt sample = SampleClone(qPowers);
@@ -1664,7 +1655,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    if (!IsProbBuffered()) {
+    if (!IsProbBuffered() || (isApproxSampling && !IsLogicalProbBuffered())) {
         par_for(0U, shots,
             [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
 
@@ -1750,7 +1741,7 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QStabilizerHybrid::CombineAncillae()
 {
-    if (engine || isHardwareEncoded) {
+    if (engine) {
         return;
     }
 

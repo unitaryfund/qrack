@@ -2824,11 +2824,11 @@ MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool irs)
     }
 }
 
-MICROSOFT_QUANTUM_DECL void SetStabilizerHardwareEncoded(_In_ uintq sid, _In_ bool she)
+MICROSOFT_QUANTUM_DECL void SetStabilizerApproxSampling(_In_ uintq sid, _In_ bool she)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
     try {
-        simulator->SetStabilizerHardwareEncoded(she);
+        simulator->SetStabilizerApproxSampling(she);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
