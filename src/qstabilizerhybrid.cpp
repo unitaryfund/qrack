@@ -1473,9 +1473,9 @@ bitCapInt QStabilizerHybrid::MAll()
             }
             int sector = std::round(2 * angle / PI_R1);
             const real1 correctionProb = (2 * angle / PI_R1 - sector);
-            if ((ONE_R1 / 2 + correctionProb) <= FP_NORM_EPSILON) {
+            if (abs(ONE_R1 / 2 + correctionProb) <= FP_NORM_EPSILON) {
                 --sector;
-            } else if ((ONE_R1 / 2 - correctionProb) <= FP_NORM_EPSILON) {
+            } else if (abs(ONE_R1 / 2 - correctionProb) <= FP_NORM_EPSILON) {
                 ++sector;
             } else if (correctionProb < 0) {
                 if (Rand() < -correctionProb) {
