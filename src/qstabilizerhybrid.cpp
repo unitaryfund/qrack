@@ -179,7 +179,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
     // PRX Quantum 3, 020361 – Published 23 June 2022
 
-    if (!useTGadget || (ancillaCount >= maxAncillaCount)) {
+    if (!useTGadget || (!isApproxSampling && (ancillaCount >= maxAncillaCount))) {
         // The option to optimize this case is off.
         SwitchToEngine();
         return;
@@ -949,8 +949,9 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     complex mtrx[4U];
     if (!wasCached) {
         std::copy(lMtrx, lMtrx + 4U, mtrx);
-    } else if (!engine && useTGadget && (target < qubitCount) && (ancillaCount < maxAncillaCount) && !IS_PHASE(lMtrx) &&
-        !IS_INVERT(lMtrx) && (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
+    } else if (!engine && useTGadget && (target < qubitCount) &&
+        (isApproxSampling || (ancillaCount < maxAncillaCount)) && !IS_PHASE(lMtrx) && !IS_INVERT(lMtrx) &&
+        (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
 
         if (shard->IsHPhase() || shard->IsHInvert()) {
             complex hGate[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
