@@ -1701,8 +1701,8 @@ void QStabilizerHybrid::WeakSampleAncillae()
 {
     const QStabilizerHybridPtr origClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    const bitLenInt i = qubitCount;
-    while (ancillaCount) {
+
+    for (size_t i = qubitCount; i < shards.size(); ++i) {
         const MpsShardPtr& shard = shards[i];
         shard->Compose(h);
 
@@ -1726,6 +1726,13 @@ void QStabilizerHybrid::WeakSampleAncillae()
             }
         }
 
+        shard->Compose(h);
+    }
+
+    const bitLenInt i = qubitCount;
+    while (ancillaCount) {
+        stabilizer->H(i);
+
         if ((ONE_R1 - stabilizer->Prob(i)) <= FP_NORM_EPSILON) {
             stabilizer = origClone->stabilizer;
             shards = origClone->shards;
@@ -1736,9 +1743,6 @@ void QStabilizerHybrid::WeakSampleAncillae()
             return;
         }
 
-        shard->Compose(h);
-
-        stabilizer->H(i);
         stabilizer->ForceM(i, false);
         stabilizer->Dispose(i, 1U);
         shards.erase(shards.begin() + i);
