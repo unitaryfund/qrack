@@ -41,7 +41,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
-    , isApproxSampling(false)
+    , isWeakSampling(false)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
     , maxEngineQubitCount(27U)
@@ -179,7 +179,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
     // PRX Quantum 3, 020361 – Published 23 June 2022
 
-    if (!useTGadget || (!isApproxSampling && (ancillaCount >= maxAncillaCount))) {
+    if (!useTGadget || (!isWeakSampling && (ancillaCount >= maxAncillaCount))) {
         // The option to optimize this case is off.
         SwitchToEngine();
         return;
@@ -940,8 +940,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     complex mtrx[4U];
     if (!wasCached) {
         std::copy(lMtrx, lMtrx + 4U, mtrx);
-    } else if (!engine && useTGadget && (target < qubitCount) &&
-        (isApproxSampling || (ancillaCount < maxAncillaCount)) && !IS_PHASE(lMtrx) && !IS_INVERT(lMtrx) &&
+    } else if (!engine && useTGadget && (target < qubitCount) && (isWeakSampling || (ancillaCount < maxAncillaCount)) &&
+        !IS_PHASE(lMtrx) && !IS_INVERT(lMtrx) &&
         (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
 
         if (shard->IsHPhase() || shard->IsHInvert()) {
@@ -1419,7 +1419,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (isApproxSampling && ancillaCount && !IsLogicalProbBuffered()) {
+    if (isWeakSampling && ancillaCount && !IsLogicalProbBuffered()) {
         WeakSampleAncillae();
     }
 
@@ -1528,7 +1528,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
     std::map<bitCapInt, int> results;
 
-    if (!IsProbBuffered() || (isApproxSampling && !IsLogicalProbBuffered())) {
+    if (!IsProbBuffered() || (isWeakSampling && !IsLogicalProbBuffered())) {
         std::mutex resultsMutex;
         par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
             const bitCapInt sample = SampleClone(qPowers);
@@ -1613,7 +1613,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    if (!IsProbBuffered() || (isApproxSampling && !IsLogicalProbBuffered())) {
+    if (!IsProbBuffered() || (isWeakSampling && !IsLogicalProbBuffered())) {
         par_for(0U, shots,
             [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
 

@@ -2550,23 +2550,23 @@ public:
      */
     virtual bool GetTInjection() { return false; }
     /**
-     *  Set option to allow QStabilizerHybrid to sample approximately.
+     *  Set option to allow QStabilizerHybrid to sample weakly.
      *
-     *  If approximate sampling is enabled during use of special gate set Clifford+RZ with QStabilizerHybrid, then
-     * terminal measurement and sampling approximate the effect of buffered RZ gates with the closest Clifford phase
-     * gate, plus a probabilistic 'correction' gate, for difference between requested phase angle and closest Clifford
-     * phase transformation.
+     *  If weak sampling is enabled during use of special gate set Clifford+RZ with QStabilizerHybrid, then terminal
+     * measurement and sampling approximate the effect of buffered RZ gates with the closest Clifford phase gate, plus a
+     * probabilistic 'correction' gate, for difference between requested phase angle and closest Clifford phase
+     * transformation.
      */
-    virtual void SetStabilizerApproxSampling(bool isApprox) {}
+    virtual void SetStabilizerWeakSampling(bool isWeak) {}
     /**
      *  Get option to allow QStabilizerHybrid to sample approximately.
      *
-     *  If approximate sampling is enabled during use of special gate set Clifford+RZ with QStabilizerHybrid, then
-     * terminal measurement and sampling approximate the effect of buffered RZ gates with the closest Clifford phase
-     * gate, plus a probabilistic 'correction' gate, for difference between requested phase angle and closest Clifford
-     * phase transformation.
+     *  If weak sampling is enabled during use of special gate set Clifford+RZ with QStabilizerHybrid, then terminal
+     * measurement and sampling approximate the effect of buffered RZ gates with the closest Clifford phase gate, plus a
+     * probabilistic 'correction' gate, for difference between requested phase angle and closest Clifford phase
+     * transformation.
      */
-    virtual bool GetStabilizerApproxSampling() { return false; }
+    virtual bool GetStabilizerWeakSampling() { return false; }
 
     /**
      *  Clone this QInterface

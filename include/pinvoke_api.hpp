@@ -238,7 +238,7 @@ MICROSOFT_QUANTUM_DECL void ResetUnitaryFidelity(_In_ uintq sid);
 MICROSOFT_QUANTUM_DECL void SetSdrp(_In_ uintq sid, _In_ double sdrp);
 MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ uintq sid, _In_ bool irs);
 MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool iti);
-MICROSOFT_QUANTUM_DECL void SetStabilizerApproxSampling(_In_ uintq sid, _In_ bool she);
+MICROSOFT_QUANTUM_DECL void SetStabilizerWeakSampling(_In_ uintq sid, _In_ bool sws);
 
 #if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq n,

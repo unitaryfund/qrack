@@ -2824,11 +2824,11 @@ MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool irs)
     }
 }
 
-MICROSOFT_QUANTUM_DECL void SetStabilizerApproxSampling(_In_ uintq sid, _In_ bool she)
+MICROSOFT_QUANTUM_DECL void SetStabilizerWeakSampling(_In_ uintq sid, _In_ bool sws)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
     try {
-        simulator->SetStabilizerApproxSampling(she);
+        simulator->SetStabilizerWeakSampling(sws);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;

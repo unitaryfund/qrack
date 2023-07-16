@@ -117,8 +117,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         if (disable_reactive_separation) {
             qftReg->SetReactiveSeparate(false);
         }
-        if (enable_approx_sampling) {
-            qftReg->SetStabilizerApproxSampling(true);
+        if (enable_weak_sampling) {
+            qftReg->SetStabilizerWeakSampling(true);
         }
         avgt = 0.0;
         sampleFailureCount = 0;
@@ -177,8 +177,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 if (disable_reactive_separation) {
                     qftReg->SetReactiveSeparate(false);
                 }
-                if (enable_approx_sampling) {
-                    qftReg->SetStabilizerApproxSampling(true);
+                if (enable_weak_sampling) {
+                    qftReg->SetStabilizerWeakSampling(true);
                 }
 
                 sampleFailureCount++;
@@ -206,8 +206,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                             if (disable_reactive_separation) {
                                 qftReg->SetReactiveSeparate(false);
                             }
-                            if (enable_approx_sampling) {
-                                qftReg->SetStabilizerApproxSampling(true);
+                            if (enable_weak_sampling) {
+                                qftReg->SetStabilizerWeakSampling(true);
                             }
 
                             sampleFailureCount++;
@@ -256,8 +256,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 if (disable_reactive_separation) {
                     qftReg->SetReactiveSeparate(false);
                 }
-                if (enable_approx_sampling) {
-                    qftReg->SetStabilizerApproxSampling(true);
+                if (enable_weak_sampling) {
+                    qftReg->SetStabilizerWeakSampling(true);
                 }
 
                 sampleFailureCount++;
@@ -4076,8 +4076,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     if (disable_reactive_separation) {
         goldStandard->SetReactiveSeparate(false);
     }
-    if (enable_approx_sampling) {
-        goldStandard->SetStabilizerApproxSampling(true);
+    if (enable_weak_sampling) {
+        goldStandard->SetStabilizerWeakSampling(true);
     }
 
     for (d = 0; d < Depth; d++) {
@@ -4210,8 +4210,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     if (disable_reactive_separation) {
         testCase->SetReactiveSeparate(false);
     }
-    if (enable_approx_sampling) {
-        testCase->SetStabilizerApproxSampling(true);
+    if (enable_weak_sampling) {
+        testCase->SetStabilizerWeakSampling(true);
     }
 
     std::map<bitCapInt, int> testCaseResult;
