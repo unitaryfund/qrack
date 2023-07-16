@@ -1746,12 +1746,14 @@ void QStabilizerHybrid::WeakSampleAncillae()
         for (size_t j = i + 1U; j < shards.size(); ++j) {
             if (clone->Prob(j) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->H(i);
                 clone->ForceM(i, true);
                 if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
                     toCombine.push_back(j);
                 }
             } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->H(i);
                 clone->ForceM(i, true);
                 if (clone->Prob(j) <= FP_NORM_EPSILON) {
                     toCombineAdj.push_back(j);
