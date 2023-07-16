@@ -1799,27 +1799,11 @@ void QStabilizerHybrid::WeakSampleAncillae()
             }
         }
 
-        const real1 finalProb =
-            (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
-        if (finalProb < 0) {
-            if (Rand() < -finalProb) {
-                stabilizer->IS(i);
-                const real1 angleCos = cos(PI_R1 / 8);
-                const real1 angleSin = sin(PI_R1 / 8);
-                shard->gate[0U] *= complex(angleCos, angleSin);
-                shard->gate[3U] *= complex(angleCos, -angleSin);
-            }
-        } else {
-            if (Rand() < finalProb) {
-                stabilizer->S(i);
-                const real1 angleCos = cos(PI_R1 / 8);
-                const real1 angleSin = sin(PI_R1 / 8);
-                shard->gate[0U] *= complex(angleCos, -angleSin);
-                shard->gate[3U] *= complex(angleCos, angleSin);
-            }
-        }
-
         shard->Compose(h);
+
+        if (toCombine.size() || toCombineAdj.size()) {
+            continue;
+        }
 
         stabilizer->H(i);
         stabilizer->ForceM(i, false);
