@@ -7245,9 +7245,9 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
             }
         }
 
-        std::map<bitCapInt, int> result = testCase->MultiShotMeasureMask(qPowers, 100U);
+        const bitCapInt result = testCase->MAll();
 
-        if ((result.size() > 1U) || (result.begin()->first != randPerm)) {
+        if (result != randPerm) {
             for (d = 0; d < Depth; d++) {
                 std::vector<int>& layer1QbRands = gate1QbRands[d];
                 for (i = 0; i < (int)layer1QbRands.size(); i++) {
@@ -7381,8 +7381,7 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
             }
         }
 
-        REQUIRE(result.begin()->first == randPerm);
-        REQUIRE(result.size() == 1U);
+        REQUIRE(result == randPerm);
     }
 }
 
