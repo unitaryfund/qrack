@@ -354,7 +354,10 @@ QInterfacePtr QStabilizerHybrid::Clone()
     c->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
-    c->lowRankCache = lowRankCache;
+    c->lowRankCache.clear();
+    for (const QUnitCliffordProb& lrc : lowRankCache) {
+        c->lowRankCache.emplace_back(lrc.prob, std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer));
+    }
     for (size_t i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
             c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
