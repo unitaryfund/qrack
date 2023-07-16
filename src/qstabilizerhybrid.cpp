@@ -41,6 +41,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
+    , isWeakSampling(false)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
     , maxEngineQubitCount(27U)
@@ -178,7 +179,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
     // PRX Quantum 3, 020361 – Published 23 June 2022
 
-    if (!useTGadget) {
+    if (!useTGadget || (!isWeakSampling && (ancillaCount >= maxAncillaCount))) {
         // The option to optimize this case is off.
         SwitchToEngine();
         return;
@@ -949,7 +950,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     complex mtrx[4U];
     if (!wasCached) {
         std::copy(lMtrx, lMtrx + 4U, mtrx);
-    } else if (!engine && useTGadget && (target < qubitCount) && !IS_PHASE(lMtrx) && !IS_INVERT(lMtrx) &&
+    } else if (!engine && useTGadget && (target < qubitCount) && (isWeakSampling || (ancillaCount < maxAncillaCount)) &&
+        !IS_PHASE(lMtrx) && !IS_INVERT(lMtrx) &&
         (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
 
         if (shard->IsHPhase() || shard->IsHInvert()) {
@@ -1433,8 +1435,10 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (ancillaCount && !IsProbBuffered()) {
+    if (isWeakSampling && ancillaCount && !IsProbBuffered()) {
+        PrepareLowRankCache();
         const bitCapInt toRet = WeakSampleAncillae();
+        lowRankCache.clear();
         SetPermutation(toRet);
 
         return toRet;
@@ -1769,10 +1773,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
 
 bitCapInt QStabilizerHybrid::WeakSampleAncillae()
 {
-    if (!lowRankCache.size()) {
-        PrepareLowRankCache();
-    }
-
     bitCapInt toRet = 0U;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         real1 qubitProb = ZERO_R1;
@@ -1808,7 +1808,6 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             lrc.prob *= nrm;
         }
     }
-    lowRankCache.clear();
 
     return toRet;
 }

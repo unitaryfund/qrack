@@ -49,6 +49,7 @@ protected:
     bool doNormalize;
     bool isSparse;
     bool useTGadget;
+    bool isWeakSampling;
     bitLenInt thresholdQubits;
     bitLenInt ancillaCount;
     bitLenInt maxEngineQubitCount;
@@ -271,6 +272,8 @@ public:
 
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
+    void SetStabilizerWeakSampling(bool isApprox) { isWeakSampling = isApprox; }
+    bool GetStabilizerWeakSampling() { return isWeakSampling; }
 
     void Finish()
     {
