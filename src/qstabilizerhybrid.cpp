@@ -1745,7 +1745,71 @@ void QStabilizerHybrid::WeakSampleAncillae()
             return;
         }
 
+        clone->ForceM(i, false);
+
+        std::vector<bitLenInt> toCombine;
+        std::vector<bitLenInt> toCombineAdj;
+        for (size_t j = i + 1U; j < shards.size(); ++j) {
+            if (clone->Prob(j) <= FP_NORM_EPSILON) {
+                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->H(i);
+                clone->ForceM(i, true);
+                if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
+                    toCombine.push_back(j);
+                }
+            } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
+                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->H(i);
+                clone->ForceM(i, true);
+                if (clone->Prob(j) <= FP_NORM_EPSILON) {
+                    toCombineAdj.push_back(j);
+                }
+            }
+        }
+
+        for (const bitLenInt& combo : toCombine) {
+            MpsShardPtr& oShard = shards[combo];
+            if (!oShard) {
+                continue;
+            }
+
+            oShard->Compose(h);
+            shard->Compose(oShard->gate);
+            oShard = NULL;
+
+            stabilizer->H(combo);
+            stabilizer->ForceM(combo, false);
+        }
+
+        for (const bitLenInt& combo : toCombineAdj) {
+            MpsShardPtr& oShard = shards[combo];
+            if (!oShard) {
+                continue;
+            }
+
+            oShard->Compose(h);
+            complex mtrx[4U];
+            inv2x2(oShard->gate, mtrx);
+            shard->Compose(oShard->gate);
+            oShard = NULL;
+
+            stabilizer->H(combo);
+            stabilizer->ForceM(combo, false);
+        }
+
+        for (size_t j = shards.size() - 1U; j >= qubitCount; --j) {
+            if (!shards[j]) {
+                stabilizer->Dispose(j, 1U);
+                shards.erase(shards.begin() + j);
+                --ancillaCount;
+            }
+        }
+
         shard->Compose(h);
+
+        if (toCombine.size() || toCombineAdj.size()) {
+            continue;
+        }
 
         stabilizer->H(i);
         stabilizer->ForceM(i, false);
