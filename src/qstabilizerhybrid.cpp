@@ -1773,18 +1773,30 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         if (result) {
             toRet |= pow2(i);
         }
+        real1 discardedProb = ZERO_R1;
         std::vector<QUnitCliffordProb> nLowRankCache;
         for (const QUnitCliffordProb& lrc : lowRankCache) {
             if (result && (lrc.stabilizer->Prob(i) <= FP_NORM_EPSILON)) {
+                discardedProb += lrc.prob;
                 continue;
             }
             if (!result && ((ONE_R1 - lrc.stabilizer->Prob(i)) <= FP_NORM_EPSILON)) {
+                discardedProb += lrc.prob;
                 continue;
             }
             lrc.stabilizer->ForceM(i, result);
             nLowRankCache.push_back(lrc);
         }
         lowRankCache = nLowRankCache;
+
+        if (discardedProb <= FP_NORM_EPSILON) {
+            continue;
+        }
+
+        const real1 nrm = ONE_R1 / (ONE_R1 - discardedProb);
+        for (QUnitCliffordProb& lrc : lowRankCache) {
+            lrc.prob *= nrm;
+        }
     }
 
     return toRet;
