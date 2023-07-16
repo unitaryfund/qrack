@@ -1435,7 +1435,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (isWeakSampling && ancillaCount && !IsProbBuffered()) {
+    if (isWeakSampling && ancillaCount && !IsLogicalProbBuffered()) {
         PrepareLowRankCache();
         const bitCapInt toRet = WeakSampleAncillae();
         lowRankCache.clear();
@@ -1549,7 +1549,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
     std::map<bitCapInt, int> results;
 
-    if (!IsProbBuffered()) {
+    if (!IsProbBuffered() || (isWeakSampling && !IsLogicalProbBuffered())) {
         std::mutex resultsMutex;
         PrepareLowRankCache();
         par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
@@ -1636,7 +1636,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    if (!IsProbBuffered()) {
+    if (!IsProbBuffered() || (isWeakSampling && !IsLogicalProbBuffered())) {
         PrepareLowRankCache();
         par_for(0U, shots,
             [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
@@ -1727,11 +1727,8 @@ void QStabilizerHybrid::PrepareLowRankCache()
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     lowRankCache.clear();
     lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
-    for (size_t i = 0U; i < shards.size(); ++i) {
+    for (size_t i = qubitCount; i < shards.size(); ++i) {
         const MpsShardPtr& shard = shards[i];
-        if (!shard) {
-            continue;
-        }
         shard->Compose(h);
         const real1 correctionProb =
             (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
@@ -1755,15 +1752,11 @@ void QStabilizerHybrid::PrepareLowRankCache()
             const real1 p0 = s0->Prob(i);
             const real1 p1 = s1->Prob(i);
             if ((ONE_R1 - p0) > FP_NORM_EPSILON) {
-                if (i >= qubitCount) {
-                    s0->ForceM(i, false);
-                }
+                s0->ForceM(i, false);
                 nLowRankCache.emplace_back(lrc.prob * (((ONE_R1 - p1) > FP_NORM_EPSILON) ? prob0 : ONE_R1), s0);
             }
             if ((ONE_R1 - p1) > FP_NORM_EPSILON) {
-                if (i >= qubitCount) {
-                    s1->ForceM(i, false);
-                }
+                s1->ForceM(i, false);
                 nLowRankCache.emplace_back(lrc.prob * (((ONE_R1 - p0) > FP_NORM_EPSILON) ? prob1 : ONE_R1), s1);
             }
         }
