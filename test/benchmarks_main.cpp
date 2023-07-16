@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
         Opt(disable_t_injection)["--disable-t-injection"](
             "Disable reverse t-injection gadget, in stabilizer simulator.") |
         Opt(disable_reactive_separation)["--disable-reactive-separation"]("Disable QUnit 'reactive' separation") |
-        Opt(enable_weak_sampling)["--enable-weask-sampling"]("Enable weak sampling, in stabilizer simulator.") |
+        Opt(enable_weak_sampling)["--enable-weak-sampling"]("Enable weak sampling, in stabilizer simulator.") |
         Opt(disable_terminal_measurement)["--disable-terminal-measurement"](
             "Disable final measurement step in benchmarks") |
         Opt(use_host_dma)["--use-host-dma"](
