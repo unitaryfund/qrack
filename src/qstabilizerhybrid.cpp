@@ -1727,19 +1727,12 @@ void QStabilizerHybrid::PrepareLowRankCache()
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     lowRankCache.clear();
     lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
-    for (size_t i = 0U; i < shards.size(); ++i) {
+    for (size_t i = qubitCount; i < shards.size(); ++i) {
         const MpsShardPtr& shard = shards[i];
-        if (!shard) {
-            continue;
-        }
-        if (i >= qubitCount) {
-            shard->Compose(h);
-        }
+        shard->Compose(h);
         const real1 correctionProb =
             (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
-        if (i >= qubitCount) {
-            shard->Compose(h);
-        }
+        shard->Compose(h);
         if (abs(correctionProb) <= FP_NORM_EPSILON) {
             continue;
         }
@@ -1755,13 +1748,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 s1->IS(i);
             } else {
                 s1->S(i);
-            }
-
-            if (i < qubitCount) {
-                nLowRankCache.emplace_back(lrc.prob * prob0, s0);
-                nLowRankCache.emplace_back(lrc.prob * prob1, s1);
-
-                continue;
             }
 
             const real1 p0 = s0->Prob(i);
