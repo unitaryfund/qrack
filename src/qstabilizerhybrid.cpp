@@ -1701,6 +1701,8 @@ void QStabilizerHybrid::WeakSampleAncillae()
 {
     const QStabilizerHybridPtr origClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    const real1 angleCos = cos(PI_R1 / 8);
+    const real1 angleSin = sin(PI_R1 / 8);
 
     for (size_t i = qubitCount; i < shards.size(); ++i) {
         const MpsShardPtr& shard = shards[i];
@@ -1711,16 +1713,12 @@ void QStabilizerHybrid::WeakSampleAncillae()
         if (correctionProb < 0) {
             if (Rand() < -correctionProb) {
                 stabilizer->IS(i);
-                const real1 angleCos = cos(PI_R1 / 8);
-                const real1 angleSin = sin(PI_R1 / 8);
                 shard->gate[0U] *= complex(angleCos, angleSin);
                 shard->gate[3U] *= complex(angleCos, -angleSin);
             }
         } else {
             if (Rand() < correctionProb) {
                 stabilizer->S(i);
-                const real1 angleCos = cos(PI_R1 / 8);
-                const real1 angleSin = sin(PI_R1 / 8);
                 shard->gate[0U] *= complex(angleCos, -angleSin);
                 shard->gate[3U] *= complex(angleCos, angleSin);
             }
