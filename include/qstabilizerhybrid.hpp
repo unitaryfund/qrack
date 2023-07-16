@@ -20,12 +20,12 @@
 
 namespace Qrack {
 
-struct QUnitCliffordAmp {
-    complex amp;
+struct QUnitCliffordProb {
+    real1 prob;
     QUnitCliffordPtr stabilizer;
 
-    QUnitCliffordAmp(complex a, QUnitCliffordPtr s)
-        : amp(a)
+    QUnitCliffordProb(real1 p, QUnitCliffordPtr s)
+        : prob(p)
         , stabilizer(s)
     {
         // Intentionally left blank.
@@ -65,7 +65,7 @@ protected:
     std::vector<QInterfaceEngine> cloneEngineTypes;
     std::vector<MpsShardPtr> shards;
     std::map<bitCapInt, complex> stateMapCache;
-    std::vector<QUnitCliffordAmp> lowRankCache;
+    std::vector<QUnitCliffordProb> lowRankCache;
 
     QUnitCliffordPtr MakeStabilizer(bitCapInt perm = 0U);
     QInterfacePtr MakeEngine(bitCapInt perm = 0U);
@@ -182,7 +182,9 @@ protected:
     {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
 
-        clone->WeakSampleAncillae();
+        if (ancillaCount) {
+            return clone->WeakSampleAncillae();
+        }
 
         const bitCapInt rawSample = clone->MAll();
         bitCapInt sample = 0U;
@@ -242,7 +244,7 @@ protected:
         return angle - sector * PI_R1 / 2;
     }
 
-    void WeakSampleAncillae();
+    bitCapInt WeakSampleAncillae();
 
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);

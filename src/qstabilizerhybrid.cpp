@@ -1432,7 +1432,10 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
     if (isWeakSampling && ancillaCount && !IsLogicalProbBuffered()) {
-        WeakSampleAncillae();
+        const bitCapInt toRet = WeakSampleAncillae();
+        SetPermutation(toRet);
+
+        return toRet;
     }
 
     if (!IsProbBuffered()) {
@@ -1709,55 +1712,73 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
 }
 
-void QStabilizerHybrid::WeakSampleAncillae()
+bitCapInt QStabilizerHybrid::WeakSampleAncillae()
 {
-    const QStabilizerHybridPtr origClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    const real1 angleCos = cos(PI_R1 / 8);
-    const real1 angleSin = sin(PI_R1 / 8);
 
+    lowRankCache.clear();
+    lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
     for (size_t i = qubitCount; i < shards.size(); ++i) {
         const MpsShardPtr& shard = shards[i];
         shard->Compose(h);
-
         const real1 correctionProb =
             (real1)(2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1);
-        if (correctionProb < 0) {
-            if (Rand() < -correctionProb) {
-                stabilizer->IS(i);
-                shard->gate[0U] *= complex(angleCos, angleSin);
-                shard->gate[3U] *= complex(angleCos, -angleSin);
-            }
-        } else {
-            if (Rand() < correctionProb) {
-                stabilizer->S(i);
-                shard->gate[0U] *= complex(angleCos, -angleSin);
-                shard->gate[3U] *= complex(angleCos, angleSin);
-            }
-        }
-
         shard->Compose(h);
-    }
-
-    const bitLenInt i = qubitCount;
-    while (ancillaCount) {
-        stabilizer->H(i);
-
-        if ((ONE_R1 - stabilizer->Prob(i)) <= FP_NORM_EPSILON) {
-            stabilizer = origClone->stabilizer;
-            shards = origClone->shards;
-            ancillaCount = origClone->ancillaCount;
-
-            WeakSampleAncillae();
-
-            return;
+        if (abs(correctionProb) <= FP_NORM_EPSILON) {
+            continue;
         }
+        const real1 prob1 = abs(correctionProb);
+        const real1 prob0 = ONE_R1 - prob1;
 
-        stabilizer->ForceM(i, false);
-        stabilizer->Dispose(i, 1U);
-        shards.erase(shards.begin() + i);
-        --ancillaCount;
+        std::vector<QUnitCliffordProb> nLowRankCache;
+        for (const QUnitCliffordProb& lrc : lowRankCache) {
+            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
+            const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
+
+            if (correctionProb < 0) {
+                s1->IS(i);
+            } else {
+                s1->S(i);
+            }
+            const real1 p0 = s0->Prob(i);
+            const real1 p1 = s1->Prob(i);
+            if ((ONE_R1 - p0) > FP_NORM_EPSILON) {
+                s0->ForceM(i, false);
+                nLowRankCache.emplace_back(lrc.prob * (((ONE_R1 - p1) > FP_NORM_EPSILON) ? prob0 : ONE_R1), s0);
+            }
+            if ((ONE_R1 - p1) > FP_NORM_EPSILON) {
+                s1->ForceM(i, false);
+                nLowRankCache.emplace_back(lrc.prob * (((ONE_R1 - p0) > FP_NORM_EPSILON) ? prob1 : ONE_R1), s1);
+            }
+        }
+        lowRankCache = nLowRankCache;
     }
+
+    bitCapInt toRet = 0U;
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        real1 qubitProb = ZERO_R1;
+        for (const QUnitCliffordProb& lrc : lowRankCache) {
+            qubitProb += lrc.prob * lrc.stabilizer->Prob(i);
+        }
+        const bool result = Rand() < qubitProb;
+        if (result) {
+            toRet |= pow2(i);
+        }
+        std::vector<QUnitCliffordProb> nLowRankCache;
+        for (const QUnitCliffordProb& lrc : lowRankCache) {
+            if (result && lrc.stabilizer->Prob(i) <= FP_NORM_EPSILON) {
+                continue;
+            }
+            if (!result && (ONE_R1 - lrc.stabilizer->Prob(i)) <= FP_NORM_EPSILON) {
+                continue;
+            }
+            lrc.stabilizer->ForceM(i, result);
+            nLowRankCache.push_back(lrc);
+        }
+        lowRankCache = nLowRankCache;
+    }
+
+    return toRet;
 }
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
