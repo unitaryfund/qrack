@@ -354,6 +354,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     c->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
+    c->lowRankCache = lowRankCache;
     for (size_t i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
             c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
@@ -1432,7 +1433,9 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
     if (isWeakSampling && ancillaCount && !IsLogicalProbBuffered()) {
+        PrepareLowRankCache();
         const bitCapInt toRet = WeakSampleAncillae();
+        lowRankCache.clear();
         SetPermutation(toRet);
 
         return toRet;
@@ -1545,11 +1548,13 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
     if (!IsProbBuffered() || (isWeakSampling && !IsLogicalProbBuffered())) {
         std::mutex resultsMutex;
+        PrepareLowRankCache();
         par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
             const bitCapInt sample = SampleClone(qPowers);
             std::lock_guard<std::mutex> lock(resultsMutex);
             ++(results[sample]);
         });
+        lowRankCache.clear();
 
         return results;
     }
@@ -1629,8 +1634,10 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     if (!IsProbBuffered() || (isWeakSampling && !IsLogicalProbBuffered())) {
+        PrepareLowRankCache();
         par_for(0U, shots,
             [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
+        lowRankCache.clear();
 
         return;
     }
@@ -1712,10 +1719,9 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
 }
 
-bitCapInt QStabilizerHybrid::WeakSampleAncillae()
+void QStabilizerHybrid::PrepareLowRankCache()
 {
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-
     lowRankCache.clear();
     lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
     for (size_t i = qubitCount; i < shards.size(); ++i) {
@@ -1753,7 +1759,10 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         }
         lowRankCache = nLowRankCache;
     }
+}
 
+bitCapInt QStabilizerHybrid::WeakSampleAncillae()
+{
     bitCapInt toRet = 0U;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         real1 qubitProb = ZERO_R1;
