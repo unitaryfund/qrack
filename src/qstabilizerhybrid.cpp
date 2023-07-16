@@ -205,8 +205,6 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // ForceM(ancillaIndex, false, true, true);
     // Ancilla is separable after measurement.
     // Dispose(ancillaIndex, 1U);
-
-    CombineAncillae();
 }
 
 bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
@@ -975,8 +973,6 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             stabilizer->CNOT(target, ancillaIndex);
             Mtrx(shard->gate, ancillaIndex);
             H(ancillaIndex);
-
-            CombineAncillae();
         }
 
         std::copy(lMtrx, lMtrx + 4U, mtrx);
@@ -1707,8 +1703,6 @@ void QStabilizerHybrid::WeakSampleAncillae()
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     const bitLenInt i = qubitCount;
     while (ancillaCount) {
-        CombineAncillae();
-
         const MpsShardPtr& shard = shards[i];
         shard->Compose(h);
 
@@ -1817,111 +1811,6 @@ void QStabilizerHybrid::WeakSampleAncillae()
         shards.erase(shards.begin() + i);
         --ancillaCount;
     }
-}
-
-void QStabilizerHybrid::CombineAncillae()
-{
-    if (engine) {
-        return;
-    }
-
-    // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
-    // If so, we can combine (or cancel) the phase effect on the earlier ancilla and completely separate the later.
-    // We must preserve the earlier ancilla's entanglement, besides partial collapse with the later ancilla.
-    // (It might be possible to change convention to preserve the later ancilla and separate the earlier.)
-
-    std::map<bitLenInt, std::vector<bitLenInt>> toCombine;
-    std::map<bitLenInt, std::vector<bitLenInt>> toCombineAdj;
-    for (size_t i = qubitCount; i < shards.size(); ++i) {
-        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-        clone->H(i);
-        clone->ForceM(i, false);
-        for (size_t j = i + 1U; j < shards.size(); ++j) {
-            if (clone->Prob(j) <= FP_NORM_EPSILON) {
-                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->H(i);
-                clone->ForceM(i, true);
-                if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
-                    toCombine[i].push_back(j);
-                }
-            } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
-                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->H(i);
-                clone->ForceM(i, true);
-                if (clone->Prob(j) <= FP_NORM_EPSILON) {
-                    toCombineAdj[i].push_back(j);
-                }
-            }
-        }
-    }
-
-    if (!toCombine.size() && !toCombineAdj.size()) {
-        // We fail to find any toCombine entries, and recursion exits.
-        return;
-    }
-
-    const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-
-    for (const auto& p : toCombine) {
-        const MpsShardPtr& baseShard = shards[p.first];
-        if (!baseShard) {
-            continue;
-        }
-        baseShard->Compose(h);
-
-        const std::vector<bitLenInt>& dep = p.second;
-        for (const bitLenInt& combo : dep) {
-            MpsShardPtr& shard = shards[combo];
-            if (!shard) {
-                continue;
-            }
-
-            shard->Compose(h);
-            baseShard->Compose(shard->gate);
-            shard = NULL;
-
-            stabilizer->H(combo);
-            stabilizer->ForceM(combo, false);
-        }
-        baseShard->Compose(h);
-    }
-
-    for (const auto& p : toCombineAdj) {
-        const MpsShardPtr& baseShard = shards[p.first];
-        if (!baseShard) {
-            continue;
-        }
-        baseShard->Compose(h);
-
-        const std::vector<bitLenInt>& dep = p.second;
-        for (const bitLenInt& combo : dep) {
-            MpsShardPtr& shard = shards[combo];
-            if (!shard) {
-                continue;
-            }
-
-            shard->Compose(h);
-            complex mtrx[4U];
-            inv2x2(shard->gate, mtrx);
-            baseShard->Compose(mtrx);
-            shard = NULL;
-
-            stabilizer->H(combo);
-            stabilizer->ForceM(combo, false);
-        }
-        baseShard->Compose(h);
-    }
-
-    for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
-        if (!shards[i]) {
-            stabilizer->Dispose(i, 1U);
-            shards.erase(shards.begin() + i);
-            --ancillaCount;
-        }
-    }
-
-    // We should fail to find any toCombine entries before exit.
-    CombineAncillae();
 }
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
