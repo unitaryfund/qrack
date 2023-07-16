@@ -2549,24 +2549,6 @@ public:
      * helps.
      */
     virtual bool GetTInjection() { return false; }
-    /**
-     *  Set option to allow QStabilizerHybrid to sample weakly.
-     *
-     *  If weak sampling is enabled during use of special gate set Clifford+RZ with QStabilizerHybrid, then terminal
-     * measurement and sampling approximate the effect of buffered RZ gates with the closest Clifford phase gate, plus a
-     * probabilistic 'correction' gate, for difference between requested phase angle and closest Clifford phase
-     * transformation.
-     */
-    virtual void SetStabilizerWeakSampling(bool isWeak) {}
-    /**
-     *  Get option to allow QStabilizerHybrid to sample approximately.
-     *
-     *  If weak sampling is enabled during use of special gate set Clifford+RZ with QStabilizerHybrid, then terminal
-     * measurement and sampling approximate the effect of buffered RZ gates with the closest Clifford phase gate, plus a
-     * probabilistic 'correction' gate, for difference between requested phase angle and closest Clifford phase
-     * transformation.
-     */
-    virtual bool GetStabilizerWeakSampling() { return false; }
 
     /**
      *  Clone this QInterface
