@@ -218,6 +218,7 @@ protected:
 
     real1_f FractionalRzAngleWithFlush(bitLenInt i, real1_f angle)
     {
+        const real1_f sectorAngle = PI_R1 / 2;
         const real1_f Period = 2 * PI_R1;
         while (angle < 0) {
             angle += Period;
@@ -225,7 +226,7 @@ protected:
         while (angle >= Period) {
             angle -= Period;
         }
-        int sector = std::round(2 * angle / PI_R1);
+        int sector = std::round(angle / sectorAngle);
         if (sector < 0) {
             sector += 4;
         }
@@ -247,7 +248,15 @@ protected:
             break;
         }
 
-        return angle - sector * PI_R1 / 2;
+        real1_f correctionAngle = angle - sector * sectorAngle;
+        while (correctionAngle > PI_R1) {
+            correctionAngle = correctionAngle - Period;
+        }
+        while (correctionAngle <= -PI_R1) {
+            correctionAngle = correctionAngle + Period;
+        }
+
+        return correctionAngle;
     }
 
     void FlushCliffordFromBuffers()

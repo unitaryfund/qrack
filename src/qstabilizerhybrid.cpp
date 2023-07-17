@@ -1816,14 +1816,19 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 lrc.stabilizer->H(i);
                 const real1_f p = lrc.stabilizer->Prob(i);
                 if (abs(ONE_R1 / 2 - p) < (ONE_R1 / 4)) {
+                    lrc.prob /= 2;
+                    if (lrc.prob <= FP_NORM_EPSILON) {
+                        continue;
+                    }
                     lrc.stabilizer->ForceM(i, false);
-                    nLowRankCache.emplace_back(lrc.prob / 2, lrc.stabilizer);
-                    totProb += lrc.prob / 2;
-                } else if (p < (ONE_R1 / 4)) {
+                }
+                if (p < (3 * ONE_R1 / 4)) {
                     nLowRankCache.push_back(lrc);
                     totProb += lrc.prob;
                 }
             }
+            lowRankCache = nLowRankCache;
+
             if (abs(ONE_R1 - totProb) <= FP_NORM_EPSILON) {
                 continue;
             }
