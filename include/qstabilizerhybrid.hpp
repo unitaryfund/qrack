@@ -250,6 +250,36 @@ protected:
         return angle - sector * PI_R1 / 2;
     }
 
+    void FlushCliffordFromBuffers()
+    {
+        for (size_t i = 0U; i < qubitCount; ++i) {
+            // Flush all buffers as close as possible to Clifforrd.
+            const MpsShardPtr& shard = shards[i];
+            if (!shard) {
+                continue;
+            }
+            if (shard->IsHPhase() || shard->IsHInvert()) {
+                FlushH(i);
+            }
+            if (shard->IsInvert()) {
+                InvertBuffer(i);
+            }
+            if (!shard->IsPhase()) {
+                // We have a cached non-phase operation.
+                continue;
+            }
+            const real1 angle = (real1)(FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
+            if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+                shards[i] = NULL;
+                continue;
+            }
+            const real1 angleCos = cos(angle);
+            const real1 angleSin = sin(angle);
+            shard->gate[0U] = complex(angleCos, -angleSin);
+            shard->gate[3U] = complex(angleCos, angleSin);
+        }
+    }
+
     void PrepareLowRankCache();
     bitCapInt WeakSampleAncillae();
 

@@ -1393,6 +1393,8 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         return stabilizer->ForceM(qubit, result, doForce, doApply);
     }
 
+    FlushCliffordFromBuffers();
+
     if (ancillaCount) {
         SwitchToEngine();
         return engine->ForceM(qubit, result, doForce, doApply);
@@ -1449,6 +1451,8 @@ bitCapInt QStabilizerHybrid::MAll()
 
         return toRet;
     }
+
+    FlushCliffordFromBuffers();
 
     if (!IsProbBuffered()) {
         const bitCapInt toRet = stabilizer->MAll();
@@ -1568,6 +1572,8 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         return results;
     }
 
+    FlushCliffordFromBuffers();
+
     std::vector<real1_f> rng = GenerateShotProbs(shots);
     const auto shotFunc = [&](bitCapInt sample, unsigned unused) { ++(results[sample]); };
     real1 partProb = ZERO_R1;
@@ -1651,6 +1657,8 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
+    FlushCliffordFromBuffers();
+
     std::vector<real1_f> rng = GenerateShotProbs(shots);
     const auto shotFunc = [&](bitCapInt sample, unsigned shot) { shotsArray[shot] = (unsigned)sample; };
     real1 partProb = ZERO_R1;
@@ -1730,40 +1738,10 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QStabilizerHybrid::PrepareLowRankCache()
 {
-    for (size_t i = 0U; i < qubitCount; ++i) {
-        // Flush all buffers as close as possible to Clifforrd.
-        const MpsShardPtr& shard = shards[i];
-        if (!shard) {
-            continue;
-        }
-        const real1 angle = (real1)(FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-        if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
-            shards[i] = NULL;
-            continue;
-        }
-        const real1 angleCos = cos(angle);
-        const real1 angleSin = sin(angle);
-        shard->gate[0U] = complex(angleCos, -angleSin);
-        shard->gate[3U] = complex(angleCos, angleSin);
-    }
-    const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    for (size_t i = qubitCount; i < shards.size(); ++i) {
-        // Flush all buffers as close as possible to Clifforrd.
-        const MpsShardPtr& shard = shards[i];
-        shard->Compose(h);
-        const real1 angle = (real1)(FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-        if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
-            shards[i] = NULL;
-            stabilizer->H(i);
-            continue;
-        }
-        const real1 angleCos = cos(angle);
-        const real1 angleSin = sin(angle);
-        shard->gate[0U] = complex(angleCos, -angleSin);
-        shard->gate[3U] = complex(angleCos, angleSin);
-        shard->Compose(h);
-    }
+    FlushCliffordFromBuffers();
     lowRankCache.clear();
+
+    const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     real1_f discardedProb = ZERO_R1_F;
     lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
     for (size_t i = 0U; i < shards.size(); ++i) {
