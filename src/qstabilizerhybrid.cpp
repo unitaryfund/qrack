@@ -189,7 +189,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     shards[target] = NULL;
 
     const real1 angle = (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-    if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+    if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
         return;
     }
     const real1 angleCos = cos(angle);
@@ -976,7 +976,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         if (shard) {
             const real1 angle =
                 (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-            if ((2 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
+            if ((4 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
                 const real1 angleCos = cos(angle);
                 const real1 angleSin = sin(angle);
                 shard->gate[0U] = complex(angleCos, -angleSin);
@@ -1738,8 +1738,9 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QStabilizerHybrid::PrepareLowRankCache()
 {
-    FlushCliffordFromBuffers();
     lowRankCache.clear();
+
+    FlushCliffordFromBuffers();
 
     lowRankCache.emplace_back(ONE_R1_F, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
 
