@@ -1834,14 +1834,14 @@ void QStabilizerHybrid::PrepareLowRankCache()
         for (QUnitCliffordProb& lrc : lowRankCache) {
             lrc.prob *= nrm;
         }
-        discardedProb = ZERO_R1;
+        discardedProb = ZERO_R1_F;
     }
 }
 
 bitCapInt QStabilizerHybrid::WeakSampleAncillae()
 {
     bitCapInt toRet = 0U;
-    real1 discardedProb = ZERO_R1;
+    real1_f discardedProb = ZERO_R1_F;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         real1 qubitProb = ZERO_R1;
         for (const QUnitCliffordProb& lrc : lowRankCache) {
@@ -1887,7 +1887,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         for (QUnitCliffordProb& lrc : lowRankCache) {
             lrc.prob *= nrm;
         }
-        discardedProb = ZERO_R1;
+        discardedProb = ZERO_R1_F;
     }
 
     return toRet;
