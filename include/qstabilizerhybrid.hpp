@@ -20,12 +20,12 @@
 
 namespace Qrack {
 
-struct QUnitCliffordProb {
-    real1_f prob;
+struct QUnitCliffordAmp {
+    complex amp;
     QUnitCliffordPtr stabilizer;
 
-    QUnitCliffordProb(real1_f p, QUnitCliffordPtr s)
-        : prob(p)
+    QUnitCliffordAmp(complex a, QUnitCliffordPtr s)
+        : amp(a)
         , stabilizer(s)
     {
         // Intentionally left blank.
@@ -65,7 +65,7 @@ protected:
     std::vector<QInterfaceEngine> cloneEngineTypes;
     std::vector<MpsShardPtr> shards;
     std::map<bitCapInt, complex> stateMapCache;
-    std::vector<QUnitCliffordProb> lowRankCache;
+    std::vector<QUnitCliffordAmp> lowRankCache;
 
     QUnitCliffordPtr MakeStabilizer(bitCapInt perm = 0U);
     QInterfacePtr MakeEngine(bitCapInt perm = 0U);
