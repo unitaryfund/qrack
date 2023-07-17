@@ -250,10 +250,10 @@ protected:
         }
 
         real1_f correctionAngle = angle - (sector * sectorAngle);
-        while (correctionAngle > PI_R1) {
+        if (correctionAngle > PI_R1) {
             correctionAngle -= Period;
         }
-        while (correctionAngle <= -PI_R1) {
+        if (correctionAngle <= -PI_R1) {
             correctionAngle += Period;
         }
         if (correctionAngle > (sectorAngle / 2)) {
