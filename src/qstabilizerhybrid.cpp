@@ -1736,9 +1736,33 @@ void QStabilizerHybrid::PrepareLowRankCache()
         if (!shard) {
             continue;
         }
-        FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U]));
+        const real1 angle = (real1)(FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
+        if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+            shards[i] = NULL;
+            continue;
+        }
+        const real1 angleCos = cos(angle);
+        const real1 angleSin = sin(angle);
+        shard->gate[0U] = complex(angleCos, -angleSin);
+        shard->gate[3U] = complex(angleCos, angleSin);
     }
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    for (size_t i = qubitCount; i < shards.size(); ++i) {
+        // Flush all buffers as close as possible to Clifforrd.
+        const MpsShardPtr& shard = shards[i];
+        shard->Compose(h);
+        const real1 angle = (real1)(FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
+        if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+            shards[i] = NULL;
+            stabilizer->H(i);
+            continue;
+        }
+        const real1 angleCos = cos(angle);
+        const real1 angleSin = sin(angle);
+        shard->gate[0U] = complex(angleCos, -angleSin);
+        shard->gate[3U] = complex(angleCos, angleSin);
+        shard->Compose(h);
+    }
     lowRankCache.clear();
     real1_f discardedProb = ZERO_R1_F;
     lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
@@ -1771,9 +1795,8 @@ void QStabilizerHybrid::PrepareLowRankCache()
             }
 
             if (!isAncilla) {
-                const real1_f cp = (real1_f)SQRT1_2_R1 * lrc.prob;
-                nLowRankCache.emplace_back(cp, s0);
-                nLowRankCache.emplace_back(cp, s1);
+                nLowRankCache.emplace_back(lrc.prob * prob0, s0);
+                nLowRankCache.emplace_back(lrc.prob * prob1, s1);
 
                 continue;
             }
