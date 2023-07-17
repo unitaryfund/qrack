@@ -24,6 +24,18 @@ struct MpsShard {
         complex o[4U];
         std::copy(gate, gate + 4U, o);
         mul2x2((complex*)g, o, gate);
+        if ((norm(gate[1U]) <= FP_NORM_EPSILON) && (norm(gate[2U]) <= FP_NORM_EPSILON)) {
+            gate[1U] = ZERO_R1;
+            gate[2U] = ZERO_R1;
+            gate[0U] /= abs(gate[0U]);
+            gate[3U] /= abs(gate[3U]);
+        }
+        if ((norm(gate[0U]) <= FP_NORM_EPSILON) && (norm(gate[3U]) <= FP_NORM_EPSILON)) {
+            gate[0U] = ZERO_R1;
+            gate[3U] = ZERO_R1;
+            gate[1U] /= abs(gate[1U]);
+            gate[2U] /= abs(gate[2U]);
+        }
     }
 
     bool IsPhase() { return (norm(gate[1U]) <= FP_NORM_EPSILON) && (norm(gate[2U]) <= FP_NORM_EPSILON); }
