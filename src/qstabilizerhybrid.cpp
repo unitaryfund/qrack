@@ -1725,6 +1725,14 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QStabilizerHybrid::PrepareLowRankCache()
 {
+    for (size_t i = 0U; i < qubitCount; ++i) {
+        // Flush all buffers as close as possible to Clifforrd.
+        const MpsShardPtr& shard = shards[i];
+        if (!shard) {
+            continue;
+        }
+        FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U]));
+    }
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     lowRankCache.clear();
     real1_f discardedProb = ZERO_R1_F;
@@ -1760,16 +1768,18 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 s1->S(i);
             }
 
-            const real1_f p0 = s0->Prob(i);
-            const real1_f p1 = s1->Prob(i);
-
-            const real1_f cp0 = lrc.prob * prob0;
-            const real1_f cp1 = lrc.prob * prob1;
             if (!isAncilla) {
-                nLowRankCache.emplace_back(cp0, s0);
-                nLowRankCache.emplace_back(cp1, s1);
+                const real1_f cp = (real1_f)SQRT1_2_R1 * lrc.prob;
+                nLowRankCache.emplace_back(cp, s0);
+                nLowRankCache.emplace_back(cp, s1);
+
                 continue;
             }
+
+            const real1_f p0 = s0->Prob(i);
+            const real1_f p1 = s1->Prob(i);
+            const real1_f cp0 = lrc.prob * prob0;
+            const real1_f cp1 = lrc.prob * prob1;
 
             if ((p0 < (ONE_R1 - FP_NORM_EPSILON)) && (cp0 > FP_NORM_EPSILON)) {
                 s0->ForceM(i, false);
