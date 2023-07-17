@@ -971,7 +971,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         }
 
         if (shard) {
-            const real1 angle = (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
+            const real1 angle =
+                (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
             const real1 angleCos = cos(angle);
             const real1 angleSin = sin(angle);
             shard->gate[0U] = complex(angleCos, -angleSin);
@@ -1726,14 +1727,22 @@ void QStabilizerHybrid::PrepareLowRankCache()
 {
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     lowRankCache.clear();
-    lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
     real1_f discardedProb = ZERO_R1_F;
-    for (size_t i = qubitCount; i < shards.size(); ++i) {
+    lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
+    for (size_t i = 0U; i < shards.size(); ++i) {
         const MpsShardPtr& shard = shards[i];
-        shard->Compose(h);
+        if (!shard) {
+            continue;
+        }
+        const bool isAncilla = (i >= qubitCount);
+        if (isAncilla) {
+            shard->Compose(h);
+        }
         const real1_f correctionProb =
             2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-        shard->Compose(h);
+        if (isAncilla) {
+            shard->Compose(h);
+        }
         if (abs(correctionProb) <= FP_NORM_EPSILON) {
             continue;
         }
@@ -1755,6 +1764,13 @@ void QStabilizerHybrid::PrepareLowRankCache()
             const real1_f p1 = s1->Prob(i);
 
             const real1_f cp0 = lrc.prob * prob0;
+            const real1_f cp1 = lrc.prob * prob1;
+            if (!isAncilla) {
+                nLowRankCache.emplace_back(cp0, s0);
+                nLowRankCache.emplace_back(cp1, s1);
+                continue;
+            }
+
             if ((p0 < (ONE_R1 - FP_NORM_EPSILON)) && (cp0 > FP_NORM_EPSILON)) {
                 s0->ForceM(i, false);
                 nLowRankCache.emplace_back(cp0, s0);
@@ -1762,7 +1778,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 discardedProb += cp0;
             }
 
-            const real1_f cp1 = lrc.prob * prob1;
             if ((p1 < (ONE_R1 - FP_NORM_EPSILON)) && (cp1 > FP_NORM_EPSILON)) {
                 s1->ForceM(i, false);
                 nLowRankCache.emplace_back(cp1, s1);
