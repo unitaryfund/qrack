@@ -1808,10 +1808,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
         const real1_f prob1 = abs(correctionProb);
         const real1_f prob0 = ONE_R1 - prob1;
 
-        if (prob1 <= FP_NORM_EPSILON) {
-            continue;
-        }
-
         real1_f totProb = ZERO_R1_F;
         std::vector<QUnitCliffordProb> nLowRankCache;
         for (const QUnitCliffordProb& lrc : lowRankCache) {
