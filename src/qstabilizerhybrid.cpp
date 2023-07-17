@@ -1753,23 +1753,21 @@ void QStabilizerHybrid::PrepareLowRankCache()
 
             const real1 p0 = s0->Prob(i);
             const real1 p1 = s1->Prob(i);
-            if ((ONE_R1 - p0) > FP_NORM_EPSILON) {
-                const real1 p = lrc.prob * (((ONE_R1 - p1) > FP_NORM_EPSILON) ? prob0 : ONE_R1);
-                if (p > FP_NORM_EPSILON) {
-                    s0->ForceM(i, false);
-                    nLowRankCache.emplace_back(p, s0);
-                } else {
-                    discardedProb += p;
-                }
+
+            const real1 cp0 = lrc.prob * prob0;
+            if ((p0 < (ONE_R1 - FP_NORM_EPSILON)) && (cp0 > FP_NORM_EPSILON)) {
+                s0->ForceM(i, false);
+                nLowRankCache.emplace_back(cp0, s0);
+            } else {
+                discardedProb += cp0;
             }
-            if ((ONE_R1 - p1) > FP_NORM_EPSILON) {
-                const real1 p = lrc.prob * (((ONE_R1 - p0) > FP_NORM_EPSILON) ? prob1 : ONE_R1);
-                if (p > FP_NORM_EPSILON) {
-                    s1->ForceM(i, false);
-                    nLowRankCache.emplace_back(p, s1);
-                } else {
-                    discardedProb += p;
-                }
+
+            const real1 cp1 = lrc.prob * prob1;
+            if ((p1 < (ONE_R1 - FP_NORM_EPSILON)) && (cp1 > FP_NORM_EPSILON)) {
+                s1->ForceM(i, false);
+                nLowRankCache.emplace_back(cp1, s1);
+            } else {
+                discardedProb += cp1;
             }
         }
         lowRankCache = nLowRankCache;
