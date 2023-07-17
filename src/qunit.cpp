@@ -1022,6 +1022,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         real1_f prob = unit->Prob(mapped);
         shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
         shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
+        ClampShard(qubit);
     }
 
     if (IS_NORM_0(shard.amp1)) {
