@@ -1776,6 +1776,9 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 continue;
             }
 
+            s0->H(i);
+            s1->H(i);
+
             const real1_f p0 = s0->Prob(i);
             const real1_f p1 = s1->Prob(i);
             const real1_f cp0 = lrc.prob * prob0;
