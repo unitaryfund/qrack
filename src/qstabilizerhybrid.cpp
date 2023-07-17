@@ -1741,8 +1741,61 @@ void QStabilizerHybrid::PrepareLowRankCache()
     FlushCliffordFromBuffers();
     lowRankCache.clear();
 
-    const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     lowRankCache.emplace_back(ONE_R1_F, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
+
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        const MpsShardPtr& shard = shards[i];
+        if (!shard) {
+            continue;
+        }
+
+        const real1_f correctionProb =
+            2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
+
+        const real1_f prob1 = abs(correctionProb);
+        const real1_f prob0 = ONE_R1 - prob1;
+
+        if (prob1 <= FP_NORM_EPSILON) {
+            continue;
+        }
+
+        real1_f totProb = ZERO_R1_F;
+        std::vector<QUnitCliffordProb> nLowRankCache;
+        for (const QUnitCliffordProb& lrc : lowRankCache) {
+            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
+            const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
+
+            if (correctionProb < 0) {
+                s1->IS(i);
+            } else {
+                s1->S(i);
+            }
+
+            const real1_f cp0 = lrc.prob * prob0;
+            const real1_f cp1 = lrc.prob * prob1;
+
+            if (cp0 > FP_NORM_EPSILON) {
+                nLowRankCache.emplace_back(cp0, s0);
+                totProb += cp0;
+            }
+            if (cp1 > FP_NORM_EPSILON) {
+                nLowRankCache.emplace_back(cp1, s1);
+                totProb += cp1;
+            }
+        }
+        lowRankCache = nLowRankCache;
+
+        if (abs(ONE_R1 - totProb) <= FP_NORM_EPSILON) {
+            continue;
+        }
+
+        const real1_f nrm = ONE_R1_F / totProb;
+        for (QUnitCliffordProb& lrc : lowRankCache) {
+            lrc.prob *= nrm;
+        }
+    }
+
+    const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = qubitCount; i < shards.size(); ++i) {
         const MpsShardPtr& shard = shards[i];
 
