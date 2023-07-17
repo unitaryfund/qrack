@@ -227,13 +227,7 @@ protected:
             angle -= Period;
         }
 
-        int sector = std::floor(angle / sectorAngle);
-        if (sector < 0) {
-            sector += 4;
-        }
-        if (sector > 3) {
-            sector -= 4;
-        }
+        int sector = (int)(angle / sectorAngle);
         switch (sector) {
         case 1U:
             stabilizer->S(i);
