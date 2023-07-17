@@ -1742,23 +1742,21 @@ void QStabilizerHybrid::PrepareLowRankCache()
     lowRankCache.clear();
 
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    lowRankCache.emplace_back(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
-    for (size_t i = 0U; i < shards.size(); ++i) {
+    lowRankCache.emplace_back(ONE_R1_F, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
+    for (size_t i = qubitCount; i < shards.size(); ++i) {
         const MpsShardPtr& shard = shards[i];
-        if (!shard) {
-            continue;
-        }
-        const bool isAncilla = (i >= qubitCount);
-        if (isAncilla) {
-            shard->Compose(h);
-        }
+
+        shard->Compose(h);
         const real1_f correctionProb =
             2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-        if (isAncilla) {
-            shard->Compose(h);
-        }
+        shard->Compose(h);
+
         const real1_f prob1 = abs(correctionProb);
         const real1_f prob0 = ONE_R1 - prob1;
+
+        if (prob1 <= FP_NORM_EPSILON) {
+            continue;
+        }
 
         real1_f totProb = ZERO_R1_F;
         std::vector<QUnitCliffordProb> nLowRankCache;
@@ -1772,45 +1770,31 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 s1->S(i);
             }
 
-            const real1_f cp0 = lrc.prob * prob0;
-            const real1_f cp1 = lrc.prob * prob1;
-
-            if (!isAncilla) {
-                if (cp0 > FP_NORM_EPSILON) {
-                    nLowRankCache.emplace_back(cp0, s0);
-                    totProb += cp0;
-                }
-                if (cp1 > FP_NORM_EPSILON) {
-                    nLowRankCache.emplace_back(cp1, s1);
-                    totProb += cp1;
-                }
-
-                continue;
-            }
-
             s0->H(i);
             s1->H(i);
 
+            const real1_f cp0 = lrc.prob * prob0;
+            const real1_f cp1 = lrc.prob * prob1;
             const real1_f p0 = s0->Prob(i);
             const real1_f p1 = s1->Prob(i);
 
             if (cp0 > FP_NORM_EPSILON) {
-                if (abs(ONE_R1 / 2 - p0) <= FP_NORM_EPSILON) {
+                if (abs(ONE_R1 / 2 - p0) < (ONE_R1 / 4)) {
                     s0->ForceM(i, false);
                     nLowRankCache.emplace_back(cp0 / 2, s0);
                     totProb += cp0 / 2;
-                } else if (p0 <= FP_NORM_EPSILON) {
+                } else if (p0 < (ONE_R1 / 4)) {
                     nLowRankCache.emplace_back(cp0, s0);
                     totProb += cp0;
                 }
             }
 
             if (cp1 > FP_NORM_EPSILON) {
-                if (abs(ONE_R1 / 2 - p1) <= FP_NORM_EPSILON) {
+                if (abs(ONE_R1 / 2 - p1) < (ONE_R1 / 4)) {
                     s1->ForceM(i, false);
                     nLowRankCache.emplace_back(cp1 / 2, s1);
                     totProb += cp1 / 2;
-                } else if (p1 <= FP_NORM_EPSILON) {
+                } else if (p1 < (ONE_R1 / 4)) {
                     nLowRankCache.emplace_back(cp1, s1);
                     totProb += cp1;
                 }
@@ -1847,13 +1831,13 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         std::vector<QUnitCliffordProb> nLowRankCache;
         for (QUnitCliffordProb& lrc : lowRankCache) {
             const real1_f prob = lrc.stabilizer->Prob(i);
-            if (result && (prob <= FP_NORM_EPSILON)) {
+            if (result && (prob < (ONE_R1 / 4))) {
                 continue;
             }
-            if (!result && ((ONE_R1 - prob) <= FP_NORM_EPSILON)) {
+            if (!result && ((ONE_R1 - prob) < (ONE_R1 / 4))) {
                 continue;
             }
-            if (abs(ONE_R1 / 2 - prob) <= FP_NORM_EPSILON) {
+            if (abs(ONE_R1 / 2 - prob) < (ONE_R1 / 4)) {
                 lrc.prob /= 2;
                 if (lrc.prob <= FP_NORM_EPSILON) {
                     continue;
