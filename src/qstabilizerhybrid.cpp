@@ -1751,9 +1751,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
         if (isAncilla) {
             shard->Compose(h);
         }
-        if (abs(correctionProb) <= FP_NORM_EPSILON) {
-            continue;
-        }
         const real1_f prob1 = abs(correctionProb);
         const real1_f prob0 = ONE_R1 - prob1;
 
