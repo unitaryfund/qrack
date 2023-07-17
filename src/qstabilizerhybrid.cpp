@@ -1776,15 +1776,15 @@ void QStabilizerHybrid::PrepareLowRankCache()
             const real1_f cp1 = lrc.prob * prob1;
 
             if (!isAncilla) {
-                if (cp0 > FP_NORM_EPSILON) {
-                    nLowRankCache.emplace_back(cp0, s0);
-                } else {
+                if (cp0 <= FP_NORM_EPSILON) {
                     discardedProb += cp0;
-                }
-                if (cp1 > FP_NORM_EPSILON) {
-                    nLowRankCache.emplace_back(cp1, s1);
                 } else {
+                    nLowRankCache.emplace_back(cp0, s0);
+                }
+                if (cp1 <= FP_NORM_EPSILON) {
                     discardedProb += cp1;
+                } else {
+                    nLowRankCache.emplace_back(cp1, s1);
                 }
 
                 continue;
@@ -1801,8 +1801,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
             } else {
                 if ((ONE_R1 - p0) <= FP_NORM_EPSILON) {
                     discardedProb += cp0;
-                }
-                if (abs(ONE_R1 / 2 - p0) <= FP_NORM_EPSILON) {
+                } else if (abs(ONE_R1 / 2 - p0) <= FP_NORM_EPSILON) {
                     discardedProb += cp0 / 2;
                     s0->ForceM(i, false);
                     nLowRankCache.emplace_back(cp0 / 2, s0);
@@ -1816,8 +1815,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
             } else {
                 if ((ONE_R1 - p1) <= FP_NORM_EPSILON) {
                     discardedProb += cp1;
-                }
-                if (abs(ONE_R1 / 2 - p1) <= FP_NORM_EPSILON) {
+                } else if (abs(ONE_R1 / 2 - p1) <= FP_NORM_EPSILON) {
                     discardedProb += cp1 / 2;
                     s1->ForceM(i, false);
                     nLowRankCache.emplace_back(cp1 / 2, s1);
@@ -1868,11 +1866,13 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             }
             if (abs(ONE_R1 / 2 - prob) <= FP_NORM_EPSILON) {
                 lrc.prob /= 2;
+                // Discard half.
+                discardedProb += lrc.prob;
                 if (lrc.prob <= FP_NORM_EPSILON) {
-                    discardedProb += 2 * lrc.prob;
+                    // Discard both halves.
+                    discardedProb += lrc.prob;
                     continue;
                 }
-                discardedProb += lrc.prob;
             }
             lrc.stabilizer->ForceM(i, result);
             nLowRankCache.push_back(lrc);
