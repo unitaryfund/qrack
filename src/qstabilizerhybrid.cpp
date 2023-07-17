@@ -95,7 +95,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 QUnitCliffordPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
 {
     return std::make_shared<QUnitClifford>(qubitCount + ancillaCount, perm, rand_generator, CMPLX_DEFAULT_ARG, false,
-        randGlobalPhase, false, -1, useRDRAND);
+        !isWeakSampling && randGlobalPhase, false, -1, useRDRAND);
 }
 QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
 {
