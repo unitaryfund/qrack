@@ -21,10 +21,10 @@
 namespace Qrack {
 
 struct QUnitCliffordProb {
-    real1 prob;
+    real1_f prob;
     QUnitCliffordPtr stabilizer;
 
-    QUnitCliffordProb(real1 p, QUnitCliffordPtr s)
+    QUnitCliffordProb(real1_f p, QUnitCliffordPtr s)
         : prob(p)
         , stabilizer(s)
     {
