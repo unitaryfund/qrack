@@ -189,6 +189,9 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     shards[target] = NULL;
 
     const real1 angle = (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
+    if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+        return;
+    }
     const real1 angleCos = cos(angle);
     const real1 angleSin = sin(angle);
     shard->gate[0U] = complex(angleCos, -angleSin);
@@ -973,23 +976,25 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         if (shard) {
             const real1 angle =
                 (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-            const real1 angleCos = cos(angle);
-            const real1 angleSin = sin(angle);
-            shard->gate[0U] = complex(angleCos, -angleSin);
-            shard->gate[3U] = complex(angleCos, angleSin);
+            if ((2 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
+                const real1 angleCos = cos(angle);
+                const real1 angleSin = sin(angle);
+                shard->gate[0U] = complex(angleCos, -angleSin);
+                shard->gate[3U] = complex(angleCos, angleSin);
 
-            QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
-                1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+                QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
+                    1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 
-            // Form potentially entangled representation, with this.
-            bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
-            ++ancillaCount;
-            shards.push_back(NULL);
+                // Form potentially entangled representation, with this.
+                bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+                ++ancillaCount;
+                shards.push_back(NULL);
 
-            // Use reverse t-injection gadget.
-            stabilizer->CNOT(target, ancillaIndex);
-            Mtrx(shard->gate, ancillaIndex);
-            H(ancillaIndex);
+                // Use reverse t-injection gadget.
+                stabilizer->CNOT(target, ancillaIndex);
+                Mtrx(shard->gate, ancillaIndex);
+                H(ancillaIndex);
+            }
         }
 
         std::copy(lMtrx, lMtrx + 4U, mtrx);
