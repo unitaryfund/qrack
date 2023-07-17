@@ -1266,6 +1266,17 @@ void QStabilizerHybrid::MACInvert(
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
     if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
+        if (isWeakSampling && ancillaCount && !IsLogicalProbBuffered()) {
+            PrepareLowRankCache();
+            real1 qubitProb = ZERO_R1;
+            for (const QUnitCliffordProb& lrc : lowRankCache) {
+                qubitProb += lrc.prob * lrc.stabilizer->Prob(qubit);
+            }
+            lowRankCache.clear();
+
+            return qubitProb;
+        }
+
         if (qubitCount <= maxEngineQubitCount) {
             QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
             clone->SwitchToEngine();
@@ -1789,6 +1800,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
 bitCapInt QStabilizerHybrid::WeakSampleAncillae()
 {
     bitCapInt toRet = 0U;
+    real1 discardedProb = ZERO_R1;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         real1 qubitProb = ZERO_R1;
         for (const QUnitCliffordProb& lrc : lowRankCache) {
@@ -1798,7 +1810,6 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         if (result) {
             toRet |= pow2(i);
         }
-        real1 discardedProb = ZERO_R1;
         std::vector<QUnitCliffordProb> nLowRankCache;
         for (const QUnitCliffordProb& lrc : lowRankCache) {
             if (result && (lrc.stabilizer->Prob(i) <= FP_NORM_EPSILON)) {
@@ -1822,6 +1833,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         for (QUnitCliffordProb& lrc : lowRankCache) {
             lrc.prob *= nrm;
         }
+        discardedProb = ZERO_R1;
     }
 
     return toRet;
