@@ -1830,7 +1830,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
             continue;
         }
 
-        const real1_f nrm = ONE_R1 / (ONE_R1 - discardedProb);
+        const real1_f nrm = ONE_R1_F / (ONE_R1_F - discardedProb);
         for (QUnitCliffordProb& lrc : lowRankCache) {
             lrc.prob *= nrm;
         }
@@ -1883,7 +1883,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             continue;
         }
 
-        const real1 nrm = ONE_R1 / (ONE_R1 - discardedProb);
+        const real1_f nrm = ONE_R1_F / (ONE_R1_F - discardedProb);
         for (QUnitCliffordProb& lrc : lowRankCache) {
             lrc.prob *= nrm;
         }
