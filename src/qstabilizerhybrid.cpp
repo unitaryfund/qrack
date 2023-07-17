@@ -1772,9 +1772,20 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 s1->S(i);
             }
 
+            const real1_f cp0 = lrc.prob * prob0;
+            const real1_f cp1 = lrc.prob * prob1;
+
             if (!isAncilla) {
-                nLowRankCache.emplace_back(lrc.prob * prob0, s0);
-                nLowRankCache.emplace_back(lrc.prob * prob1, s1);
+                if (cp0 > FP_NORM_EPSILON) {
+                    nLowRankCache.emplace_back(cp0, s0);
+                } else {
+                    discardedProb += cp0;
+                }
+                if (cp1 > FP_NORM_EPSILON) {
+                    nLowRankCache.emplace_back(cp1, s1);
+                } else {
+                    discardedProb += cp1;
+                }
 
                 continue;
             }
@@ -1784,8 +1795,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
 
             const real1_f p0 = s0->Prob(i);
             const real1_f p1 = s1->Prob(i);
-            const real1_f cp0 = lrc.prob * prob0;
-            const real1_f cp1 = lrc.prob * prob1;
 
             if ((p0 < (ONE_R1 - FP_NORM_EPSILON)) && (cp0 > FP_NORM_EPSILON)) {
                 s0->ForceM(i, false);
