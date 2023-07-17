@@ -103,7 +103,13 @@ protected:
         const size_t maxLcv = logical ? (size_t)qubitCount : shards.size();
         for (size_t i = 0U; i < maxLcv; ++i) {
             MpsShardPtr shard = shards[i];
-            if (shard && !((norm(shard->gate[1]) <= FP_NORM_EPSILON) && (norm(shard->gate[2]) <= FP_NORM_EPSILON))) {
+            if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+                FlushH(i);
+            }
+            if (shard && shard->IsInvert()) {
+                InvertBuffer(i);
+            }
+            if (shard && !shard->IsPhase()) {
                 // We have a cached non-Clifford operation.
                 return true;
             }
