@@ -1763,7 +1763,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 }
             }
             if ((ONE_R1 - p1) > FP_NORM_EPSILON) {
-                const real1 p = lrc.prob * (((ONE_R1 - p0) > FP_NORM_EPSILON) ? prob0 : ONE_R1);
+                const real1 p = lrc.prob * (((ONE_R1 - p0) > FP_NORM_EPSILON) ? prob1 : ONE_R1);
                 if (p > FP_NORM_EPSILON) {
                     s1->ForceM(i, false);
                     nLowRankCache.emplace_back(p, s1);
