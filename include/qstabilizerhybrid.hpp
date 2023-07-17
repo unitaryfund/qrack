@@ -226,7 +226,8 @@ protected:
         while (angle >= Period) {
             angle -= Period;
         }
-        int sector = std::round(angle / sectorAngle);
+
+        int sector = std::floor(angle / sectorAngle);
         if (sector < 0) {
             sector += 4;
         }
@@ -248,12 +249,16 @@ protected:
             break;
         }
 
-        real1_f correctionAngle = angle - sector * sectorAngle;
+        real1_f correctionAngle = angle - (sector * sectorAngle);
         while (correctionAngle > PI_R1) {
-            correctionAngle = correctionAngle - Period;
+            correctionAngle -= Period;
         }
         while (correctionAngle <= -PI_R1) {
-            correctionAngle = correctionAngle + Period;
+            correctionAngle += Period;
+        }
+        if (correctionAngle > (sectorAngle / 2)) {
+            stabilizer->S(i);
+            correctionAngle -= sectorAngle;
         }
 
         return correctionAngle;
