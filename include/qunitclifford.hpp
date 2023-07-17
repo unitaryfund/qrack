@@ -431,6 +431,14 @@ public:
         return SumSqrDiff(std::dynamic_pointer_cast<QUnitClifford>(toCompare));
     }
     virtual real1_f SumSqrDiff(QUnitCliffordPtr toCompare);
+    bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return ApproxCompare(std::dynamic_pointer_cast<QUnitClifford>(toCompare), error_tol);
+    }
+    bool ApproxCompare(QUnitCliffordPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return EntangleAll()->ApproxCompare(toCompare->EntangleAll(), error_tol);
+    }
 
     real1_f Prob(bitLenInt qubit)
     {

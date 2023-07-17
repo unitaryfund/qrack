@@ -1261,6 +1261,58 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
     return ONE_R1_F - clampProb((real1_f)norm(proj));
 }
 
+bool QStabilizer::ApproxCompare(QStabilizerPtr toCompare, real1_f error_tol)
+{
+    if (error_tol > TRYDECOMPOSE_EPSILON) {
+        return TRYDECOMPOSE_EPSILON >= ApproxCompareHelper(toCompare, false);
+    }
+
+    if (!toCompare) {
+        return ONE_R1_F;
+    }
+
+    if (this == toCompare.get()) {
+        return ZERO_R1_F;
+    }
+
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        // Max square difference:
+        return ONE_R1_F;
+    }
+
+    toCompare->Finish();
+    Finish();
+
+    if (!randGlobalPhase && !IS_NORM_0(phaseOffset - toCompare->phaseOffset)) {
+        return false;
+    }
+
+    toCompare->gaussian();
+    gaussian();
+
+    const bitLenInt n = qubitCount << 1U;
+    for (bitLenInt i = 0U; i < n; ++i) {
+        if (r[i] != toCompare->r[i]) {
+            return false;
+        }
+        const std::vector<bool>& xRow = x[i];
+        const std::vector<bool>& oxRow = toCompare->x[i];
+        const std::vector<bool>& zRow = z[i];
+        const std::vector<bool>& ozRow = toCompare->z[i];
+        for (size_t j = 0U; j < qubitCount; ++j) {
+            if (xRow[j] != oxRow[j]) {
+                return false;
+            }
+            if (zRow[j] != ozRow[j]) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 void QStabilizer::SetQuantumState(const complex* inputState)
 {
     if (qubitCount > 1U) {
