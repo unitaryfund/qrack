@@ -1763,7 +1763,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
         real1_f totProb = ZERO_R1_F;
         std::vector<QUnitCliffordProb> nLowRankCache;
         for (const QUnitCliffordProb& lrc : lowRankCache) {
-            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
+            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
             const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
 
             if (correctionProb < 0) {
@@ -1810,8 +1810,34 @@ void QStabilizerHybrid::PrepareLowRankCache()
 
         real1_f totProb = ZERO_R1_F;
         std::vector<QUnitCliffordProb> nLowRankCache;
+
+        if (prob1 <= FP_NORM_EPSILON) {
+            for (QUnitCliffordProb& lrc : lowRankCache) {
+                lrc.stabilizer->H(i);
+                const real1_f p = lrc.stabilizer->Prob(i);
+                if (abs(ONE_R1 / 2 - p) < (ONE_R1 / 4)) {
+                    lrc.stabilizer->ForceM(i, false);
+                    nLowRankCache.emplace_back(lrc.prob / 2, lrc.stabilizer);
+                    totProb += lrc.prob / 2;
+                } else if (p < (ONE_R1 / 4)) {
+                    nLowRankCache.push_back(lrc);
+                    totProb += lrc.prob;
+                }
+            }
+            if (abs(ONE_R1 - totProb) <= FP_NORM_EPSILON) {
+                continue;
+            }
+
+            const real1_f nrm = ONE_R1_F / totProb;
+            for (QUnitCliffordProb& lrc : lowRankCache) {
+                lrc.prob *= nrm;
+            }
+
+            continue;
+        }
+
         for (const QUnitCliffordProb& lrc : lowRankCache) {
-            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
+            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
             const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
 
             if (correctionProb < 0) {
@@ -1867,7 +1893,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
 {
     bitCapInt toRet = 0U;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        real1 qubitProb = ZERO_R1;
+        real1_f qubitProb = ZERO_R1_F;
         for (const QUnitCliffordProb& lrc : lowRankCache) {
             qubitProb += lrc.prob * lrc.stabilizer->Prob(i);
         }
