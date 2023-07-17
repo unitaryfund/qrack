@@ -1806,7 +1806,9 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         for (const QUnitCliffordProb& lrc : lowRankCache) {
             qubitProb += lrc.prob * lrc.stabilizer->Prob(i);
         }
-        const bool result = Rand() < qubitProb;
+        const bool result = (qubitProb <= FP_NORM_EPSILON)
+            ? false
+            : (((ONE_R1 - qubitProb) <= FP_NORM_EPSILON) ? true : (Rand() < qubitProb));
         if (result) {
             toRet |= pow2(i);
         }
