@@ -1796,18 +1796,34 @@ void QStabilizerHybrid::PrepareLowRankCache()
             const real1_f p0 = s0->Prob(i);
             const real1_f p1 = s1->Prob(i);
 
-            if ((p0 < (ONE_R1 - FP_NORM_EPSILON)) && (cp0 > FP_NORM_EPSILON)) {
-                s0->ForceM(i, false);
-                nLowRankCache.emplace_back(cp0, s0);
-            } else {
+            if (cp0 <= FP_NORM_EPSILON) {
                 discardedProb += cp0;
+            } else {
+                if ((ONE_R1 - p0) <= FP_NORM_EPSILON) {
+                    discardedProb += cp0;
+                }
+                if (abs(ONE_R1 / 2 - p0) <= FP_NORM_EPSILON) {
+                    discardedProb += cp0 / 2;
+                    s0->ForceM(i, false);
+                    nLowRankCache.emplace_back(cp0 / 2, s0);
+                } else {
+                    nLowRankCache.emplace_back(cp0, s0);
+                }
             }
 
-            if ((p1 < (ONE_R1 - FP_NORM_EPSILON)) && (cp1 > FP_NORM_EPSILON)) {
-                s1->ForceM(i, false);
-                nLowRankCache.emplace_back(cp1, s1);
-            } else {
+            if (cp1 <= FP_NORM_EPSILON) {
                 discardedProb += cp1;
+            } else {
+                if ((ONE_R1 - p1) <= FP_NORM_EPSILON) {
+                    discardedProb += cp1;
+                }
+                if (abs(ONE_R1 / 2 - p1) <= FP_NORM_EPSILON) {
+                    discardedProb += cp1 / 2;
+                    s1->ForceM(i, false);
+                    nLowRankCache.emplace_back(cp1 / 2, s1);
+                } else {
+                    nLowRankCache.emplace_back(cp1, s1);
+                }
             }
         }
         lowRankCache = nLowRankCache;
@@ -1840,14 +1856,23 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             toRet |= pow2(i);
         }
         std::vector<QUnitCliffordProb> nLowRankCache;
-        for (const QUnitCliffordProb& lrc : lowRankCache) {
-            if (result && (lrc.stabilizer->Prob(i) <= FP_NORM_EPSILON)) {
+        for (QUnitCliffordProb& lrc : lowRankCache) {
+            const real1_f prob = lrc.stabilizer->Prob(i);
+            if (result && (prob <= FP_NORM_EPSILON)) {
                 discardedProb += lrc.prob;
                 continue;
             }
-            if (!result && ((ONE_R1 - lrc.stabilizer->Prob(i)) <= FP_NORM_EPSILON)) {
+            if (!result && ((ONE_R1 - prob) <= FP_NORM_EPSILON)) {
                 discardedProb += lrc.prob;
                 continue;
+            }
+            if (abs(ONE_R1 / 2 - prob) <= FP_NORM_EPSILON) {
+                lrc.prob /= 2;
+                if (lrc.prob <= FP_NORM_EPSILON) {
+                    discardedProb += 2 * lrc.prob;
+                    continue;
+                }
+                discardedProb += lrc.prob;
             }
             lrc.stabilizer->ForceM(i, result);
             nLowRankCache.push_back(lrc);
