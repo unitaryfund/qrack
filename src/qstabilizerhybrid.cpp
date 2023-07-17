@@ -1266,17 +1266,6 @@ void QStabilizerHybrid::MACInvert(
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
     if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
-        if (isWeakSampling && ancillaCount && !IsLogicalProbBuffered()) {
-            PrepareLowRankCache();
-            real1 qubitProb = ZERO_R1;
-            for (const QUnitCliffordProb& lrc : lowRankCache) {
-                qubitProb += lrc.prob * lrc.stabilizer->Prob(qubit);
-            }
-            lowRankCache.clear();
-
-            return qubitProb;
-        }
-
         if (qubitCount <= maxEngineQubitCount) {
             QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
             clone->SwitchToEngine();

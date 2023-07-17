@@ -85,6 +85,9 @@ QInterfacePtr MakeEngine(bitLenInt qubitCount)
     if (disable_reactive_separation) {
         toRet->SetReactiveSeparate(false);
     }
+    if (enable_weak_sampling) {
+        toRet->SetStabilizerWeakSampling(true);
+    }
 
     return toRet;
 }
@@ -6720,6 +6723,9 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
         if (disable_reactive_separation) {
             testCase->SetReactiveSeparate(false);
         }
+        if (enable_weak_sampling) {
+            testCase->SetStabilizerWeakSampling(true);
+        }
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
@@ -7107,6 +7113,9 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
         if (disable_reactive_separation) {
             testCase->SetReactiveSeparate(false);
         }
+        if (enable_weak_sampling) {
+            testCase->SetStabilizerWeakSampling(true);
+        }
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
@@ -7446,6 +7455,9 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
         }
         if (disable_reactive_separation) {
             testCase->SetReactiveSeparate(false);
+        }
+        if (enable_weak_sampling) {
+            testCase->SetStabilizerWeakSampling(true);
         }
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
