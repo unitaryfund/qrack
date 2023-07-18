@@ -73,6 +73,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , freezeBasis2Qb(false)
     , isReactiveSeparate(true)
     , useTGadget(true)
+    , isWeakSampling(false)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
     , logFidelity(0.0)
