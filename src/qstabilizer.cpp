@@ -1270,17 +1270,17 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr toCompare, real1_f error_tol)
     }
 
     if (!toCompare) {
-        return ONE_R1_F;
+        return false;
     }
 
     if (this == toCompare.get()) {
-        return ZERO_R1_F;
+        return true;
     }
 
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return ONE_R1_F;
+        return false;
     }
 
     toCompare->Finish();
