@@ -1863,38 +1863,32 @@ void QStabilizerHybrid::PrepareLowRankCache()
         const real1_f correctionAngle = FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U]));
         shard->Compose(h);
 
-        if (abs(2 * correctionAngle / PI_R1) <= FP_NORM_EPSILON) {
-            for (const QUnitCliffordAmp& lrc : lowRankCache) {
-                lrc.stabilizer->H(i);
-            }
-        } else {
-            std::vector<QUnitCliffordAmp> nLowRankCache;
-            const complex phaseFac = complex(cos(correctionAngle), sin(correctionAngle));
-            const complex amp0 = (phaseFac - I_CMPLX) / complex(ONE_R1, -ONE_R1);
-            const complex amp1 = ONE_R1 - amp0;
-
-            for (const QUnitCliffordAmp& lrc : lowRankCache) {
-                const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
-                const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
-
-                if (correctionAngle < 0) {
-                    s1->IS(i);
-                } else {
-                    s1->S(i);
-                }
-
-                s0->H(i);
-                s1->H(i);
-
-                nLowRankCache.emplace_back(lrc.amp * amp0, s0);
-                nLowRankCache.emplace_back(lrc.amp * amp1, s1);
-            }
-            lowRankCache = nLowRankCache;
-
-            ReduceLowRankCache();
-        }
-
         std::vector<QUnitCliffordAmp> nLowRankCache;
+        const complex phaseFac = complex(cos(correctionAngle), sin(correctionAngle));
+        const complex amp0 = (phaseFac - I_CMPLX) / complex(ONE_R1, -ONE_R1);
+        const complex amp1 = ONE_R1 - amp0;
+
+        for (const QUnitCliffordAmp& lrc : lowRankCache) {
+            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
+            const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
+
+            if (correctionAngle < 0) {
+                s1->IS(i);
+            } else {
+                s1->S(i);
+            }
+
+            s0->H(i);
+            s1->H(i);
+
+            nLowRankCache.emplace_back(lrc.amp * amp0, s0);
+            nLowRankCache.emplace_back(lrc.amp * amp1, s1);
+        }
+        lowRankCache = nLowRankCache;
+
+        ReduceLowRankCache();
+
+        nLowRankCache.clear();
         for (QUnitCliffordAmp& lrc : lowRankCache) {
             const real1_f prob = lrc.stabilizer->Prob(i);
             if ((ONE_R1 - prob) < (ONE_R1 / 4)) {
