@@ -1755,55 +1755,38 @@ void QStabilizerHybrid::PrepareLowRankCache()
             2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
         shard->Compose(h);
 
-        std::vector<QUnitCliffordAmp> nLowRankCache;
-
         if (abs(correctionProb) <= FP_NORM_EPSILON) {
-            for (QUnitCliffordAmp& lrc : lowRankCache) {
+            for (const QUnitCliffordAmp& lrc : lowRankCache) {
                 lrc.stabilizer->H(i);
-                const real1_f p = lrc.stabilizer->Prob(i);
-                if (abs(ONE_R1 / 2 - p) < (ONE_R1 / 4)) {
-                    lrc.amp *= SQRT1_2_R1;
-                    if (abs(lrc.amp) <= FP_NORM_EPSILON) {
-                        continue;
-                    }
-                    lrc.stabilizer->ForceM(i, false);
+            }
+        } else {
+            std::vector<QUnitCliffordAmp> nLowRankCache;
+            const complex phaseFac = pow(I_CMPLX, correctionProb);
+            const complex amp0 = (phaseFac - I_CMPLX) / complex(ONE_R1, -ONE_R1);
+            const complex amp1 = ONE_R1 - amp0;
+
+            for (const QUnitCliffordAmp& lrc : lowRankCache) {
+                const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
+                const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
+
+                if (correctionProb < 0) {
+                    s1->IS(i);
+                } else {
+                    s1->S(i);
                 }
-                if (p < (3 * ONE_R1 / 4)) {
-                    nLowRankCache.push_back(lrc);
-                }
+
+                s0->H(i);
+                s1->H(i);
+
+                nLowRankCache.emplace_back(lrc.amp * amp0, s0);
+                nLowRankCache.emplace_back(lrc.amp * amp1, s1);
             }
             lowRankCache = nLowRankCache;
 
             ReduceLowRankCache();
-
-            continue;
         }
 
-        const complex phaseFac = pow(I_CMPLX, correctionProb);
-        const complex amp0 = (phaseFac - I_CMPLX) / complex(ONE_R1, -ONE_R1);
-        const complex amp1 = ONE_R1 - amp0;
-
-        for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
-            const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
-
-            if (correctionProb < 0) {
-                s1->IS(i);
-            } else {
-                s1->S(i);
-            }
-
-            s0->H(i);
-            s1->H(i);
-
-            nLowRankCache.emplace_back(lrc.amp * amp0, s0);
-            nLowRankCache.emplace_back(lrc.amp * amp1, s1);
-        }
-        lowRankCache = nLowRankCache;
-
-        ReduceLowRankCache();
-
-        nLowRankCache.clear();
+        std::vector<QUnitCliffordAmp> nLowRankCache;
         for (QUnitCliffordAmp& lrc : lowRankCache) {
             const real1_f prob = lrc.stabilizer->Prob(i);
             if ((ONE_R1 - prob) < (ONE_R1 / 4)) {
@@ -1841,6 +1824,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         if (result) {
             toRet |= pow2(i);
         }
+
         std::vector<QUnitCliffordAmp> nLowRankCache;
         for (QUnitCliffordAmp& lrc : lowRankCache) {
             const real1_f prob = lrc.stabilizer->Prob(i);
