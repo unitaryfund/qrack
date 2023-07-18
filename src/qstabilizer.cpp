@@ -1266,7 +1266,7 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
 bool QStabilizer::ApproxCompare(QStabilizerPtr toCompare, real1_f error_tol)
 {
     if (error_tol > TRYDECOMPOSE_EPSILON) {
-        return TRYDECOMPOSE_EPSILON >= ApproxCompareHelper(toCompare, false);
+        return TRYDECOMPOSE_EPSILON >= ApproxCompareHelper(toCompare, false, error_tol);
     }
 
     if (!toCompare) {

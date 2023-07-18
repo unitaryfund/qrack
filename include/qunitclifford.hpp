@@ -456,6 +456,10 @@ public:
     }
     bool ApproxCompare(QUnitCliffordPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
+        if (!toCompare) {
+            return false;
+        }
+
         return EntangleAll()->ApproxCompare(toCompare->EntangleAll(), error_tol);
     }
 
