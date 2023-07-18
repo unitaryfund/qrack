@@ -1743,7 +1743,8 @@ void QStabilizerHybrid::PrepareLowRankCache()
 
     FlushCliffordFromBuffers();
 
-    lowRankCache.emplace_back(ONE_R1_F, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
+    stabilizer->ResetPhaseOffset();
+    lowRankCache.emplace_back(ONE_CMPLX, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
 
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = qubitCount; i < shards.size(); ++i) {
