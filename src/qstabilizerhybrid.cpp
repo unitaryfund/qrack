@@ -1797,26 +1797,33 @@ void QStabilizerHybrid::PrepareLowRankCache()
 
             const complex cp0 = lrc.amp * amp0;
             const complex cp1 = lrc.amp * amp1;
-            const real1_f p0 = s0->Prob(i);
-            const real1_f p1 = s1->Prob(i);
 
             if (abs(cp0) > FP_NORM_EPSILON) {
-                if (abs(ONE_R1 / 2 - p0) < (ONE_R1 / 4)) {
-                    s0->ForceM(i, false);
-                    nLowRankCache.emplace_back(SQRT1_2_R1 * cp0, s0);
-                } else if (p0 < (ONE_R1 / 4)) {
-                    nLowRankCache.emplace_back(cp0, s0);
-                }
+                nLowRankCache.emplace_back(cp0, s0);
             }
 
             if (abs(cp1) > FP_NORM_EPSILON) {
-                if (abs(ONE_R1 / 2 - p1) < (ONE_R1 / 4)) {
-                    s1->ForceM(i, false);
-                    nLowRankCache.emplace_back(SQRT1_2_R1 * cp1, s1);
-                } else if (p1 < (ONE_R1 / 4)) {
-                    nLowRankCache.emplace_back(cp1, s1);
+                nLowRankCache.emplace_back(cp1, s1);
+            }
+        }
+        lowRankCache = nLowRankCache;
+
+        ReduceLowRankCache();
+
+        nLowRankCache.clear();
+        for (QUnitCliffordAmp& lrc : lowRankCache) {
+            const real1_f prob = lrc.stabilizer->Prob(i);
+            if ((ONE_R1 - prob) < (ONE_R1 / 4)) {
+                continue;
+            }
+            if (abs(ONE_R1 / 2 - prob) < (ONE_R1 / 4)) {
+                lrc.amp *= SQRT1_2_R1;
+                if (abs(lrc.amp) <= FP_NORM_EPSILON) {
+                    continue;
                 }
             }
+            lrc.stabilizer->ForceM(i, false);
+            nLowRankCache.push_back(lrc);
         }
         lowRankCache = nLowRankCache;
 
