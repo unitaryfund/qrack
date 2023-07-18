@@ -1781,8 +1781,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
             continue;
         }
 
-        const complex phaseFac = pow(-ONE_R1, correctionProb);
-
         for (const QUnitCliffordAmp& lrc : lowRankCache) {
             const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
             const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
@@ -1797,7 +1795,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
             s1->H(i);
 
             const complex cp0 = lrc.amp * amp0;
-            const complex cp1 = lrc.amp * amp1 * phaseFac;
+            const complex cp1 = lrc.amp * amp1;
             const real1_f p0 = s0->Prob(i);
             const real1_f p1 = s1->Prob(i);
 
