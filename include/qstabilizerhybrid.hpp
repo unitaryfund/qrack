@@ -21,10 +21,10 @@
 namespace Qrack {
 
 struct QUnitCliffordAmp {
-    complex amp;
+    real1_f amp;
     QUnitCliffordPtr stabilizer;
 
-    QUnitCliffordAmp(complex a, QUnitCliffordPtr s)
+    QUnitCliffordAmp(real1_f a, QUnitCliffordPtr s)
         : amp(a)
         , stabilizer(s)
     {
@@ -290,11 +290,6 @@ protected:
 
     void ReduceLowRankCache()
     {
-        for (QUnitCliffordAmp& lrc : lowRankCache) {
-            lrc.amp *= lrc.stabilizer->GetPhaseOffset();
-            lrc.stabilizer->ResetPhaseOffset();
-        }
-
         size_t i = 0U;
         real1_f totProb = ZERO_R1_F;
         while (i < lowRankCache.size()) {
@@ -311,13 +306,13 @@ protected:
                 }
             }
 
-            const real1 nrm = norm(l.amp);
+            const real1_f nrm = (l.amp * l.amp);
             if (nrm <= FP_NORM_EPSILON) {
                 lowRankCache.erase(lowRankCache.begin() + i);
                 continue;
             }
 
-            totProb += norm(l.amp);
+            totProb += nrm;
             ++i;
         }
 
@@ -325,7 +320,7 @@ protected:
             return;
         }
 
-        const complex nrm = ONE_R1_F / sqrt(totProb);
+        const real1_f nrm = ONE_R1_F / sqrt(totProb);
         for (QUnitCliffordAmp& lrc : lowRankCache) {
             lrc.amp *= nrm;
         }

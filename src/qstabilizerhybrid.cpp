@@ -1743,7 +1743,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
     FlushCliffordFromBuffers();
 
     stabilizer->ResetPhaseOffset();
-    lowRankCache.emplace_back(ONE_CMPLX, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
+    lowRankCache.emplace_back(ONE_R1_F, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
 
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = qubitCount; i < shards.size(); ++i) {
@@ -1765,7 +1765,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 const real1_f p = lrc.stabilizer->Prob(i);
                 if (abs(ONE_R1 / 2 - p) < (ONE_R1 / 4)) {
                     lrc.amp *= SQRT1_2_R1;
-                    if (norm(lrc.amp) <= FP_NORM_EPSILON) {
+                    if ((lrc.amp * lrc.amp) <= FP_NORM_EPSILON) {
                         continue;
                     }
                     lrc.stabilizer->ForceM(i, false);
@@ -1794,12 +1794,12 @@ void QStabilizerHybrid::PrepareLowRankCache()
             s0->H(i);
             s1->H(i);
 
-            const complex cp0 = lrc.amp * amp0;
-            const complex cp1 = lrc.amp * amp1;
+            const real1_f cp0 = lrc.amp * amp0;
+            const real1_f cp1 = lrc.amp * amp1;
             const real1_f p0 = s0->Prob(i);
             const real1_f p1 = s1->Prob(i);
 
-            if (norm(cp0) > FP_NORM_EPSILON) {
+            if ((cp0 * cp0) > FP_NORM_EPSILON) {
                 if (abs(ONE_R1 / 2 - p0) < (ONE_R1 / 4)) {
                     s0->ForceM(i, false);
                     nLowRankCache.emplace_back(SQRT1_2_R1 * cp0, s0);
@@ -1808,7 +1808,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 }
             }
 
-            if (norm(cp1) > FP_NORM_EPSILON) {
+            if ((cp1 * cp1) > FP_NORM_EPSILON) {
                 if (abs(ONE_R1 / 2 - p1) < (ONE_R1 / 4)) {
                     s1->ForceM(i, false);
                     nLowRankCache.emplace_back(SQRT1_2_R1 * cp1, s1);
@@ -1829,7 +1829,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         real1_f qubitProb = ZERO_R1_F;
         for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            qubitProb += norm(lrc.amp) * lrc.stabilizer->Prob(i);
+            qubitProb += (lrc.amp * lrc.amp) * lrc.stabilizer->Prob(i);
         }
         const bool result = (qubitProb <= FP_NORM_EPSILON)
             ? false
@@ -1848,7 +1848,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             }
             if (abs(ONE_R1 / 2 - prob) < (ONE_R1 / 4)) {
                 lrc.amp *= SQRT1_2_R1;
-                if (norm(lrc.amp) <= FP_NORM_EPSILON) {
+                if ((lrc.amp * lrc.amp) <= FP_NORM_EPSILON) {
                     continue;
                 }
             }
