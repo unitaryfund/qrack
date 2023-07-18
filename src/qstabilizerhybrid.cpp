@@ -1796,18 +1796,12 @@ void QStabilizerHybrid::PrepareLowRankCache()
             s0->H(i);
             s1->H(i);
 
-            const complex cp0 = lrc.amp * amp0;
-            const complex cp1 = lrc.amp * amp1;
-
-            if (abs(cp0) > FP_NORM_EPSILON) {
-                nLowRankCache.emplace_back(cp0, s0);
-            }
-
-            if (abs(cp1) > FP_NORM_EPSILON) {
-                nLowRankCache.emplace_back(cp1, s1);
-            }
+            nLowRankCache.emplace_back(lrc.amp * amp0, s0);
+            nLowRankCache.emplace_back(lrc.amp * amp1, s1);
         }
         lowRankCache = nLowRankCache;
+
+        ReduceLowRankCache();
 
         nLowRankCache.clear();
         for (QUnitCliffordAmp& lrc : lowRankCache) {
