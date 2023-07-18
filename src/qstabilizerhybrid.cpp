@@ -2013,6 +2013,12 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     }
 
     if (thisClone && thisClone->stabilizer && thatClone && thatClone->stabilizer) {
+        if (randGlobalPhase) {
+            thisClone->stabilizer->ResetPhaseOffset();
+        }
+        if (toCompare->randGlobalPhase) {
+            thatClone->stabilizer->ResetPhaseOffset();
+        }
         if (isDiscreteBool) {
             return thisClone->stabilizer->ApproxCompare(thatClone->stabilizer, error_tol) ? ZERO_R1_F : ONE_R1_F;
         } else {
