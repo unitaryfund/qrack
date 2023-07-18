@@ -132,9 +132,13 @@ public:
     }
     complex GetPhaseOffset()
     {
+        std::set<QStabilizerPtr> found;
         complex phaseOffset = ONE_CMPLX;
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            phaseOffset *= shards[i].unit->GetPhaseOffset();
+            if (found.find(shards[i].unit) == found.end()) {
+                phaseOffset *= shards[i].unit->GetPhaseOffset();
+                found.insert(shards[i].unit);
+            }
         }
         return phaseOffset;
     }
