@@ -1808,8 +1808,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
         }
         lowRankCache = nLowRankCache;
 
-        ReduceLowRankCache();
-
         nLowRankCache.clear();
         for (QUnitCliffordAmp& lrc : lowRankCache) {
             const real1_f prob = lrc.stabilizer->Prob(i);
