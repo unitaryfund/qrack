@@ -1937,11 +1937,21 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         complex qubitAmp = ZERO_CMPLX;
         for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            for (bitCapInt j = 0U; j < lrc.stabilizer->GetMaxQPower(); ++j) {
-                if (!((j >> i) & 1)) {
-                    continue;
+            if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+                std::map<bitCapInt, complex> state = lrc.stabilizer->GetQuantumState();
+                for (const auto& p : state) {
+                    if (!((p.first >> i) & 1)) {
+                        continue;
+                    }
+                    qubitAmp += lrc.amp * p.second;
                 }
-                qubitAmp += lrc.amp * lrc.stabilizer->GetAmplitude(j);
+            } else {
+                for (bitCapInt j = 0U; j < lrc.stabilizer->GetMaxQPower(); ++j) {
+                    if (!((j >> i) & 1)) {
+                        continue;
+                    }
+                    qubitAmp += lrc.amp * lrc.stabilizer->GetAmplitude(j);
+                }
             }
         }
         const real1 qubitProb = norm(qubitAmp);
