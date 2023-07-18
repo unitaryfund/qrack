@@ -290,6 +290,11 @@ protected:
 
     void ReduceLowRankCache()
     {
+        for (QUnitCliffordAmp& lrc : lowRankCache) {
+            lrc.amp *= lrc.stabilizer->GetPhaseOffset();
+            lrc.stabilizer->ResetPhaseOffset();
+        }
+
         size_t i = 0U;
         real1_f totProb = ZERO_R1_F;
         while (i < lowRankCache.size()) {
