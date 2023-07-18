@@ -1785,7 +1785,7 @@ void QStabilizerHybrid::CombineAncillae()
     const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
 
     for (const auto& p : toCombine) {
-        const MpsShardPtr& baseShard = shards[p.first];
+        MpsShardPtr& baseShard = shards[p.first];
         if (!baseShard) {
             continue;
         }
@@ -1805,11 +1805,17 @@ void QStabilizerHybrid::CombineAncillae()
             stabilizer->H(combo);
             stabilizer->ForceM(combo, false);
         }
+        const real1_f angle =
+            FractionalRzAngleWithFlush(p.first, std::arg(baseShard->gate[3U] / baseShard->gate[0U])) / 2;
+        const real1 angleCos = cos(angle);
+        const real1 angleSin = sin(angle);
+        baseShard->gate[0U] = complex(angleCos, -angleSin);
+        baseShard->gate[3U] = complex(angleCos, angleSin);
         baseShard->Compose(h);
     }
 
     for (const auto& p : toCombineAdj) {
-        const MpsShardPtr& baseShard = shards[p.first];
+        MpsShardPtr& baseShard = shards[p.first];
         if (!baseShard) {
             continue;
         }
@@ -1831,6 +1837,12 @@ void QStabilizerHybrid::CombineAncillae()
             stabilizer->H(combo);
             stabilizer->ForceM(combo, false);
         }
+        const real1_f angle =
+            FractionalRzAngleWithFlush(p.first, std::arg(baseShard->gate[3U] / baseShard->gate[0U])) / 2;
+        const real1 angleCos = cos(angle);
+        const real1 angleSin = sin(angle);
+        baseShard->gate[0U] = complex(angleCos, -angleSin);
+        baseShard->gate[3U] = complex(angleCos, angleSin);
         baseShard->Compose(h);
     }
 
