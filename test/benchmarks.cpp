@@ -7605,7 +7605,9 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 
     const int Depth = benchmarkDepth;
     const int n = max_qubits;
+    const int tMax = ((benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2)) / 2;
     std::cout << "Circuit width: " << n << std::endl;
+    std::cout << "Circuit max magic: " << 2 * tMax << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << Depth << std::endl;
     std::cout << "Count of trials: " << benchmarkSamples << std::endl;
 
@@ -7615,6 +7617,22 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 
     int gate;
 
+    std::vector<QInterfaceEngine> engineStack;
+    if (optimal) {
+#if ENABLE_OPENCL
+        engineStack.push_back(
+            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+#endif
+    } else if (optimal_single) {
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+    } else {
+        engineStack.push_back(testEngineType);
+        engineStack.push_back(testSubEngineType);
+        engineStack.push_back(testSubSubEngineType);
+    }
+
     std::vector<bitCapInt> qPowers(n);
     for (int i = 0; i < n; ++i) {
         qPowers[i] = pow2(i);
@@ -7622,8 +7640,7 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 
     real1 avgFidelity = ZERO_R1;
     for (int trial = 0U; trial < benchmarkSamples; ++trial) {
-        QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, n, 0);
 
         if (disable_t_injection) {
             testCase->SetTInjection(false);
@@ -7636,16 +7653,30 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
         }
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
+        std::vector<std::vector<real1>> rz1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
+
+        int tCount = 0;
 
         for (d = 0; d < Depth; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
+            std::vector<real1>& layerRz1QbRands = rz1QbRands[d];
             for (i = 0; i < n; i++) {
                 gate = (int)(testCase->Rand() * GateCount1Qb);
                 if (gate >= GateCount1Qb) {
                     gate = (GateCount1Qb - 1U);
                 }
                 layer1QbRands.push_back(gate);
+
+                real1 angle = ZERO_R1;
+                if (tCount < tMax) {
+                    const real1_f gateRand = (n * benchmarkDepth * testCase->Rand()) / benchmarkMaxMagic;
+                    if (gateRand < ONE_R1) {
+                        angle = 2 * PI_R1 * testCase->Rand();
+                        tCount++;
+                    }
+                }
+                layerRz1QbRands.push_back(angle);
             }
 
             std::set<bitLenInt> unusedBits;
@@ -7685,6 +7716,7 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 
         for (d = 0; d < Depth; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
+            std::vector<real1>& layerRz1QbRands = rz1QbRands[d];
             for (i = 0; i < (int)layer1QbRands.size(); i++) {
                 int gate1Qb = layer1QbRands[i];
                 if (gate1Qb == 0) {
@@ -7699,10 +7731,11 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
                     testCase->S(i);
                 } else if (gate1Qb == 5) {
                     testCase->IS(i);
-                } else if (gate1Qb == 6) {
-                    testCase->T(i);
-                } else {
-                    testCase->IT(i);
+                }
+
+                const real1 angle = layerRz1QbRands[i];
+                if (angle != ZERO_R1) {
+                    testCase->RZ(angle, i);
                 }
             }
 
@@ -7750,7 +7783,13 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
             }
 
             std::vector<int>& layer1QbRands = gate1QbRands[d];
+            std::vector<real1>& layerRz1QbRands = rz1QbRands[d];
             for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
+                const real1 angle = layerRz1QbRands[i];
+                if (angle != ZERO_R1) {
+                    testCase->RZ(-angle, i);
+                }
+
                 int gate1Qb = layer1QbRands[i];
                 if (gate1Qb == 0) {
                     testCase->H(i);
@@ -7764,10 +7803,6 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
                     testCase->IS(i);
                 } else if (gate1Qb == 5) {
                     testCase->S(i);
-                } else if (gate1Qb == 6) {
-                    testCase->IT(i);
-                } else {
-                    testCase->T(i);
                 }
             }
         }

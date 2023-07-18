@@ -472,7 +472,7 @@ bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool wil
 
     const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
 
-    if ((ancillaCount + toCopy->ancillaCount) > maxAncillaCount) {
+    if (!isWeakSampling && ((ancillaCount + toCopy->ancillaCount) > maxAncillaCount)) {
         SwitchToEngine();
     }
 
