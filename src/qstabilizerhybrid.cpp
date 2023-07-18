@@ -1860,17 +1860,16 @@ void QStabilizerHybrid::PrepareLowRankCache()
         const MpsShardPtr& shard = shards[i];
 
         shard->Compose(h);
-        const real1_f correctionProb =
-            2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
+        const real1_f correctionAngle = FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U]));
         shard->Compose(h);
 
-        if (abs(correctionProb) <= FP_NORM_EPSILON) {
+        if (abs(2 * correctionAngle / PI_R1) <= FP_NORM_EPSILON) {
             for (const QUnitCliffordAmp& lrc : lowRankCache) {
                 lrc.stabilizer->H(i);
             }
         } else {
             std::vector<QUnitCliffordAmp> nLowRankCache;
-            const complex phaseFac = pow(I_CMPLX, correctionProb);
+            const complex phaseFac = complex(cos(correctionAngle), sin(correctionAngle));
             const complex amp0 = (phaseFac - I_CMPLX) / complex(ONE_R1, -ONE_R1);
             const complex amp1 = ONE_R1 - amp0;
 
@@ -1878,7 +1877,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
                 const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
 
-                if (correctionProb < 0) {
+                if (correctionAngle < 0) {
                     s1->IS(i);
                 } else {
                     s1->S(i);
