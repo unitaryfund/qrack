@@ -1816,9 +1816,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
             }
             if (abs(ONE_R1 / 2 - prob) < (ONE_R1 / 4)) {
                 lrc.amp *= SQRT1_2_R1;
-                if (abs(lrc.amp) <= FP_NORM_EPSILON) {
-                    continue;
-                }
             }
             lrc.stabilizer->ForceM(i, false);
             nLowRankCache.push_back(lrc);
@@ -1854,9 +1851,6 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             }
             if (abs(ONE_R1 / 2 - prob) < (ONE_R1 / 4)) {
                 lrc.amp *= SQRT1_2_R1;
-                if (abs(lrc.amp) <= FP_NORM_EPSILON) {
-                    continue;
-                }
             }
             lrc.stabilizer->ForceM(i, result);
             nLowRankCache.push_back(lrc);
