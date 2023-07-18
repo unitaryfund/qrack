@@ -330,6 +330,7 @@ protected:
         }
     }
 
+    void CombineAncillae();
     void PrepareLowRankCache();
     bitCapInt WeakSampleAncillae();
 
