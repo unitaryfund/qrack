@@ -1854,6 +1854,19 @@ void QStabilizerHybrid::CombineAncillae()
         }
     }
 
+    // Flush any ancillae left in Clifford states.
+    for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
+        MpsShardPtr& shard = shards[i];
+        shard->Compose(h);
+        const real1_f prob = 2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
+        if (prob <= FP_NORM_EPSILON) {
+            stabilizer->H(i);
+            stabilizer->ForceM(i, false);
+            stabilizer->Dispose(i, 1U);
+            shards.erase(shards.begin() + i);
+        }
+    }
+
     // We should fail to find any toCombine entries before exit.
     CombineAncillae();
 }
