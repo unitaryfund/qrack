@@ -1049,6 +1049,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     toCopy->Finish();
     Finish();
 
+    phaseOffset *= toCopy->phaseOffset;
+
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
     const bitLenInt length = toCopy->qubitCount;
     const bitLenInt nQubitCount = qubitCount + length;

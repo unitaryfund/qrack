@@ -98,6 +98,9 @@ public:
 
     bitCapInt GetMaxQPower() { return pow2(qubitCount); }
 
+    void ResetPhaseOffset() { phaseOffset = ONE_CMPLX; }
+    complex GetPhaseOffset() { return phaseOffset; }
+
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     void SetRandomSeed(uint32_t seed)

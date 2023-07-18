@@ -1757,7 +1757,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
         const real1_f amp1 = sqrt(abs(correctionProb));
         const real1_f amp0 = sqrt(ONE_R1 - amp1 * amp1);
 
-        real1_f totProb = ZERO_R1_F;
         std::vector<QUnitCliffordAmp> nLowRankCache;
 
         if ((amp1 * amp1) <= FP_NORM_EPSILON) {
@@ -1773,19 +1772,11 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 }
                 if (p < (3 * ONE_R1 / 4)) {
                     nLowRankCache.push_back(lrc);
-                    totProb += norm(lrc.amp);
                 }
             }
             lowRankCache = nLowRankCache;
 
-            if (abs(ONE_R1 - totProb) <= FP_NORM_EPSILON) {
-                continue;
-            }
-
-            const complex nrm = ONE_R1_F / sqrt(totProb);
-            for (QUnitCliffordAmp& lrc : lowRankCache) {
-                lrc.amp *= nrm;
-            }
+            ReduceLowRankCache();
 
             continue;
         }
@@ -1814,10 +1805,8 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 if (abs(ONE_R1 / 2 - p0) < (ONE_R1 / 4)) {
                     s0->ForceM(i, false);
                     nLowRankCache.emplace_back(SQRT1_2_R1 * cp0, s0);
-                    totProb += norm(cp0) / 2;
                 } else if (p0 < (ONE_R1 / 4)) {
                     nLowRankCache.emplace_back(cp0, s0);
-                    totProb += norm(cp0);
                 }
             }
 
@@ -1825,23 +1814,14 @@ void QStabilizerHybrid::PrepareLowRankCache()
                 if (abs(ONE_R1 / 2 - p1) < (ONE_R1 / 4)) {
                     s1->ForceM(i, false);
                     nLowRankCache.emplace_back(SQRT1_2_R1 * cp1, s1);
-                    totProb += norm(cp1) / 2;
                 } else if (p1 < (ONE_R1 / 4)) {
                     nLowRankCache.emplace_back(cp1, s1);
-                    totProb += norm(cp1);
                 }
             }
         }
         lowRankCache = nLowRankCache;
 
-        if (abs(ONE_R1 - totProb) <= FP_NORM_EPSILON) {
-            continue;
-        }
-
-        const complex nrm = ONE_R1_F / sqrt(totProb);
-        for (QUnitCliffordAmp& lrc : lowRankCache) {
-            lrc.amp *= nrm;
-        }
+        ReduceLowRankCache();
     }
 }
 
@@ -1859,7 +1839,6 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         if (result) {
             toRet |= pow2(i);
         }
-        real1_f totProb = ZERO_R1_F;
         std::vector<QUnitCliffordAmp> nLowRankCache;
         for (QUnitCliffordAmp& lrc : lowRankCache) {
             const real1_f prob = lrc.stabilizer->Prob(i);
@@ -1877,18 +1856,10 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             }
             lrc.stabilizer->ForceM(i, result);
             nLowRankCache.push_back(lrc);
-            totProb += norm(lrc.amp);
         }
         lowRankCache = nLowRankCache;
 
-        if (abs(ONE_R1 - totProb) <= FP_NORM_EPSILON) {
-            continue;
-        }
-
-        const complex nrm = ONE_R1_F / sqrt(totProb);
-        for (QUnitCliffordAmp& lrc : lowRankCache) {
-            lrc.amp *= nrm;
-        }
+        ReduceLowRankCache();
     }
 
     return toRet;

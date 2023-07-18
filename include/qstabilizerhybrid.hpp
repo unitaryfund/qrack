@@ -288,6 +288,49 @@ protected:
         }
     }
 
+    void ReduceLowRankCache()
+    {
+        for (QUnitCliffordAmp& lrc : lowRankCache) {
+            lrc.amp *= lrc.stabilizer->GetPhaseOffset();
+            lrc.stabilizer->ResetPhaseOffset();
+        }
+
+        size_t i = 0U;
+        real1_f totProb = ZERO_R1_F;
+        while (i < lowRankCache.size()) {
+            QUnitCliffordAmp& l = lowRankCache[i];
+
+            size_t j = i;
+            while (j < lowRankCache.size()) {
+                QUnitCliffordAmp& r = lowRankCache[j];
+                if (l.stabilizer->ApproxCompare(r.stabilizer)) {
+                    l.amp += r.amp;
+                    lowRankCache.erase(lowRankCache.begin() + j);
+                } else {
+                    ++j;
+                }
+            }
+
+            const real1 nrm = norm(l.amp);
+            if (nrm <= FP_NORM_EPSILON) {
+                lowRankCache.erase(lowRankCache.begin() + i);
+                continue;
+            }
+
+            totProb += norm(l.amp);
+            ++i;
+        }
+
+        if (abs(ONE_R1 - totProb) <= FP_NORM_EPSILON) {
+            return;
+        }
+
+        const complex nrm = ONE_R1_F / sqrt(totProb);
+        for (QUnitCliffordAmp& lrc : lowRankCache) {
+            lrc.amp *= nrm;
+        }
+    }
+
     void PrepareLowRankCache();
     bitCapInt WeakSampleAncillae();
 

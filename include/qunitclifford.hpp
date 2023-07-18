@@ -124,6 +124,21 @@ public:
 
     void SetDevice(int64_t dID) {}
 
+    void ResetPhaseOffset()
+    {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            shards[i].unit->ResetPhaseOffset();
+        }
+    }
+    complex GetPhaseOffset()
+    {
+        complex phaseOffset = ONE_CMPLX;
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            phaseOffset *= shards[i].unit->GetPhaseOffset();
+        }
+        return phaseOffset;
+    }
+
     bitLenInt PermCount()
     {
         QUnitCliffordPtr thisCopy = std::dynamic_pointer_cast<QUnitClifford>(Clone());
