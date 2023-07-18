@@ -36,6 +36,7 @@ protected:
     bool freezeBasis2Qb;
     bool isReactiveSeparate;
     bool useTGadget;
+    bool isWeakSampling;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
     double logFidelity;
@@ -87,6 +88,17 @@ public:
                 return true;
             },
             ZERO_R1_F, ZERO_R1_F, ZERO_R1_F, useGadget ? 1U : 0U);
+    }
+
+    virtual void SetStabilizerWeakSampling(bool isWeak)
+    {
+        isWeakSampling = isWeak;
+        ParallelUnitApply(
+            [](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3, int64_t isWeak) {
+                unit->SetStabilizerWeakSampling((bool)isWeak);
+                return true;
+            },
+            ZERO_R1_F, ZERO_R1_F, ZERO_R1_F, isWeakSampling ? 1U : 0U);
     }
 
     virtual void SetReactiveSeparate(bool isAggSep) { isReactiveSeparate = isAggSep; }

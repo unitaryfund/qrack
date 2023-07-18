@@ -103,6 +103,7 @@ QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
         separabilityThreshold);
     toRet->SetConcurrency(GetConcurrencyLevel());
     toRet->SetTInjection(useTGadget);
+    toRet->SetStabilizerWeakSampling(isWeakSampling);
 
     return toRet;
 }
@@ -461,6 +462,9 @@ bitLenInt QUnit::Allocate(bitLenInt start, bitLenInt length)
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
     nQubits->SetReactiveSeparate(isReactiveSeparate);
+    nQubits->SetTInjection(useTGadget);
+    nQubits->SetStabilizerWeakSampling(isWeakSampling);
+
     return Compose(nQubits, start);
 }
 
@@ -4064,6 +4068,7 @@ QInterfacePtr QUnit::Clone()
 
     copyPtr->SetReactiveSeparate(isReactiveSeparate);
     copyPtr->SetTInjection(useTGadget);
+    copyPtr->SetStabilizerWeakSampling(isWeakSampling);
     copyPtr->logFidelity = logFidelity;
 
     return CloneBody(copyPtr);

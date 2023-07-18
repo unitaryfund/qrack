@@ -359,7 +359,7 @@ public:
 
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
-    void SetStabilizerWeakSampling(bool isApprox) { isWeakSampling = isApprox; }
+    void SetStabilizerWeakSampling(bool isWeak) { isWeakSampling = isWeak; }
     bool GetStabilizerWeakSampling() { return isWeakSampling; }
 
     void Finish()
