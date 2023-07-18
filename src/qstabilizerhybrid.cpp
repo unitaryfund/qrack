@@ -1825,10 +1825,11 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
 {
     bitCapInt toRet = 0U;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        real1_f qubitProb = ZERO_R1_F;
+        complex qubitAmp = ZERO_CMPLX;
         for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            qubitProb += abs(lrc.amp) * lrc.stabilizer->Prob(i);
+            qubitAmp += lrc.amp * lrc.stabilizer->Prob(i);
         }
+        const real1 qubitProb = norm(qubitAmp);
         const bool result = (qubitProb <= FP_NORM_EPSILON)
             ? false
             : (((ONE_R1 - qubitProb) <= FP_NORM_EPSILON) ? true : (Rand() < qubitProb));

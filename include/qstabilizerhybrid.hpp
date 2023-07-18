@@ -296,7 +296,7 @@ protected:
         }
 
         size_t i = 0U;
-        real1_f totProb = ZERO_R1_F;
+        complex totAmp = ZERO_CMPLX;
         while (i < lowRankCache.size()) {
             QUnitCliffordAmp& l = lowRankCache[i];
 
@@ -316,15 +316,15 @@ protected:
                 continue;
             }
 
-            totProb += abs(l.amp);
+            totAmp += l.amp;
             ++i;
         }
 
-        if (abs(ONE_R1 - totProb) <= FP_NORM_EPSILON) {
+        if (abs(ONE_CMPLX - totAmp) <= FP_NORM_EPSILON) {
             return;
         }
 
-        const real1_f nrm = ONE_R1_F / totProb;
+        const complex nrm = ONE_R1_F / totAmp;
         for (QUnitCliffordAmp& lrc : lowRankCache) {
             lrc.amp *= nrm;
         }
