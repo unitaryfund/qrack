@@ -1936,6 +1936,12 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         const bitCapInt maxLcv = pow2(shards.size());
         real1 qubitProb = ZERO_R1;
+        std::map<QUnitCliffordPtr, std::map<bitCapInt, complex>> states;
+        for (const QUnitCliffordAmp& lrc : lowRankCache) {
+            if (lrc.stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+                states[lrc.stabilizer] = stabilizer->GetQuantumState();
+            }
+        }
         for (bitCapInt j = 0U; j < maxLcv; ++j) {
             if (!((j >> i) & 1)) {
                 continue;
@@ -1945,13 +1951,17 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             const unsigned numCores = GetConcurrencyLevel();
             std::vector<std::future<complex>> futures;
             for (const QUnitCliffordAmp& lrc : lowRankCache) {
-                futures.push_back(
-                    std::async(std::launch::async, [lrc, &j]() { return lrc.amp * lrc.stabilizer->GetAmplitude(j); }));
-                if (futures.size() == numCores) {
-                    for (size_t k = 0U; k < futures.size(); ++k) {
-                        qubitAmp += futures[k].get();
+                if (!states[lrc.stabilizer].size()) {
+                    futures.push_back(std::async(
+                        std::launch::async, [lrc, &j]() { return lrc.amp * lrc.stabilizer->GetAmplitude(j); }));
+                    if (futures.size() == numCores) {
+                        for (size_t k = 0U; k < futures.size(); ++k) {
+                            qubitAmp += futures[k].get();
+                        }
+                        futures.clear();
                     }
-                    futures.clear();
+                } else if (states[lrc.stabilizer].find(j) != states[lrc.stabilizer].end()) {
+                    qubitAmp += lrc.amp * states[lrc.stabilizer][j];
                 }
             }
             if (futures.size()) {
@@ -1962,7 +1972,11 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             }
 #else
             for (const QUnitCliffordAmp& lrc : lowRankCache) {
-                qubitAmp += lrc.amp * lrc.stabilizer->GetAmplitude(j);
+                if (!states[lrc.stabilizer].size()) {
+                    qubitAmp += lrc.amp * lrc.stabilizer->GetAmplitude(j);
+                } else if (states[lrc.stabilizer].find(j) != states[lrc.stabilizer].end()) {
+                    qubitAmp += lrc.amp * states[lrc.stabilizer][j];
+                }
             }
 #endif
             qubitProb += norm(qubitAmp);
