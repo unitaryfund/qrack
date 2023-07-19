@@ -713,7 +713,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return true;
     }
 
-    if (shard.unit && shard.unit->isClifford()) {
+    if (shard.unit->isClifford()) {
         return TrySeparateClifford(qubit);
     }
 
