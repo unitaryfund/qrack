@@ -1753,16 +1753,19 @@ void QStabilizerHybrid::CombineAncillae()
     std::map<bitLenInt, std::vector<bitLenInt>> toCombineAdj;
     for (size_t i = qubitCount; i < shards.size(); ++i) {
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+        clone->H(i);
         clone->ForceM(i, false);
         for (size_t j = i + 1U; j < shards.size(); ++j) {
             if (clone->Prob(j) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->H(i);
                 clone->ForceM(i, true);
                 if ((ONE_R1 - clone->Prob(j)) < (ONE_R1 / 4)) {
                     toCombine[i].push_back(j);
                 }
             } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->H(i);
                 clone->ForceM(i, true);
                 if (clone->Prob(j) < (ONE_R1 / 4)) {
                     toCombineAdj[i].push_back(j);
