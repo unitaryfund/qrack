@@ -188,7 +188,7 @@ protected:
     {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
 
-        if (ancillaCount) {
+        if (isWeakSampling && ancillaCount) {
             return clone->WeakSampleAncillae();
         }
 
