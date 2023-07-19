@@ -1465,6 +1465,11 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
+    if (ancillaCount > maxAncillaCount) {
+        throw std::logic_error(
+            "QStabilizerHybrid::MAll() has too many ancillary qubits to proceed. (Try turning weak sampling off.)");
+    }
+
     if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         stateMapCache = stabilizer->GetQuantumState();
     }
