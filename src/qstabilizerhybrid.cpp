@@ -1939,7 +1939,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         std::map<QUnitCliffordPtr, std::map<bitCapInt, complex>> states;
         for (const QUnitCliffordAmp& lrc : lowRankCache) {
             if (pow2(lrc.stabilizer->PermCount()) <= (pow2(maxStateMapCacheQubitCount) / lowRankCache.size())) {
-                states[lrc.stabilizer] = stabilizer->GetQuantumState();
+                states[lrc.stabilizer] = lrc.stabilizer->GetQuantumState();
             }
         }
         for (bitCapInt j = 0U; j < maxLcv; ++j) {
