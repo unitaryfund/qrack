@@ -695,7 +695,13 @@ public:
 
         return true;
     }
-    bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return TrySeparate(qubit1) && TrySeparate(qubit2); }
+    bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
+    {
+        if (shards[qubit1].unit != shards[qubit2].unit) {
+            return TrySeparate(qubit1) && TrySeparate(qubit2);
+        }
+        return shards[qubit1].unit->TrySeparate(shards[qubit1].mapped, shards[qubit2].mapped);
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const QUnitCliffordPtr s);
     friend std::istream& operator>>(std::istream& is, const QUnitCliffordPtr s);

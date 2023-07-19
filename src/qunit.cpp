@@ -808,7 +808,9 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
     // Both shards are in the same unit.
     if (unit->isClifford() && !unit->TrySeparate(mapped1, mapped2)) {
-        return false;
+        const bool isShard1Sep = TrySeparateClifford(qubit1);
+        const bool isShard2Sep = TrySeparateClifford(qubit2);
+        return isShard1Sep && isShard2Sep;
     }
 
     if (QUEUED_PHASE(shard1) || QUEUED_PHASE(shard2)) {
