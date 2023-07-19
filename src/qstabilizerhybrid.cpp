@@ -1738,7 +1738,7 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
 }
 
-void QStabilizerHybrid::CombineAncillae()
+void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
 {
     if (engine) {
         return;
@@ -1766,6 +1766,28 @@ void QStabilizerHybrid::CombineAncillae()
             } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
                 clone->H(i);
+                clone->ForceM(i, true);
+                if (clone->Prob(j) < (ONE_R1 / 4)) {
+                    toCombineAdj[i].push_back(j);
+                }
+            }
+        }
+
+        if (!isMeasuring) {
+            continue;
+        }
+
+        clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+        clone->ForceM(i, false);
+        for (size_t j = i + 1U; j < shards.size(); ++j) {
+            if (clone->Prob(j) <= FP_NORM_EPSILON) {
+                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+                clone->ForceM(i, true);
+                if ((ONE_R1 - clone->Prob(j)) < (ONE_R1 / 4)) {
+                    toCombine[i].push_back(j);
+                }
+            } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
+                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
                 clone->ForceM(i, true);
                 if (clone->Prob(j) < (ONE_R1 / 4)) {
                     toCombineAdj[i].push_back(j);
@@ -1866,7 +1888,7 @@ void QStabilizerHybrid::CombineAncillae()
     }
 
     // We should fail to find any toCombine entries before exit.
-    CombineAncillae();
+    CombineAncillae(isMeasuring);
 }
 
 void QStabilizerHybrid::PrepareLowRankCache()
@@ -1874,7 +1896,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
     lowRankCache.clear();
 
     FlushCliffordFromBuffers();
-    CombineAncillae();
+    CombineAncillae(true);
 
     stabilizer->ResetPhaseOffset();
     lowRankCache.emplace_back(ONE_R1_F, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
