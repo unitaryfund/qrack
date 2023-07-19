@@ -7117,6 +7117,11 @@ TEST_CASE("test_qcircuit_ALU_INC", "[ALU]")
 
 TEST_CASE("test_mirror_qcircuit", "[mirror]")
 {
+    if (enable_weak_sampling) {
+        std::cout << ">>> 'test_mirror_qcircuit': skipped." << std::endl;
+        return;
+    }
+
     std::cout << ">>> 'test_mirror_qcircuit':" << std::endl;
 
     const int GateCount1Qb = 8;
