@@ -1875,6 +1875,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
     lowRankCache.clear();
 
     FlushCliffordFromBuffers();
+    CombineAncillae();
 
     stabilizer->ResetPhaseOffset();
     lowRankCache.emplace_back(ONE_R1_F, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
@@ -1936,7 +1937,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         complex qubitAmp = ZERO_CMPLX;
         for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+            if (lrc.stabilizer->PermCount() < maxStateMapCacheQubitCount) {
                 std::map<bitCapInt, complex> state = lrc.stabilizer->GetQuantumState();
                 for (const auto& p : state) {
                     if (!((p.first >> i) & 1)) {
