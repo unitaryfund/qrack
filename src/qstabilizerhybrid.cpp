@@ -1447,6 +1447,8 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
+    CombineAncillae();
+
     if (!IsProbBuffered()) {
         const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
@@ -1740,7 +1742,7 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
 {
-    if (engine) {
+    if (engine || !ancillaCount) {
         return;
     }
 
