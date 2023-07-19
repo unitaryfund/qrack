@@ -316,7 +316,7 @@ protected:
             ++i;
         }
 
-        if (abs(ONE_CMPLX - totAmp) <= FP_NORM_EPSILON) {
+        if (abs(ONE_CMPLX - abs(totAmp)) <= FP_NORM_EPSILON) {
             return;
         }
 
