@@ -1447,19 +1447,17 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (isWeakSampling && ancillaCount && !IsLogicalProbBuffered()) {
-        PrepareLowRankCache();
-        const bitCapInt toRet = WeakSampleAncillae();
-        lowRankCache.clear();
+    if (!IsProbBuffered()) {
+        const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
 
         return toRet;
     }
 
-    FlushCliffordFromBuffers();
-
-    if (!IsProbBuffered()) {
-        const bitCapInt toRet = stabilizer->MAll();
+    if (isWeakSampling && !IsLogicalProbBuffered()) {
+        PrepareLowRankCache();
+        const bitCapInt toRet = WeakSampleAncillae();
+        lowRankCache.clear();
         SetPermutation(toRet);
 
         return toRet;
