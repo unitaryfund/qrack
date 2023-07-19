@@ -1938,9 +1938,32 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
                 continue;
             }
             complex qubitAmp = ZERO_CMPLX;
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+            const unsigned numCores = GetConcurrencyLevel();
+            std::vector<std::future<complex>> futures;
+            for (const QUnitCliffordAmp& lrc : lowRankCache) {
+                if (futures.size() < numCores) {
+                    futures.push_back(std::async(
+                        std::launch::async, [lrc, &j]() { return lrc.amp * lrc.stabilizer->GetAmplitude(j); }));
+                }
+                if (futures.size() == numCores) {
+                    for (size_t k = 0U; k < futures.size(); ++k) {
+                        qubitAmp += futures[k].get();
+                    }
+                    futures.clear();
+                }
+            }
+            if (futures.size()) {
+                for (size_t k = 0U; k < futures.size(); ++k) {
+                    qubitAmp += futures[k].get();
+                }
+                futures.clear();
+            }
+#else
             for (const QUnitCliffordAmp& lrc : lowRankCache) {
                 qubitAmp += lrc.amp * lrc.stabilizer->GetAmplitude(j);
             }
+#endif
             qubitProb += norm(qubitAmp);
         }
         const bool result = (qubitProb <= FP_NORM_EPSILON)
