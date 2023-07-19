@@ -220,14 +220,14 @@ protected:
     {
         const real1_f sectorAngle = PI_R1 / 2;
         const real1_f Period = 2 * PI_R1;
-        while (angle < 0) {
-            angle += Period;
-        }
         while (angle >= Period) {
             angle -= Period;
         }
+        while (angle < 0) {
+            angle += Period;
+        }
 
-        int sector = (int)(angle / sectorAngle);
+        int sector = std::round(angle / sectorAngle);
         switch (sector) {
         case 1U:
             stabilizer->S(i);
@@ -249,10 +249,6 @@ protected:
         }
         if (correctionAngle <= -PI_R1) {
             correctionAngle += Period;
-        }
-        if (correctionAngle > (sectorAngle / 2)) {
-            stabilizer->S(i);
-            correctionAngle -= sectorAngle;
         }
 
         return correctionAngle;
