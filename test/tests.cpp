@@ -6692,6 +6692,11 @@ struct MultiQubitGate {
 
 TEST_CASE("test_mirror_circuit", "[mirror]")
 {
+    if (enable_weak_sampling) {
+        std::cout << ">>> 'test_mirror_circuit': skipped." << std::endl;
+        return;
+    }
+
     std::cout << ">>> 'test_mirror_circuit':" << std::endl;
 
     const int GateCount1Qb = 8;
