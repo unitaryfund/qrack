@@ -296,7 +296,7 @@ protected:
         while (i < lowRankCache.size()) {
             QUnitCliffordAmp& l = lowRankCache[i];
 
-            size_t j = i;
+            size_t j = i + 1;
             while (j < lowRankCache.size()) {
                 QUnitCliffordAmp& r = lowRankCache[j];
                 if (l.stabilizer->ApproxCompare(r.stabilizer)) {
