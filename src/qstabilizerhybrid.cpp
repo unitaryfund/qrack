@@ -1942,10 +1942,8 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
             const unsigned numCores = GetConcurrencyLevel();
             std::vector<std::future<complex>> futures;
             for (const QUnitCliffordAmp& lrc : lowRankCache) {
-                if (futures.size() < numCores) {
-                    futures.push_back(std::async(
-                        std::launch::async, [lrc, &j]() { return lrc.amp * lrc.stabilizer->GetAmplitude(j); }));
-                }
+                futures.push_back(
+                    std::async(std::launch::async, [lrc, &j]() { return lrc.amp * lrc.stabilizer->GetAmplitude(j); }));
                 if (futures.size() == numCores) {
                     for (size_t k = 0U; k < futures.size(); ++k) {
                         qubitAmp += futures[k].get();
