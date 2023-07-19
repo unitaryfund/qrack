@@ -1753,19 +1753,16 @@ void QStabilizerHybrid::CombineAncillae()
     std::map<bitLenInt, std::vector<bitLenInt>> toCombineAdj;
     for (size_t i = qubitCount; i < shards.size(); ++i) {
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-        clone->H(i);
         clone->ForceM(i, false);
         for (size_t j = i + 1U; j < shards.size(); ++j) {
             if (clone->Prob(j) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->H(i);
                 clone->ForceM(i, true);
                 if ((ONE_R1 - clone->Prob(j)) < (ONE_R1 / 4)) {
                     toCombine[i].push_back(j);
                 }
             } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->H(i);
                 clone->ForceM(i, true);
                 if (clone->Prob(j) < (ONE_R1 / 4)) {
                     toCombineAdj[i].push_back(j);
@@ -1861,6 +1858,7 @@ void QStabilizerHybrid::CombineAncillae()
             stabilizer->ForceM(i, false);
             stabilizer->Dispose(i, 1U);
             shards.erase(shards.begin() + i);
+            --ancillaCount;
         }
     }
 
@@ -1933,26 +1931,18 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
 {
     bitCapInt toRet = 0U;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        complex qubitAmp = ZERO_CMPLX;
-        for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            if (lrc.stabilizer->PermCount() < maxStateMapCacheQubitCount) {
-                std::map<bitCapInt, complex> state = lrc.stabilizer->GetQuantumState();
-                for (const auto& p : state) {
-                    if (!((p.first >> i) & 1)) {
-                        continue;
-                    }
-                    qubitAmp += lrc.amp * p.second;
-                }
-            } else {
-                for (bitCapInt j = 0U; j < lrc.stabilizer->GetMaxQPower(); ++j) {
-                    if (!((j >> i) & 1)) {
-                        continue;
-                    }
-                    qubitAmp += lrc.amp * lrc.stabilizer->GetAmplitude(j);
-                }
+        const bitCapInt maxLcv = pow2(shards.size());
+        real1 qubitProb = ZERO_R1;
+        for (bitCapInt j = 0U; j < maxLcv; ++j) {
+            if (!((j >> i) & 1)) {
+                continue;
             }
+            complex qubitAmp = ZERO_CMPLX;
+            for (const QUnitCliffordAmp& lrc : lowRankCache) {
+                qubitAmp += lrc.amp * lrc.stabilizer->GetAmplitude(j);
+            }
+            qubitProb += norm(qubitAmp);
         }
-        const real1 qubitProb = norm(qubitAmp);
         const bool result = (qubitProb <= FP_NORM_EPSILON)
             ? false
             : (((ONE_R1 - qubitProb) <= FP_NORM_EPSILON) ? true : (Rand() < qubitProb));
