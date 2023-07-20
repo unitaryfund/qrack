@@ -1751,13 +1751,14 @@ void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
         return;
     }
 
+    FlushCliffordFromBuffers();
+
     // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
     // If so, we can combine (or cancel) the phase effect on the earlier ancilla and completely separate the later.
     // We must preserve the earlier ancilla's entanglement, besides partial collapse with the later ancilla.
     // (It might be possible to change convention to preserve the later ancilla and separate the earlier.)
 
     std::map<bitLenInt, std::vector<bitLenInt>> toCombine;
-    std::map<bitLenInt, std::vector<bitLenInt>> toCombineAdj;
     for (size_t i = qubitCount; i < shards.size(); ++i) {
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
         clone->H(i);
@@ -1775,7 +1776,8 @@ void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
                 clone->H(i);
                 clone->ForceM(i, true);
                 if (clone->Prob(j) < (ONE_R1 / 4)) {
-                    toCombineAdj[i].push_back(j);
+                    toCombine[i].push_back(j);
+                    stabilizer->Z(j);
                 }
             }
         }
@@ -1797,13 +1799,14 @@ void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
                 clone->ForceM(i, true);
                 if (clone->Prob(j) < (ONE_R1 / 4)) {
-                    toCombineAdj[i].push_back(j);
+                    toCombine[i].push_back(j);
+                    stabilizer->X(j);
                 }
             }
         }
     }
 
-    if (!toCombine.size() && !toCombineAdj.size()) {
+    if (!toCombine.size()) {
         // We fail to find any toCombine entries, and recursion exits.
         return;
     }
@@ -1830,38 +1833,6 @@ void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
 
             stabilizer->H(combo);
             stabilizer->ForceM(combo, false);
-        }
-        const real1_f angle =
-            FractionalRzAngleWithFlush(p.first, std::arg(baseShard->gate[3U] / baseShard->gate[0U])) / 2;
-        const real1 angleCos = cos(angle);
-        const real1 angleSin = sin(angle);
-        baseShard->gate[0U] = complex(angleCos, -angleSin);
-        baseShard->gate[3U] = complex(angleCos, angleSin);
-        baseShard->Compose(h);
-    }
-
-    for (const auto& p : toCombineAdj) {
-        MpsShardPtr& baseShard = shards[p.first];
-        if (!baseShard) {
-            continue;
-        }
-        baseShard->Compose(h);
-
-        const std::vector<bitLenInt>& dep = p.second;
-        for (const bitLenInt& combo : dep) {
-            MpsShardPtr& shard = shards[combo];
-            if (!shard) {
-                continue;
-            }
-
-            shard->Compose(h);
-            complex mtrx[4U];
-            inv2x2(shard->gate, mtrx);
-            baseShard->Compose(mtrx);
-            shard = NULL;
-
-            stabilizer->H(combo);
-            stabilizer->ForceM(combo, true);
         }
         const real1_f angle =
             FractionalRzAngleWithFlush(p.first, std::arg(baseShard->gate[3U] / baseShard->gate[0U])) / 2;
@@ -1902,7 +1873,6 @@ void QStabilizerHybrid::PrepareLowRankCache()
 {
     lowRankCache.clear();
 
-    FlushCliffordFromBuffers();
     CombineAncillae(true);
 
     stabilizer->ResetPhaseOffset();
