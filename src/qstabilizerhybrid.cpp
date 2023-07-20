@@ -1861,7 +1861,7 @@ void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
             shard = NULL;
 
             stabilizer->H(combo);
-            stabilizer->ForceM(combo, false);
+            stabilizer->ForceM(combo, true);
         }
         const real1_f angle =
             FractionalRzAngleWithFlush(p.first, std::arg(baseShard->gate[3U] / baseShard->gate[0U])) / 2;
