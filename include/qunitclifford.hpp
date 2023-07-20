@@ -124,6 +124,13 @@ public:
 
     void SetDevice(int64_t dID) {}
 
+    void SetRandGlobalPhase(bool isRand)
+    {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            shards[i].unit->SetRandGlobalPhase(isRand);
+        }
+    }
+
     void ResetPhaseOffset()
     {
         for (bitLenInt i = 0U; i < qubitCount; ++i) {

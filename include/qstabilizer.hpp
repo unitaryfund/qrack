@@ -218,6 +218,8 @@ public:
         throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
     }
 
+    void SetRandGlobalPhase(bool isRand) { randGlobalPhase = isRand; }
+
     /// Apply a CNOT gate with control and target
     void CNOT(bitLenInt control, bitLenInt target);
     /// Apply a CY gate with control and target
