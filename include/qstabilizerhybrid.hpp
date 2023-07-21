@@ -326,7 +326,7 @@ protected:
         }
     }
 
-    void CombineAncillae(bool isMeasuring = false);
+    void CombineAncillae(bool isApproxSampling = false);
     void PrepareLowRankCache();
     bitCapInt WeakSampleAncillae();
 

@@ -1745,7 +1745,7 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
 }
 
-void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
+void QStabilizerHybrid::CombineAncillae(bool isApproxSampling)
 {
     if (engine || !ancillaCount) {
         return;
@@ -1782,7 +1782,7 @@ void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
             }
         }
 
-        if (!isMeasuring) {
+        if (!isApproxSampling) {
             continue;
         }
 
@@ -1866,7 +1866,7 @@ void QStabilizerHybrid::CombineAncillae(bool isMeasuring)
     }
 
     // We should fail to find any toCombine entries before exit.
-    CombineAncillae(isMeasuring);
+    CombineAncillae(isApproxSampling);
 }
 
 void QStabilizerHybrid::PrepareLowRankCache()
