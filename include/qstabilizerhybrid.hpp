@@ -320,7 +320,7 @@ protected:
             return;
         }
 
-        const complex nrm = ONE_R1_F / totAmp;
+        const complex nrm = ONE_CMPLX / totAmp;
         for (QUnitCliffordAmp& lrc : lowRankCache) {
             lrc.amp *= nrm;
         }

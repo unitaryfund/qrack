@@ -192,8 +192,8 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
         return;
     }
-    const real1 angleCos = cos(angle);
-    const real1 angleSin = sin(angle);
+    const real1 angleCos = (real1)cos(angle);
+    const real1 angleSin = (real1)sin(angle);
     shard->gate[0U] = complex(angleCos, -angleSin);
     shard->gate[3U] = complex(angleCos, angleSin);
 
@@ -1836,8 +1836,8 @@ void QStabilizerHybrid::CombineAncillae(bool isApproxSampling)
         }
         const real1_f angle =
             FractionalRzAngleWithFlush(p.first, std::arg(baseShard->gate[3U] / baseShard->gate[0U])) / 2;
-        const real1 angleCos = cos(angle);
-        const real1 angleSin = sin(angle);
+        const real1 angleCos = (real1)cos(angle);
+        const real1 angleSin = (real1)sin(angle);
         baseShard->gate[0U] = complex(angleCos, -angleSin);
         baseShard->gate[3U] = complex(angleCos, angleSin);
         baseShard->Compose(h);
@@ -1876,7 +1876,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
     CombineAncillae(true);
 
     stabilizer->ResetPhaseOffset();
-    lowRankCache.emplace_back(ONE_R1_F, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
+    lowRankCache.emplace_back(ONE_CMPLX, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
 
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = qubitCount; i < shards.size(); ++i) {
@@ -1887,7 +1887,7 @@ void QStabilizerHybrid::PrepareLowRankCache()
         shard->Compose(h);
 
         std::vector<QUnitCliffordAmp> nLowRankCache;
-        const complex phaseFac = complex(cos(correctionAngle), sin(correctionAngle));
+        const complex phaseFac = complex((real1)cos(correctionAngle), (real1)sin(correctionAngle));
         const complex amp0 = (phaseFac - I_CMPLX) / complex(ONE_R1, -ONE_R1);
         const complex amp1 = ONE_R1 - amp0;
 
