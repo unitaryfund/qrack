@@ -6670,17 +6670,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_36", "[mirror]")
     REQUIRE(result.begin()->first == 5U);
 }
 
-bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
+bitLenInt pickRandomBit(real1_f rand, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
-    bitLenInt bitRand = (bitLenInt)(qReg->Rand() * unusedBitsPtr->size());
+    bitLenInt bitRand = (bitLenInt)(unusedBitsPtr->size() * rand);
     if (bitRand >= unusedBitsPtr->size()) {
         bitRand = unusedBitsPtr->size() - 1U;
     }
     std::advance(bitIterator, bitRand);
-    bitLenInt bit = *bitIterator;
+    bitRand = *bitIterator;
     unusedBitsPtr->erase(bitIterator);
-    return bit;
+    return bitRand;
 }
 
 struct MultiQubitGate {
@@ -6753,8 +6753,8 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
             while (unusedBits.size() > 1) {
                 MultiQubitGate multiGate;
-                multiGate.b1 = pickRandomBit(testCase, &unusedBits);
-                multiGate.b2 = pickRandomBit(testCase, &unusedBits);
+                multiGate.b1 = pickRandomBit(testCase->Rand(), &unusedBits);
+                multiGate.b2 = pickRandomBit(testCase->Rand(), &unusedBits);
                 multiGate.b3 = 0;
 
                 if (unusedBits.size() > 0) {
@@ -6771,7 +6771,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                 multiGate.gate = gate;
 
                 if (multiGate.gate >= GateCount2Qb) {
-                    multiGate.b3 = pickRandomBit(testCase, &unusedBits);
+                    multiGate.b3 = pickRandomBit(testCase->Rand(), &unusedBits);
                 }
 
                 layerMultiQbRands.push_back(multiGate);
@@ -7077,35 +7077,6 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
     }
 }
 
-TEST_CASE("test_qcircuit_ALU_INC", "[ALU]")
-{
-    std::cout << ">>> test_qcircuit_ALU_INC:" << std::endl;
-
-    QInterfacePtr qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
-
-    qftReg->SetPermutation(0);
-
-    // create a QCircuit instance
-    QCircuitPtr circuit = std::make_shared<QCircuit>();
-
-    // execute single control test
-    circuit->INC(1, 0, 1);
-
-    circuit->Run(qftReg);
-
-    REQUIRE(qftReg->MAll() == 1);
-
-    // multi qbit
-    qftReg->SetPermutation(0);
-
-    // execute multi control test
-    circuit->INC(1, 0, 8);
-
-    circuit->Run(qftReg);
-
-    REQUIRE(qftReg->MAll() == 2);
-}
-
 TEST_CASE("test_mirror_qcircuit", "[mirror]")
 {
     if (enable_weak_sampling) {
@@ -7169,8 +7140,8 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
             std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
             while (unusedBits.size() > 1) {
                 MultiQubitGate multiGate;
-                multiGate.b1 = pickRandomBit(testCase, &unusedBits);
-                multiGate.b2 = pickRandomBit(testCase, &unusedBits);
+                multiGate.b1 = pickRandomBit(testCase->Rand(), &unusedBits);
+                multiGate.b2 = pickRandomBit(testCase->Rand(), &unusedBits);
                 multiGate.b3 = 0;
 
                 if (unusedBits.size() > 0) {
@@ -7187,7 +7158,7 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
                 multiGate.gate = gate;
 
                 if (multiGate.gate >= GateCount2Qb) {
-                    multiGate.b3 = pickRandomBit(testCase, &unusedBits);
+                    multiGate.b3 = pickRandomBit(testCase->Rand(), &unusedBits);
                 }
 
                 layerMultiQbRands.push_back(multiGate);
@@ -7604,4 +7575,33 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
         REQUIRE(result.begin()->first == randPerm);
         REQUIRE(result.size() == 1U);
     }
+}
+
+TEST_CASE("test_qcircuit_ALU_INC", "[ALU]")
+{
+    std::cout << ">>> test_qcircuit_ALU_INC:" << std::endl;
+
+    QInterfacePtr qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
+
+    qftReg->SetPermutation(0);
+
+    // create a QCircuit instance
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+
+    // execute single control test
+    circuit->INC(1, 0, 1);
+
+    circuit->Run(qftReg);
+
+    REQUIRE(qftReg->MAll() == 1);
+
+    // multi qbit
+    qftReg->SetPermutation(0);
+
+    // execute multi control test
+    circuit->INC(1, 0, 8);
+
+    circuit->Run(qftReg);
+
+    REQUIRE(qftReg->MAll() == 2);
 }

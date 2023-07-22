@@ -461,6 +461,14 @@ public:
     bitCapInt MAll();
 
     void Mtrx(const complex* mtrx, bitLenInt target);
+    void UCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
+    {
+        if (stabilizer) {
+            stabilizer->UCMtrx(controls, mtrx, target, controlPerm);
+            return;
+        }
+        QInterface::UCMtrx(controls, mtrx, target, controlPerm);
+    }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
