@@ -7665,7 +7665,11 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 
                     real1 angle = ZERO_R1;
                     if ((tCount < tMax) && (((3 * n * Depth * testCase->Rand()) / tMax) < ONE_R1)) {
-                        angle = testCase->Rand() * PI_R1 / 2;
+                        do {
+                            angle = testCase->Rand();
+                        } while (angle <= FP_NORM_EPSILON);
+                        angle *= PI_R1 / 2;
+
                         tCount++;
                     }
                     layerRz1QbRands.push_back(angle);
