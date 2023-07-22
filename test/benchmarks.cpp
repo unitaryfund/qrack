@@ -7601,7 +7601,6 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
     std::cout << ">>> 'test_mirror_circuit_clifford_rz':" << std::endl;
 
     const int GateCount1Qb = 4;
-    const int shots = 64;
 
     const int Depth = benchmarkDepth;
     const int n = max_qubits;
@@ -7632,6 +7631,11 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
         qPowers[i] = pow2(i);
     }
 
+    std::set<bitLenInt> bitSet;
+    for (int i = 0; i < n; ++i) {
+        bitSet.insert(i);
+    }
+
     real1 avgFidelity = ZERO_R1;
     for (int trial = 0U; trial < benchmarkSamples; ++trial) {
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, n, 0);
@@ -7646,9 +7650,9 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
             testCase->SetStabilizerWeakSampling(true);
         }
 
-        std::vector<std::vector<int>> gate1QbRands(Depth);
-        std::vector<std::vector<real1>> rz1QbRands(Depth);
-        std::vector<std::vector<int>> gateMultiQbRands(Depth);
+        std::vector<std::vector<int>> gate1QbRands(Depth, std::vector<int>(3 * n));
+        std::vector<std::vector<real1_f>> rz1QbRands(Depth, std::vector<real1_f>(3 * n));
+        std::vector<std::vector<int>> gateMultiQbRands(Depth, std::vector<int>(2 * n));
 
         int tCount = 0;
 
@@ -7657,13 +7661,15 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
             std::vector<real1>& layerRz1QbRands = rz1QbRands[d];
             for (int i = 0; i < n; ++i) {
                 for (int j = 0; j < 3; ++j) {
+                    const int k = 3 * i + j;
+
                     int gate = (int)(testCase->Rand() * GateCount1Qb);
                     if (gate >= GateCount1Qb) {
                         gate = (GateCount1Qb - 1U);
                     }
-                    layer1QbRands.push_back(gate);
+                    layer1QbRands[k] = gate;
 
-                    real1 angle = ZERO_R1;
+                    real1_f angle = ZERO_R1_F;
                     if ((tCount < tMax) && (((3 * n * Depth * testCase->Rand()) / tMax) < ONE_R1)) {
                         do {
                             angle = testCase->Rand();
@@ -7672,31 +7678,28 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 
                         tCount++;
                     }
-                    layerRz1QbRands.push_back(angle);
+                    layerRz1QbRands[k] = angle;
                 }
             }
 
-            std::set<bitLenInt> unusedBits;
-            for (int i = 0; i < n; ++i) {
-                unusedBits.insert(i);
-            }
+            std::set<bitLenInt> unusedBits = bitSet;
             std::vector<int>& layerMultiQbRands = gateMultiQbRands[d];
-            while (unusedBits.size() > 1) {
-                layerMultiQbRands.push_back(pickRandomBit(testCase->Rand(), &unusedBits));
-                layerMultiQbRands.push_back(pickRandomBit(testCase->Rand(), &unusedBits));
+            for (int i = 0; i < (n >> 1U); ++i) {
+                layerMultiQbRands[(i << 1)] = pickRandomBit(testCase->Rand(), &unusedBits);
+                layerMultiQbRands[(i << 1) | 1] = pickRandomBit(testCase->Rand(), &unusedBits);
             }
         }
 
-        bitCapIntOcl randPerm = (bitCapIntOcl)(testCase->Rand() * (bitCapIntOcl)testCase->GetMaxQPower());
+        bitCapInt randPerm = (bitCapInt)(testCase->Rand() * (bitCapIntOcl)testCase->GetMaxQPower());
         if (randPerm >= testCase->GetMaxQPower()) {
-            randPerm = (bitCapIntOcl)testCase->GetMaxQPower() - 1U;
+            randPerm = (bitCapInt)testCase->GetMaxQPower() - 1U;
         }
         testCase->SetPermutation(randPerm);
 
         for (int d = 0; d < Depth; ++d) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             std::vector<real1>& layerRz1QbRands = rz1QbRands[d];
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < n; ++i) {
                 for (int j = 0; j < 3; ++j) {
                     const int k = 3 * i + j;
 
@@ -7713,8 +7716,8 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
                         testCase->Z(i);
                     }
 
-                    const real1 angle = layerRz1QbRands[k];
-                    if (angle != ZERO_R1) {
+                    const real1_f angle = layerRz1QbRands[k];
+                    if (angle > 0) {
                         testCase->RZ(angle, i);
                     }
                 }
@@ -7722,15 +7725,15 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 
             std::vector<int>& layerMultiQbRands = gateMultiQbRands[d];
             for (int i = 0; i < (n >> 1U); ++i) {
-                testCase->CNOT(layerMultiQbRands[i << 1], layerMultiQbRands[(i << 1) + 1]);
+                testCase->CNOT(layerMultiQbRands[(i << 1)], layerMultiQbRands[(i << 1) + 1]);
             }
         }
 
         // Mirror the circuit
-        for (int d = Depth - 1U; d >= 0; d--) {
+        for (int d = Depth - 1U; d >= 0; --d) {
             std::vector<int>& layerMultiQbRands = gateMultiQbRands[d];
             for (int i = (n >> 1U) - 1; i >= 0; --i) {
-                testCase->CNOT(layerMultiQbRands[i << 1], layerMultiQbRands[(i << 1) + 1]);
+                testCase->CNOT(layerMultiQbRands[(i << 1)], layerMultiQbRands[(i << 1) + 1]);
             }
 
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -7739,18 +7742,18 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
                 for (int j = 2; j >= 0; --j) {
                     const int k = 3 * i + j;
 
-                    const real1 angle = layerRz1QbRands[k];
-                    if (angle != ZERO_R1) {
+                    const real1_f angle = layerRz1QbRands[k];
+                    if (angle > 0) {
                         testCase->RZ(-angle, i);
                     }
 
                     // We can trace out a quarter rotations around the Bloch sphere with stabilizer.
                     const int gate1Qb = layer1QbRands[k];
-                    if (gate1Qb & 1) {
-                        testCase->IS(i);
-                    }
                     if (gate1Qb & 2) {
                         testCase->Z(i);
+                    }
+                    if (gate1Qb & 1) {
+                        testCase->IS(i);
                     }
 
                     // We're trying to cover 3 Pauli axes
@@ -7760,8 +7763,9 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
             }
         }
 
-        std::map<bitCapInt, int> result = testCase->MultiShotMeasureMask(qPowers, shots);
-        avgFidelity += ((real1)result[randPerm]) / (shots * benchmarkSamples);
+        if (testCase->MAll() == randPerm) {
+            avgFidelity += ONE_R1 / benchmarkSamples;
+        }
     }
     std::cout << "Fidelity: " << avgFidelity << std::endl;
 }
