@@ -45,7 +45,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
     , maxEngineQubitCount(27U)
-    , maxAncillaCount(30U)
+    , maxAncillaCount(28U)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -56,7 +56,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , shards(qubitCount)
 {
     const bitLenInt maxCpuQubitCount =
-        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 28U;
 #if ENABLE_OPENCL
     const bool isQPager = (engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_OPENCL);
     if (isQPager ||
