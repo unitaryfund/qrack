@@ -55,7 +55,8 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , cloneEngineTypes(eng)
     , shards(qubitCount)
 {
-
+    const bitLenInt maxCpuQubitCount =
+        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
 #if ENABLE_OPENCL
     const bool isQPager = (engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_OPENCL);
     if (isQPager ||
@@ -76,18 +77,16 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
             }
         }
     } else {
-        maxEngineQubitCount =
-            getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+        maxEngineQubitCount = maxCpuQubitCount;
         maxAncillaCount = maxEngineQubitCount;
 #endif
     }
 #elif ENABLE_ENV_VARS
-    maxEngineQubitCount =
-        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+    maxEngineQubitCount = maxCpuQubitCount;
     maxAncillaCount = maxEngineQubitCount;
 #endif
 
-    maxStateMapCacheQubitCount = maxEngineQubitCount - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
+    maxStateMapCacheQubitCount = maxCpuQubitCount - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
 
     stabilizer = MakeStabilizer(initState);
 }
