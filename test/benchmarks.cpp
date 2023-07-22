@@ -1453,97 +1453,50 @@ TEST_CASE("test_stabilizer_rz", "[supreme]")
         std::cout << "(max quantum \"magic\": default, ceiling equal to qubit count +2)";
     }
 
-    const int DimCount1Qb = 4;
-    const int GateCountMultiQb = 3;
-
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
-        real1_f gateRand;
-        bitLenInt b1, b2;
-
         const int tMax = (benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2);
         int tCount = 0U;
 
+        std::set<bitLenInt> qubitSet;
+        for (bitLenInt i = 0; i < n; ++i) {
+            qubitSet.insert(i);
+        }
+
         for (int d = 0; d < benchmarkDepth; ++d) {
-            bitCapInt zMask = 0U;
             for (bitLenInt i = 0; i < n; ++i) {
                 for (int j = 0; j < 3; ++j) {
-                    // "Position transforms:
-                    if (j == 0) {
-                        qReg->H(i);
-                    } else if (j == 1) {
+                    // We're trying to cover 3 Pauli axes
+                    // with Euler angle axes x-z-x.
+                    qReg->H(i);
+
+                    // We can trace out a quarter rotations around the Bloch sphere with stabilizer.
+                    const int gate1Qb = (int)(4 * qReg->Rand());
+                    if (gate1Qb & 1) {
                         qReg->S(i);
-                    } else {
-                        qReg->IS(i);
-                        qReg->H(i);
+                    }
+                    if (gate1Qb & 2) {
+                        qReg->Z(i);
                     }
 
-                    // "Phase transforms:"
-                    gateRand = DimCount1Qb * qReg->Rand();
-                    if (gateRand < ONE_R1) {
-                        // Z^(1/2)
-                        qReg->S(i);
-                    } else if (gateRand < (2 * ONE_R1)) {
-                        // Z
-                        zMask |= pow2(i);
-                    } else if (gateRand < (3 * ONE_R1)) {
-                        // Z^(-1/2)
-                        qReg->IS(i);
-                    }
-                    // else - identity
+                    if ((tCount < tMax) && (((3 * n * benchmarkDepth * qReg->Rand()) / benchmarkMaxMagic) < ONE_R1)) {
+                        real1_f angle = ZERO_R1_F;
+                        do {
+                            angle = qReg->Rand();
+                        } while (angle <= FP_NORM_EPSILON);
+                        angle *= PI_R1 / 2;
 
-                    if (tCount < tMax) {
-                        gateRand = n * benchmarkDepth * qReg->Rand() / (benchmarkMaxMagic * 3);
-                        if (gateRand < ONE_R1) {
-                            qReg->RZ(4 * PI_R1 * qReg->Rand(), i);
-                            tCount++;
-                        }
+                        qReg->RZ(angle, i);
+
+                        tCount++;
                     }
                 }
             }
-            qReg->ZMask(zMask);
 
-            std::set<bitLenInt> unusedBits;
-            for (bitLenInt i = 0; i < n; ++i) {
-                unusedBits.insert(unusedBits.end(), i);
-            }
-
+            std::set<bitLenInt> unusedBits = qubitSet;
             while (unusedBits.size() > 1) {
-                b1 = pickRandomBit(qReg->Rand(), &unusedBits);
-                b2 = pickRandomBit(qReg->Rand(), &unusedBits);
-
-                gateRand = GateCountMultiQb * qReg->Rand();
-
-                if (gateRand < ONE_R1) {
-                    gateRand = 2 * qReg->Rand();
-                    if (gateRand < ONE_R1) {
-                        qReg->CNOT(b1, b2);
-                    } else {
-                        qReg->AntiCNOT(b1, b2);
-                    }
-                } else if (gateRand < (2 * ONE_R1)) {
-                    gateRand = 2 * qReg->Rand();
-                    if (gateRand < ONE_R1) {
-                        qReg->CY(b1, b2);
-                    } else {
-                        qReg->AntiCY(b1, b2);
-                    }
-                } else if (gateRand < (3 * ONE_R1)) {
-                    gateRand = 2 * qReg->Rand();
-                    if (gateRand < ONE_R1) {
-                        qReg->CZ(b1, b2);
-                    } else {
-                        qReg->AntiCZ(b1, b2);
-                    }
-                } else {
-                    gateRand = 3 * qReg->Rand();
-                    if (gateRand < ONE_R1) {
-                        qReg->Swap(b1, b2);
-                    } else if (gateRand < (2 * ONE_R1)) {
-                        qReg->ISwap(b1, b2);
-                    } else {
-                        qReg->IISwap(b1, b2);
-                    }
-                }
+                const bitLenInt b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                const bitLenInt b2 = pickRandomBit(qReg->Rand(), &unusedBits);
+                qReg->CNOT(b1, b2);
             }
         }
     });
