@@ -619,10 +619,10 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
-bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
+bitLenInt pickRandomBit(real1_f rand, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
-    bitLenInt bitRand = (bitLenInt)(unusedBitsPtr->size() * qReg->Rand());
+    bitLenInt bitRand = (bitLenInt)(unusedBitsPtr->size() * rand);
     if (bitRand >= unusedBitsPtr->size()) {
         bitRand = unusedBitsPtr->size() - 1U;
     }
@@ -674,8 +674,8 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
                 }
 
                 while (unusedBits.size() > 1) {
-                    b1 = pickRandomBit(qReg, &unusedBits);
-                    b2 = pickRandomBit(qReg, &unusedBits);
+                    b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                    b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                     if (unusedBits.size() > 0) {
                         maxGates = GateCountMultiQb;
@@ -692,10 +692,10 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
                     } else if ((unusedBits.size() == 0) || (gateRand < (3 * ONE_R1))) {
                         qReg->CNOT(b1, b2);
                     } else if (gateRand < (4 * ONE_R1)) {
-                        b3 = pickRandomBit(qReg, &unusedBits);
+                        b3 = pickRandomBit(qReg->Rand(), &unusedBits);
                         qReg->CCZ(b1, b2, b3);
                     } else {
-                        b3 = pickRandomBit(qReg, &unusedBits);
+                        b3 = pickRandomBit(qReg->Rand(), &unusedBits);
                         qReg->CCNOT(b1, b2, b3);
                     }
                 }
@@ -745,8 +745,8 @@ TEST_CASE("test_stabilizer", "[supreme]")
                 }
 
                 while (unusedBits.size() > 1) {
-                    b1 = pickRandomBit(qReg, &unusedBits);
-                    b2 = pickRandomBit(qReg, &unusedBits);
+                    b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                    b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                     gateRand = GateCountMultiQb * qReg->Rand();
 
@@ -856,8 +856,8 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
             }
 
             while (unusedBits.size() > 1) {
-                b1 = pickRandomBit(qReg, &unusedBits);
-                b2 = pickRandomBit(qReg, &unusedBits);
+                b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                 gateRand = GateCountMultiQb * qReg->Rand();
 
@@ -992,8 +992,8 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
             }
 
             while (unusedBits.size() > 1) {
-                b1 = pickRandomBit(qReg, &unusedBits);
-                b2 = pickRandomBit(qReg, &unusedBits);
+                b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                 gateRand = 2 * qReg->Rand();
 
@@ -1037,7 +1037,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                     }
                     // else - identity
                 } else {
-                    b3 = pickRandomBit(qReg, &unusedBits);
+                    b3 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                     gateRand = DimCountMultiQb * qReg->Rand();
 
@@ -1508,8 +1508,8 @@ TEST_CASE("test_stabilizer_rz", "[supreme]")
             }
 
             while (unusedBits.size() > 1) {
-                b1 = pickRandomBit(qReg, &unusedBits);
-                b2 = pickRandomBit(qReg, &unusedBits);
+                b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                 gateRand = GateCountMultiQb * qReg->Rand();
 
@@ -3438,8 +3438,8 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
                 }
 
                 while (unusedBits.size() > 1) {
-                    b1 = pickRandomBit(qReg, &unusedBits);
-                    b2 = pickRandomBit(qReg, &unusedBits);
+                    b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                    b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                     if ((GateCountMultiQb * qReg->Rand()) < ONE_R1) {
                         qReg->Swap(b1, b2);
@@ -3485,8 +3485,8 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
                 }
 
                 while (unusedBits.size() > 1) {
-                    b1 = pickRandomBit(qReg, &unusedBits);
-                    b2 = pickRandomBit(qReg, &unusedBits);
+                    b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                    b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                     if (unusedBits.size() > 0) {
                         maxGates = GateCountMultiQb;
@@ -3499,7 +3499,7 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
                     if ((unusedBits.size() == 0) || (gateRand < ONE_R1)) {
                         qReg->Swap(b1, b2);
                     } else {
-                        b3 = pickRandomBit(qReg, &unusedBits);
+                        b3 = pickRandomBit(qReg->Rand(), &unusedBits);
                         qReg->CCNOT(b1, b2, b3);
                     }
                 }
@@ -3550,8 +3550,8 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
                 }
 
                 while (unusedBits.size() > 1) {
-                    b1 = pickRandomBit(qReg, &unusedBits);
-                    b2 = pickRandomBit(qReg, &unusedBits);
+                    b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                    b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                     if (unusedBits.size() > 0) {
                         maxGates = GateCountMultiQb;
@@ -3568,7 +3568,7 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
                     } else if ((unusedBits.size() == 0) || (gateRand < (3 * ONE_R1))) {
                         qReg->CNOT(b1, b2);
                     } else {
-                        b3 = pickRandomBit(qReg, &unusedBits);
+                        b3 = pickRandomBit(qReg->Rand(), &unusedBits);
                         qReg->CCNOT(b1, b2, b3);
                     }
                 }
@@ -3618,8 +3618,8 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                 }
 
                 while (unusedBits.size() > 1) {
-                    b1 = pickRandomBit(qReg, &unusedBits);
-                    b2 = pickRandomBit(qReg, &unusedBits);
+                    b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                    b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                     canDo3 = (unusedBits.size() > 0);
                     if (canDo3) {
@@ -3634,7 +3634,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                     if (gateRand < (ONE_R1 / gateMax)) {
                         qReg->Swap(b1, b2);
                     } else if (canDo3 && (gateRand < (2 * ONE_R1 / GateCountMultiQb))) {
-                        b3 = pickRandomBit(qReg, &unusedBits);
+                        b3 = pickRandomBit(qReg->Rand(), &unusedBits);
                         qReg->CCNOT(b1, b2, b3);
                     } else {
                         control[0] = b1;
@@ -3691,8 +3691,8 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
                 }
 
                 while (unusedBits.size() > 1) {
-                    b1 = pickRandomBit(qReg, &unusedBits);
-                    b2 = pickRandomBit(qReg, &unusedBits);
+                    b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                    b2 = pickRandomBit(qReg->Rand(), &unusedBits);
 
                     if (unusedBits.size() > 0) {
                         maxGates = GateCountMultiQb;
@@ -3707,10 +3707,10 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
                     } else if ((unusedBits.size() == 0) || (gateRand < 2)) {
                         qReg->CNOT(b1, b2);
                     } else if (gateRand < 3) {
-                        b3 = pickRandomBit(qReg, &unusedBits);
+                        b3 = pickRandomBit(qReg->Rand(), &unusedBits);
                         qReg->CCZ(b1, b2, b3);
                     } else {
-                        b3 = pickRandomBit(qReg, &unusedBits);
+                        b3 = pickRandomBit(qReg->Rand(), &unusedBits);
                         qReg->CCNOT(b1, b2, b3);
                     }
                 }
@@ -4096,8 +4096,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         while (unusedBits.size() > 1) {
             MultiQubitGate multiGate;
-            multiGate.b1 = pickRandomBit(goldStandard, &unusedBits);
-            multiGate.b2 = pickRandomBit(goldStandard, &unusedBits);
+            multiGate.b1 = pickRandomBit(goldStandard->Rand(), &unusedBits);
+            multiGate.b2 = pickRandomBit(goldStandard->Rand(), &unusedBits);
 
             if (unusedBits.size() > 0) {
                 maxGates = GateCountMultiQb;
@@ -4108,7 +4108,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
             multiGate.gate = (bitLenInt)(maxGates * goldStandard->Rand());
 
             if (multiGate.gate > 2) {
-                multiGate.b3 = pickRandomBit(goldStandard, &unusedBits);
+                multiGate.b3 = pickRandomBit(goldStandard->Rand(), &unusedBits);
             }
 
             layerMultiQbRands.push_back(multiGate);
@@ -4411,8 +4411,8 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         while (unusedBits.size() > 1) {
             MultiQubitGate multiGate;
-            multiGate.b1 = pickRandomBit(rng, &unusedBits);
-            multiGate.b2 = pickRandomBit(rng, &unusedBits);
+            multiGate.b1 = pickRandomBit(rng->Rand(), &unusedBits);
+            multiGate.b2 = pickRandomBit(rng->Rand(), &unusedBits);
             multiGate.b3 = 0;
 
             if (unusedBits.size() > 0) {
@@ -4429,7 +4429,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
             multiGate.gate = gate;
 
             if (multiGate.gate >= GateCount2Qb) {
-                multiGate.b3 = pickRandomBit(rng, &unusedBits);
+                multiGate.b3 = pickRandomBit(rng->Rand(), &unusedBits);
             }
 
             layerMultiQbRands.push_back(multiGate);
@@ -4725,8 +4725,8 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         while (unusedBits.size() > 1) {
             MultiQubitGate multiGate;
-            multiGate.b1 = pickRandomBit(rng, &unusedBits);
-            multiGate.b2 = pickRandomBit(rng, &unusedBits);
+            multiGate.b1 = pickRandomBit(rng->Rand(), &unusedBits);
+            multiGate.b2 = pickRandomBit(rng->Rand(), &unusedBits);
             multiGate.b3 = 0;
 
             if (unusedBits.size() > 0) {
@@ -4743,7 +4743,7 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
             multiGate.gate = gate;
 
             if (multiGate.gate >= GateCount2Qb) {
-                multiGate.b3 = pickRandomBit(rng, &unusedBits);
+                multiGate.b3 = pickRandomBit(rng->Rand(), &unusedBits);
             }
 
             layerMultiQbRands.push_back(multiGate);
@@ -4923,8 +4923,8 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
         while (unusedBits.size() > 1) {
             MultiQubitGate multiGate;
-            multiGate.b1 = pickRandomBit(rng, &unusedBits);
-            multiGate.b2 = pickRandomBit(rng, &unusedBits);
+            multiGate.b1 = pickRandomBit(rng->Rand(), &unusedBits);
+            multiGate.b2 = pickRandomBit(rng->Rand(), &unusedBits);
             multiGate.b3 = 0;
 
             if (unusedBits.size() > 0) {
@@ -4941,7 +4941,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
             multiGate.gate = gate;
 
             if (multiGate.gate >= GateCount2Qb) {
-                multiGate.b3 = pickRandomBit(rng, &unusedBits);
+                multiGate.b3 = pickRandomBit(rng->Rand(), &unusedBits);
             }
 
             layerMultiQbRands.push_back(multiGate);
@@ -7600,22 +7600,16 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 {
     std::cout << ">>> 'test_mirror_circuit_clifford_rz':" << std::endl;
 
-    const int GateCount1Qb = 8;
-    const int GateCount2Qb = 7;
+    const int GateCount1Qb = 4;
+    const int shots = 64;
 
     const int Depth = benchmarkDepth;
     const int n = max_qubits;
-    const int tMax = ((benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2)) / 2;
+    const int tMax = (benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2);
     std::cout << "Circuit width: " << n << std::endl;
-    std::cout << "Circuit max magic: " << 2 * tMax << std::endl;
+    std::cout << "Circuit max magic: (excluding factor of x2 for mirror validation): " << tMax << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << Depth << std::endl;
     std::cout << "Count of trials: " << benchmarkSamples << std::endl;
-
-    int d;
-    int i;
-    int maxGates;
-
-    int gate;
 
     std::vector<QInterfaceEngine> engineStack;
     if (optimal) {
@@ -7654,57 +7648,38 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<real1>> rz1QbRands(Depth);
-        std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
+        std::vector<std::vector<int>> gateMultiQbRands(Depth);
 
         int tCount = 0;
 
-        for (d = 0; d < Depth; d++) {
+        for (int d = 0; d < Depth; ++d) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             std::vector<real1>& layerRz1QbRands = rz1QbRands[d];
-            for (i = 0; i < n; i++) {
-                gate = (int)(testCase->Rand() * GateCount1Qb);
-                if (gate >= GateCount1Qb) {
-                    gate = (GateCount1Qb - 1U);
-                }
-                layer1QbRands.push_back(gate);
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    int gate = (int)(testCase->Rand() * GateCount1Qb);
+                    if (gate >= GateCount1Qb) {
+                        gate = (GateCount1Qb - 1U);
+                    }
+                    layer1QbRands.push_back(gate);
 
-                real1 angle = ZERO_R1;
-                if (tCount < tMax) {
-                    const real1_f gateRand = (n * benchmarkDepth * testCase->Rand()) / benchmarkMaxMagic;
-                    if (gateRand < ONE_R1) {
-                        angle = 2 * PI_R1 * testCase->Rand();
+                    real1 angle = ZERO_R1;
+                    if ((tCount < tMax) && (((3 * n * Depth * testCase->Rand()) / tMax) < ONE_R1)) {
+                        angle = testCase->Rand() * PI_R1 / 2;
                         tCount++;
                     }
+                    layerRz1QbRands.push_back(angle);
                 }
-                layerRz1QbRands.push_back(angle);
             }
 
             std::set<bitLenInt> unusedBits;
-            for (i = 0; i < n; i++) {
+            for (int i = 0; i < n; ++i) {
                 unusedBits.insert(i);
             }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            std::vector<int>& layerMultiQbRands = gateMultiQbRands[d];
             while (unusedBits.size() > 1) {
-                MultiQubitGate multiGate;
-                multiGate.b1 = pickRandomBit(testCase, &unusedBits);
-                multiGate.b2 = pickRandomBit(testCase, &unusedBits);
-                multiGate.b3 = 0;
-
-                maxGates = GateCount2Qb;
-
-                gate = (int)(testCase->Rand() * maxGates);
-                if (gate >= maxGates) {
-                    gate = (maxGates - 1U);
-                }
-
-                multiGate.gate = gate;
-
-                if (multiGate.gate >= GateCount2Qb) {
-                    multiGate.b3 = pickRandomBit(testCase, &unusedBits);
-                }
-
-                layerMultiQbRands.push_back(multiGate);
+                layerMultiQbRands.push_back(pickRandomBit(testCase->Rand(), &unusedBits));
+                layerMultiQbRands.push_back(pickRandomBit(testCase->Rand(), &unusedBits));
             }
         }
 
@@ -7714,101 +7689,75 @@ TEST_CASE("test_mirror_circuit_clifford_rz", "[mirror]")
         }
         testCase->SetPermutation(randPerm);
 
-        for (d = 0; d < Depth; d++) {
+        for (int d = 0; d < Depth; ++d) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             std::vector<real1>& layerRz1QbRands = rz1QbRands[d];
-            for (i = 0; i < (int)layer1QbRands.size(); i++) {
-                int gate1Qb = layer1QbRands[i];
-                if (gate1Qb == 0) {
-                    testCase->H(i);
-                } else if (gate1Qb == 1) {
-                    testCase->X(i);
-                } else if (gate1Qb == 2) {
-                    testCase->Y(i);
-                } else if (gate1Qb == 3) {
-                    testCase->Z(i);
-                } else if (gate1Qb == 4) {
-                    testCase->S(i);
-                } else if (gate1Qb == 5) {
-                    testCase->IS(i);
-                }
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < 3; ++j) {
+                    const int k = 3 * i + j;
 
-                const real1 angle = layerRz1QbRands[i];
-                if (angle != ZERO_R1) {
-                    testCase->RZ(angle, i);
+                    // We're trying to cover 3 Pauli axes
+                    // with Euler angle axes x-z-x.
+                    testCase->H(i);
+
+                    // We can trace out a quarter rotations around the Bloch sphere with stabilizer.
+                    const int gate1Qb = layer1QbRands[k];
+                    if (gate1Qb & 1) {
+                        testCase->S(i);
+                    }
+                    if (gate1Qb & 2) {
+                        testCase->Z(i);
+                    }
+
+                    const real1 angle = layerRz1QbRands[k];
+                    if (angle != ZERO_R1) {
+                        testCase->RZ(angle, i);
+                    }
                 }
             }
 
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->ISwap(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 1) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 2) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 3) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 4) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                } else {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                }
+            std::vector<int>& layerMultiQbRands = gateMultiQbRands[d];
+            for (int i = 0; i < (n >> 1U); ++i) {
+                testCase->CNOT(layerMultiQbRands[i << 1], layerMultiQbRands[(i << 1) + 1]);
             }
         }
 
         // Mirror the circuit
-        for (d = Depth - 1U; d >= 0; d--) {
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->IISwap(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 1) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 2) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 3) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 4) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                } else {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                }
+        for (int d = Depth - 1U; d >= 0; d--) {
+            std::vector<int>& layerMultiQbRands = gateMultiQbRands[d];
+            for (int i = (n >> 1U) - 1; i >= 0; --i) {
+                testCase->CNOT(layerMultiQbRands[i << 1], layerMultiQbRands[(i << 1) + 1]);
             }
 
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             std::vector<real1>& layerRz1QbRands = rz1QbRands[d];
-            for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
-                const real1 angle = layerRz1QbRands[i];
-                if (angle != ZERO_R1) {
-                    testCase->RZ(-angle, i);
-                }
+            for (int i = (n - 1); i >= 0; --i) {
+                for (int j = 2; j >= 0; --j) {
+                    const int k = 3 * i + j;
 
-                int gate1Qb = layer1QbRands[i];
-                if (gate1Qb == 0) {
+                    const real1 angle = layerRz1QbRands[k];
+                    if (angle != ZERO_R1) {
+                        testCase->RZ(-angle, i);
+                    }
+
+                    // We can trace out a quarter rotations around the Bloch sphere with stabilizer.
+                    const int gate1Qb = layer1QbRands[k];
+                    if (gate1Qb & 1) {
+                        testCase->IS(i);
+                    }
+                    if (gate1Qb & 2) {
+                        testCase->Z(i);
+                    }
+
+                    // We're trying to cover 3 Pauli axes
+                    // with Euler angle axes x-z-x.
                     testCase->H(i);
-                } else if (gate1Qb == 1) {
-                    testCase->X(i);
-                } else if (gate1Qb == 2) {
-                    testCase->Y(i);
-                } else if (gate1Qb == 3) {
-                    testCase->Z(i);
-                } else if (gate1Qb == 4) {
-                    testCase->IS(i);
-                } else if (gate1Qb == 5) {
-                    testCase->S(i);
                 }
             }
         }
 
-        std::map<bitCapInt, int> result = testCase->MultiShotMeasureMask(qPowers, 1024U);
-        avgFidelity += ((real1)result[randPerm]) / (1024 * benchmarkSamples);
+        std::map<bitCapInt, int> result = testCase->MultiShotMeasureMask(qPowers, shots);
+        avgFidelity += ((real1)result[randPerm]) / (shots * benchmarkSamples);
     }
     std::cout << "Fidelity: " << avgFidelity << std::endl;
 }
