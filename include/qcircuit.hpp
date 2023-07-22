@@ -506,6 +506,24 @@ public:
         return clone;
     }
 
+    QCircuitPtr Inverse()
+    {
+        QCircuitPtr clone = std::make_shared<QCircuit>(isCollapsed);
+        clone->qubitCount = qubitCount;
+        for (const QCircuitGatePtr& gate : gates) {
+            const QCircuitGatePtr g = gate->Clone();
+            complex inv[4U];
+            for (auto& p : g->payloads) {
+                inv2x2(p.second.get(), inv);
+                std::copy(inv, inv + 4U, p.second.get());
+            }
+            clone->gates.push_back(g);
+        }
+        std::reverse(clone->gates.begin(), clone->gates.end());
+
+        return clone;
+    }
+
     /**
      * Get the (automatically calculated) count of qubits in this circuit, so far.
      */

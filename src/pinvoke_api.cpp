@@ -3110,7 +3110,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit(_In_ bool collapse)
     return cid;
 }
 
-MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid)
+uintq _init_qcircuit_copy(uintq cid, bool isCollapse)
 {
     META_LOCK_GUARD()
 
@@ -3133,7 +3133,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid)
         }
     }
 
-    QCircuitPtr nCircuit = circuit->Clone();
+    QCircuitPtr nCircuit = isCollapse ? circuit->Inverse() : circuit->Clone();
 
     if (cid == circuits.size()) {
         circuitReservations.push_back(true);
@@ -3145,6 +3145,10 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid)
 
     return toRet;
 }
+
+MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid) { return _init_qcircuit_copy(cid, false); }
+
+MICROSOFT_QUANTUM_DECL uintq qcircuit_inverse(_In_ uintq cid) { return _init_qcircuit_copy(cid, true); }
 
 MICROSOFT_QUANTUM_DECL void destroy_qcircuit(_In_ uintq cid)
 {

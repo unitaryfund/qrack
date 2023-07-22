@@ -6784,119 +6784,110 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
         }
         testCase->SetPermutation(randPerm);
 
+        QCircuitPtr circuit = std::make_shared<QCircuit>(false);
+
         for (d = 0; d < Depth; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             for (i = 0; i < (int)layer1QbRands.size(); i++) {
                 int gate1Qb = layer1QbRands[i];
                 if (gate1Qb == 0) {
-                    testCase->H(i);
+                    // testCase->H(i);
+                    complex mtrx[4]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
                 } else if (gate1Qb == 1) {
-                    testCase->X(i);
+                    // testCase->X(i);
+                    complex mtrx[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
                 } else if (gate1Qb == 2) {
-                    testCase->Y(i);
+                    // testCase->Y(i);
+                    complex mtrx[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
                 } else if (gate1Qb == 3) {
-                    testCase->Z(i);
+                    // testCase->Z(i);
+                    complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
                 } else if (gate1Qb == 4) {
-                    testCase->S(i);
+                    // testCase->S(i);
+                    complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
                 } else if (gate1Qb == 5) {
-                    testCase->IS(i);
+                    // testCase->IS(i);
+                    complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
                 } else if (gate1Qb == 6) {
-                    testCase->T(i);
+                    // testCase->T(i);
+                    complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1) };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
                 } else {
-                    testCase->IT(i);
+                    // testCase->IT(i);
+                    complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1) };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
                 }
             }
 
             std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
             for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
                 MultiQubitGate multiGate = layerMultiQbRands[i];
+                const std::set<bitLenInt> control{ multiGate.b1 };
+                const std::set<bitLenInt> controls{ multiGate.b1, multiGate.b2 };
                 if (multiGate.gate == 0) {
-                    testCase->ISwap(multiGate.b1, multiGate.b2);
+                    // testCase->Swap(multiGate.b1, multiGate.b2);
+                    circuit->Swap(multiGate.b1, multiGate.b2);
                 } else if (multiGate.gate == 1) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
+                    // testCase->CNOT(multiGate.b1, multiGate.b2);
+                    complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, 1U));
                 } else if (multiGate.gate == 2) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
+                    // testCase->CY(multiGate.b1, multiGate.b2);
+                    complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, 1U));
                 } else if (multiGate.gate == 3) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
+                    // testCase->CZ(multiGate.b1, multiGate.b2);
+                    complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, 1U));
                 } else if (multiGate.gate == 4) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
+                    // testCase->AntiCNOT(multiGate.b1, multiGate.b2);
+                    complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, 0U));
                 } else if (multiGate.gate == 5) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
+                    // testCase->AntiCY(multiGate.b1, multiGate.b2);
+                    complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, 0U));
                 } else if (multiGate.gate == 6) {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
+                    // testCase->AntiCZ(multiGate.b1, multiGate.b2);
+                    complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, 0U));
                 } else if (multiGate.gate == 7) {
-                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    // testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 3U));
                 } else if (multiGate.gate == 8) {
-                    testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                    // testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                    complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 3U));
                 } else if (multiGate.gate == 9) {
-                    testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                    // testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                    complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 3U));
                 } else if (multiGate.gate == 10) {
-                    testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    // testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 0U));
                 } else if (multiGate.gate == 11) {
-                    testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                    // testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
+                    complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 0U));
                 } else {
-                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                    // testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
+                    complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 0U));
                 }
             }
         }
 
-        // Mirror the circuit
-        for (d = Depth - 1U; d >= 0; d--) {
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->IISwap(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 1) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 2) {
-                    testCase->CY(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 3) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 4) {
-                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 5) {
-                    testCase->AntiCY(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 6) {
-                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 7) {
-                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                } else if (multiGate.gate == 8) {
-                    testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                } else if (multiGate.gate == 9) {
-                    testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                } else if (multiGate.gate == 10) {
-                    testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                } else if (multiGate.gate == 11) {
-                    testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                } else {
-                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                }
-            }
-
-            std::vector<int>& layer1QbRands = gate1QbRands[d];
-            for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
-                int gate1Qb = layer1QbRands[i];
-                if (gate1Qb == 0) {
-                    testCase->H(i);
-                } else if (gate1Qb == 1) {
-                    testCase->X(i);
-                } else if (gate1Qb == 2) {
-                    testCase->Y(i);
-                } else if (gate1Qb == 3) {
-                    testCase->Z(i);
-                } else if (gate1Qb == 4) {
-                    testCase->IS(i);
-                } else if (gate1Qb == 5) {
-                    testCase->S(i);
-                } else if (gate1Qb == 6) {
-                    testCase->IT(i);
-                } else {
-                    testCase->T(i);
-                }
-            }
-        }
-
+        circuit->Run(testCase);
+        circuit = circuit->Inverse();
+        circuit->Run(testCase);
         std::map<bitCapInt, int> result = testCase->MultiShotMeasureMask(qPowers, 100U);
 
         if ((result.size() > 1U) || (result.begin()->first != randPerm)) {
