@@ -603,8 +603,9 @@ public:
         QStabilizerPtr sepUnit = std::dynamic_pointer_cast<QStabilizer>(shard.unit->Decompose(shard.mapped, 1U));
 
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            if ((shard.unit == shards[i].unit) && (shard.mapped < shards[i].mapped)) {
-                --(shards[i].mapped);
+            CliffordShard& oShard = shards[i];
+            if ((shard.unit == oShard.unit) && (shard.mapped < oShard.mapped)) {
+                --oShard.mapped;
             }
         }
 
@@ -613,7 +614,20 @@ public:
 
         return true;
     }
-    bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return TrySeparate(qubit1) && TrySeparate(qubit2); }
+    bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
+    {
+        if (qubit1 == qubit2) {
+            return TrySeparate(qubit1);
+        }
+
+        if (shards[qubit1].unit != shards[qubit2].unit) {
+            const bool q1 = TrySeparate(qubit1);
+            const bool q2 = TrySeparate(qubit2);
+            return q1 && q2;
+        }
+
+        return false;
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const QUnitCliffordPtr s);
     friend std::istream& operator>>(std::istream& is, const QUnitCliffordPtr s);
