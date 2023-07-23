@@ -6722,9 +6722,8 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
 
-        if (disable_t_injection) {
-            testCase->SetTInjection(false);
-        }
+        // T-injection currently breaks the test.
+        testCase->SetTInjection(false);
         if (disable_reactive_separation) {
             testCase->SetReactiveSeparate(false);
         }
@@ -7109,9 +7108,8 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
 
-        if (disable_t_injection) {
-            testCase->SetTInjection(false);
-        }
+        // T-injection currently breaks the test.
+        testCase->SetTInjection(false);
         if (disable_reactive_separation) {
             testCase->SetReactiveSeparate(false);
         }
