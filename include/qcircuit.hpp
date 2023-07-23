@@ -507,7 +507,7 @@ public:
                 std::copy(inv, inv + 4U, p.second.get());
             }
         }
-        std::reverse(clone->gates.begin(), clone->gates.end());
+        clone->gates.reverse();
 
         return clone;
     }

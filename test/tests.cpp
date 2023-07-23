@@ -7585,7 +7585,7 @@ TEST_CASE("test_qcircuit_inverse", "[qcircuit]")
     complex h[4]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
 
-    QCircuitPtr circuit = std::make_shared<QCircuit>();
+    QCircuitPtr circuit = std::make_shared<QCircuit>(false);
     circuit->AppendGate(std::make_shared<QCircuitGate>(0U, x));
     circuit->AppendGate(std::make_shared<QCircuitGate>(0U, h));
     QCircuitPtr inverse = circuit->Inverse();
@@ -7596,7 +7596,7 @@ TEST_CASE("test_qcircuit_inverse", "[qcircuit]")
     inverse->Run(qftReg);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 
-    circuit = std::make_shared<QCircuit>();
+    circuit = std::make_shared<QCircuit>(false);
     circuit->AppendGate(std::make_shared<QCircuitGate>(0U, s));
     inverse = circuit->Inverse();
 
