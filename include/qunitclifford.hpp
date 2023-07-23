@@ -620,13 +620,10 @@ public:
             return TrySeparate(qubit1);
         }
 
-        if (shards[qubit1].unit != shards[qubit2].unit) {
-            const bool q1 = TrySeparate(qubit1);
-            const bool q2 = TrySeparate(qubit2);
-            return q1 && q2;
-        }
+        const bool q1 = TrySeparate(qubit1);
+        const bool q2 = TrySeparate(qubit2);
 
-        return false;
+        return q1 && q2;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const QUnitCliffordPtr s);
