@@ -663,6 +663,34 @@ real1_f QUnitClifford::SumSqrDiff(QUnitCliffordPtr toCompare)
     return thisCopy->shards[0U].unit->SumSqrDiff(thatCopy->shards[0U].unit);
 }
 
+bool QUnitClifford::TrySeparate(bitLenInt qubit)
+{
+    CliffordShard& shard = shards[qubit];
+
+    if (shard.unit->GetQubitCount() <= 1U) {
+        return true;
+    }
+
+    if (!shard.unit->TrySeparate(shard.mapped)) {
+        return false;
+    }
+
+    // If TrySeparate() == true, this bit can be decomposed.
+    QStabilizerPtr sepUnit = std::dynamic_pointer_cast<QStabilizer>(shard.unit->Decompose(shard.mapped, 1U));
+
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        CliffordShard& oShard = shards[i];
+        if ((shard.unit == oShard.unit) && (shard.mapped < oShard.mapped)) {
+            --oShard.mapped;
+        }
+    }
+
+    shard.mapped = 0U;
+    shard.unit = sepUnit;
+
+    return true;
+}
+
 std::ostream& operator<<(std::ostream& os, const QUnitCliffordPtr s)
 {
     const size_t qubitCount = (size_t)s->GetQubitCount();

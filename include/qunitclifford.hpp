@@ -587,33 +587,7 @@ public:
 
         return true;
     }
-    bool TrySeparate(bitLenInt qubit)
-    {
-        CliffordShard& shard = shards[qubit];
-
-        if (shard.unit->GetQubitCount() <= 1U) {
-            return true;
-        }
-
-        if (!shard.unit->TrySeparate(shard.mapped)) {
-            return false;
-        }
-
-        // If TrySeparate() == true, this bit can be decomposed.
-        QStabilizerPtr sepUnit = std::dynamic_pointer_cast<QStabilizer>(shard.unit->Decompose(shard.mapped, 1U));
-
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            CliffordShard& oShard = shards[i];
-            if ((shard.unit == oShard.unit) && (shard.mapped < oShard.mapped)) {
-                --oShard.mapped;
-            }
-        }
-
-        shard.mapped = 0U;
-        shard.unit = sepUnit;
-
-        return true;
-    }
+    bool TrySeparate(bitLenInt qubit);
     bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     {
         if (qubit1 == qubit2) {
