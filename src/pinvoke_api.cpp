@@ -3110,7 +3110,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit(_In_ bool collapse)
     return cid;
 }
 
-uintq _init_qcircuit_copy(uintq cid, bool isCollapse)
+uintq _init_qcircuit_copy(uintq cid, bool isInverse)
 {
     META_LOCK_GUARD()
 
@@ -3123,7 +3123,7 @@ uintq _init_qcircuit_copy(uintq cid, bool isCollapse)
     std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock(
         new const std::lock_guard<std::mutex>(circuitMutexes[circuit.get()]));
 
-    uintq ncid = (uintq)simulators.size();
+    uintq ncid = (uintq)circuits.size();
 
     for (uintq i = 0U; i < circuits.size(); ++i) {
         if (circuitReservations[i] == false) {
@@ -3133,7 +3133,7 @@ uintq _init_qcircuit_copy(uintq cid, bool isCollapse)
         }
     }
 
-    QCircuitPtr nCircuit = isCollapse ? circuit->Inverse() : circuit->Clone();
+    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : circuit->Clone();
 
     if (ncid == circuits.size()) {
         circuitReservations.push_back(true);
