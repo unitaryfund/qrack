@@ -463,10 +463,16 @@ public:
     void Mtrx(const complex* mtrx, bitLenInt target);
     void UCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
     {
-        if (stabilizer) {
+        if (!controls.size()) {
+            Mtrx(mtrx, target);
+            return;
+        }
+
+        if (stabilizer && (controls.size() == 1U)) {
             stabilizer->UCMtrx(controls, mtrx, target, controlPerm);
             return;
         }
+
         QInterface::UCMtrx(controls, mtrx, target, controlPerm);
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
