@@ -50,21 +50,6 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     SetPermutation(perm);
 }
 
-bool QStabilizer::TrimControls(const std::vector<bitLenInt>& lControls, bool isAnti, std::vector<bitLenInt>& output)
-{
-    for (const bitLenInt& bit : lControls) {
-        if (!IsSeparableZ(bit)) {
-            output.push_back(bit);
-            continue;
-        }
-        if (isAnti == M(bit)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 QInterfacePtr QStabilizer::Clone()
 {
     Finish();
@@ -1571,30 +1556,15 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 }
 
 void QStabilizer::MCPhase(
-    const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        return;
-    }
-
-    std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, false, controls)) {
         return;
     }
 
     if (!controls.size()) {
         Phase(topLeft, bottomRight, target);
         return;
-    }
-
-    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        const real1_f prob = Prob(target);
-        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
-            return;
-        }
-        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
-            return;
-        }
     }
 
     if (controls.size() > 1U) {
@@ -1653,30 +1623,15 @@ void QStabilizer::MCPhase(
 }
 
 void QStabilizer::MACPhase(
-    const std::vector<bitLenInt>& lControls, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        return;
-    }
-
-    std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, true, controls)) {
         return;
     }
 
     if (!controls.size()) {
         Phase(topLeft, bottomRight, target);
         return;
-    }
-
-    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        const real1_f prob = Prob(target);
-        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
-            return;
-        }
-        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
-            return;
-        }
     }
 
     if (controls.size() > 1U) {
@@ -1735,13 +1690,8 @@ void QStabilizer::MACPhase(
 }
 
 void QStabilizer::MCInvert(
-    const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, false, controls)) {
-        return;
-    }
-
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
         return;
@@ -1801,13 +1751,8 @@ void QStabilizer::MCInvert(
 }
 
 void QStabilizer::MACInvert(
-    const std::vector<bitLenInt>& lControls, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, true, controls)) {
-        return;
-    }
-
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
         return;
