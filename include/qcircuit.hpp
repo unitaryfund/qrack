@@ -89,23 +89,12 @@ struct QCircuitGate {
         , controls(ctrls)
     {
         for (const auto& payload : pylds) {
-            const std::shared_ptr<complex>& p = payloads[payload.first] =
-                std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
-            std::copy(payload.second.get(), payload.second.get() + 4, p.get());
+            payloads[payload.first] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
+            std::copy(payload.second.get(), payload.second.get() + 4, payloads[payload.first].get());
         }
     }
 
-    QCircuitGatePtr Clone()
-    {
-        QCircuitGatePtr clone = std::make_shared<QCircuitGate>(target, payloads, controls);
-        for (auto& p : clone->payloads) {
-            const std::shared_ptr<complex> np(new complex[4], std::default_delete<complex[]>());
-            std::copy(p.second.get(), p.second.get() + 4U, np.get());
-            p.second = np;
-        }
-
-        return clone;
-    }
+    QCircuitGatePtr Clone() { return std::make_shared<QCircuitGate>(target, payloads, controls); }
 
     /**
      * Can I combine myself with gate `other`?
@@ -497,29 +486,21 @@ public:
     /**
      * Manual constructor
      */
-    QCircuit(bitLenInt qbCount, std::list<QCircuitGatePtr> g, bool collapse = true)
+    QCircuit(bitLenInt qbCount, const std::list<QCircuitGatePtr>& g, bool collapse = true)
         : isCollapsed(collapse)
         , qubitCount(qbCount)
-        , gates(g)
     {
-        // Intentionally left blank
-    }
-
-    QCircuitPtr Clone()
-    {
-        QCircuitPtr clone = std::make_shared<QCircuit>(qubitCount, gates, isCollapsed);
-        for (QCircuitGatePtr& gate : clone->gates) {
-            gate = gate->Clone();
+        for (const QCircuitGatePtr& gate : g) {
+            gates.push_back(gate->Clone());
         }
-
-        return clone;
     }
+
+    QCircuitPtr Clone() { return std::make_shared<QCircuit>(qubitCount, gates, isCollapsed); }
 
     QCircuitPtr Inverse()
     {
-        QCircuitPtr clone = std::make_shared<QCircuit>(qubitCount, gates, isCollapsed);
+        QCircuitPtr clone = Clone();
         for (QCircuitGatePtr& gate : clone->gates) {
-            gate = gate->Clone();
             for (auto& p : gate->payloads) {
                 const complex* m = p.second.get();
                 complex inv[4U]{ conj(m[0U]), conj(m[2U]), conj(m[1U]), conj(m[3U]) };
