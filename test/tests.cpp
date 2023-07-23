@@ -7577,7 +7577,37 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
     }
 }
 
-TEST_CASE("test_qcircuit_ALU_INC", "[ALU]")
+TEST_CASE("test_qcircuit_inverse", "[qcircuit]")
+{
+    std::cout << ">>> test_qcircuit_ALU_INC:" << std::endl;
+
+    complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    complex h[4]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>();
+    circuit->AppendGate(std::make_shared<QCircuitGate>(0U, x));
+    circuit->AppendGate(std::make_shared<QCircuitGate>(0U, h));
+    QCircuitPtr inverse = circuit->Inverse();
+
+    QInterfacePtr qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
+
+    circuit->Run(qftReg);
+    inverse->Run(qftReg);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+
+    circuit = std::make_shared<QCircuit>();
+    circuit->AppendGate(std::make_shared<QCircuitGate>(0U, s));
+    inverse = circuit->Inverse();
+
+    qftReg->H(0U);
+    circuit->Run(qftReg);
+    inverse->Run(qftReg);
+    qftReg->H(0U);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+}
+
+TEST_CASE("test_qcircuit_inc", "[qcircuit]")
 {
     std::cout << ">>> test_qcircuit_ALU_INC:" << std::endl;
 
