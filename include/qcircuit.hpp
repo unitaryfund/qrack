@@ -95,7 +95,17 @@ struct QCircuitGate {
         }
     }
 
-    QCircuitGatePtr Clone() { return std::make_shared<QCircuitGate>(target, payloads, controls); }
+    QCircuitGatePtr Clone()
+    {
+        QCircuitGatePtr clone = std::make_shared<QCircuitGate>(target, payloads, controls);
+        for (auto& p : clone->payloads) {
+            const std::shared_ptr<complex> np(new complex[4], std::default_delete<complex[]>());
+            std::copy(p.second.get(), p.second.get() + 4U, np.get());
+            p.second = np;
+        }
+
+        return clone;
+    }
 
     /**
      * Can I combine myself with gate `other`?
@@ -497,10 +507,9 @@ public:
 
     QCircuitPtr Clone()
     {
-        QCircuitPtr clone = std::make_shared<QCircuit>(isCollapsed);
-        clone->qubitCount = qubitCount;
-        for (const QCircuitGatePtr& gate : gates) {
-            clone->gates.push_back(gate->Clone());
+        QCircuitPtr clone = std::make_shared<QCircuit>(qubitCount, gates, isCollapsed);
+        for (QCircuitGatePtr& gate : clone->gates) {
+            gate = gate->Clone();
         }
 
         return clone;
@@ -508,16 +517,14 @@ public:
 
     QCircuitPtr Inverse()
     {
-        QCircuitPtr clone = std::make_shared<QCircuit>(isCollapsed);
-        clone->qubitCount = qubitCount;
-        for (const QCircuitGatePtr& gate : gates) {
-            const QCircuitGatePtr g = gate->Clone();
-            complex inv[4U];
-            for (auto& p : g->payloads) {
-                inv2x2(p.second.get(), inv);
+        QCircuitPtr clone = std::make_shared<QCircuit>(qubitCount, gates, isCollapsed);
+        for (QCircuitGatePtr& gate : clone->gates) {
+            gate = gate->Clone();
+            for (auto& p : gate->payloads) {
+                const complex* m = p.second.get();
+                complex inv[4U]{ conj(m[0U]), conj(m[2U]), conj(m[1U]), conj(m[3U]) };
                 std::copy(inv, inv + 4U, p.second.get());
             }
-            clone->gates.push_back(g);
         }
         std::reverse(clone->gates.begin(), clone->gates.end());
 
