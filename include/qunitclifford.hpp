@@ -105,6 +105,32 @@ protected:
 
     bool SeparateBit(bool value, bitLenInt qubit);
 
+    void ThrowIfQubitInvalid(bitLenInt t, std::string methodName)
+    {
+        if (t >= qubitCount) {
+            throw std::invalid_argument(
+                methodName + std::string(" target qubit index parameter must be within allocated qubit bounds!"));
+        }
+    }
+
+    bitLenInt ThrowIfQubitSetInvalid(const std::vector<bitLenInt>& controls, bitLenInt t, std::string methodName)
+    {
+        if (t >= qubitCount) {
+            throw std::invalid_argument(
+                methodName + std::string(" target qubit index parameter must be within allocated qubit bounds!"));
+        }
+        if (controls.size() > 1U) {
+            throw std::invalid_argument(methodName + std::string(" can only have one control qubit!"));
+        }
+        const bitLenInt c = controls[0U];
+        if (c >= qubitCount) {
+            throw std::invalid_argument(
+                methodName + std::string(" control qubit index parameter must be within allocated qubit bounds!"));
+        }
+
+        return controls[0U];
+    }
+
 public:
     QUnitClifford(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
         complex ignored = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
@@ -211,40 +237,28 @@ public:
     using QInterface::H;
     void H(bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::H qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::H"));
         CliffordShard& shard = shards[t];
         shard.unit->H(shard.mapped);
     }
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     void S(bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::S qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::S"));
         CliffordShard& shard = shards[t];
         shard.unit->S(shard.mapped);
     }
     /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
     void IS(bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::IS qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::IS"));
         CliffordShard& shard = shards[t];
         shard.unit->IS(shard.mapped);
     }
     /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
     void Z(bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::Z qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::Z"));
         CliffordShard& shard = shards[t];
         shard.unit->Z(shard.mapped);
     }
@@ -252,35 +266,22 @@ public:
     using QInterface::X;
     void X(bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::X qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::X"));
         CliffordShard& shard = shards[t];
         shard.unit->X(shard.mapped);
     }
     /// Apply a Pauli Y gate to target
     void Y(bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::Y qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::Y"));
         CliffordShard& shard = shards[t];
         shard.unit->Y(shard.mapped);
     }
     // Swap two bits
     void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
-        if (qubit1 >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::Swap qubit index parameter must be within allocated qubit bounds!");
-        }
-
-        if (qubit2 >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::Swap qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(qubit1, std::string("QUnitClifford::Swap"));
+        ThrowIfQubitInvalid(qubit2, std::string("QUnitClifford::Swap"));
 
         if (qubit1 == qubit2) {
             return;
@@ -342,11 +343,8 @@ public:
      */
     bool IsSeparableZ(const bitLenInt& t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument("QUnitClifford::IsSeparableZ qubit index is out-of-bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::IsSeparableZ"));
         CliffordShard& shard = shards[t];
-
         return shard.unit->IsSeparableZ(shard.mapped);
     }
 
@@ -355,11 +353,8 @@ public:
      */
     bool IsSeparableX(const bitLenInt& t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument("QUnitClifford::IsSeparableX qubit index is out-of-bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::IsSeparableX"));
         CliffordShard& shard = shards[t];
-
         return shard.unit->IsSeparableX(shard.mapped);
     }
     /**
@@ -367,11 +362,8 @@ public:
      */
     bool IsSeparableY(const bitLenInt& t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument("QUnitClifford::IsSeparableY qubit index is out-of-bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::IsSeparableY"));
         CliffordShard& shard = shards[t];
-
         return shard.unit->IsSeparableY(shard.mapped);
     }
     /**
@@ -383,11 +375,8 @@ public:
      */
     uint8_t IsSeparable(const bitLenInt& t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument("QUnitClifford::IsSeparable qubit index is out-of-bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::IsSeparable"));
         CliffordShard& shard = shards[t];
-
         return shard.unit->IsSeparable(shard.mapped);
     }
 
@@ -472,38 +461,26 @@ public:
 
     real1_f Prob(bitLenInt qubit)
     {
-        if (qubit >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::Prob qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(qubit, std::string("QUnitClifford::Prob"));
         CliffordShard& shard = shards[qubit];
         return shard.unit->Prob(shard.mapped);
     }
 
     void Mtrx(const complex* mtrx, bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::Mtrx qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::Mtrx"));
         CliffordShard& shard = shards[t];
         shard.unit->Mtrx(mtrx, shard.mapped);
     }
     void Phase(complex topLeft, complex bottomRight, bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::Phase qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::Phase"));
         CliffordShard& shard = shards[t];
         shard.unit->Phase(topLeft, bottomRight, shard.mapped);
     }
     void Invert(complex topRight, complex bottomLeft, bitLenInt t)
     {
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::Invert qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::Invert"));
         CliffordShard& shard = shards[t];
         shard.unit->Invert(topRight, bottomLeft, shard.mapped);
     }
@@ -513,18 +490,8 @@ public:
             Phase(topLeft, bottomRight, t);
             return;
         }
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MCPhase target qubit index parameter must be within allocated qubit bounds!");
-        }
-        if (controls.size() > 1U) {
-            throw std::invalid_argument("QUnitClifford::MCPhase can only have one control qubit!");
-        }
-        const bitLenInt c = controls[0U];
-        if (c >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MCPhase control qubit index parameter must be within allocated qubit bounds!");
-        }
+
+        const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCPhase"));
 
         const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
@@ -537,18 +504,8 @@ public:
             Phase(topLeft, bottomRight, t);
             return;
         }
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MACPhase target qubit index parameter must be within allocated qubit bounds!");
-        }
-        if (controls.size() > 1U) {
-            throw std::invalid_argument("QUnitClifford::MACPhase can only have one control qubit!");
-        }
-        const bitLenInt c = controls[0U];
-        if (c >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MACPhase control qubit index parameter must be within allocated qubit bounds!");
-        }
+
+        const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACPhase"));
 
         const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
@@ -561,18 +518,8 @@ public:
             Invert(topRight, bottomLeft, t);
             return;
         }
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MCInvert target qubit index parameter must be within allocated qubit bounds!");
-        }
-        if (controls.size() > 1U) {
-            throw std::invalid_argument("QUnitClifford::MCInvert can only have one control qubit!");
-        }
-        const bitLenInt c = controls[0U];
-        if (c >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MCInvert control qubit index parameter must be within allocated qubit bounds!");
-        }
+
+        const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCInvert"));
 
         const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
@@ -585,18 +532,8 @@ public:
             Invert(topRight, bottomLeft, t);
             return;
         }
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MACInvert target qubit index parameter must be within allocated qubit bounds!");
-        }
-        if (controls.size() > 1U) {
-            throw std::invalid_argument("QUnitClifford::MACInvert can only have one control qubit!");
-        }
-        const bitLenInt c = controls[0U];
-        if (c >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MACInvert control qubit index parameter must be within allocated qubit bounds!");
-        }
+
+        const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACInvert"));
 
         const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
@@ -609,18 +546,8 @@ public:
             Mtrx(mtrx, t);
             return;
         }
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MCMtrx target qubit index parameter must be within allocated qubit bounds!");
-        }
-        if (controls.size() > 1U) {
-            throw std::invalid_argument("QUnitClifford::MCMtrx can only have one control qubit!");
-        }
-        const bitLenInt c = controls[0U];
-        if (c >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MCMtrx control qubit index parameter must be within allocated qubit bounds!");
-        }
+
+        const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCMtrx"));
 
         CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
             unit->MCMtrx({ c }, mtrx, t);
@@ -632,18 +559,8 @@ public:
             Mtrx(mtrx, t);
             return;
         }
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MACMtrx target qubit index parameter must be within allocated qubit bounds!");
-        }
-        if (controls.size() > 1U) {
-            throw std::invalid_argument("QUnitClifford::MACMtrx can only have one control qubit!");
-        }
-        const bitLenInt c = controls[0U];
-        if (c >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::MACMtrx control qubit index parameter must be within allocated qubit bounds!");
-        }
+
+        const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACMtrx"));
 
         CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
             unit->MACMtrx({ c }, mtrx, t);
@@ -651,14 +568,8 @@ public:
     }
     void FSim(real1_f theta, real1_f phi, bitLenInt c, bitLenInt t)
     {
-        if (c >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::FSim control qubit index parameter must be within allocated qubit bounds!");
-        }
-        if (t >= qubitCount) {
-            throw std::invalid_argument(
-                "QUnitClifford::FSim target qubit index parameter must be within allocated qubit bounds!");
-        }
+        ThrowIfQubitInvalid(c, std::string("QUnitClifford::FSim"));
+        ThrowIfQubitInvalid(t, std::string("QUnitClifford::FSim"));
 
         const complex mtrx[4]{ (real1)theta, (real1)phi, ZERO_CMPLX, ZERO_CMPLX };
         CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
