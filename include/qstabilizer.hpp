@@ -254,14 +254,6 @@ public:
     /// Measure qubit t
     bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
 
-    /// Measure all qubits
-    bitCapInt MAll()
-    {
-        bitCapInt toRet = QInterface::MAll();
-        SetPermutation(toRet);
-        return toRet;
-    }
-
     /// Get the phase radians of the lowest permutation nonzero amplitude
     real1_f FirstNonzeroPhase();
 
