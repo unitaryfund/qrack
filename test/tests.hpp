@@ -41,6 +41,7 @@ extern bool async_time;
 extern bool sparse;
 extern int device_id;
 extern bitLenInt max_qubits;
+extern bitLenInt min_qubits;
 extern bool single_qubit_run;
 extern std::string mOutputFileName;
 extern std::ofstream mOutputFile;

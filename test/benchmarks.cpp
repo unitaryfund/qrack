@@ -87,7 +87,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     if (single_qubit_run) {
         mnQbts = mxQbts;
     } else {
-        mnQbts = 4;
+        mnQbts = min_qubits;
     }
 
     int sampleFailureCount;

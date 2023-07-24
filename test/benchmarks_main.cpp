@@ -39,6 +39,7 @@ bool async_time = false;
 bool sparse = false;
 int device_id = -1;
 bitLenInt max_qubits = 24;
+bitLenInt min_qubits = 4;
 bool single_qubit_run = false;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
@@ -94,6 +95,7 @@ int main(int argc, char* argv[])
     std::string devListStr;
 
     int mxQbts = 24;
+    int mnQbts = 4;
 
     using namespace Catch::clara;
 
@@ -139,6 +141,7 @@ int main(int argc, char* argv[])
         Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)") |
         Opt(mxQbts, "max-qubits")["-m"]["--max-qubits"](
             "Maximum qubits for test (default value 24, enter \"-1\" for automatic selection)") |
+        Opt(mnQbts, "min-qubits")["-l"]["--min-qubits"]("Minimum qubits for test (default value 4)") |
         Opt(mOutputFileName, "measure-output")["--measure-output"](
             "Specifies a file name for bit measurement outputs. If specificed, benchmark iterations will always be "
             "concluded with a full measurement and written to the given file name, as human-readable or raw integral "
@@ -259,6 +262,7 @@ int main(int argc, char* argv[])
         }
     }
 
+    min_qubits = mnQbts;
     if (mxQbts == -1) {
         // If we're talking about a particular OpenCL device,
         // we have an API designed to tell us device capabilities and limitations,
