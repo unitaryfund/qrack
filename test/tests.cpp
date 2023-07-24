@@ -7577,7 +7577,7 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
 
 TEST_CASE("test_qcircuit_inverse", "[qcircuit]")
 {
-    std::cout << ">>> test_qcircuit_ALU_INC:" << std::endl;
+    std::cout << ">>> test_qcircuit_inverse:" << std::endl;
 
     complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     complex h[4]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
@@ -7607,7 +7607,7 @@ TEST_CASE("test_qcircuit_inverse", "[qcircuit]")
 
 TEST_CASE("test_qcircuit_inc", "[qcircuit]")
 {
-    std::cout << ">>> test_qcircuit_ALU_INC:" << std::endl;
+    std::cout << ">>> test_qcircuit_inc:" << std::endl;
 
     QInterfacePtr qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1, 0);
 

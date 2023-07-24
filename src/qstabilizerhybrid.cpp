@@ -1505,10 +1505,6 @@ bitCapInt QStabilizerHybrid::MAll()
             break;
         }
     }
-
-    FIX_OVERPROB_SHOT_AND_FINISH()
-
-    return m;
 #else
     real1 partProb = ZERO_R1;
     real1 resProb = (real1)Rand();
@@ -1518,10 +1514,11 @@ bitCapInt QStabilizerHybrid::MAll()
     for (m = 0U; m < maxQPower; ++m) {
         CHECK_NARROW_SHOT()
     }
+#endif
+
     FIX_OVERPROB_SHOT_AND_FINISH()
 
     return m;
-#endif
 }
 
 void QStabilizerHybrid::UniformlyControlledSingleBit(
@@ -1618,20 +1615,16 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
             break;
         }
     }
-
-    FILL_REMAINING_MAP_SHOTS()
-
-    return results;
 #else
     for (bitCapInt m = 0U; m < maxQPower; ++m) {
         const real1 prob = norm(GetAmplitude(m));
         CHECK_SHOTS(m, shotFunc);
     }
+#endif
 
     FILL_REMAINING_MAP_SHOTS()
 
     return results;
-#endif
 }
 
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
@@ -1703,16 +1696,14 @@ void QStabilizerHybrid::MultiShotMeasureMask(
             break;
         }
     }
-
-    FILL_REMAINING_ARRAY_SHOTS()
 #else
     for (bitCapInt m = 0U; m < maxQPower; ++m) {
         const real1 prob = norm(GetAmplitude(m));
         CHECK_SHOTS(m, shotFunc);
     }
+#endif
 
     FILL_REMAINING_ARRAY_SHOTS()
-#endif
 }
 
 real1_f QStabilizerHybrid::ProbParity(bitCapInt mask)
