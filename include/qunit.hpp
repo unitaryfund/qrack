@@ -389,7 +389,11 @@ public:
         ToPermBasisProb(qubit);
         return ProbBase(qubit);
     }
-    virtual real1_f ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true))); }
+    virtual real1_f ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true, false))); }
+    virtual real1_f ProbAllRdm(bitCapInt perm)
+    {
+        return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true, true)));
+    }
     virtual real1_f ProbParity(bitCapInt mask);
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
@@ -397,7 +401,8 @@ public:
         return SumSqrDiff(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
     virtual real1_f SumSqrDiff(QUnitPtr toCompare);
-    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
+    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U);
+    virtual real1_f ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U);
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
@@ -424,7 +429,7 @@ public:
     /** @} */
 
 protected:
-    virtual complex GetAmplitudeOrProb(bitCapInt perm, bool isProb);
+    virtual complex GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm);
 
     virtual void XBase(bitLenInt target);
     virtual void YBase(bitLenInt target);

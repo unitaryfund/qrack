@@ -434,51 +434,15 @@ real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
         return ProbMask(mask, permutation);
     }
 
+    if (stabilizer->PermCount() >= maxStateMapCacheQubitCount) {
+        return QInterface::ProbMaskRdm(mask, permutation);
+    }
+
     real1 prob = ZERO_R1;
-    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
-        std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
-        for (const auto& p : state) {
-            if ((p.first & mask) == permutation) {
-                prob += norm(p.second);
-            }
-        }
-    } else {
-        const bitCapInt ancillaPow = pow2(ancillaCount);
-        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
-            if ((lcv & mask) == permutation) {
-                for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-                    prob += (real1)norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
-                }
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-                const unsigned numCores = GetConcurrencyLevel();
-                std::vector<QStabilizerHybridPtr> clones;
-                for (unsigned i = 0U; i < numCores; ++i) {
-                    clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
-                }
-                std::vector<std::future<real1>> futures;
-                for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-                    if (futures.size() == numCores) {
-                        for (size_t k = 0U; k < futures.size(); ++k) {
-                            prob += futures[k].get();
-                        }
-                        futures.clear();
-                    }
-                    const bitCapInt p = i << qubitCount;
-                    const size_t c = futures.size() - 1U;
-                    futures.push_back(std::async(std::launch::async,
-                        [lcv, c, p, &clones]() { return (real1)norm(clones[c]->GetAmplitude(lcv + p)); }));
-                }
-                for (size_t k = 0U; k < futures.size(); ++k) {
-                    prob += futures[k].get();
-                }
-                futures.clear();
-                clones.clear();
-#else
-                for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-                    prob += (real1)norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
-                }
-#endif
-            }
+    std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
+    for (const auto& p : state) {
+        if ((p.first & mask) == permutation) {
+            prob += norm(p.second);
         }
     }
 

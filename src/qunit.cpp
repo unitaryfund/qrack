@@ -224,9 +224,9 @@ void QUnit::GetProbs(real1* outputProbs)
     thisCopy->shards[0U].unit->GetProbs(outputProbs);
 }
 
-complex QUnit::GetAmplitude(bitCapInt perm) { return GetAmplitudeOrProb(perm, false); }
+complex QUnit::GetAmplitude(bitCapInt perm) { return GetAmplitudeOrProb(perm, false, false); }
 
-complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
+complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm)
 {
     if (perm >= maxQPower) {
         throw std::invalid_argument("QUnit::GetAmplitudeOrProb argument out-of-bounds!");
@@ -258,10 +258,20 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         }
     }
 
-    for (const auto& qi : perms) {
-        result *= qi.first->GetAmplitude(qi.second);
-        if (IS_AMP_0(result)) {
-            break;
+    if (isProb && isRdm) {
+        for (const auto& qi : perms) {
+            result *= qi.first->ProbAllRdm(qi.second);
+            if (IS_AMP_0(result)) {
+                break;
+            }
+        }
+        result = sqrt(result);
+    } else {
+        for (const auto& qi : perms) {
+            result *= qi.first->GetAmplitude(qi.second);
+            if (IS_AMP_0(result)) {
+                break;
+            }
         }
     }
 
@@ -1054,6 +1064,21 @@ real1_f QUnit::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt 
     OrderContiguous(shards[0U].unit);
 
     return shards[0U].unit->ExpectationBitsAll(bits, offset);
+}
+
+real1_f QUnit::ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset)
+{
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QUnit::ExpectationBitsAllRdm parameter controls array values must be within allocated qubit bounds!");
+
+    if ((bits.size() == 1U) || (shards[0U].GetQubitCount() != qubitCount)) {
+        return QInterface::ExpectationBitsAllRdm(bits, offset);
+    }
+
+    ToPermBasisProb();
+    OrderContiguous(shards[0U].unit);
+
+    return shards[0U].unit->ExpectationBitsAllRdm(bits, offset);
 }
 
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
