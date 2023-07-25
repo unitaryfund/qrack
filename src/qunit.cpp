@@ -1056,14 +1056,17 @@ real1_f QUnit::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt 
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
         "QUnit::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
 
-    if ((bits.size() == 1U) || (shards[0U].GetQubitCount() != qubitCount)) {
-        return QInterface::ExpectationBitsAll(bits, offset);
+    if (shards[0U].unit && shards[0U].unit->GetQubitCount() == qubitCount) {
+        OrderContiguous(shards[0U].unit);
+        return shards[0U].unit->ExpectationBitsAll(bits, offset);
     }
 
-    ToPermBasisProb();
-    OrderContiguous(shards[0U].unit);
+    std::vector<bitLenInt> lBits = bits;
+    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+    QInterfacePtr unit = clone->EntangleAll(true);
+    clone->OrderContiguous(unit);
 
-    return shards[0U].unit->ExpectationBitsAll(bits, offset);
+    return unit->ExpectationBitsAll(bits, offset);
 }
 
 real1_f QUnit::ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset)
@@ -1071,13 +1074,17 @@ real1_f QUnit::ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapI
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
         "QUnit::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
 
+    if (shards[0U].unit && shards[0U].unit->GetQubitCount() == qubitCount) {
+        OrderContiguous(shards[0U].unit);
+        return shards[0U].unit->ExpectationBitsAll(bits, offset);
+    }
+
     std::vector<bitLenInt> lBits = bits;
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
-    clone->ToPermBasisProb();
-    QInterfacePtr unit = clone->Entangle(lBits);
+    QInterfacePtr unit = clone->EntangleAll(true);
     clone->OrderContiguous(unit);
 
-    return unit->ExpectationBitsAllRdm(lBits, offset);
+    return unit->ExpectationBitsAllRdm(bits, offset);
 }
 
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
