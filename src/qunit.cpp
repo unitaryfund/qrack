@@ -1075,7 +1075,7 @@ real1_f QUnit::ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapI
 
     if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
         OrderContiguous(shards[0U].unit);
-        return shards[0U].unit->ExpectationBitsAll(bits, offset);
+        return shards[0U].unit->ExpectationBitsAllRdm(bits, offset);
     }
 
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
