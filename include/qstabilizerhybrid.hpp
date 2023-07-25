@@ -147,19 +147,6 @@ protected:
         return dMtrx;
     }
 
-    real1_f ProbRdm(bitLenInt qubit)
-    {
-        if (!ancillaCount || stabilizer->IsSeparable(qubit)) {
-            return Prob(qubit);
-        }
-
-        std::unique_ptr<complex[]> dMtrx = GetQubitReducedDensityMatrix(qubit);
-        const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-        complex pMtrx[4];
-        mul2x2(dMtrx.get(), pauliZ, pMtrx);
-        return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;
-    }
-
     template <typename F>
     void CheckShots(unsigned shots, bitCapInt m, real1_f partProb, const std::vector<bitCapInt>& qPowers,
         std::vector<real1_f>& rng, F fn)
@@ -390,6 +377,28 @@ public:
         if (engine) {
             SetConcurrency(GetConcurrencyLevel());
         }
+    }
+
+    real1_f ProbRdm(bitLenInt qubit)
+    {
+        if (!ancillaCount || stabilizer->IsSeparable(qubit)) {
+            return Prob(qubit);
+        }
+
+        std::unique_ptr<complex[]> dMtrx = GetQubitReducedDensityMatrix(qubit);
+        const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        complex pMtrx[4];
+        mul2x2(dMtrx.get(), pauliZ, pMtrx);
+        return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;
+    }
+
+    real1_f CProbRdm(bitLenInt control, bitLenInt target)
+    {
+        AntiCNOT(control, target);
+        const real1_f prob = ProbRdm(target);
+        AntiCNOT(control, target);
+
+        return prob;
     }
 
     /**
