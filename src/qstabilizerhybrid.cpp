@@ -385,14 +385,40 @@ real1_f QStabilizerHybrid::ProbAllRdm(bitCapInt fullRegister)
         std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
         for (const auto& p : state) {
             if ((p.first & mask) == fullRegister) {
-                prob += norm(p.second);
+                prob += (real1)norm(p.second);
             }
         }
     } else {
         const bitCapInt ancillaPow = pow2(ancillaCount);
-        for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-            prob += norm(stabilizer->GetAmplitude(fullRegister | (i << qubitCount)));
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        const unsigned numCores = GetConcurrencyLevel();
+        std::vector<QStabilizerHybridPtr> clones;
+        for (unsigned i = 0U; i < numCores; ++i) {
+            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
         }
+        std::vector<std::future<real1>> futures;
+        for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+            if (futures.size() == numCores) {
+                for (size_t k = 0U; k < futures.size(); ++k) {
+                    prob += futures[k].get();
+                }
+                futures.clear();
+            }
+            const bitCapInt p = i << qubitCount;
+            const size_t c = futures.size() - 1U;
+            futures.push_back(std::async(std::launch::async,
+                [fullRegister, c, p, &clones]() { return (real1)norm(clones[c]->GetAmplitude(fullRegister + p)); }));
+        }
+        for (size_t k = 0U; k < futures.size(); ++k) {
+            prob += futures[k].get();
+        }
+        futures.clear();
+        clones.clear();
+#else
+        for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+            prob += (real1)norm(stabilizer->GetAmplitude(fullRegister | (i << qubitCount)));
+        }
+#endif
     }
 
     return (real1_f)clampProb(prob);
@@ -421,8 +447,37 @@ real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
         for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
             if ((lcv & mask) == permutation) {
                 for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-                    prob += norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
+                    prob += (real1)norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
                 }
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+                const unsigned numCores = GetConcurrencyLevel();
+                std::vector<QStabilizerHybridPtr> clones;
+                for (unsigned i = 0U; i < numCores; ++i) {
+                    clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+                }
+                std::vector<std::future<real1>> futures;
+                for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                    if (futures.size() == numCores) {
+                        for (size_t k = 0U; k < futures.size(); ++k) {
+                            prob += futures[k].get();
+                        }
+                        futures.clear();
+                    }
+                    const bitCapInt p = i << qubitCount;
+                    const size_t c = futures.size() - 1U;
+                    futures.push_back(std::async(std::launch::async,
+                        [lcv, c, p, &clones]() { return (real1)norm(clones[c]->GetAmplitude(lcv + p)); }));
+                }
+                for (size_t k = 0U; k < futures.size(); ++k) {
+                    prob += futures[k].get();
+                }
+                futures.clear();
+                clones.clear();
+#else
+                for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                    prob += (real1)norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
+                }
+#endif
             }
         }
     }
@@ -469,7 +524,7 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& b
             }
             real1 prob = ZERO_R1;
             for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-                prob += norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
+                prob += (real1)norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
             }
 #if (QBCAPPOW > 6) && BOOST_AVAILABLE
             expectation += (real1)((offset + retIndex).convert_to<real1_f>() * prob);
@@ -477,6 +532,66 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& b
             expectation += (real1)((offset + retIndex) * prob);
 #endif
         }
+
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        const unsigned numCores = GetConcurrencyLevel();
+        std::vector<QStabilizerHybridPtr> clones;
+        for (unsigned i = 0U; i < numCores; ++i) {
+            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
+        }
+
+        clones.clear();
+
+        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+            bitCapInt retIndex = 0U;
+            for (size_t b = 0U; b < bits.size(); ++b) {
+                if (lcv & bitPowers[b]) {
+                    retIndex |= pow2(b);
+                }
+            }
+            real1 prob = ZERO_R1;
+            std::vector<std::future<real1>> futures;
+            for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                if (futures.size() == numCores) {
+                    for (size_t k = 0U; k < futures.size(); ++k) {
+                        prob += futures[k].get();
+                    }
+                    futures.clear();
+                }
+                const bitCapInt p = i << qubitCount;
+                const size_t c = futures.size() - 1U;
+                futures.push_back(std::async(std::launch::async,
+                    [lcv, c, p, &clones]() { return (real1)norm(clones[c]->GetAmplitude(lcv + p)); }));
+            }
+            for (size_t k = 0U; k < futures.size(); ++k) {
+                prob += futures[k].get();
+            }
+            futures.clear();
+#if (QBCAPPOW > 6) && BOOST_AVAILABLE
+            expectation += (real1)((offset + retIndex).convert_to<real1_f>() * prob);
+#else
+            expectation += (real1)((offset + retIndex) * prob);
+#endif
+        }
+#else
+        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+            bitCapInt retIndex = 0U;
+            for (size_t b = 0U; b < bits.size(); ++b) {
+                if (lcv & bitPowers[b]) {
+                    retIndex |= pow2(b);
+                }
+            }
+            real1 prob = ZERO_R1;
+            for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                prob += (real1)norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
+            }
+#if (QBCAPPOW > 6) && BOOST_AVAILABLE
+            expectation += (real1)((offset + retIndex).convert_to<real1_f>() * prob);
+#else
+            expectation += (real1)((offset + retIndex) * prob);
+#endif
+        }
+#endif
     }
 
     return expectation;
@@ -2064,12 +2179,10 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
                     qubitAmp += lrc.amp * states[lrc.stabilizer][j];
                 }
             }
-            if (futures.size()) {
-                for (size_t k = 0U; k < futures.size(); ++k) {
-                    qubitAmp += futures[k].get();
-                }
-                futures.clear();
+            for (size_t k = 0U; k < futures.size(); ++k) {
+                qubitAmp += futures[k].get();
             }
+            futures.clear();
 #else
             for (const QUnitCliffordAmp& lrc : lowRankCache) {
                 if (!states[lrc.stabilizer].size()) {
