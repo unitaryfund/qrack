@@ -421,7 +421,7 @@ real1_f QStabilizerHybrid::ProbAllRdm(bitCapInt fullRegister)
 #endif
     }
 
-    return (real1_f)clampProb(prob);
+    return clampProb((real1_f)prob);
 }
 
 real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
@@ -482,7 +482,7 @@ real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
         }
     }
 
-    return (real1_f)clampProb(prob);
+    return clampProb((real1_f)prob);
 }
 
 real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset)
@@ -576,7 +576,7 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& b
 #endif
     }
 
-    return expectation;
+    return (real1_f)expectation;
 }
 
 void QStabilizerHybrid::SwitchToEngine()
