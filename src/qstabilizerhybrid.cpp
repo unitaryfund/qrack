@@ -515,24 +515,6 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& b
         }
     } else {
         const bitCapInt ancillaPow = pow2(ancillaCount);
-        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
-            bitCapInt retIndex = 0U;
-            for (size_t b = 0U; b < bits.size(); ++b) {
-                if (lcv & bitPowers[b]) {
-                    retIndex |= pow2(b);
-                }
-            }
-            real1 prob = ZERO_R1;
-            for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-                prob += (real1)norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
-            }
-#if (QBCAPPOW > 6) && BOOST_AVAILABLE
-            expectation += (real1)((offset + retIndex).convert_to<real1_f>() * prob);
-#else
-            expectation += (real1)((offset + retIndex) * prob);
-#endif
-        }
-
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         const unsigned numCores = GetConcurrencyLevel();
         std::vector<QStabilizerHybridPtr> clones;
