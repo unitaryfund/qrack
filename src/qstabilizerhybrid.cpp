@@ -414,16 +414,17 @@ real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
     real1 prob = ZERO_R1;
     if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
-        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
-            if ((lcv & mask) == permutation) {
-                for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-                    const bitCapInt perm = lcv | (i << qubitCount);
-                    const auto& it = state.find(perm);
-                    if (it == state.end()) {
-                        continue;
-                    }
-                    prob += norm(it->second);
+        for (const auto& p : state) {
+            if ((p.first & mask) != permutation) {
+                continue;
+            }
+            for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                const bitCapInt perm = p.first | (i << qubitCount);
+                const auto& it = state.find(perm);
+                if (it == state.end()) {
+                    continue;
                 }
+                prob += norm(it->second);
             }
         }
     } else {
@@ -455,16 +456,16 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& b
     real1 expectation = ZERO_R1;
     if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
         std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
-        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+        for (const auto& p : state) {
             bitCapInt retIndex = 0U;
-            for (size_t p = 0U; p < bits.size(); ++p) {
-                if (lcv & bitPowers[p]) {
-                    retIndex |= pow2(p);
+            for (size_t b = 0U; b < bits.size(); ++b) {
+                if (p.first & bitPowers[b]) {
+                    retIndex |= pow2(b);
                 }
             }
             real1 prob = ZERO_R1;
             for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-                const bitCapInt perm = lcv | (i << qubitCount);
+                const bitCapInt perm = p.first | (i << qubitCount);
                 const auto& it = state.find(perm);
                 if (it == state.end()) {
                     continue;
@@ -480,9 +481,9 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& b
     } else {
         for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
             bitCapInt retIndex = 0U;
-            for (size_t p = 0U; p < bits.size(); ++p) {
-                if (lcv & bitPowers[p]) {
-                    retIndex |= pow2(p);
+            for (size_t b = 0U; b < bits.size(); ++b) {
+                if (lcv & bitPowers[b]) {
+                    retIndex |= pow2(b);
                 }
             }
             real1 prob = ZERO_R1;
