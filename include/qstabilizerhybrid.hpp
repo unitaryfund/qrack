@@ -401,6 +401,19 @@ public:
         return prob;
     }
 
+    real1_f ACProbRdm(bitLenInt control, bitLenInt target)
+    {
+        CNOT(control, target);
+        const real1_f prob = ProbRdm(target);
+        CNOT(control, target);
+
+        return prob;
+    }
+
+    real1_f ProbAllRdm(bitCapInt fullRegister);
+    real1_f ProbMaskRdm(bitCapInt mask, bitCapInt permutation);
+    real1_f ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U);
+
     /**
      * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
      * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()

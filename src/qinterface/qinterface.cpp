@@ -262,7 +262,7 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
         prob += ProbAll(i);
     }
 
-    return (real1_f)prob;
+    return (real1_f)clampProb(prob);
 }
 
 /// Returns probability of permutation of the mask
@@ -279,7 +279,7 @@ real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
         }
     }
 
-    return (real1_f)prob;
+    return (real1_f)clampProb(prob);
 }
 
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
@@ -387,7 +387,7 @@ void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArr
 real1_f QInterface::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
 {
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
-        "QInterface::ExpectationBitsAll parameter controls array values must be within allocated qubit bounds!");
+        "QInterface::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
 
     if (bits.size() == 1U) {
         return Prob(bits[0]);
@@ -396,7 +396,7 @@ real1_f QInterface::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCa
     std::vector<bitCapInt> bitPowers(bits.size());
     std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
 
-    real1_f expectation = 0;
+    real1 expectation = ZERO_R1;
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapInt retIndex = 0U;
         for (size_t p = 0U; p < bits.size(); ++p) {
@@ -404,10 +404,14 @@ real1_f QInterface::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCa
                 retIndex |= pow2(p);
             }
         }
-        expectation += (bitCapIntOcl)(offset + retIndex) * ProbAll(lcv);
+#if (QBCAPPOW > 6) && BOOST_AVAILABLE
+        expectation += (real1)((offset + retIndex).convert_to<real1_f>() * ProbAll(lcv));
+#else
+        expectation += (real1)((offset + retIndex) * ProbAll(lcv));
+#endif
     }
 
-    return expectation;
+    return (real1_f)expectation;
 }
 
 std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)

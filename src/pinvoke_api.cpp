@@ -2302,15 +2302,13 @@ MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ uintq sid, _In_ bool ci, _In_ uintq qi, 
     }
 }
 
-/**
- * (External API) Get the probability that a qubit is in the |1> state.
- */
-MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q)
+double _Prob(_In_ uintq sid, _In_ uintq q, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
     try {
-        return (double)simulator->Prob(shards[simulator.get()][q]);
+        return isRdm ? (double)simulator->ProbRdm(shards[simulator.get()][q])
+                     : (double)simulator->Prob(shards[simulator.get()][q]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2319,10 +2317,17 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q)
 }
 
 /**
- * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ * (External API) Get the probability that a qubit is in the |1> state.
  */
-MICROSOFT_QUANTUM_DECL double PermutationProb(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c)
+MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q) { return _Prob(sid, q, false); }
+
+/**
+ * (External API) Get the probability that a qubit is in the |1> state, treating all ancillary qubits as post-selected T
+ * gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double ProbRdm(_In_ uintq sid, _In_ uintq q) { return _Prob(sid, q, true); }
+
+double _PermutationProb(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2337,7 +2342,44 @@ MICROSOFT_QUANTUM_DECL double PermutationProb(
     }
 
     try {
-        return (double)simulator->ProbMask(mask, perm);
+        return isRdm ? (double)simulator->ProbMaskRdm(mask, perm) : (double)simulator->ProbMask(mask, perm);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+        return (double)REAL1_DEFAULT_ARG;
+    }
+}
+
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double PermutationProb(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c)
+{
+    return _PermutationProb(sid, n, q, c, false);
+}
+
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double PermutationProbRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c)
+{
+    return _PermutationProb(sid, n, q, c, true);
+}
+
+double _PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, bool isRdm)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> q(n);
+    for (uintq i = 0U; i < n; ++i) {
+        q[i] = shards[simulators[sid].get()][c[i]];
+    }
+
+    try {
+        return isRdm ? (double)simulator->ExpectationBitsAllRdm(q) : (double)simulator->ExpectationBitsAll(q);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2350,20 +2392,16 @@ MICROSOFT_QUANTUM_DECL double PermutationProb(
  */
 MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
 {
-    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+    return _PermutationExpectation(sid, n, c, false);
+}
 
-    std::vector<bitLenInt> q(n);
-    for (uintq i = 0U; i < n; ++i) {
-        q[i] = shards[simulators[sid].get()][c[i]];
-    }
-
-    try {
-        return (double)simulator->ExpectationBitsAll(q);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (double)REAL1_DEFAULT_ARG;
-    }
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double PermutationExpectationRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
+{
+    return _PermutationExpectation(sid, n, c, true);
 }
 
 MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)

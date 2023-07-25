@@ -2362,6 +2362,42 @@ public:
     virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
 
     /**
+     * Direct measure of bit probability to be in |1> state, treating all ancillary qubits as post-selected T gate
+     * gadgets
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ProbRdm(bitLenInt qubitIndex) { return Prob(qubitIndex); }
+    /**
+     * Direct measure of full permutation probability, treating all ancillary qubits as post-selected T gate gadgets
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ProbAllRdm(bitCapInt fullRegister) { return ProbAll(fullRegister); }
+    /**
+     * Direct measure of masked permutation probability, treating all ancillary qubits as post-selected T gate gadgets
+     *
+     * "mask" masks the bits to check the probability of. "permutation" sets the 0 or 1 value for each bit in the mask.
+     * Bits which are set in the mask can be set to 0 or 1 in the permutation, while reset bits in the mask should be 0
+     * in the permutation.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ProbMaskRdm(bitCapInt mask, bitCapInt permutation) { return ProbMask(mask, permutation); }
+    /**
+     * Get permutation expectation value of bits, treating all ancillary qubits as post-selected T gate gadgets
+     *
+     * The permutation expectation value of all included bits is returned, with bits valued from low to high as the
+     * order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    {
+        return ExpectationBitsAll(bits, offset);
+    }
+
+    /**
      * Statistical measure of masked permutation probability
      *
      * "qPowers" contains powers of 2^n, each representing QInterface bit "n." The order of these values defines a mask

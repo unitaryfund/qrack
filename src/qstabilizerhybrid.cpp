@@ -371,6 +371,135 @@ QInterfacePtr QStabilizerHybrid::Clone()
     return c;
 }
 
+real1_f QStabilizerHybrid::ProbAllRdm(bitCapInt fullRegister)
+{
+    if (engine || !ancillaCount) {
+        return ProbAll(fullRegister);
+    }
+
+    CombineAncillae();
+
+    const bitCapInt ancillaPow = pow2(ancillaCount);
+    real1 prob = ZERO_R1;
+    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+        std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
+        for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+            const bitCapInt perm = fullRegister | (i << qubitCount);
+            const auto& it = state.find(perm);
+            if (it == state.end()) {
+                continue;
+            }
+            prob += norm(it->second);
+        }
+    } else {
+        for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+            prob += norm(stabilizer->GetAmplitude(fullRegister | (i << qubitCount)));
+        }
+    }
+
+    return (real1_f)clampProb(prob);
+}
+
+real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
+{
+    if ((maxQPower - 1U) == mask) {
+        return ProbAllRdm(permutation);
+    }
+
+    if (engine || !ancillaCount) {
+        return ProbMask(mask, permutation);
+    }
+
+    const bitCapInt ancillaPow = pow2(ancillaCount);
+    real1 prob = ZERO_R1;
+    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+        std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
+        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+            if ((lcv & mask) == permutation) {
+                for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                    const bitCapInt perm = lcv | (i << qubitCount);
+                    const auto& it = state.find(perm);
+                    if (it == state.end()) {
+                        continue;
+                    }
+                    prob += norm(it->second);
+                }
+            }
+        }
+    } else {
+        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+            if ((lcv & mask) == permutation) {
+                for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                    prob += norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
+                }
+            }
+        }
+    }
+
+    return (real1_f)clampProb(prob);
+}
+
+real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset)
+{
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QInterface::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
+
+    if (bits.size() == 1U) {
+        return ProbRdm(bits[0]);
+    }
+
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+
+    const bitCapInt ancillaPow = pow2(ancillaCount);
+    real1 expectation = ZERO_R1;
+    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+        std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
+        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+            bitCapInt retIndex = 0U;
+            for (size_t p = 0U; p < bits.size(); ++p) {
+                if (lcv & bitPowers[p]) {
+                    retIndex |= pow2(p);
+                }
+            }
+            real1 prob = ZERO_R1;
+            for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                const bitCapInt perm = lcv | (i << qubitCount);
+                const auto& it = state.find(perm);
+                if (it == state.end()) {
+                    continue;
+                }
+                prob += norm(it->second);
+            }
+#if (QBCAPPOW > 6) && BOOST_AVAILABLE
+            expectation += (real1)((offset + retIndex).convert_to<real1_f>() * prob);
+#else
+            expectation += (real1)((offset + retIndex) * prob);
+#endif
+        }
+    } else {
+        for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+            bitCapInt retIndex = 0U;
+            for (size_t p = 0U; p < bits.size(); ++p) {
+                if (lcv & bitPowers[p]) {
+                    retIndex |= pow2(p);
+                }
+            }
+            real1 prob = ZERO_R1;
+            for (bitCapInt i = 0U; i < ancillaPow; ++i) {
+                prob += norm(stabilizer->GetAmplitude(lcv | (i << qubitCount)));
+            }
+#if (QBCAPPOW > 6) && BOOST_AVAILABLE
+            expectation += (real1)((offset + retIndex).convert_to<real1_f>() * prob);
+#else
+            expectation += (real1)((offset + retIndex) * prob);
+#endif
+        }
+    }
+
+    return expectation;
+}
+
 void QStabilizerHybrid::SwitchToEngine()
 {
     if (engine) {

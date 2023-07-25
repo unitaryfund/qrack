@@ -107,6 +107,32 @@ public:
     virtual void SetDevice(int64_t dID);
     virtual int64_t GetDevice() { return devID; }
 
+    real1_f ProbRdm(bitLenInt qubit)
+    {
+        const QEngineShard& shard = shards[qubit];
+        if (!shard.unit) {
+            return Prob(qubit);
+        }
+
+        return shard.unit->ProbRdm(qubit);
+    }
+    virtual real1_f CProbRdm(bitLenInt control, bitLenInt target)
+    {
+        AntiCNOT(control, target);
+        const real1_f prob = ProbRdm(target);
+        AntiCNOT(control, target);
+
+        return prob;
+    }
+    virtual real1_f ACProbRdm(bitLenInt control, bitLenInt target)
+    {
+        CNOT(control, target);
+        const real1_f prob = ProbRdm(target);
+        CNOT(control, target);
+
+        return prob;
+    }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
