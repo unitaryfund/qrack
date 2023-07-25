@@ -1071,19 +1071,13 @@ real1_f QUnit::ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapI
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
         "QUnit::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
 
-    QInterfacePtr unit = shards[0U].unit;
-    if (shards[0U].GetQubitCount() != qubitCount) {
-        QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
-        clone->EntangleAll();
-        clone->ToPermBasisProb();
-        unit = clone->shards[0U].unit;
-    } else {
-        ToPermBasisProb();
-    }
+    std::vector<bitLenInt> lBits = bits;
+    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+    clone->ToPermBasisProb();
+    QInterfacePtr unit = clone->Entangle(lBits);
+    clone->OrderContiguous(unit);
 
-    OrderContiguous(unit);
-
-    return unit->ExpectationBitsAllRdm(bits, offset);
+    return unit->ExpectationBitsAllRdm(lBits, offset);
 }
 
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
