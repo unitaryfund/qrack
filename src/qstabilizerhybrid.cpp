@@ -454,8 +454,8 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(const std::vector<bitLenInt>& b
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
         "QInterface::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
 
-    if (bits.size() == 1U) {
-        return ProbRdm(bits[0]);
+    if (engine || !ancillaCount) {
+        return ExpectationBitsAllRdm(bits, offset);
     }
 
     std::vector<bitCapInt> bitPowers(bits.size());

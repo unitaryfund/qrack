@@ -178,9 +178,16 @@ public:
 
     bitLenInt PermCount()
     {
-        QUnitCliffordPtr thisCopy = std::dynamic_pointer_cast<QUnitClifford>(Clone());
-        thisCopy->EntangleAll();
-        return thisCopy->shards[0U].unit->gaussian();
+        std::map<QStabilizerPtr, QStabilizerPtr> engines;
+        bitCapInt permCount = 1U;
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            QStabilizerPtr unit = shards[i].unit;
+            if (engines.find(unit) == engines.end()) {
+                permCount *= unit->gaussian();
+            }
+        }
+
+        return permCount;
     }
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
