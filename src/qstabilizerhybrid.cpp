@@ -381,7 +381,7 @@ real1_f QStabilizerHybrid::ProbAllRdm(bitCapInt fullRegister)
 
     const bitCapInt mask = maxQPower - 1U;
     real1 prob = ZERO_R1;
-    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+    if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
         std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
         for (const auto& p : state) {
             if ((p.first & mask) == fullRegister) {
@@ -434,7 +434,7 @@ real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
         return ProbMask(mask, permutation);
     }
 
-    if (stabilizer->PermCount() >= maxStateMapCacheQubitCount) {
+    if (stabilizer->PermCount() >= pow2(maxStateMapCacheQubitCount)) {
         return QInterface::ProbMaskRdm(mask, permutation);
     }
 
@@ -1359,7 +1359,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             return clone->Prob(qubit);
         }
 
-        if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+        if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
             stateMapCache = stabilizer->GetQuantumState();
         }
 
@@ -1547,7 +1547,7 @@ bitCapInt QStabilizerHybrid::MAll()
             "QStabilizerHybrid::MAll() has too many ancillary qubits to proceed. (Try turning weak sampling off.)");
     }
 
-    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+    if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
@@ -1662,7 +1662,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;
 
-    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+    if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
@@ -1743,7 +1743,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     real1 partProb = ZERO_R1;
     bitCapInt d = 0U;
 
-    if (stabilizer->PermCount() < maxStateMapCacheQubitCount) {
+    if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
@@ -2005,7 +2005,7 @@ bitCapInt QStabilizerHybrid::WeakSampleAncillae()
         real1 qubitProb = ZERO_R1;
         std::map<QUnitCliffordPtr, std::map<bitCapInt, complex>> states;
         for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            if (pow2(lrc.stabilizer->PermCount()) <= (pow2(maxStateMapCacheQubitCount) / lowRankCache.size())) {
+            if (lrc.stabilizer->PermCount() <= (pow2(maxStateMapCacheQubitCount) / lowRankCache.size())) {
                 states[lrc.stabilizer] = lrc.stabilizer->GetQuantumState();
             }
         }
