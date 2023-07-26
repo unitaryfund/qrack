@@ -190,6 +190,23 @@ public:
         return permCount;
     }
 
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    {
+        ThrowIfQbIdArrayIsBad(bits, qubitCount,
+            "QUnitClifford::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
+
+        if (shards[0U].unit->GetQubitCount() == qubitCount) {
+            OrderContiguous(shards[0U].unit);
+            return shards[0U].unit->ExpectationBitsAll(bits, offset);
+        }
+
+        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(Clone());
+        QStabilizerPtr unit = clone->EntangleAll();
+        clone->OrderContiguous(unit);
+
+        return unit->ExpectationBitsAll(bits, offset);
+    }
+
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U);

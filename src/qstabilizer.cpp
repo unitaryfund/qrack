@@ -303,6 +303,22 @@ void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
     outputProbs[(size_t)entry.permutation] = norm(entry.amplitude);
 }
 
+real1_f QStabilizer::getExpectation(const real1_f& nrm, const std::vector<bitCapInt>& bitPowers, bitCapInt offset)
+{
+    const AmplitudeEntry entry = getBasisAmp(nrm);
+    bitCapInt retIndex = 0U;
+    for (size_t b = 0U; b < bitPowers.size(); ++b) {
+        if (entry.permutation & bitPowers[b]) {
+            retIndex |= pow2(b);
+        }
+    }
+#if (QBCAPPOW > 6) && BOOST_AVAILABLE
+    return (offset + retIndex).convert_to<real1_f>() * norm(entry.amplitude);
+#else
+    return (offset + retIndex) * norm(entry.amplitude);
+#endif
+}
+
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
 
@@ -537,6 +553,39 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
     }
 
     return toRet;
+}
+
+real1_f QStabilizer::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
+{
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QInterface::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
+
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
+
+    seed(g);
+
+    real1 expectation = (real1)getExpectation(nrm, bitPowers, offset);
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        expectation += (real1)getExpectation(nrm, bitPowers, offset);
+    }
+
+    return expectation;
 }
 
 /// Apply a CNOT gate with control and target

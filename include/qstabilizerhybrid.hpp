@@ -410,10 +410,6 @@ public:
         return prob;
     }
 
-    real1_f ProbAllRdm(bitCapInt fullRegister);
-    real1_f ProbMaskRdm(bitCapInt mask, bitCapInt permutation);
-    real1_f ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U);
-
     /**
      * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
      * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()
@@ -769,6 +765,8 @@ public:
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
 
+    real1_f ProbAllRdm(bitCapInt fullRegister);
+    real1_f ProbMaskRdm(bitCapInt mask, bitCapInt permutation);
     real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
     {
         if (stabilizer) {
@@ -776,6 +774,14 @@ public:
         }
 
         return engine->ExpectationBitsAll(bits, offset);
+    }
+    real1_f ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    {
+        if (stabilizer) {
+            return stabilizer->ExpectationBitsAll(bits, offset);
+        }
+
+        return engine->ExpectationBitsAllRdm(bits, offset);
     }
 
     bool TrySeparate(bitLenInt qubit);

@@ -196,6 +196,9 @@ protected:
     /// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
     void setBasisProb(const real1_f& nrm, real1* outputProbs);
 
+    /// Returns the (partial) expectation value from a state vector amplitude.
+    real1_f getExpectation(const real1_f& nrm, const std::vector<bitCapInt>& bitPowers, bitCapInt offset);
+
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
     real1_f ApproxCompareHelper(
@@ -274,6 +277,9 @@ public:
 
     /// Get a single basis state amplitude
     std::vector<complex> GetAmplitudes(std::vector<bitCapInt> perms);
+
+    /// Get expectation qubits, interpreting each permutation as an unsigned integer.
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
 
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
