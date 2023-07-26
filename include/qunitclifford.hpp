@@ -176,14 +176,14 @@ public:
         return phaseOffset;
     }
 
-    bitLenInt PermCount()
+    bitCapInt PermCount()
     {
         std::map<QStabilizerPtr, QStabilizerPtr> engines;
         bitCapInt permCount = 1U;
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             QStabilizerPtr unit = shards[i].unit;
             if (engines.find(unit) == engines.end()) {
-                permCount *= unit->gaussian();
+                permCount *= pow2(unit->gaussian());
             }
         }
 
