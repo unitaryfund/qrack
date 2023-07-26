@@ -259,13 +259,14 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm)
     }
 
     if (isProb && isRdm) {
+        real1 r = norm(result);
         for (const auto& qi : perms) {
-            result *= qi.first->ProbAllRdm(qi.second);
+            r *= (real1)qi.first->ProbAllRdm(qi.second);
             if (IS_AMP_0(result)) {
                 break;
             }
         }
-        result = sqrt(result);
+        result = (complex)sqrt(r);
     } else {
         for (const auto& qi : perms) {
             result *= qi.first->GetAmplitude(qi.second);
