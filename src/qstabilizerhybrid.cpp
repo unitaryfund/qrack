@@ -405,7 +405,7 @@ real1_f QStabilizerHybrid::ProbAllRdm(bitCapInt fullRegister)
                 futures.clear();
             }
             const bitCapInt p = i << qubitCount;
-            const size_t c = futures.size() - 1U;
+            const size_t c = futures.size();
             futures.push_back(std::async(std::launch::async,
                 [fullRegister, c, p, &clones]() { return (real1)norm(clones[c]->GetAmplitude(fullRegister + p)); }));
         }
@@ -454,6 +454,8 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(bool roundRz, const std::vector
     if (engine) {
         return engine->ExpectationBitsAllRdm(roundRz, bits, offset);
     }
+
+    CombineAncillae();
 
     if (!roundRz) {
         return stabilizer->ExpectationBitsAll(bits, offset);
