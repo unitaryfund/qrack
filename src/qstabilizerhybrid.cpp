@@ -471,6 +471,7 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(bool roundRz, const std::vector
             clone->stabilizer->Dispose(i, 1U);
             clone->shards.erase(clone->shards.begin() + i);
             --(clone->ancillaCount);
+            clone->CombineAncillae();
         }
     }
 
