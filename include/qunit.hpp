@@ -417,21 +417,21 @@ public:
 
         return unit->ExpectationBitsAll(bits, offset);
     }
-    virtual real1_f ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    virtual real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
     {
         ThrowIfQbIdArrayIsBad(bits, qubitCount,
             "QUnit::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
 
         if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
             OrderContiguous(shards[0U].unit);
-            return shards[0U].unit->ExpectationBitsAllRdm(bits, offset);
+            return shards[0U].unit->ExpectationBitsAllRdm(roundRz, bits, offset);
         }
 
         QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
         QInterfacePtr unit = clone->EntangleAll(true);
         clone->OrderContiguous(unit);
 
-        return unit->ExpectationBitsAllRdm(bits, offset);
+        return unit->ExpectationBitsAllRdm(roundRz, bits, offset);
     }
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(

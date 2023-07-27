@@ -2392,7 +2392,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    virtual real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
     {
         return ExpectationBitsAll(bits, offset);
     }

@@ -775,14 +775,7 @@ public:
 
         return engine->ExpectationBitsAll(bits, offset);
     }
-    real1_f ExpectationBitsAllRdm(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
-    {
-        if (stabilizer) {
-            return stabilizer->ExpectationBitsAll(bits, offset);
-        }
-
-        return engine->ExpectationBitsAllRdm(bits, offset);
-    }
+    real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = 0U);
 
     bool TrySeparate(bitLenInt qubit);
     bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);

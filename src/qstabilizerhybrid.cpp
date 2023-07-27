@@ -449,6 +449,34 @@ real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
     return clampProb((real1_f)prob);
 }
 
+real1_f QStabilizerHybrid::ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset)
+{
+    if (engine) {
+        return engine->ExpectationBitsAllRdm(roundRz, bits, offset);
+    }
+
+    if (!roundRz) {
+        return stabilizer->ExpectationBitsAll(bits, offset);
+    }
+
+    const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    for (size_t i = clone->qubitCount; i < clone->shards.size(); ++i) {
+        const MpsShardPtr& shard = clone->shards[i];
+        shard->Compose(h);
+        const real1 angle = std::arg(shard->gate[3U] / shard->gate[0U]);
+        if (std::abs(angle) < (PI_R1 / 8)) {
+            clone->stabilizer->H(i);
+            clone->stabilizer->ForceM(i, false);
+            clone->stabilizer->Dispose(i, 1U);
+            clone->shards.erase(clone->shards.begin() + i);
+            --(clone->ancillaCount);
+        }
+    }
+
+    return clone->stabilizer->ExpectationBitsAll(bits, offset);
+}
+
 void QStabilizerHybrid::SwitchToEngine()
 {
     if (engine) {
@@ -1879,7 +1907,7 @@ void QStabilizerHybrid::CombineAncillae(bool isApproxSampling)
         return;
     }
 
-    const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
 
     for (const auto& p : toCombine) {
         MpsShardPtr& baseShard = shards[p.first];

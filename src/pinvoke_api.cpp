@@ -2369,7 +2369,7 @@ MICROSOFT_QUANTUM_DECL double PermutationProbRdm(
     return _PermutationProb(sid, n, q, c, true);
 }
 
-double _PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, bool isRdm)
+double _PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, bool r, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2379,7 +2379,7 @@ double _PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq
     }
 
     try {
-        return isRdm ? (double)simulator->ExpectationBitsAllRdm(q) : (double)simulator->ExpectationBitsAll(q);
+        return isRdm ? (double)simulator->ExpectationBitsAllRdm(r, q) : (double)simulator->ExpectationBitsAll(q);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2392,16 +2392,16 @@ double _PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq
  */
 MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
 {
-    return _PermutationExpectation(sid, n, c, false);
+    return _PermutationExpectation(sid, n, c, false, false);
 }
 
 /**
  * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
  * qubits as post-selected T gate gadgets.
  */
-MICROSOFT_QUANTUM_DECL double PermutationExpectationRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
+MICROSOFT_QUANTUM_DECL double PermutationExpectationRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, bool r)
 {
-    return _PermutationExpectation(sid, n, c, true);
+    return _PermutationExpectation(sid, n, c, r, true);
 }
 
 MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
