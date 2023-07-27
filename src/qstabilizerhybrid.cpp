@@ -465,13 +465,19 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(bool roundRz, const std::vector
         const MpsShardPtr& shard = clone->shards[i];
         shard->Compose(h);
         const real1 angle = std::arg(shard->gate[3U] / shard->gate[0U]);
-        if (std::abs(angle) < (PI_R1 / 8)) {
+        if ((std::abs(angle) < (PI_R1 / 8)) || (std::abs(angle) > (3 * PI_R1 / 8))) {
+            if (std::abs(angle) > (3 * PI_R1 / 8)) {
+                if (angle > 0) {
+                    clone->stabilizer->S(i);
+                } else {
+                    clone->stabilizer->IS(i);
+                }
+            }
             clone->stabilizer->H(i);
             clone->stabilizer->ForceM(i, false);
             clone->stabilizer->Dispose(i, 1U);
             clone->shards.erase(clone->shards.begin() + i);
             --(clone->ancillaCount);
-            clone->CombineAncillae();
         }
     }
 
