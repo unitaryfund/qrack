@@ -207,6 +207,20 @@ public:
         return unit->ExpectationBitsAll(bits, offset);
     }
 
+    real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
+    {
+        if (shards[0U].unit->GetQubitCount() == qubitCount) {
+            OrderContiguous(shards[0U].unit);
+            return shards[0U].unit->ProbPermRdm(perm, ancillaeStart);
+        }
+
+        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(Clone());
+        QStabilizerPtr unit = clone->EntangleAll();
+        clone->OrderContiguous(unit);
+
+        return unit->ProbPermRdm(perm, ancillaeStart);
+    }
+
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U);

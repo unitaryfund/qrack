@@ -2373,7 +2373,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbAllRdm(bitCapInt fullRegister) { return ProbAll(fullRegister); }
+    virtual real1_f ProbAllRdm(bool roundRz, bitCapInt fullRegister) { return ProbAll(fullRegister); }
     /**
      * Direct measure of masked permutation probability, treating all ancillary qubits as post-selected T gate gadgets
      *

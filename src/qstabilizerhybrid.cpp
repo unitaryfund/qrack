@@ -371,63 +371,24 @@ QInterfacePtr QStabilizerHybrid::Clone()
     return c;
 }
 
-real1_f QStabilizerHybrid::ProbAllRdm(bitCapInt fullRegister)
+real1_f QStabilizerHybrid::ProbAllRdm(bool roundRz, bitCapInt fullRegister)
 {
     if (engine || !ancillaCount) {
         return ProbAll(fullRegister);
     }
 
-    CombineAncillae();
-
-    const bitCapInt mask = maxQPower - 1U;
-    real1 prob = ZERO_R1;
-    if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
-        std::map<bitCapInt, complex> state = stabilizer->GetQuantumState();
-        for (const auto& p : state) {
-            if ((p.first & mask) == fullRegister) {
-                prob += (real1)norm(p.second);
-            }
-        }
-    } else {
-        const bitCapInt ancillaPow = pow2(ancillaCount);
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        const unsigned numCores = GetConcurrencyLevel();
-        std::vector<QStabilizerHybridPtr> clones;
-        for (unsigned i = 0U; i < numCores; ++i) {
-            clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
-        }
-        std::vector<std::future<real1>> futures;
-        for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-            if (futures.size() == numCores) {
-                for (size_t k = 0U; k < futures.size(); ++k) {
-                    prob += futures[k].get();
-                }
-                futures.clear();
-            }
-            const bitCapInt p = i << qubitCount;
-            const size_t c = futures.size();
-            futures.push_back(std::async(std::launch::async,
-                [fullRegister, c, p, &clones]() { return (real1)norm(clones[c]->GetAmplitude(fullRegister + p)); }));
-        }
-        for (size_t k = 0U; k < futures.size(); ++k) {
-            prob += futures[k].get();
-        }
-        futures.clear();
-        clones.clear();
-#else
-        for (bitCapInt i = 0U; i < ancillaPow; ++i) {
-            prob += (real1)norm(stabilizer->GetAmplitude(fullRegister | (i << qubitCount)));
-        }
-#endif
+    if (!roundRz) {
+        return stabilizer->ProbPermRdm(fullRegister, qubitCount);
     }
 
-    return clampProb((real1_f)prob);
+    return RdmCloneHelper()->stabilizer->ProbPermRdm(fullRegister, qubitCount);
 }
 
 real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
 {
     if ((maxQPower - 1U) == mask) {
-        return ProbAllRdm(permutation);
+        // TODO: Decide on a method signature convention for this "roundRz" hard-code.
+        return ProbAllRdm(true, permutation);
     }
 
     if (engine || !ancillaCount) {
@@ -461,26 +422,7 @@ real1_f QStabilizerHybrid::ExpectationBitsAllRdm(bool roundRz, const std::vector
         return stabilizer->ExpectationBitsAll(bits, offset);
     }
 
-    const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    size_t i = clone->qubitCount;
-    while (i < clone->shards.size()) {
-        const MpsShardPtr& shard = clone->shards[i];
-        shard->Compose(h);
-        const real1 angle = std::arg(shard->gate[3U] / shard->gate[0U]);
-        if (std::abs(angle) > (PI_R1 / 8)) {
-            ++i;
-            continue;
-        }
-
-        clone->stabilizer->H(i);
-        clone->stabilizer->ForceM(i, false);
-        clone->stabilizer->Dispose(i, 1U);
-        clone->shards.erase(clone->shards.begin() + i);
-        --(clone->ancillaCount);
-    }
-
-    return clone->stabilizer->ExpectationBitsAll(bits, offset);
+    return RdmCloneHelper()->stabilizer->ExpectationBitsAll(bits, offset);
 }
 
 void QStabilizerHybrid::SwitchToEngine()

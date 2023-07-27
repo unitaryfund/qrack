@@ -281,6 +281,10 @@ public:
     /// Get expectation qubits, interpreting each permutation as an unsigned integer.
     real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
 
+    /// Under assumption of a QStabilizerHybrid ancillary buffer, trace out the permutation probability
+    /// of the reduced density matrx without ancillae.
+    real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
+
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
      */

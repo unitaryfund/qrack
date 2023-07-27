@@ -389,10 +389,13 @@ public:
         ToPermBasisProb(qubit);
         return ProbBase(qubit);
     }
-    virtual real1_f ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true, false))); }
-    virtual real1_f ProbAllRdm(bitCapInt perm)
+    virtual real1_f ProbAll(bitCapInt perm)
     {
-        return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true, true)));
+        return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true, false, false)));
+    }
+    virtual real1_f ProbAllRdm(bool roundRz, bitCapInt perm)
+    {
+        return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true, true, roundRz)));
     }
     virtual real1_f ProbParity(bitCapInt mask);
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
@@ -459,7 +462,7 @@ public:
     /** @} */
 
 protected:
-    virtual complex GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm);
+    virtual complex GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm, bool roundRz);
 
     virtual void XBase(bitLenInt target);
     virtual void YBase(bitLenInt target);

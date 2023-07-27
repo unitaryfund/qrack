@@ -588,6 +588,45 @@ real1_f QStabilizer::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitC
     return expectation;
 }
 
+real1_f QStabilizer::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
+{
+    if (ancillaeStart > qubitCount) {
+        throw std::invalid_argument("QStabilizer::ProbPermRDM ancillaeStart is out-of-bounds!");
+    }
+
+    if (ancillaeStart == qubitCount) {
+        return ProbAll(perm);
+    }
+
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
+
+    seed(g);
+
+    const AmplitudeEntry firstAmp = getBasisAmp(nrm);
+    real1 prob = ((firstAmp.permutation & perm) == perm) ? norm(firstAmp.amplitude) : ZERO_R1;
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        const AmplitudeEntry amp = getBasisAmp(nrm);
+        if ((amp.permutation & perm) == perm) {
+            prob += norm(amp.amplitude);
+        }
+    }
+
+    return prob;
+}
+
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 {

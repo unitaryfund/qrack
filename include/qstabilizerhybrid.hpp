@@ -317,6 +317,31 @@ protected:
     void PrepareLowRankCache();
     bitCapInt WeakSampleAncillae();
 
+    QStabilizerHybridPtr RdmCloneHelper()
+    {
+        CombineAncillae();
+        const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        size_t i = clone->qubitCount;
+        while (i < clone->shards.size()) {
+            const MpsShardPtr& shard = clone->shards[i];
+            shard->Compose(h);
+            const real1 angle = std::arg(shard->gate[3U] / shard->gate[0U]);
+            if (std::abs(angle) > (PI_R1 / 8)) {
+                ++i;
+                continue;
+            }
+
+            clone->stabilizer->H(i);
+            clone->stabilizer->ForceM(i, false);
+            clone->stabilizer->Dispose(i, 1U);
+            clone->shards.erase(clone->shards.begin() + i);
+            --(clone->ancillaCount);
+        }
+
+        return clone;
+    }
+
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
@@ -765,7 +790,7 @@ public:
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
 
-    real1_f ProbAllRdm(bitCapInt fullRegister);
+    real1_f ProbAllRdm(bool roundRz, bitCapInt fullRegister);
     real1_f ProbMaskRdm(bitCapInt mask, bitCapInt permutation);
     real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
     {
