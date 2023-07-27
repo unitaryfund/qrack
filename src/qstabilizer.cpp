@@ -598,6 +598,9 @@ real1_f QStabilizer::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
         return ProbAll(perm);
     }
 
+    const bitCapInt qubitMask = pow2(ancillaeStart) - 1U;
+    perm &= qubitMask;
+
     Finish();
 
     // log_2 of number of nonzero basis states
@@ -619,7 +622,7 @@ real1_f QStabilizer::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
             }
         }
         const AmplitudeEntry amp = getBasisAmp(nrm);
-        if ((amp.permutation & perm) == perm) {
+        if (perm == (amp.permutation & qubitMask)) {
             prob += norm(amp.amplitude);
         }
     }
