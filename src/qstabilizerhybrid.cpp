@@ -384,11 +384,11 @@ real1_f QStabilizerHybrid::ProbAllRdm(bool roundRz, bitCapInt fullRegister)
     return RdmCloneHelper()->stabilizer->ProbPermRdm(fullRegister, qubitCount);
 }
 
-real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
+real1_f QStabilizerHybrid::ProbMaskRdm(bool roundRz, bitCapInt mask, bitCapInt permutation)
 {
     if ((maxQPower - 1U) == mask) {
         // TODO: Decide on a method signature convention for this "roundRz" hard-code.
-        return ProbAllRdm(true, permutation);
+        return ProbAllRdm(roundRz, permutation);
     }
 
     if (engine || !ancillaCount) {
@@ -396,7 +396,7 @@ real1_f QStabilizerHybrid::ProbMaskRdm(bitCapInt mask, bitCapInt permutation)
     }
 
     if (stabilizer->PermCount() >= pow2(maxStateMapCacheQubitCount)) {
-        return QInterface::ProbMaskRdm(mask, permutation);
+        return QInterface::ProbMaskRdm(roundRz, mask, permutation);
     }
 
     real1 prob = ZERO_R1;

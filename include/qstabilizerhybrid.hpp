@@ -791,7 +791,7 @@ public:
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
 
     real1_f ProbAllRdm(bool roundRz, bitCapInt fullRegister);
-    real1_f ProbMaskRdm(bitCapInt mask, bitCapInt permutation);
+    real1_f ProbMaskRdm(bool roundRz, bitCapInt mask, bitCapInt permutation);
     real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
     {
         if (stabilizer) {

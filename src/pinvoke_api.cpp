@@ -2327,7 +2327,7 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q) { return _Prob(
  */
 MICROSOFT_QUANTUM_DECL double ProbRdm(_In_ uintq sid, _In_ uintq q) { return _Prob(sid, q, true); }
 
-double _PermutationProb(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c, bool isRdm)
+double _PermutationProb(uintq sid, uintq n, uintq* q, bool* c, bool isRdm, bool r)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2342,7 +2342,7 @@ double _PermutationProb(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _I
     }
 
     try {
-        return isRdm ? (double)simulator->ProbMaskRdm(mask, perm) : (double)simulator->ProbMask(mask, perm);
+        return isRdm ? (double)simulator->ProbMaskRdm(r, mask, perm) : (double)simulator->ProbMask(mask, perm);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2356,7 +2356,7 @@ double _PermutationProb(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _I
 MICROSOFT_QUANTUM_DECL double PermutationProb(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c)
 {
-    return _PermutationProb(sid, n, q, c, false);
+    return _PermutationProb(sid, n, q, c, false, false);
 }
 
 /**
@@ -2364,9 +2364,9 @@ MICROSOFT_QUANTUM_DECL double PermutationProb(
  * qubits as post-selected T gate gadgets.
  */
 MICROSOFT_QUANTUM_DECL double PermutationProbRdm(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c)
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) bool* c, _In_ bool r)
 {
-    return _PermutationProb(sid, n, q, c, true);
+    return _PermutationProb(sid, n, q, c, true, r);
 }
 
 double _PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c, bool r, bool isRdm)

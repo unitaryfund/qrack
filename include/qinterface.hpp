@@ -2383,7 +2383,10 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbMaskRdm(bitCapInt mask, bitCapInt permutation) { return ProbMask(mask, permutation); }
+    virtual real1_f ProbMaskRdm(bool roundRz, bitCapInt mask, bitCapInt permutation)
+    {
+        return ProbMask(mask, permutation);
+    }
     /**
      * Get permutation expectation value of bits, treating all ancillary qubits as post-selected T gate gadgets
      *
