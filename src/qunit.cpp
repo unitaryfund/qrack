@@ -262,7 +262,7 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm)
         real1 r = norm(result);
         for (const auto& qi : perms) {
             r *= (real1)qi.first->ProbAllRdm(qi.second);
-            if (IS_AMP_0(result)) {
+            if ((2 * r) <= separabilityThreshold) {
                 break;
             }
         }
