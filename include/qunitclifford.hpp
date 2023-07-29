@@ -213,16 +213,40 @@ public:
 
     real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
     {
-        if (shards[0U].unit->GetQubitCount() == qubitCount) {
-            OrderContiguous(shards[0U].unit);
-            return shards[0U].unit->ProbPermRdm(perm, ancillaeStart);
+        if (ancillaeStart > qubitCount) {
+            throw std::invalid_argument("QUnitClifford::ProbPermRdm() ancillaeStart is out-of-bounds!");
         }
 
-        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(Clone());
-        QStabilizerPtr unit = clone->EntangleAll();
-        clone->OrderContiguous(unit);
+        std::map<QStabilizerPtr, bitLenInt> ancillaMap;
+        for (size_t i = 0U; i < qubitCount; ++i) {
+            const CliffordShard& shard = shards[i];
+            if (ancillaMap.find(shard.unit) == ancillaMap.end()) {
+                OrderContiguous(shard.unit);
+                ancillaMap[shard.unit] = shard.unit->GetQubitCount();
+            }
+        }
 
-        return unit->ProbPermRdm(perm, ancillaeStart);
+        std::map<QStabilizerPtr, bitCapInt> permMap;
+        for (size_t i = 0U; i < ancillaeStart; ++i) {
+            if (!(perm & pow2(i))) {
+                continue;
+            }
+            const CliffordShard& shard = shards[i];
+            permMap[shard.unit] |= pow2(shard.mapped);
+        }
+        for (size_t i = ancillaeStart; i < qubitCount; ++i) {
+            const CliffordShard& shard = shards[i];
+            if (ancillaMap[shard.unit] > shard.mapped) {
+                ancillaMap[shard.unit] = shard.mapped;
+            }
+        }
+
+        real1 prob = ONE_R1;
+        for (const auto& p : ancillaMap) {
+            prob *= (real1)p.first->ProbPermRdm(permMap[p.first], p.second);
+        }
+
+        return (real1_f)prob;
     }
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
