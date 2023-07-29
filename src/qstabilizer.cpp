@@ -585,7 +585,42 @@ real1_f QStabilizer::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitC
         expectation += (real1)getExpectation(nrm, bitPowers, offset);
     }
 
-    return expectation;
+    return (real1_f)expectation;
+}
+
+real1_f QStabilizer::ExpectationBitsFactorized(const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms)
+{
+    if (perms.size() < bits.size()) {
+        throw std::invalid_argument(
+            "QStabilizer::ExpectationBitsFactorized has fewer eigenvalues specified than qubits!");
+    }
+
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QInterface::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
+
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
+
+    seed(g);
+
+    real1 expectation = (real1)getExpectation(nrm, perms, 0U);
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        expectation += (real1)getExpectation(nrm, perms, 0U);
+    }
+
+    return (real1_f)expectation;
 }
 
 real1_f QStabilizer::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)

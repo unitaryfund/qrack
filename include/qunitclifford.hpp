@@ -195,16 +195,20 @@ public:
         ThrowIfQbIdArrayIsBad(bits, qubitCount,
             "QUnitClifford::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
 
-        if (shards[0U].unit->GetQubitCount() == qubitCount) {
-            OrderContiguous(shards[0U].unit);
-            return shards[0U].unit->ExpectationBitsAll(bits, offset);
+        std::map<QStabilizerPtr, std::vector<bitLenInt>> qubitMap;
+        std::map<QStabilizerPtr, std::vector<bitCapInt>> permMap;
+        for (size_t i = 0U; i < bits.size(); ++i) {
+            const CliffordShard& shard = shards[bits[i]];
+            qubitMap[shard.unit].push_back(shard.mapped);
+            permMap[shard.unit].push_back(pow2(i));
         }
 
-        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(Clone());
-        QStabilizerPtr unit = clone->EntangleAll();
-        clone->OrderContiguous(unit);
+        real1 expectation = ZERO_R1_F;
+        for (const auto& p : qubitMap) {
+            expectation += (real1)p.first->ExpectationBitsFactorized(p.second, permMap[p.first]);
+        }
 
-        return unit->ExpectationBitsAll(bits, offset);
+        return (real1_f)expectation;
     }
 
     real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
