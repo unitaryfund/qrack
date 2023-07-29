@@ -395,7 +395,16 @@ public:
     }
     virtual real1_f ProbAllRdm(bool roundRz, bitCapInt perm)
     {
-        return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true, true, roundRz)));
+        if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
+            OrderContiguous(shards[0U].unit);
+            return shards[0U].unit->ProbAllRdm(roundRz, perm);
+        }
+
+        QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+        QInterfacePtr unit = clone->EntangleAll(true);
+        clone->OrderContiguous(unit);
+
+        return unit->ProbAllRdm(roundRz, perm);
     }
     virtual real1_f ProbParity(bitCapInt mask);
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
