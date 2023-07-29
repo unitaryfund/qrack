@@ -203,7 +203,7 @@ public:
             permMap[shard.unit].push_back(pow2(i));
         }
 
-        real1 expectation = ZERO_R1_F;
+        real1 expectation = ZERO_R1;
         for (const auto& p : qubitMap) {
             expectation += (real1)p.first->ExpectationBitsFactorized(p.second, permMap[p.first]);
         }
