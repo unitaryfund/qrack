@@ -190,64 +190,9 @@ public:
         return permCount;
     }
 
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
-    {
-        ThrowIfQbIdArrayIsBad(bits, qubitCount,
-            "QUnitClifford::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U);
 
-        std::map<QStabilizerPtr, std::vector<bitLenInt>> qubitMap;
-        std::map<QStabilizerPtr, std::vector<bitCapInt>> permMap;
-        for (size_t i = 0U; i < bits.size(); ++i) {
-            const CliffordShard& shard = shards[bits[i]];
-            qubitMap[shard.unit].push_back(shard.mapped);
-            permMap[shard.unit].push_back(pow2(i));
-        }
-
-        real1 expectation = ZERO_R1;
-        for (const auto& p : qubitMap) {
-            expectation += (real1)p.first->ExpectationBitsFactorized(p.second, permMap[p.first]);
-        }
-
-        return (real1_f)expectation;
-    }
-
-    real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
-    {
-        if (ancillaeStart > qubitCount) {
-            throw std::invalid_argument("QUnitClifford::ProbPermRdm() ancillaeStart is out-of-bounds!");
-        }
-
-        std::map<QStabilizerPtr, bitLenInt> ancillaMap;
-        for (size_t i = 0U; i < qubitCount; ++i) {
-            const CliffordShard& shard = shards[i];
-            if (ancillaMap.find(shard.unit) == ancillaMap.end()) {
-                OrderContiguous(shard.unit);
-                ancillaMap[shard.unit] = shard.unit->GetQubitCount();
-            }
-        }
-
-        std::map<QStabilizerPtr, bitCapInt> permMap;
-        for (size_t i = 0U; i < ancillaeStart; ++i) {
-            if (!(perm & pow2(i))) {
-                continue;
-            }
-            const CliffordShard& shard = shards[i];
-            permMap[shard.unit] |= pow2(shard.mapped);
-        }
-        for (size_t i = ancillaeStart; i < qubitCount; ++i) {
-            const CliffordShard& shard = shards[i];
-            if (ancillaMap[shard.unit] > shard.mapped) {
-                ancillaMap[shard.unit] = shard.mapped;
-            }
-        }
-
-        real1 prob = ONE_R1;
-        for (const auto& p : ancillaMap) {
-            prob *= (real1)p.first->ProbPermRdm(permMap[p.first], p.second);
-        }
-
-        return (real1_f)prob;
-    }
+    real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
