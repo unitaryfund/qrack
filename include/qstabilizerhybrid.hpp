@@ -271,24 +271,21 @@ protected:
     {
         const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        size_t i = clone->qubitCount;
-        while (i < clone->shards.size()) {
-            const MpsShardPtr& shard = clone->shards[i];
+        for (size_t i = clone->shards.size() - 1U; i >= clone->qubitCount; --i) {
+            MpsShardPtr& shard = clone->shards[i];
             shard->Compose(h);
-            const real1 angle = std::arg(shard->gate[3U] / shard->gate[0U]);
-            if (std::abs(angle) > (PI_R1 / 8)) {
-                ++i;
-                continue;
+            const real1_f prob =
+                2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
+            if (prob < (ONE_R1 / 2)) {
+                clone->stabilizer->H(i);
+                clone->stabilizer->ForceM(i, false);
+                clone->stabilizer->Dispose(i, 1U);
+                clone->shards.erase(clone->shards.begin() + i);
+                --clone->ancillaCount;
             }
-
-            shard->gate[0U] = ONE_CMPLX;
-            shard->gate[1U] = ZERO_CMPLX;
-            shard->gate[2U] = ZERO_CMPLX;
-            shard->gate[3U] = ONE_CMPLX;
-
-            clone->CombineAncillae();
-            i = clone->qubitCount;
         }
+
+        clone->CombineAncillae();
 
         return clone;
     }
