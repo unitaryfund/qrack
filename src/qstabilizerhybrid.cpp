@@ -1890,7 +1890,7 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
 
             const real1_f comboProb =
                 2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-            if (comboProb > threshold) {
+            if (abs(comboProb) > threshold) {
                 std::copy(oMtrx, oMtrx, shard->gate);
 
                 continue;
