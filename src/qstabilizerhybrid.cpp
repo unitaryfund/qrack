@@ -1891,6 +1891,9 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                 }
             }
 
+            complex cMtrx[4U];
+            std::copy(shard->gate, shard->gate + 4U, cMtrx);
+
             const real1_f comboProb =
                 2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
             if (isIncompat || (abs(comboProb) > threshold)) {
@@ -1899,7 +1902,9 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                 continue;
             }
 
-            FlushCliffordFromBuffers();
+            std::copy(cMtrx, cMtrx + 4U, shard->gate);
+            FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U]));
+
             if (isCorrected) {
                 stabilizer->Z(i);
             }
