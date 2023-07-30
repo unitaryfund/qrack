@@ -274,18 +274,56 @@ protected:
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         for (size_t i = clone->shards.size() - 1U; i >= clone->qubitCount; --i) {
             MpsShardPtr& shard = clone->shards[i];
+            complex oMtrx[4U];
+            std::copy(shard->gate, shard->gate + 4U, oMtrx);
             shard->Compose(h);
-            const real1_f prob =
-                2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-            if (abs(prob) > (ONE_R1 / 4)) {
-                shard->Compose(h);
+
+            QStabilizerHybridPtr clone2 = std::dynamic_pointer_cast<QStabilizerHybrid>(clone->Clone());
+            clone2->stabilizer->H(i);
+            clone2->stabilizer->ForceM(i, false);
+
+            bool isCorrected = false;
+            for (size_t j = clone2->shards.size() - 1U; j >= clone2->qubitCount; --j) {
+                const real1_f prob = clone2->stabilizer->Prob(j);
+                const MpsShardPtr& oShard = clone2->shards[j];
+                oShard->Compose(h);
+                if (prob < (ONE_R1 / 4)) {
+                    shard->Compose(oShard->gate);
+                    std::copy(h, h + 4U, clone->shards[j]->gate);
+                }
+                if (prob > (3 * ONE_R1 / 4)) {
+                    isCorrected = !isCorrected;
+                    shard->Compose(oShard->gate);
+                    std::copy(h, h + 4U, clone->shards[j]->gate);
+                }
+            }
+
+            const real1_f comboProb =
+                2 * clone2->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
+            if (comboProb > (ONE_R1 / 4)) {
+                std::copy(oMtrx, oMtrx, shard->gate);
                 continue;
+            }
+
+            clone->FlushCliffordFromBuffers();
+            if (isCorrected) {
+                clone->stabilizer->Z(i);
             }
             clone->stabilizer->H(i);
             clone->stabilizer->ForceM(i, false);
             clone->stabilizer->Dispose(i, 1U);
             clone->shards.erase(clone->shards.begin() + i);
             --clone->ancillaCount;
+
+            for (size_t j = clone->shards.size() - 1U; j >= clone->qubitCount; --j) {
+                if (clone->stabilizer->IsSeparable(j)) {
+                    clone->stabilizer->Dispose(j, 1U);
+                    clone->shards.erase(clone->shards.begin() + j);
+                    --clone->ancillaCount;
+                }
+            }
+
+            i = clone->shards.size() - 1U;
         }
 
         return clone;
