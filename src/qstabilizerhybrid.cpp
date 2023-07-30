@@ -1844,7 +1844,7 @@ void QStabilizerHybrid::CombineAncillae()
         MpsShardPtr& shard = shards[i];
         shard->Compose(h);
         const real1_f prob = 2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-        if (prob <= FP_NORM_EPSILON) {
+        if (abs(prob) <= FP_NORM_EPSILON) {
             stabilizer->H(i);
             stabilizer->ForceM(i, false);
             stabilizer->Dispose(i, 1U);

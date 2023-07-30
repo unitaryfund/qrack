@@ -276,7 +276,7 @@ protected:
             shard->Compose(h);
             const real1_f prob =
                 2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-            if (prob < (ONE_R1 / 2)) {
+            if (abs(prob) < (ONE_R1 / 4)) {
                 clone->stabilizer->H(i);
                 clone->stabilizer->ForceM(i, false);
                 clone->stabilizer->Dispose(i, 1U);
