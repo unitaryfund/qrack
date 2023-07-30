@@ -1762,6 +1762,12 @@ void QStabilizerHybrid::CombineAncillae()
         return;
     }
 
+    RdmCloneFlush(FP_NORM_EPSILON);
+
+    if (!ancillaCount) {
+        return;
+    }
+
     FlushCliffordFromBuffers();
 
     // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
@@ -1875,6 +1881,9 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             bool isCorrected = (p == 1);
             bool isIncompat = false;
             for (size_t j = clone->shards.size() - 1U; j >= clone->qubitCount; --j) {
+                if (i == j) {
+                    continue;
+                }
                 const real1_f prob = clone->stabilizer->Prob(j);
                 const MpsShardPtr& oShard = clone->shards[j];
                 oShard->Compose(h);
