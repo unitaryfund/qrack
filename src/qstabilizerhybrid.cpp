@@ -1763,6 +1763,7 @@ void QStabilizerHybrid::CombineAncillae()
     }
 
     FlushCliffordFromBuffers();
+    RdmCloneFlush(FP_NORM_EPSILON);
 
     // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
     // If so, we can combine (or cancel) the phase effect on the earlier ancilla and completely separate the later.
@@ -1857,7 +1858,7 @@ void QStabilizerHybrid::CombineAncillae()
     CombineAncillae();
 }
 
-void QStabilizerHybrid::RdmCloneFlush()
+void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
 {
     const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
@@ -1889,7 +1890,7 @@ void QStabilizerHybrid::RdmCloneFlush()
 
             const real1_f comboProb =
                 2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-            if (comboProb > (ONE_R1 / 4)) {
+            if (comboProb > threshold) {
                 std::copy(oMtrx, oMtrx, shard->gate);
 
                 continue;

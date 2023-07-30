@@ -275,7 +275,7 @@ protected:
 
         return clone;
     }
-    void RdmCloneFlush();
+    void RdmCloneFlush(real1_f threshold = (ONE_R1 / 4));
 
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
