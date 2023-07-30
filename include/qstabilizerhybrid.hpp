@@ -264,29 +264,7 @@ protected:
             shard->gate[3U] = complex(angleCos, angleSin);
         }
 
-        const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-        for (size_t i = qubitCount; i < shards.size(); ++i) {
-            // Flush all buffers as close as possible to Clifforrd.
-            const MpsShardPtr& shard = shards[i];
-            shard->Compose(h);
-
-            const real1 angle = (real1)(FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-            if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
-                stabilizer->H(i);
-                stabilizer->ForceM(i, false);
-                stabilizer->Dispose(i, 1U);
-                shards.erase(shards.begin() + i);
-                --ancillaCount;
-
-                continue;
-            }
-            const real1 angleCos = cos(angle);
-            const real1 angleSin = sin(angle);
-            shard->gate[0U] = complex(angleCos, -angleSin);
-            shard->gate[3U] = complex(angleCos, angleSin);
-
-            shard->Compose(h);
-        }
+        RdmCloneFlush();
     }
 
     void CombineAncillae();
@@ -295,11 +273,11 @@ protected:
     {
         CombineAncillae();
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->RdmCloneFlush();
+        clone->RdmCloneFlush(ONE_R1 / 4);
 
         return clone;
     }
-    void RdmCloneFlush(real1_f threshold = (ONE_R1 / 4));
+    void RdmCloneFlush(real1_f threshold = FP_NORM_EPSILON);
 
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
