@@ -1758,12 +1758,13 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QStabilizerHybrid::CombineAncillae()
 {
+    RdmCloneFlush(FP_NORM_EPSILON);
+
     if (engine || !ancillaCount) {
         return;
     }
 
     FlushCliffordFromBuffers();
-    RdmCloneFlush(FP_NORM_EPSILON);
 
     // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
     // If so, we can combine (or cancel) the phase effect on the earlier ancilla and completely separate the later.
@@ -1860,6 +1861,7 @@ void QStabilizerHybrid::CombineAncillae()
 
 void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
 {
+    FlushCliffordFromBuffers();
     const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
         MpsShardPtr& shard = shards[i];
@@ -1873,6 +1875,7 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             clone->stabilizer->ForceM(i, p == 1);
 
             bool isCorrected = (p == 1);
+            bool isIncompat = false;
             for (size_t j = clone->shards.size() - 1U; j >= clone->qubitCount; --j) {
                 const real1_f prob = clone->stabilizer->Prob(j);
                 const MpsShardPtr& oShard = clone->shards[j];
@@ -1880,17 +1883,19 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                 if (prob < (ONE_R1 / 4)) {
                     shard->Compose(oShard->gate);
                     std::copy(h, h + 4U, shards[j]->gate);
-                }
-                if (prob > (3 * ONE_R1 / 4)) {
+                } else if (prob > (3 * ONE_R1 / 4)) {
                     isCorrected = !isCorrected;
                     shard->Compose(oShard->gate);
                     std::copy(h, h + 4U, shards[j]->gate);
+                } else if (stabilizer->IsSeparable(j)) {
+                    isIncompat = true;
+                    break;
                 }
             }
 
             const real1_f comboProb =
                 2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-            if (abs(comboProb) > threshold) {
+            if (isIncompat || (abs(comboProb) > threshold)) {
                 std::copy(oMtrx, oMtrx, shard->gate);
 
                 continue;
