@@ -265,7 +265,7 @@ protected:
         }
     }
 
-    void CombineAncillae(bool isApproxSampling = false);
+    void CombineAncillae();
 
     QStabilizerHybridPtr RdmCloneHelper()
     {

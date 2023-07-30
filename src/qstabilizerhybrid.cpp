@@ -1756,7 +1756,7 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
 }
 
-void QStabilizerHybrid::CombineAncillae(bool isApproxSampling)
+void QStabilizerHybrid::CombineAncillae()
 {
     if (engine || !ancillaCount) {
         return;
@@ -1789,29 +1789,6 @@ void QStabilizerHybrid::CombineAncillae(bool isApproxSampling)
                 if (clone->Prob(j) < (ONE_R1 / 4)) {
                     toCombine[i].push_back(j);
                     stabilizer->Z(j);
-                }
-            }
-        }
-
-        if (!isApproxSampling) {
-            continue;
-        }
-
-        clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-        clone->ForceM(i, false);
-        for (size_t j = i + 1U; j < shards.size(); ++j) {
-            if (clone->Prob(j) <= FP_NORM_EPSILON) {
-                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->ForceM(i, true);
-                if ((ONE_R1 - clone->Prob(j)) < (ONE_R1 / 4)) {
-                    toCombine[i].push_back(j);
-                }
-            } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
-                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->ForceM(i, true);
-                if (clone->Prob(j) < (ONE_R1 / 4)) {
-                    toCombine[i].push_back(j);
-                    stabilizer->X(j);
                 }
             }
         }
@@ -1877,7 +1854,7 @@ void QStabilizerHybrid::CombineAncillae(bool isApproxSampling)
     }
 
     // We should fail to find any toCombine entries before exit.
-    CombineAncillae(isApproxSampling);
+    CombineAncillae();
 }
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
