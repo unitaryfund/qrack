@@ -73,7 +73,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , freezeBasis2Qb(false)
     , isReactiveSeparate(true)
     , useTGadget(true)
-    , isWeakSampling(false)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
     , logFidelity(0.0)
@@ -104,7 +103,6 @@ QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
         separabilityThreshold);
     toRet->SetConcurrency(GetConcurrencyLevel());
     toRet->SetTInjection(useTGadget);
-    toRet->SetStabilizerWeakSampling(isWeakSampling);
 
     return toRet;
 }
@@ -464,7 +462,6 @@ bitLenInt QUnit::Allocate(bitLenInt start, bitLenInt length)
         separabilityThreshold);
     nQubits->SetReactiveSeparate(isReactiveSeparate);
     nQubits->SetTInjection(useTGadget);
-    nQubits->SetStabilizerWeakSampling(isWeakSampling);
 
     return Compose(nQubits, start);
 }
@@ -4054,7 +4051,6 @@ QInterfacePtr QUnit::Clone()
 
     copyPtr->SetReactiveSeparate(isReactiveSeparate);
     copyPtr->SetTInjection(useTGadget);
-    copyPtr->SetStabilizerWeakSampling(isWeakSampling);
     copyPtr->logFidelity = logFidelity;
 
     return CloneBody(copyPtr);

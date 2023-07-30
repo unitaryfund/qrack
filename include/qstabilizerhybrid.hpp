@@ -49,7 +49,6 @@ protected:
     bool doNormalize;
     bool isSparse;
     bool useTGadget;
-    bool isWeakSampling;
     bitLenInt thresholdQubits;
     bitLenInt ancillaCount;
     bitLenInt maxEngineQubitCount;
@@ -65,7 +64,6 @@ protected:
     std::vector<QInterfaceEngine> cloneEngineTypes;
     std::vector<MpsShardPtr> shards;
     std::map<bitCapInt, complex> stateMapCache;
-    std::vector<QUnitCliffordAmp> lowRankCache;
 
     QUnitCliffordPtr MakeStabilizer(bitCapInt perm = 0U);
     QInterfacePtr MakeEngine(bitCapInt perm = 0U);
@@ -175,10 +173,6 @@ protected:
     {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
 
-        if (isWeakSampling && ancillaCount) {
-            return clone->WeakSampleAncillae();
-        }
-
         const bitCapInt rawSample = clone->MAll();
         bitCapInt sample = 0U;
         for (size_t i = 0U; i < qPowers.size(); ++i) {
@@ -271,51 +265,7 @@ protected:
         }
     }
 
-    void ReduceLowRankCache()
-    {
-        for (QUnitCliffordAmp& lrc : lowRankCache) {
-            lrc.amp *= lrc.stabilizer->GetPhaseOffset();
-            lrc.stabilizer->ResetPhaseOffset();
-        }
-
-        size_t i = 0U;
-        complex totAmp = ZERO_CMPLX;
-        while (i < lowRankCache.size()) {
-            QUnitCliffordAmp& l = lowRankCache[i];
-
-            size_t j = i + 1;
-            while (j < lowRankCache.size()) {
-                QUnitCliffordAmp& r = lowRankCache[j];
-                if (l.stabilizer->ApproxCompare(r.stabilizer)) {
-                    l.amp += r.amp;
-                    lowRankCache.erase(lowRankCache.begin() + j);
-                } else {
-                    ++j;
-                }
-            }
-
-            if (abs(l.amp) <= FP_NORM_EPSILON) {
-                lowRankCache.erase(lowRankCache.begin() + i);
-                continue;
-            }
-
-            totAmp += l.amp;
-            ++i;
-        }
-
-        if (abs(ONE_CMPLX - abs(totAmp)) <= FP_NORM_EPSILON) {
-            return;
-        }
-
-        const complex nrm = ONE_CMPLX / totAmp;
-        for (QUnitCliffordAmp& lrc : lowRankCache) {
-            lrc.amp *= nrm;
-        }
-    }
-
     void CombineAncillae(bool isApproxSampling = false);
-    void PrepareLowRankCache();
-    bitCapInt WeakSampleAncillae();
 
     QStabilizerHybridPtr RdmCloneHelper()
     {
@@ -367,14 +317,6 @@ public:
 
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
-    void SetStabilizerWeakSampling(bool isWeak)
-    {
-        if (stabilizer) {
-            stabilizer->SetRandGlobalPhase(!isWeak);
-        }
-        isWeakSampling = isWeak;
-    }
-    bool GetStabilizerWeakSampling() { return isWeakSampling; }
 
     void Finish()
     {

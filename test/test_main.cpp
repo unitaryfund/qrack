@@ -28,7 +28,6 @@ qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_t_injection = false;
 bool disable_reactive_separation = false;
-bool enable_weak_sampling = false;
 bool use_host_dma = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
@@ -109,7 +108,6 @@ int main(int argc, char* argv[])
         Opt(disable_t_injection)["--disable-t-injection"](
             "Disable reverse t-injection gadget, in stabilizer simulator.") |
         Opt(disable_reactive_separation)["--disable-reactive-separation"]("Disable QUnit 'reactive' separation") |
-        Opt(enable_weak_sampling)["--enable-weak-sampling"]("Enable weak sampling, in stabilizer simulator.") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)") |
@@ -484,8 +482,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     }
     if (disable_reactive_separation) {
         qftReg->SetReactiveSeparate(false);
-    }
-    if (enable_weak_sampling) {
-        qftReg->SetStabilizerWeakSampling(true);
     }
 }

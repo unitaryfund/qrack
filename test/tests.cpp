@@ -85,9 +85,6 @@ QInterfacePtr MakeEngine(bitLenInt qubitCount)
     if (disable_reactive_separation) {
         toRet->SetReactiveSeparate(false);
     }
-    if (enable_weak_sampling) {
-        toRet->SetStabilizerWeakSampling(true);
-    }
 
     return toRet;
 }
@@ -6692,11 +6689,6 @@ struct MultiQubitGate {
 
 TEST_CASE("test_mirror_circuit", "[mirror]")
 {
-    if (enable_weak_sampling) {
-        std::cout << ">>> 'test_mirror_circuit': skipped." << std::endl;
-        return;
-    }
-
     std::cout << ">>> 'test_mirror_circuit':" << std::endl;
 
     const int GateCount1Qb = 8;
@@ -6726,9 +6718,6 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
         testCase->SetTInjection(false);
         if (disable_reactive_separation) {
             testCase->SetReactiveSeparate(false);
-        }
-        if (enable_weak_sampling) {
-            testCase->SetStabilizerWeakSampling(true);
         }
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
@@ -7078,11 +7067,6 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
 TEST_CASE("test_mirror_qcircuit", "[mirror]")
 {
-    if (enable_weak_sampling) {
-        std::cout << ">>> 'test_mirror_qcircuit': skipped." << std::endl;
-        return;
-    }
-
     std::cout << ">>> 'test_mirror_qcircuit':" << std::endl;
 
     const int GateCount1Qb = 8;
@@ -7112,9 +7096,6 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
         testCase->SetTInjection(false);
         if (disable_reactive_separation) {
             testCase->SetReactiveSeparate(false);
-        }
-        if (enable_weak_sampling) {
-            testCase->SetStabilizerWeakSampling(true);
         }
 
         std::vector<std::vector<int>> gate1QbRands(Depth);

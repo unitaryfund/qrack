@@ -41,7 +41,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
-    , isWeakSampling(false)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
     , maxEngineQubitCount(27U)
@@ -93,8 +92,8 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 
 QUnitCliffordPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
 {
-    return std::make_shared<QUnitClifford>(qubitCount + ancillaCount, perm, rand_generator, ONE_CMPLX, false,
-        !isWeakSampling && randGlobalPhase, false, -1, useRDRAND);
+    return std::make_shared<QUnitClifford>(
+        qubitCount + ancillaCount, perm, rand_generator, ONE_CMPLX, false, randGlobalPhase, false, -1, useRDRAND);
 }
 QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
 {
@@ -178,7 +177,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
     // PRX Quantum 3, 020361 – Published 23 June 2022
 
-    if (!useTGadget || (!isWeakSampling && (ancillaCount >= maxAncillaCount))) {
+    if (!useTGadget || (ancillaCount >= maxAncillaCount)) {
         // The option to optimize this case is off.
         SwitchToEngine();
         return;
@@ -358,10 +357,6 @@ QInterfacePtr QStabilizerHybrid::Clone()
     c->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
-    c->lowRankCache.clear();
-    for (const QUnitCliffordAmp& lrc : lowRankCache) {
-        c->lowRankCache.emplace_back(lrc.amp, std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer));
-    }
     for (size_t i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
             c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
@@ -515,7 +510,7 @@ bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool wil
 
     const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
 
-    if (!isWeakSampling && ((ancillaCount + toCopy->ancillaCount) > maxAncillaCount)) {
+    if ((ancillaCount + toCopy->ancillaCount) > maxAncillaCount) {
         SwitchToEngine();
     }
 
@@ -999,9 +994,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     complex mtrx[4U];
     if (!wasCached) {
         std::copy(lMtrx, lMtrx + 4U, mtrx);
-    } else if (!engine && useTGadget && (target < qubitCount) && (isWeakSampling || (ancillaCount < maxAncillaCount)) &&
-        !IS_PHASE(lMtrx) && !IS_INVERT(lMtrx) &&
-        (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
+    } else if (!engine && useTGadget && (target < qubitCount) && (ancillaCount < maxAncillaCount) && !IS_PHASE(lMtrx) &&
+        !IS_INVERT(lMtrx) && (shard->IsPhase() || shard->IsInvert() || shard->IsHPhase() || shard->IsHInvert())) {
 
         if (shard->IsHPhase() || shard->IsHInvert()) {
             complex hGate[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
@@ -1500,20 +1494,6 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (isWeakSampling && !IsLogicalProbBuffered()) {
-        PrepareLowRankCache();
-        const bitCapInt toRet = WeakSampleAncillae();
-        lowRankCache.clear();
-        SetPermutation(toRet);
-
-        return toRet;
-    }
-
-    if (ancillaCount > maxAncillaCount) {
-        throw std::logic_error(
-            "QStabilizerHybrid::MAll() has too many ancillary qubits to proceed. (Try turning weak sampling off.)");
-    }
-
     if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
         stateMapCache = stabilizer->GetQuantumState();
     }
@@ -1607,22 +1587,20 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         return engine->MultiShotMeasureMask(qPowers, shots);
     }
 
+    FlushCliffordFromBuffers();
+
     std::map<bitCapInt, int> results;
 
-    if (!IsProbBuffered() || (isWeakSampling && !IsLogicalProbBuffered())) {
+    if (!IsProbBuffered()) {
         std::mutex resultsMutex;
-        PrepareLowRankCache();
         par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
             const bitCapInt sample = SampleClone(qPowers);
             std::lock_guard<std::mutex> lock(resultsMutex);
             ++(results[sample]);
         });
-        lowRankCache.clear();
 
         return results;
     }
-
-    FlushCliffordFromBuffers();
 
     std::vector<real1_f> rng = GenerateShotProbs(shots);
     const auto shotFunc = [&](bitCapInt sample, unsigned unused) { ++(results[sample]); };
@@ -1694,16 +1672,14 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    if (!IsProbBuffered() || (isWeakSampling && !IsLogicalProbBuffered())) {
-        PrepareLowRankCache();
+    FlushCliffordFromBuffers();
+
+    if (!IsProbBuffered()) {
         par_for(0U, shots,
             [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
-        lowRankCache.clear();
 
         return;
     }
-
-    FlushCliffordFromBuffers();
 
     std::vector<real1_f> rng = GenerateShotProbs(shots);
     const auto shotFunc = [&](bitCapInt sample, unsigned shot) { shotsArray[shot] = (unsigned)sample; };
@@ -1902,145 +1878,6 @@ void QStabilizerHybrid::CombineAncillae(bool isApproxSampling)
 
     // We should fail to find any toCombine entries before exit.
     CombineAncillae(isApproxSampling);
-}
-
-void QStabilizerHybrid::PrepareLowRankCache()
-{
-    lowRankCache.clear();
-
-    CombineAncillae(true);
-
-    stabilizer->ResetPhaseOffset();
-    lowRankCache.emplace_back(ONE_CMPLX, std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()));
-
-    const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    for (size_t i = qubitCount; i < shards.size(); ++i) {
-        const MpsShardPtr& shard = shards[i];
-
-        shard->Compose(h);
-        const real1_f correctionAngle = FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U]));
-        shard->Compose(h);
-
-        std::vector<QUnitCliffordAmp> nLowRankCache;
-        const complex phaseFac = complex((real1)cos(correctionAngle), (real1)sin(correctionAngle));
-        const complex amp0 = (phaseFac - I_CMPLX) / complex(ONE_R1, -ONE_R1);
-        const complex amp1 = ONE_R1 - amp0;
-
-        for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            const QUnitCliffordPtr s0 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer);
-            const QUnitCliffordPtr s1 = std::dynamic_pointer_cast<QUnitClifford>(lrc.stabilizer->Clone());
-
-            if (correctionAngle < 0) {
-                s1->IS(i);
-            } else {
-                s1->S(i);
-            }
-
-            s0->H(i);
-            s1->H(i);
-
-            nLowRankCache.emplace_back(lrc.amp * amp0, s0);
-            nLowRankCache.emplace_back(lrc.amp * amp1, s1);
-        }
-        lowRankCache = nLowRankCache;
-
-        ReduceLowRankCache();
-
-        nLowRankCache.clear();
-        for (QUnitCliffordAmp& lrc : lowRankCache) {
-            const real1_f prob = lrc.stabilizer->Prob(i);
-            if ((ONE_R1 - prob) < (ONE_R1 / 4)) {
-                continue;
-            }
-            if (abs(ONE_R1 / 2 - prob) < (ONE_R1 / 4)) {
-                lrc.amp *= SQRT1_2_R1;
-            }
-            lrc.stabilizer->ForceM(i, false);
-            nLowRankCache.push_back(lrc);
-        }
-        lowRankCache = nLowRankCache;
-
-        ReduceLowRankCache();
-    }
-}
-
-bitCapInt QStabilizerHybrid::WeakSampleAncillae()
-{
-    const bitCapInt maxLcv = pow2(shards.size());
-    bitCapInt toRet = 0U;
-    for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        real1 qubitProb = ZERO_R1;
-        std::map<QUnitCliffordPtr, std::map<bitCapInt, complex>> states;
-        for (const QUnitCliffordAmp& lrc : lowRankCache) {
-            if (lrc.stabilizer->PermCount() <= (pow2(maxStateMapCacheQubitCount) / lowRankCache.size())) {
-                states[lrc.stabilizer] = lrc.stabilizer->GetQuantumState();
-            }
-        }
-        for (bitCapInt j = 0U; j < maxLcv; ++j) {
-            if (!((j >> i) & 1)) {
-                continue;
-            }
-            complex qubitAmp = ZERO_CMPLX;
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-            const unsigned numCores = GetConcurrencyLevel();
-            std::vector<std::future<complex>> futures;
-            for (const QUnitCliffordAmp& lrc : lowRankCache) {
-                if (!states[lrc.stabilizer].size()) {
-                    if (futures.size() == numCores) {
-                        for (size_t k = 0U; k < futures.size(); ++k) {
-                            qubitAmp += futures[k].get();
-                        }
-                        futures.clear();
-                    }
-                    futures.push_back(std::async(
-                        std::launch::async, [lrc, &j]() { return lrc.amp * lrc.stabilizer->GetAmplitude(j); }));
-                } else if (states[lrc.stabilizer].find(j) != states[lrc.stabilizer].end()) {
-                    qubitAmp += lrc.amp * states[lrc.stabilizer][j];
-                }
-            }
-            for (size_t k = 0U; k < futures.size(); ++k) {
-                qubitAmp += futures[k].get();
-            }
-            futures.clear();
-#else
-            for (const QUnitCliffordAmp& lrc : lowRankCache) {
-                if (!states[lrc.stabilizer].size()) {
-                    qubitAmp += lrc.amp * lrc.stabilizer->GetAmplitude(j);
-                } else if (states[lrc.stabilizer].find(j) != states[lrc.stabilizer].end()) {
-                    qubitAmp += lrc.amp * states[lrc.stabilizer][j];
-                }
-            }
-#endif
-            qubitProb += norm(qubitAmp);
-        }
-        const bool result = (qubitProb <= FP_NORM_EPSILON)
-            ? false
-            : (((ONE_R1 - qubitProb) <= FP_NORM_EPSILON) ? true : (Rand() < qubitProb));
-        if (result) {
-            toRet |= pow2(i);
-        }
-
-        std::vector<QUnitCliffordAmp> nLowRankCache;
-        for (QUnitCliffordAmp& lrc : lowRankCache) {
-            const real1_f prob = lrc.stabilizer->Prob(i);
-            if (result && (prob < (ONE_R1 / 4))) {
-                continue;
-            }
-            if (!result && ((ONE_R1 - prob) < (ONE_R1 / 4))) {
-                continue;
-            }
-            if (abs(ONE_R1 / 2 - prob) < (ONE_R1 / 4)) {
-                lrc.amp *= SQRT1_2_R1;
-            }
-            lrc.stabilizer->ForceM(i, result);
-            nLowRankCache.push_back(lrc);
-        }
-        lowRankCache = nLowRankCache;
-
-        ReduceLowRankCache();
-    }
-
-    return toRet;
 }
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
