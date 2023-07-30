@@ -276,13 +276,15 @@ protected:
             shard->Compose(h);
             const real1_f prob =
                 2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-            if (abs(prob) < (ONE_R1 / 4)) {
-                clone->stabilizer->H(i);
-                clone->stabilizer->ForceM(i, false);
-                clone->stabilizer->Dispose(i, 1U);
-                clone->shards.erase(clone->shards.begin() + i);
-                --clone->ancillaCount;
+            if (abs(prob) > (ONE_R1 / 4)) {
+                shard->Compose(h);
+                continue;
             }
+            clone->stabilizer->H(i);
+            clone->stabilizer->ForceM(i, false);
+            clone->stabilizer->Dispose(i, 1U);
+            clone->shards.erase(clone->shards.begin() + i);
+            --clone->ancillaCount;
         }
 
         clone->CombineAncillae();
