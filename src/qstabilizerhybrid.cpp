@@ -1859,17 +1859,72 @@ void QStabilizerHybrid::CombineAncillae()
 
 void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
 {
+    FlushCliffordFromBuffers();
     const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
         MpsShardPtr& shard = shards[i];
-        shard->Compose(h);
-        const real1_f prob = 2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-        if (abs(prob) < threshold) {
+        complex oMtrx[4U];
+        std::copy(shard->gate, shard->gate + 4U, oMtrx);
+
+        for (int p = 0; p < 2; ++p) {
+            shard->Compose(h);
+            QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+            clone->stabilizer->H(i);
+            clone->stabilizer->ForceM(i, p == 1);
+
+            bool isCorrected = (p == 1);
+            bool isIncompat = false;
+            for (size_t j = clone->shards.size() - 1U; j >= clone->qubitCount; --j) {
+                const real1_f prob = clone->stabilizer->Prob(j);
+                const MpsShardPtr& oShard = clone->shards[j];
+                oShard->Compose(h);
+                if (prob < (ONE_R1 / 4)) {
+                    shard->Compose(oShard->gate);
+                    std::copy(h, h + 4U, shards[j]->gate);
+                } else if (prob > (3 * ONE_R1 / 4)) {
+                    isCorrected = !isCorrected;
+                    shard->Compose(oShard->gate);
+                    std::copy(h, h + 4U, shards[j]->gate);
+                } else if (stabilizer->IsSeparable(j)) {
+                    isIncompat = true;
+                    break;
+                }
+            }
+
+            complex cMtrx[4U];
+            std::copy(shard->gate, shard->gate + 4U, cMtrx);
+
+            const real1_f comboProb =
+                2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
+            if (isIncompat || (abs(comboProb) > threshold)) {
+                std::copy(oMtrx, oMtrx, shard->gate);
+
+                continue;
+            }
+
+            std::copy(cMtrx, cMtrx + 4U, shard->gate);
+            FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U]));
+
+            if (isCorrected) {
+                stabilizer->Z(i);
+            }
             stabilizer->H(i);
-            stabilizer->ForceM(i, false);
+            stabilizer->ForceM(i, p == 1);
             stabilizer->Dispose(i, 1U);
             shards.erase(shards.begin() + i);
             --ancillaCount;
+
+            for (size_t j = shards.size() - 1U; j >= qubitCount; --j) {
+                if (stabilizer->IsSeparable(j)) {
+                    stabilizer->Dispose(j, 1U);
+                    shards.erase(shards.begin() + j);
+                    --ancillaCount;
+                }
+            }
+
+            i = shards.size() - 1U;
+
+            break;
         }
     }
 }
