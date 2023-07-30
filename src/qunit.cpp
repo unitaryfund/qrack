@@ -224,9 +224,9 @@ void QUnit::GetProbs(real1* outputProbs)
     thisCopy->shards[0U].unit->GetProbs(outputProbs);
 }
 
-complex QUnit::GetAmplitude(bitCapInt perm) { return GetAmplitudeOrProb(perm, false, false, false); }
+complex QUnit::GetAmplitude(bitCapInt perm) { return GetAmplitudeOrProb(perm, false); }
 
-complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm, bool roundRz)
+complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 {
     if (perm >= maxQPower) {
         throw std::invalid_argument("QUnit::GetAmplitudeOrProb argument out-of-bounds!");
@@ -258,21 +258,10 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm, bool 
         }
     }
 
-    if (isProb && isRdm) {
-        real1 r = norm(result);
-        for (const auto& qi : perms) {
-            r *= (real1)qi.first->ProbAllRdm(roundRz, qi.second);
-            if ((2 * r) <= separabilityThreshold) {
-                break;
-            }
-        }
-        result = (complex)sqrt(r);
-    } else {
-        for (const auto& qi : perms) {
-            result *= qi.first->GetAmplitude(qi.second);
-            if (IS_AMP_0(result)) {
-                break;
-            }
+    for (const auto& qi : perms) {
+        result *= qi.first->GetAmplitude(qi.second);
+        if (IS_AMP_0(result)) {
+            break;
         }
     }
 

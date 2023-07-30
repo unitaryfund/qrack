@@ -129,6 +129,34 @@ real1_f QUnitClifford::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
     return (real1_f)prob;
 }
 
+real1_f QUnitClifford::ProbMask(bitCapInt mask, bitCapInt perm)
+{
+    bitCapInt v = mask; // count the number of bits set in v
+    std::vector<bitLenInt> bits;
+    while (v) {
+        bitCapInt oldV = v;
+        v &= v - ONE_BCI; // clear the least significant bit set
+        bits.push_back(log2((v ^ oldV) & oldV));
+    }
+
+    std::map<QStabilizerPtr, bitCapInt> maskMap;
+    std::map<QStabilizerPtr, bitCapInt> permMap;
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const CliffordShard& shard = shards[bits[i]];
+        maskMap[shard.unit] |= pow2(shard.mapped);
+        if (pow2(bits[i]) & perm) {
+            permMap[shard.unit] |= pow2(shard.mapped);
+        }
+    }
+
+    real1 expectation = ZERO_R1;
+    for (const auto& p : maskMap) {
+        expectation += (real1)p.first->ProbMask(p.second, permMap[p.first]);
+    }
+
+    return (real1_f)expectation;
+}
+
 void QUnitClifford::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();

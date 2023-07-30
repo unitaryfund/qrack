@@ -194,6 +194,8 @@ public:
 
     real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
 
+    real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
+
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U);

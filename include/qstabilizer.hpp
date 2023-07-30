@@ -288,6 +288,9 @@ public:
     /// of the reduced density matrx without ancillae.
     real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
 
+    /// Direct measure of masked permutation probability
+    real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
+
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
      */

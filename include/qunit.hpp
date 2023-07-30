@@ -389,10 +389,7 @@ public:
         ToPermBasisProb(qubit);
         return ProbBase(qubit);
     }
-    virtual real1_f ProbAll(bitCapInt perm)
-    {
-        return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true, false, false)));
-    }
+    virtual real1_f ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true))); }
     virtual real1_f ProbAllRdm(bool roundRz, bitCapInt perm)
     {
         if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
@@ -471,7 +468,7 @@ public:
     /** @} */
 
 protected:
-    virtual complex GetAmplitudeOrProb(bitCapInt perm, bool isProb, bool isRdm, bool roundRz);
+    virtual complex GetAmplitudeOrProb(bitCapInt perm, bool isProb);
 
     virtual void XBase(bitLenInt target);
     virtual void YBase(bitLenInt target);
