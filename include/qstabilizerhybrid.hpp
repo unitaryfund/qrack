@@ -269,7 +269,6 @@ protected:
 
     QStabilizerHybridPtr RdmCloneHelper()
     {
-        CombineAncillae();
         const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         size_t i = clone->qubitCount;
@@ -282,11 +281,13 @@ protected:
                 continue;
             }
 
-            clone->stabilizer->H(i);
-            clone->stabilizer->ForceM(i, false);
-            clone->stabilizer->Dispose(i, 1U);
-            clone->shards.erase(clone->shards.begin() + i);
-            --(clone->ancillaCount);
+            shard->gate[0U] = ONE_CMPLX;
+            shard->gate[1U] = ZERO_CMPLX;
+            shard->gate[2U] = ZERO_CMPLX;
+            shard->gate[3U] = ONE_CMPLX;
+
+            clone->CombineAncillae();
+            i = clone->qubitCount;
         }
 
         return clone;
