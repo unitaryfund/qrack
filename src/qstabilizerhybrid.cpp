@@ -1758,8 +1758,6 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QStabilizerHybrid::CombineAncillae()
 {
-    RdmCloneFlush(FP_NORM_EPSILON);
-
     if (engine || !ancillaCount) {
         return;
     }
