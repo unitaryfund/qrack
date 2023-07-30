@@ -1838,7 +1838,7 @@ void QStabilizerHybrid::CombineAncillae()
     }
 
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
-        if (!shards[i]) {
+        if (!shards[i] || stabilizer->IsSeparable(i)) {
             stabilizer->Dispose(i, 1U);
             shards.erase(shards.begin() + i);
             --ancillaCount;
@@ -1879,7 +1879,6 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             clone->stabilizer->ForceM(i, p == 1);
 
             bool isCorrected = (p == 1);
-            bool isIncompat = false;
             for (size_t j = clone->shards.size() - 1U; j >= clone->qubitCount; --j) {
                 if (i == j) {
                     continue;
@@ -1894,9 +1893,6 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                     isCorrected = !isCorrected;
                     shard->Compose(oShard->gate);
                     std::copy(h, h + 4U, shards[j]->gate);
-                } else if (stabilizer->IsSeparable(j)) {
-                    isIncompat = true;
-                    break;
                 }
             }
 
@@ -1905,7 +1901,7 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
 
             const real1_f comboProb =
                 2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-            if (isIncompat || (abs(comboProb) > threshold)) {
+            if (abs(comboProb) > threshold) {
                 std::copy(oMtrx, oMtrx, shard->gate);
 
                 continue;
