@@ -2417,6 +2417,11 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, b
 
     std::vector<bitCapInt> _c;
     _c.reserve(n);
+#if QBCAPPOW < 7
+    for (uintq i = 0U; i < n; ++i) {
+        _c.push_back(c[i]);
+    }
+#else
     for (uintq i = 0U; i < n; ++i) {
         bitCapInt perm = 0U;
         for (uintq j = 0U; j < m; ++j) {
@@ -2425,6 +2430,7 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, b
         }
         _c.push_back(perm);
     }
+#endif
 
     try {
         return isRdm ? (double)simulator->ExpectationBitsFactorizedRdm(r, _q, _c)
