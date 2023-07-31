@@ -60,9 +60,9 @@ MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq 
 MICROSOFT_QUANTUM_DECL double PermutationExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ bool r);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, _In_reads_(n * m) uintq* c);
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, _In_reads_(n * m) uintq* c, _In_ bool r);
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r);
 
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback);

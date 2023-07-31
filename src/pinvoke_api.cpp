@@ -2446,7 +2446,7 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, b
  * (External API) Get the permutation expectation value, based upon the order of input qubits.
  */
 MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, _In_reads_(n* m) uintq* c)
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c)
 {
     return _FactorizedExpectation(sid, n, q, m, c, false, false);
 }
@@ -2456,7 +2456,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
  * qubits as post-selected T gate gadgets.
  */
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, _In_reads_(n* m) uintq* c, _In_ bool r)
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r)
 {
     return _FactorizedExpectation(sid, n, q, m, c, r, true);
 }
