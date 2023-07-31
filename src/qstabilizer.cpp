@@ -555,40 +555,8 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
     return toRet;
 }
 
-real1_f QStabilizer::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
-{
-    ThrowIfQbIdArrayIsBad(bits, qubitCount,
-        "QInterface::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
-
-    std::vector<bitCapInt> bitPowers(bits.size());
-    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
-
-    Finish();
-
-    // log_2 of number of nonzero basis states
-    const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
-    const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
-
-    seed(g);
-
-    real1 expectation = (real1)getExpectation(nrm, bitPowers, offset);
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
-                rowmult(elemCount, qubitCount + i);
-            }
-        }
-        expectation += (real1)getExpectation(nrm, bitPowers, offset);
-    }
-
-    return (real1_f)expectation;
-}
-
-real1_f QStabilizer::ExpectationBitsFactorized(const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms)
+real1_f QStabilizer::ExpectationBitsFactorized(
+    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {
     if (perms.size() < bits.size()) {
         throw std::invalid_argument(
@@ -596,7 +564,7 @@ real1_f QStabilizer::ExpectationBitsFactorized(const std::vector<bitLenInt>& bit
     }
 
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
-        "QInterface::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
+        "QStabilizer::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
 
     Finish();
 
@@ -609,7 +577,7 @@ real1_f QStabilizer::ExpectationBitsFactorized(const std::vector<bitLenInt>& bit
 
     seed(g);
 
-    real1 expectation = (real1)getExpectation(nrm, perms, 0U);
+    real1 expectation = (real1)getExpectation(nrm, perms, offset);
     for (bitCapInt t = 0U; t < permCountMin1; ++t) {
         const bitCapInt t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
@@ -617,7 +585,7 @@ real1_f QStabilizer::ExpectationBitsFactorized(const std::vector<bitLenInt>& bit
                 rowmult(elemCount, qubitCount + i);
             }
         }
-        expectation += (real1)getExpectation(nrm, perms, 0U);
+        expectation += (real1)getExpectation(nrm, perms, offset);
     }
 
     return (real1_f)expectation;

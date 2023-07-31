@@ -2359,7 +2359,42 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
+    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    {
+        std::vector<bitCapInt> perms;
+        perms.reserve(bits.size());
+        for (size_t i = 0U; i < bits.size(); ++i) {
+            perms.push_back(pow2(i));
+        }
+
+        return ExpectationBitsFactorized(bits, perms, offset);
+    }
+
+    /**
+     * Get expectation value of bits, given an array of qubit weights
+     *
+     * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
+
+    /**
+     * Get (reduced density matrix) expectation value of bits, given an array of qubit weights
+     *
+     * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry. If there are stabilizer ancillae, they are traced out of the reduced density matrix, giving an approximate
+     * result.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationBitsFactorizedRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0)
+    {
+        return ExpectationBitsFactorized(bits, perms, offset);
+    }
 
     /**
      * Direct measure of bit probability to be in |1> state, treating all ancillary qubits as post-selected T gate

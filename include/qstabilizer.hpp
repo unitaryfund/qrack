@@ -279,10 +279,8 @@ public:
     std::vector<complex> GetAmplitudes(std::vector<bitCapInt> perms);
 
     /// Get expectation qubits, interpreting each permutation as an unsigned integer.
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
-
-    /// Get expectation qubits, interpreting each permutation as an unsigned integer.
-    real1_f ExpectationBitsFactorized(const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms);
+    real1_f ExpectationBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
 
     /// Under assumption of a QStabilizerHybrid ancillary buffer, trace out the permutation probability
     /// of the reduced density matrx without ancillae.

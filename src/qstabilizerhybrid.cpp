@@ -396,21 +396,6 @@ real1_f QStabilizerHybrid::ProbMaskRdm(bool roundRz, bitCapInt mask, bitCapInt p
     return RdmCloneHelper()->stabilizer->ProbMask(mask, permutation);
 }
 
-real1_f QStabilizerHybrid::ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset)
-{
-    if (engine) {
-        return engine->ExpectationBitsAllRdm(roundRz, bits, offset);
-    }
-
-    CombineAncillae();
-
-    if (!roundRz) {
-        return stabilizer->ExpectationBitsAll(bits, offset);
-    }
-
-    return RdmCloneHelper()->stabilizer->ExpectationBitsAll(bits, offset);
-}
-
 void QStabilizerHybrid::SwitchToEngine()
 {
     if (engine) {

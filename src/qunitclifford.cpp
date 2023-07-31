@@ -70,8 +70,14 @@ QInterfacePtr QUnitClifford::CloneBody(QUnitCliffordPtr copyPtr)
     return copyPtr;
 }
 
-real1_f QUnitClifford::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
+real1_f QUnitClifford::ExpectationBitsFactorized(
+    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {
+    if (perms.size() < bits.size()) {
+        throw std::invalid_argument(
+            "QUnitClifford::ExpectationBitsFactorized() must supply at least as many 'perms' as bits!");
+    }
+
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
         "QUnitClifford::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
 
@@ -80,12 +86,12 @@ real1_f QUnitClifford::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bi
     for (size_t i = 0U; i < bits.size(); ++i) {
         const CliffordShard& shard = shards[bits[i]];
         qubitMap[shard.unit].push_back(shard.mapped);
-        permMap[shard.unit].push_back(pow2(i));
+        permMap[shard.unit].push_back(perms[i]);
     }
 
     real1 expectation = ZERO_R1;
     for (const auto& p : qubitMap) {
-        expectation += (real1)p.first->ExpectationBitsFactorized(p.second, permMap[p.first]);
+        expectation += (real1)p.first->ExpectationBitsFactorized(p.second, permMap[p.first], offset);
     }
 
     return (real1_f)expectation;

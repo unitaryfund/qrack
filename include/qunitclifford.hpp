@@ -190,7 +190,8 @@ public:
         return permCount;
     }
 
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U);
+    real1_f ExpectationBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
 
     real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
 

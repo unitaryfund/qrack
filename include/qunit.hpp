@@ -398,37 +398,49 @@ public:
         return SumSqrDiff(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
     virtual real1_f SumSqrDiff(QUnitPtr toCompare);
-    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    virtual real1_f ExpectationBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
     {
+        if (perms.size() < bits.size()) {
+            throw std::invalid_argument(
+                "QUnit::ExpectationBitsFactorized() must supply at least as many 'perms' as bits!");
+        }
+
         ThrowIfQbIdArrayIsBad(bits, qubitCount,
             "QUnit::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
 
         if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
             OrderContiguous(shards[0U].unit);
-            return shards[0U].unit->ExpectationBitsAll(bits, offset);
+            return shards[0U].unit->ExpectationBitsFactorized(bits, perms, offset);
         }
 
         QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
         QInterfacePtr unit = clone->EntangleAll(true);
         clone->OrderContiguous(unit);
 
-        return unit->ExpectationBitsAll(bits, offset);
+        return unit->ExpectationBitsFactorized(bits, perms, offset);
     }
-    virtual real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    virtual real1_f ExpectationBitsFactorizedRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
     {
+        if (perms.size() < bits.size()) {
+            throw std::invalid_argument(
+                "QUnit::ExpectationBitsFactorized() must supply at least as many 'perms' as bits!");
+        }
+
         ThrowIfQbIdArrayIsBad(bits, qubitCount,
             "QUnit::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
 
         if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
             OrderContiguous(shards[0U].unit);
-            return shards[0U].unit->ExpectationBitsAllRdm(roundRz, bits, offset);
+            return shards[0U].unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
         }
 
         QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
         QInterfacePtr unit = clone->EntangleAll(true);
         clone->OrderContiguous(unit);
 
-        return unit->ExpectationBitsAllRdm(roundRz, bits, offset);
+        return unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
     }
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(
