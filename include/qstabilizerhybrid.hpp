@@ -729,6 +729,20 @@ public:
 
         return engine->ExpectationBitsAll(bits, offset);
     }
+    real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    {
+        if (engine) {
+            return engine->ExpectationBitsAllRdm(roundRz, bits, offset);
+        }
+
+        CombineAncillae();
+
+        if (!roundRz) {
+            return stabilizer->ExpectationBitsAll(bits, offset);
+        }
+
+        return RdmCloneHelper()->stabilizer->ExpectationBitsAll(bits, offset);
+    }
     real1_f ExpectationBitsFactorizedRdm(
         bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
     {
