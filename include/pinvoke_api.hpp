@@ -64,20 +64,18 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r);
 #if FPPOW < 6
-MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, float* c);
+MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, float* c, _In_ bool r);
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c, _In_ bool r);
 #elif FPPOW < 7
-MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, double* c);
+MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, double* c, _In_ bool r);
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* c, _In_ bool r);
 #else
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, boost::multiprecision::float128* c);
-MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q,
-    _In_ uintq m, boost::multiprecision::float128* c, _In_ bool r);
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* c);
+MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* c, _In_ bool r);
 #endif
 
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback);

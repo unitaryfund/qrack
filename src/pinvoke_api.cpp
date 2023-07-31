@@ -2478,10 +2478,9 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
 /**
  * (External API) Get the permutation expectation value, based upon the order of input qubits.
  */
-MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, real1_f* c)
+MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c)
 {
-    return _FactorizedExpectation(sid, n, q, m, NULL, c, false, false);
+    return _FactorizedExpectation(sid, n, q, 0U, NULL, c, false, false);
 }
 
 /**
@@ -2489,9 +2488,9 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(
  * qubits as post-selected T gate gadgets.
  */
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, real1_f* c, _In_ bool r)
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c, _In_ bool r)
 {
-    return _FactorizedExpectation(sid, n, q, m, NULL, c, r, true);
+    return _FactorizedExpectation(sid, n, q, 0U, NULL, c, r, true);
 }
 
 MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
