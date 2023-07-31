@@ -2440,7 +2440,7 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
     if (f) {
         _f.reserve(n2);
         for (uintq i = 0U; i < n2; ++i) {
-            _f.push_back(_f[i]);
+            _f.push_back(f[i]);
         }
     }
 
