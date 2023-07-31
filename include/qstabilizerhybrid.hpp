@@ -769,9 +769,9 @@ public:
         return ExpectationFactorized(false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }
     real1_f ExpectationFloatsFactorizedRdm(
-        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights, bitCapInt offset = 0U)
     {
-        return ExpectationFactorized(true, bits, std::vector<bitCapInt>(), weights, 0U, roundRz);
+        return ExpectationFactorized(true, bits, std::vector<bitCapInt>(), weights, offset, roundRz);
     }
 
     bool TrySeparate(bitLenInt qubit);

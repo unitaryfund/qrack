@@ -2415,15 +2415,17 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
         _q.push_back(shards[simulators[sid].get()][q[i]]);
     }
 
+    const uintq n2 = n << 1U;
+
     std::vector<bitCapInt> _c;
     if (c) {
-        _c.reserve(n);
+        _c.reserve(n2);
 #if QBCAPPOW < 7
-        for (uintq i = 0U; i < n; ++i) {
+        for (uintq i = 0U; i < n2; ++i) {
             _c.push_back(c[i]);
         }
 #else
-        for (uintq i = 0U; i < n; ++i) {
+        for (uintq i = 0U; i < n2; ++i) {
             bitCapInt perm = 0U;
             for (uintq j = 0U; j < m; ++j) {
                 perm <<= 64U;
@@ -2436,7 +2438,6 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
 
     std::vector<real1_f> _f;
     if (f) {
-        const uintq n2 = n << 1U;
         _f.reserve(n2);
         for (uintq i = 0U; i < n2; ++i) {
             _f.push_back(_f[i]);
