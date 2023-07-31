@@ -763,10 +763,27 @@ public:
 
         return RdmCloneHelper()->stabilizer->ExpectationBitsAll(bits, offset);
     }
+    real1_f ExpectationBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
+    {
+        if (stabilizer) {
+            return QInterface::ExpectationBitsFactorized(bits, perms, offset);
+        }
+
+        return engine->ExpectationBitsFactorized(bits, perms, offset);
+    }
     real1_f ExpectationBitsFactorizedRdm(
         bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
     {
         return ExpectationFactorized(false, bits, perms, std::vector<real1_f>(), offset, roundRz);
+    }
+    real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        if (stabilizer) {
+            return QInterface::ExpectationFloatsFactorized(bits, weights);
+        }
+
+        return engine->ExpectationFloatsFactorized(bits, weights);
     }
     real1_f ExpectationFloatsFactorizedRdm(
         bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
