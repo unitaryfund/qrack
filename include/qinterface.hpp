@@ -2397,6 +2397,32 @@ public:
     }
 
     /**
+     * Get expectation value of bits, given a (floating-point) array of qubit weights
+     *
+     * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "weights"
+     * entry.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationFloatsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+
+    /**
+     * Get (reduced density matrix) expectation value of bits, given a (floating-point) array of qubit weights
+     *
+     * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "weights"
+     * entry. If there are stabilizer ancillae, they are traced out of the reduced density matrix, giving an approximate
+     * result.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationFloatsFactorizedRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return ExpectationFloatsFactorized(bits, weights);
+    }
+
+    /**
      * Direct measure of bit probability to be in |1> state, treating all ancillary qubits as post-selected T gate
      * gadgets
      *

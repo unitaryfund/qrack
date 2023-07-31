@@ -2405,7 +2405,7 @@ MICROSOFT_QUANTUM_DECL double PermutationExpectationRdm(_In_ uintq sid, _In_ uin
     return _PermutationExpectation(sid, n, q, r, true);
 }
 
-double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, bool r, bool isRdm)
+double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, real1_f* f, bool r, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2416,25 +2416,38 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, b
     }
 
     std::vector<bitCapInt> _c;
-    _c.reserve(n);
+    if (c) {
+        _c.reserve(n);
 #if QBCAPPOW < 7
-    for (uintq i = 0U; i < n; ++i) {
-        _c.push_back(c[i]);
-    }
-#else
-    for (uintq i = 0U; i < n; ++i) {
-        bitCapInt perm = 0U;
-        for (uintq j = 0U; j < m; ++j) {
-            perm <<= 64U;
-            perm |= c[i * m + j];
+        for (uintq i = 0U; i < n; ++i) {
+            _c.push_back(c[i]);
         }
-        _c.push_back(perm);
-    }
+#else
+        for (uintq i = 0U; i < n; ++i) {
+            bitCapInt perm = 0U;
+            for (uintq j = 0U; j < m; ++j) {
+                perm <<= 64U;
+                perm |= c[i * m + j];
+            }
+            _c.push_back(perm);
+        }
 #endif
+    }
+
+    std::vector<real1_f> _f;
+    if (f) {
+        const uintq n2 = n << 1U;
+        _f.reserve(n2);
+        for (uintq i = 0U; i < n2; ++i) {
+            _f.push_back(_f[i]);
+        }
+    }
 
     try {
-        return isRdm ? (double)simulator->ExpectationBitsFactorizedRdm(r, _q, _c)
-                     : (double)simulator->ExpectationBitsFactorized(_q, _c);
+        return c    ? isRdm ? (double)simulator->ExpectationBitsFactorizedRdm(r, _q, _c)
+                            : (double)simulator->ExpectationBitsFactorized(_q, _c)
+               : isRdm ? (double)simulator->ExpectationFloatsFactorizedRdm(r, _q, _f)
+                    : (double)simulator->ExpectationFloatsFactorized(_q, _f);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2448,7 +2461,7 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, b
 MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c)
 {
-    return _FactorizedExpectation(sid, n, q, m, c, false, false);
+    return _FactorizedExpectation(sid, n, q, m, c, NULL, false, false);
 }
 
 /**
@@ -2458,7 +2471,26 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r)
 {
-    return _FactorizedExpectation(sid, n, q, m, c, r, true);
+    return _FactorizedExpectation(sid, n, q, m, c, NULL, r, true);
+}
+
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, real1_f* c)
+{
+    return _FactorizedExpectation(sid, n, q, m, NULL, c, false, false);
+}
+
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, real1_f* c, _In_ bool r)
+{
+    return _FactorizedExpectation(sid, n, q, m, NULL, c, r, true);
 }
 
 MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)

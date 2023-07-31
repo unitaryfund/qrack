@@ -193,6 +193,8 @@ public:
     real1_f ExpectationBitsFactorized(
         const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
 
+    real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+
     real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
 
     real1_f ProbMask(bitCapInt mask, bitCapInt permutation);

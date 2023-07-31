@@ -387,19 +387,22 @@ void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArr
 real1_f QInterface::ExpectationBitsFactorized(
     const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {
-    if (perms.size() < bits.size()) {
+    if (perms.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
-            "QInterface::ExpectationBitsFactorized() must supply at least as many 'perms' as bits!");
+            "QInterface::ExpectationBitsFactorized() must supply at least twice as many 'perms' as bits!");
     }
 
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
-        "QInterface::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
+        "QInterface::ExpectationBitsFactorized() parameter qubits vector values must be within allocated qubit "
+        "bounds!");
 
     if (bits.size() == 1U) {
+        const real1_f prob = Prob(bits[0]);
 #if (QBCAPPOW > 6) && BOOST_AVAILABLE
-        return (perms[0U] + offset).convert_to<real1_f>() * Prob(bits[0]);
+        return (perms[0U] + offset).convert_to<real1_f>() * (ONE_R1_F - prob) +
+            (perms[1U] + offset).convert_to<real1_f>() * prob;
 #else
-        return (perms[0U] + offset) * Prob(bits[0]);
+        return (perms[0U] + offset) * (ONE_R1_F - prob) + (perms[1U] + offset) * prob;
 #endif
     }
 
@@ -408,20 +411,49 @@ real1_f QInterface::ExpectationBitsFactorized(
 
     real1 expectation = ZERO_R1;
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
-        bitCapInt retIndex = 0U;
+        bitCapInt retIndex = offset;
         for (size_t p = 0U; p < bits.size(); ++p) {
-            if (lcv & bitPowers[p]) {
-                retIndex += perms[p];
-            }
+            retIndex += (lcv & bitPowers[p]) ? perms[(p << 1U) | 1U] : perms[p << 1U];
         }
 #if (QBCAPPOW > 6) && BOOST_AVAILABLE
-        expectation += (real1)((retIndex + offset).convert_to<real1_f>() * ProbAll(lcv));
+        expectation += (real1)(retIndex.convert_to<real1_f>() * ProbAll(lcv));
 #else
-        expectation += (real1)((retIndex + offset) * ProbAll(lcv));
+        expectation += (real1)(retIndex * ProbAll(lcv));
 #endif
     }
 
     return (real1_f)expectation;
+}
+
+real1_f QInterface::ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+{
+    if (weights.size() < (bits.size() << 1U)) {
+        throw std::invalid_argument(
+            "QInterface::ExpectationFloatsFactorized() must supply at least twice as many weights as bits!");
+    }
+
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QInterface::ExpectationFloatsFactorized() parameter qubits vector values must be within allocated qubit "
+        "bounds!");
+
+    if (bits.size() == 1U) {
+        const real1_f prob = Prob(bits[0]);
+        return weights[0U] * (ONE_R1_F - prob) + weights[1U] * prob;
+    }
+
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+
+    real1_f expectation = ZERO_R1_F;
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
+        real1_f weight = 0U;
+        for (size_t p = 0U; p < bits.size(); ++p) {
+            weight += (lcv & bitPowers[p]) ? weights[(p << 1U) | 1U] : weights[p << 1U];
+        }
+        expectation += weight * ProbAll(lcv);
+    }
+
+    return expectation;
 }
 
 std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)

@@ -197,7 +197,12 @@ protected:
     void setBasisProb(const real1_f& nrm, real1* outputProbs);
 
     /// Returns the (partial) expectation value from a state vector amplitude.
-    real1_f getExpectation(const real1_f& nrm, const std::vector<bitCapInt>& bitPowers, bitCapInt offset);
+    real1_f getExpectation(const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
+        const std::vector<bitCapInt>& perms, bitCapInt offset);
+
+    /// Returns the (partial) expectation value from a state vector amplitude.
+    real1_f getExpectation(
+        const real1_f& nrm, const std::vector<bitCapInt>& bitPowers, const std::vector<real1_f>& weights);
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
@@ -281,6 +286,9 @@ public:
     /// Get expectation qubits, interpreting each permutation as an unsigned integer.
     real1_f ExpectationBitsFactorized(
         const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
+
+    /// Get expectation qubits, interpreting each permutation as a floating-point value.
+    real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
 
     /// Under assumption of a QStabilizerHybrid ancillary buffer, trace out the permutation probability
     /// of the reduced density matrx without ancillae.

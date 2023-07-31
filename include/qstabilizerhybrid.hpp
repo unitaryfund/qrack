@@ -279,6 +279,26 @@ protected:
     }
     void RdmCloneFlush(real1_f threshold = FP_NORM_EPSILON);
 
+    real1_f ExpectationFactorized(bool isFloat, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms,
+        const std::vector<real1_f>& weights, bitCapInt offset, bool roundRz)
+    {
+        if (engine) {
+            return isFloat ? engine->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                           : engine->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
+            ;
+        }
+
+        CombineAncillae();
+
+        if (!roundRz) {
+            return isFloat ? stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                           : stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
+        }
+
+        return isFloat ? RdmCloneHelper()->stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                       : RdmCloneHelper()->stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
+    }
+
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
@@ -746,17 +766,12 @@ public:
     real1_f ExpectationBitsFactorizedRdm(
         bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
     {
-        if (engine) {
-            return engine->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
-        }
-
-        CombineAncillae();
-
-        if (!roundRz) {
-            return stabilizer->ExpectationBitsFactorized(bits, perms, offset);
-        }
-
-        return RdmCloneHelper()->stabilizer->ExpectationBitsFactorized(bits, perms, offset);
+        return ExpectationFactorized(false, bits, perms, std::vector<real1_f>(), offset, roundRz);
+    }
+    real1_f ExpectationFloatsFactorizedRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return ExpectationFactorized(true, bits, std::vector<bitCapInt>(), weights, 0U, roundRz);
     }
 
     bool TrySeparate(bitLenInt qubit);

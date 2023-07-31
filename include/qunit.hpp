@@ -401,46 +401,12 @@ public:
     virtual real1_f ExpectationBitsFactorized(
         const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
     {
-        if (perms.size() < bits.size()) {
-            throw std::invalid_argument(
-                "QUnit::ExpectationBitsFactorized() must supply at least as many 'perms' as bits!");
-        }
-
-        ThrowIfQbIdArrayIsBad(bits, qubitCount,
-            "QUnit::ExpectationBitsAll parameter qubits vector values must be within allocated qubit bounds!");
-
-        if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
-            OrderContiguous(shards[0U].unit);
-            return shards[0U].unit->ExpectationBitsFactorized(bits, perms, offset);
-        }
-
-        QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
-        QInterfacePtr unit = clone->EntangleAll(true);
-        clone->OrderContiguous(unit);
-
-        return unit->ExpectationBitsFactorized(bits, perms, offset);
+        return ExpectationFactorized(false, false, bits, perms, std::vector<real1_f>(), offset, false);
     }
     virtual real1_f ExpectationBitsFactorizedRdm(
         bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
     {
-        if (perms.size() < bits.size()) {
-            throw std::invalid_argument(
-                "QUnit::ExpectationBitsFactorized() must supply at least as many 'perms' as bits!");
-        }
-
-        ThrowIfQbIdArrayIsBad(bits, qubitCount,
-            "QUnit::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
-
-        if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
-            OrderContiguous(shards[0U].unit);
-            return shards[0U].unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
-        }
-
-        QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
-        QInterfacePtr unit = clone->EntangleAll(true);
-        clone->OrderContiguous(unit);
-
-        return unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
+        return ExpectationFactorized(true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(
@@ -509,6 +475,34 @@ protected:
         bitLenInt valueLength, const unsigned char* values);
     bitCapInt GetIndexedEigenstate(bitLenInt start, bitLenInt length, const unsigned char* values);
 #endif
+
+    real1_f ExpectationFactorized(bool isRdm, bool isFloat, const std::vector<bitLenInt>& bits,
+        const std::vector<bitCapInt>& perms, const std::vector<real1_f>& weights, bitCapInt offset, bool roundRz)
+    {
+        if ((isFloat && (weights.size() < bits.size())) || (!isFloat && (perms.size() < bits.size()))) {
+            throw std::invalid_argument("QUnit::ExpectationFactorized() must supply at least as many weights as bits!");
+        }
+
+        ThrowIfQbIdArrayIsBad(bits, qubitCount,
+            "QUnit::ExpectationFactorized parameter qubits vector values must be within allocated qubit bounds!");
+
+        if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
+            OrderContiguous(shards[0U].unit);
+            return isFloat ? (isRdm ? shards[0U].unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                                    : shards[0U].unit->ExpectationFloatsFactorized(bits, weights))
+                           : (isRdm ? shards[0U].unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+                                    : shards[0U].unit->ExpectationBitsFactorized(bits, perms, offset));
+        }
+
+        QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+        QInterfacePtr unit = clone->EntangleAll(true);
+        clone->OrderContiguous(unit);
+
+        return isFloat ? (isRdm ? unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                                : unit->ExpectationFloatsFactorized(bits, weights))
+                       : (isRdm ? unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+                                : unit->ExpectationBitsFactorized(bits, perms, offset));
+    }
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt> bits);
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);

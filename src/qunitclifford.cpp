@@ -73,9 +73,9 @@ QInterfacePtr QUnitClifford::CloneBody(QUnitCliffordPtr copyPtr)
 real1_f QUnitClifford::ExpectationBitsFactorized(
     const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {
-    if (perms.size() < bits.size()) {
+    if (perms.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
-            "QUnitClifford::ExpectationBitsFactorized() must supply at least as many 'perms' as bits!");
+            "QUnitClifford::ExpectationBitsFactorized() must supply at least twice as many 'perms' as bits!");
     }
 
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
@@ -86,7 +86,8 @@ real1_f QUnitClifford::ExpectationBitsFactorized(
     for (size_t i = 0U; i < bits.size(); ++i) {
         const CliffordShard& shard = shards[bits[i]];
         qubitMap[shard.unit].push_back(shard.mapped);
-        permMap[shard.unit].push_back(perms[i]);
+        permMap[shard.unit].push_back(perms[i << 1U]);
+        permMap[shard.unit].push_back(perms[(i << 1U) | 1U]);
     }
 
     real1 expectation = ZERO_R1;
@@ -95,6 +96,35 @@ real1_f QUnitClifford::ExpectationBitsFactorized(
     }
 
     return (real1_f)expectation;
+}
+
+real1_f QUnitClifford::ExpectationFloatsFactorized(
+    const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+{
+    if (weights.size() < bits.size()) {
+        throw std::invalid_argument(
+            "QUnitClifford::ExpectationFloatsFactorized() must supply at least twice as many weights as bits!");
+    }
+
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QUnitClifford::ExpectationFloatsFactorized parameter qubits vector values must be within allocated qubit "
+        "bounds!");
+
+    std::map<QStabilizerPtr, std::vector<bitLenInt>> qubitMap;
+    std::map<QStabilizerPtr, std::vector<real1_f>> weightMap;
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const CliffordShard& shard = shards[bits[i]];
+        qubitMap[shard.unit].push_back(shard.mapped);
+        weightMap[shard.unit].push_back(weights[i << 1U]);
+        weightMap[shard.unit].push_back(weights[(i << 1U) | 1U]);
+    }
+
+    real1_f expectation = ZERO_R1;
+    for (const auto& p : qubitMap) {
+        expectation += p.first->ExpectationFloatsFactorized(p.second, weightMap[p.first]);
+    }
+
+    return expectation;
 }
 
 real1_f QUnitClifford::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
