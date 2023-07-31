@@ -101,7 +101,7 @@ real1_f QUnitClifford::ExpectationBitsFactorized(
 real1_f QUnitClifford::ExpectationFloatsFactorized(
     const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
 {
-    if (weights.size() < bits.size()) {
+    if (weights.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
             "QUnitClifford::ExpectationFloatsFactorized() must supply at least twice as many weights as bits!");
     }

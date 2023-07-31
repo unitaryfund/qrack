@@ -2362,8 +2362,9 @@ public:
     virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
     {
         std::vector<bitCapInt> perms;
-        perms.reserve(bits.size());
+        perms.reserve(bits.size() << 1U);
         for (size_t i = 0U; i < bits.size(); ++i) {
+            perms.push_back(0U);
             perms.push_back(pow2(i));
         }
 
