@@ -1763,7 +1763,10 @@ void QStabilizerHybrid::CombineAncillae()
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
         clone->H(i);
         clone->ForceM(i, false);
-        for (size_t j = i + 1U; j < shards.size(); ++j) {
+        for (size_t j = qubitCount; j < shards.size(); ++j) {
+            if (i == j) {
+                continue;
+            }
             if (clone->Prob(j) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
                 clone->H(i);
