@@ -114,6 +114,33 @@ protected:
 
     void Init();
 
+    void RunNonClifford(
+        const std::vector<bitLenInt>& controls, complex top, complex bottom, bitLenInt target, bool isInvert)
+    {
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            Swap(i, controls[i]);
+        }
+        Swap(controls.size(), target);
+
+        std::vector<bitLenInt> c;
+        c.reserve(controls.size());
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            c.push_back(i);
+        }
+        if (isInvert) {
+            MCPhase(c, top, bottom, target);
+        } else {
+            MCInvert(c, top, bottom, target);
+        }
+
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            Swap(i, controls[i]);
+        }
+        Swap(controls.size(), target);
+
+        return;
+    }
+
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,

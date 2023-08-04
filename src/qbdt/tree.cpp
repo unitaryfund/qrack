@@ -17,6 +17,7 @@
 #include "qbdt_node.hpp"
 #include "qfactory.hpp"
 
+#define IS_REAL_1(r) (abs(ONE_CMPLX - r) <= FP_NORM_EPSILON)
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
     ((IS_REAL_1(std::real(top)) || IS_REAL_1(std::imag(bottom))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
@@ -1043,6 +1044,11 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
         return;
     }
 
+    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
+        RunNonClifford(controls, topLeft, bottomRight, target, false);
+        return;
+    }
+
     const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
         ApplyControlledSingle(mtrx, controls, target, false);
@@ -1067,6 +1073,11 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
 {
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
+        return;
+    }
+
+    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
+        RunNonClifford(controls, topRight, bottomLeft, target, true);
         return;
     }
 
