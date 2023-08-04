@@ -19,9 +19,6 @@
 #include "qbdt_node_interface.hpp"
 #include "qstabilizer.hpp"
 
-#define IS_0_PROB(p) (p < (ONE_R1 / 4))
-#define IS_1_PROB(p) (p > (3 * ONE_R1 / 4))
-
 namespace Qrack {
 
 class QBdtQStabilizerNode;
