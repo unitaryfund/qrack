@@ -16,10 +16,9 @@
 
 #pragma once
 
-#include "qbdt_qengine_node.hpp"
-#include "qengine.hpp"
+#include "qbdt_qstabilizer_node.hpp"
 
-#define NODE_TO_QENGINE(leaf) (std::dynamic_pointer_cast<QBdtQEngineNode>(leaf)->qReg)
+#define NODE_TO_QSTABILIZER(leaf) (std::dynamic_pointer_cast<QBdtQStabilizerNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
@@ -36,7 +35,6 @@ class QBdt : public QParity, public QInterface {
 protected:
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
-    bitLenInt maxPageQubits;
     bitLenInt bdtStride;
     int64_t devID;
     QBdtNodeInterfacePtr root;
@@ -57,11 +55,11 @@ protected:
         bdtMaxQPower = pow2(bdtQubitCount);
     }
 
-    QBdtQEngineNodePtr MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
+    QBdtQStabilizerNodePtr MakeQStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
     QInterfacePtr MakeTempStateVector()
     {
-        QInterfacePtr copyPtr = NODE_TO_QENGINE(MakeQEngineNode(ONE_R1, qubitCount));
+        QInterfacePtr copyPtr = NODE_TO_QSTABILIZER(MakeQStabilizerNode(ONE_R1, qubitCount));
         Finish();
         GetQuantumState(copyPtr);
 
@@ -74,23 +72,23 @@ protected:
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
         if (!bdtQubitCount) {
-            operation(NODE_TO_QENGINE(root));
+            operation(NODE_TO_QSTABILIZER(root));
             return;
         }
 
         SetStateVector();
-        operation(NODE_TO_QENGINE(root));
+        operation(NODE_TO_QSTABILIZER(root));
         ResetStateVector();
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
         if (!bdtQubitCount) {
-            return operation(NODE_TO_QENGINE(root));
+            return operation(NODE_TO_QSTABILIZER(root));
         }
 
         SetStateVector();
-        bitCapInt toRet = operation(NODE_TO_QENGINE(root));
+        bitCapInt toRet = operation(NODE_TO_QSTABILIZER(root));
         ResetStateVector();
 
         return toRet;
@@ -133,22 +131,22 @@ public:
     {
     }
 
-    QBdt(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ignored = 0U,
+    QBdt(QStabilizerPtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ignored = 0U,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QEnginePtr ReleaseEngine()
+    QStabilizerPtr ReleaseEngine()
     {
         if (bdtQubitCount) {
-            throw std::domain_error("Cannot release QEngine from QBdt with BDT qubits!");
+            throw std::domain_error("Cannot release QStabilizer from QBdt with BDT qubits!");
         }
 
-        return NODE_TO_QENGINE(root);
+        return NODE_TO_QSTABILIZER(root);
     }
 
-    void LockEngine(QEnginePtr eng) { root = std::make_shared<QBdtQEngineNode>(ONE_CMPLX, eng); }
+    void LockEngine(QStabilizerPtr eng) { root = std::make_shared<QBdtQStabilizerNode>(ONE_CMPLX, eng); }
 
     bool isBinaryDecisionTree() { return true; };
 
@@ -197,8 +195,8 @@ public:
     {
         QBdtPtr d = std::dynamic_pointer_cast<QBdt>(dest);
         if (!bdtQubitCount) {
-            d->root = d->MakeQEngineNode(ONE_CMPLX, d->qubitCount, 0U);
-            NODE_TO_QENGINE(root)->Decompose(start, NODE_TO_QENGINE(d->root));
+            d->root = d->MakeQStabilizerNode(ONE_CMPLX, d->qubitCount, 0U);
+            NODE_TO_QSTABILIZER(root)->Decompose(start, NODE_TO_QSTABILIZER(d->root));
             d->SetQubitCount(d->qubitCount, d->qubitCount);
             SetQubitCount(qubitCount - d->qubitCount, qubitCount - d->qubitCount);
 
@@ -211,7 +209,7 @@ public:
     void Dispose(bitLenInt start, bitLenInt length)
     {
         if (!bdtQubitCount) {
-            NODE_TO_QENGINE(root)->Dispose(start, length);
+            NODE_TO_QSTABILIZER(root)->Dispose(start, length);
             SetQubitCount(qubitCount - length, qubitCount - length);
 
             return;
@@ -223,7 +221,7 @@ public:
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
         if (!bdtQubitCount) {
-            NODE_TO_QENGINE(root)->Dispose(start, length, disposedPerm);
+            NODE_TO_QSTABILIZER(root)->Dispose(start, length, disposedPerm);
             SetQubitCount(qubitCount - length, qubitCount - length);
 
             return;
@@ -249,10 +247,7 @@ public:
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
 
-    void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
-    }
+    void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     real1_f ProbParity(bitCapInt mask)
     {
@@ -266,7 +261,7 @@ public:
 
         real1_f toRet;
         ExecuteAsStateVector(
-            [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(NODE_TO_QENGINE(root))->ProbParity(mask); });
+            [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(NODE_TO_QSTABILIZER(root))->ProbParity(mask); });
         return toRet;
     }
     void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
@@ -287,7 +282,7 @@ public:
         }
 
         SetStateVector();
-        return QINTERFACE_TO_QPARITY(NODE_TO_QENGINE(root))->ForceMParity(mask, result, doForce);
+        return QINTERFACE_TO_QPARITY(NODE_TO_QSTABILIZER(root))->ForceMParity(mask, result, doForce);
     }
 
 #if ENABLE_ALU

@@ -33,7 +33,7 @@ namespace Qrack {
 class QBdtNodeInterface;
 typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 
-class QBdtNodeInterface {
+class QBdtNodeInterface : public std::enable_shared_from_this<QBdtNodeInterface> {
 protected:
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
     static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
@@ -81,6 +81,8 @@ public:
     {
         // Virtual destructor for inheritance
     }
+
+    virtual bool IsStabilizer() { return false; }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U)
     {
@@ -166,6 +168,20 @@ public:
     {
         throw std::out_of_range("QBdtNodeInterface::PushSpecial() not implemented! (You probably called "
                                 "PushStateVector() past terminal depth.)");
+    }
+
+    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U)
+    {
+        if (!depth || (norm(scale) <= _qrack_qbdt_sep_thresh)) {
+            return shared_from_this();
+        }
+
+        --depth;
+
+        branches[0U] = branches[0U]->PopSpecial(depth);
+        branches[1U] = branches[1U]->PopSpecial(depth);
+
+        return shared_from_this();
     }
 };
 

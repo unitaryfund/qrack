@@ -28,7 +28,7 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  * A "Qrack::QPager" splits a "Qrack::QEngine" implementation into equal-length "pages." This helps both optimization
  * and distribution of a single coherent quantum register across multiple devices.
  */
-class QPager : public QEngine, public std::enable_shared_from_this<QEngine> {
+class QPager : public QEngine, public std::enable_shared_from_this<QPager> {
 protected:
     bool useGpuThreshold;
     bool isSparse;

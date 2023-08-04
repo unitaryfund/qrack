@@ -80,9 +80,9 @@ protected:
     }
 
 public:
-    QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr, complex ignored = CMPLX_DEFAULT_ARG,
-        bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false, int64_t ignored3 = -1,
-        bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
+    QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
+        int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
         std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
 
     ~QStabilizer() { Dump(); }
@@ -261,9 +261,6 @@ public:
 
     /// Measure qubit t
     bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
-
-    /// Get the phase radians of the lowest permutation nonzero amplitude
-    real1_f FirstNonzeroPhase();
 
     /// Convert the state to ket notation
     void GetQuantumState(complex* stateVec);
