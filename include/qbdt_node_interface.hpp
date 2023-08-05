@@ -42,15 +42,11 @@ public:
 #if ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
-        bitLenInt parDepth = 1U)
+        bitLenInt parDepth = 1U);
 #else
     virtual void PushStateVector(complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
-        bitLenInt depth, bitLenInt parDepth = 1U)
+        bitLenInt depth, bitLenInt parDepth = 1U);
 #endif
-    {
-        throw std::out_of_range("QBdtNodeInterface::PushStateVector() not implemented! (You probably set "
-                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
-    }
 
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
@@ -155,8 +151,7 @@ public:
     virtual void Apply2x2(complex const* mtrx, bitLenInt depth)
 #endif
     {
-        throw std::out_of_range("QBdtNodeInterface::Apply2x2() not implemented! (You probably set "
-                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+        throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }
 
 #if ENABLE_COMPLEX_X2

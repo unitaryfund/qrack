@@ -823,16 +823,14 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
             return;
         }
 
-        if (root->IsStabilizer()) {
-            root = root->PopSpecial();
-        }
+        root = root->PopSpecial();
     }
 
-    // if (!bdtQubitCount) {
-    //     NODE_TO_QSTABILIZER(root)->Mtrx(mtrx, target);
-    //
-    //     return;
-    // }
+    if (!bdtQubitCount) {
+        NODE_TO_QSTABILIZER(root)->Mtrx(mtrx, target);
+
+        return;
+    }
 
     const bool isKet = (target >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : target;
@@ -1018,7 +1016,22 @@ void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         MACInvert(controls, mtrx[1U], mtrx[2U], target);
     } else {
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            Swap(i, controls[i]);
+        }
+        Swap(controls.size(), target);
+
+        std::vector<bitLenInt> c;
+        c.reserve(controls.size());
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            c.push_back(i);
+        }
         ApplyControlledSingle(mtrx, controls, target, true);
+
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            Swap(i, controls[i]);
+        }
+        Swap(controls.size(), target);
     }
 }
 

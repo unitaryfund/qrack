@@ -24,16 +24,6 @@ class QBdtNode;
 typedef std::shared_ptr<QBdtNode> QBdtNodePtr;
 
 class QBdtNode : public QBdtNodeInterface {
-protected:
-#if ENABLE_COMPLEX_X2
-    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
-        bitLenInt parDepth = 1U);
-#else
-    virtual void PushStateVector(complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
-        bitLenInt depth, bitLenInt parDepth = 1U);
-#endif
-
 public:
     QBdtNode()
         : QBdtNodeInterface()
@@ -76,6 +66,25 @@ public:
 #else
     virtual void Apply2x2(complex const* mtrx, bitLenInt depth);
 #endif
+
+    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U)
+    {
+        if (!depth) {
+            return shared_from_this();
+        }
+
+        if (norm(scale) <= _qrack_qbdt_sep_thresh) {
+            SetZero();
+            return shared_from_this();
+        }
+
+        --depth;
+
+        branches[0U] = branches[0U]->PopSpecial(depth);
+        branches[1U] = branches[1U]->PopSpecial(depth);
+
+        return shared_from_this();
+    }
 };
 
 } // namespace Qrack
