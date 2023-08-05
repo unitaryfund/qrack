@@ -161,6 +161,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 
     // We need a Bell pair for teleportation, with one end on each side of the QBDT/stabilizer domain wall.
     // We allocate one end in the stabilizer simulator.
+    qReg = std::dynamic_pointer_cast<QStabilizer>(qReg->Clone());
     const bitLenInt aliceBellBit = qReg->GetQubitCount();
     qReg->Allocate(1U);
 
@@ -175,7 +176,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // We act CNOT from |+> control to |0> target.
     // (Notice, we act X gate in |1> branch and no gate in |0> branch.)
     qRegB1->X(aliceBellBit);
-    nRoot->Prune();
+    nRoot->Prune(2U);
     // This is the Bell pair "Eve" creates to distribute to "Alice" and "Bob," in quantum teleportation.
 
     // "Alice" prepares and sends a qubit to "Bob"; stabilizer prepares and sends a qubit to QBDT.
@@ -183,86 +184,79 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // Alice uses the "prepared state" qubit as the control of a CNOT on the Bell pair.
     qReg->CNOT(0U, aliceBellBit);
     qRegB1->CNOT(0U, aliceBellBit);
-    nRoot->Prune();
+    nRoot->Prune(2U);
 
     // Alice now measures both of her bits, and records the results.
 
     // First, measure Alice's "prepared state" bit.
-    const bool q0 = qReg->Rand() < ((qReg->Prob(0U) + qRegB1->Prob(0U)) / 2);
+    const real1 p01 = qReg->Prob(aliceBellBit);
+    const real1 p11 = qRegB1->Prob(aliceBellBit);
+    const bool q1 = qReg->Rand() < ((p01 + p11) / 2);
 
-    bool isB0 = false;
-    const real1 p00 = qReg->Prob(0U);
-    if (q0 && IS_0_PROB(p00)) {
-        b0->SetZero();
-    } else if (!q0 && IS_1_PROB(p00)) {
-        b0->SetZero();
+    bool isB0 = !((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)));
+    if (isB0) {
+        qReg->ForceM(aliceBellBit, q1);
+        qReg->Dispose(aliceBellBit, 1U);
     } else {
-        isB0 = true;
-        qReg->ForceM(0U, q0);
+        b0->SetZero();
     }
 
-    bool isB1 = false;
-    const real1 p10 = qRegB1->Prob(0U);
-    if (q0 && IS_0_PROB(p10)) {
-        b1->SetZero();
-    } else if (!q0 && IS_1_PROB(p10)) {
-        b1->SetZero();
+    bool isB1 = !((q1 && IS_0_PROB(p11)) || (!q1 && IS_1_PROB(p11)));
+    if (isB1) {
+        qRegB1->ForceM(aliceBellBit, q1);
+        qRegB1->Dispose(aliceBellBit, 1U);
     } else {
-        isB1 = true;
-        qRegB1->ForceM(0U, q0);
+        b1->SetZero();
     }
 
-    nRoot->Normalize();
-    nRoot->Prune();
+    nRoot->Prune(2U);
+    nRoot->Normalize(2U);
 
     // Next, measure Alice's Bell pair bit.
-    bool q1;
-    if (isB0 && isB1) {
-        q1 = qReg->Rand() < ((qReg->Prob(aliceBellBit) + qRegB1->Prob(aliceBellBit)) / 2);
-    } else if (isB0) {
-        q1 = qReg->Rand() < qReg->Prob(aliceBellBit);
-    } else {
-        q1 = qRegB1->Rand() < qRegB1->Prob(aliceBellBit);
+    const real1 p00 = isB0 ? qReg->Prob(0U) : qRegB1->Prob(0U);
+    const real1 p10 = isB1 ? qRegB1->Prob(0U) : qReg->Prob(0U);
+    const bool q0 = qReg->Rand() < ((p00 + p10) / 2);
+
+    if (isB0) {
+        if ((q0 && IS_0_PROB(p00)) || (!q0 && IS_1_PROB(p00))) {
+            b0->SetZero();
+        } else {
+            qReg->ForceM(0U, q0);
+            qReg->Dispose(0U, 1U);
+        }
     }
 
-    const real1 p01 = qReg->Prob(aliceBellBit);
-    if (q1 && IS_0_PROB(p01)) {
-        b0->SetZero();
-    } else if (!q1 && IS_1_PROB(p01)) {
-        b0->SetZero();
-    } else {
-        qReg->ForceM(aliceBellBit, q1);
+    if (isB1) {
+        if ((q0 && IS_0_PROB(p10)) || (!q0 && IS_1_PROB(p10))) {
+            b1->SetZero();
+        } else {
+            qRegB1->ForceM(0U, q0);
+            qRegB1->Dispose(0U, 1U);
+        }
     }
 
-    const real1 p11 = qRegB1->Prob(aliceBellBit);
-    if (q1 && IS_0_PROB(p11)) {
-        b1->SetZero();
-    } else if (!q1 && IS_1_PROB(p11)) {
-        b1->SetZero();
-    } else {
-        qRegB1->ForceM(aliceBellBit, q1);
-    }
-
-    nRoot->Normalize();
-    nRoot->Prune();
+    nRoot->Prune(2U);
+    nRoot->Normalize(2U);
 
     // Bob acts 0 to 2 corrective gates based upon Alice's measured bits.
     if (q0) {
         b1->scale = -b1->scale;
+        nRoot->Prune(2U);
     }
     if (q1) {
         std::swap(nRoot->branches[0U], nRoot->branches[1U]);
+        nRoot->Prune(2U);
         // WARNING: b0 and b1 are no longer valid, from here.
     }
-    nRoot->Prune();
 
     // This process might need to be repeated, recursively.
-    if (!IS_NORM_0(b0->scale)) {
+    if (!IS_NORM_0(nRoot->branches[0U]->scale)) {
         nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth);
     }
-    if (!IS_NORM_0(b1->scale)) {
+    if (!IS_NORM_0(nRoot->branches[1U]->scale)) {
         nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth);
     }
+    nRoot->Prune(2U);
 
     // We're done! Just return the replacement for "this" pointer.
     return nRoot;
