@@ -584,11 +584,11 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
                                 "depth, or root depth lacks method implementation.)");
     }
 
-    b0 = b0->PopSpecial();
-    b1 = b1->PopSpecial();
-
     b0->Branch();
     b1->Branch();
+
+    b0 = b0->PopSpecial();
+    b1 = b1->PopSpecial();
 
     // For parallelism, keep shared_ptr from deallocating.
     QBdtNodeInterfacePtr b00 = b0->branches[0U];
