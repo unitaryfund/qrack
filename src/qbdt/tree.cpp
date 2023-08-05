@@ -918,7 +918,8 @@ void QBdt::ApplyControlledSingle(
         return;
     }
 
-    if (!((IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && IS_CTRLED_CLIFFORD(mtrx[0U], mtrx[3U])) ||
+    if ((controls.size() > 1U) ||
+        !((IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && IS_CTRLED_CLIFFORD(mtrx[0U], mtrx[3U])) ||
             (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U]) && IS_CTRLED_CLIFFORD(mtrx[1U], mtrx[2U])))) {
         bool isOrdered = true;
         for (size_t i = 0U; i < controls.size(); ++i) {
