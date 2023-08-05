@@ -170,8 +170,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     const QStabilizerPtr qRegB1 = std::dynamic_pointer_cast<QStabilizer>(qReg->Clone());
     nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, qReg);
     nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, qRegB1);
-    const QBdtQStabilizerNodePtr& b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
-    const QBdtQStabilizerNodePtr& b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
+    QBdtNodeInterfacePtr& b0 = nRoot->branches[0U];
+    QBdtNodeInterfacePtr& b1 = nRoot->branches[1U];
 
     // We act CNOT from |+> control to |0> target.
     // (Notice, we act X gate in |1> branch and no gate in |0> branch.)
@@ -244,16 +244,16 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         nRoot->Prune(2U);
     }
     if (q1) {
-        std::swap(nRoot->branches[0U], nRoot->branches[1U]);
+        std::swap(b0, b1);
         nRoot->Prune(2U);
     }
 
     // This process might need to be repeated, recursively.
     if (!IS_NORM_0(b0->scale)) {
-        nRoot->branches[0U] = b0->PopSpecial(depth);
+        b0 = b0->PopSpecial(depth);
     }
     if (!IS_NORM_0(b1->scale)) {
-        nRoot->branches[1U] = b1->PopSpecial(depth);
+        b1 = b1->PopSpecial(depth);
     }
     nRoot->Prune(2U);
 

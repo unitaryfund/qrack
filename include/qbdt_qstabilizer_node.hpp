@@ -75,6 +75,11 @@ public:
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(
         bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U);
 
+    virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+    {
+        // Intentionally left blank
+    }
+
     virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U);
 };
 
