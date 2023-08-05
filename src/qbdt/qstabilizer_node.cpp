@@ -237,18 +237,18 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     }
 
     const real1 p01 = qReg->Prob(aliceBellBit);
-    if (q0 && IS_0_PROB(p01)) {
+    if (q1 && IS_0_PROB(p01)) {
         b0->SetZero();
-    } else if (!q0 && IS_1_PROB(p01)) {
+    } else if (!q1 && IS_1_PROB(p01)) {
         b0->SetZero();
     } else {
         qReg->ForceM(aliceBellBit, q1);
     }
 
     const real1 p11 = qRegB1->Prob(aliceBellBit);
-    if (q0 && IS_0_PROB(p11)) {
+    if (q1 && IS_0_PROB(p11)) {
         b1->SetZero();
-    } else if (!q0 && IS_1_PROB(p11)) {
+    } else if (!q1 && IS_1_PROB(p11)) {
         b1->SetZero();
     } else {
         qRegB1->ForceM(aliceBellBit, q1);
