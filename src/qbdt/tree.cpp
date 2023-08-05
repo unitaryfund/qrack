@@ -907,6 +907,41 @@ void QBdt::ApplyControlledSingle(
         return;
     }
 
+    if (!((IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && IS_CTRLED_CLIFFORD(mtrx[0U], mtrx[3U])) ||
+            (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U]) && IS_CTRLED_CLIFFORD(mtrx[1U], mtrx[2U])))) {
+        bool isOrdered = true;
+        for (size_t i = 0U; i < controls.size(); ++i) {
+            if (controls[i] != i) {
+                isOrdered = false;
+                break;
+            }
+        }
+        isOrdered &= target == controls.size();
+
+        if (!isOrdered) {
+            for (size_t i = 0U; i < controls.size(); ++i) {
+                Swap(i, controls[i]);
+            }
+            Swap(controls.size(), target);
+
+            std::vector<bitLenInt> c;
+            c.reserve(controls.size());
+            for (size_t i = 0U; i < controls.size(); ++i) {
+                c.push_back(i);
+            }
+            ApplyControlledSingle(mtrx, c, target, isAnti);
+
+            for (size_t i = 0U; i < controls.size(); ++i) {
+                Swap(i, controls[i]);
+            }
+            Swap(controls.size(), target);
+
+            return;
+        }
+
+        root = root->PopSpecial(controls.size() + 1U);
+    }
+
     std::vector<bitLenInt> controlVec(controls.begin(), controls.end());
     std::sort(controlVec.begin(), controlVec.end());
     const bool isSwapped = (target < controlVec.back()) && (target < bdtQubitCount);
