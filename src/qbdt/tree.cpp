@@ -49,7 +49,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 {
     Init();
 
-    SetQubitCount(qBitCount, qBitCount);
+    SetQubitCount(qBitCount, 0U);
 
     SetPermutation(initState);
 }
@@ -235,27 +235,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
         }
     }
 
-    if (!bdtQubitCount) {
-        root = MakeQStabilizerNode(phaseFac, attachedQubitCount, initState);
-
-        return;
-    }
-
-    const bitLenInt maxQubit = attachedQubitCount ? (bdtQubitCount - 1U) : bdtQubitCount;
-    root = std::make_shared<QBdtNode>(phaseFac);
-    QBdtNodeInterfacePtr leaf = root;
-    for (bitLenInt qubit = 0U; qubit < maxQubit; ++qubit) {
-        const size_t bit = SelectBit(initState, qubit);
-        leaf->branches[bit] = std::make_shared<QBdtNode>(ONE_CMPLX);
-        leaf->branches[bit ^ 1U] = std::make_shared<QBdtNode>(ZERO_CMPLX);
-        leaf = leaf->branches[bit];
-    }
-
-    if (attachedQubitCount) {
-        const size_t bit = SelectBit(initState, maxQubit);
-        leaf->branches[bit] = MakeQStabilizerNode(ONE_CMPLX, attachedQubitCount, initState >> bdtQubitCount);
-        leaf->branches[bit ^ 1U] = std::make_shared<QBdtQStabilizerNode>();
-    }
+    root = MakeQStabilizerNode(phaseFac, attachedQubitCount, initState);
 }
 
 QInterfacePtr QBdt::Clone()
