@@ -848,11 +848,11 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         }
     }
 
-    if (!bdtQubitCount) {
-        NODE_TO_QSTABILIZER(root)->Mtrx(mtrx, target);
-
-        return;
-    }
+    // if (!bdtQubitCount) {
+    //     NODE_TO_QSTABILIZER(root)->Mtrx(mtrx, target);
+    //
+    //     return;
+    // }
 
     const bool isKet = (target >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : target;

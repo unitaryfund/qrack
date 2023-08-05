@@ -17,8 +17,8 @@
 #include "qbdt_node.hpp"
 #include "qbdt_qstabilizer_node.hpp"
 
-#define IS_0_PROB(p) (p < (ONE_R1 / 8))
-#define IS_1_PROB(p) (p > (7 * ONE_R1 / 8))
+#define IS_0_PROB(p) (p < (ONE_R1 / 4))
+#define IS_1_PROB(p) (p > (3 * ONE_R1 / 4))
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
 
@@ -188,23 +188,27 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // Alice now measures both of her bits, and records the results.
 
     // First, measure Alice's "prepared state" bit.
-    const bool q0 = (qReg->Rand() < ((qReg->Prob(0U) + qRegB1->Prob(0U)) / 2));
+    const bool q0 = qReg->Rand() < ((qReg->Prob(0U) + qRegB1->Prob(0U)) / 2);
 
+    bool isB0 = false;
     const real1 p00 = qReg->Prob(0U);
     if (q0 && IS_0_PROB(p00)) {
         b0->SetZero();
     } else if (!q0 && IS_1_PROB(p00)) {
         b0->SetZero();
     } else {
+        isB0 = true;
         qReg->ForceM(0U, q0);
     }
 
+    bool isB1 = false;
     const real1 p10 = qRegB1->Prob(0U);
     if (q0 && IS_0_PROB(p10)) {
         b1->SetZero();
     } else if (!q0 && IS_1_PROB(p10)) {
         b1->SetZero();
     } else {
+        isB1 = true;
         qRegB1->ForceM(0U, q0);
     }
 
@@ -212,7 +216,14 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     nRoot->Prune();
 
     // Next, measure Alice's Bell pair bit.
-    const bool q1 = (qReg->Rand() < ((qReg->Prob(aliceBellBit) + qRegB1->Prob(aliceBellBit)) / 2));
+    bool q1;
+    if (isB0 && isB1) {
+        q1 = qReg->Rand() < ((qReg->Prob(aliceBellBit) + qRegB1->Prob(aliceBellBit)) / 2);
+    } else if (isB0) {
+        q1 = qReg->Rand() < qReg->Prob(aliceBellBit);
+    } else {
+        q1 = qRegB1->Rand() < qRegB1->Prob(aliceBellBit);
+    }
 
     const real1 p01 = qReg->Prob(aliceBellBit);
     if (q0 && IS_0_PROB(p01)) {
