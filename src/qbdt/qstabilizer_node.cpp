@@ -147,35 +147,16 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
     return toRet;
 }
 
-#if ENABLE_COMPLEX_X2
-void QBdtQStabilizerNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-    const complex2& mtrxColShuff2, bitLenInt depth)
-{
-    if (!depth) {
-        return;
-    }
-
-    --depth;
-
-    const complex mtrx[4U]{ mtrxCol1.c2[0U], mtrxCol2.c2[0U], mtrxCol1.c2[1U], mtrxCol2.c2[1U] };
-    qReg->Mtrx(mtrx, depth);
-
-    Prune(depth);
-}
-#else
 void QBdtQStabilizerNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 {
     if (!depth) {
         return;
     }
 
-    --depth;
+    qReg->Mtrx(mtrx, 0U);
 
-    qReg->Mtrx(mtrx, depth);
-
-    Prune(depth);
+    Prune();
 }
-#endif
 
 QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 {

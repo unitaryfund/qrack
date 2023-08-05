@@ -148,12 +148,12 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-#if ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, bitLenInt depth)
-#else
+    {
+        throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
+    }
     virtual void Apply2x2(complex const* mtrx, bitLenInt depth)
-#endif
     {
         throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }

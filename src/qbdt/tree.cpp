@@ -235,7 +235,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
         }
     }
 
-    root = MakeQStabilizerNode(phaseFac, attachedQubitCount, initState);
+    root = MakeQStabilizerNode(phaseFac, qubitCount, initState);
 }
 
 QInterfacePtr QBdt::Clone()
@@ -870,6 +870,8 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
             if (isKet) {
                 leaf->Branch();
                 NODE_TO_QSTABILIZER(leaf)->Mtrx(mtrx, target - bdtQubitCount);
+            } else if (leaf->IsStabilizer()) {
+                leaf->Apply2x2(mtrx, bdtQubitCount - target);
             } else {
 #if ENABLE_COMPLEX_X2
                 leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, bdtQubitCount - target);
@@ -1008,6 +1010,8 @@ void QBdt::ApplyControlledSingle(
                 } else {
                     qi->MCMtrx(ketControlsVec, mtrx, target - bdtQubitCount);
                 }
+            } else if (leaf->IsStabilizer()) {
+                leaf->Apply2x2(mtrx, bdtQubitCount - target);
             } else {
 #if ENABLE_COMPLEX_X2
                 leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, bdtQubitCount - target);

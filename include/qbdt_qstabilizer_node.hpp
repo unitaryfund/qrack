@@ -80,12 +80,7 @@ public:
         // Intentionally left blank
     }
 
-#if ENABLE_COMPLEX_X2
-    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-        const complex2& mtrxColShuff2, bitLenInt depth);
-#else
     virtual void Apply2x2(complex const* mtrx, bitLenInt depth);
-#endif
 
     virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U);
 };
