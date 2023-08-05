@@ -835,12 +835,17 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     }
 
     if (!IS_CLIFFORD(mtrx)) {
-        root = root->PopSpecial();
-        Swap(0U, target);
-        ApplySingle(mtrx, 0U);
-        Swap(0U, target);
+        if (target) {
+            Swap(0U, target);
+            ApplySingle(mtrx, 0U);
+            Swap(0U, target);
 
-        return;
+            return;
+        }
+
+        if (root->IsStabilizer()) {
+            root = root->PopSpecial();
+        }
     }
 
     if (!bdtQubitCount) {

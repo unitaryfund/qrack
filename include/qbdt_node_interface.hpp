@@ -172,16 +172,8 @@ public:
 
     virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U)
     {
-        if (!depth || (norm(scale) <= _qrack_qbdt_sep_thresh)) {
-            return shared_from_this();
-        }
-
-        --depth;
-
-        branches[0U] = branches[0U]->PopSpecial(depth);
-        branches[1U] = branches[1U]->PopSpecial(depth);
-
-        return shared_from_this();
+        throw std::out_of_range(
+            "QBdtNodeInterface::PopSpecial() not implemented! (Check IsStabilizer() before PopSpecial().)");
     }
 };
 
