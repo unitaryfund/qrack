@@ -147,17 +147,6 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
     return toRet;
 }
 
-void QBdtQStabilizerNode::Apply2x2(complex const* mtrx, bitLenInt depth)
-{
-    if (!depth) {
-        return;
-    }
-
-    qReg->Mtrx(mtrx, 0U);
-
-    Prune();
-}
-
 QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 {
     if (!depth || IS_NODE_0(scale)) {

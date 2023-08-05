@@ -80,8 +80,6 @@ public:
         // Intentionally left blank
     }
 
-    virtual void Apply2x2(complex const* mtrx, bitLenInt depth);
-
     virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U);
 };
 

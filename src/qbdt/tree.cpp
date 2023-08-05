@@ -772,6 +772,10 @@ bitCapInt QBdt::MAll()
     Finish();
 
     for (bitLenInt i = 0U; i < bdtQubitCount; ++i) {
+        if (leaf->IsStabilizer()) {
+            result |= NODE_TO_QSTABILIZER(leaf)->MAll() << i;
+            break;
+        }
         leaf->Branch();
         real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1U]->scale));
         bool bitResult;
@@ -853,10 +857,14 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 #endif
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
-            for (bitLenInt j = 0U; j < maxQubit; ++j) {
+            bitLenInt j;
+            for (j = 0U; j < maxQubit; ++j) {
                 if (IS_NODE_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
+                }
+                if (leaf->IsStabilizer()) {
+                    break;
                 }
                 leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
             }
@@ -871,7 +879,8 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
                 leaf->Branch();
                 NODE_TO_QSTABILIZER(leaf)->Mtrx(mtrx, target - bdtQubitCount);
             } else if (leaf->IsStabilizer()) {
-                leaf->Apply2x2(mtrx, bdtQubitCount - target);
+                leaf->Branch();
+                NODE_TO_QSTABILIZER(leaf)->Mtrx(mtrx, target - j);
             } else {
 #if ENABLE_COMPLEX_X2
                 leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, bdtQubitCount - target);
@@ -988,10 +997,14 @@ void QBdt::ApplyControlledSingle(
 
             QBdtNodeInterfacePtr leaf = root;
             // Iterate to qubit depth.
-            for (bitLenInt j = 0U; j < maxQubit; ++j) {
+            bitLenInt j;
+            for (j = 0U; j < maxQubit; ++j) {
                 if (IS_NODE_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
+                }
+                if (leaf->IsStabilizer()) {
+                    break;
                 }
                 leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
             }
@@ -1009,6 +1022,14 @@ void QBdt::ApplyControlledSingle(
                     qi->MACMtrx(ketControlsVec, mtrx, target - bdtQubitCount);
                 } else {
                     qi->MCMtrx(ketControlsVec, mtrx, target - bdtQubitCount);
+                }
+            } else if (leaf->IsStabilizer()) {
+                leaf->Branch();
+                QStabilizerPtr qi = NODE_TO_QSTABILIZER(leaf);
+                if (isAnti) {
+                    qi->MACMtrx(ketControlsVec, mtrx, target - j);
+                } else {
+                    qi->MCMtrx(ketControlsVec, mtrx, target - j);
                 }
             } else if (leaf->IsStabilizer()) {
                 leaf->Apply2x2(mtrx, bdtQubitCount - target);
