@@ -161,7 +161,6 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 
     // We need a Bell pair for teleportation, with one end on each side of the QBDT/stabilizer domain wall.
     // We allocate one end in the stabilizer simulator.
-    qReg = std::dynamic_pointer_cast<QStabilizer>(qReg->Clone());
     const bitLenInt aliceBellBit = qReg->GetQubitCount();
     qReg->Allocate(1U);
 
