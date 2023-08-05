@@ -1031,8 +1031,6 @@ void QBdt::ApplyControlledSingle(
                 } else {
                     qi->MCMtrx(ketControlsVec, mtrx, target - j);
                 }
-            } else if (leaf->IsStabilizer()) {
-                leaf->Apply2x2(mtrx, bdtQubitCount - target);
             } else {
 #if ENABLE_COMPLEX_X2
                 leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, bdtQubitCount - target);
