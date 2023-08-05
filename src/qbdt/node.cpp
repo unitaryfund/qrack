@@ -527,11 +527,128 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, cons
         return;
     }
 
-    branches[0U] = branches[0U]->PopSpecial();
-    branches[1U] = branches[1U]->PopSpecial();
-
     PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, branches[0U], branches[1U], depth);
     Prune(depth);
+}
+
+void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+    const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
+    bitLenInt parDepth)
+{
+    std::lock(b0->mtx, b1->mtx);
+    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+    const bool isB0Zero = IS_NODE_0(b0->scale);
+    const bool isB1Zero = IS_NODE_0(b1->scale);
+
+    if (isB0Zero && isB1Zero) {
+        b0->SetZero();
+        b1->SetZero();
+
+        return;
+    }
+
+    if (isB0Zero) {
+        b0 = b1->ShallowClone();
+        b0->scale = ZERO_CMPLX;
+    }
+
+    if (isB1Zero) {
+        b1 = b0->ShallowClone();
+        b1->scale = ZERO_CMPLX;
+    }
+
+    // TODO: If the shuffled columns are passed in, much work can be avoided.
+
+    if (isB0Zero || isB1Zero) {
+        complex2 qubit(b0->scale, b1->scale);
+        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
+        b0->scale = qubit.c(0U);
+        b1->scale = qubit.c(1U);
+
+        return;
+    }
+
+    if (b0->isEqualUnder(b1)) {
+        complex2 qubit(b0->scale, b1->scale);
+        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
+        b0->scale = qubit.c(0U);
+        b1->scale = qubit.c(1U);
+
+        return;
+    }
+
+    if (!depth) {
+        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
+                                "depth, or root depth lacks method implementation.)");
+    }
+
+    b0 = b0->PopSpecial();
+    b1 = b1->PopSpecial();
+
+    b0->Branch();
+    b1->Branch();
+
+    // For parallelism, keep shared_ptr from deallocating.
+    QBdtNodeInterfacePtr b00 = b0->branches[0U];
+    QBdtNodeInterfacePtr b01 = b0->branches[1U];
+    QBdtNodeInterfacePtr b10 = b1->branches[0U];
+    QBdtNodeInterfacePtr b11 = b1->branches[1U];
+
+    if (!b00) {
+        b0->PushSpecial(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b1);
+
+        b0->PopStateVector();
+        b1->PopStateVector();
+
+        return;
+    }
+
+    if (true) {
+        std::lock(b00->mtx, b01->mtx);
+        std::lock_guard<std::mutex> lock0(b00->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b01->mtx, std::adopt_lock);
+        b00->scale *= b0->scale;
+        b01->scale *= b0->scale;
+    }
+    b0->scale = SQRT1_2_R1;
+
+    if (true) {
+        std::lock(b10->mtx, b11->mtx);
+        std::lock_guard<std::mutex> lock0(b10->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b11->mtx, std::adopt_lock);
+        b10->scale *= b1->scale;
+        b11->scale *= b1->scale;
+    }
+    b1->scale = SQRT1_2_R1;
+
+    --depth;
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+        ++parDepth;
+
+        std::future<void> future0 = std::async(std::launch::async, [&] {
+            b0->PushStateVector(
+                mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth, parDepth);
+        });
+        b1->PushStateVector(
+            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth, parDepth);
+
+        future0.get();
+    } else {
+        b0->PushStateVector(
+            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth, parDepth);
+        b1->PushStateVector(
+            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth, parDepth);
+    }
+#else
+    b0->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth);
+    b1->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth);
+#endif
+
+    b0->PopStateVector();
+    b1->PopStateVector();
 }
 #else
 void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
@@ -576,6 +693,117 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
     PushStateVector(mtrx, branches[0U], branches[1U], depth);
     Prune(depth);
 }
+
+void QBdtNode::PushStateVector(
+    complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
+{
+    std::lock(b0->mtx, b1->mtx);
+    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+
+    const bool isB0Zero = IS_NODE_0(b0->scale);
+    const bool isB1Zero = IS_NODE_0(b1->scale);
+
+    if (isB0Zero && isB1Zero) {
+        b0->SetZero();
+        b1->SetZero();
+
+        return;
+    }
+
+    if (isB0Zero) {
+        b0 = b1->ShallowClone();
+        b0->scale = ZERO_CMPLX;
+    }
+
+    if (isB1Zero) {
+        b1 = b0->ShallowClone();
+        b1->scale = ZERO_CMPLX;
+    }
+
+    if (isB0Zero || isB1Zero) {
+        const complex Y0 = b0->scale;
+        const complex Y1 = b1->scale;
+        b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
+        b1->scale = mtrx[2U] * Y0 + mtrx[3U] * Y1;
+
+        return;
+    }
+
+    if (b0->isEqualUnder(b1)) {
+        const complex Y0 = b0->scale;
+        const complex Y1 = b1->scale;
+        b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
+        b1->scale = mtrx[2U] * Y0 + mtrx[3U] * Y1;
+
+        return;
+    }
+
+    if (!depth) {
+        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
+                                "depth, or root depth lacks method implementation.)");
+    }
+
+    b0 = b0->PopSpecial();
+    b1 = b1->PopSpecial();
+
+    b0->Branch();
+    b1->Branch();
+
+    // For parallelism, keep shared_ptr from deallocating.
+    QBdtNodeInterfacePtr b00 = b0->branches[0U];
+    QBdtNodeInterfacePtr b01 = b0->branches[1U];
+    QBdtNodeInterfacePtr b10 = b1->branches[0U];
+    QBdtNodeInterfacePtr b11 = b1->branches[1U];
+
+    if (!b00) {
+        b0->PushSpecial(mtrx, b1);
+
+        b0->PopStateVector();
+        b1->PopStateVector();
+
+        return;
+    }
+
+    if (true) {
+        std::lock(b00->mtx, b01->mtx);
+        std::lock_guard<std::mutex> lock0(b00->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b01->mtx, std::adopt_lock);
+        b00->scale *= b0->scale;
+        b01->scale *= b0->scale;
+    }
+    b0->scale = SQRT1_2_R1;
+
+    if (true) {
+        std::lock(b10->mtx, b11->mtx);
+        std::lock_guard<std::mutex> lock0(b10->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b11->mtx, std::adopt_lock);
+        b10->scale *= b1->scale;
+        b11->scale *= b1->scale;
+    }
+    b1->scale = SQRT1_2_R1;
+
+    --depth;
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+        ++parDepth;
+
+        std::future<void> future0 = std::async(std::launch::async,
+            [&] { b0->PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth); });
+        b1->PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
+
+        future0.get();
+    } else {
+        b0->PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth);
+        b1->PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
+    }
+#else
+    b0->PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth);
+    b1->PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth);
 #endif
 
+    b0->PopStateVector();
+    b1->PopStateVector();
+}
+#endif
 } // namespace Qrack

@@ -1016,22 +1016,7 @@ void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         MACInvert(controls, mtrx[1U], mtrx[2U], target);
     } else {
-        for (size_t i = 0U; i < controls.size(); ++i) {
-            Swap(i, controls[i]);
-        }
-        Swap(controls.size(), target);
-
-        std::vector<bitLenInt> c;
-        c.reserve(controls.size());
-        for (size_t i = 0U; i < controls.size(); ++i) {
-            c.push_back(i);
-        }
         ApplyControlledSingle(mtrx, controls, target, true);
-
-        for (size_t i = 0U; i < controls.size(); ++i) {
-            Swap(i, controls[i]);
-        }
-        Swap(controls.size(), target);
     }
 }
 
@@ -1039,11 +1024,6 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
 {
     if (!controls.size()) {
         Phase(topLeft, bottomRight, target);
-        return;
-    }
-
-    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
-        RunNonClifford(controls, topLeft, bottomRight, target, false);
         return;
     }
 
@@ -1071,11 +1051,6 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
 {
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
-        return;
-    }
-
-    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
-        RunNonClifford(controls, topRight, bottomLeft, target, true);
         return;
     }
 
