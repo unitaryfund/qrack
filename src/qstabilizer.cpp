@@ -1116,7 +1116,9 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         // Set Zbar_p := Z_b
         rowset(p + n, t + n);
 
+        // Set the new stabilizer result phase
         r[p + n] = result ? 2U : 0U;
+
         // Now update the Xbar's and Zbar's that don't commute with Z_b
         for (bitLenInt i = 0U; i < p; ++i) {
             if (x[i][t]) {
