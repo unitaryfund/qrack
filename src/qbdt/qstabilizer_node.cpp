@@ -165,7 +165,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     const bitLenInt aliceBellBit = qReg->GetQubitCount();
     qReg->Allocate(1U);
 
-    // Creating an "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
+    // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
     // qubit reset to |+>, (or effectively |0> followed by H gate).
     const QStabilizerPtr qRegB1 = std::dynamic_pointer_cast<QStabilizer>(qReg->Clone());
     nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, qReg);
@@ -246,15 +246,14 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     if (q1) {
         std::swap(nRoot->branches[0U], nRoot->branches[1U]);
         nRoot->Prune(2U);
-        // WARNING: b0 and b1 are no longer valid, from here.
     }
 
     // This process might need to be repeated, recursively.
-    if (!IS_NORM_0(nRoot->branches[0U]->scale)) {
-        nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth);
+    if (!IS_NORM_0(b0->scale)) {
+        nRoot->branches[0U] = b0->PopSpecial(depth);
     }
-    if (!IS_NORM_0(nRoot->branches[1U]->scale)) {
-        nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth);
+    if (!IS_NORM_0(b1->scale)) {
+        nRoot->branches[1U] = b1->PopSpecial(depth);
     }
     nRoot->Prune(2U);
 
