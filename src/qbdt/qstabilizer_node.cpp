@@ -206,7 +206,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // First, measure Alice's Bell pair bit.
     const real1 p01 = qReg0->Prob(aliceBellBit);
     const real1 p11 = qReg1->Prob(aliceBellBit);
-    const bool q1 = qReg->Rand() > (ONE_R1 / 8);
+    const bool q1 = qReg->Rand() < ((p01 + p11) / 2);
 
     bool isB0 = !((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)));
     if (isB0) {
@@ -233,7 +233,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // Next, measure Alice's "prepared state" bit.
     const real1 p00 = isB0 ? qReg0->Prob(0U) : qReg1->Prob(0U);
     const real1 p10 = isB1 ? qReg1->Prob(0U) : qReg0->Prob(0U);
-    const bool q0 = ((p00 + p10) / 2) > (ONE_R1 / 8);
+    const bool q0 = qReg->Rand() < ((p00 + p10) / 2);
 
     if (isB0) {
         if ((q0 && IS_0_PROB(p00)) || (!q0 && IS_1_PROB(p00))) {
