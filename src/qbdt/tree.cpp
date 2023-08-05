@@ -927,7 +927,7 @@ void QBdt::ApplyControlledSingle(
                 break;
             }
         }
-        isOrdered &= target == controls.size();
+        isOrdered = isOrdered && (target == controls.size());
 
         if (!isOrdered) {
             for (size_t i = 0U; i < controls.size(); ++i) {
@@ -940,7 +940,7 @@ void QBdt::ApplyControlledSingle(
             for (size_t i = 0U; i < controls.size(); ++i) {
                 c.push_back(i);
             }
-            ApplyControlledSingle(mtrx, c, target, isAnti);
+            ApplyControlledSingle(mtrx, c, c.size(), isAnti);
 
             for (size_t i = 0U; i < controls.size(); ++i) {
                 Swap(i, controls[i]);
