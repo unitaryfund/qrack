@@ -491,7 +491,7 @@ complex QBdt::GetAmplitude(bitCapInt perm)
     }
 
     if (!IS_NODE_0(leaf->scale) && (j < bdtQubitCount)) {
-        scale *= NODE_TO_QSTABILIZER(leaf)->GetAmplitude(perm >> j));
+        scale *= NODE_TO_QSTABILIZER(leaf)->GetAmplitude(perm >> j);
     }
 
     if (!IS_NODE_0(leaf->scale) && attachedQubitCount) {
