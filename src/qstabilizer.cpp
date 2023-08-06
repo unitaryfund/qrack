@@ -1090,25 +1090,6 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         return result;
     }
 
-    uint8_t phaseFac = 0U;
-    if (!randGlobalPhase && IsSeparableX(t)) {
-        for (phaseFac = 0U; phaseFac < 4U; ++phaseFac) {
-            H(t);
-            const bool isZero = IsSeparableZ(t) && M(t);
-            H(t);
-
-            if (isZero) {
-                break;
-            }
-
-            IS(t);
-        }
-
-        for (size_t i = 0U; i < phaseFac; ++i) {
-            S(t);
-        }
-    }
-
     Finish();
 
     const bitLenInt elemCount = qubitCount << 1U;
@@ -1137,6 +1118,8 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             return result;
         }
 
+        uint8_t phaseFac = ((r[p] - r[p + n]) + (r[p] - r[t + n])) & 3U;
+
         // Set Xbar_p := Zbar_p
         rowcopy(p, p + n);
         // Set Zbar_p := Z_b
@@ -1161,10 +1144,8 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             }
         }
 
-        if (!randGlobalPhase && result) {
-            for (size_t i = 0U; i < phaseFac; ++i) {
-                S(t);
-            }
+        if (!randGlobalPhase) {
+            phaseOffset *= pow(I_CMPLX, phaseFac);
         }
 
         return result;
