@@ -201,32 +201,70 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
-    // Alice would now measure both of her bits, and record the results.
-    // Bob would act 0 to 2 corrective gates based upon Alice's measured bits.
-    // However, we want to avoid measurement. (Our stabilizer simulation isn't aware of phase with mid-circuit measurement.)
-    // Instead, we can just do the entire algorithm in a unitary manner!
+    // Alice now measures both of her bits, and records the results.
 
-    // Bob controls his (C)Z correction with Alice's "prepared state" bit.
-    qReg1->Z(0U);
-    nRoot->Prune(2U);
-    nRoot->Normalize(2U);
+    // First, measure Alice's Bell pair bit.
+    const real1 p01 = qReg0->Prob(aliceBellBit);
+    const real1 p11 = qReg1->Prob(aliceBellBit);
+    const bool q1 = qReg->Rand() < ((p01 + p11) / 2);
 
-    qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+    bool isB0 = !((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)));
+    if (isB0) {
+        qReg0->ForceM(aliceBellBit, q1);
+        qReg0->Dispose(aliceBellBit, 1U);
+    } else {
+        b0->SetZero();
+    }
 
-    // TODO: The CX gate is backwards.
+    bool isB1 = !((q1 && IS_0_PROB(p11)) || (!q1 && IS_1_PROB(p11)));
+    if (isB1) {
+        qReg1->ForceM(aliceBellBit, q1);
+        qReg1->Dispose(aliceBellBit, 1U);
+    } else {
+        b1->SetZero();
+    }
 
-    // Bob controls his (C)X correction with Alice's "prepared state" bit.
-    qReg1->X(aliceBellBit);
     nRoot->Prune(2U);
     nRoot->Normalize(2U);
 
     qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
-    qReg0->Dispose(aliceBellBit, 1U);
-    qReg1->Dispose(aliceBellBit, 1U);
-    qReg0->Dispose(0U, 1U);
-    qReg1->Dispose(0U, 1U);
+    // Next, measure Alice's "prepared state" bit.
+    const real1 p00 = isB0 ? qReg0->Prob(0U) : qReg1->Prob(0U);
+    const real1 p10 = isB1 ? qReg1->Prob(0U) : qReg0->Prob(0U);
+    const bool q0 = qReg->Rand() < ((p00 + p10) / 2);
+
+    if (isB0) {
+        if ((q0 && IS_0_PROB(p00)) || (!q0 && IS_1_PROB(p00))) {
+            b0->SetZero();
+        } else {
+            qReg0->ForceM(0U, q0);
+            qReg0->Dispose(0U, 1U);
+        }
+    }
+
+    if (isB1) {
+        if ((q0 && IS_0_PROB(p10)) || (!q0 && IS_1_PROB(p10))) {
+            b1->SetZero();
+        } else {
+            qReg1->ForceM(0U, q0);
+            qReg1->Dispose(0U, 1U);
+        }
+    }
+
+    nRoot->Prune(2U);
+    nRoot->Normalize(2U);
+
+    // Bob acts 0 to 2 corrective gates based upon Alice's measured bits.
+    if (q0) {
+        b1->scale = -b1->scale;
+        nRoot->Prune();
+    }
+    if (q1) {
+        std::swap(b0, b1);
+        nRoot->Prune();
+    }
 
     // This process might need to be repeated, recursively.
     if (!IS_NORM_0(b0->scale)) {
