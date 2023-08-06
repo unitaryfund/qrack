@@ -1111,7 +1111,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             return result;
         }
 
-        const uint8_t phaseFac = r[p + n];
+        const uint8_t phaseFac = r[p] - r[p + n];
 
         // Set Xbar_p := Zbar_p
         rowcopy(p, p + n);
