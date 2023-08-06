@@ -36,17 +36,24 @@
 
 namespace Qrack {
 
-QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, complex ignored, bool doNorm,
+QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool ignored2, int64_t ignored3, bool useHardwareRNG, bool ignored4, real1_f ignored5,
     std::vector<int64_t> ignored6, bitLenInt ignored7, real1_f ignored8)
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , rawRandBools(0U)
     , rawRandBoolsRemaining(0U)
-    , phaseOffset(ONE_CMPLX)
     , r((n << 1U) + 1U)
     , x((n << 1U) + 1U, BoolVector(n))
     , z((n << 1U) + 1U, BoolVector(n))
 {
+    if (phaseFac != CMPLX_DEFAULT_ARG) {
+        phaseOffset = phaseFac;
+    } else if (randGlobalPhase) {
+        phaseOffset = std::polar(ONE_R1, 2 * PI_R1 * Rand());
+    } else {
+        phaseOffset = ONE_CMPLX;
+    }
+
     SetPermutation(perm);
 }
 
@@ -331,40 +338,6 @@ real1_f QStabilizer::getExpectation(
 
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
-
-/// Get the phase radians of the lowest permutation nonzero amplitude
-real1_f QStabilizer::FirstNonzeroPhase()
-{
-    Finish();
-
-    // log_2 of number of nonzero basis states
-    const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
-    const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
-
-    seed(g);
-
-    const AmplitudeEntry entry0 = getBasisAmp(nrm);
-    if (entry0.amplitude != ZERO_CMPLX) {
-        return (real1_f)std::arg(entry0.amplitude);
-    }
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
-                rowmult(elemCount, qubitCount + i);
-            }
-        }
-        const AmplitudeEntry entry = getBasisAmp(nrm);
-        if (entry.amplitude != ZERO_CMPLX) {
-            return (real1_f)std::arg(entry.amplitude);
-        }
-    }
-
-    return ZERO_R1_F;
-}
 
 /// Convert the state to ket notation (warning: could be huge!)
 void QStabilizer::GetQuantumState(complex* stateVec)
@@ -1117,6 +1090,25 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         return result;
     }
 
+    uint8_t phaseFac = 0U;
+    if (!randGlobalPhase && IsSeparableX(t)) {
+        for (phaseFac = 0U; phaseFac < 4U; ++phaseFac) {
+            H(t);
+            const bool isZero = IsSeparableZ(t) && M(t);
+            H(t);
+
+            if (isZero) {
+                break;
+            }
+
+            IS(t);
+        }
+
+        for (size_t i = 0U; i < phaseFac; ++i) {
+            S(t);
+        }
+    }
+
     Finish();
 
     const bitLenInt elemCount = qubitCount << 1U;
@@ -1150,7 +1142,12 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         // Set Zbar_p := Z_b
         rowset(p + n, t + n);
 
+        // Set the new stabilizer result phase
         r[p + n] = result ? 2U : 0U;
+        if (result) {
+            phaseFac = (phaseFac + 2U) & 3U;
+        }
+
         // Now update the Xbar's and Zbar's that don't commute with Z_b
         for (bitLenInt i = 0U; i < p; ++i) {
             if (x[i][t]) {
@@ -1161,6 +1158,12 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         for (bitLenInt i = p + 1U; i < elemCount; ++i) {
             if (x[i][t]) {
                 rowmult(i, p);
+            }
+        }
+
+        if (!randGlobalPhase && result) {
+            for (size_t i = 0U; i < phaseFac; ++i) {
+                S(t);
             }
         }
 
