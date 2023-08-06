@@ -447,8 +447,12 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0U; j < qubit; ++j) {
+        bitLenInt j;
+        for (j = 0U; j < qubit; ++j) {
             if (IS_NODE_0(leaf->scale)) {
+                break;
+            }
+            if (leaf->IsStabilizer()) {
                 break;
             }
             leaf->Branch();
@@ -462,6 +466,23 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
 
         leaf->Branch();
+
+        if (leaf->IsStabilizer()) {
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+            if (result) {
+                if (qReg->Prob(qubit - j) < (ONE_R1 / 4)) {
+                    leaf->SetZero();
+                } else {
+                    qReg->ForceM(qubit - j, true);
+                }
+            } else {
+                if (qReg->Prob(qubit - j) > (3 * ONE_R1 / 4)) {
+                    leaf->SetZero();
+                } else {
+                    qReg->ForceM(qubit - j, false);
+                }
+            }
+        }
 
         QBdtNodeInterfacePtr& b0 = leaf->branches[0U];
         QBdtNodeInterfacePtr& b1 = leaf->branches[1U];
