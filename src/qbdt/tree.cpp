@@ -382,8 +382,12 @@ real1_f QBdt::Prob(bitLenInt qubit)
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
-        for (bitLenInt j = 0U; j < qubit; ++j) {
+        bitLenInt j;
+        for (j = 0U; j < qubit; ++j) {
             if (IS_NODE_0(leaf->scale)) {
+                break;
+            }
+            if (leaf->IsStabilizer()) {
                 break;
             }
             leaf = leaf->branches[SelectBit(i, j)];
@@ -391,6 +395,11 @@ real1_f QBdt::Prob(bitLenInt qubit)
         }
 
         if (IS_NODE_0(leaf->scale)) {
+            return;
+        }
+
+        if (leaf->IsStabilizer()) {
+            oneChanceBuff[cpu] += norm(scale) * NODE_TO_STABILIZER(leaf)->Prob(qubit - j);
             return;
         }
 
@@ -415,6 +424,9 @@ real1_f QBdt::ProbAll(bitCapInt perm)
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         if (IS_NODE_0(leaf->scale)) {
             break;
+        }
+        if (leaf->IsStabilizer()) {
+            return clampProb(norm(scale) * NODE_TO_STABILIZER(leaf)->ProbAll(perm >> j));
         }
         leaf = leaf->branches[SelectBit(perm, j)];
         scale *= leaf->scale;
