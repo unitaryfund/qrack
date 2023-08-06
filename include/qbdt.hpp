@@ -16,7 +16,9 @@
 
 #pragma once
 
+#include "qbdt_node.hpp"
 #include "qbdt_qstabilizer_node.hpp"
+#include "qengine.hpp"
 
 #define NODE_TO_STABILIZER(leaf) (std::dynamic_pointer_cast<QBdtQStabilizerNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
@@ -33,8 +35,6 @@ class QBdt : public QAlu, public QParity, public QInterface {
 class QBdt : public QParity, public QInterface {
 #endif
 protected:
-    bitLenInt attachedQubitCount;
-    bitLenInt bdtQubitCount;
     bitLenInt bdtStride;
     int64_t devID;
     QBdtNodeInterfacePtr root;
@@ -42,54 +42,62 @@ protected:
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
 
-    void SetQubitCount(bitLenInt qb, bitLenInt aqb)
-    {
-        attachedQubitCount = aqb;
-        SetQubitCount(qb);
-    }
-
-    void SetQubitCount(bitLenInt qb)
-    {
-        QInterface::SetQubitCount(qb);
-        bdtQubitCount = qubitCount - attachedQubitCount;
-        bdtMaxQPower = pow2(bdtQubitCount);
-    }
-
     QBdtQStabilizerNodePtr MakeQStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
+    QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = 0U);
 
-    QInterfacePtr MakeTempStateVector()
+    template <typename Fn> void GetTraversal(Fn getLambda)
     {
-        QInterfacePtr copyPtr = NODE_TO_STABILIZER(MakeQStabilizerNode(ONE_R1, qubitCount));
         Finish();
-        GetQuantumState(copyPtr);
 
-        // If the calling function fully deferences our return, it's automatically freed.
-        return copyPtr;
+        for (bitCapInt i = 0U; i < maxQPower; ++i) {
+            QBdtNodeInterfacePtr leaf = root;
+            complex scale = leaf->scale;
+            for (bitLenInt j = 0U; j < qubitCount; ++j) {
+                if (norm(leaf->scale) <= _qrack_qbdt_sep_thresh) {
+                    break;
+                }
+                leaf = leaf->branches[SelectBit(i, j)];
+                scale *= leaf->scale;
+            }
+
+            getLambda((bitCapIntOcl)i, scale);
+        }
     }
+    template <typename Fn> void SetTraversal(Fn setLambda)
+    {
+        Dump();
 
-    template <typename Fn> void GetTraversal(Fn getLambda);
-    template <typename Fn> void SetTraversal(Fn setLambda);
+        root = std::make_shared<QBdtNode>();
+        root->Branch(qubitCount);
+
+        _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
+            QBdtNodeInterfacePtr prevLeaf = root;
+            QBdtNodeInterfacePtr leaf = root;
+            for (bitLenInt j = 0U; j < qubitCount; ++j) {
+                prevLeaf = leaf;
+                leaf = leaf->branches[SelectBit(i, j)];
+            }
+
+            setLambda((bitCapIntOcl)i, leaf);
+        });
+
+        root->PopStateVector(qubitCount);
+        root->Prune(qubitCount);
+    }
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
-        if (!bdtQubitCount) {
-            operation(NODE_TO_STABILIZER(root));
-            return;
-        }
-
-        SetStateVector();
-        operation(NODE_TO_STABILIZER(root));
-        ResetStateVector();
+        QInterfacePtr qReg = MakeQEngine(qubitCount);
+        GetQuantumState(qReg);
+        operation(qReg);
+        SetQuantumState(qReg);
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
-        if (!bdtQubitCount) {
-            return operation(NODE_TO_STABILIZER(root));
-        }
-
-        SetStateVector();
-        bitCapInt toRet = operation(NODE_TO_STABILIZER(root));
-        ResetStateVector();
+        QInterfacePtr qReg = MakeQEngine(qubitCount);
+        GetQuantumState(qReg);
+        const bitCapInt toRet = operation(qReg);
+        SetQuantumState(qReg);
 
         return toRet;
     }
@@ -131,29 +139,9 @@ public:
     {
     }
 
-    QBdt(QUnitCliffordPtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ignored = 0U,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
-        bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
-        bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
-
-    QUnitCliffordPtr ReleaseEngine()
-    {
-        if (bdtQubitCount) {
-            throw std::domain_error("Cannot release QStabilizer from QBdt with BDT qubits!");
-        }
-
-        return NODE_TO_STABILIZER(root);
-    }
-
-    void LockEngine(QUnitCliffordPtr eng) { root = std::make_shared<QBdtQStabilizerNode>(ONE_CMPLX, eng); }
-
     bool isBinaryDecisionTree() { return true; };
 
-    void SetStateVector();
-    void ResetStateVector(bitLenInt aqb = 0U);
-
-    void SetDevice(int64_t dID);
+    void SetDevice(int64_t dID) { devID = dID; }
 
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
@@ -163,7 +151,7 @@ public:
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
-        root->Normalize(bdtQubitCount);
+        root->Normalize(qubitCount);
     }
 
     real1_f SumSqrDiff(QInterfacePtr toCompare) { return SumSqrDiff(std::dynamic_pointer_cast<QBdt>(toCompare)); }
@@ -173,11 +161,26 @@ public:
 
     QInterfacePtr Clone();
 
-    void GetQuantumState(complex* state);
-    void GetQuantumState(QInterfacePtr eng);
-    void SetQuantumState(const complex* state);
-    void SetQuantumState(QInterfacePtr eng);
-    void GetProbs(real1* outputProbs);
+    void GetQuantumState(complex* state)
+    {
+        GetTraversal([state](bitCapIntOcl i, complex scale) { state[i] = scale; });
+    }
+    void GetQuantumState(QInterfacePtr eng)
+    {
+        GetTraversal([eng](bitCapIntOcl i, complex scale) { eng->SetAmplitude(i, scale); });
+    }
+    void SetQuantumState(const complex* state)
+    {
+        SetTraversal([state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = state[i]; });
+    }
+    void SetQuantumState(QInterfacePtr eng)
+    {
+        SetTraversal([eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = eng->GetAmplitude(i); });
+    }
+    void GetProbs(real1* outputProbs)
+    {
+        GetTraversal([outputProbs](bitCapIntOcl i, complex scale) { outputProbs[i] = norm(scale); });
+    }
 
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp)
@@ -194,41 +197,14 @@ public:
     void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         QBdtPtr d = std::dynamic_pointer_cast<QBdt>(dest);
-        if (!bdtQubitCount) {
-            d->root = d->MakeQStabilizerNode(ONE_CMPLX, d->qubitCount, 0U);
-            NODE_TO_STABILIZER(root)->Decompose(start, NODE_TO_STABILIZER(d->root));
-            d->SetQubitCount(d->qubitCount, d->qubitCount);
-            SetQubitCount(qubitCount - d->qubitCount, qubitCount - d->qubitCount);
-
-            return;
-        }
-
         DecomposeDispose(start, dest->GetQubitCount(), d);
     }
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-    void Dispose(bitLenInt start, bitLenInt length)
-    {
-        if (!bdtQubitCount) {
-            NODE_TO_STABILIZER(root)->Dispose(start, length);
-            SetQubitCount(qubitCount - length, qubitCount - length);
-
-            return;
-        }
-
-        DecomposeDispose(start, length, NULL);
-    }
+    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
 
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
-        if (!bdtQubitCount) {
-            NODE_TO_STABILIZER(root)->Dispose(start, length, disposedPerm);
-            SetQubitCount(qubitCount - length, qubitCount - length);
-
-            return;
-        }
-
         ForceMReg(start, length, disposedPerm);
-
         DecomposeDispose(start, length, NULL);
     }
 
@@ -260,8 +236,8 @@ public:
         }
 
         real1_f toRet;
-        ExecuteAsStateVector(
-            [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(NODE_TO_STABILIZER(root))->ProbParity(mask); });
+        ExecuteAsStateVector([&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(eng)->ProbParity(mask); });
+
         return toRet;
     }
     void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
@@ -281,8 +257,11 @@ public:
             return ForceM(log2(mask), result, doForce);
         }
 
-        SetStateVector();
-        return QINTERFACE_TO_QPARITY(NODE_TO_STABILIZER(root))->ForceMParity(mask, result, doForce);
+        bool toRet;
+        ExecuteAsStateVector(
+            [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(eng)->ForceMParity(mask, result, doForce); });
+
+        return toRet;
     }
 
 #if ENABLE_ALU
