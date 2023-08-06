@@ -1130,11 +1130,11 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     std::vector<bitLenInt> lControls(controls);
     lControls.push_back(target);
     std::sort(lControls.begin(), lControls.end());
-    target = lControls.back();
+    const bitLenInt lTarget = lControls.back();
     lControls.pop_back();
 
     H(target);
-    MCPhase(lControls, ONE_CMPLX, -ONE_CMPLX, target);
+    MCPhase(lControls, ONE_CMPLX, -ONE_CMPLX, lTarget);
     H(target);
 }
 
