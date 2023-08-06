@@ -478,12 +478,20 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
-    for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
+    bitLenInt j;
+    for (j = 0U; j < bdtQubitCount; ++j) {
         if (IS_NODE_0(leaf->scale)) {
+            break;
+        }
+        if (leaf->IsStabilizer()) {
             break;
         }
         leaf = leaf->branches[SelectBit(perm, j)];
         scale *= leaf->scale;
+    }
+
+    if (!IS_NODE_0(leaf->scale) && (j < bdtQubitCount)) {
+        scale *= NODE_TO_QSTABILIZER(leaf)->GetAmplitude(perm >> j));
     }
 
     if (!IS_NODE_0(leaf->scale) && attachedQubitCount) {
