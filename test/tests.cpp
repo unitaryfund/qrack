@@ -387,6 +387,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
     qftReg->X(1);
     qftReg->CY(0, 1);
     REQUIRE_FLOAT(-ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x01)));
+
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->CZ(0, 1);
+    qftReg->ForceM(0U, true);
+    qftReg->ForceM(1U, true);
+    REQUIRE_FLOAT(-ONE_R1_F, (real1_f)real(qftReg->GetAmplitude(0x03)));
+
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->CS(0, 1);
+    qftReg->ForceM(0U, true);
+    qftReg->ForceM(1U, true);
+    REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x03)));
+
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
+    qftReg->H(0);
+    qftReg->CY(0, 1);
+    qftReg->ForceM(0U, true);
+    REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x03)));
+
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
+    qftReg->H(0);
+    qftReg->X(1);
+    qftReg->CY(0, 1);
+    qftReg->ForceM(0U, true);
+    REQUIRE_FLOAT(-ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x01)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
