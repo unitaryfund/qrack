@@ -93,7 +93,7 @@ protected:
     {
         QInterfacePtr qReg = MakeQEngine(qubitCount);
         GetQuantumState(qReg);
-        bitCapInt toRet = operation(qReg);
+        const bitCapInt toRet = operation(qReg);
         SetQuantumState(qReg);
 
         return toRet;
@@ -233,8 +233,7 @@ public:
         }
 
         real1_f toRet;
-        ExecuteAsStateVector(
-            [&](QInterfacePtr eng) { toRet = std::dynamic_pointer_cast<QParity>(eng)->ProbParity(mask); });
+        ExecuteAsStateVector([&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(eng)->ProbParity(mask); });
 
         return toRet;
     }
@@ -256,9 +255,8 @@ public:
         }
 
         bool toRet;
-        ExecuteAsStateVector([&](QInterfacePtr eng) {
-            toRet = std::dynamic_pointer_cast<QParity>(eng)->ForceMParity(mask, result, doForce);
-        });
+        ExecuteAsStateVector(
+            [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(eng)->ForceMParity(mask, result, doForce); });
 
         return toRet;
     }

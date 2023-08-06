@@ -711,7 +711,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     std::vector<bitLenInt> lControls(controls);
     std::sort(lControls.begin(), lControls.end());
 
-    if ((lControls[controls.size() - 1U] < target) || (target >= bdtQubitCount)) {
+    if (lControls[controls.size() - 1U] < target) {
         ApplyControlledSingle(mtrx, lControls, target, false);
         return;
     }
