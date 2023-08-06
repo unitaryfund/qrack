@@ -41,7 +41,7 @@ bool QBdtQStabilizerNode::isEqual(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    QStabilizerPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;
+    QUnitCliffordPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;
 
     if (qReg.get() == rReg.get()) {
         return true;
@@ -69,7 +69,7 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
         return IS_NODE_0(r->scale);
     }
 
-    QStabilizerPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;
+    QUnitCliffordPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;
 
     if (qReg.get() == rReg.get()) {
         return true;
@@ -95,7 +95,7 @@ void QBdtQStabilizerNode::Branch(bitLenInt depth, bitLenInt parDepth)
     }
 
     if (qReg) {
-        qReg = std::dynamic_pointer_cast<QStabilizer>(qReg->Clone());
+        qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
     }
 }
 
@@ -142,7 +142,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
         return toRet;
     }
 
-    toRet->qReg = std::dynamic_pointer_cast<QStabilizer>(qReg->Decompose(depth, size));
+    toRet->qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Decompose(depth, size));
 
     return toRet;
 }
@@ -164,12 +164,12 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
     // qubit reset to |+>, (or effectively |0> followed by H gate).
     QBdtNodeInterfacePtr& b0 = nRoot->branches[0U] =
-        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QStabilizer>(qReg->Clone()));
+        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
     QBdtNodeInterfacePtr& b1 = nRoot->branches[1U] =
-        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QStabilizer>(qReg->Clone()));
+        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
 
-    QStabilizerPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    QStabilizerPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+    QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
+    QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
     // We allocate the other Bell pair end in the stabilizer simulator.
     qReg0->Allocate(1U);
     qReg1->Allocate(1U);

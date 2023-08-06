@@ -17,7 +17,7 @@
 #pragma once
 
 #include "qbdt_node_interface.hpp"
-#include "qstabilizer.hpp"
+#include "qunitclifford.hpp"
 
 namespace Qrack {
 
@@ -26,7 +26,7 @@ typedef std::shared_ptr<QBdtQStabilizerNode> QBdtQStabilizerNodePtr;
 
 class QBdtQStabilizerNode : public QBdtNodeInterface {
 public:
-    QStabilizerPtr qReg;
+    QUnitCliffordPtr qReg;
 
     QBdtQStabilizerNode()
         : QBdtNodeInterface(ZERO_CMPLX)
@@ -35,7 +35,7 @@ public:
         // Intentionally left blank.
     }
 
-    QBdtQStabilizerNode(complex scl, QStabilizerPtr q)
+    QBdtQStabilizerNode(complex scl, QUnitCliffordPtr q)
         : QBdtNodeInterface(scl)
         , qReg(q)
     {
