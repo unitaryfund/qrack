@@ -709,13 +709,15 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     }
 
     std::vector<bitLenInt> lControls(controls);
-    lControls.push_back(target);
     std::sort(lControls.begin(), lControls.end());
-    const bitLenInt lTarget = lControls.back();
-    lControls.pop_back();
+
+    if ((lControls[controls.size() - 1U] < target) || (target >= bdtQubitCount)) {
+        ApplyControlledSingle(mtrx, lControls, target, false);
+        return;
+    }
 
     H(target);
-    MCPhase(lControls, ONE_CMPLX, -ONE_CMPLX, lTarget);
+    MCPhase(lControls, ONE_CMPLX, -ONE_CMPLX, target);
     H(target);
 }
 
