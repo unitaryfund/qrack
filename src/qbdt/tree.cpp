@@ -1083,4 +1083,37 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     MCPhase(lControls, ONE_CMPLX, -ONE_CMPLX, target);
     H(target);
 }
+
+void QBdt::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (qubit1 == qubit2) {
+        return;
+    }
+
+    const std::vector<bitLenInt> controls{ qubit1 };
+    real1 sinTheta = (real1)sin(theta);
+
+    if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
+        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        return;
+    }
+
+    const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
+
+    const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
+    if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
+        ISwap(qubit1, qubit2);
+        MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
+        return;
+    }
+
+    const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
+    if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
+        IISwap(qubit1, qubit2);
+        MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
+        return;
+    }
+
+    ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubit1, qubit2); });
+}
 } // namespace Qrack
