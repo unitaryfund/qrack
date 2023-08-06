@@ -42,11 +42,18 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , rawRandBools(0U)
     , rawRandBoolsRemaining(0U)
-    , phaseOffset(phaseFac)
     , r((n << 1U) + 1U)
     , x((n << 1U) + 1U, BoolVector(n))
     , z((n << 1U) + 1U, BoolVector(n))
 {
+    if (phaseFac != CMPLX_DEFAULT_ARG) {
+        phaseOffset = phaseFac;
+    } else if (randGlobalPhase) {
+        phaseOffset = std::polar(ONE_R1, 2 * PI_R1 * Rand());
+    } else {
+        phaseOffset = ONE_CMPLX;
+    }
+
     SetPermutation(perm);
 }
 
@@ -1083,6 +1090,25 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         return result;
     }
 
+    uint8_t phaseFac = 0U;
+    if (!randGlobalPhase && IsSeparableX(t)) {
+        for (phaseFac = 0U; phaseFac < 4U; ++phaseFac) {
+            H(t);
+            const bool isZero = IsSeparableZ(t) && M(t);
+            H(t);
+
+            if (isZero) {
+                break;
+            }
+
+            IS(t);
+        }
+
+        for (size_t i = 0U; i < phaseFac; ++i) {
+            S(t);
+        }
+    }
+
     Finish();
 
     const bitLenInt elemCount = qubitCount << 1U;
@@ -1111,8 +1137,6 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             return result;
         }
 
-        const uint8_t phaseFac = r[p + n];
-
         // Set Xbar_p := Zbar_p
         rowcopy(p, p + n);
         // Set Zbar_p := Z_b
@@ -1120,8 +1144,8 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
         // Set the new stabilizer result phase
         r[p + n] = result ? 2U : 0U;
-        if (!randGlobalPhase && !result) {
-            phaseOffset *= pow(I_CMPLX, phaseFac & 3U);
+        if (result) {
+            phaseFac = (phaseFac + 2U) & 3U;
         }
 
         // Now update the Xbar's and Zbar's that don't commute with Z_b
@@ -1134,6 +1158,12 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         for (bitLenInt i = p + 1U; i < elemCount; ++i) {
             if (x[i][t]) {
                 rowmult(i, p);
+            }
+        }
+
+        if (!randGlobalPhase && result) {
+            for (size_t i = 0U; i < phaseFac; ++i) {
+                S(t);
             }
         }
 
