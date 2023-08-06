@@ -133,7 +133,7 @@ protected:
 
 public:
     QUnitClifford(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
-        complex ignored = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
+        complex phasFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
         int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
         std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
 
@@ -201,7 +201,7 @@ public:
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-    QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U);
+    QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)

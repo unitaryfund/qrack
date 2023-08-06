@@ -29,18 +29,23 @@
 
 namespace Qrack {
 
-QUnitClifford::QUnitClifford(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, complex ignored, bool doNorm,
+QUnitClifford::QUnitClifford(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool ignored2, int64_t ignored3, bool useHardwareRNG, bool ignored4, real1_f ignored5,
     std::vector<int64_t> ignored6, bitLenInt ignored7, real1_f ignored8)
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
 {
-    SetPermutation(perm);
+    shards.emplace_back(0U, MakeStabilizer(1U, perm & 1U, phaseFac));
+    for (bitLenInt i = 1U; i < qubitCount; ++i) {
+        shards.emplace_back(0U,
+            MakeStabilizer(1U, (perm >> i) & 1U,
+                (randGlobalPhase && (phaseFac == CMPLX_DEFAULT_ARG)) ? CMPLX_DEFAULT_ARG : ONE_CMPLX));
+    }
 }
 
-QStabilizerPtr QUnitClifford::MakeStabilizer(bitLenInt length, bitCapInt perm)
+QStabilizerPtr QUnitClifford::MakeStabilizer(bitLenInt length, bitCapInt perm, complex phaseFac)
 {
     QStabilizerPtr toRet = std::make_shared<QStabilizer>(
-        length, perm, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+        length, perm, rand_generator, phaseFac, false, randGlobalPhase, false, -1, useRDRAND);
 
     return toRet;
 }
