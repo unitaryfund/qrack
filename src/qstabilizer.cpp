@@ -1111,7 +1111,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             return result;
         }
 
-        const uint8_t phaseFac = ((r[p + n] + r[t + n]) - r[p]) & 3U;
+        const uint8_t phaseFac = r[p + n];
 
         // Set Xbar_p := Zbar_p
         rowcopy(p, p + n);
@@ -1120,8 +1120,8 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
         // Set the new stabilizer result phase
         r[p + n] = result ? 2U : 0U;
-        if (!randGlobalPhase) {
-            phaseOffset *= pow(I_CMPLX, phaseFac);
+        if (!randGlobalPhase && !result) {
+            phaseOffset *= pow(I_CMPLX, phaseFac & 3U);
         }
 
         // Now update the Xbar's and Zbar's that don't commute with Z_b
