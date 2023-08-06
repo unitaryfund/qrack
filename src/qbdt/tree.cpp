@@ -659,8 +659,8 @@ void QBdt::ApplyControlledSingle(
         Swap(target, controlVec.back());
         std::swap(target, controlVec.back());
     }
+    const bitLenInt control = controlVec.back();
 
-    const bitCapInt qPower = pow2(target);
     bitCapInt controlMask = 0U;
     for (size_t c = 0U; c < controls.size(); ++c) {
         const bitLenInt control = controlVec[c];
@@ -676,12 +676,12 @@ void QBdt::ApplyControlledSingle(
     const complex2 mtrxCol2Shuff = mtrxColShuff(mtrxCol2);
 #endif
 
-    par_for_qbdt(qPower, target,
+    par_for_qbdt(pow2(target), target,
 #if ENABLE_COMPLEX_X2
-        [this, controlMask, controlPerm, target, mtrx, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff, isAnti](
-            const bitCapInt& i) {
+        [this, controlMask, controlPerm, control, target, mtrx, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff,
+            isAnti](const bitCapInt& i) {
 #else
-        [this, controlMask, controlPerm, target, mtrx, isAnti](const bitCapInt& i) {
+        [this, controlMask, controlPerm, control, target, mtrx, isAnti](const bitCapInt& i) {
 #endif
             if ((i & controlMask) != controlPerm) {
                 return (bitCapInt)(controlMask - ONE_BCI);
@@ -709,14 +709,22 @@ void QBdt::ApplyControlledSingle(
 
             if (leaf->IsStabilizer()) {
                 leaf->Branch();
-                NODE_TO_STABILIZER(leaf)->Mtrx(mtrx, target - j);
-            } else {
-#if ENABLE_COMPLEX_X2
-                leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
-#else
-                leaf->Apply2x2(mtrx, qubitCount - target);
-#endif
+                const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+                if (control < j) {
+                    qReg->Mtrx(mtrx, target - j);
+                } else if (isAnti) {
+                    qReg->MACMtrx({ (bitLenInt)(control - j) }, mtrx, target - j);
+                } else {
+                    qReg->MCMtrx({ (bitLenInt)(control - j) }, mtrx, target - j);
+                }
+
+                return (bitCapInt)(pow2(target - j) - ONE_BCI);
             }
+#if ENABLE_COMPLEX_X2
+            leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
+#else
+            leaf->Apply2x2(mtrx, qubitCount - target);
+#endif
 
             return (bitCapInt)0U;
         });
