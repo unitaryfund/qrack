@@ -280,6 +280,9 @@ public:
     /// Get a single basis state amplitude
     std::vector<complex> GetAmplitudes(std::vector<bitCapInt> perms);
 
+    /// Get any single basis state amplitude where qubit "t" has value "m"
+    AmplitudeEntry GetQubitAmplitude(bitLenInt t, bool m);
+
     /// Get expectation qubits, interpreting each permutation as an unsigned integer.
     real1_f ExpectationBitsFactorized(
         const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);

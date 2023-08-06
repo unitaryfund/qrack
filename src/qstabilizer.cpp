@@ -538,6 +538,42 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
     return toRet;
 }
 
+AmplitudeEntry QStabilizer::GetQubitAmplitude(bitLenInt t, bool m)
+{
+    const bitCapInt tPow = pow2(t);
+    const bitCapInt mPow = m ? tPow : 0U;
+
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
+
+    seed(g);
+
+    AmplitudeEntry entry = getBasisAmp(nrm);
+    if ((entry.permutation & tPow) == mPow) {
+        return entry;
+    }
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        if ((entry.permutation & tPow) == mPow) {
+            return entry;
+        }
+    }
+
+    return AmplitudeEntry(0U, ZERO_CMPLX);
+}
+
 real1_f QStabilizer::ExpectationBitsFactorized(
     const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {
@@ -733,9 +769,14 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
 /// Apply a CY gate with control and target
 void QStabilizer::CY(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c) && M(c) && IsSeparableZ(t)) {
-        phaseOffset *= M(t) ? -I_CMPLX : I_CMPLX;
+    if (!randGlobalPhase) {
+        IS(t);
+        CNOT(c, t);
+        S(t);
+
+        return;
     }
+
     ParFor(
         [this, c, t](const bitLenInt& i) {
             z[i][t] = z[i][t] ^ x[i][t];
@@ -760,9 +801,14 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 /// Apply an (anti-)CY gate with control and target
 void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c) && !M(c) && IsSeparableZ(t)) {
-        phaseOffset *= M(t) ? -I_CMPLX : I_CMPLX;
+    if (!randGlobalPhase) {
+        IS(t);
+        AntiCNOT(c, t);
+        S(t);
+
+        return;
     }
+
     ParFor(
         [this, c, t](const bitLenInt& i) {
             z[i][t] = z[i][t] ^ x[i][t];
@@ -1090,25 +1136,6 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         return result;
     }
 
-    uint8_t phaseFac = 0U;
-    if (!randGlobalPhase && IsSeparableX(t)) {
-        for (phaseFac = 0U; phaseFac < 4U; ++phaseFac) {
-            H(t);
-            const bool isZero = IsSeparableZ(t) && M(t);
-            H(t);
-
-            if (isZero) {
-                break;
-            }
-
-            IS(t);
-        }
-
-        for (size_t i = 0U; i < phaseFac; ++i) {
-            S(t);
-        }
-    }
-
     Finish();
 
     const bitLenInt elemCount = qubitCount << 1U;
@@ -1137,6 +1164,8 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             return result;
         }
 
+        AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, result);
+
         // Set Xbar_p := Zbar_p
         rowcopy(p, p + n);
         // Set Zbar_p := Z_b
@@ -1144,9 +1173,6 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
         // Set the new stabilizer result phase
         r[p + n] = result ? 2U : 0U;
-        if (result) {
-            phaseFac = (phaseFac + 2U) & 3U;
-        }
 
         // Now update the Xbar's and Zbar's that don't commute with Z_b
         for (bitLenInt i = 0U; i < p; ++i) {
@@ -1161,10 +1187,9 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             }
         }
 
-        if (!randGlobalPhase && result) {
-            for (size_t i = 0U; i < phaseFac; ++i) {
-                S(t);
-            }
+        if (!randGlobalPhase) {
+            complex nAmp = GetAmplitude(ampEntry.permutation);
+            phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
         }
 
         return result;
