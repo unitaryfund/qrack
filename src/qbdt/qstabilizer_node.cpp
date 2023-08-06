@@ -160,7 +160,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
 
     // We need a Bell pair for teleportation, with one end on each side of the QBDT/stabilizer domain wall.
-    const bitLenInt aliceBellBit = qReg->GetQubitCount();
+    bitLenInt aliceBellBit = qReg->GetQubitCount();
     // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
     // qubit reset to |+>, (or effectively |0> followed by H gate).
     QBdtNodeInterfacePtr& b0 = nRoot->branches[0U] =
@@ -203,30 +203,50 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 
     // Alice would now measure both of her bits, and record the results.
     // Bob would act 0 to 2 corrective gates based upon Alice's measured bits.
-    // However, we want to avoid measurement. (Our stabilizer simulation isn't aware of phase with mid-circuit measurement.)
-    // Instead, we can just do the entire algorithm in a unitary manner!
+    // However, we want to avoid measurement. (Our stabilizer simulation isn't aware of phase with mid-circuit
+    // measurement.) Instead, we can just do the entire algorithm in a unitary manner!
 
     // Bob controls his (C)Z correction with Alice's "prepared state" bit.
     qReg1->Z(0U);
+    qReg0->Dispose(0U, 1U);
+    qReg1->Dispose(0U, 1U);
+    --aliceBellBit;
     nRoot->Prune(2U);
-    nRoot->Normalize(2U);
 
+    qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
     // TODO: The CX gate is backwards.
 
     // Bob controls his (C)X correction with Alice's "prepared state" bit.
-    qReg1->X(aliceBellBit);
-    nRoot->Prune(2U);
-    nRoot->Normalize(2U);
+    // qReg1->X(aliceBellBit);
+    // nRoot->Prune(2U);
+    // nRoot->Normalize(2U);
 
-    qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+    const real1 p01 = qReg0->Prob(aliceBellBit);
+    const real1 p11 = qReg1->Prob(aliceBellBit);
+    const bool q1 = qReg->Rand() < ((p01 + p11) / 2);
 
-    qReg0->Dispose(aliceBellBit, 1U);
-    qReg1->Dispose(aliceBellBit, 1U);
-    qReg0->Dispose(0U, 1U);
-    qReg1->Dispose(0U, 1U);
+    if (!((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)))) {
+        qReg0->ForceM(aliceBellBit, q1);
+        qReg0->Dispose(aliceBellBit, 1U);
+    } else {
+        b0->SetZero();
+        nRoot->Normalize();
+    }
+
+    if (!((q1 && IS_0_PROB(p11)) || (!q1 && IS_1_PROB(p11)))) {
+        qReg1->ForceM(aliceBellBit, q1);
+        qReg1->Dispose(aliceBellBit, 1U);
+    } else {
+        b1->SetZero();
+        nRoot->Normalize();
+    }
+
+    if (q1) {
+        std::swap(b0, b1);
+        nRoot->Prune();
+    }
 
     // This process might need to be repeated, recursively.
     if (!IS_NORM_0(b0->scale)) {
