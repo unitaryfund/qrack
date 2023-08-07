@@ -283,15 +283,15 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
-    for (bitLenInt j = 0U; j < qubitCount; ++j) {
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
         if (IS_NODE_0(leaf->scale)) {
             break;
         }
         if (leaf->IsStabilizer()) {
-            scale *= NODE_TO_STABILIZER(leaf)->GetAmplitude(perm >> j);
+            scale *= NODE_TO_STABILIZER(leaf)->GetAmplitude(perm >> i);
             break;
         }
-        leaf = leaf->branches[SelectBit(perm, j)];
+        leaf = leaf->branches[SelectBit(perm, i)];
         scale *= leaf->scale;
     }
 
@@ -421,14 +421,14 @@ real1_f QBdt::ProbAll(bitCapInt perm)
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
 
-    for (bitLenInt j = 0U; j < qubitCount; ++j) {
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
         if (IS_NODE_0(leaf->scale)) {
             break;
         }
         if (leaf->IsStabilizer()) {
-            return clampProb(norm(scale) * NODE_TO_STABILIZER(leaf)->ProbAll(perm >> j));
+            return clampProb(norm(scale) * NODE_TO_STABILIZER(leaf)->ProbAll(perm >> i));
         }
-        leaf = leaf->branches[SelectBit(perm, j)];
+        leaf = leaf->branches[SelectBit(perm, i)];
         scale *= leaf->scale;
     }
 
@@ -555,6 +555,8 @@ bitCapInt QBdt::MAll()
             leaf = leaf->branches[0U];
         }
     }
+
+    SetPermutation(result);
 
     return result;
 }
