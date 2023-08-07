@@ -376,7 +376,11 @@ real1_f QBdt::Prob(bitLenInt qubit)
         throw std::invalid_argument("QBdt::Prob qubit index parameter must be within allocated qubit bounds!");
     }
 
-    FlushIfBlocked(qubit);
+    const MpsShardPtr shard = shards[qubit];
+    if (shard && !shard->IsPhase()) {
+        shards[qubit] = NULL;
+        ApplySingle(shard->gate, qubit);
+    }
 
     const bitCapInt qPower = pow2(qubit);
     const unsigned numCores = GetConcurrencyLevel();
@@ -504,9 +508,9 @@ bitCapInt QBdt::MAll()
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         const MpsShardPtr shard = shards[i];
         if (shard && !shard->IsPhase()) {
-            shards[i] = NULL;
             ApplySingle(shard->gate, i);
         }
+        shards[i] = NULL;
     }
 
     Finish();
