@@ -23,6 +23,17 @@
 
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_CLIFFORD(mtrx)                                                                                              \
+    ((IS_PHASE(mtrx) && IS_CLIFFORD_PHASE_INVERT(mtrx[0], mtrx[3])) ||                                                 \
+        (IS_INVERT(mtrx) && IS_CLIFFORD_PHASE_INVERT(mtrx[1], mtrx[2])) ||                                             \
+        ((IS_SAME(mtrx[0U], mtrx[1U]) || IS_SAME(mtrx[0U], -mtrx[1U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) ||      \
+             IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U])) &&                                                                \
+            (IS_SAME(mtrx[0U], mtrx[2U]) || IS_SAME(mtrx[0U], -mtrx[2U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) ||   \
+                IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U])) &&                                                             \
+            (IS_SAME(mtrx[0U], mtrx[3U]) || IS_SAME(mtrx[0U], -mtrx[3U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U]) ||   \
+                IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U]))))
+#define IS_PHASE(mtrx) (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]))
+#define IS_INVERT(mtrx) (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U]))
 
 namespace Qrack {
 
@@ -57,6 +68,31 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         return;
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
+
+#if 0
+    // TODO: "this" node needs to be replaced with a stabilizer node.
+    if (b0->IsStabilizer() && b1->IsStabilizer()) {
+        if (b0 == b1) {
+            const QUnitCliffordPtr& qReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
+            qReg->Allocate(0U, 1U);
+            qReg->H(0U);
+            scale *= b0->scale / abs(b0->scale);
+        } else if (b0->IsEqualUnder(b1)) {
+            const real1 prob = std::min(1U, std::max(0U, norm(b1->scale)));
+            const real1 sqrtProb = sqrt(prob);
+            const real1 sqrt1MinProb = std::min(1U, std::max(0U, ONE_R1 - prob));
+            const complex phase0 = std::polar(ONE_R1, arg(b0->scale));
+            const complex phase1 = std::polar(ONE_R1, arg(b1->scale));
+            const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
+            if (IS_CLIFFORD(mtrx)) {
+                qReg->Allocate(0U, 1U);
+                qReg->Mtrx(mtrx, 0);
+            }
+        }
+
+        return;
+    }
+#endif
 
     // Prune recursively to depth.
     --depth;
