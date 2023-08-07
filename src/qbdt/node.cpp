@@ -177,6 +177,10 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     b0->scale /= phaseFac;
     b1->scale /= phaseFac;
 
+    if (b0->IsStabilizer() || b1->IsStabilizer()) {
+        return shared_from_this();
+    }
+
     // Now, we try to combine pointers to equivalent branches.
     const bitCapInt depthPow = pow2(depth);
     // Combine single elements at bottom of full depth, up to where branches are equal below:
