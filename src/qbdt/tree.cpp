@@ -19,8 +19,11 @@
 
 #define IS_REAL_1(r) (abs(ONE_CMPLX - r) <= FP_NORM_EPSILON)
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
-#define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
+#define _IS_CTRLED_CLIFFORD(top, bottom)                                                                               \
     ((IS_REAL_1(std::real(top)) || IS_REAL_1(std::imag(bottom))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
+#define IS_CTRLED_CLIFFORD(mtrx)                                                                                       \
+    ((IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && _IS_CTRLED_CLIFFORD(mtrx[0U], mtrx[3U])) ||                        \
+        (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U]) && _IS_CTRLED_CLIFFORD(mtrx[1U], mtrx[2U])))
 #define IS_CLIFFORD_PHASE_INVERT(top, bottom)                                                                          \
     (IS_SAME(top, bottom) || IS_SAME(top, -bottom) || IS_SAME(top, I_CMPLX * bottom) || IS_SAME(top, -I_CMPLX * bottom))
 #define IS_CLIFFORD(mtrx)                                                                                              \
@@ -687,9 +690,8 @@ void QBdt::ApplyControlledSingle(
         return;
     }
 
-    if ((controls.size() > 1U) ||
-        !((IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && IS_CTRLED_CLIFFORD(mtrx[0U], mtrx[3U])) ||
-            (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U]) && IS_CTRLED_CLIFFORD(mtrx[1U], mtrx[2U])))) {
+    const bool isCtrledClifford = IS_CTRLED_CLIFFORD(mtrx);
+    if (!isCtrledClifford || (controls.size() > 1U)) {
         bool isOrdered = true;
         for (size_t i = 0U; i < controls.size(); ++i) {
             if (controls[i] != i) {
@@ -720,7 +722,13 @@ void QBdt::ApplyControlledSingle(
             return;
         }
 
-        root = root->PopSpecial(controls.size() + 1U);
+        if (isCtrledClifford) {
+            root = root->PopSpecial(controls.size() - 1U);
+        } else if (IS_CLIFFORD(mtrx)) {
+            root = root->PopSpecial(controls.size());
+        } else {
+            root = root->PopSpecial(controls.size() + 1U);
+        }
     }
 
     std::vector<bitLenInt> controlVec(controls.begin(), controls.end());
