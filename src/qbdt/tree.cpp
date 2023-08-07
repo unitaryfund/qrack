@@ -30,6 +30,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , root(NULL)
     , deviceIDs(devIds)
     , engines(eng)
+    , shards(qBitCount, NULL)
 {
     Init();
 
@@ -185,6 +186,7 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     Dump();
+    DumpBuffers();
 
     if (!qubitCount) {
         return;
@@ -217,6 +219,7 @@ QInterfacePtr QBdt::Clone()
         false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
     copyPtr->root = root ? root->ShallowClone() : NULL;
+    copyPtr->shards = std::vector<MpsShardPtr>(qubitCount, NULL);
     copyPtr->SetQubitCount(qubitCount);
 
     return copyPtr;
@@ -233,6 +236,9 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         // Max square difference:
         return ONE_R1_F;
     }
+
+    FlushBuffers();
+    toCompare->FlushBuffers();
 
     const unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<complex[]> projectionBuff(new complex[numCores]());
@@ -264,6 +270,8 @@ complex QBdt::GetAmplitude(bitCapInt perm)
         throw std::invalid_argument("QBdt::GetAmplitude argument out-of-bounds!");
     }
 
+    FlushBuffers();
+
     Finish();
 
     QBdtNodeInterfacePtr leaf = root;
@@ -292,6 +300,16 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     Finish();
 
     root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
+
+    // Resize the shards buffer.
+    shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
+    // Split the common shared_ptr references, with toCopy.
+    for (bitLenInt i = 0; i < toCopy->qubitCount; ++i) {
+        if (shards[start + i]) {
+            shards[start + i] = shards[start + i]->Clone();
+        }
+    }
+
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
     return start;
@@ -321,10 +339,13 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
     if (dest) {
         dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
-        dest->SetQubitCount(length);
+        std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     } else {
         root->RemoveSeparableAtDepth(start, length);
     }
+
+    shards.erase(shards.begin() + start, shards.begin() + start + length);
+
     SetQubitCount(qubitCount - length);
     root->Prune(qubitCount);
 }
@@ -342,6 +363,7 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
     nQubits->SetPermutation(0U);
     nQubits->root->InsertAtDepth(root, length, qubitCount);
     root = nQubits->root;
+    shards.insert(shards.begin() + start, nQubits->shards.begin(), nQubits->shards.end());
     SetQubitCount(qubitCount + length);
     ROR(length, 0U, start + length);
 
@@ -353,6 +375,9 @@ real1_f QBdt::Prob(bitLenInt qubit)
     if (qubit >= qubitCount) {
         throw std::invalid_argument("QBdt::Prob qubit index parameter must be within allocated qubit bounds!");
     }
+
+    FlushIfBlocked(qubit);
+
     const bitCapInt qPower = pow2(qubit);
     const unsigned numCores = GetConcurrencyLevel();
     std::map<QEnginePtr, real1> qiProbs;
@@ -388,6 +413,8 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
 real1_f QBdt::ProbAll(bitCapInt perm)
 {
+    FlushBuffers();
+
     Finish();
 
     QBdtNodeInterfacePtr leaf = root;
@@ -473,6 +500,14 @@ bitCapInt QBdt::MAll()
 {
     bitCapInt result = 0U;
     QBdtNodeInterfacePtr leaf = root;
+
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        const MpsShardPtr shard = shards[i];
+        if (shard && !shard->IsPhase()) {
+            shards[i] = NULL;
+            ApplySingle(shard->gate, i);
+        }
+    }
 
     Finish();
 
@@ -639,7 +674,15 @@ void QBdt::ApplyControlledSingle(
     }
 }
 
-void QBdt::Mtrx(const complex* mtrx, bitLenInt target) { ApplySingle(mtrx, target); }
+void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
+{
+    MpsShardPtr& shard = shards[target];
+    if (shard) {
+        shard->Compose(mtrx);
+    } else {
+        shard = std::make_shared<MpsShard>(mtrx);
+    }
+}
 
 void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
 {
@@ -650,6 +693,7 @@ void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, b
     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         MCInvert(controls, mtrx[1U], mtrx[2U], target);
     } else {
+        FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, false);
     }
 }
@@ -664,6 +708,7 @@ void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         MACInvert(controls, mtrx[1U], mtrx[2U], target);
     } else {
+        FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, true);
     }
 }
@@ -677,6 +722,7 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
 
     const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
+        FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, false);
         return;
     }
@@ -691,6 +737,7 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
     target = lControls.back();
     lControls.pop_back();
 
+    FlushIfBlocked(target, lControls);
     ApplyControlledSingle(mtrx, lControls, target, false);
 }
 
@@ -703,6 +750,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
 
     const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
+        FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, false);
         return;
     }
@@ -711,6 +759,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     std::sort(lControls.begin(), lControls.end());
 
     if (lControls.back() < target) {
+        FlushIfBlocked(target, lControls);
         ApplyControlledSingle(mtrx, lControls, target, false);
         return;
     }
