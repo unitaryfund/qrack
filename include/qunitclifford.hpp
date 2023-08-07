@@ -52,7 +52,18 @@ struct CliffordShard {
 
 class QUnitClifford : public QInterface {
 protected:
+    complex phaseOffset;
     std::vector<CliffordShard> shards;
+
+    void CombinePhaseOffsets(QStabilizerPtr unit)
+    {
+        if (randGlobalPhase) {
+            return;
+        }
+
+        phaseOffset *= unit->GetPhaseOffset();
+        unit->ResetPhaseOffset();
+    }
 
     struct QSortEntry {
         bitLenInt bit;
@@ -88,17 +99,13 @@ protected:
         CGateFn;
     void CGate(bitLenInt control, bitLenInt target, const complex* mtrx, CGateFn fn)
     {
-        if (shards[control].unit == shards[target].unit) {
-            fn(shards[control].unit, shards[control].mapped, shards[target].mapped, mtrx);
-            TrySeparate(control);
-
-            TrySeparate(target);
-            return;
-        }
         std::vector<bitLenInt> bits{ control, target };
         std::vector<bitLenInt*> ebits{ &bits[0U], &bits[1U] };
         QStabilizerPtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
         fn(unit, bits[0U], bits[1U], mtrx);
+        CombinePhaseOffsets(unit);
+        TrySeparate(control);
+        TrySeparate(target);
     }
 
     QInterfacePtr CloneBody(QUnitCliffordPtr copyPtr);
@@ -157,24 +164,8 @@ public:
         }
     }
 
-    void ResetPhaseOffset()
-    {
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            shards[i].unit->ResetPhaseOffset();
-        }
-    }
-    complex GetPhaseOffset()
-    {
-        std::set<QStabilizerPtr> found;
-        complex phaseOffset = ONE_CMPLX;
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            if (found.find(shards[i].unit) == found.end()) {
-                phaseOffset *= shards[i].unit->GetPhaseOffset();
-                found.insert(shards[i].unit);
-            }
-        }
-        return phaseOffset;
-    }
+    void ResetPhaseOffset() { phaseOffset = ONE_CMPLX; }
+    complex GetPhaseOffset() { return phaseOffset; }
 
     bitCapInt PermCount()
     {
@@ -263,6 +254,7 @@ public:
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::S"));
         CliffordShard& shard = shards[t];
         shard.unit->S(shard.mapped);
+        CombinePhaseOffsets(shard.unit);
     }
     /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
     void IS(bitLenInt t)
@@ -270,6 +262,7 @@ public:
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::IS"));
         CliffordShard& shard = shards[t];
         shard.unit->IS(shard.mapped);
+        CombinePhaseOffsets(shard.unit);
     }
     /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
     void Z(bitLenInt t)
@@ -277,6 +270,7 @@ public:
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::Z"));
         CliffordShard& shard = shards[t];
         shard.unit->Z(shard.mapped);
+        CombinePhaseOffsets(shard.unit);
     }
     /// Apply an X (or NOT) gate to target
     using QInterface::X;
@@ -292,6 +286,7 @@ public:
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::Y"));
         CliffordShard& shard = shards[t];
         shard.unit->Y(shard.mapped);
+        CombinePhaseOffsets(shard.unit);
     }
     // Swap two bits
     void Swap(bitLenInt qubit1, bitLenInt qubit2)
@@ -451,7 +446,7 @@ public:
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         if (!randGlobalPhase && qubitCount) {
-           shards[0U].unit->NormalizeState(nrm, norm_thresh, phaseArg);
+            shards[0U].unit->NormalizeState(nrm, norm_thresh, phaseArg);
         }
     }
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
