@@ -818,11 +818,10 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
     }
 
     std::vector<bitLenInt> lControls(controls);
+    lControls.push_back(target);
     std::sort(lControls.begin(), lControls.end());
-
-    if (target < lControls[controls.size() - 1U]) {
-        std::swap(target, lControls[controls.size() - 1U]);
-    }
+    target = lControls.back();
+    lControls.pop_back();
 
     ApplyControlledSingle(mtrx, lControls, target, false);
 }
@@ -843,7 +842,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     std::vector<bitLenInt> lControls(controls);
     std::sort(lControls.begin(), lControls.end());
 
-    if (lControls[controls.size() - 1U] < target) {
+    if (lControls.back() < target) {
         ApplyControlledSingle(mtrx, lControls, target, false);
         return;
     }
