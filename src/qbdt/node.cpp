@@ -72,12 +72,16 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #if 0
     // TODO: "this" node needs to be replaced with a stabilizer node.
     if (b0->IsStabilizer() && b1->IsStabilizer()) {
-        if (b0 == b1) {
-            const QUnitCliffordPtr& qReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-            qReg->Allocate(0U, 1U);
-            qReg->H(0U);
-            scale *= b0->scale / abs(b0->scale);
-        } else if (b0->IsEqualUnder(b1)) {
+        if (b0->IsEqualUnder(b1)) {
+            if (IS_NORM_0(b0->scale - b1->scale)) {
+                const QUnitCliffordPtr& qReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
+                qReg->Allocate(0U, 1U);
+                qReg->H(0U);
+                scale *= b0->scale / abs(b0->scale);
+
+                return;
+            }
+
             const real1 prob = std::min(1U, std::max(0U, norm(b1->scale)));
             const real1 sqrtProb = sqrt(prob);
             const real1 sqrt1MinProb = std::min(1U, std::max(0U, ONE_R1 - prob));
