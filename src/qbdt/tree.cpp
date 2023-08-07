@@ -219,7 +219,7 @@ QInterfacePtr QBdt::Clone()
         false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
     copyPtr->root = root ? root->ShallowClone() : NULL;
-    copyPtr->shards = std::vector<MpsShardPtr>(qubitCount, NULL);
+    copyPtr->shards = std::vector<MpsShardPtr>(shards);
     copyPtr->SetQubitCount(qubitCount);
 
     return copyPtr;
