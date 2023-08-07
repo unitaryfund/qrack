@@ -68,7 +68,8 @@ public:
 
     virtual void Branch(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
 
-    virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
+    virtual QBdtNodeInterfacePtr Prune(
+        bitLenInt depth = 1U, bitLenInt parDepth = 1U, const bool& isCliffordBlocked = false);
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U);
 

@@ -112,7 +112,7 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
         for (bitCapInt j = 0U; j < end; ++j) {
             j |= fn(j);
         }
-        root->Prune(maxQubit);
+        root = root->Prune(maxQubit);
         return;
     }
 
@@ -156,7 +156,7 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
         j |= fn(j);
     }
 #endif
-    root->Prune(maxQubit);
+    root = root->Prune(maxQubit);
 }
 
 void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
@@ -371,7 +371,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     shards.erase(shards.begin() + start, shards.begin() + start + length);
 
     SetQubitCount(qubitCount - length);
-    root->Prune(qubitCount);
+    root = root->Prune(qubitCount);
 }
 
 bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
@@ -555,7 +555,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
     });
 
-    root->Prune(qubit);
+    root = root->Prune(qubit);
 
     return result;
 }

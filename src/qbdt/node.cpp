@@ -15,6 +15,7 @@
 // for details.
 
 #include "qbdt_node.hpp"
+#include "qbdt_qstabilizer_node.hpp"
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #include <future>
@@ -23,6 +24,8 @@
 
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_CLIFFORD_PHASE_INVERT(top, bottom)                                                                          \
+    (IS_SAME(top, bottom) || IS_SAME(top, -bottom) || IS_SAME(top, I_CMPLX * bottom) || IS_SAME(top, -I_CMPLX * bottom))
 #define IS_CLIFFORD(mtrx)                                                                                              \
     ((IS_PHASE(mtrx) && IS_CLIFFORD_PHASE_INVERT(mtrx[0], mtrx[3])) ||                                                 \
         (IS_INVERT(mtrx) && IS_CLIFFORD_PHASE_INVERT(mtrx[1], mtrx[2])) ||                                             \
@@ -50,60 +53,61 @@ const bitLenInt pStridePow = (PSTRIDEPOW + 1U) >> 1U;
 const bitCapInt pStride = pow2(pStridePow);
 #endif
 
-void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
+QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const bool& isCliffordBlocked)
 {
     if (!depth) {
-        return;
+        return shared_from_this();
     }
 
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NODE_0(scale)) {
         SetZero();
-        return;
+        return shared_from_this();
     }
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
         SetZero();
-        return;
+        return shared_from_this();
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
 
-#if 0
-    // TODO: "this" node needs to be replaced with a stabilizer node.
-    if (b0->IsStabilizer() && b1->IsStabilizer()) {
-        if (b0->IsEqualUnder(b1)) {
+    if (!isCliffordBlocked && b0->IsStabilizer() && b1->IsStabilizer()) {
+        if (b0->isEqualUnder(b1)) {
+            const QUnitCliffordPtr& qReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
+
             if (IS_NORM_0(b0->scale - b1->scale)) {
-                const QUnitCliffordPtr& qReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
                 qReg->Allocate(0U, 1U);
                 qReg->H(0U);
                 scale *= b0->scale / abs(b0->scale);
 
-                return;
+                return std::make_shared<QBdtQStabilizerNode>(scale, qReg);
             }
 
-            const real1 prob = std::min(1U, std::max(0U, norm(b1->scale)));
+            const real1 prob = std::min(ONE_R1, std::max(ZERO_R1, norm(b1->scale)));
             const real1 sqrtProb = sqrt(prob);
-            const real1 sqrt1MinProb = std::min(1U, std::max(0U, ONE_R1 - prob));
+            const real1 sqrt1MinProb = std::min(ONE_R1, std::max(ZERO_R1, ONE_R1 - prob));
             const complex phase0 = std::polar(ONE_R1, arg(b0->scale));
             const complex phase1 = std::polar(ONE_R1, arg(b1->scale));
-            const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
+            const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1,
+                -sqrt1MinProb * phase1 };
             if (IS_CLIFFORD(mtrx)) {
                 qReg->Allocate(0U, 1U);
                 qReg->Mtrx(mtrx, 0);
+                scale = qReg->GetPhaseOffset();
+                qReg->ResetPhaseOffset();
             }
         }
 
-        return;
+        return shared_from_this();
     }
-#endif
 
     // Prune recursively to depth.
     --depth;
 
     if (b0.get() == b1.get()) {
         std::lock_guard<std::mutex> lock(b0->mtx);
-        b0->Prune(depth, parDepth);
+        branches[0U] = b0->Prune(depth, parDepth, isCliffordBlocked);
     } else {
         std::lock(b0->mtx, b1->mtx);
         std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
@@ -117,17 +121,18 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {
             ++parDepth;
 
-            std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
-            b1->Prune(depth, parDepth);
+            std::future<void> future0 =
+                std::async(std::launch::async, [&] { branches[0U] = b0->Prune(depth, parDepth, isCliffordBlocked); });
+            branches[1U] = b1->Prune(depth, parDepth, isCliffordBlocked);
 
             future0.get();
         } else {
-            b0->Prune(depth, parDepth);
-            b1->Prune(depth, parDepth);
+            branches[0U] = b0->Prune(depth, parDepth, isCliffordBlocked);
+            branches[1U] = b1->Prune(depth, parDepth, isCliffordBlocked);
         }
 #else
-        b0->Prune(depth, parDepth);
-        b1->Prune(depth, parDepth);
+        branches[0U] = b0->Prune(depth, parDepth, isCliffordBlocked);
+        branches[1U] = b1->Prune(depth, parDepth, isCliffordBlocked);
 #endif
     }
 
@@ -150,7 +155,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         b0->scale /= phaseFac;
 
         // Phase factor applied, and branches point to same object.
-        return;
+        return shared_from_this();
     }
 
     std::lock(b0->mtx, b1->mtx);
@@ -234,6 +239,8 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     if (b0 == b1) {
         branches[1U] = branches[0U];
     }
+
+    return shared_from_this();
 }
 
 void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
@@ -527,11 +534,11 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 }
 
 #if ENABLE_COMPLEX_X2
-void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-    const complex2& mtrxColShuff2, bitLenInt depth)
+QBdtNodeInterfacePtr QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2,
+    const complex2& mtrxColShuff1, const complex2& mtrxColShuff2, bitLenInt depth)
 {
     if (!depth) {
-        return;
+        return shared_from_this();
     }
 
     Branch();
@@ -547,9 +554,8 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, cons
             b0->scale *= mtrxCol1.c(0U);
             b1->scale *= mtrxCol2.c(1U);
         }
-        Prune();
 
-        return;
+        return Prune();
     }
 
     if (IS_NORM_0(mtrxCol1.c(0U)) && IS_NORM_0(mtrxCol2.c(1U))) {
@@ -562,13 +568,13 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, cons
             b1->scale *= mtrxCol2.c(0U);
             b0->scale *= mtrxCol1.c(1U);
         }
-        Prune();
 
-        return;
+        return Prune();
     }
 
     PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, branches[0U], branches[1U], depth);
-    Prune(depth);
+
+    return Prune(depth);
 }
 
 void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
@@ -682,10 +688,10 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1->PopStateVector();
 }
 #else
-void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
+QBdtNodeInterfacePtr QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 {
     if (!depth) {
-        return;
+        return shared_from_this();
     }
 
     Branch();
@@ -701,9 +707,8 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
             b0->scale *= mtrx[0U];
             b1->scale *= mtrx[3U];
         }
-        Prune();
 
-        return;
+        return Prune();
     }
 
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
@@ -716,13 +721,13 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
             b1->scale *= mtrx[1U];
             b0->scale *= mtrx[2U];
         }
-        Prune();
 
-        return;
+        return Prune();
     }
 
     PushStateVector(mtrx, branches[0U], branches[1U], depth);
-    Prune(depth);
+
+    return Prune();
 }
 
 void QBdtNode::PushStateVector(

@@ -136,7 +136,8 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+    virtual QBdtNodeInterfacePtr Prune(
+        bitLenInt depth = 1U, bitLenInt parDepth = 1U, const bool& isCliffordBlocked = false)
     {
         throw std::out_of_range("QBdtNodeInterface::Prune() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
@@ -148,12 +149,12 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-        const complex2& mtrxColShuff2, bitLenInt depth)
+    virtual QBdtNodeInterfacePtr Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2,
+        const complex2& mtrxColShuff1, const complex2& mtrxColShuff2, bitLenInt depth)
     {
         throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }
-    virtual void Apply2x2(complex const* mtrx, bitLenInt depth)
+    virtual QBdtNodeInterfacePtr Apply2x2(complex const* mtrx, bitLenInt depth)
     {
         throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }

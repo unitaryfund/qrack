@@ -107,16 +107,18 @@ void QBdtQStabilizerNode::Branch(bitLenInt depth, bitLenInt parDepth)
     }
 }
 
-void QBdtQStabilizerNode::Prune(bitLenInt depth, bitLenInt unused)
+QBdtNodeInterfacePtr QBdtQStabilizerNode::Prune(bitLenInt depth, bitLenInt unused, const bool& unused2)
 {
     if (IS_NODE_0(scale)) {
         SetZero();
-        return;
+        return shared_from_this();
     }
 
     const real1_f phaseArg = qReg->FirstNonzeroPhase();
     qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
     scale *= std::polar(ONE_R1, (real1)phaseArg);
+
+    return shared_from_this();
 }
 
 void QBdtQStabilizerNode::InsertAtDepth(
@@ -185,7 +187,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // We act CNOT from |+> control to |0> target.
     // (Notice, we act X gate in |1> branch and no gate in |0> branch.)
     qReg1->X(aliceBellBit);
-    nRoot->Prune(2U);
+    nRoot = nRoot->Prune(2U, 1U, true);
     // This is the Bell pair "Eve" creates to distribute to "Alice" and "Bob," in quantum teleportation.
 
     qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
@@ -196,7 +198,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // Alice uses the "prepared state" qubit as the control of a CNOT on the Bell pair.
     qReg0->CNOT(0U, aliceBellBit);
     qReg1->CNOT(0U, aliceBellBit);
-    nRoot->Prune(2U);
+    nRoot = nRoot->Prune(2U, 1U, true);
 
     qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
@@ -204,7 +206,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // Alice acts H on her "prepared state":
     qReg0->H(0U);
     qReg1->H(0U);
-    nRoot->Prune(2U);
+    nRoot = nRoot->Prune(2U, 1U, true);
 
     qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
@@ -232,7 +234,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         b1->SetZero();
     }
 
-    nRoot->Prune(2U);
+    nRoot = nRoot->Prune(2U, 1U, true);
     nRoot->Normalize(2U);
 
     qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
@@ -261,17 +263,17 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         }
     }
 
-    nRoot->Prune(2U);
+    nRoot = nRoot->Prune(2U, 1U, true);
     nRoot->Normalize(2U);
 
     // Bob acts 0 to 2 corrective gates based upon Alice's measured bits.
     if (q0) {
         b1->scale = -b1->scale;
-        nRoot->Prune();
+        nRoot = nRoot->Prune(1U, 1U, true);
     }
     if (q1) {
         std::swap(b0, b1);
-        nRoot->Prune();
+        nRoot = nRoot->Prune(1U, 1U, true);
     }
 
     // This process might need to be repeated, recursively.
@@ -281,7 +283,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     if (!IS_NORM_0(b1->scale)) {
         b1 = b1->PopSpecial(depth);
     }
-    nRoot->Prune();
+    nRoot = nRoot->Prune(1U, 1U, true);
 
     // We're done! Just return the replacement for "this" pointer.
     return nRoot;
