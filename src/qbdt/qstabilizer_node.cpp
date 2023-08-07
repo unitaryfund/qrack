@@ -41,6 +41,10 @@ bool QBdtQStabilizerNode::isEqual(QBdtNodeInterfacePtr r)
         return true;
     }
 
+    if (!r->IsStabilizer()) {
+        return false;
+    }
+
     QUnitCliffordPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;
 
     if (qReg.get() == rReg.get()) {
@@ -67,6 +71,10 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
 
     if (IS_NODE_0(scale)) {
         return IS_NODE_0(r->scale);
+    }
+
+    if (!r->IsStabilizer()) {
+        return false;
     }
 
     QUnitCliffordPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;

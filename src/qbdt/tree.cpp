@@ -527,6 +527,8 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                     qReg->ForceM(qubit - j, false);
                 }
             }
+
+            return;
         }
 
         QBdtNodeInterfacePtr& b0 = leaf->branches[0U];
@@ -664,13 +666,14 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
             if (leaf->IsStabilizer()) {
                 leaf->Branch();
                 NODE_TO_STABILIZER(leaf)->Mtrx(mtrx, target - j);
-            } else {
-#if ENABLE_COMPLEX_X2
-                leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
-#else
-                leaf->Apply2x2(mtrx, qubitCount - target);
-#endif
+
+                return (bitCapInt)(pow2(target - j) - ONE_BCI);
             }
+#if ENABLE_COMPLEX_X2
+            leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
+#else
+            leaf->Apply2x2(mtrx, qubitCount - target);
+#endif
 
             return (bitCapInt)0U;
         });
