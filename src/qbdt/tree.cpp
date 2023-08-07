@@ -482,18 +482,16 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
         if (result) {
             if (IS_NODE_0(b1->scale)) {
-                leaf->SetZero();
-            } else {
-                b0->SetZero();
-                b1->scale /= abs(b1->scale);
+                throw std::runtime_error("QBdt::ForceM() forced a result with 0 probability!");
             }
+            b0->SetZero();
+            b1->scale /= abs(b1->scale);
         } else {
             if (IS_NODE_0(b0->scale)) {
-                leaf->SetZero();
-            } else {
-                b0->scale /= abs(b0->scale);
-                b1->SetZero();
+                throw std::runtime_error("QBdt::ForceM() forced a result with 0 probability!");
             }
+            b0->scale /= abs(b0->scale);
+            b1->SetZero();
         }
     });
 
@@ -676,7 +674,6 @@ void QBdt::ApplyControlledSingle(
     // Undo isSwapped.
     if (isSwapped) {
         Swap(target, controlVec.back());
-        std::swap(target, controlVec.back());
     }
 }
 
