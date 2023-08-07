@@ -17,8 +17,10 @@
 #pragma once
 
 #include "qbdt_node.hpp"
+#include "qbdt_qstabilizer_node.hpp"
 #include "qengine.hpp"
 
+#define NODE_TO_STABILIZER(leaf) (std::dynamic_pointer_cast<QBdtQStabilizerNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
@@ -40,6 +42,7 @@ protected:
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
 
+    QBdtQStabilizerNodePtr MakeQStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
     QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = 0U);
 
     template <typename Fn> void GetTraversal(Fn getLambda)

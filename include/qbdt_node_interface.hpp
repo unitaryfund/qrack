@@ -33,7 +33,7 @@ namespace Qrack {
 class QBdtNodeInterface;
 typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 
-class QBdtNodeInterface {
+class QBdtNodeInterface : public std::enable_shared_from_this<QBdtNodeInterface> {
 protected:
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
     static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
@@ -81,6 +81,8 @@ public:
     {
         // Virtual destructor for inheritance
     }
+
+    virtual bool IsStabilizer() { return false; }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U)
     {
@@ -146,26 +148,20 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-#if ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, bitLenInt depth)
-#else
-    virtual void Apply2x2(complex const* mtrx, bitLenInt depth)
-#endif
     {
-        throw std::out_of_range("QBdtNodeInterface::Apply2x2() not implemented! (You probably set "
-                                "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
+        throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
+    }
+    virtual void Apply2x2(complex const* mtrx, bitLenInt depth)
+    {
+        throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }
 
-#if ENABLE_COMPLEX_X2
-    virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b1)
-#else
-    virtual void PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
-#endif
+    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U)
     {
-        throw std::out_of_range("QBdtNodeInterface::PushSpecial() not implemented! (You probably called "
-                                "PushStateVector() past terminal depth.)");
+        throw std::out_of_range(
+            "QBdtNodeInterface::PopSpecial() not implemented! (Check IsStabilizer() before PopSpecial().)");
     }
 };
 

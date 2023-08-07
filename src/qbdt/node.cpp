@@ -587,20 +587,14 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b0->Branch();
     b1->Branch();
 
+    b0 = b0->PopSpecial();
+    b1 = b1->PopSpecial();
+
     // For parallelism, keep shared_ptr from deallocating.
     QBdtNodeInterfacePtr b00 = b0->branches[0U];
     QBdtNodeInterfacePtr b01 = b0->branches[1U];
     QBdtNodeInterfacePtr b10 = b1->branches[0U];
     QBdtNodeInterfacePtr b11 = b1->branches[1U];
-
-    if (!b00) {
-        b0->PushSpecial(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b1);
-
-        b0->PopStateVector();
-        b1->PopStateVector();
-
-        return;
-    }
 
     if (true) {
         std::lock(b00->mtx, b01->mtx);
@@ -744,20 +738,14 @@ void QBdtNode::PushStateVector(
     b0->Branch();
     b1->Branch();
 
+    b0 = b0->PopSpecial();
+    b1 = b1->PopSpecial();
+
     // For parallelism, keep shared_ptr from deallocating.
     QBdtNodeInterfacePtr b00 = b0->branches[0U];
     QBdtNodeInterfacePtr b01 = b0->branches[1U];
     QBdtNodeInterfacePtr b10 = b1->branches[0U];
     QBdtNodeInterfacePtr b11 = b1->branches[1U];
-
-    if (!b00) {
-        b0->PushSpecial(mtrx, b1);
-
-        b0->PopStateVector();
-        b1->PopStateVector();
-
-        return;
-    }
 
     if (true) {
         std::lock(b00->mtx, b01->mtx);
