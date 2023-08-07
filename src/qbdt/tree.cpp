@@ -517,10 +517,19 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
         if (leaf->IsStabilizer()) {
             const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+            const bitLenInt sq = qubit - j;
             if (result) {
-                qReg->ForceM(qubit - j, true);
+                if (Prob(sq) < (ONE_R1 / 4)) {
+                    leaf->SetZero();
+                } else {
+                    qReg->ForceM(qubit - j, true);
+                }
             } else {
-                qReg->ForceM(qubit - j, false);
+                if (Prob(sq) > (3 * ONE_R1 / 4)) {
+                    leaf->SetZero();
+                } else {
+                    qReg->ForceM(qubit - j, false);
+                }
             }
 
             return;
