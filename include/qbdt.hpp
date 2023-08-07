@@ -18,8 +18,10 @@
 
 #include "mpsshard.hpp"
 #include "qbdt_node.hpp"
+#include "qbdt_qstabilizer_node.hpp"
 #include "qengine.hpp"
 
+#define NODE_TO_STABILIZER(leaf) (std::dynamic_pointer_cast<QBdtQStabilizerNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
@@ -76,6 +78,41 @@ protected:
         }
     }
 
+    void DumpBuffers()
+    {
+        for (size_t i = 0; i < shards.size(); ++i) {
+            shards[i] = NULL;
+        }
+    }
+    void FlushBuffers()
+    {
+        for (size_t i = 0U; i < shards.size(); ++i) {
+            const MpsShardPtr shard = shards[i];
+            if (shard) {
+                shards[i] = NULL;
+                ApplySingle(shard->gate, i);
+            }
+        }
+    }
+
+    void FlushIfBlocked(bitLenInt target, const std::vector<bitLenInt>& controls = std::vector<bitLenInt>())
+    {
+        for (const bitLenInt& control : controls) {
+            const MpsShardPtr shard = shards[control];
+            if (shard && !shard->IsPhase()) {
+                shards[control] = NULL;
+                ApplySingle(shard->gate, control);
+            }
+        }
+
+        const MpsShardPtr shard = shards[target];
+        if (shard) {
+            shards[target] = NULL;
+            ApplySingle(shard->gate, target);
+        }
+    }
+
+    QBdtQStabilizerNodePtr MakeQStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
     QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = 0U);
 
     template <typename Fn> void GetTraversal(Fn getLambda)
