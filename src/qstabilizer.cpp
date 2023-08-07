@@ -835,6 +835,7 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
 {
     if (!randGlobalPhase && IsSeparableZ(c) && M(c) && IsSeparableZ(t) && M(t)) {
         phaseOffset *= -ONE_CMPLX;
+        return;
     }
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -858,6 +859,7 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
 {
     if (!randGlobalPhase && IsSeparableZ(c) && !M(c) && IsSeparableZ(t) && M(t)) {
         phaseOffset *= -ONE_CMPLX;
+        return;
     }
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -898,6 +900,7 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
 
     if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t) && (M(c) != M(t))) {
         phaseOffset *= I_CMPLX;
+        return;
     }
 
     ParFor(
@@ -935,6 +938,7 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
 
     if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t) && (M(c) != M(t))) {
         phaseOffset *= -I_CMPLX;
+        return;
     }
 
     ParFor(
@@ -982,6 +986,7 @@ void QStabilizer::S(bitLenInt t)
 {
     if (!randGlobalPhase && IsSeparableZ(t) && M(t)) {
         phaseOffset *= I_CMPLX;
+        return;
     }
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -998,6 +1003,7 @@ void QStabilizer::IS(bitLenInt t)
 {
     if (!randGlobalPhase && IsSeparableZ(t) && M(t)) {
         phaseOffset *= -I_CMPLX;
+        return;
     }
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -1014,6 +1020,7 @@ void QStabilizer::Z(bitLenInt t)
 {
     if (!randGlobalPhase && IsSeparableZ(t) && M(t)) {
         phaseOffset *= -ONE_CMPLX;
+        return;
     }
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -1042,6 +1049,8 @@ void QStabilizer::Y(bitLenInt t)
     // Y is composed as IS, X, S, with overall -i phase
     if (!randGlobalPhase && IsSeparableZ(t)) {
         phaseOffset *= M(t) ? -I_CMPLX : I_CMPLX;
+        X(t);
+        return;
     }
     ParFor(
         [this, t](const bitLenInt& i) {
