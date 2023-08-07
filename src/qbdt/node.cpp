@@ -596,15 +596,6 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     QBdtNodeInterfacePtr b10 = b1->branches[0U];
     QBdtNodeInterfacePtr b11 = b1->branches[1U];
 
-    if (!b00) {
-        b0->PushSpecial(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b1);
-
-        b0->PopStateVector();
-        b1->PopStateVector();
-
-        return;
-    }
-
     if (true) {
         std::lock(b00->mtx, b01->mtx);
         std::lock_guard<std::mutex> lock0(b00->mtx, std::adopt_lock);
@@ -755,15 +746,6 @@ void QBdtNode::PushStateVector(
     QBdtNodeInterfacePtr b01 = b0->branches[1U];
     QBdtNodeInterfacePtr b10 = b1->branches[0U];
     QBdtNodeInterfacePtr b11 = b1->branches[1U];
-
-    // if (!b00) {
-    //     b0->PushSpecial(mtrx, b1);
-    //
-    //     b0->PopStateVector();
-    //     b1->PopStateVector();
-    //
-    //     return;
-    // }
 
     if (true) {
         std::lock(b00->mtx, b01->mtx);

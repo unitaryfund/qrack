@@ -158,17 +158,6 @@ public:
         throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }
 
-#if ENABLE_COMPLEX_X2
-    virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b1)
-#else
-    virtual void PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
-#endif
-    {
-        throw std::out_of_range("QBdtNodeInterface::PushSpecial() not implemented! (You probably called "
-                                "PushStateVector() past terminal depth.)");
-    }
-
     virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U)
     {
         throw std::out_of_range(
