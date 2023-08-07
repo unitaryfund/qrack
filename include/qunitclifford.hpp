@@ -469,6 +469,10 @@ public:
             return false;
         }
 
+        if (this == toCompare.get()) {
+            return true;
+        }
+
         return EntangleAll()->ApproxCompare(toCompare->EntangleAll(), error_tol);
     }
 
@@ -484,18 +488,21 @@ public:
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::Mtrx"));
         CliffordShard& shard = shards[t];
         shard.unit->Mtrx(mtrx, shard.mapped);
+        CombinePhaseOffsets(shard.unit);
     }
     void Phase(complex topLeft, complex bottomRight, bitLenInt t)
     {
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::Phase"));
         CliffordShard& shard = shards[t];
         shard.unit->Phase(topLeft, bottomRight, shard.mapped);
+        CombinePhaseOffsets(shard.unit);
     }
     void Invert(complex topRight, complex bottomLeft, bitLenInt t)
     {
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::Invert"));
         CliffordShard& shard = shards[t];
         shard.unit->Invert(topRight, bottomLeft, shard.mapped);
+        CombinePhaseOffsets(shard.unit);
     }
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt t)
     {
