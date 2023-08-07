@@ -469,6 +469,10 @@ public:
             return false;
         }
 
+        if (this == toCompare.get()) {
+            return true;
+        }
+
         return EntangleAll()->ApproxCompare(toCompare->EntangleAll(), error_tol);
     }
 

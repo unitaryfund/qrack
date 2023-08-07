@@ -49,6 +49,10 @@ bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
         return !rhs;
     }
 
+    if (!rhs || (lhs->IsStabilizer() != rhs->IsStabilizer())) {
+        return false;
+    }
+
     return lhs->isEqual(rhs);
 }
 
