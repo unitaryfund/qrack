@@ -526,14 +526,14 @@ std::vector<complex> QUnitClifford::GetAmplitudes(std::vector<bitCapInt> perms)
 bool QUnitClifford::SeparateBit(bool value, bitLenInt qubit)
 {
     CliffordShard& shard = shards[qubit];
-    QStabilizerPtr unit = shard.unit;
+    const QStabilizerPtr unit = shard.unit;
 
     if (unit->GetQubitCount() <= 1U) {
         unit->SetBit(0, value);
         return true;
     }
 
-    bitLenInt mapped = shard.mapped;
+    const bitLenInt mapped = shard.mapped;
 
     if (!unit->TrySeparate(mapped)) {
         // This conditional coaxes the unit into separable form, so this should never actually happen.
@@ -562,7 +562,7 @@ bool QUnitClifford::ForceM(bitLenInt t, bool res, bool doForce, bool doApply)
         throw std::invalid_argument("QUnitClifford::ForceM target parameter must be within allocated qubit bounds!");
     }
 
-    CliffordShard& shard = shards[t];
+    const CliffordShard& shard = shards[t];
 
     const bool result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
     if (!randGlobalPhase) {
