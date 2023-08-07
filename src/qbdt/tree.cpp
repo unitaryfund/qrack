@@ -115,9 +115,10 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
 
     std::mutex myMutex;
     bitCapInt idx = 0U;
-    std::vector<std::future<void>> futures(threads);
+    std::vector<std::future<void>> futures;
+    futures.reserve(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu] = std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, fn]() {
+        futures.push_back(std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, fn]() {
             for (;;) {
                 bitCapInt i;
                 if (true) {
@@ -141,10 +142,10 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
                     }
                 }
             }
-        });
+        }));
     }
 
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+    for (unsigned cpu = 0U; cpu < futures.size(); ++cpu) {
         futures[cpu].get();
     }
 #else
@@ -174,9 +175,10 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
 
     std::mutex myMutex;
     bitCapInt idx = 0U;
-    std::vector<std::future<void>> futures(threads);
+    std::vector<std::future<void>> futures;
+    futures.reserve(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu] = std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, cpu, fn]() {
+        futures.push_back(std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, cpu, fn]() {
             for (;;) {
                 bitCapInt i;
                 if (true) {
@@ -192,10 +194,10 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
                     fn(j + l, cpu);
                 }
             }
-        });
+        }));
     }
 
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
+    for (unsigned cpu = 0U; cpu < futures.size(); ++cpu) {
         futures[cpu].get();
     }
 #else
