@@ -450,7 +450,9 @@ public:
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
-        // Intentionally left blank
+        if (!randGlobalPhase && qubitCount) {
+           shards[0U].unit->NormalizeState(nrm, norm_thresh, phaseArg);
+        }
     }
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
