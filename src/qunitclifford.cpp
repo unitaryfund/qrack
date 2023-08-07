@@ -34,12 +34,7 @@ QUnitClifford::QUnitClifford(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp
     std::vector<int64_t> ignored6, bitLenInt ignored7, real1_f ignored8)
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
 {
-    shards.emplace_back(0U, MakeStabilizer(1U, perm & 1U, phaseFac));
-    for (bitLenInt i = 1U; i < qubitCount; ++i) {
-        shards.emplace_back(0U,
-            MakeStabilizer(1U, (perm >> i) & 1U,
-                (randGlobalPhase && (phaseFac == CMPLX_DEFAULT_ARG)) ? CMPLX_DEFAULT_ARG : ONE_CMPLX));
-    }
+    SetPermutation(perm, phaseFac);
 }
 
 QStabilizerPtr QUnitClifford::MakeStabilizer(bitLenInt length, bitCapInt perm, complex phaseFac)
@@ -53,7 +48,7 @@ QStabilizerPtr QUnitClifford::MakeStabilizer(bitLenInt length, bitCapInt perm, c
 QInterfacePtr QUnitClifford::Clone()
 {
     QUnitCliffordPtr copyPtr = std::make_shared<QUnitClifford>(
-        qubitCount, 0U, rand_generator, CMPLX_DEFAULT_ARG, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+        qubitCount, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
 
     return CloneBody(copyPtr);
 }
@@ -204,8 +199,16 @@ void QUnitClifford::SetPermutation(bitCapInt perm, complex phaseFac)
 
     shards.clear();
 
+    if (phaseFac != CMPLX_DEFAULT_ARG) {
+        phaseOffset = phaseFac;
+    } else if (randGlobalPhase) {
+        phaseOffset = std::polar(ONE_R1, 2 * PI_R1 * Rand());
+    } else {
+        phaseOffset = ONE_CMPLX;
+    }
+
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        shards.emplace_back(0U, MakeStabilizer(1U, (perm >> i) & 1U));
+        shards.emplace_back(0U, MakeStabilizer(1U, (perm >> i) & 1U, ONE_CMPLX));
     }
 }
 
@@ -411,24 +414,24 @@ void QUnitClifford::SortUnit(QStabilizerPtr unit, std::vector<QSortEntry>& bits,
 void QUnitClifford::GetQuantumState(complex* stateVec)
 {
     QUnitCliffordPtr thisCopy = std::dynamic_pointer_cast<QUnitClifford>(Clone());
-    thisCopy->EntangleAll();
-    thisCopy->shards[0U].unit->GetQuantumState(stateVec);
+    thisCopy->shards[0U].unit->NormalizeState(ONE_R1_F, FP_NORM_EPSILON, std::arg(phaseOffset));
+    thisCopy->EntangleAll()->GetQuantumState(stateVec);
 }
 
 /// Convert the state to ket notation (warning: could be huge!)
 void QUnitClifford::GetQuantumState(QInterfacePtr eng)
 {
     QUnitCliffordPtr thisCopy = std::dynamic_pointer_cast<QUnitClifford>(Clone());
-    thisCopy->EntangleAll();
-    thisCopy->shards[0U].unit->GetQuantumState(eng);
+    thisCopy->shards[0U].unit->NormalizeState(ONE_R1_F, FP_NORM_EPSILON, std::arg(phaseOffset));
+    thisCopy->EntangleAll()->GetQuantumState(eng);
 }
 
 /// Convert the state to ket notation (warning: could be huge!)
 std::map<bitCapInt, complex> QUnitClifford::GetQuantumState()
 {
     QUnitCliffordPtr thisCopy = std::dynamic_pointer_cast<QUnitClifford>(Clone());
-    thisCopy->EntangleAll();
-    return thisCopy->shards[0U].unit->GetQuantumState();
+    thisCopy->shards[0U].unit->NormalizeState(ONE_R1_F, FP_NORM_EPSILON, std::arg(phaseOffset));
+    return thisCopy->EntangleAll()->GetQuantumState();
 }
 
 /// Get all probabilities corresponding to ket notation
@@ -447,7 +450,6 @@ complex QUnitClifford::GetAmplitude(bitCapInt perm)
     }
 
     std::map<QStabilizerPtr, bitCapInt> perms;
-
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         CliffordShard& shard = shards[i];
         if (perms.find(shard.unit) == perms.end()) {
@@ -458,7 +460,7 @@ complex QUnitClifford::GetAmplitude(bitCapInt perm)
         }
     }
 
-    complex result(ONE_R1, ZERO_R1);
+    complex result(phaseOffset);
     for (auto&& qi : perms) {
         result *= qi.first->GetAmplitude(qi.second);
         if (norm(result) <= REAL1_EPSILON) {
@@ -515,7 +517,7 @@ std::vector<complex> QUnitClifford::GetAmplitudes(std::vector<bitCapInt> perms)
                 break;
             }
         }
-        toRet.push_back(amp);
+        toRet.push_back(phaseOffset * amp);
     }
 
     return toRet;
@@ -563,6 +565,10 @@ bool QUnitClifford::ForceM(bitLenInt t, bool res, bool doForce, bool doApply)
     CliffordShard& shard = shards[t];
 
     const bool result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
+    if (!randGlobalPhase) {
+        phaseOffset *= shard.unit->GetPhaseOffset();
+        shard.unit->ResetPhaseOffset();
+    }
 
     if (!doApply) {
         return result;
@@ -743,6 +749,7 @@ void QUnitClifford::SetQuantumState(const complex* inputState)
         throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
     }
 
+    phaseOffset = ONE_CMPLX;
     SetPermutation(0U);
 
     const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
