@@ -463,6 +463,8 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         return result;
     }
 
+    shards[qubit] = NULL;
+
     const bitCapInt qPower = pow2(qubit);
     root->scale = GetNonunitaryPhase();
 
