@@ -508,7 +508,7 @@ std::vector<complex> QUnitClifford::GetAmplitudes(std::vector<bitCapInt> perms)
                 permMap[shard.unit] |= pow2(shard.mapped);
             }
         }
-        complex amp = ONE_CMPLX;
+        complex amp = phaseOffset;
         for (const auto& p : permMap) {
             const std::set<bitCapInt>& s = permsMap[p.first];
             const size_t i = std::distance(s.begin(), s.find(p.second));
@@ -517,7 +517,7 @@ std::vector<complex> QUnitClifford::GetAmplitudes(std::vector<bitCapInt> perms)
                 break;
             }
         }
-        toRet.push_back(phaseOffset * amp);
+        toRet.push_back(amp);
     }
 
     return toRet;
@@ -749,7 +749,6 @@ void QUnitClifford::SetQuantumState(const complex* inputState)
         throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
     }
 
-    phaseOffset = ONE_CMPLX;
     SetPermutation(0U);
 
     const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
