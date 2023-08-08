@@ -575,7 +575,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 
     par_for_qbdt(qPower, target,
 #if ENABLE_COMPLEX_X2
-        [this, target, mtrx, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff](const bitCapInt& i) {
+        [this, target, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff](const bitCapInt& i) {
 #else
         [this, target, mtrx](const bitCapInt& i) {
 #endif
@@ -647,10 +647,10 @@ void QBdt::ApplyControlledSingle(
 
     par_for_qbdt(qPower, target,
 #if ENABLE_COMPLEX_X2
-        [this, controlMask, controlPerm, target, mtrx, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff, isAnti](
+        [this, controlMask, controlPerm, target, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff](
             const bitCapInt& i) {
 #else
-        [this, controlMask, controlPerm, target, mtrx, isAnti](const bitCapInt& i) {
+        [this, controlMask, controlPerm, target, mtrx](const bitCapInt& i) {
 #endif
             if ((i & controlMask) != controlPerm) {
                 return (bitCapInt)(controlMask - ONE_BCI);
