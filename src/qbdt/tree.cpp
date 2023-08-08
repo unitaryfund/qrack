@@ -368,6 +368,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     Finish();
 
     if (dest) {
+        dest->Finish();
         dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
         std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     } else {
@@ -390,7 +391,14 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
 
     QBdtPtr nQubits = std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
-    return Compose(nQubits, start);
+    nQubits->SetPermutation(0U);
+    nQubits->root->InsertAtDepth(root, length, qubitCount);
+    root = nQubits->root;
+    shards.insert(shards.begin() + start, nQubits->shards.begin(), nQubits->shards.end());
+    SetQubitCount(qubitCount + length);
+    ROR(length, 0U, start + length);
+
+    return start;
 }
 
 real1_f QBdt::Prob(bitLenInt qubit)
@@ -857,6 +865,10 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
         shard->Compose(mtrx);
     } else {
         shard = std::make_shared<MpsShard>(mtrx);
+    }
+
+    if (!shard->IsPhase() || !shard->IsInvert()) {
+        FlushBuffer(target);
     }
 }
 
