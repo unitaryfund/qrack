@@ -593,7 +593,6 @@ bitCapInt QBdt::MAll()
             result |= NODE_TO_STABILIZER(leaf)->MAll() << i;
             break;
         }
-        leaf->Branch();
         real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1U]->scale));
         bool bitResult;
         if (oneChance >= ONE_R1) {
