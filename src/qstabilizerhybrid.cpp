@@ -114,7 +114,7 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm, bitLenInt qbCount)
 
 void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
 {
-    complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
     pauliShard->Compose(shards[qubit]->gate);
     shards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
@@ -123,7 +123,7 @@ void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
 
 void QStabilizerHybrid::FlushH(bitLenInt qubit)
 {
-    complex hGate[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+    const complex hGate[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
         -complex(SQRT1_2_R1, ZERO_R1) };
     MpsShardPtr shard = std::make_shared<MpsShard>(hGate);
     shard->Compose(shards[qubit]->gate);
