@@ -50,18 +50,28 @@ protected:
             shards[i] = NULL;
         }
     }
+    void FlushBuffer(bitLenInt t)
+    {
+        const MpsShardPtr shard = shards[t];
+        if (shard) {
+            shards[t] = NULL;
+            ApplySingle(shard->gate, t);
+        }
+    }
     void FlushBuffers()
     {
         for (size_t i = 0U; i < shards.size(); ++i) {
-            const MpsShardPtr shard = shards[i];
-            if (shard) {
-                shards[i] = NULL;
-                ApplySingle(shard->gate, i);
-            }
+            FlushBuffer(i);
         }
     }
 
     void FlushIfBlocked(bitLenInt target, const std::vector<bitLenInt>& controls = std::vector<bitLenInt>())
+    {
+        FlushIfBlocked(controls);
+        FlushBuffer(target);
+    }
+
+    void FlushIfBlocked(const std::vector<bitLenInt>& controls)
     {
         for (const bitLenInt& control : controls) {
             const MpsShardPtr shard = shards[control];
@@ -69,12 +79,6 @@ protected:
                 shards[control] = NULL;
                 ApplySingle(shard->gate, control);
             }
-        }
-
-        const MpsShardPtr shard = shards[target];
-        if (shard) {
-            shards[target] = NULL;
-            ApplySingle(shard->gate, target);
         }
     }
 

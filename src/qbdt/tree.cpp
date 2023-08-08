@@ -49,7 +49,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , root(NULL)
     , deviceIDs(devIds)
     , engines(eng)
-    , shards(qBitCount, NULL)
+    , shards(qubitCount)
 {
     Init();
 
@@ -235,14 +235,19 @@ QInterfacePtr QBdt::Clone()
 {
     Finish();
 
-    QBdtPtr copyPtr = std::make_shared<QBdt>(engines, 0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+    QBdtPtr c = std::make_shared<QBdt>(engines, 0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+        -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
-    copyPtr->root = root ? root->ShallowClone() : NULL;
-    copyPtr->shards = std::vector<MpsShardPtr>(shards);
-    copyPtr->SetQubitCount(qubitCount);
+    c->root = root ? root->ShallowClone() : NULL;
+    c->shards.resize(shards.size());
+    c->SetQubitCount(qubitCount);
+    for (size_t i = 0U; i < shards.size(); ++i) {
+        if (shards[i]) {
+            c->shards[i] = shards[i]->Clone();
+        }
+    }
 
-    return copyPtr;
+    return c;
 }
 
 real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
@@ -322,6 +327,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     }
 
     Finish();
+    toCopy->Finish();
 
     root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
 
@@ -384,14 +390,7 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
 
     QBdtPtr nQubits = std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
-    nQubits->SetPermutation(0U);
-    nQubits->root->InsertAtDepth(root, length, qubitCount);
-    root = nQubits->root;
-    shards.insert(shards.begin() + start, nQubits->shards.begin(), nQubits->shards.end());
-    SetQubitCount(qubitCount + length);
-    ROR(length, 0U, start + length);
-
-    return start;
+    return Compose(nQubits, start);
 }
 
 real1_f QBdt::Prob(bitLenInt qubit)
@@ -897,9 +896,12 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
         return;
     }
 
+    std::vector<bitLenInt> lControls(controls);
+    lControls.push_back(target);
+
     const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
-        FlushIfBlocked(target, controls);
+        FlushIfBlocked(lControls);
         ApplyControlledSingle(mtrx, controls, target, false);
         return;
     }
@@ -908,13 +910,11 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
         return;
     }
 
-    std::vector<bitLenInt> lControls(controls);
-    lControls.push_back(target);
+    FlushIfBlocked(lControls);
     std::sort(lControls.begin(), lControls.end());
     target = lControls.back();
     lControls.pop_back();
 
-    FlushIfBlocked(target, lControls);
     ApplyControlledSingle(mtrx, lControls, target, false);
 }
 

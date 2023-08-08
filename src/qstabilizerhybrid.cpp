@@ -359,7 +359,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     c->ancillaCount = ancillaCount;
     for (size_t i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
-            c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
+            c->shards[i] = shards[i]->Clone();
         }
     }
 
