@@ -642,6 +642,11 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         }
 
         root = root->PopSpecial();
+    } else if (root->IsStabilizer()) {
+        NODE_TO_STABILIZER(root)->Mtrx(mtrx, target);
+        root = root->Prune();
+
+        return;
     }
 
     const bitCapInt qPower = pow2(target);
@@ -681,9 +686,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
             }
 
             if (leaf->IsStabilizer()) {
-                leaf->Branch();
                 NODE_TO_STABILIZER(leaf)->Mtrx(mtrx, target - j);
-
                 return (bitCapInt)(pow2(target - j) - ONE_BCI);
             }
 #if ENABLE_COMPLEX_X2
@@ -751,6 +754,16 @@ void QBdt::ApplyControlledSingle(
         } else {
             root = root->PopSpecial(controls.size() + 1U);
         }
+    } else if (root->IsStabilizer()) {
+        const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+        if (isAnti) {
+            qReg->MACMtrx(controls, mtrx, target);
+        } else {
+            qReg->MCMtrx(controls, mtrx, target);
+        }
+        root = root->Prune();
+
+        return;
     }
 
     std::vector<bitLenInt> controlVec(controls.begin(), controls.end());
@@ -809,7 +822,6 @@ void QBdt::ApplyControlledSingle(
             }
 
             if (leaf->IsStabilizer()) {
-                leaf->Branch();
                 const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
                 if (control < j) {
                     qReg->Mtrx(mtrx, target - j);
