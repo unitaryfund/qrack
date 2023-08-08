@@ -490,6 +490,19 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         return result;
     }
 
+    if (root->IsStabilizer()) {
+        const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+        if (result) {
+            qReg->ForceM(qubit, true);
+            root = root->Prune();
+        } else {
+            qReg->ForceM(qubit, false);
+            root = root->Prune();
+        }
+
+        return result;
+    }
+
     const bitCapInt qPower = pow2(qubit);
     root->scale = GetNonunitaryPhase();
 
