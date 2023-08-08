@@ -71,6 +71,12 @@ struct MpsShard {
         return IsPhase() && (norm(gate[0U] + gate[3U]) <= FP_NORM_EPSILON) &&
             (randGlobalPhase || (norm(ONE_CMPLX - gate[0U]) <= FP_NORM_EPSILON));
     }
+
+    bool IsH()
+    {
+        return (norm(SQRT1_2_R1 - gate[0U]) <= FP_NORM_EPSILON) && (norm(SQRT1_2_R1 - gate[1U]) <= FP_NORM_EPSILON) &&
+            (norm(SQRT1_2_R1 - gate[2U]) <= FP_NORM_EPSILON) && (norm(SQRT1_2_R1 + gate[3U]) <= FP_NORM_EPSILON);
+    }
 };
 
 } // namespace Qrack

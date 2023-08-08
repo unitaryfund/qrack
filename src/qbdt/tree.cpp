@@ -693,6 +693,10 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
     } else {
         shard = std::make_shared<MpsShard>(mtrx);
     }
+
+    if (!shard->IsPhase() || !shard->IsInvert()) {
+        FlushBuffer(target);
+    }
 }
 
 void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
