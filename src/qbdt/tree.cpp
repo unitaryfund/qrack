@@ -642,7 +642,9 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         }
 
         root = root->PopSpecial();
-    } else if (root->IsStabilizer()) {
+    }
+
+    if (root->IsStabilizer()) {
         NODE_TO_STABILIZER(root)->Mtrx(mtrx, target);
         root = root->Prune();
 
@@ -754,7 +756,9 @@ void QBdt::ApplyControlledSingle(
         } else {
             root = root->PopSpecial(controls.size() + 1U);
         }
-    } else if (root->IsStabilizer()) {
+    }
+
+    if (root->IsStabilizer()) {
         const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
         if (isAnti) {
             qReg->MACMtrx(controls, mtrx, target);
