@@ -120,7 +120,7 @@ protected:
         });
 
         root->PopStateVector(qubitCount);
-        root->Prune(qubitCount);
+        root = root->Prune(qubitCount);
     }
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
