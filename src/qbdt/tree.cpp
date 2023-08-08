@@ -518,7 +518,6 @@ bitCapInt QBdt::MAll()
     Finish();
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        leaf->Branch();
         real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1U]->scale));
         bool bitResult;
         if (oneChance >= ONE_R1) {
