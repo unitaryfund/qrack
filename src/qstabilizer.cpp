@@ -943,8 +943,11 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
         return;
     }
 
-    if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t) && (M(c) != M(t))) {
-        phaseOffset *= -I_CMPLX;
+    if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t)) {
+        if (M(c) != M(t)) {
+            phaseOffset *= -I_CMPLX;
+            Swap(c, t);
+        }
         return;
     }
 
