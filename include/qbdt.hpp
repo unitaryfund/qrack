@@ -61,18 +61,23 @@ protected:
 
     void FlushIfBlocked(bitLenInt target, const std::vector<bitLenInt>& controls = std::vector<bitLenInt>())
     {
+        FlushIfBlocked(controls);
+
+        const MpsShardPtr shard = shards[target];
+        if (shard) {
+            shards[target] = NULL;
+            ApplySingle(shard->gate, target);
+        }
+    }
+
+    void FlushIfBlocked(const std::vector<bitLenInt>& controls)
+    {
         for (const bitLenInt& control : controls) {
             const MpsShardPtr shard = shards[control];
             if (shard && !shard->IsPhase()) {
                 shards[control] = NULL;
                 ApplySingle(shard->gate, control);
             }
-        }
-
-        const MpsShardPtr shard = shards[target];
-        if (shard) {
-            shards[target] = NULL;
-            ApplySingle(shard->gate, target);
         }
     }
 

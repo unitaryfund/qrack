@@ -741,7 +741,7 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
     target = lControls.back();
     lControls.pop_back();
 
-    FlushIfBlocked(target, lControls);
+    FlushIfBlocked(lControls);
     ApplyControlledSingle(mtrx, lControls, target, false);
 }
 
