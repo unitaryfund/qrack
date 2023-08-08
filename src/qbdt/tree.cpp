@@ -407,10 +407,14 @@ real1_f QBdt::Prob(bitLenInt qubit)
         throw std::invalid_argument("QBdt::Prob qubit index parameter must be within allocated qubit bounds!");
     }
 
-    const MpsShardPtr shard = shards[qubit];
-    if (shard && !shard->IsPhase()) {
-        shards[qubit] = NULL;
-        ApplySingle(shard->gate, qubit);
+    const MpsShardPtr& shard = shards[qubit];
+    if (shard) {
+        if (shard->IsInvert()) {
+            InvertBuffer(qubit);
+        } else if (!shard->IsPhase()) {
+            shards[qubit] = NULL;
+            ApplySingle(shard->gate, qubit);
+        }
     }
 
     const bitCapInt qPower = pow2(qubit);
@@ -496,6 +500,8 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     if (!doApply) {
         return result;
     }
+
+    shards[qubit] = NULL;
 
     if (root->IsStabilizer()) {
         const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
@@ -587,10 +593,15 @@ bitCapInt QBdt::MAll()
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         const MpsShardPtr shard = shards[i];
-        if (shard && !shard->IsPhase()) {
-            ApplySingle(shard->gate, i);
+        if (shard) {
+            if (shard->IsInvert()) {
+                shards[i] = NULL;
+                X(i);
+            } else if (!shard->IsPhase()) {
+                shards[i] = NULL;
+                ApplySingle(shard->gate, i);
+            }
         }
-        shards[i] = NULL;
     }
 
     Finish();

@@ -82,6 +82,15 @@ protected:
         }
     }
 
+    void InvertBuffer(bitLenInt qubit)
+    {
+        const complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
+        pauliShard->Compose(shards[qubit]->gate);
+        shards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
+        ApplySingle(pauliX, qubit);
+    }
+
     QBdtQStabilizerNodePtr MakeQStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
     QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = 0U);
 
