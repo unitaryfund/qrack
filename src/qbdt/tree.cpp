@@ -94,7 +94,6 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
 {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    Finish();
     root->Branch(maxQubit);
 
     const bitCapInt Stride = bdtStride;
@@ -212,7 +211,6 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
-    Dump();
     DumpBuffers();
 
     if (!qubitCount) {
@@ -233,8 +231,6 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
 QInterfacePtr QBdt::Clone()
 {
-    Finish();
-
     QBdtPtr c = std::make_shared<QBdt>(engines, 0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
         -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
@@ -268,9 +264,6 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     const unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<complex[]> projectionBuff(new complex[numCores]());
 
-    Finish();
-    toCompare->Finish();
-
     if (randGlobalPhase) {
         real1_f lPhaseArg = FirstNonzeroPhase();
         real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
@@ -296,8 +289,6 @@ complex QBdt::GetAmplitude(bitCapInt perm)
     }
 
     FlushBuffers();
-
-    Finish();
 
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
@@ -325,9 +316,6 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     if (!toCopy->qubitCount) {
         return start;
     }
-
-    Finish();
-    toCopy->Finish();
 
     root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
 
@@ -365,10 +353,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         return;
     }
 
-    Finish();
-
     if (dest) {
-        dest->Finish();
         dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
         std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     } else {
@@ -386,8 +371,6 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
     if (!length) {
         return start;
     }
-
-    Finish();
 
     QBdtPtr nQubits = std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
@@ -425,8 +408,6 @@ real1_f QBdt::Prob(bitLenInt qubit)
     const unsigned numCores = GetConcurrencyLevel();
     std::map<QEnginePtr, real1> qiProbs;
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
-
-    Finish();
 
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
@@ -466,8 +447,6 @@ real1_f QBdt::Prob(bitLenInt qubit)
 real1_f QBdt::ProbAll(bitCapInt perm)
 {
     FlushBuffers();
-
-    Finish();
 
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
@@ -613,8 +592,6 @@ bitCapInt QBdt::MAll()
             }
         }
     }
-
-    Finish();
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         if (leaf->IsStabilizer()) {
@@ -897,10 +874,6 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
     } else {
         shard = std::make_shared<MpsShard>(mtrx);
     }
-
-    if (!shard->IsPhase() && !shard->IsInvert()) {
-        FlushBuffer(target);
-    }
 }
 
 void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
@@ -912,6 +885,7 @@ void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, b
     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         MCInvert(controls, mtrx[1U], mtrx[2U], target);
     } else {
+        FlushNonPhaseBuffers();
         FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, false);
     }
@@ -927,6 +901,7 @@ void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         MACInvert(controls, mtrx[1U], mtrx[2U], target);
     } else {
+        FlushNonPhaseBuffers();
         FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, true);
     }
@@ -944,7 +919,7 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
 
     const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
-        FlushIfBlocked(lControls);
+        FlushNonPhaseBuffers();
         ApplyControlledSingle(mtrx, controls, target, false);
         return;
     }
@@ -953,11 +928,11 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
         return;
     }
 
-    FlushIfBlocked(lControls);
     std::sort(lControls.begin(), lControls.end());
     target = lControls.back();
     lControls.pop_back();
 
+    FlushNonPhaseBuffers();
     ApplyControlledSingle(mtrx, lControls, target, false);
 }
 
@@ -970,6 +945,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
 
     const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
+        FlushNonPhaseBuffers();
         FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, false);
         return;
@@ -979,6 +955,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     std::sort(lControls.begin(), lControls.end());
 
     if (lControls.back() < target) {
+        FlushNonPhaseBuffers();
         FlushIfBlocked(target, lControls);
         ApplyControlledSingle(mtrx, lControls, target, false);
         return;
