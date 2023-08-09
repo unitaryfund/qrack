@@ -22,7 +22,7 @@
 #endif
 
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
-#define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
+#define IS_SAME_AMP(a, b) (norm((a) - (b)) <= _qrack_qbdt_sep_thresh)
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #define ATOMIC_ASYNC(...)                                                                                              \
     std::async(std::launch::async, [__VA_ARGS__]()
