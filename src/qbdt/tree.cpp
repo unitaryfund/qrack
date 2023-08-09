@@ -695,10 +695,6 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
     } else {
         shard = std::make_shared<MpsShard>(mtrx);
     }
-
-    if (!shard->IsPhase() && !shard->IsInvert()) {
-        FlushBuffer(target);
-    }
 }
 
 void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
@@ -710,6 +706,7 @@ void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, b
     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         MCInvert(controls, mtrx[1U], mtrx[2U], target);
     } else {
+        FlushNonPhaseBuffers();
         FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, false);
     }
@@ -725,6 +722,7 @@ void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
     } else if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         MACInvert(controls, mtrx[1U], mtrx[2U], target);
     } else {
+        FlushNonPhaseBuffers();
         FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, true);
     }
@@ -742,7 +740,7 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
 
     const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
-        FlushIfBlocked(lControls);
+        FlushNonPhaseBuffers();
         ApplyControlledSingle(mtrx, controls, target, false);
         return;
     }
@@ -751,11 +749,11 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
         return;
     }
 
-    FlushIfBlocked(lControls);
     std::sort(lControls.begin(), lControls.end());
     target = lControls.back();
     lControls.pop_back();
 
+    FlushNonPhaseBuffers();
     ApplyControlledSingle(mtrx, lControls, target, false);
 }
 
@@ -768,6 +766,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
 
     const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
+        FlushNonPhaseBuffers();
         FlushIfBlocked(target, controls);
         ApplyControlledSingle(mtrx, controls, target, false);
         return;
@@ -777,6 +776,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     std::sort(lControls.begin(), lControls.end());
 
     if (lControls.back() < target) {
+        FlushNonPhaseBuffers();
         FlushIfBlocked(target, lControls);
         ApplyControlledSingle(mtrx, lControls, target, false);
         return;

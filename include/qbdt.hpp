@@ -62,13 +62,11 @@ protected:
             FlushBuffer(i);
         }
     }
-
     void FlushIfBlocked(bitLenInt target, const std::vector<bitLenInt>& controls = std::vector<bitLenInt>())
     {
         FlushIfBlocked(controls);
         FlushBuffer(target);
     }
-
     void FlushIfBlocked(const std::vector<bitLenInt>& controls)
     {
         for (const bitLenInt& control : controls) {
@@ -76,6 +74,16 @@ protected:
             if (shard && !shard->IsPhase()) {
                 shards[control] = NULL;
                 ApplySingle(shard->gate, control);
+            }
+        }
+    }
+    void FlushNonPhaseBuffers()
+    {
+        for (size_t i = 0U; i < shards.size(); ++i) {
+            const MpsShardPtr shard = shards[i];
+            if (shard && !shard->IsPhase()) {
+                shards[i] = NULL;
+                ApplySingle(shard->gate, i);
             }
         }
     }
