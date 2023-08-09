@@ -473,7 +473,8 @@ public:
             return true;
         }
 
-        return EntangleAll()->ApproxCompare(toCompare->EntangleAll(), error_tol);
+        return std::dynamic_pointer_cast<QUnitClifford>(Clone())->EntangleAll()->ApproxCompare(
+            std::dynamic_pointer_cast<QUnitClifford>(toCompare->Clone())->EntangleAll(), error_tol);
     }
 
     real1_f Prob(bitLenInt qubit)
