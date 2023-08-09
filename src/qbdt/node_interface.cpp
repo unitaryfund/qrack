@@ -64,11 +64,7 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    if (!isEqualUnder(r)) {
-        return false;
-    }
-
-    return true;
+    return isEqualUnder(r);
 }
 
 bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
