@@ -73,6 +73,10 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
         return IS_NODE_0(r->scale);
     }
 
+    if (IS_NODE_0(r->scale)) {
+        return false;
+    }
+
     if (!r->IsStabilizer()) {
         return false;
     }
