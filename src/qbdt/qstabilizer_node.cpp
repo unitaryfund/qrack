@@ -171,7 +171,12 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
 
 QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 {
-    if (!depth || IS_NODE_0(scale)) {
+    if (!depth) {
+        return shared_from_this();
+    }
+
+    if (IS_NODE_0(scale)) {
+        SetZero();
         return shared_from_this();
     }
 
@@ -247,7 +252,6 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     }
 
     nRoot = nRoot->Prune(2U, 1U, true);
-    nRoot->Normalize(2U);
 
     qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
@@ -276,7 +280,6 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     }
 
     nRoot = nRoot->Prune(2U, 1U, true);
-    nRoot->Normalize(2U);
 
     // Bob acts 0 to 2 corrective gates based upon Alice's measured bits.
     if (q0) {
@@ -289,13 +292,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     }
 
     // This process might need to be repeated, recursively.
-    if (!IS_NORM_0(b0->scale)) {
-        b0 = b0->PopSpecial(depth);
-    }
-    if (!IS_NORM_0(b1->scale)) {
-        b1 = b1->PopSpecial(depth);
-    }
-    nRoot = nRoot->Prune(1U, 1U, true);
+    b0 = b0->PopSpecial(depth);
+    b1 = b1->PopSpecial(depth);
 
     // We're done! Just return the replacement for "this" pointer.
     return nRoot;
