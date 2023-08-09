@@ -93,7 +93,6 @@ protected:
     template <typename Fn> void GetTraversal(Fn getLambda)
     {
         FlushBuffers();
-        Finish();
 
         for (bitCapInt i = 0U; i < maxQPower; ++i) {
             QBdtNodeInterfacePtr leaf = root;
@@ -111,7 +110,6 @@ protected:
     }
     template <typename Fn> void SetTraversal(Fn setLambda)
     {
-        Dump();
         DumpBuffers();
 
         root = std::make_shared<QBdtNode>();

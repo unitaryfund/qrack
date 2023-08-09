@@ -69,7 +69,6 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
 {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    Finish();
     root->Branch(maxQubit);
 
     const bitCapInt Stride = bdtStride;
@@ -187,7 +186,6 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
-    Dump();
     DumpBuffers();
 
     if (!qubitCount) {
@@ -215,8 +213,6 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
 QInterfacePtr QBdt::Clone()
 {
-    Finish();
-
     QBdtPtr c = std::make_shared<QBdt>(engines, 0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
         -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
@@ -250,9 +246,6 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     const unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<complex[]> projectionBuff(new complex[numCores]());
 
-    Finish();
-    toCompare->Finish();
-
     if (randGlobalPhase) {
         real1_f lPhaseArg = FirstNonzeroPhase();
         real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
@@ -279,8 +272,6 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
     FlushBuffers();
 
-    Finish();
-
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
@@ -303,9 +294,6 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     if (!toCopy->qubitCount) {
         return start;
     }
-
-    Finish();
-    toCopy->Finish();
 
     root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
 
@@ -343,10 +331,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         return;
     }
 
-    Finish();
-
     if (dest) {
-        dest->Finish();
         dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
         std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     } else {
@@ -364,8 +349,6 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
     if (!length) {
         return start;
     }
-
-    Finish();
 
     QBdtPtr nQubits = std::make_shared<QBdt>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
@@ -396,8 +379,6 @@ real1_f QBdt::Prob(bitLenInt qubit)
     std::map<QEnginePtr, real1> qiProbs;
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
-    Finish();
-
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
@@ -427,8 +408,6 @@ real1_f QBdt::Prob(bitLenInt qubit)
 real1_f QBdt::ProbAll(bitCapInt perm)
 {
     FlushBuffers();
-
-    Finish();
 
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
@@ -523,8 +502,6 @@ bitCapInt QBdt::MAll()
         }
         shards[i] = NULL;
     }
-
-    Finish();
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1U]->scale));
