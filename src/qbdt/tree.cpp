@@ -82,7 +82,7 @@ void QBdt::Init()
 QBdtQStabilizerNodePtr QBdt::MakeQStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm)
 {
     return std::make_shared<QBdtQStabilizerNode>(scale,
-        std::make_shared<QUnitClifford>(qbCount, perm, rand_generator, ONE_CMPLX, false, false, false, 0U,
+        std::make_shared<QUnitClifford>(qbCount, perm, rand_generator, ONE_CMPLX, false, randGlobalPhase, false, 0U,
             hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor));
 }
 QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
@@ -417,6 +417,10 @@ real1_f QBdt::Prob(bitLenInt qubit)
         }
     }
 
+    if (root->IsStabilizer()) {
+        return NODE_TO_STABILIZER(root)->Prob(qubit);
+    }
+
     const bitCapInt qPower = pow2(qubit);
     const unsigned numCores = GetConcurrencyLevel();
     std::map<QEnginePtr, real1> qiProbs;
@@ -486,6 +490,12 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     if (qubit >= qubitCount) {
         throw std::invalid_argument("QBdt::Prob qubit index parameter must be within allocated qubit bounds!");
+    }
+
+    Finish();
+
+    if (root->IsStabilizer()) {
+        return NODE_TO_STABILIZER(root)->ForceM(qubit, result, doForce, doApply);
     }
 
     const real1_f oneChance = Prob(qubit);
@@ -658,12 +668,17 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
             return;
         }
 
+        if (root->IsStabilizer()) {
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+            qReg->SetRandGlobalPhase(false);
+            qReg->ResetPhaseOffset();
+        }
+
         root = root->PopSpecial();
     }
 
     if (root->IsStabilizer()) {
         NODE_TO_STABILIZER(root)->Mtrx(mtrx, target);
-        root = root->Prune();
 
         return;
     }
@@ -766,6 +781,12 @@ void QBdt::ApplyControlledSingle(
             return;
         }
 
+        if (root->IsStabilizer()) {
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+            qReg->SetRandGlobalPhase(false);
+            qReg->ResetPhaseOffset();
+        }
+
         if (isCtrledClifford) {
             root = root->PopSpecial(controls.size() - 1U);
         } else if (IS_CLIFFORD(mtrx)) {
@@ -782,7 +803,6 @@ void QBdt::ApplyControlledSingle(
         } else {
             qReg->MCMtrx(controls, mtrx, target);
         }
-        root = root->Prune();
 
         return;
     }
