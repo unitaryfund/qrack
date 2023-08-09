@@ -92,8 +92,8 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
         return true;
     }
 
-    QBdtNodeInterfacePtr lLeaf = branches[_b];
-    QBdtNodeInterfacePtr rLeaf = r->branches[_b];
+    QBdtNodeInterfacePtr& lLeaf = branches[_b];
+    QBdtNodeInterfacePtr& rLeaf = r->branches[_b];
     std::lock(lLeaf->mtx, rLeaf->mtx);
     std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
@@ -106,12 +106,17 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
     // Since we allow approximation in determining equality,
     // amortize error by averaging the scale.
     // (All other update operations on the branches are blocked by the mutexes.)
-    const complex nScale = (branches[_b]->scale + r->branches[_b]->scale) / (real1)2;
-    branches[_b]->scale = nScale;
-    r->branches[_b]->scale = nScale;
+    // We can weight by use_count() of each leaf, which should roughly correspond
+    // to the number of branches that point to each node.
+
+    const real1 lWeight = (real1)lLeaf.use_count();
+    const real1 rWeight = (real1)rLeaf.use_count();
+    const complex nScale = (lWeight * lLeaf->scale + rWeight * rLeaf->scale) / (lWeight + rWeight);
+    lLeaf->scale = nScale;
+    rLeaf->scale = nScale;
 
     // Set the branches equal.
-    branches[_b] = r->branches[_b];
+    lLeaf = rLeaf;
 
     return true;
 }
