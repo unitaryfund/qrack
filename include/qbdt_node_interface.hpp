@@ -116,6 +116,8 @@ public:
 
     virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
 
+    virtual bool isEqualBranch(QBdtNodeInterfacePtr r, const bool& b);
+
     virtual QBdtNodeInterfacePtr ShallowClone()
     {
         throw std::out_of_range("QBdtNodeInterface::ShallowClone() not implemented! (You probably set "

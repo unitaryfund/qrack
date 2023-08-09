@@ -49,6 +49,10 @@ bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
         return !rhs;
     }
 
+    if (!rhs) {
+        return false;
+    }
+
     return lhs->isEqual(rhs);
 }
 
@@ -56,52 +60,12 @@ bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs) { return !(l
 
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
-    if (!r) {
-        return false;
-    }
-
-    if (this == r.get()) {
-        return true;
-    }
-
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
 
-    if ((!branches[0U]) != (!r->branches[0U])) {
+    if (!isEqualUnder(r)) {
         return false;
-    }
-
-    if (branches[0U].get() != r->branches[0U].get()) {
-        QBdtNodeInterfacePtr lLeaf = branches[0U];
-        QBdtNodeInterfacePtr rLeaf = r->branches[0U];
-        std::lock(lLeaf->mtx, rLeaf->mtx);
-        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
-
-        if (lLeaf != rLeaf) {
-            return false;
-        }
-
-        branches[0U] = r->branches[0U];
-    }
-
-    if ((!branches[1U]) != (!r->branches[1U])) {
-        return false;
-    }
-
-    if (branches[1U].get() != r->branches[1U].get()) {
-        QBdtNodeInterfacePtr lLeaf = branches[1U];
-        QBdtNodeInterfacePtr rLeaf = r->branches[1U];
-        std::lock(lLeaf->mtx, rLeaf->mtx);
-        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
-
-        if (lLeaf != rLeaf) {
-            return false;
-        }
-
-        branches[1U] = r->branches[1U];
     }
 
     return true;
@@ -109,10 +73,6 @@ bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 
 bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
 {
-    if (!r) {
-        return false;
-    }
-
     if (this == r.get()) {
         return true;
     }
@@ -121,41 +81,41 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return IS_NODE_0(r->scale);
     }
 
-    if ((!branches[0U]) != (!r->branches[0U])) {
+    return isEqualBranch(r, 0U) && isEqualBranch(r, 1U);
+}
+
+bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
+{
+    const size_t _b = b ? 1U : 0U;
+
+    if ((!branches[_b]) != (!r->branches[_b])) {
         return false;
     }
 
-    if (branches[0U].get() != r->branches[0U].get()) {
-        QBdtNodeInterfacePtr lLeaf = branches[0U];
-        QBdtNodeInterfacePtr rLeaf = r->branches[0U];
-        std::lock(lLeaf->mtx, rLeaf->mtx);
-        std::lock_guard<std::mutex> rLock(lLeaf->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lLock(rLeaf->mtx, std::adopt_lock);
-
-        if (lLeaf != rLeaf) {
-            return false;
-        }
-
-        branches[0U] = r->branches[0U];
+    if (branches[_b].get() == r->branches[_b].get()) {
+        return true;
     }
 
-    if ((!branches[0U]) != (!r->branches[0U])) {
+    QBdtNodeInterfacePtr lLeaf = branches[_b];
+    QBdtNodeInterfacePtr rLeaf = r->branches[_b];
+    std::lock(lLeaf->mtx, rLeaf->mtx);
+    std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
+
+    if (lLeaf != rLeaf) {
         return false;
     }
 
-    if (branches[1U].get() != r->branches[1U].get()) {
-        QBdtNodeInterfacePtr lLeaf = branches[1U];
-        QBdtNodeInterfacePtr rLeaf = r->branches[1U];
-        std::lock(lLeaf->mtx, rLeaf->mtx);
-        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
+    // These lLeaf and rLeaf are deemed equal.
+    // Since we allow approximation in determining equality,
+    // amortize error by averaging the scale.
+    // (All other update operations on the branches are blocked by the mutexes.)
+    const complex nScale = (branches[_b]->scale + r->branches[_b]->scale) / (real1)2;
+    branches[_b]->scale = nScale;
+    r->branches[_b]->scale = nScale;
 
-        if (lLeaf != rLeaf) {
-            return false;
-        }
-
-        branches[1U] = r->branches[1U];
-    }
+    // Set the branches equal.
+    branches[_b] = r->branches[_b];
 
     return true;
 }
