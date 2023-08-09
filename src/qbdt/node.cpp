@@ -161,8 +161,8 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         for (bitLenInt j = 1U; j < depth; ++j) {
             size_t bit = SelectBit(i, depth - (j + 1U));
 
-            QBdtNodeInterfacePtr lRef = leaf0;
-            QBdtNodeInterfacePtr rRef = leaf1;
+            const QBdtNodeInterfacePtr& lRef = leaf0;
+            const QBdtNodeInterfacePtr& rRef = leaf1;
 
             std::lock(lRef->mtx, rRef->mtx);
             std::lock_guard<std::mutex> lock0(lRef->mtx, std::adopt_lock);
