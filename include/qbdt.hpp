@@ -20,8 +20,6 @@
 #include "qbdt_node.hpp"
 #include "qengine.hpp"
 
-#include <mutex>
-
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
@@ -464,31 +462,5 @@ public:
         ExecuteAsStateVector([&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->Hash(start, length, values); });
     }
 #endif
-
-    std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
-    {
-        if (!shots) {
-            return std::map<bitCapInt, int>();
-        }
-
-        std::map<bitCapInt, int> results;
-        std::mutex resultsMutex;
-        par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
-            const bitCapInt sample = SampleClone(qPowers);
-            std::lock_guard<std::mutex> lock(resultsMutex);
-            ++(results[sample]);
-        });
-
-        return results;
-    }
-    void MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
-    {
-        if (!shots) {
-            return;
-        }
-
-        par_for(0U, shots,
-            [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
-    }
 };
 } // namespace Qrack

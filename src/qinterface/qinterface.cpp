@@ -13,6 +13,7 @@
 #include "qinterface.hpp"
 
 #include <algorithm>
+#include <mutex>
 #include <random>
 #include <thread>
 
@@ -462,24 +463,13 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(const std::vector<bitC
         return std::map<bitCapInt, int>();
     }
 
-    std::vector<bitLenInt> bitMap(qPowers.size());
-    std::transform(qPowers.begin(), qPowers.end(), bitMap.begin(), log2);
-
-    ThrowIfQbIdArrayIsBad(bitMap, qubitCount,
-        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
-
-    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowers.size());
-    std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
-    ProbBitsAll(bitMap, &(maskProbsVec[0]));
-    std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
     std::map<bitCapInt, int> results;
-    for (unsigned int shot = 0U; shot < shots; ++shot) {
-        ++(results[dist(gen)]);
-    }
+    std::mutex resultsMutex;
+    par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
+        const bitCapInt sample = SampleClone(qPowers);
+        std::lock_guard<std::mutex> lock(resultsMutex);
+        ++(results[sample]);
+    });
 
     return results;
 }
@@ -491,21 +481,8 @@ void QInterface::MultiShotMeasureMask(
         return;
     }
 
-    std::vector<bitLenInt> bitMap(qPowers.size());
-    std::transform(qPowers.begin(), qPowers.end(), bitMap.begin(), log2);
-
-    ThrowIfQbIdArrayIsBad(bitMap, qubitCount,
-        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
-
-    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowers.size());
-    std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
-    ProbBitsAll(bitMap, &(maskProbsVec[0]));
-    std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)dist(gen); });
+    par_for(0U, shots,
+        [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
 }
 
 bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)
