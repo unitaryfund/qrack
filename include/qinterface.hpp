@@ -195,6 +195,21 @@ protected:
         XMask(xMask);
     }
 
+    bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
+    {
+        QInterfacePtr clone = Clone();
+
+        const bitCapInt rawSample = clone->MAll();
+        bitCapInt sample = 0U;
+        for (size_t i = 0U; i < qPowers.size(); ++i) {
+            if (rawSample & qPowers[i]) {
+                sample |= pow2(i);
+            }
+        }
+
+        return sample;
+    }
+
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
         bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON);

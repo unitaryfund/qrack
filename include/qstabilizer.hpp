@@ -27,6 +27,7 @@
 #include "qinterface.hpp"
 
 #include <cstdint>
+#include <mutex>
 
 namespace Qrack {
 
@@ -423,6 +424,32 @@ public:
         Swap(qubit2, 1U);
 
         return toRet;
+    }
+
+    std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
+    {
+        if (!shots) {
+            return std::map<bitCapInt, int>();
+        }
+
+        std::map<bitCapInt, int> results;
+        std::mutex resultsMutex;
+        par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
+            const bitCapInt sample = SampleClone(qPowers);
+            std::lock_guard<std::mutex> lock(resultsMutex);
+            ++(results[sample]);
+        });
+
+        return results;
+    }
+    void MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
+    {
+        if (!shots) {
+            return;
+        }
+
+        par_for(0U, shots,
+            [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
     }
 
     friend std::ostream& operator<<(std::ostream& os, const QStabilizerPtr s);
