@@ -390,7 +390,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
         throw std::invalid_argument("QBdt::Prob qubit index parameter must be within allocated qubit bounds!");
     }
 
-    const MpsShardPtr& shard = shards[qubit];
+    const MpsShardPtr shard = shards[qubit];
     if (shard) {
         if (shard->IsInvert()) {
             InvertBuffer(qubit);
