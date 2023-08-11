@@ -23,73 +23,9 @@
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
 
 namespace Qrack {
-bool QBdtQStabilizerNode::isEqual(QBdtNodeInterfacePtr r)
+bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 {
-    if (!r) {
-        return false;
-    }
-
-    if (this == r.get()) {
-        return true;
-    }
-
-    if (!IS_SAME_AMP(scale, r->scale)) {
-        return false;
-    }
-
-    if (IS_NODE_0(scale)) {
-        return true;
-    }
-
-    if (!r->IsStabilizer()) {
-        return false;
-    }
-
     QUnitCliffordPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;
-
-    if (qReg.get() == rReg.get()) {
-        return true;
-    }
-
-    if (qReg->ApproxCompare(rReg)) {
-        qReg = rReg;
-        return true;
-    }
-
-    return false;
-}
-
-bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
-{
-    if (!r) {
-        return false;
-    }
-
-    if (this == r.get()) {
-        return true;
-    }
-
-    if (IS_NODE_0(scale)) {
-        return IS_NODE_0(r->scale);
-    }
-
-    if (IS_NODE_0(r->scale)) {
-        return false;
-    }
-
-    if (!r->IsStabilizer()) {
-        return false;
-    }
-
-    QUnitCliffordPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;
-
-    if (!rReg) {
-        return !qReg;
-    }
-
-    if (!qReg) {
-        return false;
-    }
 
     if (qReg.get() == rReg.get()) {
         return true;

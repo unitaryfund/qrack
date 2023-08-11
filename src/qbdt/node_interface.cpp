@@ -49,7 +49,7 @@ bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
         return !rhs;
     }
 
-    if (!rhs || (lhs->IsStabilizer() != rhs->IsStabilizer())) {
+    if (!rhs) {
         return false;
     }
 
@@ -60,63 +60,15 @@ bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs) { return !(l
 
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
-    if (!r) {
-        return false;
-    }
-
-    if (this == r.get()) {
-        return true;
-    }
-
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
 
-    if ((!branches[0U]) != (!r->branches[0U])) {
-        return false;
-    }
-
-    if (branches[0U].get() != r->branches[0U].get()) {
-        QBdtNodeInterfacePtr lLeaf = branches[0U];
-        QBdtNodeInterfacePtr rLeaf = r->branches[0U];
-        std::lock(lLeaf->mtx, rLeaf->mtx);
-        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
-
-        if (lLeaf != rLeaf) {
-            return false;
-        }
-
-        branches[0U] = r->branches[0U];
-    }
-
-    if ((!branches[1U]) != (!r->branches[1U])) {
-        return false;
-    }
-
-    if (branches[1U].get() != r->branches[1U].get()) {
-        QBdtNodeInterfacePtr lLeaf = branches[1U];
-        QBdtNodeInterfacePtr rLeaf = r->branches[1U];
-        std::lock(lLeaf->mtx, rLeaf->mtx);
-        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
-
-        if (lLeaf != rLeaf) {
-            return false;
-        }
-
-        branches[1U] = r->branches[1U];
-    }
-
-    return true;
+    return isEqualUnder(r);
 }
 
 bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
 {
-    if (!r) {
-        return false;
-    }
-
     if (this == r.get()) {
         return true;
     }
@@ -125,41 +77,50 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return IS_NODE_0(r->scale);
     }
 
-    if ((!branches[0U]) != (!r->branches[0U])) {
+    if (IS_NODE_0(r->scale) || (IsStabilizer() != r->IsStabilizer())) {
         return false;
     }
 
-    if (branches[0U].get() != r->branches[0U].get()) {
-        QBdtNodeInterfacePtr lLeaf = branches[0U];
-        QBdtNodeInterfacePtr rLeaf = r->branches[0U];
-        std::lock(lLeaf->mtx, rLeaf->mtx);
-        std::lock_guard<std::mutex> rLock(lLeaf->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lLock(rLeaf->mtx, std::adopt_lock);
+    return isEqualBranch(r, 0U) && isEqualBranch(r, 1U);
+}
 
-        if (lLeaf != rLeaf) {
-            return false;
-        }
+bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
+{
+    const size_t _b = b ? 1U : 0U;
 
-        branches[0U] = r->branches[0U];
-    }
-
-    if ((!branches[0U]) != (!r->branches[0U])) {
+    if ((!branches[_b]) != (!r->branches[_b])) {
         return false;
     }
 
-    if (branches[1U].get() != r->branches[1U].get()) {
-        QBdtNodeInterfacePtr lLeaf = branches[1U];
-        QBdtNodeInterfacePtr rLeaf = r->branches[1U];
-        std::lock(lLeaf->mtx, rLeaf->mtx);
-        std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
-
-        if (lLeaf != rLeaf) {
-            return false;
-        }
-
-        branches[1U] = r->branches[1U];
+    if (branches[_b].get() == r->branches[_b].get()) {
+        return true;
     }
+
+    QBdtNodeInterfacePtr& lLeaf = branches[_b];
+    QBdtNodeInterfacePtr& rLeaf = r->branches[_b];
+    std::lock(lLeaf->mtx, rLeaf->mtx);
+    std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
+
+    if (lLeaf != rLeaf) {
+        return false;
+    }
+
+    // These lLeaf and rLeaf are deemed equal.
+    // Since we allow approximation in determining equality,
+    // amortize error by averaging the scale.
+    // (All other update operations on the branches are blocked by the mutexes.)
+    // We can weight by use_count() of each leaf, which should roughly correspond
+    // to the number of branches that point to each node.
+
+    const real1 lWeight = (real1)lLeaf.use_count();
+    const real1 rWeight = (real1)rLeaf.use_count();
+    const complex nScale = (lWeight * lLeaf->scale + rWeight * rLeaf->scale) / (lWeight + rWeight);
+    lLeaf->scale = nScale;
+    rLeaf->scale = nScale;
+
+    // Set the branches equal.
+    lLeaf = rLeaf;
 
     return true;
 }

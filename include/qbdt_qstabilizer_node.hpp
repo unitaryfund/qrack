@@ -57,9 +57,7 @@ public:
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQStabilizerNode>(scale, qReg); }
 
-    virtual bool isEqual(QBdtNodeInterfacePtr r);
-
-    virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
+    virtual bool isEqualBranch(QBdtNodeInterfacePtr r, const bool& b);
 
     virtual void Normalize(bitLenInt depth = 1U)
     {

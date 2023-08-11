@@ -169,21 +169,6 @@ protected:
         }
     }
 
-    bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
-    {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-
-        const bitCapInt rawSample = clone->MAll();
-        bitCapInt sample = 0U;
-        for (size_t i = 0U; i < qPowers.size(); ++i) {
-            if (rawSample & qPowers[i]) {
-                sample |= pow2(i);
-            }
-        }
-
-        return sample;
-    }
-
     std::vector<real1_f> GenerateShotProbs(unsigned shots)
     {
         std::vector<real1_f> rng;

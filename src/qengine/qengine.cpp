@@ -564,4 +564,56 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     return result;
 }
 
+std::map<bitCapInt, int> QEngine::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
+{
+    if (!shots) {
+        return std::map<bitCapInt, int>();
+    }
+
+    std::vector<bitLenInt> bitMap(qPowers.size());
+    std::transform(qPowers.begin(), qPowers.end(), bitMap.begin(), log2);
+
+    ThrowIfQbIdArrayIsBad(bitMap, qubitCount,
+        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
+
+    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowers.size());
+    std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
+    ProbBitsAll(bitMap, &(maskProbsVec[0]));
+    std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::map<bitCapInt, int> results;
+    for (unsigned int shot = 0U; shot < shots; ++shot) {
+        ++(results[dist(gen)]);
+    }
+
+    return results;
+}
+
+void QEngine::MultiShotMeasureMask(
+    const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
+{
+    if (!shots) {
+        return;
+    }
+
+    std::vector<bitLenInt> bitMap(qPowers.size());
+    std::transform(qPowers.begin(), qPowers.end(), bitMap.begin(), log2);
+
+    ThrowIfQbIdArrayIsBad(bitMap, qubitCount,
+        "QInterface::MultiShotMeasureMask parameter qPowers array values must be within allocated qubit bounds!");
+
+    const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowers.size());
+    std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
+    ProbBitsAll(bitMap, &(maskProbsVec[0]));
+    std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)dist(gen); });
+}
+
 } // namespace Qrack

@@ -266,5 +266,9 @@ public:
 
         return dest;
     }
+
+    virtual std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots);
+    virtual void MultiShotMeasureMask(
+        const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray);
 };
 } // namespace Qrack

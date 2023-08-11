@@ -608,6 +608,9 @@ bitCapInt QBdt::MAll()
             bitResult = (Rand() <= oneChance);
         }
 
+        // We might share this node with a clone:
+        leaf->Branch();
+
         if (bitResult) {
             leaf->branches[0U]->SetZero();
             leaf->branches[1U]->scale = ONE_CMPLX;
