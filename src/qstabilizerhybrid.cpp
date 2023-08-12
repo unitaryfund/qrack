@@ -673,6 +673,26 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return stabilizer->GetAmplitude(perm);
     }
 
+    const real1_f roundingThreshold = ZERO_R1_F;
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
+    }
+#endif
+    const bool isRounded = abs(roundingThreshold) > FP_NORM_EPSILON;
+    const QUnitCliffordPtr origStabilizer =
+        isRounded ? std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()) : NULL;
+    const bitLenInt origAncillaCount = ancillaCount;
+    std::vector<MpsShardPtr> origShards = isRounded ? shards : std::vector<MpsShardPtr>();
+    if (isRounded) {
+        for (size_t i = 0U; i < origShards.size(); ++i) {
+            if (origShards[i]) {
+                origShards[i] = origShards[i]->Clone();
+            }
+        }
+        RdmCloneFlush(roundingThreshold);
+    }
+
     std::vector<bitLenInt> indices;
     std::vector<bitCapInt> perms{ perm };
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
@@ -707,6 +727,12 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
             } else {
                 amp = mtrx[0U] * amp + mtrx[1U] * amps[i];
             }
+        }
+
+        if (isRounded) {
+            stabilizer = origStabilizer;
+            ancillaCount = origAncillaCount;
+            shards = origShards;
         }
 
         return amp;
@@ -760,6 +786,12 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         if (shard) {
             aEngine->Mtrx(shard->gate, i);
         }
+    }
+
+    if (isRounded) {
+        stabilizer = origStabilizer;
+        ancillaCount = origAncillaCount;
+        shards = origShards;
     }
 
     return (real1)pow(SQRT2_R1, (real1)ancillaCount) * aEngine->GetAmplitude(0U);
