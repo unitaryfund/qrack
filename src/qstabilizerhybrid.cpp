@@ -676,7 +676,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
     const real1_f roundingThreshold = ZERO_R1_F;
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
-        separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
+        separabilityThreshold = abs((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
     }
 #endif
     const bool isRounded = abs(roundingThreshold) > FP_NORM_EPSILON;
