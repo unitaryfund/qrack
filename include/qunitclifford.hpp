@@ -446,7 +446,7 @@ public:
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         if (!randGlobalPhase) {
-            phaseOffset *= std::polar(ONE_R1, phaseArg);
+            phaseOffset *= std::polar(ONE_R1, (real1)phaseArg);
         }
     }
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
