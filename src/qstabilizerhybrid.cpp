@@ -1866,6 +1866,14 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
     const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
         MpsShardPtr& shard = shards[i];
+        if (!shard) {
+            stabilizer->ForceM(i, false);
+            stabilizer->Dispose(i, 1U);
+            shards.erase(shards.begin() + i);
+            --ancillaCount;
+
+            continue;
+        }
         complex oMtrx[4U];
         std::copy(shard->gate, shard->gate + 4U, oMtrx);
 
