@@ -41,6 +41,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
+    , isRoundingFlushed(false)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
     , maxEngineQubitCount(27U)
@@ -675,7 +676,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
 
     const real1_f roundingThreshold = ZERO_R1_F;
 #if ENABLE_ENV_VARS
-    if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
     }
 #endif
@@ -1484,9 +1485,15 @@ bitCapInt QStabilizerHybrid::MAll()
 
     CombineAncillae();
 
+    if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
+        isRoundingFlushed = true;
+    }
+
     if (!IsProbBuffered()) {
         const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
+        isRoundingFlushed = false;
 
         return toRet;
     }
@@ -1539,6 +1546,7 @@ bitCapInt QStabilizerHybrid::MAll()
 #endif
 
     FIX_OVERPROB_SHOT_AND_FINISH()
+    isRoundingFlushed = false;
 
     return m;
 }
@@ -1585,6 +1593,13 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     }
 
     FlushCliffordFromBuffers();
+
+    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        QStabilizerHybridPtr roundedClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        roundedClone->RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
+        roundedClone->isRoundingFlushed = true;
+        return roundedClone->MultiShotMeasureMask(qPowers, shots);
+    }
 
     std::map<bitCapInt, int> results;
 
@@ -1670,6 +1685,15 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     FlushCliffordFromBuffers();
+
+    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        QStabilizerHybridPtr roundedClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        roundedClone->RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
+        roundedClone->isRoundingFlushed = true;
+        roundedClone->MultiShotMeasureMask(qPowers, shots, shotsArray);
+
+        return;
+    }
 
     if (!IsProbBuffered()) {
         par_for(0U, shots,

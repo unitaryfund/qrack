@@ -49,6 +49,7 @@ protected:
     bool doNormalize;
     bool isSparse;
     bool useTGadget;
+    bool isRoundingFlushed;
     bitLenInt thresholdQubits;
     bitLenInt ancillaCount;
     bitLenInt maxEngineQubitCount;
