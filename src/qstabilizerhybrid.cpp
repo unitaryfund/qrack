@@ -1914,7 +1914,7 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             }
 
             const real1 angle =
-                (real1)FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]), false);
+                (real1)FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]), true);
             if ((4 * abs(angle) / PI_R1) > threshold) {
                 continue;
             }
