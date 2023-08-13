@@ -1511,12 +1511,11 @@ bitCapInt QUnit::MAll()
                 shard.unit->MAll();
             }
         }
-    } else {
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            if (shards[i].IsInvertControl()) {
-                // Measurement commutes with control
-                M(i);
-            }
+    }
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        if (shards[i].IsInvertControl()) {
+            // Measurement commutes with control
+            M(i);
         }
     }
 
