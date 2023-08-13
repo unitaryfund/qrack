@@ -183,7 +183,7 @@ protected:
         return rng;
     }
 
-    real1_f FractionalRzAngleWithFlush(bitLenInt i, real1_f angle)
+    real1_f FractionalRzAngleWithFlush(bitLenInt i, real1_f angle, bool isGateSuppressed = false)
     {
         const real1_f sectorAngle = PI_R1 / 2;
         const real1_f Period = 2 * PI_R1;
@@ -195,19 +195,21 @@ protected:
         }
 
         int sector = std::round(angle / sectorAngle);
-        switch (sector) {
-        case 1U:
-            stabilizer->S(i);
-            break;
-        case 2U:
-            stabilizer->Z(i);
-            break;
-        case 3U:
-            stabilizer->IS(i);
-            break;
-        case 0U:
-        default:
-            break;
+        if (!isGateSuppressed) {
+            switch (sector) {
+            case 1U:
+                stabilizer->S(i);
+                break;
+            case 2U:
+                stabilizer->Z(i);
+                break;
+            case 3U:
+                stabilizer->IS(i);
+                break;
+            case 0U:
+            default:
+                break;
+            }
         }
 
         real1_f correctionAngle = angle - (sector * sectorAngle);
