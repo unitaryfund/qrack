@@ -1885,19 +1885,23 @@ void QStabilizerHybrid::CombineAncillae()
     CombineAncillae();
 }
 
+/// Flush non-Clifford phase gate gadgets with angle below a threshold.
 void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
 {
     const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
+        // We're going to start by non-destructively "simulating" measurement collapse.
         MpsShardPtr nShard = shards[i]->Clone();
 
         for (int p = 0; p < 2; ++p) {
+            // Say that we hypothetically collapse ancilla index "i" into state |p>...
             QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
             clone->stabilizer->H(i);
-            clone->stabilizer->ForceM(i, p == 1);
+            clone->stabilizer->ForceM(i, p);
 
+            // Do any other ancillae collapse?
             nShard->Compose(h);
-            bool isCorrected = (p == 1);
+            bool isCorrected = p;
             for (size_t j = clone->shards.size() - 1U; j >= clone->qubitCount; --j) {
                 if (i == j) {
                     continue;
@@ -1906,29 +1910,36 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                 const MpsShardPtr& oShard = clone->shards[j];
                 oShard->Compose(h);
                 if (prob < (ONE_R1 / 4)) {
+                    // Collapsed to 0 - combine buffers
                     nShard->Compose(oShard->gate);
                 } else if (prob > (3 * ONE_R1 / 4)) {
+                    // Collapsed to 1 - combine buffers, with Z correction
                     isCorrected = !isCorrected;
                     nShard->Compose(oShard->gate);
                 }
             }
 
+            // Calculate the near-Clifford gate phase angle, but don't change the state:
             const real1 angle =
                 (real1)FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]), true);
             if ((4 * abs(angle) / PI_R1) > threshold) {
+                // The gate phase angle is too significant to flush.
                 continue;
             }
 
+            // We're round the gates to 0, and we eliminate the ancillae.
             FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]));
             if (isCorrected) {
                 stabilizer->Z(i);
             }
             stabilizer->H(i);
-            stabilizer->ForceM(i, p == 1);
+            stabilizer->ForceM(i, p);
             stabilizer->Dispose(i, 1U);
             shards.erase(shards.begin() + i);
             --ancillaCount;
 
+            // All observable effects of qubits becoming separable have been accounted.
+            // (Hypothetical newly-arising X-basis separable states have no effect.)
             for (size_t j = shards.size() - 1U; j >= qubitCount; --j) {
                 if (stabilizer->IsSeparable(j)) {
                     stabilizer->Dispose(j, 1U);
@@ -1937,6 +1948,7 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                 }
             }
 
+            // Start the loop condition over entirely, less the ancillae we removed.
             i = shards.size();
 
             break;
