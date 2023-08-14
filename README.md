@@ -222,7 +222,7 @@ Note that this controls total direct Qrack OpenCL buffer allocation, not total Q
 
 Similarly functionality to above is available for `QBdt` with `QRACK_QBDT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]`. In the case of this parameter, any branch with less than the parameter value for probability is rounded to 0, and its partner branch is renormalized to unit length. This same value is also used for branch equality comparison.
 
-Environment variable `QRACK_NONCLIFFORD_ROUNDING_THRESHOLD` sets the non-Clifford phase gate magnitude, as a fraction of `S` gate phase angle, that will be rounded to 0 in terminal measurement and sampling operations. (For `0`/default value, all non-Clifford phase gates are exactly preserved.)
+Environment variable `QRACK_NONCLIFFORD_ROUNDING_THRESHOLD` sets the non-Clifford phase gate magnitude, as a fraction of `T` gate phase angle, (from the closest Clifford state Bloch sphere orientation,) that will be rounded to 0 in terminal measurement and sampling operations. (For `0`/default value, all non-Clifford phase gates are exactly preserved.)
 
 ## Vectorization optimization
 
