@@ -7801,7 +7801,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
     const complex s[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
     const complex is[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
-    QCircuitPtr circuit = std::make_shared<QCircuit>();
+    QCircuitPtr circuit = std::make_shared<QCircuit>(false);
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
