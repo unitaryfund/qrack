@@ -7806,7 +7806,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
     for (d = 0; d < n; d++) {
-        const bitLenInt layerMagicQubit = std::max((real1_f)(n - 1), n * rng->Rand());
+        const bitLenInt layerMagicQubit = std::max((real1_f)(w - 1), w * rng->Rand());
         const bitLenInt layerMagicAxis = std::max((real1_f)2, 3 * rng->Rand());
         for (i = 0; i < w; i++) {
             // Random general 3-parameter unitary gate via "x-z-x" Euler angles:
