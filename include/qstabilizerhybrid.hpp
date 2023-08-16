@@ -102,13 +102,16 @@ protected:
         const size_t maxLcv = logical ? (size_t)qubitCount : shards.size();
         for (size_t i = 0U; i < maxLcv; ++i) {
             MpsShardPtr shard = shards[i];
-            if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+            if (!shard) {
+                continue;
+            }
+            if (shard->IsHPhase() || shard->IsHInvert()) {
                 FlushH(i);
             }
-            if (shard && shard->IsInvert()) {
+            if (shard->IsInvert()) {
                 InvertBuffer(i);
             }
-            if (shard && !shard->IsPhase()) {
+            if (!shard->IsPhase()) {
                 // We have a cached non-Clifford operation.
                 return true;
             }
@@ -292,6 +295,8 @@ protected:
 
     void ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inverse);
 
+    complex GetAmplitudeOrProb(bitCapInt perm, bool isProb = false);
+
 public:
     QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -412,7 +417,8 @@ public:
 
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
-    complex GetAmplitude(bitCapInt perm);
+    complex GetAmplitude(bitCapInt perm) { return GetAmplitudeOrProb(perm, false); }
+    real1_f ProbAll(bitCapInt perm) { return (real1_f)norm(GetAmplitudeOrProb(perm, true)); }
     void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)
     {

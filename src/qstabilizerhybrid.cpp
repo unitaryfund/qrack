@@ -667,20 +667,16 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     clone->SwitchToEngine();
     clone->GetProbs(outputProbs);
 }
-complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
+complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 {
     if (engine) {
         return engine->GetAmplitude(perm);
     }
 
-    if (!IsBuffered()) {
-        return stabilizer->GetAmplitude(perm);
-    }
-
-    const real1_f roundingThreshold = ZERO_R1_F;
+    real1_f roundingThreshold = ZERO_R1_F;
 #if ENABLE_ENV_VARS
     if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
-        separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
+        roundingThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
     }
 #endif
     const bool isRounded = roundingThreshold > FP_NORM_EPSILON;
@@ -695,6 +691,18 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
             }
         }
         RdmCloneFlush(roundingThreshold);
+    }
+
+    if ((isProb && !ancillaCount && !IsLogicalProbBuffered()) || !IsBuffered()) {
+        const complex toRet = stabilizer->GetAmplitude(perm);
+
+        if (isRounded) {
+            stabilizer = origStabilizer;
+            ancillaCount = origAncillaCount;
+            shards = origShards;
+        }
+
+        return toRet;
     }
 
     std::vector<bitLenInt> indices;

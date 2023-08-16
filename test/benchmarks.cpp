@@ -7806,13 +7806,27 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
     for (d = 0; d < n; d++) {
+        const bitLenInt layerMagicQubit = std::max((real1_f)(n - 1), n * rng->Rand());
+        const bitLenInt layerMagicAxis = std::max((real1_f)2, 3 * rng->Rand());
         for (i = 0; i < w; i++) {
-            // Random general 3-parameter unitary gate via Euler angles
+            // Random general 3-parameter unitary gate via "x-z-x" Euler angles:
             for (int p = 0; p < 3; ++p) {
                 circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
-                const real1 gateRand = (real1)(2 * PI_R1 * rng->Rand());
-                const complex mtrx[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, gateRand) };
-                circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
+
+                // Clifford rotation
+                if ((2 * rng->Rand()) <= ONE_R1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, z));
+                }
+                if ((2 * rng->Rand()) <= ONE_R1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, s));
+                }
+
+                if ((i == layerMagicQubit) && (p == layerMagicAxis)) {
+                    // Non-Clifford rotation
+                    const real1 gateRand = (real1)(PI_R1 * rng->Rand() / 2);
+                    const complex mtrx[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, gateRand) };
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
+                }
             }
         }
 
