@@ -7749,7 +7749,6 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 {
     std::cout << ">>> 'test_stabilizer_rz_nn_mirror':" << std::endl;
 
-    const int GateCountMultiQb = 14;
     const int GateCount2Qb = 8;
     const int w = max_qubits;
     const int n = benchmarkDepth;
@@ -7846,51 +7845,10 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
                 usedBits.push_back(b2);
 
                 // Try to pack 3-qubit gates as "greedily" as we can:
-                int tempGate = 0;
-                int b3 = 0;
 
-                const bool canBe3Qubit = (d & 1U);
-
-                if (canBe3Qubit) {
-                    do {
-                        tempRow = row;
-                        tempCol = col;
-
-                        tempRow += ((tempGate & 2) ? 1 : -1);
-                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1) ? 1 : 0);
-
-                        b3 = tempRow * colLen + tempCol;
-
-                        ++tempGate;
-                    } while ((tempGate < 4) &&
-                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                            (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
-                }
-
-                const bool is3Qubit = canBe3Qubit && (tempGate < 4);
-                if (is3Qubit) {
-                    usedBits.push_back(b3);
-                    if ((rng->Rand() * 2) >= ONE_R1) {
-                        std::swap(b1, b2);
-                    }
-                    if ((rng->Rand() * 2) >= ONE_R1) {
-                        std::swap(b1, b3);
-                    }
-                    if ((rng->Rand() * 2) >= ONE_R1) {
-                        std::swap(b2, b3);
-                    }
-                }
-
-                if (is3Qubit) {
-                    gate = (int)(rng->Rand() * (GateCountMultiQb - GateCount2Qb)) + GateCount2Qb;
-                    if (gate >= GateCountMultiQb) {
-                        gate = GateCountMultiQb - 1U;
-                    }
-                } else {
-                    gate = (int)(rng->Rand() * GateCount2Qb);
-                    if (gate >= GateCount2Qb) {
-                        gate = GateCount2Qb - 1U;
-                    }
+                gate = (int)(rng->Rand() * GateCount2Qb);
+                if (gate >= GateCount2Qb) {
+                    gate = GateCount2Qb - 1U;
                 }
 
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
@@ -7914,20 +7872,8 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
                 } else if (gate == 6) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
-                } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
-                } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
-                } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
-                } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
-                } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
-                } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
                 }
             }
         }
