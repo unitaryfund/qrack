@@ -5475,6 +5475,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->Swap(b1, b2);
                 } else if (gate == 2) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
                 } else if (gate == 3) {
@@ -5715,6 +5716,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->Swap(b1, b2);
                 } else if (gate == 2) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
                 } else if (gate == 3) {
@@ -5930,6 +5932,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->Swap(b1, b2);
                 } else if (gate == 2) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
                 } else if (gate == 3) {
@@ -6144,6 +6147,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->Swap(b1, b2);
                 } else if (gate == 2) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
                 } else if (gate == 3) {
@@ -6350,6 +6354,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->Swap(b1, b2);
                 } else if (gate == 2) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
                 } else if (gate == 3) {
@@ -6534,6 +6539,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->Swap(b1, b2);
                 } else if (gate == 2) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
                 } else if (gate == 3) {
@@ -7788,12 +7794,12 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
         engineStack.push_back(testSubSubEngineType);
     }
 
-    const complex h[4U] { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    const complex x[4U] { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4U] { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4U] { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4U] { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4U] { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    const complex x[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4U]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
@@ -7805,7 +7811,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
             for (int p = 0; p < 3; ++p) {
                 circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
                 const real1 gateRand = (real1)(2 * PI_R1 * rng->Rand());
-                const complex mtrx[4U] { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, gateRand) };
+                const complex mtrx[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, gateRand) };
                 circuit->AppendGate(std::make_shared<QCircuitGate>(i, mtrx));
             }
         }
@@ -7862,6 +7868,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->Swap(b1, b2);
                 } else if (gate == 2) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
                 } else if (gate == 3) {
