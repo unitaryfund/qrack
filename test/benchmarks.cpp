@@ -7869,7 +7869,218 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
                 usedBits.push_back(b1);
                 usedBits.push_back(b2);
 
-                // Try to pack 3-qubit gates as "greedily" as we can:
+                gate = (int)(rng->Rand() * GateCount2Qb);
+                if (gate >= GateCount2Qb) {
+                    gate = GateCount2Qb - 1U;
+                }
+
+                const std::set<bitLenInt> control{ (bitLenInt)b1 };
+                const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
+                if (gate == 0) {
+                    circuit->Swap(b1, b2);
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
+                } else if (gate == 1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->Swap(b1, b2);
+                } else if (gate == 2) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                } else if (gate == 3) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                } else if (gate == 4) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                } else if (gate == 5) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                } else if (gate == 6) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                } else {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                }
+            }
+        }
+
+        if (d & 1) {
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+        }
+    }
+
+    bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(w));
+    if (randPerm >= pow2Ocl(w)) {
+        randPerm = pow2Ocl(w) - 1U;
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+    circuit->Run(testCase);
+    circuit->Inverse()->Run(testCase);
+    testCase->Finish();
+
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
+    std::cout
+        << "Execution time: "
+        << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()
+        << "s" << std::endl;
+}
+
+TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
+{
+    std::cout << ">>> 'test_stabilizer_rz_hard_nn_mirror':" << std::endl;
+
+    const int GateCount2Qb = 8;
+    const int w = max_qubits;
+    const int n = benchmarkDepth;
+    std::cout << "Circuit width: " << w << std::endl;
+    std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
+    std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit." << std::endl;
+
+    // The test runs 2 bit gates according to a tiling sequence.
+    // The 1 bit indicates +/- column offset.
+    // The 2 bit indicates +/- row offset.
+    // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
+    // paper.
+    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    const bitLenInt deadQubit = 3U;
+
+    // We factor the qubit count into two integers, as close to a perfect square as we can.
+    int colLen = std::sqrt(w);
+    while (((w / colLen) * colLen) != w) {
+        colLen--;
+    }
+    int rowLen = w / colLen;
+
+    int d;
+    int i;
+
+    std::vector<QInterfaceEngine> engineStack;
+    if (optimal) {
+#if ENABLE_OPENCL
+        engineStack.push_back(
+            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+#endif
+    } else if (optimal_single) {
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+    } else {
+        engineStack.push_back(testEngineType);
+        engineStack.push_back(testSubEngineType);
+        engineStack.push_back(testSubSubEngineType);
+    }
+
+    const complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+    const complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+    const complex sqrtx[4]{ ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
+    const complex sqrty[4]{ ONE_PLUS_I_DIV_2, -ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
+    const complex wconj[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, exp(I_CMPLX * (real1)(PI_R1 / 8)) };
+    const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    const complex x[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4U]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+
+    std::vector<int> lastSingleBitGates;
+
+    QCircuitPtr circuit = std::make_shared<QCircuit>(false);
+
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+
+    for (d = 0; d < n; d++) {
+        for (i = 0; i < w; i++) {
+            if ((n == 54U) && (i == deadQubit)) {
+                if (d == 0) {
+                    lastSingleBitGates.push_back(0);
+                }
+                continue;
+            }
+
+            // Each individual bit has one of these 3 gates applied at random.
+            // "SqrtX" and "SqrtY" are Clifford.
+            // "SqrtW" requires one non-Clifford RZ gate, (beside H gates).
+            // The same gate is not applied twice consecutively in sequence.
+
+            if (d == 0) {
+                // For the first iteration, we can pick any gate.
+
+                const real1_f gateRand = 3 * rng->Rand();
+                if (gateRand < ONE_R1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, sqrtx));
+                    lastSingleBitGates.push_back(0);
+                } else if (gateRand < (2 * ONE_R1)) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, sqrty));
+                    lastSingleBitGates.push_back(1);
+                } else {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, wconj));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
+                    lastSingleBitGates.push_back(2);
+                }
+            } else {
+                // For all subsequent iterations after the first, we eliminate the choice of the same gate applied
+                // on the immediately previous iteration.
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+                int gateChoice = max(1, (int)(2 * rng->Rand()));
+#else
+                int gateChoice = std::max(1, (int)(2 * rng->Rand()));
+#endif
+                if (gateChoice >= lastSingleBitGates[i]) {
+                    ++gateChoice;
+                }
+
+                if (gateChoice == 0) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, sqrtx));
+                    lastSingleBitGates[i] = 0;
+                } else if (gateChoice == 1) {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, sqrty));
+                    lastSingleBitGates[i] = 1;
+                } else {
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, wconj));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(i, h));
+                    lastSingleBitGates[i] = 2;
+                }
+            }
+        }
+
+        int gate = gateSequence.front();
+        std::vector<bitLenInt> usedBits;
+
+        for (int row = 1; row < rowLen; row += 2) {
+            for (int col = 0; col < colLen; col++) {
+                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                // In this test, the boundaries of the rectangle have no couplers.
+                // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                // awkwardly.)
+
+                int b1 = row * colLen + col;
+
+                if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
+                    continue;
+                }
+
+                int tempRow = row;
+                int tempCol = col;
+
+                tempRow += ((gate & 2U) ? 1 : -1);
+                tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
+
+                int b2 = tempRow * colLen + tempCol;
+
+                if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                    (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                    continue;
+                }
+
+                usedBits.push_back(b1);
+                usedBits.push_back(b2);
 
                 gate = (int)(rng->Rand() * GateCount2Qb);
                 if (gate >= GateCount2Qb) {
