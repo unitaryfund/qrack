@@ -34,7 +34,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 {
     Init();
 
-    SetPermutation(initState);
+    SetPermutation(initState, phaseFac);
 }
 
 void QBdt::Init()
