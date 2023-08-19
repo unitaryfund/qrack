@@ -1504,18 +1504,18 @@ bitCapInt QUnit::MAll()
         shard.DumpPhaseBuffers();
         shard.ClearInvertPhase();
     }
-    for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        if (shards[i].IsInvertControl()) {
-            // Measurement commutes with control
-            M(i);
-        }
-    }
     if (useTGadget && (engines[0U] == QINTERFACE_STABILIZER_HYBRID)) {
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             QEngineShard& shard = shards[i];
             if (shard.unit && shard.unit->isClifford()) {
                 shard.unit->MAll();
             }
+        }
+    }
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        if (shards[i].IsInvertControl()) {
+            // Measurement commutes with control
+            M(i);
         }
     }
 

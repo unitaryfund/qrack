@@ -41,6 +41,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
+    , isRoundingFlushed(false)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
     , maxEngineQubitCount(27U)
@@ -84,6 +85,9 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     maxEngineQubitCount = maxCpuQubitCount;
     maxAncillaCount = maxEngineQubitCount;
 #endif
+    if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        maxAncillaCount = -1;
+    }
 
     maxStateMapCacheQubitCount = maxCpuQubitCount - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
 
@@ -663,14 +667,42 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     clone->SwitchToEngine();
     clone->GetProbs(outputProbs);
 }
-complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
+complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 {
     if (engine) {
         return engine->GetAmplitude(perm);
     }
 
-    if (!IsBuffered()) {
-        return stabilizer->GetAmplitude(perm);
+    real1_f roundingThreshold = ZERO_R1_F;
+#if ENABLE_ENV_VARS
+    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        roundingThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
+    }
+#endif
+    const bool isRounded = roundingThreshold > FP_NORM_EPSILON;
+    const QUnitCliffordPtr origStabilizer =
+        isRounded ? std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()) : NULL;
+    const bitLenInt origAncillaCount = ancillaCount;
+    std::vector<MpsShardPtr> origShards = isRounded ? shards : std::vector<MpsShardPtr>();
+    if (isRounded) {
+        for (size_t i = 0U; i < origShards.size(); ++i) {
+            if (origShards[i]) {
+                origShards[i] = origShards[i]->Clone();
+            }
+        }
+        RdmCloneFlush(roundingThreshold);
+    }
+
+    if ((isProb && !ancillaCount && !IsLogicalProbBuffered()) || !IsBuffered()) {
+        const complex toRet = stabilizer->GetAmplitude(perm);
+
+        if (isRounded) {
+            stabilizer = origStabilizer;
+            ancillaCount = origAncillaCount;
+            shards = origShards;
+        }
+
+        return toRet;
     }
 
     std::vector<bitLenInt> indices;
@@ -707,6 +739,12 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
             } else {
                 amp = mtrx[0U] * amp + mtrx[1U] * amps[i];
             }
+        }
+
+        if (isRounded) {
+            stabilizer = origStabilizer;
+            ancillaCount = origAncillaCount;
+            shards = origShards;
         }
 
         return amp;
@@ -760,6 +798,12 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         if (shard) {
             aEngine->Mtrx(shard->gate, i);
         }
+    }
+
+    if (isRounded) {
+        stabilizer = origStabilizer;
+        ancillaCount = origAncillaCount;
+        shards = origShards;
     }
 
     return (real1)pow(SQRT2_R1, (real1)ancillaCount) * aEngine->GetAmplitude(0U);
@@ -1452,9 +1496,15 @@ bitCapInt QStabilizerHybrid::MAll()
 
     CombineAncillae();
 
+    if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
+        isRoundingFlushed = true;
+    }
+
     if (!IsProbBuffered()) {
         const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
+        isRoundingFlushed = false;
 
         return toRet;
     }
@@ -1507,6 +1557,7 @@ bitCapInt QStabilizerHybrid::MAll()
 #endif
 
     FIX_OVERPROB_SHOT_AND_FINISH()
+    isRoundingFlushed = false;
 
     return m;
 }
@@ -1553,6 +1604,13 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     }
 
     FlushCliffordFromBuffers();
+
+    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        QStabilizerHybridPtr roundedClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        roundedClone->RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
+        roundedClone->isRoundingFlushed = true;
+        return roundedClone->MultiShotMeasureMask(qPowers, shots);
+    }
 
     std::map<bitCapInt, int> results;
 
@@ -1638,6 +1696,15 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     FlushCliffordFromBuffers();
+
+    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+        QStabilizerHybridPtr roundedClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        roundedClone->RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
+        roundedClone->isRoundingFlushed = true;
+        roundedClone->MultiShotMeasureMask(qPowers, shots, shotsArray);
+
+        return;
+    }
 
     if (!IsProbBuffered()) {
         par_for(0U, shots,
@@ -1829,30 +1896,23 @@ void QStabilizerHybrid::CombineAncillae()
     CombineAncillae();
 }
 
+/// Flush non-Clifford phase gate gadgets with angle below a threshold.
 void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
 {
     const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
-        MpsShardPtr& shard = shards[i];
-        complex oMtrx[4U];
-        std::copy(shard->gate, shard->gate + 4U, oMtrx);
+        // We're going to start by non-destructively "simulating" measurement collapse.
+        MpsShardPtr nShard = shards[i]->Clone();
 
         for (int p = 0; p < 2; ++p) {
-            shard->Compose(h);
+            // Say that we hypothetically collapse ancilla index "i" into state |p>...
             QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-
-            if (clone->stabilizer->IsSeparable(i)) {
-                stabilizer->Dispose(i, 1U);
-                shards.erase(shards.begin() + i);
-                --ancillaCount;
-
-                break;
-            }
-
             clone->stabilizer->H(i);
-            clone->stabilizer->ForceM(i, p == 1);
+            clone->stabilizer->ForceM(i, p);
 
-            bool isCorrected = (p == 1);
+            // Do any other ancillae collapse?
+            nShard->Compose(h);
+            bool isCorrected = p;
             for (size_t j = clone->shards.size() - 1U; j >= clone->qubitCount; --j) {
                 if (i == j) {
                     continue;
@@ -1861,38 +1921,36 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                 const MpsShardPtr& oShard = clone->shards[j];
                 oShard->Compose(h);
                 if (prob < (ONE_R1 / 4)) {
-                    shard->Compose(oShard->gate);
-                    std::copy(h, h + 4U, shards[j]->gate);
+                    // Collapsed to 0 - combine buffers
+                    nShard->Compose(oShard->gate);
                 } else if (prob > (3 * ONE_R1 / 4)) {
+                    // Collapsed to 1 - combine buffers, with Z correction
                     isCorrected = !isCorrected;
-                    shard->Compose(oShard->gate);
-                    std::copy(h, h + 4U, shards[j]->gate);
+                    nShard->Compose(oShard->gate);
                 }
             }
 
-            complex cMtrx[4U];
-            std::copy(shard->gate, shard->gate + 4U, cMtrx);
-
-            const real1_f comboProb =
-                2 * clone->FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-            if (abs(comboProb) > threshold) {
-                std::copy(oMtrx, oMtrx, shard->gate);
-
+            // Calculate the near-Clifford gate phase angle, but don't change the state:
+            const real1 angle =
+                (real1)FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]), true);
+            if ((4 * abs(angle) / PI_R1) > threshold) {
+                // The gate phase angle is too significant to flush.
                 continue;
             }
 
-            std::copy(cMtrx, cMtrx + 4U, shard->gate);
-            FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U]));
-
+            // We're round the gates to 0, and we eliminate the ancillae.
+            FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]));
             if (isCorrected) {
                 stabilizer->Z(i);
             }
             stabilizer->H(i);
-            stabilizer->ForceM(i, p == 1);
+            stabilizer->ForceM(i, p);
             stabilizer->Dispose(i, 1U);
             shards.erase(shards.begin() + i);
             --ancillaCount;
 
+            // All observable effects of qubits becoming separable have been accounted.
+            // (Hypothetical newly-arising X-basis separable states have no effect.)
             for (size_t j = shards.size() - 1U; j >= qubitCount; --j) {
                 if (stabilizer->IsSeparable(j)) {
                     stabilizer->Dispose(j, 1U);
@@ -1901,7 +1959,8 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                 }
             }
 
-            i = shards.size() - 1U;
+            // Start the loop condition over entirely, less the ancillae we removed.
+            i = shards.size();
 
             break;
         }

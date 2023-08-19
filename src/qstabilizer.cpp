@@ -49,7 +49,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     if (phaseFac != CMPLX_DEFAULT_ARG) {
         phaseOffset = phaseFac;
     } else if (randGlobalPhase) {
-        phaseOffset = std::polar(ONE_R1, 2 * PI_R1 * Rand());
+        phaseOffset = std::polar(ONE_R1, (real1)(2 * PI_R1 * Rand()));
     } else {
         phaseOffset = ONE_CMPLX;
     }
