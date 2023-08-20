@@ -54,7 +54,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
         phaseOffset = ONE_CMPLX;
     }
 
-    SetPermutation(perm);
+    SetPermutation(perm, phaseFac);
 }
 
 QInterfacePtr QStabilizer::Clone()
