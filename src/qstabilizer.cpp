@@ -1080,6 +1080,9 @@ void QStabilizer::Z(bitLenInt t)
 /// Apply an X (or NOT) gate to target
 void QStabilizer::X(bitLenInt t)
 {
+    AmplitudeEntry ampEntry =
+        randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, Prob(t) > (ONE_R1 / 4));
+
     ParFor(
         [this, t](const bitLenInt& i) {
             if (z[i][t]) {
@@ -1087,6 +1090,11 @@ void QStabilizer::X(bitLenInt t)
             }
         },
         { t });
+
+    if (!randGlobalPhase) {
+        complex nAmp = GetAmplitude(ampEntry.permutation);
+        phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
+    }
 }
 
 /// Apply a Pauli Y gate to target
