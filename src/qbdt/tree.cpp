@@ -82,8 +82,8 @@ void QBdt::Init()
 QBdtQStabilizerNodePtr QBdt::MakeQStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm)
 {
     return std::make_shared<QBdtQStabilizerNode>(scale,
-        std::make_shared<QUnitClifford>(qbCount, perm, rand_generator, ONE_CMPLX, false, false, false, 0U,
-            hardware_rand_generator != NULL));
+        std::make_shared<QUnitClifford>(
+            qbCount, perm, rand_generator, ONE_CMPLX, false, false, false, 0U, hardware_rand_generator != NULL));
 }
 QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
 {

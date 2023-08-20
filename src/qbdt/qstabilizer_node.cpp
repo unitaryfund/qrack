@@ -126,13 +126,14 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     const bitLenInt aliceBellBit = qReg->GetQubitCount();
     // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
     // qubit reset to |+>, (or effectively |0> followed by H gate).
-    QBdtNodeInterfacePtr& b0 = nRoot->branches[0U] =
-        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-    QBdtNodeInterfacePtr& b1 = nRoot->branches[1U] =
-        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+    QBdtNodeInterfacePtr& b0 = nRoot->branches[0U];
+    b0 = std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+    QBdtNodeInterfacePtr& b1 = nRoot->branches[1U];
+    b1 = std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
 
-    QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+    QUnitCliffordPtr& qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
+    QUnitCliffordPtr& qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+
     // We allocate the other Bell pair end in the stabilizer simulator.
     qReg0->Allocate(1U);
     qReg1->Allocate(1U);
@@ -140,92 +141,40 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // We act CNOT from |+> control to |0> target.
     // (Notice, we act X gate in |1> branch and no gate in |0> branch.)
     qReg1->X(aliceBellBit);
-    nRoot = nRoot->Prune(2U, 1U, true);
-    // This is the Bell pair "Eve" creates to distribute to "Alice" and "Bob," in quantum teleportation.
 
-    qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+    // This is the Bell pair "Eve" creates to distribute to "Alice" and "Bob," in quantum teleportation.
 
     // "Alice" prepares and sends a qubit to "Bob"; stabilizer prepares and sends a qubit to QBDT.
     // Alice's "prepared state" to teleport is the 0U index stabilizer qubit, (same in both branches).
     // Alice uses the "prepared state" qubit as the control of a CNOT on the Bell pair.
     qReg0->CNOT(0U, aliceBellBit);
     qReg1->CNOT(0U, aliceBellBit);
-    nRoot = nRoot->Prune(2U, 1U, true);
-
-    qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
     // Alice acts H on her "prepared state":
     qReg0->H(0U);
     qReg1->H(0U);
-    nRoot = nRoot->Prune(2U, 1U, true);
-
-    qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
     // Alice now measures both of her bits, and records the results.
 
     // First, measure Alice's Bell pair bit.
-    const real1 p01 = qReg0->Prob(aliceBellBit);
-    const real1 p11 = qReg1->Prob(aliceBellBit);
-    const bool q1 = qReg->Rand() < ((p01 + p11) / 2);
-
-    bool isB0 = !((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)));
-    if (isB0) {
-        qReg0->ForceM(aliceBellBit, q1);
-        qReg0->Dispose(aliceBellBit, 1U);
-    } else {
-        b0->SetZero();
-    }
-
-    bool isB1 = !((q1 && IS_0_PROB(p11)) || (!q1 && IS_1_PROB(p11)));
-    if (isB1) {
-        qReg1->ForceM(aliceBellBit, q1);
-        qReg1->Dispose(aliceBellBit, 1U);
-    } else {
-        b1->SetZero();
-    }
-
-    nRoot = nRoot->Prune(2U, 1U, true);
-
-    qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+    // (We can safely demand "post-selection" for |0>, without loss of generality.)
+    qReg0->ForceM(aliceBellBit, false);
+    qReg0->Dispose(aliceBellBit, 1U);
+    qReg1->ForceM(aliceBellBit, false);
+    qReg1->Dispose(aliceBellBit, 1U);
 
     // Next, measure Alice's "prepared state" bit.
-    const real1 p00 = isB0 ? qReg0->Prob(0U) : qReg1->Prob(0U);
-    const real1 p10 = isB1 ? qReg1->Prob(0U) : qReg0->Prob(0U);
-    const bool q0 = qReg->Rand() < ((p00 + p10) / 2);
-
-    if (isB0) {
-        if ((q0 && IS_0_PROB(p00)) || (!q0 && IS_1_PROB(p00))) {
-            b0->SetZero();
-        } else {
-            qReg0->ForceM(0U, q0);
-            qReg0->Dispose(0U, 1U);
-        }
-    }
-
-    if (isB1) {
-        if ((q0 && IS_0_PROB(p10)) || (!q0 && IS_1_PROB(p10))) {
-            b1->SetZero();
-        } else {
-            qReg1->ForceM(0U, q0);
-            qReg1->Dispose(0U, 1U);
-        }
-    }
-
-    nRoot = nRoot->Prune(2U, 1U, true);
+    // (We can safely demand "post-selection" for |0>, without loss of generality.)
+    qReg0->ForceM(0U, false);
+    qReg0->Dispose(0U, 1U);
+    qReg1->ForceM(0U, false);
+    qReg1->Dispose(0U, 1U);
 
     // Bob acts 0 to 2 corrective gates based upon Alice's measured bits.
-    if (q0) {
-        b1->scale = -b1->scale;
-        nRoot = nRoot->Prune(1U, 1U, true);
-    }
-    if (q1) {
-        std::swap(b0, b1);
-        nRoot = nRoot->Prune(1U, 1U, true);
-    }
+    // (We post-selected for the case that he acts none.)
+
+    // Normalize the local sub-tree:
+    nRoot = nRoot->Prune(2U, 1U, true);
 
     // This process might need to be repeated, recursively.
     b0 = b0->PopSpecial(depth);
