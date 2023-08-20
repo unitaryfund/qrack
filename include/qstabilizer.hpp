@@ -241,17 +241,17 @@ public:
     /// Apply a Hadamard gate to target
     using QInterface::H;
     void H(bitLenInt qubitIndex);
-    /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-    void S(bitLenInt qubitIndex);
-    /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
-    void IS(bitLenInt qubitIndex);
-    /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
-    void Z(bitLenInt qubitIndex);
     /// Apply an X (or NOT) gate to target
     using QInterface::X;
     void X(bitLenInt qubitIndex);
     /// Apply a Pauli Y gate to target
     void Y(bitLenInt qubitIndex);
+    /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
+    void Z(bitLenInt qubitIndex);
+    /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
+    void S(bitLenInt qubitIndex);
+    /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
+    void IS(bitLenInt qubitIndex);
     // Swap two bits
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     // Swap two bits and apply a phase factor of i if they are different
