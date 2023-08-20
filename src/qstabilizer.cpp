@@ -729,6 +729,13 @@ real1_f QStabilizer::ProbMask(bitCapInt mask, bitCapInt perm)
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 {
+    if (!randGlobalPhase && IsSeparableZ(c)) {
+        if (M(c)) {
+            X(t);
+        }
+        return;
+    }
+
     AmplitudeEntry ampEntry =
         randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, Prob(t) > (ONE_R1 / 4));
 
@@ -757,6 +764,13 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 /// Apply an (anti-)CNOT gate with control and target
 void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
 {
+    if (!randGlobalPhase && IsSeparableZ(c)) {
+        if (!M(c)) {
+            X(t);
+        }
+        return;
+    }
+
     AmplitudeEntry ampEntry =
         randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, Prob(t) > (ONE_R1 / 4));
 
