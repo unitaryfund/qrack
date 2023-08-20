@@ -113,6 +113,10 @@ protected:
                 if (norm(leaf->scale) <= _qrack_qbdt_sep_thresh) {
                     break;
                 }
+                if (leaf->IsStabilizer()) {
+                    scale *= NODE_TO_STABILIZER(leaf)->GetAmplitude(i >> j);
+                    break;
+                }
                 leaf = leaf->branches[SelectBit(i, j)];
                 scale *= leaf->scale;
             }
