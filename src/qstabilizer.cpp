@@ -1092,7 +1092,8 @@ void QStabilizer::X(bitLenInt t)
         { t });
 
     if (!randGlobalPhase) {
-        complex nAmp = GetAmplitude(ampEntry.permutation);
+        const bitCapInt p = IsSeparableZ(t) ? (ampEntry.permutation ^ pow2(t)) : ampEntry.permutation;
+        complex nAmp = GetAmplitude(p);
         phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
     }
 }
