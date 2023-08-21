@@ -253,8 +253,10 @@ void QUnitClifford::Detach(bitLenInt start, bitLenInt length, QUnitCliffordPtr d
                     shard.unit = nUnit;
                 } else {
                     shard.unit->Dispose(shard.mapped, subLen);
-                    phaseOffset *= shard.unit->GetPhaseOffset();
-                    shard.unit->ResetPhaseOffset();
+                    if (!randGlobalPhase) {
+                        phaseOffset *= shard.unit->GetPhaseOffset();
+                        shard.unit->ResetPhaseOffset();
+                    }
                 }
             }
         } else {
@@ -546,8 +548,10 @@ bool QUnitClifford::SeparateBit(bool value, bitLenInt qubit)
     shard.mapped = 0U;
 
     unit->Dispose(mapped, 1U);
-    phaseOffset *= unit->GetPhaseOffset();
-    unit->ResetPhaseOffset();
+    if (!randGlobalPhase) {
+        phaseOffset *= unit->GetPhaseOffset();
+        unit->ResetPhaseOffset();
+    }
 
     /* Update the mappings. */
     for (auto&& s : shards) {
