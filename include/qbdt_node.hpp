@@ -91,8 +91,16 @@ public:
 
         --depth;
 
-        branches[0U] = branches[0U]->PopSpecial(depth);
-        branches[1U] = branches[1U]->PopSpecial(depth);
+        QBdtNodeInterfacePtr& b0 = branches[0U];
+        QBdtNodeInterfacePtr& b1 = branches[1U];
+
+        if (b0.get() == b1.get()) {
+            b0 = b0->PopSpecial(depth);
+            b1 = b0;
+        } else {
+            b0 = b0->PopSpecial(depth);
+            b1 = b1->PopSpecial(depth);
+        }
 
         return shared_from_this();
     }
