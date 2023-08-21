@@ -639,10 +639,10 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1 = b1->PopSpecial();
 
     // For parallelism, keep shared_ptr from deallocating.
-    QBdtNodeInterfacePtr b00 = b0->branches[0U];
-    QBdtNodeInterfacePtr b01 = b0->branches[1U];
-    QBdtNodeInterfacePtr b10 = b1->branches[0U];
-    QBdtNodeInterfacePtr b11 = b1->branches[1U];
+    QBdtNodeInterfacePtr& b00 = b0->branches[0U];
+    QBdtNodeInterfacePtr& b01 = b0->branches[1U];
+    QBdtNodeInterfacePtr& b10 = b1->branches[0U];
+    QBdtNodeInterfacePtr& b11 = b1->branches[1U];
 
     if (true) {
         std::lock(b00->mtx, b01->mtx);
@@ -667,23 +667,18 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
-        std::future<void> future0 = std::async(std::launch::async, [&] {
-            b0->PushStateVector(
-                mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth, parDepth);
-        });
-        b1->PushStateVector(
-            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth, parDepth);
+        std::future<void> future0 = std::async(std::launch::async,
+            [&] { b0->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b00, b10, depth, parDepth); });
+        b1->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b01, b11, depth, parDepth);
 
         future0.get();
     } else {
-        b0->PushStateVector(
-            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth, parDepth);
-        b1->PushStateVector(
-            mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth, parDepth);
+        b0->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b00, b10, depth, parDepth);
+        b1->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b01, b11, depth, parDepth);
     }
 #else
-    b0->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[0U], b1->branches[0U], depth);
-    b1->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b0->branches[1U], b1->branches[1U], depth);
+    b0->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b00, b10, depth);
+    b1->PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, b01, b11, depth);
 #endif
 
     b0->PopStateVector();
@@ -789,10 +784,10 @@ void QBdtNode::PushStateVector(
     b1 = b1->PopSpecial();
 
     // For parallelism, keep shared_ptr from deallocating.
-    QBdtNodeInterfacePtr b00 = b0->branches[0U];
-    QBdtNodeInterfacePtr b01 = b0->branches[1U];
-    QBdtNodeInterfacePtr b10 = b1->branches[0U];
-    QBdtNodeInterfacePtr b11 = b1->branches[1U];
+    QBdtNodeInterfacePtr& b00 = b0->branches[0U];
+    QBdtNodeInterfacePtr& b01 = b0->branches[1U];
+    QBdtNodeInterfacePtr& b10 = b1->branches[0U];
+    QBdtNodeInterfacePtr& b11 = b1->branches[1U];
 
     if (true) {
         std::lock(b00->mtx, b01->mtx);
@@ -817,18 +812,18 @@ void QBdtNode::PushStateVector(
     if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
         ++parDepth;
 
-        std::future<void> future0 = std::async(std::launch::async,
-            [&] { b0->PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth); });
-        b1->PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
+        std::future<void> future0 =
+            std::async(std::launch::async, [&] { b0->PushStateVector(mtrx, b00, b10, depth, parDepth); });
+        b1->PushStateVector(mtrx, b01, b11, depth, parDepth);
 
         future0.get();
     } else {
-        b0->PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth, parDepth);
-        b1->PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth, parDepth);
+        b0->PushStateVector(mtrx, b00, b10, depth, parDepth);
+        b1->PushStateVector(mtrx, b01, b11, depth, parDepth);
     }
 #else
-    b0->PushStateVector(mtrx, b0->branches[0U], b1->branches[0U], depth);
-    b1->PushStateVector(mtrx, b0->branches[1U], b1->branches[1U], depth);
+    b0->PushStateVector(mtrx, b00, b10, depth);
+    b1->PushStateVector(mtrx, b01, b11, depth);
 #endif
 
     b0->PopStateVector();
