@@ -736,9 +736,6 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
         return;
     }
 
-    AmplitudeEntry ampEntry =
-        randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, !(Prob(t) < (3 * ONE_R1 / 4)));
-
     ParFor(
         [this, c, t](const bitLenInt& i) {
             if (x[i][c]) {
@@ -753,12 +750,7 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
                 }
             }
         },
-        { c, t });
-
-    if (!randGlobalPhase) {
-        complex nAmp = GetAmplitude(ampEntry.permutation);
-        phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
-    }
+        { c, t }, true);
 }
 
 /// Apply an (anti-)CNOT gate with control and target
@@ -771,9 +763,6 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
         return;
     }
 
-    AmplitudeEntry ampEntry =
-        randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, !(Prob(t) < (3 * ONE_R1 / 4)));
-
     ParFor(
         [this, c, t](const bitLenInt& i) {
             if (x[i][c]) {
@@ -788,12 +777,7 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
                 }
             }
         },
-        { c, t });
-
-    if (!randGlobalPhase) {
-        complex nAmp = GetAmplitude(ampEntry.permutation);
-        phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
-    }
+        { c, t }, true);
 }
 
 /// Apply a CY gate with control and target
@@ -805,9 +789,6 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
         }
         return;
     }
-
-    AmplitudeEntry ampEntry =
-        randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, !(Prob(t) < (3 * ONE_R1 / 4)));
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -827,12 +808,7 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 
             z[i][t] = z[i][t] ^ x[i][t];
         },
-        { c, t });
-
-    if (!randGlobalPhase) {
-        complex nAmp = GetAmplitude(ampEntry.permutation);
-        phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
-    }
+        { c, t }, true);
 }
 
 /// Apply an (anti-)CY gate with control and target
@@ -844,9 +820,6 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
         }
         return;
     }
-
-    AmplitudeEntry ampEntry =
-        randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, !(Prob(t) < (3 * ONE_R1 / 4)));
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -866,12 +839,7 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 
             z[i][t] = z[i][t] ^ x[i][t];
         },
-        { c, t });
-
-    if (!randGlobalPhase) {
-        complex nAmp = GetAmplitude(ampEntry.permutation);
-        phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
-    }
+        { c, t }, true);
 }
 
 /// Apply a CZ gate with control and target
@@ -1052,22 +1020,13 @@ void QStabilizer::H(bitLenInt t)
 /// Apply an X (or NOT) gate to target
 void QStabilizer::X(bitLenInt t)
 {
-    AmplitudeEntry ampEntry =
-        randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, Prob(t) > (ONE_R1 / 4));
-
     ParFor(
         [this, t](const bitLenInt& i) {
             if (z[i][t]) {
                 r[i] = (r[i] + 2U) & 0x3U;
             }
         },
-        { t });
-
-    if (!randGlobalPhase) {
-        const bitCapInt p = IsSeparableZ(t) ? (ampEntry.permutation ^ pow2(t)) : ampEntry.permutation;
-        complex nAmp = GetAmplitude(p);
-        phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
-    }
+        { t }, true, true);
 }
 
 /// Apply a Pauli Y gate to target
@@ -1117,6 +1076,7 @@ void QStabilizer::S(bitLenInt t)
         }
         return;
     }
+
     ParFor(
         [this, t](const bitLenInt& i) {
             if (x[i][t] && z[i][t]) {
@@ -1136,6 +1096,7 @@ void QStabilizer::IS(bitLenInt t)
         }
         return;
     }
+
     ParFor(
         [this, t](const bitLenInt& i) {
             z[i][t] = z[i][t] ^ x[i][t];
