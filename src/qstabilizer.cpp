@@ -845,19 +845,12 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 /// Apply a CZ gate with control and target
 void QStabilizer::CZ(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (M(c)) {
-            Z(t);
+    if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t)) {
+        if (M(c) && M(t)) {
+            phaseOffset *= -ONE_CMPLX;
         }
         return;
     }
-    if (!randGlobalPhase && IsSeparableZ(t)) {
-        if (M(t)) {
-            Z(c);
-        }
-        return;
-    }
-
     ParFor(
         [this, c, t](const bitLenInt& i) {
             if (x[i][t]) {
@@ -878,19 +871,12 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
 /// Apply an (anti-)CZ gate with control and target
 void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (!M(c)) {
-            Z(t);
+    if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t)) {
+        if (!M(c) && M(t)) {
+            phaseOffset *= -ONE_CMPLX;
         }
         return;
     }
-    if (!randGlobalPhase && IsSeparableZ(t)) {
-        if (M(t)) {
-            Phase(-ONE_CMPLX, ONE_CMPLX, c);
-        }
-        return;
-    }
-
     ParFor(
         [this, c, t](const bitLenInt& i) {
             if (x[i][t]) {
@@ -1038,7 +1024,6 @@ void QStabilizer::Y(bitLenInt t)
         X(t);
         return;
     }
-
     ParFor(
         [this, t](const bitLenInt& i) {
             if (z[i][t] ^ x[i][t]) {
@@ -1057,7 +1042,6 @@ void QStabilizer::Z(bitLenInt t)
         }
         return;
     }
-
     ParFor(
         [this, t](const bitLenInt& i) {
             if (x[i][t]) {
