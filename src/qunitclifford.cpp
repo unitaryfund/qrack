@@ -253,6 +253,8 @@ void QUnitClifford::Detach(bitLenInt start, bitLenInt length, QUnitCliffordPtr d
                     shard.unit = nUnit;
                 } else {
                     shard.unit->Dispose(shard.mapped, subLen);
+                    phaseOffset *= shard.unit->GetPhaseOffset();
+                    shard.unit->ResetPhaseOffset();
                 }
             }
         } else {
@@ -270,13 +272,6 @@ void QUnitClifford::Detach(bitLenInt start, bitLenInt length, QUnitCliffordPtr d
         if (subunit != subunits.end() &&
             shard.mapped >= (shards[decomposedUnits[shard.unit]].mapped + subunit->second)) {
             shard.mapped -= subunit->second;
-        }
-    }
-
-    if (!dest) {
-        for (const auto& shard : shards) {
-            phaseOffset *= shard.unit->GetPhaseOffset();
-            shard.unit->ResetPhaseOffset();
         }
     }
 
