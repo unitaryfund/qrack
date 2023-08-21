@@ -130,9 +130,9 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
     QBdtNodeInterfacePtr& b1 = nRoot->branches[1U] =
         std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-
     QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+
     // We allocate the other Bell pair end in the stabilizer simulator.
     qReg0->Allocate(1U);
     qReg1->Allocate(1U);
@@ -153,19 +153,14 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     qReg0->H(0U);
     qReg1->H(0U);
 
-    // ("Prune," to adjust nRoot after those gates:)
-    nRoot = nRoot->Prune(2U, 1U, true);
-    qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
-
     // Alice now measures both of her bits, and records the results.
 
     // First, measure Alice's Bell pair bit.
     const real1 p01 = qReg0->Prob(aliceBellBit);
     const real1 p11 = qReg1->Prob(aliceBellBit);
-    const bool q1 = qReg->Rand() < ((p01 + p11) / 2);
+    const bool q1 = (7 * ONE_R1 / 8) > ((p01 + p11) / 2);
 
-    bool isB0 = !((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)));
+    const bool isB0 = !((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)));
     if (isB0) {
         qReg0->ForceM(aliceBellBit, q1);
         qReg0->Dispose(aliceBellBit, 1U);
@@ -173,7 +168,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         b0->SetZero();
     }
 
-    bool isB1 = !((q1 && IS_0_PROB(p11)) || (!q1 && IS_1_PROB(p11)));
+    const bool isB1 = !((q1 && IS_0_PROB(p11)) || (!q1 && IS_1_PROB(p11)));
     if (isB1) {
         qReg1->ForceM(aliceBellBit, q1);
         qReg1->Dispose(aliceBellBit, 1U);
@@ -181,14 +176,10 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         b1->SetZero();
     }
 
-    nRoot = nRoot->Prune(2U, 1U, true);
-    qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
-
     // Next, measure Alice's "prepared state" bit.
     const real1 p00 = isB0 ? qReg0->Prob(0U) : qReg1->Prob(0U);
     const real1 p10 = isB1 ? qReg1->Prob(0U) : qReg0->Prob(0U);
-    const bool q0 = qReg->Rand() < ((p00 + p10) / 2);
+    const bool q0 = (7 * ONE_R1 / 8) > ((p00 + p10) / 2);
 
     if (isB0) {
         if ((q0 && IS_0_PROB(p00)) || (!q0 && IS_1_PROB(p00))) {
@@ -208,19 +199,19 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         }
     }
 
-    nRoot = nRoot->Prune(2U, 1U, true);
-
     // Bob acts 0 to 2 corrective gates based upon Alice's measured bits.
     if (q0) {
         b1->scale = -b1->scale;
     }
     if (q1) {
-        std::swap(b0, b1);
+        b0.swap(b1);
     }
 
     // This process might need to be repeated, recursively.
     b0 = b0->PopSpecial(depth);
     b1 = b1->PopSpecial(depth);
+
+    nRoot->Prune(2U, 1U, true);
 
     // We're done! Just return the replacement for "this" pointer.
     return nRoot;
