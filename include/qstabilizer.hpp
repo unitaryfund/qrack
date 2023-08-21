@@ -292,6 +292,9 @@ public:
     /// Get a single basis state amplitude
     std::vector<complex> GetAmplitudes(std::vector<bitCapInt> perms);
 
+    /// Get any single basis state amplitude
+    AmplitudeEntry GetAnyAmplitude();
+
     /// Get any single basis state amplitude where qubit "t" has value "m"
     AmplitudeEntry GetQubitAmplitude(bitLenInt t, bool m);
 
