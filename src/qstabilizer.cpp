@@ -1422,8 +1422,8 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     const bitCapInt oMaxQPower = pow2(qubitCount);
     const bitLenInt end = start + length;
     const bitLenInt nQubitCount = qubitCount - length;
-    const bitLenInt secondStart = nQubitCount + start;
-    const bitLenInt secondEnd = nQubitCount + end;
+    const bitLenInt secondStart = qubitCount + start;
+    const bitLenInt secondEnd = qubitCount + end;
 
     if (dest) {
         for (bitLenInt i = 0U; i < length; ++i) {
@@ -1441,12 +1441,12 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         std::copy(r.begin() + j, r.begin() + j + length, dest->r.begin() + length);
     }
 
-    x.erase(x.begin() + start, x.begin() + end);
-    z.erase(z.begin() + start, z.begin() + end);
-    r.erase(r.begin() + start, r.begin() + end);
     x.erase(x.begin() + secondStart, x.begin() + secondEnd);
     z.erase(z.begin() + secondStart, z.begin() + secondEnd);
     r.erase(r.begin() + secondStart, r.begin() + secondEnd);
+    x.erase(x.begin() + start, x.begin() + end);
+    z.erase(z.begin() + start, z.begin() + end);
+    r.erase(r.begin() + start, r.begin() + end);
 
     qubitCount = nQubitCount;
     maxQPower = pow2(nQubitCount);
