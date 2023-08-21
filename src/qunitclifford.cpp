@@ -273,6 +273,13 @@ void QUnitClifford::Detach(bitLenInt start, bitLenInt length, QUnitCliffordPtr d
         }
     }
 
+    if (!dest) {
+        for (const auto& shard : shards) {
+            phaseOffset *= shard.unit->GetPhaseOffset();
+            shard.unit->ResetPhaseOffset();
+        }
+    }
+
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
@@ -544,6 +551,8 @@ bool QUnitClifford::SeparateBit(bool value, bitLenInt qubit)
     shard.mapped = 0U;
 
     unit->Dispose(mapped, 1U);
+    phaseOffset *= unit->GetPhaseOffset();
+    unit->ResetPhaseOffset();
 
     /* Update the mappings. */
     for (auto&& s : shards) {

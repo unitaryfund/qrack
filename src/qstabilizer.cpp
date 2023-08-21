@@ -538,6 +538,19 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
     return toRet;
 }
 
+AmplitudeEntry QStabilizer::GetAnyAmplitude()
+{
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / pow2Ocl(g)));
+
+    seed(g);
+
+    return getBasisAmp(nrm);
+}
+
 AmplitudeEntry QStabilizer::GetQubitAmplitude(bitLenInt t, bool m)
 {
     const bitCapInt tPow = pow2(t);
@@ -1317,6 +1330,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     }
 
     qubitCount = nQubitCount;
+    maxQPower = pow2(qubitCount);
 
     return start;
 }
@@ -1396,6 +1410,8 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     }
     Finish();
 
+    const AmplitudeEntry ampEntry = GetAnyAmplitude();
+
     // We want to have the maximum number of 0 cross terms possible.
     gaussian();
 
@@ -1403,6 +1419,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     // outside inter- "dest" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
     // qubit.)
 
+    const bitCapInt oMaxQPower = pow2(qubitCount);
     const bitLenInt end = start + length;
     const bitLenInt nQubitCount = qubitCount - length;
     const bitLenInt secondStart = nQubitCount + start;
@@ -1432,6 +1449,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     r.erase(r.begin() + secondStart, r.begin() + secondEnd);
 
     qubitCount = nQubitCount;
+    maxQPower = pow2(nQubitCount);
 
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
 
@@ -1439,6 +1457,17 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         x[i].erase(x[i].begin() + start, x[i].begin() + end);
         z[i].erase(z[i].begin() + start, z[i].begin() + end);
     }
+
+    if (randGlobalPhase || dest) {
+        return;
+    }
+
+    const bitCapInt startMask = pow2(start) - 1U;
+    const bitCapInt endMask = (oMaxQPower - 1U) ^ (pow2(start + length) - 1U);
+    const bitCapInt nPerm = (ampEntry.permutation & startMask) | ((ampEntry.permutation & endMask) >> length);
+
+    const complex nAmp = GetAmplitude(nPerm);
+    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol)
