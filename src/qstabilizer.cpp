@@ -1298,7 +1298,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const bitLenInt length = toCopy->qubitCount;
     const bitLenInt nQubitCount = qubitCount + length;
     const bitLenInt endLength = qubitCount - start;
-    const bitLenInt secondStart = nQubitCount + start;
+    const bitLenInt secondStart = qubitCount + start;
     const bitLenInt dLen = length << 1U;
     const BoolVector row(length, false);
 
@@ -1307,22 +1307,22 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
         z[i].insert(z[i].begin() + start, row.begin(), row.end());
     }
 
-    x.insert(x.begin() + start, toCopy->x.begin(), toCopy->x.begin() + length);
-    z.insert(z.begin() + start, toCopy->z.begin(), toCopy->z.begin() + length);
-    r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
+    x.insert(x.begin() + secondStart, toCopy->x.begin() + length, toCopy->x.begin() + dLen);
+    z.insert(z.begin() + secondStart, toCopy->z.begin() + length, toCopy->z.begin() + dLen);
+    r.insert(r.begin() + secondStart, toCopy->r.begin() + length, toCopy->r.begin() + dLen);
     for (bitLenInt i = 0U; i < length; ++i) {
-        const bitLenInt offset = start + i;
+        const bitLenInt offset = secondStart + i;
         x[offset].insert(x[offset].begin(), start, false);
         x[offset].insert(x[offset].end(), endLength, false);
         z[offset].insert(z[offset].begin(), start, false);
         z[offset].insert(z[offset].end(), endLength, false);
     }
 
-    x.insert(x.begin() + secondStart, toCopy->x.begin() + length, toCopy->x.begin() + dLen);
-    z.insert(z.begin() + secondStart, toCopy->z.begin() + length, toCopy->z.begin() + dLen);
-    r.insert(r.begin() + secondStart, toCopy->r.begin() + length, toCopy->r.begin() + dLen);
+    x.insert(x.begin() + start, toCopy->x.begin(), toCopy->x.begin() + length);
+    z.insert(z.begin() + start, toCopy->z.begin(), toCopy->z.begin() + length);
+    r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
     for (bitLenInt i = 0U; i < length; ++i) {
-        const bitLenInt offset = secondStart + i;
+        const bitLenInt offset = start + i;
         x[offset].insert(x[offset].begin(), start, false);
         x[offset].insert(x[offset].end(), endLength, false);
         z[offset].insert(z[offset].begin(), start, false);
