@@ -63,7 +63,8 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     void Dispatch(DispatchFn fn) { fn(); }
 
-    void ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits)
+    void ParFor(
+        StabilizerParallelFunc fn, std::vector<bitLenInt> qubits, bool isPhaseAware = false, bool isInvert = false)
     {
         for (size_t i = 0U; i < qubits.size(); ++i) {
             if (qubits[i] >= qubitCount) {
@@ -71,12 +72,23 @@ protected:
             }
         }
 
+        const bool isPhase = isPhaseAware && !randGlobalPhase;
+        const bitLenInt t = qubits.back();
+        AmplitudeEntry ampEntry =
+            isPhase ? GetQubitAmplitude(t, Prob(t) > (ONE_R1 / 4)) : AmplitudeEntry(0U, ONE_CMPLX);
+
         Dispatch([this, fn] {
             const bitLenInt maxLcv = qubitCount << 1U;
             for (bitLenInt i = 0; i < maxLcv; ++i) {
                 fn(i);
             }
         });
+
+        if (isPhase) {
+            const bitCapInt p = (isInvert && IsSeparableZ(t)) ? (ampEntry.permutation ^ pow2(t)) : ampEntry.permutation;
+            complex nAmp = GetAmplitude(p);
+            phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
+        }
     }
 
 public:
