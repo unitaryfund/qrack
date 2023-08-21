@@ -1410,7 +1410,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     }
     Finish();
 
-    const AmplitudeEntry ampEntry = GetAnyAmplitude();
+    const AmplitudeEntry ampEntry = (randGlobalPhase || dest) ? AmplitudeEntry(0U, ONE_CMPLX) : GetAnyAmplitude();
 
     // We want to have the maximum number of 0 cross terms possible.
     gaussian();
