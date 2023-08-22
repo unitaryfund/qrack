@@ -391,6 +391,11 @@ public:
         return shard.unit->IsSeparable(shard.mapped);
     }
 
+    bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
+    {
+        return std::dynamic_pointer_cast<QUnitClifford>(Clone())->EntangleAll()->CanDecomposeDispose(start, length);
+    }
+
     using QInterface::Compose;
     bitLenInt Compose(QUnitCliffordPtr toCopy) { return Compose(toCopy, qubitCount); }
     bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnitClifford>(toCopy)); }

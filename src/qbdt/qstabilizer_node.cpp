@@ -118,9 +118,35 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 
     --depth;
 
-    // Quantum teleportation algorithm:
-
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
+
+    if (qReg->CanDecomposeDispose(0U, 1U)) {
+        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
+        QInterfacePtr qubit = clone->Decompose(0U, 1U);
+        complex stateVec[2U];
+        qubit->GetQuantumState(stateVec);
+
+        if (IS_NORM_0(stateVec[0U])) {
+            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>();
+            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(ONE_CMPLX, clone);
+
+            return nRoot;
+        }
+
+        nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(stateVec[0U], clone);
+        if (IS_NORM_0(stateVec[1U])) {
+            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>();
+
+            return nRoot;
+        }
+
+        clone = std::dynamic_pointer_cast<QUnitClifford>(clone->Clone());
+        nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(stateVec[1U], clone);
+
+        return nRoot;
+    }
+
+    // Quantum teleportation algorithm:
 
     // We need a Bell pair for teleportation, with one end on each side of the QBDT/stabilizer domain wall.
     const bitLenInt aliceBellBit = qReg->GetQubitCount();
