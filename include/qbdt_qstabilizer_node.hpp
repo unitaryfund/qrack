@@ -27,10 +27,12 @@ typedef std::shared_ptr<QBdtQStabilizerNode> QBdtQStabilizerNodePtr;
 class QBdtQStabilizerNode : public QBdtNodeInterface {
 public:
     QUnitCliffordPtr qReg;
+    bitLenInt ancillaCount;
 
     QBdtQStabilizerNode()
         : QBdtNodeInterface(ZERO_CMPLX)
         , qReg(NULL)
+        , ancillaCount(0)
     {
         // Intentionally left blank.
     }
@@ -38,6 +40,15 @@ public:
     QBdtQStabilizerNode(complex scl, QUnitCliffordPtr q)
         : QBdtNodeInterface(scl)
         , qReg(q)
+        , ancillaCount(0)
+    {
+        // Intentionally left blank
+    }
+
+    QBdtQStabilizerNode(complex scl, QUnitCliffordPtr q, bitLenInt ac)
+        : QBdtNodeInterface(scl)
+        , qReg(q)
+        , ancillaCount(ac)
     {
         // Intentionally left blank
     }

@@ -25,18 +25,36 @@
 namespace Qrack {
 bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 {
-    QUnitCliffordPtr rReg = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r)->qReg;
+    QBdtQStabilizerNodePtr rStab = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r);
+    QUnitCliffordPtr rReg = rStab->qReg;
 
     if (qReg.get() == rReg.get()) {
         return true;
     }
 
-    if (qReg->ApproxCompare(rReg)) {
-        qReg = rReg;
-        return true;
+    QUnitCliffordPtr lReg = qReg;
+
+    if (ancillaCount < rStab->ancillaCount) {
+        lReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
+        lReg->Allocate(rStab->ancillaCount - ancillaCount);
     }
 
-    return false;
+    if (ancillaCount > rStab->ancillaCount) {
+        rReg = std::dynamic_pointer_cast<QUnitClifford>(rReg->Clone());
+        rReg->Allocate(ancillaCount - rStab->ancillaCount);
+    }
+
+    if (!lReg->ApproxCompare(rReg)) {
+        return false;
+    }
+
+    if (ancillaCount > rStab->ancillaCount) {
+        qReg = rStab->qReg;
+    } else {
+        rStab->qReg = qReg;
+    }
+
+    return true;
 }
 
 void QBdtQStabilizerNode::Branch(bitLenInt depth, bitLenInt parDepth)
@@ -153,19 +171,26 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     // Quantum teleportation algorithm:
 
     // We need a Bell pair for teleportation, with one end on each side of the QBDT/stabilizer domain wall.
-    const bitLenInt aliceBellBit = qReg->GetQubitCount();
+    const bitLenInt aliceBellBit = qReg->GetQubitCount() - ancillaCount;
     // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
     // qubit reset to |+>, (or effectively |0> followed by H gate).
-    QBdtNodeInterfacePtr& b0 = nRoot->branches[0U] =
+    nRoot->branches[0U] =
         std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-    QBdtNodeInterfacePtr& b1 = nRoot->branches[1U] =
+    nRoot->branches[1U] =
         std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+    QBdtQStabilizerNodePtr b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
+    QBdtQStabilizerNodePtr b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
     QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
     // We allocate the other Bell pair end in the stabilizer simulator.
-    qReg0->Allocate(1U);
-    qReg1->Allocate(1U);
+    // We're trying to minimize the use of auxiliary qubits, and reuse them.
+    if (!ancillaCount) {
+        qReg0->Allocate(1U);
+        qReg1->Allocate(1U);
+        ++(b0->ancillaCount);
+        ++(b1->ancillaCount);
+    }
 
     // We act CNOT from |+> control to |0> target.
     // (Notice, we act X gate in |1> branch and no gate in |0> branch.)
@@ -193,7 +218,11 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     const bool isB0 = !((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)));
     if (isB0) {
         qReg0->ForceM(aliceBellBit, q1);
-        qReg0->Dispose(aliceBellBit, 1U);
+        // This is now considered an auxiliary qubit, at back of index order.
+        // We reset it to |0>, always, when done with it.
+        if (q1) {
+            qReg0->X(aliceBellBit);
+        }
     } else {
         b0->SetZero();
     }
@@ -201,7 +230,11 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     const bool isB1 = !((q1 && IS_0_PROB(p11)) || (!q1 && IS_1_PROB(p11)));
     if (isB1) {
         qReg1->ForceM(aliceBellBit, q1);
-        qReg1->Dispose(aliceBellBit, 1U);
+        // This is now considered an auxiliary qubit, at back of index order.
+        // We reset it to |0>, always, when done with it.
+        if (q1) {
+            qReg1->X(aliceBellBit);
+        }
     } else {
         b1->SetZero();
     }
@@ -216,7 +249,14 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
             b0->SetZero();
         } else {
             qReg0->ForceM(0U, q0);
-            qReg0->Dispose(0U, 1U);
+            // This is now considered an (additional) auxiliary qubit.
+            ++(b0->ancillaCount);
+            // We reset it to |0>, always, when done with it.
+            if (q0) {
+                qReg0->X(0U);
+            }
+            // To place it at back of index order, we use a logical shift:
+            qReg0->ROR(1U, 0U, qReg0->GetQubitCount());
         }
     }
 
@@ -225,7 +265,14 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
             b1->SetZero();
         } else {
             qReg1->ForceM(0U, q0);
-            qReg1->Dispose(0U, 1U);
+            // This is now considered an (additional) auxiliary qubit.
+            ++(b1->ancillaCount);
+            // We reset it to |0>, always, when done with it.
+            if (q0) {
+                qReg1->X(0U);
+            }
+            // To place it at back of index order, we use a logical shift:
+            qReg1->ROR(1U, 0U, qReg1->GetQubitCount());
         }
     }
 
@@ -234,12 +281,12 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         b1->scale = -b1->scale;
     }
     if (q1) {
-        b0.swap(b1);
+        nRoot->branches[0U].swap(nRoot->branches[1U]);
     }
 
     // This process might need to be repeated, recursively.
-    b0 = b0->PopSpecial(depth);
-    b1 = b1->PopSpecial(depth);
+    nRoot->branches[0U] = b0->PopSpecial(depth);
+    nRoot->branches[1U] = b1->PopSpecial(depth);
 
     nRoot->Prune(2U, 1U, true);
 
