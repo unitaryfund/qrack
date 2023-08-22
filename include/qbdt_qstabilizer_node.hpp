@@ -29,20 +29,14 @@ public:
     QUnitCliffordPtr qReg;
     bitLenInt ancillaCount;
 
-    QBdtQStabilizerNode()
-        : QBdtNodeInterface(ZERO_CMPLX)
-        , qReg(NULL)
-        , ancillaCount(0)
-    {
-        // Intentionally left blank.
-    }
-
     QBdtQStabilizerNode(complex scl, QUnitCliffordPtr q)
         : QBdtNodeInterface(scl)
         , qReg(q)
         , ancillaCount(0)
     {
-        // Intentionally left blank
+        if (!qReg) {
+            throw std::invalid_argument("QBdtQStabilizerNode constructor must receive a non-null argument!");
+        }
     }
 
     QBdtQStabilizerNode(complex scl, QUnitCliffordPtr q, bitLenInt ac)
@@ -50,7 +44,9 @@ public:
         , qReg(q)
         , ancillaCount(ac)
     {
-        // Intentionally left blank
+        if (!qReg) {
+            throw std::invalid_argument("QBdtQStabilizerNode constructor must receive a non-null argument!");
+        }
     }
 
     virtual ~QBdtQStabilizerNode()
@@ -63,7 +59,8 @@ public:
     virtual void SetZero()
     {
         QBdtNodeInterface::SetZero();
-        qReg = NULL;
+        qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
+        qReg->Clear();
     }
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQStabilizerNode>(scale, qReg); }

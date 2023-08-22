@@ -32,6 +32,14 @@ bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
         return true;
     }
 
+    if (ancillaCount >= qReg->GetQubitCount()) {
+        return rStab->ancillaCount >= rReg->GetQubitCount();
+    }
+
+    if (rStab->ancillaCount >= rReg->GetQubitCount()) {
+        return false;
+    }
+
     QUnitCliffordPtr lReg = qReg;
 
     if (ancillaCount < rStab->ancillaCount) {
@@ -125,7 +133,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
 
 QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 {
-    if (!depth) {
+    if (!depth || (ancillaCount >= qReg->GetQubitCount())) {
         return shared_from_this();
     }
 
@@ -138,32 +146,45 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
 
+    if ((ancillaCount + 1U) >= qReg->GetQubitCount()) {
+        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
+        clone->Clear();
+
+        nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(qReg->GetAmplitude(0U), clone);
+        nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(qReg->GetAmplitude(0U), clone);
+
+        return nRoot;
+    }
+
     // If the stabilizer qubit to "pop" satisfies the separability condition and other assumptions of "Decompose(),"
     // then we can completely avoid the quantum teleportation algorithm, and just duplicate the stabilizer qubit as a
     // QBdtNode branch pair qubit, by direct query and preparation of state.
 
     if (qReg->CanDecomposeDispose(0U, 1U)) {
-        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
-        QInterfacePtr qubit = clone->Decompose(0U, 1U);
+        QUnitCliffordPtr clone0 = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
+        QInterfacePtr qubit = clone0->Decompose(0U, 1U);
+        QUnitCliffordPtr clone1 = std::dynamic_pointer_cast<QUnitClifford>(clone0->Clone());
         complex stateVec[2U];
         qubit->GetQuantumState(stateVec);
 
         if (IS_NORM_0(stateVec[0U])) {
-            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>();
-            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(ONE_CMPLX, clone);
-
-            return nRoot;
+            clone0->Clear();
+            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(ZERO_CMPLX, clone0);
+            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(ONE_CMPLX, clone1);
+        } else {
+            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(stateVec[0U], clone0);
+            if (IS_NORM_0(stateVec[1U])) {
+                clone1->Clear();
+                nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(ZERO_CMPLX, clone1);
+            } else {
+                nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(stateVec[1U], clone1);
+            }
         }
 
-        nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(stateVec[0U], clone);
-        if (IS_NORM_0(stateVec[1U])) {
-            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>();
+        nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth);
+        nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth);
 
-            return nRoot;
-        }
-
-        clone = std::dynamic_pointer_cast<QUnitClifford>(clone->Clone());
-        nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(stateVec[1U], clone);
+        nRoot->Prune(2U, 1U, true);
 
         return nRoot;
     }

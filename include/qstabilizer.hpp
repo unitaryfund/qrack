@@ -137,6 +137,16 @@ public:
         }
     }
 
+    void Clear()
+    {
+        x.clear();
+        z.clear();
+        r.clear();
+        phaseOffset = ONE_CMPLX;
+        qubitCount = 0U;
+        maxQPower = 1U;
+    }
+
 protected:
     /// Sets row i equal to row k
     void rowcopy(const bitLenInt& i, const bitLenInt& k)

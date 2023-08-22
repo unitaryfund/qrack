@@ -181,6 +181,14 @@ public:
         return permCount;
     }
 
+    void Clear()
+    {
+        shards = std::vector<CliffordShard>();
+        phaseOffset = ONE_CMPLX;
+        qubitCount = 0U;
+        maxQPower = 1U;
+    }
+
     real1_f ExpectationBitsFactorized(
         const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
 
