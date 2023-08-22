@@ -306,8 +306,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     }
 
     // This process might need to be repeated, recursively.
-    nRoot->branches[0U] = b0->PopSpecial(depth);
-    nRoot->branches[1U] = b1->PopSpecial(depth);
+    nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth);
+    nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth);
 
     nRoot->Prune(2U, 1U, true);
 
