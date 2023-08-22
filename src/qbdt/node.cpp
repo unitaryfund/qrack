@@ -176,13 +176,6 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     b1->scale /= phaseFac;
 
     if (b0->IsStabilizer() || b1->IsStabilizer()) {
-        if (IS_NORM_0(b0->scale)) {
-            b0->SetZero();
-        }
-        if (IS_NORM_0(b1->scale)) {
-            b1->SetZero();
-        }
-
         return shared_from_this();
     }
 
@@ -590,10 +583,6 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
     bitLenInt parDepth)
 {
-    if ((depth <= 1U) && (b0->IsStabilizer() || b1->IsStabilizer())) {
-        return;
-    }
-
     std::lock(b0->mtx, b1->mtx);
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
