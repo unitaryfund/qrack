@@ -785,6 +785,10 @@ void QBdtNode::PushStateVector(
     b0 = b0->PopSpecial();
     b1 = b1->PopSpecial();
 
+    if (b0->IsStabilizer() || b1->IsStabilizer()) {
+        return;
+    }
+
     // For parallelism, keep shared_ptr from deallocating.
     QBdtNodeInterfacePtr& b00 = b0->branches[0U];
     QBdtNodeInterfacePtr& b01 = b0->branches[1U];
