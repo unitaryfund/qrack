@@ -94,10 +94,10 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                 qReg->Mtrx(mtrx, 0);
                 scale = qReg->GetPhaseOffset();
                 qReg->ResetPhaseOffset();
+
+                return shared_from_this();
             }
         }
-
-        return shared_from_this();
     }
 
     // Prune recursively to depth.
