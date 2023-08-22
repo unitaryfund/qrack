@@ -120,6 +120,10 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
 
+    // If the stabilizer qubit to "pop" satisfies the separability condition and other assumptions of "Decompose(),"
+    // then we can completely avoid the quantum teleportation algorithm, and just duplicate the stabilizer qubit as a
+    // QBdtNode branch pair qubit, by direct query and preparation of state.
+
     if (qReg->CanDecomposeDispose(0U, 1U)) {
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
         QInterfacePtr qubit = clone->Decompose(0U, 1U);
