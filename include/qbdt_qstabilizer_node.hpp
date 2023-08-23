@@ -61,6 +61,7 @@ public:
         QBdtNodeInterface::SetZero();
         qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
         qReg->Clear();
+        ancillaCount = 0;
     }
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQStabilizerNode>(scale, qReg); }

@@ -168,6 +168,39 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         return nRoot;
     }
 
+    // If the stabilizer qubit to "pop" satisfies the separability condition and other assumptions of "Decompose(),"
+    // then we can completely avoid the quantum teleportation algorithm, and just duplicate the stabilizer qubit as a
+    // QBdtNode branch pair qubit, by direct query and preparation of state.
+
+    if (qReg->CanDecomposeDispose(0U, 1U)) {
+        QUnitCliffordPtr clone0 = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
+        QInterfacePtr qubit = clone0->Decompose(0U, 1U);
+        QUnitCliffordPtr clone1 = std::dynamic_pointer_cast<QUnitClifford>(clone0->Clone());
+        complex stateVec[2U];
+        qubit->GetQuantumState(stateVec);
+
+        QBdtNodeInterfacePtr& b0 = nRoot->branches[0U];
+        QBdtNodeInterfacePtr& b1 = nRoot->branches[1U];
+
+        b0 = std::make_shared<QBdtQStabilizerNode>(stateVec[0U], clone0, ancillaCount);
+        b1 = std::make_shared<QBdtQStabilizerNode>(stateVec[1U], clone1, ancillaCount);
+
+        if (IS_NORM_0(stateVec[0U])) {
+            b0->SetZero();
+        } else {
+            b0 = b0->PopSpecial(depth);
+        }
+        if (IS_NORM_0(stateVec[1U])) {
+            b1->SetZero();
+        } else {
+            b1 = b1->PopSpecial(depth);
+        }
+
+        nRoot->Prune(2U, 1U, true);
+
+        return nRoot;
+    }
+
     // Quantum teleportation algorithm:
 
     // We need a Bell pair for teleportation, with one end on each side of the QBDT/stabilizer domain wall.
