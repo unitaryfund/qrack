@@ -47,6 +47,10 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     , x((n << 1U) + 1U, BoolVector(n))
     , z((n << 1U) + 1U, BoolVector(n))
 {
+    maxStateMapCacheQubitCount = getenv("QRACK_MAX_CPU_QB")
+        ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB")))
+        : 28U - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
+
     if (phaseFac != CMPLX_DEFAULT_ARG) {
         phaseOffset = phaseFac;
     } else if (randGlobalPhase) {
@@ -1491,6 +1495,9 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
         return ONE_R1_F;
     }
 
+    toCompare->Finish();
+    Finish();
+
     if ((error_tol <= TRYDECOMPOSE_EPSILON) && !isUnitarityBroken) {
         toCompare->gaussian();
         gaussian();
@@ -1517,9 +1524,6 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
         return ZERO_R1_F;
     }
 
-    toCompare->Finish();
-    Finish();
-
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapIntOcl permCount = pow2Ocl(g);
@@ -1530,6 +1534,32 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
     seed(g);
 
     if (error_tol <= TRYDECOMPOSE_EPSILON) {
+        if (toCompare->PermCount() < pow2(maxStateMapCacheQubitCount)) {
+            const std::map<bitCapInt, complex> stateMapCache = toCompare->GetQuantumState();
+
+            complex proj = ZERO_CMPLX;
+            const AmplitudeEntry entry = getBasisAmp(nrm);
+            const auto it = stateMapCache.find(entry.permutation);
+            if (it != stateMapCache.end()) {
+                proj += conj(entry.amplitude) * it->second;
+            }
+            for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+                const bitCapInt t2 = t ^ (t + 1U);
+                for (bitLenInt i = 0U; i < g; ++i) {
+                    if ((t2 >> i) & 1U) {
+                        rowmult(elemCount, qubitCount + i);
+                    }
+                }
+                const AmplitudeEntry entry = getBasisAmp(nrm);
+                const auto it = stateMapCache.find(entry.permutation);
+                if (it != stateMapCache.end()) {
+                    proj += conj(entry.amplitude) * it->second;
+                }
+            }
+
+            return ONE_R1_F - clampProb((real1_f)norm(proj));
+        }
+
         const AmplitudeEntry entry = getBasisAmp(nrm);
         complex proj = conj(entry.amplitude) * toCompare->GetAmplitude(entry.permutation);
         for (bitCapInt t = 0U; t < permCountMin1; ++t) {

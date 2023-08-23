@@ -49,6 +49,7 @@ protected:
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
     complex phaseOffset;
+    bitLenInt maxStateMapCacheQubitCount;
     bool isUnitarityBroken;
 
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
@@ -239,6 +240,8 @@ public:
      * At the bottom, generators containing Z's only in quasi-upper-triangular form.
      */
     bitLenInt gaussian();
+
+    bitCapInt PermCount() { return pow2(gaussian()); }
 
     void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)
