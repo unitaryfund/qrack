@@ -21,7 +21,7 @@
 #include "qbdt_qstabilizer_node.hpp"
 #include "qengine.hpp"
 
-#define NODE_TO_STABILIZER(leaf) (std::dynamic_pointer_cast<QBdtQStabilizerNode>(leaf)->qReg)
+#define NODE_TO_STABILIZER(leaf) (std::dynamic_pointer_cast<QBdtQStabilizerNode>(leaf)->GetReg())
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 

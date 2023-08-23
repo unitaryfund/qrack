@@ -152,7 +152,7 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     if (!isCliffordBlocked && b0->IsStabilizer() && b1->IsStabilizer()) {
         if (b0->isEqualUnder(b1)) {
             const QBdtQStabilizerNodePtr& sNode = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0);
-            const QUnitCliffordPtr& qReg = sNode->qReg;
+            const QUnitCliffordPtr qReg = sNode->GetReg();
             const real1 prob = std::min(ONE_R1, std::max(ZERO_R1, norm(b1->scale)));
             const real1 sqrtProb = sqrt(prob);
             const real1 sqrt1MinProb = std::min(ONE_R1, std::max(ZERO_R1, ONE_R1 - prob));

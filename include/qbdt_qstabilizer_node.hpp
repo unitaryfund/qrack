@@ -25,8 +25,10 @@ class QBdtQStabilizerNode;
 typedef std::shared_ptr<QBdtQStabilizerNode> QBdtQStabilizerNodePtr;
 
 class QBdtQStabilizerNode : public QBdtNodeInterface {
-public:
+protected:
     QUnitCliffordPtr qReg;
+
+public:
     bitLenInt ancillaCount;
 
     QBdtQStabilizerNode(complex scl, QUnitCliffordPtr q)
@@ -63,6 +65,8 @@ public:
         qReg->Clear();
         ancillaCount = 0;
     }
+
+    virtual QUnitCliffordPtr GetReg() { return qReg; }
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQStabilizerNode>(scale, qReg); }
 
