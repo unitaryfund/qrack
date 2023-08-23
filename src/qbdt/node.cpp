@@ -22,6 +22,8 @@
 #include <thread>
 #endif
 
+#include <signal.h>
+
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_CLIFFORD_PHASE_INVERT(top, bottom)                                                                          \
@@ -644,10 +646,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1 = b1->PopSpecial();
 
     if (b0->IsStabilizer() || b1->IsStabilizer()) {
-        b0->Prune();
-        b1->Prune();
-
-        return;
+        throw std::runtime_error("QBdtNode::PushStateVector() encountered terminal stabilizer nodes, without exit!");
     }
 
     // For parallelism, keep shared_ptr from deallocating.
@@ -796,10 +795,7 @@ void QBdtNode::PushStateVector(
     b1 = b1->PopSpecial();
 
     if (b0->IsStabilizer() || b1->IsStabilizer()) {
-        b0->Prune();
-        b1->Prune();
-
-        return;
+        throw std::runtime_error("QBdtNode::PushStateVector() encountered terminal stabilizer nodes, without exit!");
     }
 
     // For parallelism, keep shared_ptr from deallocating.
