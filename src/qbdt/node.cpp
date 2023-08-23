@@ -624,7 +624,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         return;
     }
 
-    if (b0->isEqualUnder(b1)) {
+    if (!depth || b0->isEqualUnder(b1)) {
         complex2 qubit(b0->scale, b1->scale);
         qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
         b0->scale = qubit.c(0U);
@@ -633,20 +633,11 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         return;
     }
 
-    if (!depth) {
-        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
-                                "depth, or root depth lacks method implementation.)");
-    }
-
     b0->Branch();
     b1->Branch();
 
     b0 = b0->PopSpecial();
     b1 = b1->PopSpecial();
-
-    if (b0->IsStabilizer() || b1->IsStabilizer()) {
-        throw std::runtime_error("QBdtNode::PushStateVector() encountered terminal stabilizer nodes, without exit!");
-    }
 
     // For parallelism, keep shared_ptr from deallocating.
     QBdtNodeInterfacePtr& b00 = b0->branches[0U];
@@ -773,7 +764,7 @@ void QBdtNode::PushStateVector(
         return;
     }
 
-    if (b0->isEqualUnder(b1)) {
+    if (!depth || b0->isEqualUnder(b1)) {
         const complex Y0 = b0->scale;
         const complex Y1 = b1->scale;
         b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
@@ -782,20 +773,11 @@ void QBdtNode::PushStateVector(
         return;
     }
 
-    if (!depth) {
-        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
-                                "depth, or root depth lacks method implementation.)");
-    }
-
     b0->Branch();
     b1->Branch();
 
     b0 = b0->PopSpecial();
     b1 = b1->PopSpecial();
-
-    if (b0->IsStabilizer() || b1->IsStabilizer()) {
-        throw std::runtime_error("QBdtNode::PushStateVector() encountered terminal stabilizer nodes, without exit!");
-    }
 
     // For parallelism, keep shared_ptr from deallocating.
     QBdtNodeInterfacePtr& b00 = b0->branches[0U];
