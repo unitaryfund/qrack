@@ -155,6 +155,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
         nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(qReg->GetAmplitude(0U), clone);
         nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(qReg->GetAmplitude(1U), clone);
 
+        nRoot->Prune(1U, 1U, true);
+
         return nRoot;
     }
 
