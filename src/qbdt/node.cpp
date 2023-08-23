@@ -624,13 +624,18 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         return;
     }
 
-    if (!depth || b0->isEqualUnder(b1)) {
+    if (b0->isEqualUnder(b1)) {
         complex2 qubit(b0->scale, b1->scale);
         qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
         b0->scale = qubit.c(0U);
         b1->scale = qubit.c(1U);
 
         return;
+    }
+
+    if (!depth) {
+        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
+                                "depth, or root depth lacks method implementation.)");
     }
 
     b0->Branch();
@@ -764,13 +769,18 @@ void QBdtNode::PushStateVector(
         return;
     }
 
-    if (!depth || b0->isEqualUnder(b1)) {
+    if (b0->isEqualUnder(b1)) {
         const complex Y0 = b0->scale;
         const complex Y1 = b1->scale;
         b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
         b1->scale = mtrx[2U] * Y0 + mtrx[3U] * Y1;
 
         return;
+    }
+
+    if (!depth) {
+        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
+                                "depth, or root depth lacks method implementation.)");
     }
 
     b0->Branch();
