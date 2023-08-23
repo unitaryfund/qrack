@@ -54,14 +54,14 @@ public:
 
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
-    std::unique_ptr<std::mutex> mtx;
+    std::shared_ptr<std::mutex> mtx;
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
     {
         branches[0U] = NULL;
         branches[1U] = NULL;
-        mtx = std::unique_ptr<std::mutex>(new std::mutex);
+        mtx = std::make_shared<std::mutex>();
     }
 
     QBdtNodeInterface(complex scl)
@@ -69,7 +69,7 @@ public:
     {
         branches[0U] = NULL;
         branches[1U] = NULL;
-        mtx = std::unique_ptr<std::mutex>(new std::mutex);
+        mtx = std::make_shared<std::mutex>();
     }
 
     QBdtNodeInterface(complex scl, QBdtNodeInterfacePtr* b)
@@ -77,7 +77,7 @@ public:
     {
         branches[0U] = b[0U];
         branches[1U] = b[1U];
-        mtx = std::unique_ptr<std::mutex>(new std::mutex);
+        mtx = std::make_shared<std::mutex>();
     }
 
     virtual ~QBdtNodeInterface()

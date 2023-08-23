@@ -145,7 +145,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     --depth;
 
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
-    nRoot->mtx = std::move(mtx);
+    nRoot->mtx = mtx;
 
     // If we have only one logical qubit left to "pop," clear the ancillae.
     if ((ancillaCount + 1U) >= qReg->GetQubitCount()) {

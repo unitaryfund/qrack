@@ -73,6 +73,10 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     QBdtNodeInterfacePtr b1 = branches[1U];
 
     if (!isCliffordBlocked && b0->IsStabilizer() && b1->IsStabilizer()) {
+        std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
+
         if (b0->isEqualUnder(b1)) {
             const QBdtQStabilizerNodePtr& sNode = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0);
             const QUnitCliffordPtr& qReg = sNode->qReg;
@@ -96,7 +100,7 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                 qReg->ResetPhaseOffset();
 
                 sNode->scale = ONE_CMPLX;
-                sNode->mtx = std::move(mtx);
+                sNode->mtx = mtx;
 
                 return sNode->Prune();
             }
