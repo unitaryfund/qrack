@@ -42,6 +42,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , rawRandBools(0U)
     , rawRandBoolsRemaining(0U)
+    , isUnitarityBroken(false)
     , r((n << 1U) + 1U)
     , x((n << 1U) + 1U, BoolVector(n))
     , z((n << 1U) + 1U, BoolVector(n))
@@ -77,6 +78,8 @@ QInterfacePtr QStabilizer::Clone()
 void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();
+
+    isUnitarityBroken = false;
 
     if (phaseFac != CMPLX_DEFAULT_ARG) {
         phaseOffset = phaseFac;
@@ -1216,6 +1219,8 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             return result;
         }
 
+        isUnitarityBroken = true;
+
         AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, result);
 
         // Set Xbar_p := Zbar_p
@@ -1484,6 +1489,32 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
         return ONE_R1_F;
+    }
+
+    if ((error_tol <= TRYDECOMPOSE_EPSILON) && !isUnitarityBroken) {
+        toCompare->gaussian();
+        gaussian();
+
+        const bitLenInt n = qubitCount << 1U;
+        for (bitLenInt i = 0U; i < n; ++i) {
+            if (r[i] != toCompare->r[i]) {
+                return ONE_R1_F;
+            }
+            const std::vector<bool>& xRow = x[i];
+            const std::vector<bool>& oxRow = toCompare->x[i];
+            const std::vector<bool>& zRow = z[i];
+            const std::vector<bool>& ozRow = toCompare->z[i];
+            for (size_t j = 0U; j < qubitCount; ++j) {
+                if (xRow[j] != oxRow[j]) {
+                    return ONE_R1_F;
+                }
+                if (zRow[j] != ozRow[j]) {
+                    return ONE_R1_F;
+                }
+            }
+        }
+
+        return ZERO_R1_F;
     }
 
     toCompare->Finish();

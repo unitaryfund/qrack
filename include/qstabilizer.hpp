@@ -49,6 +49,7 @@ protected:
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
     complex phaseOffset;
+    bool isUnitarityBroken;
 
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
     std::vector<uint8_t> r;
