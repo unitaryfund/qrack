@@ -157,13 +157,28 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
 
     // If we have only one logical qubit left to "pop," clear the ancillae.
     if ((ancillaCount + 1U) >= qReg->GetQubitCount()) {
+        complex stateVec[2U]{ qReg->GetAmplitude(0U), qReg->GetAmplitude(1U) };
         QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
         clone->Clear();
 
-        nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(qReg->GetAmplitude(0U), clone);
-        nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(qReg->GetAmplitude(1U), clone);
+        QBdtNodeInterfacePtr& b0 = nRoot->branches[0U];
+        QBdtNodeInterfacePtr& b1 = nRoot->branches[1U];
 
-        nRoot->Prune(1U, 1U, true);
+        b0 = std::make_shared<QBdtQStabilizerNode>(stateVec[0U], clone);
+        b1 = std::make_shared<QBdtQStabilizerNode>(stateVec[1U], clone);
+
+        if (IS_NORM_0(stateVec[0U])) {
+            b0->SetZero();
+        } else {
+            b0 = b0->PopSpecial(depth);
+        }
+        if (IS_NORM_0(stateVec[1U])) {
+            b1->SetZero();
+        } else {
+            b1 = b1->PopSpecial(depth);
+        }
+
+        nRoot->Prune(2U, 1U, true);
 
         return nRoot;
     }
