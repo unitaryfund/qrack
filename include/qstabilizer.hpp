@@ -228,7 +228,7 @@ protected:
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
-    real1_f ApproxCompareHelper(QStabilizerPtr toCompare);
+    real1_f ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error_tol = ZERO_R1_F);
 
 public:
     /**
@@ -395,7 +395,7 @@ public:
     }
     bool ApproxCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
-        return error_tol >= ApproxCompareHelper(toCompare);
+        return error_tol >= ApproxCompareHelper(toCompare, error_tol);
     }
 
     real1_f Prob(bitLenInt qubit);
