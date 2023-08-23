@@ -317,7 +317,9 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         return start;
     }
 
-    root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
+    root = root->PopSpecial(qubitCount);
+
+    root->InsertAtDepth(toCopy->root->PopSpecial(toCopy->qubitCount), start, toCopy->qubitCount);
 
     // Resize the shards buffer.
     shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
@@ -329,6 +331,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     }
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
+    root = root->Prune(qubitCount);
 
     return start;
 }
@@ -353,8 +356,10 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         return;
     }
 
+    root = root->PopSpecial(qubitCount);
+
     if (dest) {
-        dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
+        dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone()->Prune(length);
         std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     } else {
         root->RemoveSeparableAtDepth(start, length);
