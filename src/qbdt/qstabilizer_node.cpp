@@ -17,12 +17,30 @@
 #include "qbdt_node.hpp"
 #include "qbdt_qstabilizer_node.hpp"
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+#include <future>
+#include <thread>
+#endif
+
 #define IS_0_PROB(p) (p < (ONE_R1 / 4))
 #define IS_1_PROB(p) (p > (3 * ONE_R1 / 4))
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
 
 namespace Qrack {
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+const unsigned numThreads = std::thread::hardware_concurrency() << 1U;
+#if ENABLE_ENV_VARS
+const bitLenInt pStridePow =
+    (((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW)) +
+        1U) >>
+    1U;
+#else
+const bitLenInt pStridePow = (PSTRIDEPOW + 1U) >> 1U;
+#endif
+const bitCapInt pStride = pow2(pStridePow);
+#endif
+
 bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
 {
     const QBdtQStabilizerNodePtr rStab = r->IsStabilizer() ? std::dynamic_pointer_cast<QBdtQStabilizerNode>(r) : NULL;
@@ -139,7 +157,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
     return toRet;
 }
 
-QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
+QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt parDepth)
 {
     if (!depth || (ancillaCount >= qReg->GetQubitCount())) {
         return shared_from_this();
@@ -333,8 +351,27 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth)
     }
 
     // This process might need to be repeated, recursively.
-    nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth);
-    nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth);
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+    unsigned underThreads = (unsigned)(pow2(depth) / pStride);
+    if (underThreads == 1U) {
+        underThreads = 0U;
+    }
+    if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {
+        ++parDepth;
+
+        std::future<void> future0 = std::async(
+            std::launch::async, [&] { nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth, parDepth); });
+        nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth, parDepth);
+
+        future0.get();
+    } else {
+        nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth, parDepth);
+        nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth, parDepth);
+    }
+#else
+    nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth, parDepth);
+    nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth, parDepth);
+#endif
 
     nRoot->Prune(2U, 1U, true);
 

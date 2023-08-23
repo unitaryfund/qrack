@@ -78,7 +78,7 @@ public:
     virtual QBdtNodeInterfacePtr Apply2x2(complex const* mtrx, bitLenInt depth);
 #endif
 
-    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U)
+    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
         if (!depth) {
             return shared_from_this();
@@ -95,11 +95,11 @@ public:
         QBdtNodeInterfacePtr& b1 = branches[1U];
 
         if (b0.get() == b1.get()) {
-            b0 = b0->PopSpecial(depth);
+            b0 = b0->PopSpecial(depth, parDepth);
             b1 = b0;
         } else {
-            b0 = b0->PopSpecial(depth);
-            b1 = b1->PopSpecial(depth);
+            b0 = b0->PopSpecial(depth, parDepth);
+            b1 = b1->PopSpecial(depth, parDepth);
         }
 
         return shared_from_this();
