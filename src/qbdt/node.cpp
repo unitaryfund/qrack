@@ -95,7 +95,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                 scale = qReg->GetPhaseOffset();
                 qReg->ResetPhaseOffset();
 
-                return shared_from_this();
+                sNode->scale = ONE_CMPLX;
+
+                return sNode->Prune();
             }
         }
     }
