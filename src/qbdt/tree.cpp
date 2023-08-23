@@ -521,7 +521,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             leaf = leaf->branches[SelectBit(i, j)];
         }
 
-        std::lock_guard<std::mutex> lock(leaf->mtx);
+        std::lock_guard<std::mutex> lock(*(leaf->mtx.get()));
 
         if (IS_NODE_0(leaf->scale)) {
             return;
@@ -692,7 +692,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
             }
 
-            std::lock_guard<std::mutex> lock(leaf->mtx);
+            std::lock_guard<std::mutex> lock(*(leaf->mtx.get()));
 
             if (IS_NODE_0(leaf->scale)) {
                 return (bitCapInt)0U;
@@ -835,7 +835,7 @@ void QBdt::ApplyControlledSingle(
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
             }
 
-            std::lock_guard<std::mutex> lock(leaf->mtx);
+            std::lock_guard<std::mutex> lock(*(leaf->mtx.get()));
 
             if (IS_NODE_0(leaf->scale)) {
                 return (bitCapInt)0U;

@@ -96,6 +96,7 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                 qReg->ResetPhaseOffset();
 
                 sNode->scale = ONE_CMPLX;
+                sNode->mtx = std::move(mtx);
 
                 return sNode->Prune();
             }
@@ -106,12 +107,12 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     --depth;
 
     if (b0.get() == b1.get()) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
+        std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
         branches[0U] = b0->Prune(depth, parDepth, isCliffordBlocked);
     } else {
-        std::lock(b0->mtx, b1->mtx);
-        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+        std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         unsigned underThreads = (unsigned)(pow2(depth) / pStride);
@@ -148,7 +149,7 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     // However, we can't assume that peer pairs of nodes don't point to the same memory (and mutex).
     // As we're locked on the node above already, our shared_ptr copies are safe.
     if (b0.get() == b1.get()) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
+        std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
 
         const complex phaseFac = std::polar(ONE_R1, (real1)(std::arg(b0->scale)));
         scale *= phaseFac;
@@ -158,9 +159,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
         return shared_from_this();
     }
 
-    std::lock(b0->mtx, b1->mtx);
-    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+    std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+    std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
@@ -195,9 +196,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
         }
 
         if (true) {
-            std::lock(leaf0->mtx, leaf1->mtx);
-            std::lock_guard<std::mutex> lock00(leaf0->mtx, std::adopt_lock);
-            std::lock_guard<std::mutex> lock11(leaf1->mtx, std::adopt_lock);
+            std::lock(*(leaf0->mtx.get()), *(leaf1->mtx.get()));
+            std::lock_guard<std::mutex> lock00(*(leaf0->mtx.get()), std::adopt_lock);
+            std::lock_guard<std::mutex> lock11(*(leaf1->mtx.get()), std::adopt_lock);
 
             if (leaf0->isEqual(leaf1)) {
                 b1->branches[topBit] = b0->branches[topBit];
@@ -213,9 +214,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
             const QBdtNodeInterfacePtr& lRef = leaf0;
             const QBdtNodeInterfacePtr& rRef = leaf1;
 
-            std::lock(lRef->mtx, rRef->mtx);
-            std::lock_guard<std::mutex> lock0(lRef->mtx, std::adopt_lock);
-            std::lock_guard<std::mutex> lock1(rRef->mtx, std::adopt_lock);
+            std::lock(*(lRef->mtx.get()), *(rRef->mtx.get()));
+            std::lock_guard<std::mutex> lock0(*(lRef->mtx.get()), std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(*(rRef->mtx.get()), std::adopt_lock);
 
             leaf0 = lRef->branches[bit];
             leaf1 = rRef->branches[bit];
@@ -225,9 +226,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                 return (bitCapInt)(pow2(depth - j) - ONE_BCI);
             }
 
-            std::lock(leaf0->mtx, leaf1->mtx);
-            std::lock_guard<std::mutex> lock00(leaf0->mtx, std::adopt_lock);
-            std::lock_guard<std::mutex> lock11(leaf1->mtx, std::adopt_lock);
+            std::lock(*(leaf0->mtx.get()), *(leaf1->mtx.get()));
+            std::lock_guard<std::mutex> lock00(*(leaf0->mtx.get()), std::adopt_lock);
+            std::lock_guard<std::mutex> lock11(*(leaf1->mtx.get()), std::adopt_lock);
 
             if (leaf0->isEqual(leaf1)) {
                 lRef->branches[bit] = rRef->branches[bit];
@@ -267,11 +268,11 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     } else {
         // Split all clones.
         if (true) {
-            std::lock_guard<std::mutex> lock0(b0->mtx);
+            std::lock_guard<std::mutex> lock0(*(b0->mtx.get()));
             branches[0U] = b0->ShallowClone();
         }
         if (true) {
-            std::lock_guard<std::mutex> lock1(b1->mtx);
+            std::lock_guard<std::mutex> lock1(*(b1->mtx.get()));
             branches[1U] = b1->ShallowClone();
         }
     }
@@ -319,16 +320,16 @@ void QBdtNode::Normalize(bitLenInt depth)
 
     --depth;
     if (b0.get() == b1.get()) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
+        std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
 
         const real1 nrm = (real1)sqrt(2 * norm(b0->scale));
 
         b0->Normalize(depth);
         b0->scale *= ONE_R1 / nrm;
     } else {
-        std::lock(b0->mtx, b1->mtx);
-        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+        std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
         const real1 nrm = sqrt(norm(b0->scale) + norm(b1->scale));
 
@@ -361,7 +362,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     // Depth-first
     --depth;
     if (b0.get() == b1.get()) {
-        std::lock_guard<std::mutex> lock(b0->mtx);
+        std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
         b0->PopStateVector(depth);
 
         const real1 nrm = (real1)(2 * norm(b0->scale));
@@ -382,9 +383,9 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 
     ++parDepth;
 
-    std::lock(b0->mtx, b1->mtx);
-    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+    std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+    std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
     b0->PopStateVector(depth);
     b1->PopStateVector(depth);
@@ -452,36 +453,36 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 
     if (b0.get() == b1.get()) {
         if (!depth && size) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
+            std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
             QBdtNodeInterfacePtr n0 = std::make_shared<QBdtNode>(b0->scale, b->branches);
             branches[0U] = n0;
             branches[1U] = n0;
-            std::lock_guard<std::mutex> nLock(n0->mtx);
+            std::lock_guard<std::mutex> nLock(*(n0->mtx.get()));
             n0->InsertAtDepth(b, size, 0U, parDepth);
 
             return;
         }
 
-        std::lock_guard<std::mutex> lock(b0->mtx);
+        std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
         b0->InsertAtDepth(b, depth, size, parDepth);
 
         return;
     }
 
     if (!depth && size) {
-        std::lock(b0->mtx, b1->mtx);
-        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+        std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
         if (IS_NODE_0(b0->scale)) {
             branches[1U] = std::make_shared<QBdtNode>(b1->scale, b->branches);
             QBdtNodeInterfacePtr n1 = branches[1U];
-            std::lock_guard<std::mutex> nLock(n1->mtx);
+            std::lock_guard<std::mutex> nLock(*(n1->mtx.get()));
             n1->InsertAtDepth(b, size, 0U, parDepth);
         } else if (IS_NODE_0(b0->scale)) {
             branches[0U] = std::make_shared<QBdtNode>(b0->scale, b->branches);
             QBdtNodeInterfacePtr n0 = branches[0U];
-            std::lock_guard<std::mutex> nLock(n0->mtx);
+            std::lock_guard<std::mutex> nLock(*(n0->mtx.get()));
             n0->InsertAtDepth(b, size, 0U, parDepth);
         } else {
             branches[0U] = std::make_shared<QBdtNode>(b0->scale, b->branches);
@@ -489,8 +490,8 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             QBdtNodeInterfacePtr n0 = branches[0U];
             QBdtNodeInterfacePtr n1 = branches[1U];
             // These were just created, so there's no chance of deadlock in separate locks.
-            std::lock_guard<std::mutex> nLock0(n0->mtx);
-            std::lock_guard<std::mutex> nLock1(n1->mtx);
+            std::lock_guard<std::mutex> nLock0(*(n0->mtx.get()));
+            std::lock_guard<std::mutex> nLock1(*(n1->mtx.get()));
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
             if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
@@ -514,9 +515,9 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         return;
     }
 
-    std::lock(b0->mtx, b1->mtx);
-    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+    std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+    std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
@@ -551,9 +552,9 @@ QBdtNodeInterfacePtr QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2
 
     if (IS_NORM_0(mtrxCol2.c(0U)) && IS_NORM_0(mtrxCol1.c(1U))) {
         if (true) {
-            std::lock(b0->mtx, b1->mtx);
-            std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-            std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+            std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+            std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
             b0->scale *= mtrxCol1.c(0U);
             b1->scale *= mtrxCol2.c(1U);
@@ -564,9 +565,9 @@ QBdtNodeInterfacePtr QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2
 
     if (IS_NORM_0(mtrxCol1.c(0U)) && IS_NORM_0(mtrxCol2.c(1U))) {
         if (true) {
-            std::lock(b0->mtx, b1->mtx);
-            std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-            std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+            std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+            std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
             branches[0U].swap(branches[1U]);
             b1->scale *= mtrxCol2.c(0U);
@@ -585,9 +586,9 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
     bitLenInt parDepth)
 {
-    std::lock(b0->mtx, b1->mtx);
-    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+    std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+    std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
@@ -652,18 +653,18 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     QBdtNodeInterfacePtr& b11 = b1->branches[1U];
 
     if (true) {
-        std::lock(b00->mtx, b01->mtx);
-        std::lock_guard<std::mutex> lock0(b00->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b01->mtx, std::adopt_lock);
+        std::lock(*(b00->mtx.get()), *(b01->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b00->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b01->mtx.get()), std::adopt_lock);
         b00->scale *= b0->scale;
         b01->scale *= b0->scale;
     }
     b0->scale = SQRT1_2_R1;
 
     if (true) {
-        std::lock(b10->mtx, b11->mtx);
-        std::lock_guard<std::mutex> lock0(b10->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b11->mtx, std::adopt_lock);
+        std::lock(*(b10->mtx.get()), *(b11->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b10->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b11->mtx.get()), std::adopt_lock);
         b10->scale *= b1->scale;
         b11->scale *= b1->scale;
     }
@@ -704,9 +705,9 @@ QBdtNodeInterfacePtr QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         if (true) {
-            std::lock(b0->mtx, b1->mtx);
-            std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-            std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+            std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+            std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
             b0->scale *= mtrx[0U];
             b1->scale *= mtrx[3U];
@@ -717,9 +718,9 @@ QBdtNodeInterfacePtr QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         if (true) {
-            std::lock(b0->mtx, b1->mtx);
-            std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-            std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+            std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+            std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+            std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
             branches[0U].swap(branches[1U]);
             b1->scale *= mtrx[1U];
@@ -737,9 +738,9 @@ QBdtNodeInterfacePtr QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
 void QBdtNode::PushStateVector(
     complex const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-    std::lock(b0->mtx, b1->mtx);
-    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+    std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+    std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
 
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
@@ -801,18 +802,18 @@ void QBdtNode::PushStateVector(
     QBdtNodeInterfacePtr& b11 = b1->branches[1U];
 
     if (true) {
-        std::lock(b00->mtx, b01->mtx);
-        std::lock_guard<std::mutex> lock0(b00->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b01->mtx, std::adopt_lock);
+        std::lock(*(b00->mtx.get()), *(b01->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b00->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b01->mtx.get()), std::adopt_lock);
         b00->scale *= b0->scale;
         b01->scale *= b0->scale;
     }
     b0->scale = SQRT1_2_R1;
 
     if (true) {
-        std::lock(b10->mtx, b11->mtx);
-        std::lock_guard<std::mutex> lock0(b10->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b11->mtx, std::adopt_lock);
+        std::lock(*(b10->mtx.get()), *(b11->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b10->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b11->mtx.get()), std::adopt_lock);
         b10->scale *= b1->scale;
         b11->scale *= b1->scale;
     }
