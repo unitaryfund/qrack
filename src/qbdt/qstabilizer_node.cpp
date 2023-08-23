@@ -23,6 +23,15 @@
 #define IS_SAME_AMP(a, b) (abs((a) - (b)) <= REAL1_EPSILON)
 
 namespace Qrack {
+bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
+{
+    if (ancillaCount >= qReg->GetQubitCount()) {
+        return true;
+    }
+
+    return QBdtNodeInterface::isEqualUnder(r);
+}
+
 bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 {
     QBdtQStabilizerNodePtr rStab = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r);
@@ -30,14 +39,6 @@ bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 
     if (qReg.get() == rReg.get()) {
         return true;
-    }
-
-    if (ancillaCount >= qReg->GetQubitCount()) {
-        return rStab->ancillaCount >= rReg->GetQubitCount();
-    }
-
-    if (rStab->ancillaCount >= rReg->GetQubitCount()) {
-        return false;
     }
 
     QUnitCliffordPtr lReg = qReg;
