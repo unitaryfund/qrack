@@ -22,8 +22,6 @@
 #include <thread>
 #endif
 
-#include <signal.h>
-
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_CLIFFORD_PHASE_INVERT(top, bottom)                                                                          \
@@ -182,6 +180,10 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     }
 
     if (b0->IsStabilizer() || b1->IsStabilizer()) {
+        if (b0 == b1) {
+            branches[1U] = branches[0U];
+        }
+
         return shared_from_this();
     }
 
