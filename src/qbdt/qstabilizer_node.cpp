@@ -124,7 +124,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::Prune(bitLenInt depth, bitLenInt unuse
 void QBdtQStabilizerNode::InsertAtDepth(
     QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
 {
-    if (!depth) {
+    if (!size) {
         return;
     }
 
