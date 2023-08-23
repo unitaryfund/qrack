@@ -25,8 +25,13 @@
 namespace Qrack {
 bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
 {
-    if (ancillaCount >= qReg->GetQubitCount()) {
-        return true;
+    const QBdtQStabilizerNodePtr rStab = r->IsStabilizer() ? std::dynamic_pointer_cast<QBdtQStabilizerNode>(r) : NULL;
+    if (!IS_NODE_0(scale) && (ancillaCount >= qReg->GetQubitCount())) {
+        return rStab && (rStab->ancillaCount >= rStab->qReg->GetQubitCount());
+    }
+
+    if (!IS_NODE_0(r->scale) && rStab && (rStab->ancillaCount >= rStab->qReg->GetQubitCount())) {
+        return ancillaCount >= qReg->GetQubitCount();
     }
 
     return QBdtNodeInterface::isEqualUnder(r);
