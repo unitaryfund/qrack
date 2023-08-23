@@ -42,10 +42,15 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , rawRandBools(0U)
     , rawRandBoolsRemaining(0U)
+    , isUnitarityBroken(false)
     , r((n << 1U) + 1U)
     , x((n << 1U) + 1U, BoolVector(n))
     , z((n << 1U) + 1U, BoolVector(n))
 {
+    maxStateMapCacheQubitCount = getenv("QRACK_MAX_CPU_QB")
+        ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB")))
+        : 28U - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
+
     if (phaseFac != CMPLX_DEFAULT_ARG) {
         phaseOffset = phaseFac;
     } else if (randGlobalPhase) {
@@ -77,6 +82,8 @@ QInterfacePtr QStabilizer::Clone()
 void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();
+
+    isUnitarityBroken = false;
 
     if (phaseFac != CMPLX_DEFAULT_ARG) {
         phaseOffset = phaseFac;
@@ -471,7 +478,7 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
 
     seed(g);
 
-    AmplitudeEntry entry = getBasisAmp(nrm);
+    const AmplitudeEntry entry = getBasisAmp(nrm);
     if (entry.permutation == perm) {
         return entry.amplitude;
     }
@@ -508,7 +515,7 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
 
     seed(g);
 
-    AmplitudeEntry entry = getBasisAmp(nrm);
+    const AmplitudeEntry entry = getBasisAmp(nrm);
     if (prms.find(entry.permutation) != prms.end()) {
         amps[entry.permutation] = entry.amplitude;
     }
@@ -567,7 +574,7 @@ AmplitudeEntry QStabilizer::GetQubitAmplitude(bitLenInt t, bool m)
 
     seed(g);
 
-    AmplitudeEntry entry = getBasisAmp(nrm);
+    const AmplitudeEntry entry = getBasisAmp(nrm);
     if ((entry.permutation & tPow) == mPow) {
         return entry;
     }
@@ -1216,6 +1223,8 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             return result;
         }
 
+        isUnitarityBroken = true;
+
         AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ONE_CMPLX) : GetQubitAmplitude(t, result);
 
         // Set Xbar_p := Zbar_p
@@ -1470,7 +1479,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
-real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol)
+real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error_tol)
 {
     if (!toCompare) {
         return ONE_R1_F;
@@ -1489,89 +1498,106 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
     toCompare->Finish();
     Finish();
 
-    const bitCapInt maxQPower = GetMaxQPower();
-    complex proj = ZERO_CMPLX;
+    if ((error_tol <= TRYDECOMPOSE_EPSILON) && !isUnitarityBroken) {
+        toCompare->gaussian();
+        gaussian();
 
-    if (isDiscreteBool) {
-        real1_f potential = ZERO_R1_F;
-        real1_f oPotential = ZERO_R1_F;
-        for (bitCapInt i = 0U; i < maxQPower; ++i) {
-            const complex amp = GetAmplitude(i);
-            const complex oAmp = toCompare->GetAmplitude(i);
-
-            potential += (real1_f)norm(amp);
-            oPotential += (real1_f)norm(oAmp);
-            if ((potential - oPotential) > error_tol) {
+        const bitLenInt n = qubitCount << 1U;
+        for (bitLenInt i = 0U; i < n; ++i) {
+            if (r[i] != toCompare->r[i]) {
                 return ONE_R1_F;
             }
-
-            proj += conj(amp) * oAmp;
-            const real1_f prob = clampProb((real1_f)norm(proj));
-            if (error_tol >= (ONE_R1 - prob)) {
-                return ZERO_R1_F;
+            const std::vector<bool>& xRow = x[i];
+            const std::vector<bool>& oxRow = toCompare->x[i];
+            const std::vector<bool>& zRow = z[i];
+            const std::vector<bool>& ozRow = toCompare->z[i];
+            for (size_t j = 0U; j < qubitCount; ++j) {
+                if (xRow[j] != oxRow[j]) {
+                    return ONE_R1_F;
+                }
+                if (zRow[j] != ozRow[j]) {
+                    return ONE_R1_F;
+                }
             }
+        }
+
+        return ZERO_R1_F;
+    }
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+
+    seed(g);
+
+    if (error_tol <= TRYDECOMPOSE_EPSILON) {
+        if (toCompare->PermCount() < pow2(maxStateMapCacheQubitCount)) {
+            const std::map<bitCapInt, complex> stateMapCache = toCompare->GetQuantumState();
+
+            complex proj = ZERO_CMPLX;
+            const AmplitudeEntry entry = getBasisAmp(nrm);
+            const auto it = stateMapCache.find(entry.permutation);
+            if (it != stateMapCache.end()) {
+                proj += conj(entry.amplitude) * it->second;
+            }
+            for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+                const bitCapInt t2 = t ^ (t + 1U);
+                for (bitLenInt i = 0U; i < g; ++i) {
+                    if ((t2 >> i) & 1U) {
+                        rowmult(elemCount, qubitCount + i);
+                    }
+                }
+                const AmplitudeEntry entry = getBasisAmp(nrm);
+                const auto it = stateMapCache.find(entry.permutation);
+                if (it != stateMapCache.end()) {
+                    proj += conj(entry.amplitude) * it->second;
+                }
+            }
+
+            return ONE_R1_F - clampProb((real1_f)norm(proj));
+        }
+
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        complex proj = conj(entry.amplitude) * toCompare->GetAmplitude(entry.permutation);
+        for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+            const bitCapInt t2 = t ^ (t + 1U);
+            for (bitLenInt i = 0U; i < g; ++i) {
+                if ((t2 >> i) & 1U) {
+                    rowmult(elemCount, qubitCount + i);
+                }
+            }
+            const AmplitudeEntry entry = getBasisAmp(nrm);
+            proj += conj(entry.amplitude) * toCompare->GetAmplitude(entry.permutation);
         }
 
         return ONE_R1_F - clampProb((real1_f)norm(proj));
     }
 
-    for (bitCapInt i = 0U; i < maxQPower; ++i) {
-        proj += conj(GetAmplitude(i)) * toCompare->GetAmplitude(i);
+    const AmplitudeEntry entry = getBasisAmp(nrm);
+    real1_f potential = nrm;
+    complex proj = conj(entry.amplitude) * toCompare->GetAmplitude(entry.permutation);
+    if ((potential - norm(proj)) > error_tol) {
+        return ONE_R1_F;
+    }
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        potential += nrm;
+        proj += conj(entry.amplitude) * toCompare->GetAmplitude(entry.permutation);
+        if ((potential - norm(proj)) > error_tol) {
+            return ONE_R1_F;
+        }
     }
 
     return ONE_R1_F - clampProb((real1_f)norm(proj));
-}
-
-bool QStabilizer::ApproxCompare(QStabilizerPtr toCompare, real1_f error_tol)
-{
-    if (error_tol > TRYDECOMPOSE_EPSILON) {
-        return TRYDECOMPOSE_EPSILON >= ApproxCompareHelper(toCompare, false, error_tol);
-    }
-
-    if (!toCompare) {
-        return false;
-    }
-
-    if (this == toCompare.get()) {
-        return true;
-    }
-
-    // If the qubit counts are unequal, these can't be approximately equal objects.
-    if (qubitCount != toCompare->qubitCount) {
-        // Max square difference:
-        return false;
-    }
-
-    toCompare->Finish();
-    Finish();
-
-    if (!randGlobalPhase && !IS_NORM_0(phaseOffset - toCompare->phaseOffset)) {
-        return false;
-    }
-
-    toCompare->gaussian();
-    gaussian();
-
-    const bitLenInt n = qubitCount << 1U;
-    for (bitLenInt i = 0U; i < n; ++i) {
-        if (r[i] != toCompare->r[i]) {
-            return false;
-        }
-        const std::vector<bool>& xRow = x[i];
-        const std::vector<bool>& oxRow = toCompare->x[i];
-        const std::vector<bool>& zRow = z[i];
-        const std::vector<bool>& ozRow = toCompare->z[i];
-        for (size_t j = 0U; j < qubitCount; ++j) {
-            if (xRow[j] != oxRow[j]) {
-                return false;
-            }
-            if (zRow[j] != ozRow[j]) {
-                return false;
-            }
-        }
-    }
-
-    return true;
 }
 
 void QStabilizer::SetQuantumState(const complex* inputState)

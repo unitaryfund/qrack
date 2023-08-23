@@ -49,6 +49,8 @@ protected:
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
     complex phaseOffset;
+    bitLenInt maxStateMapCacheQubitCount;
+    bool isUnitarityBroken;
 
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
     std::vector<uint8_t> r;
@@ -137,6 +139,16 @@ public:
         }
     }
 
+    void Clear()
+    {
+        x.clear();
+        z.clear();
+        r.clear();
+        phaseOffset = ONE_CMPLX;
+        qubitCount = 0U;
+        maxQPower = 1U;
+    }
+
 protected:
     /// Sets row i equal to row k
     void rowcopy(const bitLenInt& i, const bitLenInt& k)
@@ -218,8 +230,7 @@ protected:
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
-    real1_f ApproxCompareHelper(
-        QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
+    real1_f ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error_tol = ZERO_R1_F);
 
 public:
     /**
@@ -229,6 +240,8 @@ public:
      * At the bottom, generators containing Z's only in quasi-upper-triangular form.
      */
     bitLenInt gaussian();
+
+    bitCapInt PermCount() { return pow2(gaussian()); }
 
     void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)
@@ -378,13 +391,16 @@ public:
 
     real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
-        return ApproxCompareHelper(std::dynamic_pointer_cast<QStabilizer>(toCompare), false);
+        return ApproxCompareHelper(std::dynamic_pointer_cast<QStabilizer>(toCompare));
     }
     bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QStabilizer>(toCompare), error_tol);
     }
-    bool ApproxCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON);
+    bool ApproxCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return error_tol >= ApproxCompareHelper(toCompare, error_tol);
+    }
 
     real1_f Prob(bitLenInt qubit);
 
