@@ -784,11 +784,6 @@ void QBdtNode::PushStateVector(
         return;
     }
 
-    if (!depth) {
-        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
-                                "depth, or root depth lacks method implementation.)");
-    }
-
     b0->Branch();
     b1->Branch();
 
@@ -796,7 +791,15 @@ void QBdtNode::PushStateVector(
     b1 = b1->PopSpecial();
 
     if (b0->IsStabilizer() || b1->IsStabilizer()) {
+        b0->Prune();
+        b1->Prune();
+
         return;
+    }
+
+    if (!depth) {
+        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
+                                "depth, or root depth lacks method implementation.)");
     }
 
     // For parallelism, keep shared_ptr from deallocating.
