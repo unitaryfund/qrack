@@ -43,21 +43,24 @@ const bitCapInt pStride = pow2(pStridePow);
 
 bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
 {
-    const QBdtQStabilizerNodePtr rStab = r->IsStabilizer() ? std::dynamic_pointer_cast<QBdtQStabilizerNode>(r) : NULL;
-    const bool isRTerminal = rStab ? (rStab->ancillaCount >= rStab->qReg->GetQubitCount()) : !r->branches[0U];
-
-    if (ancillaCount >= qReg->GetQubitCount()) {
-        return isRTerminal;
+    if (this == r.get()) {
+        return true;
     }
 
-    if (isRTerminal) {
+    QBdtQStabilizerNodePtr rStab = r->IsStabilizer() ? std::dynamic_pointer_cast<QBdtQStabilizerNode>(r) : NULL;
+
+    if (!qReg->GetQubitCount()) {
+        return rStab ? !rStab->qReg->GetQubitCount() : !r->branches[0u];
+    }
+
+    if (!rStab || !rStab->qReg->GetQubitCount()) {
         return false;
     }
 
-    return QBdtNodeInterface::isEqualUnder(r);
+    return isEqualBranch(r, 0U);
 }
 
-bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
+bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& unused)
 {
     QBdtQStabilizerNodePtr rStab = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r);
     QUnitCliffordPtr rReg = rStab->qReg;
@@ -71,9 +74,7 @@ bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
     if (ancillaCount < rStab->ancillaCount) {
         lReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
         lReg->Allocate(rStab->ancillaCount - ancillaCount);
-    }
-
-    if (ancillaCount > rStab->ancillaCount) {
+    } else if (ancillaCount > rStab->ancillaCount) {
         rReg = std::dynamic_pointer_cast<QUnitClifford>(rReg->Clone());
         rReg->Allocate(ancillaCount - rStab->ancillaCount);
     }
