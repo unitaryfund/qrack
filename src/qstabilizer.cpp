@@ -1498,7 +1498,7 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
     toCompare->Finish();
     Finish();
 
-    if ((error_tol <= TRYDECOMPOSE_EPSILON) && !isUnitarityBroken) {
+    if ((error_tol <= TRYDECOMPOSE_EPSILON) && !isUnitarityBroken && !toCompare->isUnitarityBroken) {
         toCompare->gaussian();
         gaussian();
 
