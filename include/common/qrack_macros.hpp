@@ -173,4 +173,4 @@
 #define CMPLX_DEFAULT_ARG complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG)
 #define FP_NORM_EPSILON std::numeric_limits<real1>::epsilon()
 #define FP_NORM_EPSILON_F ((real1_f)FP_NORM_EPSILON)
-#define TRYDECOMPOSE_EPSILON ((real1_f)(4 * FP_NORM_EPSILON))
+#define TRYDECOMPOSE_EPSILON ((real1_f)(8 * FP_NORM_EPSILON))
