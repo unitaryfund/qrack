@@ -205,9 +205,12 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         return nRoot;
     }
 
+#if 0
     // If the stabilizer qubit to "pop" satisfies the separability condition and other assumptions of "Decompose(),"
     // then we can completely avoid the quantum teleportation algorithm, and just duplicate the stabilizer qubit as a
     // QBdtNode branch pair qubit, by direct query and preparation of state.
+
+    // TODO: Decompose() might not properly handle phase-sensitivity.
 
     if (qReg->CanDecomposeDispose(0U, 1U)) {
         QUnitCliffordPtr clone0 = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
@@ -237,6 +240,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
 
         return nRoot;
     }
+#endif
 
     // Quantum teleportation algorithm:
 
