@@ -73,14 +73,6 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    if (!branches[0U]) {
-        return !r->branches[0U];
-    }
-
-    if (!r->branches[0U]) {
-        return false;
-    }
-
     return isEqualBranch(r, 0U) && isEqualBranch(r, 1U);
 }
 
