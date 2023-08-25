@@ -73,6 +73,10 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
+    if (r->IsStabilizer()) {
+        r = r->PopSpecial();
+    }
+
     return isEqualBranch(r, 0U) && isEqualBranch(r, 1U);
 }
 

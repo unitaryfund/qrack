@@ -1300,7 +1300,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
                 rowmult(i, p);
             }
         }
-        
+
         if (randGlobalPhase) {
             return result;
         }

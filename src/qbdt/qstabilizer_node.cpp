@@ -48,16 +48,23 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
     }
 
     QBdtQStabilizerNodePtr rStab = r->IsStabilizer() ? std::dynamic_pointer_cast<QBdtQStabilizerNode>(r) : NULL;
+    const bool isRTerminal = rStab ? (rStab->ancillaCount >= rStab->qReg->GetQubitCount()) : !r->branches[0U];
 
     if (ancillaCount >= qReg->GetQubitCount()) {
-        return rStab ? (rStab->ancillaCount >= rStab->qReg->GetQubitCount()) : !r->branches[0u];
+        return isRTerminal;
     }
 
-    if (!rStab || (rStab->ancillaCount >= rStab->qReg->GetQubitCount())) {
+    if (isRTerminal) {
         return false;
     }
 
-    return isEqualBranch(r, 0U);
+    if (rStab) {
+        return isEqualBranch(r, 0U);
+    }
+
+    QBdtNodeInterfacePtr ths = PopSpecial();
+
+    return ths->isEqualBranch(r, 0U) && ths->isEqualBranch(r, 1U);
 }
 
 bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& unused)
