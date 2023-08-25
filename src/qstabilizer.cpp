@@ -55,6 +55,62 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     SetPermutation(perm, phaseFac);
 }
 
+void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits, bool isPhaseAware, bool isInvert)
+{
+    for (size_t i = 0U; i < qubits.size(); ++i) {
+        if (qubits[i] >= qubitCount) {
+            throw std::domain_error("QStabilizer gate qubit indices are out-of-bounds!");
+        }
+    }
+
+    const bool isPhase = isPhaseAware && !randGlobalPhase;
+    const bitLenInt t = qubits.back();
+    const QStabilizerPtr clone = isPhase ? std::dynamic_pointer_cast<QStabilizer>(Clone()) : NULL;
+
+    Dispatch([this, fn] {
+        const bitLenInt maxLcv = qubitCount << 1U;
+        for (bitLenInt i = 0; i < maxLcv; ++i) {
+            fn(i);
+        }
+    });
+
+    if (!isPhase) {
+        return;
+    }
+
+    isInvert |= IsSeparableZ(t);
+    const bitCapInt tPow = pow2(t);
+
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+
+    seed(g);
+
+    const AmplitudeEntry entry = getBasisAmp(nrm);
+    const complex oAmp = clone->GetAmplitude(isInvert ? entry.permutation ^ tPow : entry.permutation);
+    if (norm(oAmp) > FP_NORM_EPSILON) {
+        phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+        return;
+    }
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        const complex oAmp = clone->GetAmplitude(isInvert ? entry.permutation ^ tPow : entry.permutation);
+        if (norm(oAmp) > FP_NORM_EPSILON) {
+            phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+            return;
+        }
+    }
+}
+
 QInterfacePtr QStabilizer::Clone()
 {
     Finish();
@@ -1245,23 +1301,33 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             }
         }
 
-        if (randGlobalPhase) {
+        const bitLenInt g = gaussian();
+        const bitCapIntOcl permCount = pow2Ocl(g);
+        const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+        const bitLenInt elemCount = qubitCount << 1U;
+        const real1_f nrm = sqrt(ONE_R1_F / permCount);
+
+        seed(g);
+
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        const complex oAmp = clone->GetAmplitude(entry.permutation);
+        if (norm(oAmp) > FP_NORM_EPSILON) {
+            phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
             return result;
         }
-
-        for (bitCapInt perm = 0U; perm < maxQPower; ++perm) {
-            const complex oAmp = clone->GetAmplitude(perm);
-            if (norm(oAmp) <= FP_NORM_EPSILON) {
-                continue;
+        for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+            const bitCapInt t2 = t ^ (t + 1U);
+            for (bitLenInt i = 0U; i < g; ++i) {
+                if ((t2 >> i) & 1U) {
+                    rowmult(elemCount, qubitCount + i);
+                }
             }
-            const complex nAmp = GetAmplitude(perm);
-            if (norm(nAmp) <= FP_NORM_EPSILON) {
-                continue;
+            const AmplitudeEntry entry = getBasisAmp(nrm);
+            const complex oAmp = GetAmplitude(entry.permutation);
+            if (norm(oAmp) > FP_NORM_EPSILON) {
+                phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+                return result;
             }
-
-            phaseOffset *= (oAmp * abs(nAmp)) / (nAmp * abs(oAmp));
-
-            break;
         }
 
         return result;
