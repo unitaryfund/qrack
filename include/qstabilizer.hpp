@@ -66,47 +66,7 @@ protected:
     void Dispatch(DispatchFn fn) { fn(); }
 
     void ParFor(
-        StabilizerParallelFunc fn, std::vector<bitLenInt> qubits, bool isPhaseAware = false, bool isInvert = false)
-    {
-        for (size_t i = 0U; i < qubits.size(); ++i) {
-            if (qubits[i] >= qubitCount) {
-                throw std::domain_error("QStabilizer gate qubit indices are out-of-bounds!");
-            }
-        }
-
-        const bool isPhase = isPhaseAware && !randGlobalPhase;
-        const bitLenInt t = qubits.back();
-        const QStabilizerPtr clone = isPhase ? std::dynamic_pointer_cast<QStabilizer>(Clone()) : NULL;
-
-        Dispatch([this, fn] {
-            const bitLenInt maxLcv = qubitCount << 1U;
-            for (bitLenInt i = 0; i < maxLcv; ++i) {
-                fn(i);
-            }
-        });
-
-        if (!isPhase) {
-            return;
-        }
-
-        isInvert |= IsSeparableZ(t);
-        const bitCapInt tPow = pow2(t);
-
-        for (bitCapInt perm = 0U; perm < maxQPower; ++perm) {
-            const complex oAmp = clone->GetAmplitude(perm);
-            if (norm(oAmp) <= FP_NORM_EPSILON) {
-                continue;
-            }
-            const complex nAmp = GetAmplitude(isInvert ? perm ^ tPow : perm);
-            if (norm(nAmp) <= FP_NORM_EPSILON) {
-                continue;
-            }
-
-            phaseOffset *= (oAmp * abs(nAmp)) / (nAmp * abs(oAmp));
-
-            break;
-        }
-    }
+        StabilizerParallelFunc fn, std::vector<bitLenInt> qubits, bool isPhaseAware = false, bool isInvert = false);
 
 public:
     QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
