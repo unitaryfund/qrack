@@ -1560,7 +1560,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
-real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error_tol)
+real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare)
 {
     if (!toCompare) {
         return ONE_R1_F;
@@ -1578,32 +1578,6 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
 
     toCompare->Finish();
     Finish();
-
-    if ((error_tol <= TRYDECOMPOSE_EPSILON) && !isUnitarityBroken && !toCompare->isUnitarityBroken) {
-        toCompare->gaussian();
-        gaussian();
-
-        const bitLenInt n = qubitCount << 1U;
-        for (bitLenInt i = 0U; i < n; ++i) {
-            if (r[i] != toCompare->r[i]) {
-                return ONE_R1_F;
-            }
-            const std::vector<bool>& xRow = x[i];
-            const std::vector<bool>& oxRow = toCompare->x[i];
-            const std::vector<bool>& zRow = z[i];
-            const std::vector<bool>& ozRow = toCompare->z[i];
-            for (size_t j = 0U; j < qubitCount; ++j) {
-                if (xRow[j] != oxRow[j]) {
-                    return ONE_R1_F;
-                }
-                if (zRow[j] != ozRow[j]) {
-                    return ONE_R1_F;
-                }
-            }
-        }
-
-        return ZERO_R1_F;
-    }
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
