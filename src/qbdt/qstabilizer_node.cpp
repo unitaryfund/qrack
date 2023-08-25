@@ -49,11 +49,11 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
 
     QBdtQStabilizerNodePtr rStab = r->IsStabilizer() ? std::dynamic_pointer_cast<QBdtQStabilizerNode>(r) : NULL;
 
-    if (!qReg->GetQubitCount()) {
-        return rStab ? !rStab->qReg->GetQubitCount() : !r->branches[0u];
+    if (ancillaCount >= qReg->GetQubitCount()) {
+        return rStab ? (rStab->ancillaCount >= rStab->qReg->GetQubitCount()) : !r->branches[0u];
     }
 
-    if (!rStab || !rStab->qReg->GetQubitCount()) {
+    if (!rStab || (rStab->ancillaCount >= rStab->qReg->GetQubitCount())) {
         return false;
     }
 
