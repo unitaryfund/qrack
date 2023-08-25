@@ -76,8 +76,7 @@ protected:
 
         const bool isPhase = isPhaseAware && !randGlobalPhase;
         const bitLenInt t = qubits.back();
-        AmplitudeEntry ampEntry =
-            isPhase ? GetQubitAmplitude(t, Prob(t) > (ONE_R1 / 4)) : AmplitudeEntry(0U, ONE_CMPLX);
+        const QStabilizerPtr clone = isPhase ? std::dynamic_pointer_cast<QStabilizer>(Clone()) : NULL;
 
         Dispatch([this, fn] {
             const bitLenInt maxLcv = qubitCount << 1U;
@@ -86,10 +85,26 @@ protected:
             }
         });
 
-        if (isPhase) {
-            const bitCapInt p = (isInvert && IsSeparableZ(t)) ? (ampEntry.permutation ^ pow2(t)) : ampEntry.permutation;
-            complex nAmp = GetAmplitude(p);
-            phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
+        if (!isPhase) {
+            return;
+        }
+
+        isInvert |= IsSeparableZ(t);
+        const bitCapInt tPow = pow2(t);
+
+        for (bitCapInt perm = 0U; perm < maxQPower; ++perm) {
+            const complex oAmp = clone->GetAmplitude(perm);
+            if (norm(oAmp) <= FP_NORM_EPSILON) {
+                continue;
+            }
+            const complex nAmp = GetAmplitude(isInvert ? perm ^ tPow : perm);
+            if (norm(nAmp) <= FP_NORM_EPSILON) {
+                continue;
+            }
+
+            phaseOffset *= (oAmp * abs(nAmp)) / (nAmp * abs(oAmp));
+
+            break;
         }
     }
 

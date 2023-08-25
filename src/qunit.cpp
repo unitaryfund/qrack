@@ -46,7 +46,7 @@
 #define CACHED_PLUS(q)                                                                                                 \
     (CACHED_X(shards[q]) && !(shards[q].unit && shards[q].unit->isClifford() && shards[q].unit->GetTInjection()) &&    \
         (ProbBase(q) <= FP_NORM_EPSILON))
-/* "UNSAFE" variants here do not check whether the bit has cached 2-qubit gates.*/
+// "UNSAFE" variants here do not check whether the bit has cached 2-qubit gates.
 #define UNSAFE_CACHED_ZERO_OR_ONE(shard)                                                                               \
     (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_X(shard)                                                                                         \
@@ -369,7 +369,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         }
     }
 
-    /* Find the rest of the qubits. */
+    // Find the rest of the qubits.
     for (auto&& shard : shards) {
         const auto subunit = subunits.find(shard.unit);
         if (subunit != subunits.end() &&
@@ -395,7 +395,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     QInterfacePtr unit1 = shards[**first].unit;
     std::map<QInterfacePtr, bool> found;
 
-    /* Walk through all of the supplied bits and create a unique list to compose. */
+    // Walk through all of the supplied bits and create a unique list to compose.
     for (auto bit = first; bit < last; ++bit) {
         if (found.find(shards[**bit].unit) == found.end()) {
             found[shards[**bit].unit] = true;
@@ -403,7 +403,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
         }
     }
 
-    /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
+    // Collapse all of the other units into unit1, returning a map to the new bit offset.
     while (units.size() > 1U) {
         // Work odd unit into collapse sequence:
         if (units.size() & 1U) {
@@ -431,7 +431,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             offsetPartners[consumed] = retained;
         }
 
-        /* Since each unit will be collapsed in-order, one set of bits at a time. */
+        // Since each unit will be collapsed in-order, one set of bits at a time.
         for (auto&& shard : shards) {
             const auto search = offsets.find(shard.unit);
             if (search != offsets.end()) {
@@ -443,7 +443,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
         units = nUnits;
     }
 
-    /* Change the source parameters to the correct newly mapped bit indexes. */
+    // Change the source parameters to the correct newly mapped bit indexes.
     for (auto bit = first; bit < last; ++bit) {
         **bit = shards[**bit].mapped;
     }
@@ -857,15 +857,15 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
-    /* Before we call OrderContinguous, when we are cohering lists of shards, we should always proactively sort the
-     * order in which we compose qubits into a single engine. This is a cheap way to reduce the need for costly qubit
-     * swap gates, later. */
+    // Before we call OrderContinguous, when we are cohering lists of shards, we should always proactively sort the
+    // order in which we compose qubits into a single engine. This is a cheap way to reduce the need for costly qubit
+    // swap gates, later.
 
     if (!unit || (unit->GetQubitCount() == 1U)) {
         return;
     }
 
-    /* Create a sortable collection of all of the bits that are in the unit. */
+    // Create a sortable collection of all of the bits that are in the unit.
     std::vector<QSortEntry> bits(unit->GetQubitCount());
 
     bitLenInt j = 0U;
@@ -880,15 +880,15 @@ void QUnit::OrderContiguous(QInterfacePtr unit)
     SortUnit(unit, bits, 0U, bits.size() - 1U);
 }
 
-/* Sort a container of bits, calling Swap() on each. */
+/// Sort a container of bits, calling Swap() on each.
 void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high)
 {
     bitLenInt i = low, j = high;
     if (i == (j - 1U)) {
         if (bits[j] < bits[i]) {
-            unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
-            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); /* Change the global mapping. */
-            std::swap(bits[i].mapped, bits[j].mapped); /* Change the contents of the sorting array. */
+            unit->Swap(bits[i].mapped, bits[j].mapped); // Change the location in the QE itself.
+            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); // Change the global mapping.
+            std::swap(bits[i].mapped, bits[j].mapped); // Change the contents of the sorting array.
         }
         return;
     }
@@ -902,9 +902,9 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
             --j;
         }
         if (i < j) {
-            unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
-            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); /* Change the global mapping. */
-            std::swap(bits[i].mapped, bits[j].mapped); /* Change the contents of the sorting array. */
+            unit->Swap(bits[i].mapped, bits[j].mapped); // Change the location in the QE itself.
+            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); // Change the global mapping.
+            std::swap(bits[i].mapped, bits[j].mapped); // Change the contents of the sorting array.
             ++i;
             --j;
         } else if (i == j) {
@@ -1377,7 +1377,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         }
     }
 
-    /* Update the mappings. */
+    // Update the mappings.
     for (auto&& s : shards) {
         if ((s.unit == unit) && (s.mapped > mapped)) {
             --(s.mapped);
@@ -3049,7 +3049,7 @@ void QUnit::INCxx(
         throw std::invalid_argument("QUnit::INCxx flag2Index parameter must be within allocated qubit bounds!");
     }
 
-    /* Make sure the flag bits are entangled in the same QU. */
+    // Make sure the flag bits are entangled in the same QU.
     DirtyShardRange(start, length);
     DirtyShardRangePhase(start, length);
     shards[flag1Index].MakeDirty();
