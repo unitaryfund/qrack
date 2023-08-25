@@ -82,10 +82,10 @@ void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubit
     const bitCapInt tPow = pow2(t);
 
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -335,7 +335,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     bitCapInt perm = 0U;
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         if (xRow[j]) {
-            perm |= pow2Ocl(j);
+            perm |= pow2(j);
         }
     }
 
@@ -406,10 +406,10 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -435,10 +435,10 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -465,10 +465,10 @@ std::map<bitCapInt, complex> QStabilizer::GetQuantumState()
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -495,10 +495,10 @@ void QStabilizer::GetProbs(real1* outputProbs)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -524,10 +524,10 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -561,10 +561,10 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -604,7 +604,7 @@ AmplitudeEntry QStabilizer::GetAnyAmplitude()
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const real1_f nrm = sqrt((real1_f)(ONE_R1 / pow2Ocl(g)));
+    const real1_f nrm = sqrt(ONE_R1_F / pow2Ocl(g));
 
     seed(g);
 
@@ -620,10 +620,10 @@ AmplitudeEntry QStabilizer::GetQubitAmplitude(bitLenInt t, bool m)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -665,10 +665,10 @@ real1_f QStabilizer::ExpectationBitsFactorized(
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -705,10 +705,10 @@ real1_f QStabilizer::ExpectationFloatsFactorized(
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -743,10 +743,10 @@ real1_f QStabilizer::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -774,10 +774,10 @@ real1_f QStabilizer::ProbMask(bitCapInt mask, bitCapInt perm)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
@@ -1306,10 +1306,10 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         }
 
         const bitLenInt g = gaussian();
-        const bitCapIntOcl permCount = pow2Ocl(g);
-        const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+        const bitCapInt permCount = pow2(g);
+        const bitCapInt permCountMin1 = permCount - ONE_BCI;
         const bitLenInt elemCount = qubitCount << 1U;
-        const real1_f nrm = sqrt(ONE_R1_F / permCount);
+        const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
         seed(g);
 
@@ -1581,10 +1581,10 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare)
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
-    const bitCapIntOcl permCount = pow2Ocl(g);
-    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
 
     seed(g);
 
