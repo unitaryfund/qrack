@@ -1300,6 +1300,10 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
                 rowmult(i, p);
             }
         }
+        
+        if (randGlobalPhase) {
+            return result;
+        }
 
         const bitLenInt g = gaussian();
         const bitCapIntOcl permCount = pow2Ocl(g);
@@ -1496,6 +1500,8 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     }
     Finish();
 
+    const AmplitudeEntry ampEntry = (randGlobalPhase || dest) ? AmplitudeEntry(0U, ONE_CMPLX) : GetAnyAmplitude();
+
     // We want to have the maximum number of 0 cross terms possible.
     gaussian();
 
@@ -1503,6 +1509,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     // outside inter- "dest" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
     // qubit.)
 
+    const bitCapInt oMaxQPower = pow2(qubitCount);
     const bitLenInt end = start + length;
     const bitLenInt nQubitCount = qubitCount - length;
     const bitLenInt secondStart = qubitCount + start;
@@ -1540,6 +1547,17 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         x[i].erase(x[i].begin() + start, x[i].begin() + end);
         z[i].erase(z[i].begin() + start, z[i].begin() + end);
     }
+
+    if (randGlobalPhase || dest) {
+        return;
+    }
+
+    const bitCapInt startMask = pow2(start) - 1U;
+    const bitCapInt endMask = (oMaxQPower - 1U) ^ (pow2(start + length) - 1U);
+    const bitCapInt nPerm = (ampEntry.permutation & startMask) | ((ampEntry.permutation & endMask) >> length);
+
+    const complex nAmp = GetAmplitude(nPerm);
+    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error_tol)
