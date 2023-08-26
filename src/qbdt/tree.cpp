@@ -779,10 +779,6 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
                 Swap(last - i, controls[last - i]);
             }
 
-            if (isSwapped && !isPhase) {
-                Swap(target, controlVec.back());
-            }
-
             return;
         }
 
@@ -807,10 +803,6 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             qReg->MACMtrx(controls, mtrx, target);
         } else {
             qReg->MCMtrx(controls, mtrx, target);
-        }
-
-        if (isSwapped && !isPhase) {
-            Swap(target, controlVec.back());
         }
 
         return;
