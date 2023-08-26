@@ -735,6 +735,19 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
     std::sort(controls.begin(), controls.end());
 
+    if (target < controls.back()) {
+        std::swap(target, controls.back());
+        if (!isPhase) {
+            // We need the target at back, for QBdt, if this isn't symmetric.
+            Swap(target, controls.back());
+            ApplyControlledSingle(mtrx, controls, target, isAnti);
+            Swap(target, controls.back());
+
+            return;
+        }
+        // Otherwise, the gate is symmetric in target and controls, so we can continue.
+    }
+
     const bool isCtrledClifford = IS_CTRLED_CLIFFORD(mtrx);
     if (!isCtrledClifford || (controls.size() > 1U)) {
         bool isOrdered = true;
@@ -749,9 +762,6 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
         if (!isOrdered) {
             for (size_t i = 0U; i < controls.size(); ++i) {
                 Swap(i, controls[i]);
-                if (i == target) {
-                    std::swap(target, controls[i]);
-                }
             }
             Swap(controls.size(), target);
 
@@ -765,9 +775,6 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             Swap(controls.size(), target);
             const bitLenInt last = controls.size() - 1U;
             for (size_t i = 0U; i < controls.size(); ++i) {
-                if ((last - i) == target) {
-                    std::swap(target, controls[last - i]);
-                }
                 Swap(last - i, controls[last - i]);
             }
 
@@ -798,19 +805,6 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
         }
 
         return;
-    }
-
-    if (target < controls.back()) {
-        std::swap(target, controls.back());
-        if (!isPhase) {
-            // We need the target at back, for QBdt, if this isn't symmetric.
-            Swap(target, controls.back());
-            ApplyControlledSingle(mtrx, controls, target, isAnti);
-            Swap(target, controls.back());
-
-            return;
-        }
-        // Otherwise, the gate is symmetric in target and controls, so we can continue.
     }
 
     const bitLenInt control = controls.back();
