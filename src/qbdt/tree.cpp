@@ -603,12 +603,17 @@ void QBdt::ApplyControlledSingle(
 
     std::vector<bitLenInt> controlVec(controls.begin(), controls.end());
     std::sort(controlVec.begin(), controlVec.end());
-    const bool isSwapped = target < controlVec.back();
-    if (isSwapped) {
-        if (!isPhase) {
-            Swap(target, controlVec.back());
-        }
+    if (target < controlVec.back()) {
         std::swap(target, controlVec.back());
+        if (!isPhase) {
+            // We need the target at back, for QBdt, if this isn't symmetric.
+            Swap(target, controlVec.back());
+            ApplyControlledSingle(mtrx, controlVec, target, isAnti);
+            Swap(target, controlVec.back());
+
+            return;
+        }
+        // Otherwise, the gate is symmetric in target and controls, so we can continue.
     }
 
     const bitCapInt qPower = pow2(target);
@@ -662,11 +667,6 @@ void QBdt::ApplyControlledSingle(
 
             return (bitCapInt)0U;
         });
-
-    // Undo isSwapped.
-    if (isSwapped && !isPhase) {
-        Swap(target, controlVec.back());
-    }
 }
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
