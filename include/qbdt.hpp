@@ -270,6 +270,63 @@ public:
 
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
+    void Swap(bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::Swap(q1, q2);
+    }
+    void ISwap(bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::ISwap(q1, q2);
+    }
+    void IISwap(bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::IISwap(q1, q2);
+    }
+    void SqrtSwap(bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::SqrtSwap(q1, q2);
+    }
+    void ISqrtSwap(bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::ISqrtSwap(q1, q2);
+    }
+    void CSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::CSwap(controls, q1, q2);
+    }
+    void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::CSqrtSwap(controls, q1, q2);
+    }
+    void CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::CISqrtSwap(controls, q1, q2);
+    }
+
     real1_f ProbParity(bitCapInt mask)
     {
         if (!mask) {
