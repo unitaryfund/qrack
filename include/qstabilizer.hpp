@@ -426,8 +426,8 @@ public:
 
         const bool toRet = CanDecomposeDispose(0U, 2U);
 
-        Swap(qubit1, 0U);
         Swap(qubit2, 1U);
+        Swap(qubit1, 0U);
 
         return toRet;
     }
