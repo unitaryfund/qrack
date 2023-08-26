@@ -648,9 +648,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_bdt_nonclifford")
         ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_DEFAULT_ARG,
         devList, 10);
 
-    std::vector<bitLenInt> controls{ 0U, 4U };
+    std::vector<bitLenInt> controls{ 4U, 0U };
     qftReg->MCInvert(controls, ONE_CMPLX, ONE_CMPLX, 2U);
     REQUIRE_THAT(qftReg, HasProbability(0x15));
+
+    controls[1U] = 2U;
+    qftReg->MCInvert(controls, ONE_CMPLX, ONE_CMPLX, 0U);
+    REQUIRE_THAT(qftReg, HasProbability(0x14));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
