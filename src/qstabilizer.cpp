@@ -2188,15 +2188,18 @@ void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt q
 
 bool QStabilizer::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored)
 {
-    for (size_t i = 0U; i < qubits.size(); ++i) {
-        Swap(qubits[i], i);
+    std::vector<bitLenInt> lQubits(qubits);
+    std::sort(lQubits.begin(), lQubits.end());
+
+    for (size_t i = 0U; i < lQubits.size(); ++i) {
+        Swap(lQubits[i], i);
     }
 
-    const bool toRet = CanDecomposeDispose(0U, 2U);
+    const bool toRet = CanDecomposeDispose(0U, lQubits.size());
 
-    const bitLenInt last = qubits.size() - 1U;
-    for (size_t i = 0U; i < qubits.size(); ++i) {
-        Swap(qubits[last - i], last - i);
+    const bitLenInt last = lQubits.size() - 1U;
+    for (size_t i = 0U; i < lQubits.size(); ++i) {
+        Swap(lQubits[last - i], last - i);
     }
 
     return toRet;
