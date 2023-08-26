@@ -3031,12 +3031,6 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
         return (real1_f)runningNorm;
     }
 
-    if (randGlobalPhase) {
-        real1_f lPhaseArg = FirstNonzeroPhase();
-        real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
-        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, rPhaseArg - lPhaseArg);
-    }
-
     toCompare->clFinish();
 
     const bool isMigrate = (device_context->context_id != toCompare->device_context->context_id);
