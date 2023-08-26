@@ -595,8 +595,9 @@ void QBdt::ApplyControlledSingle(
     ThrowIfQbIdArrayIsBad(controls, qubitCount,
         "QBdt::ApplyControlledSingle parameter controls array values must be within allocated qubit bounds!");
 
-    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && IS_NORM_0(ONE_CMPLX - mtrx[0U]) &&
-        IS_NORM_0(ONE_CMPLX - mtrx[3U])) {
+    const bool isPhase = IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) &&
+        (isAnti ? IS_NORM_0(ONE_CMPLX - mtrx[3U]) : IS_NORM_0(ONE_CMPLX - mtrx[0U]));
+    if (isPhase && IS_NORM_0(ONE_CMPLX - mtrx[0U]) && IS_NORM_0(ONE_CMPLX - mtrx[3U])) {
         return;
     }
 
@@ -604,7 +605,9 @@ void QBdt::ApplyControlledSingle(
     std::sort(controlVec.begin(), controlVec.end());
     const bool isSwapped = target < controlVec.back();
     if (isSwapped) {
-        Swap(target, controlVec.back());
+        if (!isPhase) {
+            Swap(target, controlVec.back());
+        }
         std::swap(target, controlVec.back());
     }
 
@@ -661,7 +664,7 @@ void QBdt::ApplyControlledSingle(
         });
 
     // Undo isSwapped.
-    if (isSwapped) {
+    if (isSwapped && !isPhase) {
         Swap(target, controlVec.back());
     }
 }
