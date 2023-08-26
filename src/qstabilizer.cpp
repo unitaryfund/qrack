@@ -1560,7 +1560,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
-real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare)
+real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error_tol, bool isDiscrete)
 {
     if (!toCompare) {
         return ONE_R1_F;
@@ -1584,9 +1584,35 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare)
     const bitCapInt permCount = pow2(g);
     const bitCapInt permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f pNrm = ONE_R1_F / (real1_f)permCount;
+    const real1_f nrm = sqrt(pNrm);
 
     seed(g);
+
+    if (isDiscrete) {
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        real1_f potential = pNrm;
+        complex proj = conj(entry.amplitude) * toCompare->GetAmplitude(entry.permutation);
+        if ((potential - abs(proj)) > error_tol) {
+            return ONE_R1_F;
+        }
+        for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+            const bitCapInt t2 = t ^ (t + 1U);
+            for (bitLenInt i = 0U; i < g; ++i) {
+                if ((t2 >> i) & 1U) {
+                    rowmult(elemCount, qubitCount + i);
+                }
+            }
+            const AmplitudeEntry entry = getBasisAmp(nrm);
+            potential += pNrm;
+            proj += conj(entry.amplitude) * toCompare->GetAmplitude(entry.permutation);
+            if ((potential - abs(proj)) > error_tol) {
+                return ONE_R1_F;
+            }
+        }
+
+        return ONE_R1_F - clampProb((real1_f)norm(proj));
+    }
 
     if (toCompare->PermCount() < pow2(maxStateMapCacheQubitCount)) {
         const std::map<bitCapInt, complex> stateMapCache = toCompare->GetQuantumState();
