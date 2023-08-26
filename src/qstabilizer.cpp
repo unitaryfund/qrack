@@ -2194,8 +2194,9 @@ bool QStabilizer::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f igno
 
     const bool toRet = CanDecomposeDispose(0U, 2U);
 
+    const bitLenInt last = qubits.size() - 1U;
     for (size_t i = 0U; i < qubits.size(); ++i) {
-        Swap(qubits[i], i);
+        Swap(qubits[last - i], last - i);
     }
 
     return toRet;
