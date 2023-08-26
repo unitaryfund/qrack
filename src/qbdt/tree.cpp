@@ -733,6 +733,16 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
         return;
     }
 
+    std::vector<bitLenInt> controlVec(controls.begin(), controls.end());
+    std::sort(controlVec.begin(), controlVec.end());
+    const bool isSwapped = target < controlVec.back();
+    if (isSwapped) {
+        if (!isPhase) {
+            Swap(target, controlVec.back());
+        }
+        std::swap(target, controlVec.back());
+    }
+
     const bool isCtrledClifford = IS_CTRLED_CLIFFORD(mtrx);
     if (!isCtrledClifford || (controls.size() > 1U)) {
         std::sort(controls.begin(), controls.end());
@@ -748,9 +758,6 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
         if (!isOrdered) {
             for (size_t i = 0U; i < controls.size(); ++i) {
                 Swap(i, controls[i]);
-                if (i == target) {
-                    std::swap(target, controls[i]);
-                }
             }
             Swap(controls.size(), target);
 
@@ -764,10 +771,11 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             Swap(controls.size(), target);
             const bitLenInt last = controls.size() - 1U;
             for (size_t i = 0U; i < controls.size(); ++i) {
-                if ((last - i) == target) {
-                    std::swap(target, controls[last - i]);
-                }
                 Swap(last - i, controls[last - i]);
+            }
+
+            if (isSwapped && !isPhase) {
+                Swap(target, controlVec.back());
             }
 
             return;
@@ -796,20 +804,14 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             qReg->MCMtrx(controls, mtrx, target);
         }
 
+        if (isSwapped && !isPhase) {
+            Swap(target, controlVec.back());
+        }
+
         return;
     }
 
-    std::vector<bitLenInt> controlVec(controls.begin(), controls.end());
-    std::sort(controlVec.begin(), controlVec.end());
-    const bool isSwapped = target < controlVec.back();
-    if (isSwapped) {
-        if (!isPhase) {
-            Swap(target, controlVec.back());
-        }
-        std::swap(target, controlVec.back());
-    }
     const bitLenInt control = controlVec.back();
-
     bitCapInt controlMask = 0U;
     for (size_t c = 0U; c < controls.size(); ++c) {
         const bitLenInt control = controlVec[c];
