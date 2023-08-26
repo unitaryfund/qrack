@@ -717,8 +717,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         });
 }
 
-void QBdt::ApplyControlledSingle(
-    const complex* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti)
+void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti)
 {
     if (target >= qubitCount) {
         throw std::invalid_argument(
@@ -735,6 +734,7 @@ void QBdt::ApplyControlledSingle(
 
     const bool isCtrledClifford = IS_CTRLED_CLIFFORD(mtrx);
     if (!isCtrledClifford || (controls.size() > 1U)) {
+        std::sort(controls.begin(), controls.end());
         bool isOrdered = true;
         for (size_t i = 0U; i < controls.size(); ++i) {
             if (controls[i] != i) {
@@ -757,10 +757,11 @@ void QBdt::ApplyControlledSingle(
             }
             ApplyControlledSingle(mtrx, c, c.size(), isAnti);
 
-            for (size_t i = 0U; i < controls.size(); ++i) {
-                Swap(i, controls[i]);
-            }
             Swap(controls.size(), target);
+            const bitLenInt last = controls.size() - 1U;
+            for (size_t i = 0U; i < controls.size(); ++i) {
+                Swap(last - i, controls[last - i]);
+            }
 
             return;
         }

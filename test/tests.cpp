@@ -642,6 +642,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_Iiswap")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_bdt_nonclifford")
+{
+    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 5U, 0x11, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_DEFAULT_ARG,
+        devList, 10);
+
+    std::vector<bitLenInt> controls{ 0U, 4U };
+    qftReg->MCInvert(controls, ONE_CMPLX, ONE_CMPLX, 2U);
+    REQUIRE_THAT(qftReg, HasProbability(0x15));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
 {
     std::vector<bitLenInt> control{ 8 };

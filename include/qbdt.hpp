@@ -168,8 +168,7 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
-    void ApplyControlledSingle(
-        const complex* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti);
+    void ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
