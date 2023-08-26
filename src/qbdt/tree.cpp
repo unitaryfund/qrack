@@ -584,8 +584,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         });
 }
 
-void QBdt::ApplyControlledSingle(
-    const complex* mtrx, const std::vector<bitLenInt>& controls, bitLenInt target, bool isAnti)
+void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti)
 {
     if (target >= qubitCount) {
         throw std::invalid_argument(
@@ -601,15 +600,14 @@ void QBdt::ApplyControlledSingle(
         return;
     }
 
-    std::vector<bitLenInt> controlVec(controls.begin(), controls.end());
-    std::sort(controlVec.begin(), controlVec.end());
-    if (target < controlVec.back()) {
-        std::swap(target, controlVec.back());
+    std::sort(controls.begin(), controls.end());
+    if (target < controls.back()) {
+        std::swap(target, controls.back());
         if (!isPhase) {
             // We need the target at back, for QBdt, if this isn't symmetric.
-            Swap(target, controlVec.back());
-            ApplyControlledSingle(mtrx, controlVec, target, isAnti);
-            Swap(target, controlVec.back());
+            Swap(target, controls.back());
+            ApplyControlledSingle(mtrx, controls, target, isAnti);
+            Swap(target, controls.back());
 
             return;
         }
@@ -619,7 +617,7 @@ void QBdt::ApplyControlledSingle(
     const bitCapInt qPower = pow2(target);
     bitCapInt controlMask = 0U;
     for (size_t c = 0U; c < controls.size(); ++c) {
-        const bitLenInt control = controlVec[c];
+        const bitLenInt control = controls[c];
         controlMask |= pow2(target - (control + 1U));
     }
     const bitCapInt controlPerm = isAnti ? 0U : controlMask;
