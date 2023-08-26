@@ -1706,12 +1706,6 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
         return (real1_f)runningNorm;
     }
 
-    if (randGlobalPhase) {
-        real1_f lPhaseArg = FirstNonzeroPhase();
-        real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
-        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, rPhaseArg - lPhaseArg);
-    }
-
     stateVec->isReadLocked = false;
     toCompare->stateVec->isReadLocked = false;
 
