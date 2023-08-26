@@ -748,6 +748,9 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
         if (!isOrdered) {
             for (size_t i = 0U; i < controls.size(); ++i) {
                 Swap(i, controls[i]);
+                if (i == target) {
+                    std::swap(target, controls[i]);
+                }
             }
             Swap(controls.size(), target);
 
@@ -761,6 +764,9 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             Swap(controls.size(), target);
             const bitLenInt last = controls.size() - 1U;
             for (size_t i = 0U; i < controls.size(); ++i) {
+                if ((last - i) == target) {
+                    std::swap(target, controls[last - i]);
+                }
                 Swap(last - i, controls[last - i]);
             }
 
