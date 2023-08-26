@@ -421,6 +421,10 @@ public:
     bool TrySeparate(bitLenInt qubit) { return CanDecomposeDispose(qubit, 1U); }
     bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     {
+        if (qubit2 < qubit1) {
+            std::swap(qubit1, qubit2);
+        }
+
         Swap(qubit1, 0U);
         Swap(qubit2, 1U);
 
