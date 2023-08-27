@@ -64,7 +64,8 @@ void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubit
     }
 
     const bool isPhase = isPhaseAware && !randGlobalPhase;
-    const QStabilizerPtr clone = isPhase ? std::dynamic_pointer_cast<QStabilizer>(Clone()) : NULL;
+    const bitLenInt t = qubits.back();
+    const AmplitudeEntry ampEntry = isPhase ? GetQubitAmplitude(t, false) : AmplitudeEntry(0U, ZERO_CMPLX);
 
     Dispatch([this, fn] {
         const bitLenInt maxLcv = qubitCount << 1U;
@@ -77,34 +78,8 @@ void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubit
         return;
     }
 
-    const bitLenInt g = gaussian();
-    const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
-    const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
-
-    seed(g);
-
-    const AmplitudeEntry entry = getBasisAmp(nrm);
-    const complex oAmp = clone->GetAmplitude(entry.permutation);
-    if (norm(oAmp) > FP_NORM_EPSILON) {
-        phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
-        return;
-    }
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
-                rowmult(elemCount, qubitCount + i);
-            }
-        }
-        const AmplitudeEntry entry = getBasisAmp(nrm);
-        const complex oAmp = clone->GetAmplitude(entry.permutation);
-        if (norm(oAmp) > FP_NORM_EPSILON) {
-            phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
-            return;
-        }
-    }
+    const complex nAmp = GetAmplitude(ampEntry.permutation);
+    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 QInterfacePtr QStabilizer::Clone()
@@ -798,10 +773,10 @@ real1_f QStabilizer::ProbMask(bitCapInt mask, bitCapInt perm)
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (M(c)) {
-            X(t);
-        }
+    if (!randGlobalPhase) {
+        H(t);
+        CZ(c, t);
+        H(t);
 
         return;
     }
@@ -820,16 +795,16 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
                 }
             }
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply an (anti-)CNOT gate with control and target
 void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (!M(c)) {
-            X(t);
-        }
+    if (!randGlobalPhase) {
+        H(t);
+        AntiCZ(c, t);
+        H(t);
 
         return;
     }
@@ -848,16 +823,16 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
                 }
             }
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply a CY gate with control and target
 void QStabilizer::CY(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (M(c)) {
-            Y(t);
-        }
+    if (!randGlobalPhase) {
+        IS(t);
+        CNOT(c, t);
+        S(t);
 
         return;
     }
@@ -880,16 +855,16 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 
             z[i][t] = z[i][t] ^ x[i][t];
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply an (anti-)CY gate with control and target
 void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (!M(c)) {
-            Y(t);
-        }
+    if (!randGlobalPhase) {
+        IS(t);
+        AntiCNOT(c, t);
+        S(t);
 
         return;
     }
@@ -912,7 +887,7 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 
             z[i][t] = z[i][t] ^ x[i][t];
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply a CZ gate with control and target
@@ -977,6 +952,12 @@ void QStabilizer::Swap(bitLenInt c, bitLenInt t)
         return;
     }
 
+    if (!randGlobalPhase) {
+        QInterface::Swap(c, t);
+
+        return;
+    }
+
     ParFor(
         [this, c, t](const bitLenInt& i) {
             BoolVector::swap(x[i][c], x[i][t]);
@@ -991,11 +972,9 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
         return;
     }
 
-    if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t)) {
-        if (M(c) != M(t)) {
-            phaseOffset *= I_CMPLX;
-            Swap(c, t);
-        }
+    if (!randGlobalPhase) {
+        QInterface::ISwap(c, t);
+
         return;
     }
 
@@ -1032,11 +1011,9 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
         return;
     }
 
-    if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t)) {
-        if (M(c) != M(t)) {
-            phaseOffset *= -I_CMPLX;
-            Swap(c, t);
-        }
+    if (!randGlobalPhase) {
+        QInterface::IISwap(c, t);
+
         return;
     }
 
@@ -1137,7 +1114,7 @@ void QStabilizer::Z(bitLenInt t)
                 r[i] = (r[i] + 2U) & 0x3U;
             }
         },
-        { t });
+        { t }, true);
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -1157,7 +1134,7 @@ void QStabilizer::S(bitLenInt t)
             }
             z[i][t] = z[i][t] ^ x[i][t];
         },
-        { t });
+        { t }, true);
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -1177,7 +1154,7 @@ void QStabilizer::IS(bitLenInt t)
                 r[i] = (r[i] + 2U) & 0x3U;
             }
         },
-        { t });
+        { t }, true);
 }
 
 /**
