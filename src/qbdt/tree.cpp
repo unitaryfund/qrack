@@ -715,9 +715,6 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
         return;
     }
 
-    std::vector<bitLenInt> lControls(controls);
-    lControls.push_back(target);
-
     const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
         FlushNonPhaseBuffers();
@@ -729,6 +726,8 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
         return;
     }
 
+    std::vector<bitLenInt> lControls(controls);
+    lControls.push_back(target);
     std::sort(lControls.begin(), lControls.end());
     target = lControls.back();
     lControls.pop_back();
