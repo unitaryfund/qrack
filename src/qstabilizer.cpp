@@ -55,7 +55,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     SetPermutation(perm, phaseFac);
 }
 
-void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits, bool isPhaseAware)
+void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits)
 {
     for (size_t i = 0U; i < qubits.size(); ++i) {
         if (qubits[i] >= qubitCount) {
@@ -63,23 +63,12 @@ void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubit
         }
     }
 
-    const bool isPhase = isPhaseAware && !randGlobalPhase;
-    const bitLenInt t = qubits.back();
-    const AmplitudeEntry ampEntry = isPhase ? GetQubitAmplitude(t, false) : AmplitudeEntry(0U, ZERO_CMPLX);
-
     Dispatch([this, fn] {
         const bitLenInt maxLcv = qubitCount << 1U;
         for (bitLenInt i = 0; i < maxLcv; ++i) {
             fn(i);
         }
     });
-
-    if (!isPhase) {
-        return;
-    }
-
-    const complex nAmp = GetAmplitude(ampEntry.permutation);
-    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 QInterfacePtr QStabilizer::Clone()
@@ -915,7 +904,7 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
                 z[i][t] = !z[i][t];
             }
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply an (anti-)CZ gate with control and target
@@ -943,7 +932,7 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
                 z[i][t] = !z[i][t];
             }
         },
-        { c, t }, true);
+        { c, t });
 }
 
 void QStabilizer::Swap(bitLenInt c, bitLenInt t)
@@ -1114,7 +1103,7 @@ void QStabilizer::Z(bitLenInt t)
                 r[i] = (r[i] + 2U) & 0x3U;
             }
         },
-        { t }, true);
+        { t });
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -1134,7 +1123,7 @@ void QStabilizer::S(bitLenInt t)
             }
             z[i][t] = z[i][t] ^ x[i][t];
         },
-        { t }, true);
+        { t });
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -1154,7 +1143,7 @@ void QStabilizer::IS(bitLenInt t)
                 r[i] = (r[i] + 2U) & 0x3U;
             }
         },
-        { t }, true);
+        { t });
 }
 
 /**
