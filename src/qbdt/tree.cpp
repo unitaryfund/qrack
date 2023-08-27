@@ -735,19 +735,6 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
     std::sort(controls.begin(), controls.end());
 
-    if (target < controls.back()) {
-        std::swap(target, controls.back());
-        if (!isPhase) {
-            // We need the target at back, for QBdt, if this isn't symmetric.
-            Swap(target, controls.back());
-            ApplyControlledSingle(mtrx, controls, target, isAnti);
-            Swap(target, controls.back());
-
-            return;
-        }
-        // Otherwise, the gate is symmetric in target and controls, so we can continue.
-    }
-
     const bool isCtrledClifford = IS_CTRLED_CLIFFORD(mtrx);
     if (!isCtrledClifford || (controls.size() > 1U)) {
         bool isOrdered = true;
@@ -760,10 +747,19 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
         isOrdered = isOrdered && (target == controls.size());
 
         if (!isOrdered) {
+            // We Swap() non-Clifford gates into the lowest qubit indices,
+            // so non-Clifford depth is minimized.
+            std::vector<bitLenInt> rQubits;
+            rQubits.reserve(controls.size() + 1U);
             for (size_t i = 0U; i < controls.size(); ++i) {
                 Swap(i, controls[i]);
+                rQubits.push_back(controls[i]);
+                if (i == target) {
+                    std::swap(target, controls[i]);
+                }
             }
             Swap(controls.size(), target);
+            rQubits.push_back(target);
 
             std::vector<bitLenInt> c;
             c.reserve(controls.size());
@@ -772,10 +768,9 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             }
             ApplyControlledSingle(mtrx, c, c.size(), isAnti);
 
-            Swap(controls.size(), target);
-            const bitLenInt last = controls.size() - 1U;
-            for (size_t i = 0U; i < controls.size(); ++i) {
-                Swap(last - i, controls[last - i]);
+            const bitLenInt last = rQubits.size() - 1U;
+            for (size_t i = 0U; i < rQubits.size(); ++i) {
+                Swap(last - i, rQubits[last - i]);
             }
 
             return;
@@ -805,6 +800,19 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
         }
 
         return;
+    }
+
+    if (target < controls.back()) {
+        std::swap(target, controls.back());
+        if (!isPhase) {
+            // We need the target at back, for QBdt, if this isn't symmetric.
+            Swap(target, controls.back());
+            ApplyControlledSingle(mtrx, controls, target, isAnti);
+            Swap(target, controls.back());
+
+            return;
+        }
+        // Otherwise, the gate is symmetric in target and controls, so we can continue.
     }
 
     const bitLenInt control = controls.back();
@@ -964,7 +972,7 @@ void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, co
     std::vector<bitLenInt> lControls(controls);
     std::sort(lControls.begin(), lControls.end());
 
-    if (lControls.back() < target) {
+    if ((lControls.size() > 1U) || (lControls.back() < target)) {
         FlushNonPhaseBuffers();
         FlushIfBlocked(target, lControls);
         ApplyControlledSingle(mtrx, lControls, target, false);
