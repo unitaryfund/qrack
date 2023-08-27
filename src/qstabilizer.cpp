@@ -78,7 +78,7 @@ void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubit
         return;
     }
 
-    isInvert |= IsSeparableZ(t);
+    isInvert &= IsSeparableZ(t);
     const bitCapInt tPow = pow2(t);
 
     const bitLenInt g = gaussian();
