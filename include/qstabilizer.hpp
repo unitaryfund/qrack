@@ -65,8 +65,7 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     void Dispatch(DispatchFn fn) { fn(); }
 
-    void ParFor(
-        StabilizerParallelFunc fn, std::vector<bitLenInt> qubits, bool isPhaseAware = false, bool isInvert = false);
+    void ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits, bool isPhaseAware = false);
 
 public:
     QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
