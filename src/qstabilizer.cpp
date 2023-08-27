@@ -802,10 +802,11 @@ real1_f QStabilizer::ProbMask(bitCapInt mask, bitCapInt perm)
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (M(c)) {
-            X(t);
-        }
+    if (!randGlobalPhase) {
+        H(t);
+        CZ(c, t);
+        H(t);
+
         return;
     }
 
@@ -823,16 +824,17 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
                 }
             }
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply an (anti-)CNOT gate with control and target
 void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (!M(c)) {
-            X(t);
-        }
+    if (!randGlobalPhase) {
+        H(t);
+        AntiCZ(c, t);
+        H(t);
+
         return;
     }
 
@@ -850,16 +852,17 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
                 }
             }
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply a CY gate with control and target
 void QStabilizer::CY(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (M(c)) {
-            Y(t);
-        }
+    if (!randGlobalPhase) {
+        IS(t);
+        CNOT(c, t);
+        S(t);
+
         return;
     }
 
@@ -881,16 +884,17 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 
             z[i][t] = z[i][t] ^ x[i][t];
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply an (anti-)CY gate with control and target
 void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 {
-    if (!randGlobalPhase && IsSeparableZ(c)) {
-        if (!M(c)) {
-            Y(t);
-        }
+    if (!randGlobalPhase) {
+        IS(t);
+        AntiCNOT(c, t);
+        S(t);
+
         return;
     }
 
@@ -912,7 +916,7 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 
             z[i][t] = z[i][t] ^ x[i][t];
         },
-        { c, t }, true);
+        { c, t });
 }
 
 /// Apply a CZ gate with control and target
