@@ -112,6 +112,8 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
             j |= fn(j);
         }
         root = root->Prune(maxQubit);
+        CheckRootRandomGlobalPhase();
+
         return;
     }
 
@@ -156,6 +158,7 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
     }
 #endif
     root = root->Prune(maxQubit);
+    CheckRootRandomGlobalPhase();
 }
 
 void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
@@ -332,6 +335,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
     root = root->Prune(qubitCount);
+    CheckRootRandomGlobalPhase();
 
     return start;
 }
@@ -360,6 +364,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
     if (dest) {
         dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone()->Prune(length);
+        dest->CheckRootRandomGlobalPhase();
         std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     } else {
         root->RemoveSeparableAtDepth(start, length);
@@ -369,6 +374,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
     SetQubitCount(qubitCount - length);
     root = root->Prune(qubitCount);
+    CheckRootRandomGlobalPhase();
 }
 
 bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
@@ -505,6 +511,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             qReg->ForceM(qubit, false);
             root = root->Prune();
         }
+        CheckRootRandomGlobalPhase();
 
         return result;
     }
@@ -575,6 +582,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     });
 
     root = root->Prune(qubit);
+    CheckRootRandomGlobalPhase();
 
     return result;
 }

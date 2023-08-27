@@ -144,6 +144,7 @@ protected:
 
         root->PopStateVector(qubitCount);
         root = root->Prune(qubitCount);
+        CheckRootRandomGlobalPhase();
     }
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
@@ -181,6 +182,16 @@ protected:
     void ApplySingle(const complex* mtrx, bitLenInt target);
 
     void Init();
+
+    void CheckRootRandomGlobalPhase()
+    {
+        if (!randGlobalPhase || !root->IsStabilizer()) {
+            return;
+        }
+        const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+        qReg->SetRandGlobalPhase(true);
+        qReg->ResetPhaseOffset();
+    }
 
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
