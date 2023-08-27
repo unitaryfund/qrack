@@ -890,6 +890,8 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
         return;
     }
 
+    const AmplitudeEntry ampEntry = GetQubitAmplitude(c, false);
+
     ParFor(
         [this, c, t](const bitLenInt& i) {
             if (x[i][t]) {
@@ -905,6 +907,9 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
             }
         },
         { c, t });
+
+    const complex nAmp = GetAmplitude(ampEntry.permutation);
+    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 /// Apply an (anti-)CZ gate with control and target
@@ -917,6 +922,8 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
 
         return;
     }
+
+    const AmplitudeEntry ampEntry = GetQubitAmplitude(c, true);
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -933,6 +940,9 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
             }
         },
         { c, t });
+
+    const complex nAmp = GetAmplitude(ampEntry.permutation);
+    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 void QStabilizer::Swap(bitLenInt c, bitLenInt t)
@@ -1036,6 +1046,8 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
 /// Apply a Hadamard gate to target
 void QStabilizer::H(bitLenInt t)
 {
+    const QStabilizerPtr clone = randGlobalPhase ? NULL : std::dynamic_pointer_cast<QStabilizer>(Clone());
+
     ParFor(
         [this, t](const bitLenInt& i) {
             BoolVector::swap(x[i][t], z[i][t]);
@@ -1044,6 +1056,47 @@ void QStabilizer::H(bitLenInt t)
             }
         },
         { t });
+
+    if (randGlobalPhase) {
+        return;
+    }
+
+    const bool oIsSepZ = clone->IsSeparableZ(t);
+    const bool nIsSepZ = IsSeparableZ(t);
+
+    const bitCapInt tPow = pow2(t);
+    const bitLenInt g = gaussian();
+    const bitCapInt permCount = pow2(g);
+    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+
+    seed(g);
+
+    const AmplitudeEntry entry = getBasisAmp(nrm);
+    if (nIsSepZ || ((entry.permutation & tPow) == 0U)) {
+        const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
+        if (norm(oAmp) > FP_NORM_EPSILON) {
+            phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+            return;
+        }
+    }
+    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
+        const bitCapInt t2 = t ^ (t + 1U);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        if (nIsSepZ || ((entry.permutation & tPow) == 0U)) {
+            const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
+            if (norm(oAmp) > FP_NORM_EPSILON) {
+                phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+                return;
+            }
+        }
+    }
 }
 
 /// Apply an X (or NOT) gate to target
@@ -1097,6 +1150,8 @@ void QStabilizer::Z(bitLenInt t)
         return;
     }
 
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+
     ParFor(
         [this, t](const bitLenInt& i) {
             if (x[i][t]) {
@@ -1104,6 +1159,13 @@ void QStabilizer::Z(bitLenInt t)
             }
         },
         { t });
+
+    if (randGlobalPhase) {
+        return;
+    }
+
+    const complex nAmp = GetAmplitude(ampEntry.permutation);
+    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -1116,6 +1178,8 @@ void QStabilizer::S(bitLenInt t)
         return;
     }
 
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+
     ParFor(
         [this, t](const bitLenInt& i) {
             if (x[i][t] && z[i][t]) {
@@ -1124,6 +1188,13 @@ void QStabilizer::S(bitLenInt t)
             z[i][t] = z[i][t] ^ x[i][t];
         },
         { t });
+
+    if (randGlobalPhase) {
+        return;
+    }
+
+    const complex nAmp = GetAmplitude(ampEntry.permutation);
+    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -1136,6 +1207,8 @@ void QStabilizer::IS(bitLenInt t)
         return;
     }
 
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+
     ParFor(
         [this, t](const bitLenInt& i) {
             z[i][t] = z[i][t] ^ x[i][t];
@@ -1144,6 +1217,13 @@ void QStabilizer::IS(bitLenInt t)
             }
         },
         { t });
+
+    if (randGlobalPhase) {
+        return;
+    }
+
+    const complex nAmp = GetAmplitude(ampEntry.permutation);
+    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 /**
