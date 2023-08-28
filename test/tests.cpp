@@ -655,6 +655,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_bdt_nonclifford")
     controls[1U] = 2U;
     qftReg->MCInvert(controls, ONE_CMPLX, ONE_CMPLX, 0U);
     REQUIRE_THAT(qftReg, HasProbability(0x14));
+
+    std::vector<bitLenInt> control{ 4U };
+    qftReg->SetPermutation(0x01);
+    qftReg->AntiCSwap(control, 0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x04));
+
+    qftReg->H(4);
+    qftReg->AntiCSwap(control, 0, 2);
+    qftReg->AntiCSwap(control, 0, 2);
+    qftReg->H(4);
+    REQUIRE_THAT(qftReg, HasProbability(0x04));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")

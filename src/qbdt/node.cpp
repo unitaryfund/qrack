@@ -148,34 +148,38 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     b1->scale /= phaseFac;
 
     if (b0->IsStabilizer() || b1->IsStabilizer()) {
-        if (!isCliffordBlocked && b0->isEqualUnder(b1)) {
-            const QBdtQStabilizerNodePtr& sNode =
-                std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0->IsStabilizer() ? b0 : b1);
-            const QUnitCliffordPtr qReg = sNode->GetReg();
-            const real1 prob = std::min(ONE_R1, std::max(ZERO_R1, norm(b1->scale)));
-            const real1 sqrtProb = sqrt(prob);
-            const real1 sqrt1MinProb = sqrt(std::min(ONE_R1, std::max(ZERO_R1, ONE_R1 - prob)));
-            const complex phase0 = std::polar(ONE_R1, arg(b0->scale));
-            const complex phase1 = std::polar(ONE_R1, arg(b1->scale));
-            const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1,
-                -sqrt1MinProb * phase1 };
+        if (!isCliffordBlocked) {
+            const bool isB0Stabilizer = IS_NODE_0(b1->scale) && b0->IsStabilizer();
+            const bool isB1Stabilizer = IS_NODE_0(b0->scale) && b1->IsStabilizer();
+            if (isB0Stabilizer || isB1Stabilizer || b0->isEqualUnder(b1)) {
+                const QBdtQStabilizerNodePtr& sNode =
+                    std::dynamic_pointer_cast<QBdtQStabilizerNode>(isB1Stabilizer ? b1 : b0);
+                const QUnitCliffordPtr qReg = sNode->GetReg();
+                const real1 prob = std::min(ONE_R1, std::max(ZERO_R1, norm(b1->scale)));
+                const real1 sqrtProb = sqrt(prob);
+                const real1 sqrt1MinProb = sqrt(std::min(ONE_R1, std::max(ZERO_R1, ONE_R1 - prob)));
+                const complex phase0 = IS_NODE_0(b0->scale) ? ONE_CMPLX : std::polar(ONE_R1, arg(b0->scale));
+                const complex phase1 = IS_NODE_0(b1->scale) ? ONE_CMPLX : std::polar(ONE_R1, arg(b1->scale));
+                const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1,
+                    -sqrt1MinProb * phase1 };
 
-            if (IS_CLIFFORD(mtrx)) {
-                if (sNode->ancillaCount) {
-                    // Reuse an ancilla if possible, before allocating a new qubit.
-                    --(sNode->ancillaCount);
-                    qReg->ROL(1U, 0U, qReg->GetQubitCount());
-                } else {
-                    qReg->Allocate(0U, 1U);
+                if (IS_CLIFFORD(mtrx)) {
+                    if (sNode->ancillaCount) {
+                        // Reuse an ancilla if possible, before allocating a new qubit.
+                        --(sNode->ancillaCount);
+                        qReg->ROL(1U, 0U, qReg->GetQubitCount());
+                    } else {
+                        qReg->Allocate(0U, 1U);
+                    }
+                    qReg->Mtrx(mtrx, 0);
+                    scale = qReg->GetPhaseOffset();
+                    qReg->ResetPhaseOffset();
+
+                    sNode->scale = ONE_CMPLX;
+                    sNode->mtx = mtx;
+
+                    return sNode->Prune();
                 }
-                qReg->Mtrx(mtrx, 0);
-                scale = qReg->GetPhaseOffset();
-                qReg->ResetPhaseOffset();
-
-                sNode->scale = ONE_CMPLX;
-                sNode->mtx = mtx;
-
-                return sNode->Prune();
             }
         }
 
