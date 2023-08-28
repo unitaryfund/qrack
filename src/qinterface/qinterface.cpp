@@ -302,7 +302,22 @@ void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
-void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
+void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if (length < 2U) {
+        return;
+    }
+
+    shift %= length;
+    if (!shift) {
+        return;
+    }
+
+    const bitLenInt end = start + length;
+    Reverse(start + shift, end);
+    Reverse(start, start + shift);
+    Reverse(start, end);
+}
 
 bitLenInt QInterface::Compose(QInterfacePtr toCopy, bitLenInt start)
 {
