@@ -172,10 +172,8 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                         qReg->Allocate(0U, 1U);
                     }
                     qReg->Mtrx(mtrx, 0);
-                    scale = qReg->GetPhaseOffset();
-                    qReg->ResetPhaseOffset();
 
-                    sNode->scale = ONE_CMPLX;
+                    sNode->scale = scale;
                     sNode->mtx = mtx;
 
                     return sNode->Prune();
