@@ -2273,8 +2273,8 @@ public:
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
     {
-        while ((last > 0U) && first < (last - 1U)) {
-            last--;
+        while ((last > 0U) && (first < (last - 1U))) {
+            --last;
             Swap(first, last);
             ++first;
         }
