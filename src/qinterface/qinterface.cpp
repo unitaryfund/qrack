@@ -286,7 +286,7 @@ real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    if (!length) {
+    if (length < 2U) {
         return;
     }
 
