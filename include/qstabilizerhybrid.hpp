@@ -52,6 +52,7 @@ protected:
     bool isRoundingFlushed;
     bitLenInt thresholdQubits;
     bitLenInt ancillaCount;
+    bitLenInt deadAncillaCount;
     bitLenInt maxEngineQubitCount;
     bitLenInt maxAncillaCount;
     bitLenInt maxStateMapCacheQubitCount;
@@ -288,6 +289,24 @@ protected:
 
         return isFloat ? RdmCloneHelper()->stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
                        : RdmCloneHelper()->stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
+    }
+
+    void ClearAncilla(bitLenInt i)
+    {
+        if (stabilizer->TrySeparate(i)) {
+            stabilizer->Dispose(i, 1U);
+            shards.erase(shards.begin() + i);
+        } else {
+            const bitLenInt deadIndex = qubitCount + ancillaCount - 1U;
+            stabilizer->SetBit(i, false);
+            if (i != deadIndex) {
+                stabilizer->Swap(i, deadIndex);
+                shards[i].swap(shards[deadIndex]);
+            }
+            shards.erase(shards.begin() + deadIndex);
+            ++deadAncillaCount;
+        }
+        --ancillaCount;
     }
 
     real1_f ApproxCompareHelper(

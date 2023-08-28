@@ -44,6 +44,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , isRoundingFlushed(false)
     , thresholdQubits(qubitThreshold)
     , ancillaCount(0U)
+    , deadAncillaCount(0U)
     , maxEngineQubitCount(27U)
     , maxAncillaCount(28U)
     , separabilityThreshold(sep_thresh)
@@ -96,8 +97,8 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 
 QUnitCliffordPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
 {
-    return std::make_shared<QUnitClifford>(
-        qubitCount + ancillaCount, perm, rand_generator, ONE_CMPLX, false, randGlobalPhase, false, -1, useRDRAND);
+    return std::make_shared<QUnitClifford>(qubitCount + ancillaCount + deadAncillaCount, perm, rand_generator,
+        ONE_CMPLX, false, randGlobalPhase, false, -1, useRDRAND);
 }
 QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
 {
@@ -199,13 +200,16 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     shard->gate[0U] = complex(angleCos, -angleSin);
     shard->gate[3U] = complex(angleCos, angleSin);
 
-    QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
-        1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
-
     // Form potentially entangled representation, with this.
-    bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+    bitLenInt ancillaIndex = deadAncillaCount
+        ? (qubitCount + ancillaCount)
+        : stabilizer->Compose(std::make_shared<QUnitClifford>(
+              1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
     ++ancillaCount;
     shards.push_back(NULL);
+    if (deadAncillaCount) {
+        --deadAncillaCount;
+    }
 
     // Use reverse t-injection gadget.
     stabilizer->CNOT(target, ancillaIndex);
@@ -361,6 +365,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     c->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
+    c->deadAncillaCount = deadAncillaCount;
     for (size_t i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
             c->shards[i] = shards[i]->Clone();
@@ -406,7 +411,7 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
-    if ((qubitCount + ancillaCount) > maxEngineQubitCount) {
+    if ((qubitCount + ancillaCount + deadAncillaCount) > maxEngineQubitCount) {
         QInterfacePtr e = MakeEngine(0);
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         const unsigned numCores = GetConcurrencyLevel();
@@ -447,7 +452,8 @@ void QStabilizerHybrid::SwitchToEngine()
         // We have extra "gate fusion" shards leftover.
         shards.erase(shards.begin() + qubitCount, shards.end());
         // We're done with ancillae.
-        ancillaCount = 0;
+        ancillaCount = 0U;
+        deadAncillaCount = 0U;
 
         return;
     }
@@ -457,18 +463,21 @@ void QStabilizerHybrid::SwitchToEngine()
     stabilizer = NULL;
     FlushBuffers();
 
-    if (!ancillaCount) {
+    if (!ancillaCount && !deadAncillaCount) {
         return;
     }
 
     // When we measure, we act postselection on reverse T-gadgets.
-    engine->ForceMReg(qubitCount, ancillaCount, 0, true, true);
+    if (ancillaCount) {
+        engine->ForceMReg(qubitCount, ancillaCount, 0, true, true);
+    }
     // Ancillae are separable after measurement.
-    engine->Dispose(qubitCount, ancillaCount);
+    engine->Dispose(qubitCount, ancillaCount + deadAncillaCount);
     // We have extra "gate fusion" shards leftover.
     shards.erase(shards.begin() + qubitCount, shards.end());
     // We're done with ancillae.
-    ancillaCount = 0;
+    ancillaCount = 0U;
+    deadAncillaCount = 0U;
 }
 
 bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool willDestroy)
@@ -479,7 +488,7 @@ bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool wil
 
     const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
 
-    if ((ancillaCount + toCopy->ancillaCount) > maxAncillaCount) {
+    if ((ancillaCount + deadAncillaCount + toCopy->ancillaCount + toCopy->deadAncillaCount) > maxAncillaCount) {
         SwitchToEngine();
     }
 
@@ -492,7 +501,10 @@ bitLenInt QStabilizerHybrid::ComposeEither(QStabilizerHybridPtr toCopy, bool wil
         toRet = willDestroy ? engine->ComposeNoClone(toCopy->engine) : engine->Compose(toCopy->engine);
     } else {
         toRet = stabilizer->Compose(toCopy->stabilizer, qubitCount);
+        stabilizer->ROR(deadAncillaCount, qubitCount + ancillaCount,
+            deadAncillaCount + toCopy->ancillaCount + toCopy->deadAncillaCount);
         ancillaCount += toCopy->ancillaCount;
+        deadAncillaCount += toCopy->deadAncillaCount;
     }
 
     // Resize the shards buffer.
@@ -519,7 +531,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
         return qubitCount;
     }
 
-    if (toCopy->ancillaCount) {
+    if (toCopy->ancillaCount || toCopy->deadAncillaCount) {
         const bitLenInt origSize = qubitCount;
         ROL(origSize - start, 0, qubitCount);
         const bitLenInt result = Compose(toCopy);
@@ -539,6 +551,10 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
         toRet = engine->Compose(toCopy->engine, start);
     } else {
         toRet = stabilizer->Compose(toCopy->stabilizer, start);
+        stabilizer->ROR(deadAncillaCount, qubitCount + ancillaCount,
+            deadAncillaCount + toCopy->ancillaCount + toCopy->deadAncillaCount);
+        ancillaCount += toCopy->ancillaCount;
+        deadAncillaCount += toCopy->deadAncillaCount;
     }
 
     // Resize the shards buffer.
@@ -683,6 +699,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     const QUnitCliffordPtr origStabilizer =
         isRounded ? std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()) : NULL;
     const bitLenInt origAncillaCount = ancillaCount;
+    const bitLenInt origDeadAncillaCount = deadAncillaCount;
     std::vector<MpsShardPtr> origShards = isRounded ? shards : std::vector<MpsShardPtr>();
     if (isRounded) {
         for (size_t i = 0U; i < origShards.size(); ++i) {
@@ -699,6 +716,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         if (isRounded) {
             stabilizer = origStabilizer;
             ancillaCount = origAncillaCount;
+            deadAncillaCount = origDeadAncillaCount;
             shards = origShards;
         }
 
@@ -744,6 +762,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         if (isRounded) {
             stabilizer = origStabilizer;
             ancillaCount = origAncillaCount;
+            deadAncillaCount = origDeadAncillaCount;
             shards = origShards;
         }
 
@@ -803,6 +822,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     if (isRounded) {
         stabilizer = origStabilizer;
         ancillaCount = origAncillaCount;
+        deadAncillaCount = origDeadAncillaCount;
         shards = origShards;
     }
 
@@ -814,7 +834,9 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     DumpBuffers();
 
     if (qubitCount > 1U) {
-        ancillaCount = 0;
+        ancillaCount = 0U;
+        deadAncillaCount = 0U;
+        shards.resize(qubitCount);
         if (stabilizer) {
             engine = MakeEngine();
             stabilizer = NULL;
@@ -827,11 +849,14 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     // Otherwise, we're preparing 1 qubit.
     engine = NULL;
 
-    if (stabilizer && !ancillaCount) {
+    if (stabilizer && !ancillaCount && !deadAncillaCount) {
         stabilizer->SetPermutation(0U);
     } else {
-        ancillaCount = 0;
+        ancillaCount = 0U;
+        deadAncillaCount = 0U;
         stabilizer = MakeStabilizer(0U);
+        shards.clear();
+        shards.resize(qubitCount);
     }
 
     const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
@@ -849,11 +874,14 @@ void QStabilizerHybrid::SetPermutation(bitCapInt perm, complex phaseFac)
 
     engine = NULL;
 
-    if (stabilizer && !ancillaCount) {
+    if (stabilizer && !ancillaCount && !deadAncillaCount) {
         stabilizer->SetPermutation(perm);
     } else {
         ancillaCount = 0U;
+        deadAncillaCount = 0U;
         stabilizer = MakeStabilizer(perm);
+        shards.clear();
+        shards.resize(qubitCount);
     }
 }
 
@@ -1031,13 +1059,16 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
                 shard->gate[0U] = complex(angleCos, -angleSin);
                 shard->gate[3U] = complex(angleCos, angleSin);
 
-                QUnitCliffordPtr ancilla = std::make_shared<QUnitClifford>(
-                    1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
-
                 // Form potentially entangled representation, with this.
-                bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+                bitLenInt ancillaIndex = deadAncillaCount
+                    ? (qubitCount + ancillaCount)
+                    : stabilizer->Compose(std::make_shared<QUnitClifford>(
+                          1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
                 ++ancillaCount;
                 shards.push_back(NULL);
+                if (deadAncillaCount) {
+                    --deadAncillaCount;
+                }
 
                 // Use reverse t-injection gadget.
                 stabilizer->CNOT(target, ancillaIndex);
@@ -1872,9 +1903,7 @@ void QStabilizerHybrid::CombineAncillae()
 
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
         if (!shards[i] || stabilizer->IsSeparable(i)) {
-            stabilizer->Dispose(i, 1U);
-            shards.erase(shards.begin() + i);
-            --ancillaCount;
+            ClearAncilla(i);
         }
     }
 
@@ -1886,9 +1915,7 @@ void QStabilizerHybrid::CombineAncillae()
         if (abs(prob) <= FP_NORM_EPSILON) {
             stabilizer->H(i);
             stabilizer->ForceM(i, false);
-            stabilizer->Dispose(i, 1U);
-            shards.erase(shards.begin() + i);
-            --ancillaCount;
+            ClearAncilla(i);
         }
     }
 
@@ -1945,17 +1972,13 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             }
             stabilizer->H(i);
             stabilizer->ForceM(i, p);
-            stabilizer->Dispose(i, 1U);
-            shards.erase(shards.begin() + i);
-            --ancillaCount;
+            ClearAncilla(i);
 
             // All observable effects of qubits becoming separable have been accounted.
             // (Hypothetical newly-arising X-basis separable states have no effect.)
             for (size_t j = shards.size() - 1U; j >= qubitCount; --j) {
                 if (stabilizer->IsSeparable(j)) {
-                    stabilizer->Dispose(j, 1U);
-                    shards.erase(shards.begin() + j);
-                    --ancillaCount;
+                    ClearAncilla(j);
                 }
             }
 
@@ -2032,6 +2055,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         stabilizer = std::dynamic_pointer_cast<QUnitClifford>(toCompare->stabilizer->Clone());
         shards.resize(toCompare->shards.size());
         ancillaCount = toCompare->ancillaCount;
+        deadAncillaCount = toCompare->deadAncillaCount;
         for (size_t i = 0U; i < shards.size(); ++i) {
             shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
         }
@@ -2040,6 +2064,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         toCompare->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
         toCompare->shards.resize(shards.size());
         toCompare->ancillaCount = ancillaCount;
+        toCompare->deadAncillaCount = deadAncillaCount;
         for (size_t i = 0U; i < shards.size(); ++i) {
             toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
         }
@@ -2107,7 +2132,7 @@ void QStabilizerHybrid::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f
 bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
 {
     if (qubitCount == 1U) {
-        if (ancillaCount) {
+        if (ancillaCount || deadAncillaCount) {
             SwitchToEngine();
             complex sv[2];
             engine->GetQuantumState(sv);
@@ -2124,7 +2149,7 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
 }
 bool QStabilizerHybrid::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 {
-    if ((qubitCount == 2U) && !ancillaCount) {
+    if ((qubitCount == 2U) && !ancillaCount && !deadAncillaCount) {
         return true;
     }
 
