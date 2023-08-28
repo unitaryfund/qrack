@@ -2068,7 +2068,6 @@ public:
     /** Circular shift right - shift bits right, and carry first bits. */
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
-#if ENABLE_ALU
     /** Arithmetic shift left, with last 2 bits as sign and carry */
     virtual void ASL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
@@ -2081,6 +2080,7 @@ public:
     /** Logical shift right, filling the extra bits with |0> */
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
+#if ENABLE_ALU
     /** Common driver method behind INCC and DECC */
     virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
