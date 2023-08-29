@@ -208,7 +208,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
             b1 = b1->PopSpecial(depth);
         }
 
-        nRoot->Prune(2U, 1U, true);
+        nRoot = nRoot->Prune(2U, 1U, true);
 
         return nRoot;
     }
@@ -244,7 +244,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
             b1 = b1->PopSpecial(depth);
         }
 
-        nRoot->Prune(2U, 1U, true);
+        nRoot = nRoot->Prune(2U, 1U, true);
 
         return nRoot;
     }
@@ -389,7 +389,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth, parDepth);
 #endif
 
-    nRoot->Prune(2U, 1U, true);
+    nRoot = nRoot->Prune(2U, 1U, true);
 
     // We're done! Just return the replacement for "this" pointer.
     return nRoot;
