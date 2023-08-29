@@ -286,7 +286,7 @@ real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    if (!length) {
+    if (length < 2U) {
         return;
     }
 
@@ -302,7 +302,88 @@ void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
-void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
+void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if (length < 2U) {
+        return;
+    }
+
+    shift %= length;
+    if (!shift) {
+        return;
+    }
+
+    const bitLenInt end = start + length;
+    Reverse(start + shift, end);
+    Reverse(start, start + shift);
+    Reverse(start, end);
+}
+
+/// Arithmetic shift left, with last 2 bits as sign and carry
+void QInterface::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if (!length || !shift) {
+        return;
+    }
+
+    if (shift >= length) {
+        SetReg(start, length, 0U);
+    } else {
+        const bitLenInt end = start + length;
+        Swap(end - 1U, end - 2U);
+        ROL(shift, start, length);
+        SetReg(start, shift, 0U);
+        Swap(end - 1U, end - 2U);
+    }
+}
+
+/// Arithmetic shift right, with last 2 bits as sign and carry
+void QInterface::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if (!length || !shift) {
+        return;
+    }
+
+    if (shift >= length) {
+        SetReg(start, length, 0U);
+    } else {
+        const bitLenInt end = start + length;
+        Swap(end - 1U, end - 2U);
+        ROR(shift, start, length);
+        SetReg(end - shift - 1U, shift, 0U);
+        Swap(end - 1U, end - 2U);
+    }
+}
+
+/// Logical shift left, filling the extra bits with |0>
+void QInterface::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if (!length || !shift) {
+        return;
+    }
+
+    if (shift >= length) {
+        SetReg(start, length, 0U);
+    } else {
+        ROL(shift, start, length);
+        SetReg(start, shift, 0U);
+    }
+}
+
+/// Logical shift right, filling the extra bits with |0>
+void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if (!length || !shift) {
+        return;
+    }
+
+    if (shift >= length) {
+        SetReg(start, length, 0U);
+    } else {
+        SetReg(start, shift, 0U);
+        ROR(shift, start, length);
+    }
+}
 
 bitLenInt QInterface::Compose(QInterfacePtr toCopy, bitLenInt start)
 {

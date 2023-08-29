@@ -890,7 +890,7 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = GetQubitAmplitude(c, false);
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(c, false);
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -908,6 +908,10 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
         },
         { c, t });
 
+    if (randGlobalPhase) {
+        return;
+    }
+
     const complex nAmp = GetAmplitude(ampEntry.permutation);
     phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
@@ -923,7 +927,7 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = GetQubitAmplitude(c, true);
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(c, true);
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -940,6 +944,10 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
             }
         },
         { c, t });
+
+    if (randGlobalPhase) {
+        return;
+    }
 
     const complex nAmp = GetAmplitude(ampEntry.permutation);
     phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
