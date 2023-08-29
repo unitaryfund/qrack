@@ -358,8 +358,6 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         }
     }
 
-    nRoot = nRoot->Prune(2U, 1U, true);
-
     // Bob acts 0 to 2 corrective gates based upon Alice's measured bits.
     if (q0 && nRoot->branches[1U]) {
         nRoot->branches[1U]->scale = -nRoot->branches[1U]->scale;
@@ -367,6 +365,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     if (q1) {
         nRoot->branches[0U].swap(nRoot->branches[1U]);
     }
+
+    nRoot = nRoot->Prune(2U, 1U, true);
 
     // This process might need to be repeated, recursively.
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
