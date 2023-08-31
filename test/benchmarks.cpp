@@ -7634,7 +7634,7 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
     const complex is[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     std::set<bitLenInt> qubitSet;
-    for (bitLenInt i = 0; i < n; ++i) {
+    for (bitLenInt i = 0; i < w; ++i) {
         qubitSet.insert(i);
     }
 
