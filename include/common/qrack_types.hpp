@@ -154,9 +154,9 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 #define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
 #define ONE_R1_F 1.0f
-constexpr real1 PI_R1 = (real1)M_PI;
-constexpr real1 SQRT2_R1 = (real1)M_SQRT2;
-constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
+constexpr real1_f PI_R1 = (real1_f)M_PI;
+constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
+constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0f
 // Half of the amplitude of 16 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2e-17f
@@ -165,10 +165,10 @@ constexpr real1 ZERO_R1 = (real1)0.0f;
 #define ZERO_R1_F 0.0f
 constexpr real1 ONE_R1 = (real1)1.0f;
 #define ONE_R1_F 1.0f
-constexpr real1 PI_R1 = (real1)M_PI;
-constexpr real1 SQRT2_R1 = (real1)M_SQRT2;
-constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
-constexpr real1 REAL1_DEFAULT_ARG = (real1)-999.0f;
+constexpr real1_f PI_R1 = (real1_f)M_PI;
+constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
+constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
+constexpr real1_f REAL1_DEFAULT_ARG = (real1_f)-999.0f;
 // Half of the amplitude of 16 maximally superposed qubits in any permutation
 constexpr real1 REAL1_EPSILON = (real1)2e-17f;
 #endif
@@ -177,9 +177,9 @@ constexpr real1 REAL1_EPSILON = (real1)2e-17f;
 #define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
 #define ONE_R1_F 1.0f
-constexpr real1 PI_R1 = (real1)M_PI;
-constexpr real1 SQRT2_R1 = (real1)M_SQRT2;
-constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
+constexpr real1_f PI_R1 = (real1_f)M_PI;
+constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
+constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0f
 // Half of the amplitude of 32 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2e-33f
@@ -199,9 +199,9 @@ constexpr real1 ZERO_R1 = (real1)0.0;
 #define ZERO_R1_F 0.0
 constexpr real1 ONE_R1 = (real1)1.0;
 #define ONE_R1_F 1.0
-constexpr real1 PI_R1 = (real1)M_PI;
-constexpr real1 SQRT2_R1 = (real1)M_SQRT2;
-constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
+constexpr real1_f PI_R1 = (real1_f)M_PI;
+constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
+constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0
 // Half of the amplitude of 64 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2e-129

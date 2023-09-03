@@ -7644,11 +7644,11 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
 
     for (int d = 0; d < n; d++) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        const bitLenInt layerMagicQubit = max((real1_f)(w - 1), w * rng->Rand());
-        const bitLenInt layerMagicAxis = max((real1_f)2, 3 * rng->Rand());
+        const bitLenInt layerMagicQubit = max((real1_s)(w - 1), (real1_s)(w * rng->Rand()));
+        const bitLenInt layerMagicAxis = max((real1_s)2, (real1_s)(3 * rng->Rand()));
 #else
-        const bitLenInt layerMagicQubit = std::max((real1_f)(w - 1), w * rng->Rand());
-        const bitLenInt layerMagicAxis = std::max((real1_f)2, 3 * rng->Rand());
+        const bitLenInt layerMagicQubit = std::max((real1_s)(w - 1), (real1_s)(w * rng->Rand()));
+        const bitLenInt layerMagicAxis = std::max((real1_s)2, (real1_s)(3 * rng->Rand()));
 #endif
         for (int i = 0; i < w; i++) {
             // Random general 3-parameter unitary gate via "x-z-x" Euler angles:
@@ -7783,11 +7783,11 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 
     for (d = 0; d < n; d++) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        const bitLenInt layerMagicQubit = max((real1_f)(w - 1), w * rng->Rand());
-        const bitLenInt layerMagicAxis = max((real1_f)2, 3 * rng->Rand());
+        const bitLenInt layerMagicQubit = max((real1_s)(w - 1), (real1_s)(w * rng->Rand()));
+        const bitLenInt layerMagicAxis = max((real1_s)2, (real1_s)(3 * rng->Rand()));
 #else
-        const bitLenInt layerMagicQubit = std::max((real1_f)(w - 1), w * rng->Rand());
-        const bitLenInt layerMagicAxis = std::max((real1_f)2, 3 * rng->Rand());
+        const bitLenInt layerMagicQubit = std::max((real1_s)(w - 1), (real1_s)(w * rng->Rand()));
+        const bitLenInt layerMagicAxis = std::max((real1_s)2, (real1_s)(3 * rng->Rand()));
 #endif
         for (i = 0; i < w; i++) {
             // Random general 3-parameter unitary gate via "x-z-x" Euler angles:

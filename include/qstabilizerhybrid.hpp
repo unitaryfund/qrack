@@ -198,7 +198,7 @@ protected:
             angle += Period;
         }
 
-        int sector = std::round(angle / sectorAngle);
+        int sector = std::round((real1_s)(angle / sectorAngle));
         if (!isGateSuppressed) {
             switch (sector) {
             case 1U:
