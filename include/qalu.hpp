@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
+#include "common/qrack_functions.hpp"
 
 namespace Qrack {
 

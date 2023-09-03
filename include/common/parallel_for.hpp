@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "qrack_types.hpp"
+#include "qrack_functions.hpp"
 
 #include <set>
 #include <vector>
