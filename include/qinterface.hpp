@@ -1157,7 +1157,7 @@ public:
     {
         constexpr complex diag = complex(SQRT1_2_R1, ZERO_R1);
         constexpr complex m01 = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        constexpr complex m10 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        constexpr complex m10 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
         constexpr complex mtrx[4]{ diag, m01, m10, diag };
         Mtrx(mtrx, qubit);
     }
@@ -1171,7 +1171,7 @@ public:
     {
         constexpr complex diag = complex(SQRT1_2_R1, ZERO_R1);
         constexpr complex m01 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        constexpr complex m10 = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        constexpr complex m10 = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
         constexpr complex mtrx[4]{ diag, m01, m10, diag };
         Mtrx(mtrx, qubit);
     }
