@@ -631,9 +631,9 @@ protected:
 
         shard.pauliBasis = PauliX;
 
-        const complex mtrx[4U]{ ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
-            ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
-            ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX) };
+        constexpr complex diag = complex(ONE_R1 / 2, ONE_R1 / 2);
+        constexpr complex cross = complex(ONE_R1 / 2, -ONE_R1 / 2);
+        constexpr complex mtrx[4U]{ diag, cross, cross, diag };
 
         if (shard.unit) {
             shard.unit->Mtrx(mtrx, shard.mapped);

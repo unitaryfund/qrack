@@ -372,7 +372,8 @@ public:
         }
 
         std::unique_ptr<complex[]> dMtrx = GetQubitReducedDensityMatrix(qubit);
-        const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        constexpr complex ONE_CMPLX_NEG = complex(-ONE_R1, ZERO_R1);
+        constexpr complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX_NEG };
         complex pMtrx[4];
         mul2x2(dMtrx.get(), pauliZ, pMtrx);
         return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;
