@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -12,8 +12,6 @@
 
 #pragma once
 
-#define _USE_MATH_DEFINES
-
 #include "oclapi.hpp"
 
 #if !ENABLE_CUDA
@@ -22,7 +20,6 @@
 
 #include <cuda_runtime.h>
 
-#include <map>
 #include <memory>
 #include <mutex>
 #include <vector>

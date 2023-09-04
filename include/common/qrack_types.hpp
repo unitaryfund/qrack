@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -63,21 +63,18 @@ typedef half_float::half real1;
 typedef float real1_f;
 typedef float real1_s;
 #endif
-} // namespace Qrack
 #elif FPPOW < 6
 namespace Qrack {
 typedef std::complex<float> complex;
 typedef float real1;
 typedef float real1_f;
 typedef float real1_s;
-} // namespace Qrack
 #elif FPPOW < 7
 namespace Qrack {
 typedef std::complex<double> complex;
 typedef double real1;
 typedef double real1_f;
 typedef double real1_s;
-} // namespace Qrack
 #else
 #include <boost/multiprecision/float128.hpp>
 #include <quadmath.h>
@@ -86,11 +83,7 @@ typedef std::complex<boost::multiprecision::float128> complex;
 typedef boost::multiprecision::float128 real1;
 typedef boost::multiprecision::float128 real1_f;
 typedef double real1_s;
-// Minimum representable difference from 1
-} // namespace Qrack
 #endif
-
-namespace Qrack {
 
 #if UINTPOW < 4
 constexpr uint8_t ONE_BCI = 1U;
@@ -128,7 +121,7 @@ constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << (QBCAPPOW + 3U);
 
 typedef std::shared_ptr<complex> BitOp;
 
-/** Called once per value between begin and end. */
+// Called once per value between begin and end.
 typedef std::function<void(const bitCapIntOcl&, const unsigned& cpu)> ParallelFunc;
 typedef std::function<bitCapIntOcl(const bitCapIntOcl&)> IncrementFunc;
 typedef std::function<bitCapInt(const bitCapInt&)> BdtFunc;

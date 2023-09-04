@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // Adapted from:
 //
@@ -25,8 +25,6 @@
 #pragma once
 
 #include "qinterface.hpp"
-
-#include <cstdint>
 
 namespace Qrack {
 

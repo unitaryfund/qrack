@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -19,8 +19,6 @@
 #if !ENABLE_PTHREAD || !ENABLE_QUNIT_CPU_PARALLEL
 #error PTHREAD or QUNIT_CPU_PARALLEL has not been enabled
 #endif
-
-#define _USE_MATH_DEFINES
 
 #include <condition_variable>
 #include <functional>

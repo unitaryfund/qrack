@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // QUnit maintains explicit separability of qubits as an optimization on a QEngine.
 // See https://arxiv.org/abs/1710.05867
@@ -19,7 +19,6 @@
 #include "common/cudaengine.cuh"
 #include "qengine_cuda.hpp"
 #endif
-#include "qinterface.hpp"
 #include "qunit.hpp"
 
 namespace Qrack {
