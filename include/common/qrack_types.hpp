@@ -16,6 +16,7 @@
 
 #include <complex>
 #include <cstdint>
+#include <memory>
 
 #define _USE_MATH_DEFINES
 
