@@ -7619,6 +7619,7 @@ TEST_CASE("test_qcircuit_inverse", "[qcircuit]")
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_qcircuit_inc", "[qcircuit]")
 {
     std::cout << ">>> test_qcircuit_inc:" << std::endl;
@@ -7647,3 +7648,4 @@ TEST_CASE("test_qcircuit_inc", "[qcircuit]")
 
     REQUIRE(qftReg->MAll() == 2);
 }
+#endif
