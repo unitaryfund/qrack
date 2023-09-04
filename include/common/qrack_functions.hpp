@@ -14,8 +14,6 @@
 
 #include "qrack_types.hpp"
 
-#include <functional>
-#include <limits>
 #include <set>
 #include <vector>
 
