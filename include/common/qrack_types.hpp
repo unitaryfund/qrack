@@ -14,13 +14,14 @@
 
 #include "config.h"
 
+#define _USE_MATH_DEFINES
+
+#include <cmath>
 #include <complex>
 #include <cstdint>
 #include <functional>
 #include <limits>
 #include <memory>
-
-#define _USE_MATH_DEFINES
 
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
