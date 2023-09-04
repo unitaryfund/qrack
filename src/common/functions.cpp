@@ -10,7 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qrack_types.hpp"
+#include "qrack_functions.hpp"
 
 #if ENABLE_COMPLEX_X2
 #if FPPOW == 5
