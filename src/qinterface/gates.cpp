@@ -19,7 +19,6 @@ constexpr complex C_SQRT_I = complex(SQRT1_2_R1, SQRT1_2_R1);
 constexpr complex C_SQRT_N_I = complex(SQRT1_2_R1, -SQRT1_2_R1);
 constexpr complex I_CMPLX_NEG = complex(ZERO_R1, -ONE_R1);
 constexpr complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
-constexpr complex C_SQRT_I_NEG = complex(-SQRT1_2_R1, -SQRT1_2_R1);
 
 void QInterface::UCMtrx(
     const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
