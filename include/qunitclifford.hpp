@@ -3,7 +3,7 @@
 // (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // QUnitClifford maintains explicit separability of qubits as an optimization on a
-// QEngine. See https://arxiv.org/abs/1710.05867
+// QStabilizer. See https://arxiv.org/abs/1710.05867
 // (The makers of Qrack have no affiliation with the authors of that paper.)
 //
 // Licensed under the GNU Lesser General Public License V3.
