@@ -291,6 +291,7 @@ install (FILES
     include/qengine_gpu_util.hpp
     include/qengine_opencl.hpp
     include/qengine_cuda.hpp
+    include/qtensornetwork.hpp
     include/qinterface.hpp
     include/qalu.hpp
     include/qparity.hpp
