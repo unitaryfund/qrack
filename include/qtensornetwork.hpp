@@ -31,6 +31,10 @@ typedef std::shared_ptr<TensorNetworkMeta> TensorNetworkMetaPtr;
 
 class QTensorNetwork : public QInterface {
 protected:
+    int64_t devID;
+    QInterfacePtr layerStack;
+    std::vector<int64_t> deviceIDs;
+    std::vector<QInterfaceEngine> engines;
     std::vector<QCircuitPtr> circuit;
     std::vector<std::map<bitLenInt, bool>> measurements;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -76,6 +80,8 @@ protected:
 
     TensorNetworkMetaPtr GetTensorNetwork() { return NULL; }
 
+    void MakeLayerStack();
+
 public:
     QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -88,7 +94,7 @@ public:
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
-        : QTensorNetwork({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
+        : QTensorNetwork({ QINTERFACE_OPTIMAL_MULTI }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
               separation_thresh)
     {
@@ -167,8 +173,22 @@ public:
     {
         TensorNetworkMetaPtr network = GetTensorNetwork();
 
-        // TODO: Calculate result of measurement with cuTensorNetwork
-        bool toRet = false;
+#if ENABLE_ENV_VARS
+        const bitLenInt maxQb = getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")
+            ? (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")))
+            : 27U;
+#else
+        constexpr bitLenInt maxQb = 27U;
+#endif
+
+        bool toRet;
+        if (qubitCount <= maxQb) {
+            MakeLayerStack();
+            toRet = layerStack->ForceM(qubit, result, doForce, doApply);
+        } else {
+            // TODO: Calculate result of measurement with cuTensorNetwork
+            throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
+        }
 
         size_t layerId = circuit.size() - 1U;
         // Starting from latest circuit layer, if measurement commutes...
@@ -177,12 +197,7 @@ public:
                 // We will insert a terminal measurement on this qubit, again.
                 // This other measurement commutes, as it is in the same basis.
                 // So, erase any redundant later measurement.
-                std::map<bitLenInt, bool>& mLayer = measurements[layerId];
-                const auto m = mLayer.find(qubit);
-                if (m != mLayer.end()) {
-                    toRet = m->second;
-                    mLayer.erase(qubit);
-                }
+                measurements[layerId].erase(qubit);
             }
             // ...Fill an earlier layer.
             --layerId;
@@ -204,6 +219,7 @@ public:
 
     void Mtrx(const complex* mtrx, bitLenInt target)
     {
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
         Dispatch([this, target, lMtrx] {
@@ -212,6 +228,7 @@ public:
     }
     void MCMtrx(const std::vector<bitLenInt> controls, const complex* mtrx, bitLenInt target)
     {
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
         Dispatch([this, target, controls, lMtrx] {
@@ -222,6 +239,7 @@ public:
     }
     void MACMtrx(const std::vector<bitLenInt> controls, const complex* mtrx, bitLenInt target)
     {
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
         Dispatch([this, target, controls, lMtrx] {
@@ -232,6 +250,7 @@ public:
     }
     void MCPhase(const std::vector<bitLenInt> controls, complex topLeft, complex bottomRight, bitLenInt target)
     {
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = topLeft;
         lMtrx.get()[1U] = ZERO_CMPLX;
@@ -245,6 +264,7 @@ public:
     }
     void MACPhase(const std::vector<bitLenInt> controls, complex topLeft, complex bottomRight, bitLenInt target)
     {
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = topLeft;
         lMtrx.get()[1U] = ZERO_CMPLX;
@@ -258,6 +278,7 @@ public:
     }
     void MCInvert(const std::vector<bitLenInt> controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
         lMtrx.get()[1U] = topRight;
@@ -271,6 +292,7 @@ public:
     }
     void MACInvert(const std::vector<bitLenInt> controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
         lMtrx.get()[1U] = topRight;

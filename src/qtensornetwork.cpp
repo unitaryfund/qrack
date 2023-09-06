@@ -8,7 +8,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+// TODO: qtensornetwork.hpp will be included in qfactory.hpp, then the former include can be removed.
 #include "qtensornetwork.hpp"
+#include "qfactory.hpp"
 
 #include <cuda_runtime.h>
 #include <cutensornet.h>
@@ -20,8 +22,50 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
+    , devID(deviceId)
+    , deviceIDs(devList)
+    , engines(eng)
     , circuit({ std::make_shared<QCircuit>() })
 {
+}
+
+void QTensorNetwork::MakeLayerStack()
+{
+    if (layerStack) {
+        // We have a cached layerStack.
+        return;
+    }
+
+    // We need to prepare the layer stack (and cache it).
+    layerStack = std::dynamic_pointer_cast<QEngine>(
+        CreateQuantumInterface(engines, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, false, false, devID,
+            hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs));
+
+    const size_t maxLcv = std::max(circuit.size(), measurements.size());
+    for (size_t i = 0U; i < maxLcv; ++i) {
+        if (circuit.size() <= i) {
+            continue;
+        }
+
+        circuit[i]->Run(layerStack);
+
+        if (measurements.size() <= i) {
+            continue;
+        }
+
+        const size_t bitCount = measurements[i].size();
+        std::vector<bitLenInt> bits;
+        bits.reserve(bitCount);
+        std::vector<bool> values;
+        values.reserve(bitCount);
+
+        for (const auto& m : measurements[i]) {
+            bits.push_back(m.first);
+            values.push_back(m.second);
+        }
+
+        layerStack->ForceM(bits, values);
+    }
 }
 
 void QTensorNetwork::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
