@@ -170,9 +170,9 @@ public:
         // TODO: Calculate result of measurement with cuTensorNetwork
         const bool toRet = false;
 
-        size_t layerId = 0U;
-        while (circuit[layerId]->IsNonPhaseTarget(qubit)) {
-            ++layerId;
+        size_t layerId = circuit.size() - 1U;
+        while (!(circuit[layerId]->IsNonPhaseTarget(qubit))) {
+            --layerId;
         }
         if (layerId > measurements.size()) {
             measurements.emplace_back();
