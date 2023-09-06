@@ -23,7 +23,8 @@ typedef std::shared_ptr<QTensorNetwork> QTensorNetworkPtr;
 
 class QTensorNetwork : public QInterface {
 protected:
-    QCircuitPtr circuit;
+    std::vector<QCircuitPtr> circuit;
+    std::vector<std::map<bitLenInt, bool>> measurements;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     DispatchQueue dispatchQueue;
 #endif
@@ -35,6 +36,34 @@ protected:
 #else
         fn();
 #endif
+    }
+
+    QCircuitPtr GetCircuit(bitLenInt target, std::vector<bitLenInt> controls = std::vector<bitLenInt>())
+    {
+        for (size_t i = 0U; i < measurements.size(); ++i) {
+            const size_t l = measurements.size() - (i + 1U);
+            std::map<bitLenInt, bool>& m = measurements[l];
+
+            if (m.find(target) != m.end()) {
+                if (circuit.size() == l) {
+                    circuit.emplace_back();
+                }
+
+                return circuit[l];
+            }
+
+            for (size_t j = 0U; j < controls.size(); ++j) {
+                if (m.find(controls[j]) != m.end()) {
+                    if (circuit.size() == l) {
+                        circuit.emplace_back();
+                    }
+
+                    return circuit[l];
+                }
+            }
+        }
+
+        return circuit[0U];
     }
 
 public:
@@ -131,15 +160,18 @@ public:
     {
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
-        Dispatch([this, target, lMtrx] { circuit->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get())); });
+        Dispatch([this, target, lMtrx] {
+            GetCircuit(target)->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get()));
+        });
     }
     void MCMtrx(const std::vector<bitLenInt> controls, const complex* mtrx, bitLenInt target)
     {
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
         Dispatch([this, target, controls, lMtrx] {
-            circuit->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get(),
-                std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
+            GetCircuit(target, controls)
+                ->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get(),
+                    std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
     void MACMtrx(const std::vector<bitLenInt> controls, const complex* mtrx, bitLenInt target)
@@ -147,8 +179,9 @@ public:
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
         Dispatch([this, target, controls, lMtrx] {
-            circuit->AppendGate(std::make_shared<QCircuitGate>(
-                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+            GetCircuit(target, controls)
+                ->AppendGate(std::make_shared<QCircuitGate>(
+                    target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
         });
     }
     void MCPhase(const std::vector<bitLenInt> controls, complex topLeft, complex bottomRight, bitLenInt target)
@@ -159,8 +192,9 @@ public:
         lMtrx.get()[2U] = ZERO_CMPLX;
         lMtrx.get()[3U] = bottomRight;
         Dispatch([this, target, controls, lMtrx] {
-            circuit->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get(),
-                std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
+            GetCircuit(target, controls)
+                ->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get(),
+                    std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
     void MACPhase(const std::vector<bitLenInt> controls, complex topLeft, complex bottomRight, bitLenInt target)
@@ -171,8 +205,9 @@ public:
         lMtrx.get()[2U] = ZERO_CMPLX;
         lMtrx.get()[3U] = bottomRight;
         Dispatch([this, target, controls, lMtrx] {
-            circuit->AppendGate(std::make_shared<QCircuitGate>(
-                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+            GetCircuit(target, controls)
+                ->AppendGate(std::make_shared<QCircuitGate>(
+                    target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
         });
     }
     void MCInvert(const std::vector<bitLenInt> controls, complex topRight, complex bottomLeft, bitLenInt target)
@@ -183,8 +218,9 @@ public:
         lMtrx.get()[2U] = bottomLeft;
         lMtrx.get()[3U] = ZERO_CMPLX;
         Dispatch([this, target, controls, lMtrx] {
-            circuit->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get(),
-                std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
+            GetCircuit(target, controls)
+                ->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get(),
+                    std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
     void MACInvert(const std::vector<bitLenInt> controls, complex topRight, complex bottomLeft, bitLenInt target)
@@ -195,8 +231,9 @@ public:
         lMtrx.get()[2U] = bottomLeft;
         lMtrx.get()[3U] = ZERO_CMPLX;
         Dispatch([this, target, controls, lMtrx] {
-            circuit->AppendGate(std::make_shared<QCircuitGate>(
-                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+            GetCircuit(target, controls)
+                ->AppendGate(std::make_shared<QCircuitGate>(
+                    target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
         });
     }
 
