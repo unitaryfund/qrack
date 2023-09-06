@@ -564,6 +564,20 @@ public:
      */
     void Run(QInterfacePtr qsim);
 
+    /**
+     * Check if an index is any target qubit of this circuit.
+     */
+    bool IsNonPhaseTarget(bitLenInt qubit)
+    {
+        for (const QCircuitGatePtr& gate : gates) {
+            if ((gate->target == qubit) && !(gate->IsPhase())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 #if ENABLE_ALU
     /** Add integer (without sign) */
     void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
