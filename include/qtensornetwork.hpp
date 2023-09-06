@@ -21,6 +21,14 @@ namespace Qrack {
 class QTensorNetwork;
 typedef std::shared_ptr<QTensorNetwork> QTensorNetworkPtr;
 
+struct TensorMeta {
+    std::vector<std::vector<int32_t>> modes;
+    std::vector<std::vector<int64_t>> extents;
+};
+
+typedef std::vector<TensorMeta> TensorNetworkMeta;
+typedef std::shared_ptr<TensorNetworkMeta> TensorNetworkMetaPtr;
+
 class QTensorNetwork : public QInterface {
 protected:
     std::vector<QCircuitPtr> circuit;
@@ -65,6 +73,8 @@ protected:
 
         return circuit[0U];
     }
+
+    TensorNetworkMetaPtr GetTensorNetwork() { return NULL; }
 
 public:
     QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -153,7 +163,20 @@ public:
     real1_f Prob(bitLenInt qubitIndex) { return ZERO_R1_F; }
     real1_f ProbAll(bitCapInt fullRegister) { return ZERO_R1_F; }
 
-    bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) { return false; }
+    bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
+    {
+        TensorNetworkMetaPtr network = GetTensorNetwork();
+
+        // TODO: Calculate result of measurement with cuTensorNetwork
+        const bool toRet = false;
+
+        if (circuit.size() > measurements.size()) {
+            measurements.emplace_back();
+        }
+        measurements.back()[qubit] = toRet;
+
+        return false;
+    }
     bitCapInt MAll() { return 0U; }
 
     void Mtrx(const complex* mtrx, bitLenInt target)
