@@ -175,7 +175,7 @@ public:
                 target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
         });
     }
-    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+    void MCInvert(const std::vector<bitLenInt> controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
@@ -187,7 +187,7 @@ public:
                 std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
-    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+    void MACInvert(const std::vector<bitLenInt> controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
