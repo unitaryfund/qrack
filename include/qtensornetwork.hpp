@@ -168,7 +168,7 @@ public:
         TensorNetworkMetaPtr network = GetTensorNetwork();
 
         // TODO: Calculate result of measurement with cuTensorNetwork
-        const bool toRet = false;
+        bool toRet = false;
 
         size_t layerId = circuit.size() - 1U;
         // Starting from latest circuit layer, if measurement commutes...
@@ -177,7 +177,12 @@ public:
                 // We will insert a terminal measurement on this qubit, again.
                 // This other measurement commutes, as it is in the same basis.
                 // So, erase any redundant later measurement.
-                measurements[layerId].erase(qubit);
+                std::map<bitLenInt, bool>& mLayer = measurements[layerId];
+                const auto m = mLayer.find(qubit);
+                if (m != mLayer.end()) {
+                    toRet = m->second;
+                    mLayer.erase(qubit);
+                }
             }
             // ...Fill an earlier layer.
             --layerId;
