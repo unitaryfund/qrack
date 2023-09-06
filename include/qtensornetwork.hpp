@@ -171,15 +171,29 @@ public:
         const bool toRet = false;
 
         size_t layerId = circuit.size() - 1U;
+        // Starting from latest circuit layer, if measurement commutes...
         while (layerId && !(circuit[layerId]->IsNonPhaseTarget(qubit))) {
+            if (measurements.size() > layerId) {
+                // We will insert a terminal measurement on this qubit, again.
+                // This other measurement commutes, as it is in the same basis.
+                // So, erase any redundant later measurement.
+                measurements[layerId].erase(qubit);
+            }
+            // ...Fill an earlier layer.
             --layerId;
         }
+
+        // Identify whether we need a totally new measurement layer.
         if (layerId > measurements.size()) {
+            // Insert the required measurement layer.
             measurements.emplace_back();
         }
+
+        // Insert terminal measurement.
         measurements[layerId][qubit] = toRet;
 
-        return false;
+        // Tell the user the result.
+        return toRet;
     }
     bitCapInt MAll() { return 0U; }
 
