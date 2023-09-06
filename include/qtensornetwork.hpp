@@ -171,7 +171,7 @@ public:
         const bool toRet = false;
 
         size_t layerId = circuit.size() - 1U;
-        while (!(circuit[layerId]->IsNonPhaseTarget(qubit))) {
+        while (layerId && !(circuit[layerId]->IsNonPhaseTarget(qubit))) {
             --layerId;
         }
         if (layerId > measurements.size()) {
