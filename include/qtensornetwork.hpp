@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "qinterface.hpp"
+#include "qcircuit.hpp"
 
 namespace Qrack {
 
@@ -18,6 +18,9 @@ class QTensorNetwork;
 typedef std::shared_ptr<QTensorNetwork> QTensorNetworkPtr;
 
 class QTensorNetwork : public QInterface {
+protected:
+    QCircuitPtr circuit;
+
 public:
     QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -83,12 +86,45 @@ public:
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) { return false; }
     bitCapInt MAll() { return 0U; }
 
-    void Mtrx(const complex* mtrx, bitLenInt target) {}
-    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target) {}
-    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target) {}
-    void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target) {}
-    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target) {}
+    void Mtrx(const complex* mtrx, bitLenInt target)
+    {
+        circuit->AppendGate(std::make_shared<QCircuitGate>(target, mtrx));
+    }
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
+    {
+        circuit->AppendGate(std::make_shared<QCircuitGate>(
+            target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
+    }
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
+    {
+        circuit->AppendGate(
+            std::make_shared<QCircuitGate>(target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+    }
+    void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+    {
+        const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        circuit->AppendGate(std::make_shared<QCircuitGate>(
+            target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
+    }
+    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+    {
+        const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        circuit->AppendGate(
+            std::make_shared<QCircuitGate>(target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+    }
+    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+    {
+        const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        circuit->AppendGate(std::make_shared<QCircuitGate>(
+            target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
+    }
+    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+    {
+        const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        circuit->AppendGate(
+            std::make_shared<QCircuitGate>(target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+    }
 
-    void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2) {}
+    void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 };
 } // namespace Qrack
