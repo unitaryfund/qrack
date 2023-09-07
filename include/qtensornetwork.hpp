@@ -92,6 +92,26 @@ protected:
 
     void MakeLayerStack();
 
+    template <typename Fn> void RunAsAmplitudes(Fn fn)
+    {
+#if ENABLE_CUDA
+        const bitLenInt maxQb = GetThresholdQb();
+        bitCapInt toRet;
+        if (qubitCount <= maxQb) {
+            MakeLayerStack();
+            return fn();
+        } else {
+            TensorNetworkMetaPtr network = MakeTensorNetwork();
+
+            // TODO: Calculate result of measurement with cuTensorNetwork
+            throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
+        }
+#else
+        MakeLayerStack();
+        return fn();
+#endif
+    }
+
 #if ENABLE_CUDA
     TensorNetworkMetaPtr MakeTensorNetwork() { return NULL; }
 #endif
@@ -185,72 +205,79 @@ public:
         Phase(phaseFac, phaseFac, 0U);
     }
 
-    QInterfacePtr Clone() { return NULL; }
+    QInterfacePtr Clone() { return NULL; } // TODO
 
-    void GetQuantumState(complex* state) {}
-    void GetQuantumState(QInterfacePtr eng) {}
-    void SetQuantumState(const complex* state) {}
-    void SetQuantumState(QInterfacePtr eng) {}
-    void GetProbs(real1* outputProbs) {}
+    void GetQuantumState(complex* state)
+    {
+        RunAsAmplitudes([&] { layerStack->GetQuantumState(state); });
+    }
+    void SetQuantumState(const complex* state)
+    {
+        throw std::domain_error("QTensorNetwork::SetQuantumState() not implemented!");
+    }
+    void SetQuantumState(QInterfacePtr eng)
+    {
+        throw std::domain_error("QTensorNetwork::SetQuantumState() not implemented!");
+    }
+    void GetProbs(real1* outputProbs)
+    {
+        RunAsAmplitudes([&] { layerStack->GetProbs(outputProbs); });
+    }
 
-    complex GetAmplitude(bitCapInt perm) { return ZERO_CMPLX; }
-    void SetAmplitude(bitCapInt perm, complex amp) {}
+    complex GetAmplitude(bitCapInt perm)
+    {
+        complex toRet;
+        RunAsAmplitudes([&] { toRet = layerStack->GetAmplitude(perm); });
+        return toRet;
+    }
+    void SetAmplitude(bitCapInt perm, complex amp)
+    {
+        throw std::domain_error("QTensorNetwork::SetAmplitude() not implemented!");
+    }
 
     using QInterface::Compose;
     bitLenInt Compose(QTensorNetworkPtr toCopy, bitLenInt start) { return 0U; }
     bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start) { return 0U; }
-    void Decompose(bitLenInt start, QInterfacePtr dest) {}
-    QInterfacePtr Decompose(bitLenInt start, bitLenInt length) { return NULL; }
-    void Dispose(bitLenInt start, bitLenInt length) {}
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) {}
+    void Decompose(bitLenInt start, QInterfacePtr dest)
+    {
+        throw std::domain_error("QTensorNetwork::Decompose() not implemented!");
+    }
+    QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
+    {
+        throw std::domain_error("QTensorNetwork::Decompose() not implemented!");
+    }
+    void Dispose(bitLenInt start, bitLenInt length)
+    {
+        throw std::domain_error("QTensorNetwork::Dispose() not implemented!");
+    }
+    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+    {
+        throw std::domain_error("QTensorNetwork::Dispose() not implemented!");
+    }
 
     using QInterface::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length) { return 0U; }
 
-    real1_f Prob(bitLenInt qubitIndex) { return ZERO_R1_F; }
+    real1_f Prob(bitLenInt qubitIndex)
+    {
+        real1_f toRet;
+        RunAsAmplitudes([&] { toRet = layerStack->Prob(qubitIndex); });
+        return toRet;
+    }
     real1_f ProbAll(bitCapInt fullRegister)
     {
-#if ENABLE_CUDA
-        const bitLenInt maxQb = GetThresholdQb();
-        bitCapInt toRet;
-        if (qubitCount <= maxQb) {
-            MakeLayerStack();
-            return layerStack->ProbAll(fullRegister);
-        } else {
-            TensorNetworkMetaPtr network = MakeTensorNetwork();
-
-            // TODO: Calculate result of measurement with cuTensorNetwork
-            throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
-        }
-#else
-        MakeLayerStack();
-        return layerStack->ProbAll(fullRegister);
-#endif
+        real1_f toRet;
+        RunAsAmplitudes([&] { toRet = layerStack->ProbAll(fullRegister); });
+        return toRet;
     }
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
     bitCapInt MAll()
     {
-#if ENABLE_CUDA
-        const bitLenInt maxQb = GetThresholdQb();
         bitCapInt toRet;
-        if (qubitCount <= maxQb) {
-            MakeLayerStack();
-            toRet = layerStack->MAll();
-        } else {
-            TensorNetworkMetaPtr network = MakeTensorNetwork();
-
-            // TODO: Calculate result of measurement with cuTensorNetwork
-            throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
-        }
-#else
-        MakeLayerStack();
-        const bitCapInt toRet = layerStack->MAll();
-#endif
-
+        RunAsAmplitudes([&] { toRet = layerStack->MAll(); });
         SetPermutation(toRet);
-
         return toRet;
     }
 
