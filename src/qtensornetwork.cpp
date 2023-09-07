@@ -155,8 +155,9 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         for (size_t i = 0U; i < qubitCount; ++i) {
             nonMeasuredQubits.push_back(i);
         }
-        for (const auto& m : measurements[layerId]) {
-            nonMeasuredQubits.erase(std::find(nonMeasuredQubits.begin(), nonMeasuredQubits.end(), m.first));
+        std::map<bitLenInt, bool>& m = measurements[layerId];
+        for (const auto& b : m) {
+            nonMeasuredQubits.erase(std::find(nonMeasuredQubits.begin(), nonMeasuredQubits.end(), b.first));
         }
 
         const QCircuitPtr& c = circuit[layerId];
@@ -168,12 +169,13 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         }
 
         // If we did not return, this circuit layer is fully collapsed.
+        constexpr complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+
         if (!layerId) {
-            constexpr complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
             circuit[0U] = std::make_shared<QCircuit>();
-            for (const auto& m : measurements[0U]) {
-                if (m.second) {
-                    circuit[0U]->AppendGate(std::make_shared<QCircuitGate>(m.first, pauliX));
+            for (const auto& b : m) {
+                if (b.second) {
+                    circuit[0U]->AppendGate(std::make_shared<QCircuitGate>(b.first, pauliX));
                 }
             }
 
@@ -181,8 +183,15 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         }
         circuit.erase(circuit.begin() + layerId);
 
-        std::map<bitLenInt, bool>& m = measurements[layerId];
-        const std::map<bitLenInt, bool>& mMin1 = measurements[layerId - 1U];
+        const size_t layerIdMin1 = layerId - 1U;
+        const std::map<bitLenInt, bool>& mMin1 = measurements[layerIdMin1];
+        for (const auto& b : m) {
+            const auto it = mMin1.find(b.first);
+            if ((it == mMin1.end()) || (b.second == it->second)) {
+                continue;
+            }
+            circuit[layerIdMin1]->AppendGate(std::make_shared<QCircuitGate>(b.first, pauliX));
+        }
         m.insert(mMin1.begin(), mMin1.end());
         measurements.erase(measurements.begin() + (layerId - 1U));
 
