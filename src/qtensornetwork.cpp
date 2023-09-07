@@ -113,7 +113,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
             if (!m.size()) {
                 measurements.erase(measurements.begin() + layerId);
                 if (layerId < (circuit.size() - 1U)) {
-                    c->Append(circuit[layerId + 1U]);
+                    c->Combine(circuit[layerId + 1U]);
                     circuit.erase(circuit.begin() + layerId + 1U);
                 }
             }

@@ -597,6 +597,19 @@ public:
     }
 
     /**
+     * Combine circuit (with identical qubit index mappings) at the end of this circuit, by acting all additional gates in sequence.
+     */
+    void Combine(QCircuitPtr circuit)
+    {
+        if (circuit->qubitCount > qubitCount) {
+            qubitCount = circuit->qubitCount;
+        }
+        for (const QCircuitGatePtr& g : circuit->gates) {
+            AppendGate(g);
+        }
+    }
+
+    /**
      * Add a gate to the gate sequence.
      */
     void AppendGate(QCircuitGatePtr nGate);
