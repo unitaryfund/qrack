@@ -47,23 +47,21 @@ void QTensorNetwork::MakeLayerStack()
     const size_t maxLcv = std::max(circuit.size(), measurements.size());
     Finish();
     for (size_t i = 0U; i < maxLcv; ++i) {
-        if (circuit.size() <= i) {
-            continue;
+        if (circuit.size() > i) {
+            circuit[i]->Run(layerStack);
         }
-
-        circuit[i]->Run(layerStack);
 
         if (measurements.size() <= i) {
             continue;
         }
 
-        const size_t bitCount = measurements[i].size();
+        const std::map<bitLenInt, bool>& mLayer = measurements[i];
         std::vector<bitLenInt> bits;
-        bits.reserve(bitCount);
+        bits.reserve(mLayer.size());
         std::vector<bool> values;
-        values.reserve(bitCount);
+        values.reserve(mLayer.size());
 
-        for (const auto& m : measurements[i]) {
+        for (const auto& m : mLayer) {
             bits.push_back(m.first);
             values.push_back(m.second);
         }

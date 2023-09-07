@@ -207,9 +207,7 @@ public:
         Dump();
         circuit.clear();
         measurements.clear();
-        if (layerStack) {
-            layerStack->SetPermutation(initState, phaseFac);
-        }
+        layerStack = NULL;
 
         circuit.push_back(std::make_shared<QCircuit>());
 
@@ -224,7 +222,7 @@ public:
                 real1_f angle = Rand() * 2 * (real1_f)PI_R1;
                 phaseFac = complex((real1)cos(angle), (real1)sin(angle));
             } else {
-                phaseFac = ONE_CMPLX;
+                return;
             }
         }
 
