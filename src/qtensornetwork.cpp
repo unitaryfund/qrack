@@ -168,12 +168,18 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         }
 
         // If we did not return, this circuit layer is fully collapsed.
-        circuit.erase(circuit.begin() + layerId);
         if (!layerId) {
-            circuit.push_back(std::make_shared<QCircuit>());
+            constexpr complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            circuit[0U] = std::make_shared<QCircuit>();
+            for (const auto& m : measurements[0U]) {
+                if (m.second) {
+                    circuit[0U]->AppendGate(std::make_shared<QCircuitGate>(m.first, pauliX));
+                }
+            }
 
             return toRet;
         }
+        circuit.erase(circuit.begin() + layerId);
 
         std::map<bitLenInt, bool>& m = measurements[layerId];
         const std::map<bitLenInt, bool>& mMin1 = measurements[layerId - 1U];
