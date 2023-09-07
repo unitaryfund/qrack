@@ -586,6 +586,17 @@ public:
     }
 
     /**
+     * Append circuit (with identical qubit index mappings) at the end of this circuit.
+     */
+    void Append(QCircuitPtr circuit)
+    {
+        if (circuit->qubitCount > qubitCount) {
+            qubitCount = circuit->qubitCount;
+        }
+        gates.insert(gates.end(), circuit->gates.begin(), circuit->gates.end());
+    }
+
+    /**
      * Add a gate to the gate sequence.
      */
     void AppendGate(QCircuitGatePtr nGate);
