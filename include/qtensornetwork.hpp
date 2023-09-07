@@ -59,7 +59,7 @@ protected:
 
             if (m.find(target) != m.end()) {
                 if (circuit.size() == l) {
-                    circuit.emplace_back();
+                    circuit.push_back(std::make_shared<QCircuit>());
                 }
 
                 return circuit[l];
@@ -68,7 +68,7 @@ protected:
             for (size_t j = 0U; j < controls.size(); ++j) {
                 if (m.find(controls[j]) != m.end()) {
                     if (circuit.size() == l) {
-                        circuit.emplace_back();
+                        circuit.push_back(std::make_shared<QCircuit>());
                     }
 
                     return circuit[l];
@@ -211,7 +211,7 @@ public:
             layerStack->SetPermutation(initState, phaseFac);
         }
 
-        circuit.emplace_back();
+        circuit.push_back(std::make_shared<QCircuit>());
 
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             if (initState & pow2(i)) {

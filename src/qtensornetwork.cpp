@@ -25,7 +25,6 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     , devID(deviceId)
     , deviceIDs(devList)
     , engines(eng)
-    , circuit({ std::make_shared<QCircuit>() })
 {
     if (!engines.size()) {
         engines.push_back(QINTERFACE_QUNIT_MULTI);
@@ -42,9 +41,8 @@ void QTensorNetwork::MakeLayerStack()
     }
 
     // We need to prepare the layer stack (and cache it).
-    layerStack = std::dynamic_pointer_cast<QEngine>(
-        CreateQuantumInterface(engines, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, false, false, devID,
-            hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs));
+    layerStack = CreateQuantumInterface(engines, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, false, false,
+        devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs);
 
     const size_t maxLcv = std::max(circuit.size(), measurements.size());
     for (size_t i = 0U; i < maxLcv; ++i) {
