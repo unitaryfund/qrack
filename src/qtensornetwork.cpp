@@ -72,22 +72,15 @@ void QTensorNetwork::MakeLayerStack()
 
 bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-#if ENABLE_CUDA
-    const bitLenInt maxQb = GetThresholdQb();
-    bool toRet;
-    if (qubitCount <= maxQb) {
-        MakeLayerStack();
-        toRet = layerStack->ForceM(qubit, result, doForce, doApply);
-    } else {
-        TensorNetworkMetaPtr network = MakeTensorNetwork();
-
-        // TODO: Calculate result of measurement with cuTensorNetwork
-        throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
+    if ((qubit + 1U) > qubitCount) {
+        if (doForce && result) {
+            throw std::runtime_error("QTensorNetwork::ForceM() forced a measurement with 0 probability!");
+        }
+        return false;
     }
-#else
-    MakeLayerStack();
-    const bool toRet = layerStack->ForceM(qubit, result, doForce, doApply);
-#endif
+
+    bool toRet;
+    RunAsAmplitudes([&] { toRet = layerStack->ForceM(qubit, result, doForce, doApply); });
 
     size_t layerId = circuit.size() - 1U;
     // Starting from latest circuit layer, if measurement commutes...
