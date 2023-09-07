@@ -142,7 +142,31 @@ public:
     }
     real1_f SumSqrDiff(QTensorNetworkPtr toCompare) { return ONE_R1_F; }
 
-    void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG) {}
+    void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG)
+    {
+        Dump();
+        circuit.clear();
+        measurements.clear();
+
+        circuit.emplace_back();
+
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            if (initState & pow2(i)) {
+                X(i);
+            }
+        }
+
+        if (phaseFac == CMPLX_DEFAULT_ARG) {
+            if (randGlobalPhase) {
+                real1_f angle = Rand() * 2 * (real1_f)PI_R1;
+                phaseFac = complex((real1)cos(angle), (real1)sin(angle));
+            } else {
+                phaseFac = ONE_CMPLX;
+            }
+        }
+
+        Phase(phaseFac, phaseFac, 0U);
+    }
 
     QInterfacePtr Clone() { return NULL; }
 
