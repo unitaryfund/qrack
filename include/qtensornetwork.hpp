@@ -280,7 +280,29 @@ public:
         // Tell the user the result.
         return toRet;
     }
-    bitCapInt MAll() { return 0U; }
+    bitCapInt MAll()
+    {
+#if ENABLE_ENV_VARS
+        const bitLenInt maxQb = getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")
+            ? (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")))
+            : 27U;
+#else
+        constexpr bitLenInt maxQb = 27U;
+#endif
+
+        bitCapInt toRet;
+        if (qubitCount <= maxQb) {
+            MakeLayerStack();
+            toRet = layerStack->MAll();
+        } else {
+            // TODO: Calculate result of measurement with cuTensorNetwork
+            throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
+        }
+
+        SetPermutation(toRet);
+
+        return toRet;
+    }
 
     void Mtrx(const complex* mtrx, bitLenInt target)
     {
