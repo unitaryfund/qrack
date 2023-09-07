@@ -280,7 +280,10 @@ public:
     }
 
     using QInterface::Allocate;
-    bitLenInt Allocate(bitLenInt start, bitLenInt length) { return 0U; }
+    bitLenInt Allocate(bitLenInt start, bitLenInt length)
+    {
+        throw std::domain_error("QTensorNetwork::Allocate() not implemented!");
+    }
 
     real1_f Prob(bitLenInt qubitIndex)
     {
