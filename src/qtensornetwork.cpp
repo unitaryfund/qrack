@@ -45,6 +45,7 @@ void QTensorNetwork::MakeLayerStack()
         devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs);
 
     const size_t maxLcv = std::max(circuit.size(), measurements.size());
+    Finish();
     for (size_t i = 0U; i < maxLcv; ++i) {
         if (circuit.size() <= i) {
             continue;
@@ -77,6 +78,7 @@ QInterfacePtr QTensorNetwork::Clone()
         doNormalize, randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false,
         (real1_f)amplitudeFloor);
 
+    Finish();
     for (const QCircuitPtr& c : circuit) {
         clone->circuit.push_back(c->Clone());
     }
