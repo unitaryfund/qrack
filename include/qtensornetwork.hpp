@@ -112,6 +112,7 @@ protected:
 
     template <typename Fn> void RunAsAmplitudes(Fn fn)
     {
+        Finish();
 #if ENABLE_CUDA
         const bitLenInt maxQb = GetThresholdQb();
         bitCapInt toRet;
