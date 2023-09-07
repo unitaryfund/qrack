@@ -87,7 +87,7 @@ protected:
         }
     }
 
-    void CheckQubitCount(bitLenInt target, std::vector<bitLenInt> controls)
+    void CheckQubitCount(bitLenInt target, const std::vector<bitLenInt>& controls)
     {
         CheckQubitCount(target);
         for (const bitLenInt& c : controls) {

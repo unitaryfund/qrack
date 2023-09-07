@@ -44,12 +44,9 @@ void QTensorNetwork::MakeLayerStack()
     layerStack = CreateQuantumInterface(engines, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, false, false,
         devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs);
 
-    const size_t maxLcv = std::max(circuit.size(), measurements.size());
     Finish();
-    for (size_t i = 0U; i < maxLcv; ++i) {
-        if (circuit.size() > i) {
-            circuit[i]->Run(layerStack);
-        }
+    for (size_t i = 0U; i < circuit.size(); ++i) {
+        circuit[i]->Run(layerStack);
 
         if (measurements.size() <= i) {
             continue;
@@ -107,22 +104,29 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
     while (layerId && !(circuit[layerId]->IsNonPhaseTarget(qubit))) {
         const QCircuitPtr& c = circuit[layerId];
         c->DeletePhaseTarget(qubit, toRet);
-        if (measurements.size() > layerId) {
-            // We will insert a terminal measurement on this qubit, again.
-            // This other measurement commutes, as it is in the same basis.
-            // So, erase any redundant later measurement.
-            std::map<bitLenInt, bool>& m = measurements[layerId];
-            m.erase(qubit);
 
-            // If the measurement layer is empty, telescope the layers.
-            if (!m.size()) {
-                measurements.erase(measurements.begin() + layerId);
-                if (layerId < (circuit.size() - 1U)) {
-                    c->Combine(circuit[layerId + 1U]);
-                    circuit.erase(circuit.begin() + layerId + 1U);
-                }
+        if (measurements.size() <= layerId) {
+            // ...Fill an earlier layer.
+            --layerId;
+            continue;
+        }
+
+        // We will insert a terminal measurement on this qubit, again.
+        // This other measurement commutes, as it is in the same basis.
+        // So, erase any redundant later measurement.
+        std::map<bitLenInt, bool>& m = measurements[layerId];
+        m.erase(qubit);
+
+        // If the measurement layer is empty, telescope the layers.
+        if (!m.size()) {
+            measurements.erase(measurements.begin() + layerId);
+            const size_t prevLayerId = layerId + 1U;
+            if (prevLayerId < circuit.size()) {
+                c->Combine(circuit[prevLayerId]);
+                circuit.erase(circuit.begin() + prevLayerId);
             }
         }
+
         // ...Fill an earlier layer.
         --layerId;
     }
@@ -138,7 +142,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
 
     // If no qubit in this layer is target of a non-phase gate, it can be completely telescoped into classical state
     // preparation.
-    while (layerId) {
+    while (true) {
         std::vector<bitLenInt> nonMeasuredQubits;
         nonMeasuredQubits.reserve(qubitCount);
         for (size_t i = 0U; i < qubitCount; ++i) {
@@ -147,6 +151,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         for (const auto& m : measurements[layerId]) {
             nonMeasuredQubits.erase(std::find(nonMeasuredQubits.begin(), nonMeasuredQubits.end(), m.first));
         }
+
         const QCircuitPtr& c = circuit[layerId];
         for (const bitLenInt& q : nonMeasuredQubits) {
             if (c->IsNonPhaseTarget(q)) {
@@ -157,12 +162,17 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
 
         // If we did not return, this circuit layer is fully collapsed.
         circuit.erase(circuit.begin() + layerId);
+        if (!layerId) {
+            circuit.push_back(std::make_shared<QCircuit>());
+            return toRet;
+        }
 
         std::map<bitLenInt, bool>& m = measurements[layerId];
         const std::map<bitLenInt, bool>& mMin1 = measurements[layerId - 1U];
         m.insert(mMin1.begin(), mMin1.end());
         measurements.erase(measurements.begin() + (layerId - 1U));
 
+        // ...Repeat until we reach the terminal layer.
         --layerId;
     }
 
