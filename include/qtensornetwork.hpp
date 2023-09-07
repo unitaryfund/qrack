@@ -193,6 +193,7 @@ public:
         size_t layerId = circuit.size() - 1U;
         // Starting from latest circuit layer, if measurement commutes...
         while (layerId && !(circuit[layerId]->IsNonPhaseTarget(qubit))) {
+            circuit[layerId]->DeletePhaseTarget(qubit, toRet);
             if (measurements.size() > layerId) {
                 // We will insert a terminal measurement on this qubit, again.
                 // This other measurement commutes, as it is in the same basis.
