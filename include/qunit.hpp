@@ -30,9 +30,9 @@ class QUnit : public QAlu, public QParity, public QInterface {
 class QUnit : public QParity, public QInterface {
 #endif
 protected:
+    bool freezeBasis2Qb;
     bool useHostRam;
     bool isSparse;
-    bool freezeBasis2Qb;
     bool isReactiveSeparate;
     bool useTGadget;
     bitLenInt thresholdQubits;
