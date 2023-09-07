@@ -100,6 +100,10 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
     bool toRet;
     RunAsAmplitudes([&] { toRet = layerStack->ForceM(qubit, result, doForce, doApply); });
 
+    if (!doApply) {
+        return toRet;
+    }
+
     size_t layerId = circuit.size() - 1U;
     // Starting from latest circuit layer, if measurement commutes...
     while (layerId && !(circuit[layerId]->IsNonPhaseTarget(qubit))) {
