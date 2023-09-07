@@ -54,24 +54,25 @@ protected:
     QCircuitPtr GetCircuit(bitLenInt target, std::vector<bitLenInt> controls = std::vector<bitLenInt>())
     {
         for (size_t i = 0U; i < measurements.size(); ++i) {
-            const size_t l = measurements.size() - (i + 1U);
+            size_t l = measurements.size() - (i + 1U);
             std::map<bitLenInt, bool>& m = measurements[l];
+            ++l;
 
             if (m.find(target) != m.end()) {
-                if (circuit.size() == (l + 1U)) {
+                if (circuit.size() == l) {
                     circuit.push_back(std::make_shared<QCircuit>());
                 }
 
-                return circuit[l + 1U];
+                return circuit[l];
             }
 
             for (size_t j = 0U; j < controls.size(); ++j) {
                 if (m.find(controls[j]) != m.end()) {
-                    if (circuit.size() == (l + 1U)) {
+                    if (circuit.size() == l) {
                         circuit.push_back(std::make_shared<QCircuit>());
                     }
 
-                    return circuit[l + 1U];
+                    return circuit[l];
                 }
             }
         }
