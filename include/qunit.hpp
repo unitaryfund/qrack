@@ -30,7 +30,6 @@ class QUnit : public QAlu, public QParity, public QInterface {
 class QUnit : public QParity, public QInterface {
 #endif
 protected:
-    bool doNormalize;
     bool useHostRam;
     bool isSparse;
     bool freezeBasis2Qb;

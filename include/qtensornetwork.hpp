@@ -32,6 +32,10 @@ typedef std::shared_ptr<TensorNetworkMeta> TensorNetworkMetaPtr;
 
 class QTensorNetwork : public QInterface {
 protected:
+    bool useHostRam;
+    bool isSparse;
+    bool isReactiveSeparate;
+    bool useTGadget;
     int64_t devID;
     QInterfacePtr layerStack;
     std::vector<int64_t> deviceIDs;

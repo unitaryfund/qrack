@@ -22,6 +22,10 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
+    , useHostRam(useHostMem)
+    , isSparse(useSparseStateVec)
+    , isReactiveSeparate(true)
+    , useTGadget(true)
     , devID(deviceId)
     , deviceIDs(devList)
     , engines(eng)
@@ -48,8 +52,11 @@ void QTensorNetwork::MakeLayerStack()
     }
 
     // We need to prepare the layer stack (and cache it).
-    layerStack = CreateQuantumInterface(engines, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, false, false,
-        devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs);
+    layerStack =
+        CreateQuantumInterface(engines, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+            useHostRam, devID, hardware_rand_generator != NULL, isSparse, (real1_f)amplitudeFloor, deviceIDs);
+    layerStack->SetReactiveSeparate(isReactiveSeparate);
+    layerStack->SetTInjection(useTGadget);
 
     Finish();
     for (size_t i = 0U; i < circuit.size(); ++i) {
@@ -86,6 +93,9 @@ QInterfacePtr QTensorNetwork::Clone()
     }
     clone->measurements = measurements;
     clone->layerStack = layerStack;
+
+    clone->SetReactiveSeparate(isReactiveSeparate);
+    clone->SetTInjection(useTGadget);
 
     return clone;
 }
