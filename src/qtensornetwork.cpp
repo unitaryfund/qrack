@@ -156,9 +156,10 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         // If we did not return, this circuit layer is fully collapsed.
         circuit.erase(circuit.begin() + layerId);
 
-        const std::map<bitLenInt, bool>& m = measurements[layerId];
-        measurements[layerId - 1U].insert(m.begin(), m.end());
-        measurements.erase(measurements.begin() + layerId);
+        std::map<bitLenInt, bool>& m = measurements[layerId];
+        const std::map<bitLenInt, bool>& mMin1 = measurements[layerId - 1U];
+        m.insert(mMin1.begin(), mMin1.end());
+        measurements.erase(measurements.begin() + (layerId - 1U));
 
         --layerId;
     }
