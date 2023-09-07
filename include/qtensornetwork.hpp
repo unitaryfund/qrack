@@ -197,7 +197,8 @@ public:
     real1_f SumSqrDiff(QTensorNetworkPtr toCompare)
     {
         real1_f toRet;
-        RunAsAmplitudes([&] { toRet = layerStack->SumSqrDiff(toCompare); });
+        toCompare->MakeLayerStack();
+        RunAsAmplitudes([&] { toRet = layerStack->SumSqrDiff(toCompare->layerStack); });
         return toRet;
     }
 
