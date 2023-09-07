@@ -27,6 +27,11 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     , engines(eng)
     , circuit({ std::make_shared<QCircuit>() })
 {
+    if (!engines.size()) {
+        engines.push_back(QINTERFACE_QUNIT_MULTI);
+    }
+
+    SetPermutation(initState, phaseFac);
 }
 
 void QTensorNetwork::MakeLayerStack()
