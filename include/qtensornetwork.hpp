@@ -79,6 +79,17 @@ protected:
         return circuit[0U];
     }
 
+    bitLenInt GetThresholdQb()
+    {
+#if ENABLE_ENV_VARS
+        return getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")
+            ? (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")))
+            : 27U;
+#else
+        return 27U;
+#endif
+    }
+
     void MakeLayerStack();
 
 #if ENABLE_CUDA
@@ -197,22 +208,32 @@ public:
     bitLenInt Allocate(bitLenInt start, bitLenInt length) { return 0U; }
 
     real1_f Prob(bitLenInt qubitIndex) { return ZERO_R1_F; }
-    real1_f ProbAll(bitCapInt fullRegister) { return ZERO_R1_F; }
+    real1_f ProbAll(bitCapInt fullRegister)
+    {
+#if ENABLE_CUDA
+        const bitLenInt maxQb = GetThresholdQb();
+        bitCapInt toRet;
+        if (qubitCount <= maxQb) {
+            MakeLayerStack();
+            return layerStack->ProbAll(fullRegister);
+        } else {
+            TensorNetworkMetaPtr network = MakeTensorNetwork();
+
+            // TODO: Calculate result of measurement with cuTensorNetwork
+            throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
+        }
+#else
+        MakeLayerStack();
+        return layerStack->ProbAll(fullRegister);
+#endif
+    }
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
     bitCapInt MAll()
     {
 #if ENABLE_CUDA
-
-#if ENABLE_ENV_VARS
-        const bitLenInt maxQb = getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")
-            ? (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")))
-            : 27U;
-#else
-        constexpr bitLenInt maxQb = 27U;
-#endif
-
+        const bitLenInt maxQb = GetThresholdQb();
         bitCapInt toRet;
         if (qubitCount <= maxQb) {
             MakeLayerStack();

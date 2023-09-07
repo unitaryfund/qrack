@@ -73,15 +73,7 @@ void QTensorNetwork::MakeLayerStack()
 bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
 #if ENABLE_CUDA
-
-#if ENABLE_ENV_VARS
-    const bitLenInt maxQb = getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")
-        ? (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")))
-        : 27U;
-#else
-    constexpr bitLenInt maxQb = 27U;
-#endif
-
+    const bitLenInt maxQb = GetThresholdQb();
     bool toRet;
     if (qubitCount <= maxQb) {
         MakeLayerStack();
