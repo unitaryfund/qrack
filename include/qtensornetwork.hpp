@@ -224,6 +224,35 @@ public:
         // Insert terminal measurement.
         measurements[layerId][qubit] = toRet;
 
+        // If no qubit in this layer is target of a non-phase gate, it can be completely telescoped into classical state
+        // preparation.
+        while (layerId) {
+            std::vector<bitLenInt> nonMeasuredQubits;
+            nonMeasuredQubits.reserve(qubitCount);
+            for (size_t i = 0U; i < qubitCount; ++i) {
+                nonMeasuredQubits.push_back(i);
+            }
+            for (const auto& m : measurements[layerId]) {
+                nonMeasuredQubits.erase(std::find(nonMeasuredQubits.begin(), nonMeasuredQubits.end(), m.first));
+            }
+            const QCircuitPtr& c = circuit[layerId];
+            for (const bitLenInt& q : nonMeasuredQubits) {
+                if (c->IsNonPhaseTarget(q)) {
+                    // Nothing more to do; tell the user the result.
+                    return toRet;
+                }
+            }
+
+            // If we did not return, this circuit layer is fully collapsed.
+            circuit.erase(circuit.begin() + layerId);
+
+            const std::map<bitLenInt, bool>& m = measurements[layerId];
+            measurements[layerId - 1U].insert(m.begin(), m.end());
+            measurements.erase(measurements.begin() + layerId);
+
+            --layerId;
+        }
+
         // Tell the user the result.
         return toRet;
     }
