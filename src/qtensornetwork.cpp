@@ -170,7 +170,9 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         // If we did not return, this circuit layer is fully collapsed.
         circuit.erase(circuit.begin() + layerId);
         if (!layerId) {
+            measurements.clear();
             circuit.push_back(std::make_shared<QCircuit>());
+
             return toRet;
         }
 
