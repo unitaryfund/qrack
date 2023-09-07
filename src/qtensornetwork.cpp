@@ -27,7 +27,14 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     , engines(eng)
 {
     if (!engines.size()) {
-        engines.push_back(QINTERFACE_QUNIT_MULTI);
+#if ENABLE_OPENCL
+        engines.push_back((OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#elif ENABLE_CUDA
+        engines.push_back(
+            (CUDAEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+        engines.push_back(QINTERFACE_OPTIMAL);
+#endif
     }
 
     SetPermutation(initState, phaseFac);

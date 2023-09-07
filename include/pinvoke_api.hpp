@@ -37,8 +37,8 @@ struct _QrackTimeEvolveOpHeader;
 extern "C" {
 // non-quantum
 MICROSOFT_QUANTUM_DECL int get_error(_In_ uintq sid);
-MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool bdt,
-    _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc, _In_ bool dm);
+MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bool md, _In_ bool sd, _In_ bool sh,
+    _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc, _In_ bool dm);
 MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool dm);
 MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool dm);
 MICROSOFT_QUANTUM_DECL uintq init() { return init_count(0, false); }

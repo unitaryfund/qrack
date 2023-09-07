@@ -596,8 +596,8 @@ MICROSOFT_QUANTUM_DECL int get_error(_In_ uintq sid)
 /**
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
-MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool bdt,
-    _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc, _In_ bool hp)
+MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bool md, _In_ bool sd, _In_ bool sh,
+    _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc, _In_ bool hp)
 {
     META_LOCK_GUARD()
 
@@ -648,6 +648,10 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
 
     if (sd) {
         simulatorType.push_back(isOclMulti ? QINTERFACE_QUNIT_MULTI : QINTERFACE_QUNIT);
+    }
+
+    if (tn) {
+        simulatorType.push_back(QINTERFACE_TENSOR_NETWORK);
     }
 
     // (...then reverse:)
@@ -725,17 +729,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
         }
     }
 
-    std::vector<QInterfaceEngine> simulatorType;
-
-#if ENABLE_OPENCL
-    simulatorType.push_back(
-        (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#elif ENABLE_CUDA
-    simulatorType.push_back(
-        (CUDAEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-    simulatorType.push_back(QINTERFACE_OPTIMAL);
-#endif
+    const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK };
 
     bool isSuccess = true;
     QInterfacePtr simulator = NULL;
@@ -791,9 +785,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
         }
     }
 
-    std::vector<QInterfaceEngine> simulatorType;
-
-    simulatorType.push_back(QINTERFACE_OPTIMAL);
+    const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_OPTIMAL };
 
     std::vector<int64_t> deviceList;
 #if ENABLE_OPENCL
