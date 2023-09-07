@@ -454,6 +454,36 @@ struct QCircuitGate {
      * Convert my set of qubit indices to a vector
      */
     std::vector<bitLenInt> GetControlsVector() { return std::vector<bitLenInt>(controls.begin(), controls.end()); }
+
+    /**
+     * Erase a control index, if it exists, (via post selection).
+     */
+    void PostSelectControl(bitLenInt c, bool eigen)
+    {
+        const auto controlIt = controls.find(c);
+        if (controlIt == controls.end()) {
+            return;
+        }
+
+        const size_t cpos = std::distance(controls.begin(), controlIt);
+        const bitCapInt midPow = pow2(cpos);
+        const bitCapInt lowMask = midPow - 1U;
+        const bitCapInt highMask = ~(lowMask | midPow);
+        const bitCapInt qubitPow = pow2(cpos);
+        const bitCapInt eigenPow = eigen ? qubitPow : 0U;
+
+        std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
+        for (const auto& payload : payloads) {
+            if ((payload.first & qubitPow) != eigenPow) {
+                continue;
+            }
+            const bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) >> 1U);
+            nPayloads.emplace(nKey, payload.second);
+        }
+
+        payloads = nPayloads;
+        controls.erase(c);
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g);
@@ -556,6 +586,31 @@ public:
     }
 
     /**
+     * Append circuit (with identical qubit index mappings) at the end of this circuit.
+     */
+    void Append(QCircuitPtr circuit)
+    {
+        if (circuit->qubitCount > qubitCount) {
+            qubitCount = circuit->qubitCount;
+        }
+        gates.insert(gates.end(), circuit->gates.begin(), circuit->gates.end());
+    }
+
+    /**
+     * Combine circuit (with identical qubit index mappings) at the end of this circuit, by acting all additional gates
+     * in sequence.
+     */
+    void Combine(QCircuitPtr circuit)
+    {
+        if (circuit->qubitCount > qubitCount) {
+            qubitCount = circuit->qubitCount;
+        }
+        for (const QCircuitGatePtr& g : circuit->gates) {
+            AppendGate(g);
+        }
+    }
+
+    /**
      * Add a gate to the gate sequence.
      */
     void AppendGate(QCircuitGatePtr nGate);
@@ -563,6 +618,38 @@ public:
      * Run this circuit.
      */
     void Run(QInterfacePtr qsim);
+
+    /**
+     * Check if an index is any target qubit of this circuit.
+     */
+    bool IsNonPhaseTarget(bitLenInt qubit)
+    {
+        for (const QCircuitGatePtr& gate : gates) {
+            if ((gate->target == qubit) && !(gate->IsPhase())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * (If the qubit is not a target of a non-phase gate...) Delete this qubits' controls and phase targets.
+     */
+    void DeletePhaseTarget(bitLenInt qubit, bool eigen)
+    {
+        std::list<QCircuitGatePtr> nGates;
+        gates.reverse();
+        for (const QCircuitGatePtr& gate : gates) {
+            if (gate->target == qubit) {
+                continue;
+            }
+            QCircuitGatePtr nGate = gate->Clone();
+            nGate->PostSelectControl(qubit, eigen);
+            nGates.insert(nGates.begin(), nGate);
+        }
+        gates = nGates;
+    }
 
 #if ENABLE_ALU
     /** Add integer (without sign) */

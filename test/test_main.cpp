@@ -67,6 +67,7 @@ int main(int argc, char* argv[])
     bool qunit_multi = false;
     bool qunit_qpager = false;
     bool qunit_multi_qpager = false;
+    bool qtensornetwork = false;
 
     // Engines
     bool cpu = false;
@@ -91,6 +92,7 @@ int main(int argc, char* argv[])
         Opt(qunit_multi)["--layer-qunit-multi"]("Enable QUnitMulti implementation tests") |
         Opt(qunit_qpager)["--layer-qunit-qpager"]("Enable QUnit with QPager implementation tests") |
         Opt(qunit_multi_qpager)["--layer-qunit-multi-qpager"]("Enable QUnitMulti with QPager implementation tests") |
+        Opt(qtensornetwork)["--layer-qtensornetwork"]("Enable QTensorNetwork implementation tests") |
         Opt(stabilizer_qpager)["--proc-stabilizer-qpager"](
             "Enable QStabilizerHybrid over QPager implementation tests") |
         Opt(stabilizer_bdt)["--proc-stabilizer-bdt"](
@@ -152,13 +154,14 @@ int main(int argc, char* argv[])
         session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
     }
 
-    if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager && !qunit_multi_qpager) {
+    if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager && !qunit_multi_qpager && !qtensornetwork) {
         qunit = true;
         qunit_multi = true;
         qengine = true;
         // qpager = true;
         // qunit_qpager = true;
         // qunit_multi_qpager = true;
+        // qtensornetwork = true;
     }
 
     if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt && !cuda) {
@@ -456,6 +459,14 @@ int main(int argc, char* argv[])
         session.config().stream() << "########### QUnitMulti -> QStabilizerHybrid -> QPager ###########" << std::endl;
         num_failed = session.run();
 #endif
+    }
+
+    if (num_failed == 0 && qtensornetwork) {
+        testEngineType = QINTERFACE_TENSOR_NETWORK;
+        testSubEngineType = QINTERFACE_QUNIT;
+        testSubSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+        session.config().stream() << "############ QTensorNetwork ############" << std::endl;
+        num_failed = session.run();
     }
 
     return num_failed;

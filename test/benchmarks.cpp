@@ -4158,6 +4158,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
 
     std::vector<QInterfaceEngine> engineStack;
     if (optimal) {
+        engineStack.push_back(QINTERFACE_TENSOR_NETWORK);
 #if ENABLE_OPENCL
         engineStack.push_back(
             (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
