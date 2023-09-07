@@ -70,6 +70,21 @@ void QTensorNetwork::MakeLayerStack()
     }
 }
 
+QInterfacePtr QTensorNetwork::Clone()
+{
+    QTensorNetworkPtr clone = std::make_shared<QTensorNetwork>(engines, qubitCount, 0U, rand_generator, ONE_CMPLX,
+        doNormalize, randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false,
+        (real1_f)amplitudeFloor);
+
+    for (const QCircuitPtr& c : circuit) {
+        clone->circuit.push_back(c->Clone());
+    }
+    clone->measurements = measurements;
+    clone->layerStack = layerStack;
+
+    return clone;
+}
+
 bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     if ((qubit + 1U) > qubitCount) {

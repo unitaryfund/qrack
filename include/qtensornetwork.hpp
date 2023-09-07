@@ -154,6 +154,8 @@ public:
 
     ~QTensorNetwork() { Dump(); }
 
+    void SetDevice(int64_t dID) { devID = dID; }
+
     void Finish()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -192,7 +194,12 @@ public:
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QTensorNetwork>(toCompare));
     }
-    real1_f SumSqrDiff(QTensorNetworkPtr toCompare) { return ONE_R1_F; }
+    real1_f SumSqrDiff(QTensorNetworkPtr toCompare)
+    {
+        real1_f toRet;
+        RunAsAmplitudes([&] { toRet = layerStack->SumSqrDiff(toCompare); });
+        return toRet;
+    }
 
     void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
@@ -223,7 +230,7 @@ public:
         Phase(phaseFac, phaseFac, 0U);
     }
 
-    QInterfacePtr Clone() { return NULL; } // TODO
+    QInterfacePtr Clone();
 
     void GetQuantumState(complex* state)
     {
@@ -309,9 +316,10 @@ public:
             GetCircuit(target)->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get()));
         });
     }
-    void MCMtrx(const std::vector<bitLenInt> controls, const complex* mtrx, bitLenInt target)
+    void MCMtrx(const std::vector<bitLenInt>& ctrls, const complex* mtrx, bitLenInt target)
     {
         layerStack = NULL;
+        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
@@ -321,9 +329,10 @@ public:
                     std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
-    void MACMtrx(const std::vector<bitLenInt> controls, const complex* mtrx, bitLenInt target)
+    void MACMtrx(const std::vector<bitLenInt>& ctrls, const complex* mtrx, bitLenInt target)
     {
         layerStack = NULL;
+        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
@@ -333,9 +342,10 @@ public:
                     target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
         });
     }
-    void MCPhase(const std::vector<bitLenInt> controls, complex topLeft, complex bottomRight, bitLenInt target)
+    void MCPhase(const std::vector<bitLenInt>& ctrls, complex topLeft, complex bottomRight, bitLenInt target)
     {
         layerStack = NULL;
+        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = topLeft;
@@ -348,9 +358,10 @@ public:
                     std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
-    void MACPhase(const std::vector<bitLenInt> controls, complex topLeft, complex bottomRight, bitLenInt target)
+    void MACPhase(const std::vector<bitLenInt>& ctrls, complex topLeft, complex bottomRight, bitLenInt target)
     {
         layerStack = NULL;
+        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = topLeft;
@@ -363,9 +374,10 @@ public:
                     target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
         });
     }
-    void MCInvert(const std::vector<bitLenInt> controls, complex topRight, complex bottomLeft, bitLenInt target)
+    void MCInvert(const std::vector<bitLenInt>& ctrls, complex topRight, complex bottomLeft, bitLenInt target)
     {
         layerStack = NULL;
+        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
@@ -378,9 +390,10 @@ public:
                     std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
-    void MACInvert(const std::vector<bitLenInt> controls, complex topRight, complex bottomLeft, bitLenInt target)
+    void MACInvert(const std::vector<bitLenInt>& ctrls, complex topRight, complex bottomLeft, bitLenInt target)
     {
         layerStack = NULL;
+        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
