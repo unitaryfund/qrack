@@ -15,6 +15,7 @@
 #include "qengine_cpu.hpp"
 #include "qpager.hpp"
 #include "qstabilizerhybrid.hpp"
+#include "qtensornetwork.hpp"
 
 #if ENABLE_OPENCL
 #include "qengine_opencl.hpp"
@@ -63,6 +64,8 @@ QInterfacePtr CreateQuantumInterface(
         return std::make_shared<QStabilizerHybrid>(engines, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(engines, args...);
+    case QINTERFACE_TENSOR_NETWORK:
+        return std::make_shared<QTensorNetwork>(engines, args...);
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
@@ -105,6 +108,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
         return std::make_shared<QStabilizerHybrid>(engines, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(engines, args...);
+    case QINTERFACE_TENSOR_NETWORK:
+        return std::make_shared<QTensorNetwork>(engines, args...);
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
@@ -143,6 +148,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QStabilizerHybrid>(args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(args...);
+    case QINTERFACE_TENSOR_NETWORK:
+        return std::make_shared<QTensorNetwork>(args...);
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
@@ -196,6 +203,11 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
             return std::make_shared<QUnit>(engines, args...);
         }
         return std::make_shared<QUnit>(args...);
+    case QINTERFACE_TENSOR_NETWORK:
+        if (engines.size()) {
+            return std::make_shared<QTensorNetwork>(engines, args...);
+        }
+        return std::make_shared<QTensorNetwork>(args...);
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);

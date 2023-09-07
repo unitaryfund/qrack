@@ -8,8 +8,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-// TODO: qtensornetwork.hpp will be included in qfactory.hpp, then the former include can be removed.
-#include "qtensornetwork.hpp"
 #include "qfactory.hpp"
 
 #if ENABLE_CUDA
