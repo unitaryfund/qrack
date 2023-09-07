@@ -58,20 +58,20 @@ protected:
             std::map<bitLenInt, bool>& m = measurements[l];
 
             if (m.find(target) != m.end()) {
-                if (circuit.size() == l) {
+                if (circuit.size() == (l + 1U)) {
                     circuit.push_back(std::make_shared<QCircuit>());
                 }
 
-                return circuit[l];
+                return circuit[l + 1U];
             }
 
             for (size_t j = 0U; j < controls.size(); ++j) {
                 if (m.find(controls[j]) != m.end()) {
-                    if (circuit.size() == l) {
+                    if (circuit.size() == (l + 1U)) {
                         circuit.push_back(std::make_shared<QCircuit>());
                     }
 
-                    return circuit[l];
+                    return circuit[l + 1U];
                 }
             }
         }
