@@ -70,7 +70,6 @@ if (ENABLE_CUDA)
         src/common/qengine.cu
         src/qengine/cuda.cu
         src/qhybrid.cpp
-        src/qtensornetwork.cpp
         src/qunitmulti.cpp
         )
 endif(ENABLE_CUDA)
