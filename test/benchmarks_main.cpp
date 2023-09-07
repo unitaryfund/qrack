@@ -310,19 +310,20 @@ int main(int argc, char* argv[])
     int num_failed = 0;
 
     if (num_failed == 0 && optimal) {
-        session.config().stream() << "############ Default Optimal (QUnitMulti/QUnit) ############" << std::endl;
+        session.config().stream() << "############ Default Optimal (QTensorNetwork -> QUnitMulti/QUnit) ############"
+                                  << std::endl;
         num_failed = session.run();
         return num_failed;
     }
 
     if (num_failed == 0 && optimal_single) {
-        session.config().stream() << "############ Default Optimal (QUnit) ############" << std::endl;
+        session.config().stream() << "############ Default Optimal (QTensorNetwork -> QUnit) ############" << std::endl;
         num_failed = session.run();
         return num_failed;
     }
 
     if (num_failed == 0 && optimal_cpu) {
-        session.config().stream() << "############ Default Optimal (CPU) ############" << std::endl;
+        session.config().stream() << "############ Default Optimal (QTensorNetwork -> CPU) ############" << std::endl;
         testEngineType = QINTERFACE_QUNIT;
         testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
         testSubSubEngineType = QINTERFACE_CPU;
