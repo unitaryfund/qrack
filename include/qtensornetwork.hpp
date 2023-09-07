@@ -202,12 +202,12 @@ public:
                 std::map<bitLenInt, bool>& m = measurements[layerId];
                 m.erase(qubit);
 
-                // If the measurement layer is empty, telescope the layers
+                // If the measurement layer is empty, telescope the layers.
                 if (!m.size()) {
                     measurements.erase(measurements.begin() + layerId);
-                    if (layerId) {
-                        circuit[layerId - 1U]->Append(c);
-                        circuit.erase(circuit.begin() + layerId);
+                    if (layerId < (circuit.size() - 1U)) {
+                        c->Append(circuit[layerId + 1U]);
+                        circuit.erase(circuit.begin() + layerId + 1U);
                     }
                 }
             }
