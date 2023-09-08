@@ -47,11 +47,12 @@ using namespace Qrack;
         (testSubSubEngineType == QINTERFACE_HYBRID) || (testEngineType == QINTERFACE_OPENCL) ||                        \
         (testSubEngineType == QINTERFACE_OPENCL) || (testSubSubEngineType == QINTERFACE_OPENCL) ||                     \
         (testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER) ||                           \
-        (testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT))
+        (testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT) ||                                 \
+        (testEngineType == QINTERFACE_TENSOR_NETWORK))
 
 #define QINTERFACE_GROVER_RESTRICTED                                                                                   \
     ((testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT) ||                                    \
-        (testSubSubEngineType == QINTERFACE_BDT))
+        (testSubSubEngineType == QINTERFACE_BDT) || (testEngineType == QINTERFACE_TENSOR_NETWORK))
 
 #define C_SQRT1_2 complex(SQRT1_2_R1, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, SQRT1_2_R1)
@@ -3198,6 +3199,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expectationbitsall")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     qftReg->SetPermutation(0x02);
     REQUIRE(QPARITY(qftReg)->ProbParity(0x7) > 0.99);
     qftReg->X(0);
@@ -3220,6 +3226,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
     REQUIRE(QPARITY(qftReg)->ForceMParity(0x1, true, true));
@@ -3253,6 +3264,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     qftReg->SetPermutation(0);
     qftReg->H(0);
     QPARITY(qftReg)->UniformParityRZ(1, (real1_f)M_PI_2);
@@ -3282,6 +3298,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cuniformparityrz")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     const std::vector<bitLenInt> controls{ 3, 4 };
     const std::vector<bitLenInt> control{ 3 };
 
@@ -3821,6 +3842,11 @@ int qRand(int high, QInterfacePtr q)
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(250);
@@ -3886,6 +3912,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     REQUIRE(!isOverflowAdd(1, 1, 128, 256));
     REQUIRE(isOverflowAdd(127, 127, 128, 256));
     REQUIRE(isOverflowAdd(128, 128, 128, 256));
@@ -3923,6 +3954,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(247 + 256);
@@ -3952,6 +3988,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(247 + 256);
@@ -3998,6 +4039,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
 
     qftReg->SetPermutation(1);
     QALU(qftReg)->CINC(1, 0, 8, std::vector<bitLenInt>());
@@ -4032,6 +4077,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
     int start = 0x08;
 
@@ -4055,6 +4105,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     REQUIRE(!isOverflowSub(1, 1, 128, 256));
     REQUIRE(isOverflowSub(1, 128, 128, 256));
     REQUIRE(isOverflowSub(128, 127, 128, 256));
@@ -4072,6 +4127,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(7);
@@ -4089,6 +4149,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(7);
@@ -4118,6 +4183,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec", "[travis_xfail]")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     const std::vector<bitLenInt> controls{ 8 };
@@ -4141,6 +4211,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec", "[travis_xfail]")
 #if ENABLE_BCD
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(0x95);
@@ -4156,6 +4231,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(0x095);
@@ -4173,6 +4253,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(0x94);
@@ -4188,6 +4273,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(0x005);
@@ -4206,6 +4296,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(5);
@@ -4235,6 +4330,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     qftReg->SetPermutation(256);
@@ -4254,6 +4354,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     qftReg->SetPermutation(65);
     QALU(qftReg)->MULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (69 << 8)));
@@ -4275,6 +4380,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     qftReg->SetPermutation(65 | (69 << 8));
     QALU(qftReg)->IMULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
@@ -4292,6 +4402,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     qftReg->SetPermutation(6);
     QALU(qftReg)->POWModNOut(3, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 6 | (217 << 8)));
@@ -4313,6 +4428,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     const std::vector<bitLenInt> controls{ 16 };
@@ -4336,6 +4456,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
 
     const std::vector<bitLenInt> controls{ 16 };
@@ -4358,6 +4483,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
@@ -4385,6 +4515,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
@@ -4410,6 +4545,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
@@ -4429,6 +4569,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less", "[travis_xfail]")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     qftReg->SetReg(0, 20, 0x40000);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40000));
     qftReg->H(19);
@@ -4455,6 +4600,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less", "[travis_xf
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int j;
 
     qftReg->SetReg(0, 8, 0x03);
@@ -4471,6 +4621,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int j;
 
     qftReg->SetPermutation(0);
@@ -4495,6 +4650,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int j;
 
     qftReg->SetPermutation(1 << 16);
@@ -4515,6 +4675,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int j;
 
     qftReg->SetReg(0, 9, 0x03);
@@ -4532,6 +4697,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int j;
 
     qftReg->SetPermutation(0);
@@ -4557,6 +4727,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int j;
 
     qftReg->SetPermutation(1 << 18);
@@ -4578,6 +4753,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     const bitCapIntOcl INPUT_KEY = 126;
 
     int j;
@@ -4739,6 +4919,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 {
+    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
+        // Not implemented
+        return;
+    }
+
     int i;
     unsigned char* toSearch = cl_alloc(256);
 
