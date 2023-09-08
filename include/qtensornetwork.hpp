@@ -357,6 +357,26 @@ public:
         return toRet;
     }
 
+    std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots)
+    {
+        std::set<bitLenInt> qubits;
+        for (const bitCapInt& qPow : qPowers) {
+            qubits.insert(log2(qPow));
+        }
+        std::map<bitCapInt, int> toRet;
+        RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->MultiShotMeasureMask(qPowers, shots); }, qubits);
+
+        return toRet;
+    }
+    void MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
+    {
+        std::set<bitLenInt> qubits;
+        for (const bitCapInt& qPow : qPowers) {
+            qubits.insert(log2(qPow));
+        }
+        RunAsAmplitudes([&](QInterfacePtr ls) { ls->MultiShotMeasureMask(qPowers, shots, shotsArray); }, qubits);
+    }
+
     void Mtrx(const complex* mtrx, bitLenInt target)
     {
         layerStack = NULL;
