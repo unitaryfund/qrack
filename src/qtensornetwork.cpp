@@ -92,7 +92,9 @@ QInterfacePtr QTensorNetwork::Clone()
         clone->circuit.push_back(c->Clone());
     }
     clone->measurements = measurements;
-    clone->layerStack = layerStack;
+    if (layerStack) {
+        clone->layerStack = layerStack->Clone();
+    }
 
     clone->SetReactiveSeparate(isReactiveSeparate);
     clone->SetTInjection(useTGadget);
