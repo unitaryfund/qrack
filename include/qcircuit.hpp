@@ -684,6 +684,7 @@ public:
             qubits.insert(gate->target);
             qubits.insert(gate->controls.begin(), gate->controls.end());
         }
+
         // Restore the original order of this QCircuit's gates.
         gates.reverse();
 

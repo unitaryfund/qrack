@@ -3217,7 +3217,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit(_In_ bool collapse)
     return cid;
 }
 
-uintq _init_qcircuit_copy(uintq cid, bool isInverse)
+uintq _init_qcircuit_copy(uintq cid, bool isInverse, std::set<bitLenInt> q)
 {
     META_LOCK_GUARD()
 
@@ -3240,7 +3240,7 @@ uintq _init_qcircuit_copy(uintq cid, bool isInverse)
         }
     }
 
-    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : circuit->Clone();
+    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : (q.size() ? circuit->PastLightCone(q) : circuit->Clone());
 
     if (ncid == circuits.size()) {
         circuitReservations.push_back(true);
@@ -3253,9 +3253,18 @@ uintq _init_qcircuit_copy(uintq cid, bool isInverse)
     return ncid;
 }
 
-MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid) { return _init_qcircuit_copy(cid, false); }
+MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid) { return _init_qcircuit_copy(cid, false, {}); }
 
-MICROSOFT_QUANTUM_DECL uintq qcircuit_inverse(_In_ uintq cid) { return _init_qcircuit_copy(cid, true); }
+MICROSOFT_QUANTUM_DECL uintq qcircuit_inverse(_In_ uintq cid) { return _init_qcircuit_copy(cid, true, {}); }
+
+MICROSOFT_QUANTUM_DECL uintq qcircuit_past_light_cone(_In_ uintq cid, _In_ uintq n, _In_reads_(n) uintq* q)
+{
+    std::set<bitLenInt> qubits;
+    for (uintq i = 0U; i < n; ++i) {
+        qubits.insert((bitLenInt)q[i]);
+    }
+    return _init_qcircuit_copy(cid, false, qubits);
+}
 
 MICROSOFT_QUANTUM_DECL void destroy_qcircuit(_In_ uintq cid)
 {

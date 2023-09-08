@@ -297,6 +297,7 @@ MICROSOFT_QUANTUM_DECL void qneuron_learn_permutation(_In_ uintq nid, _In_ doubl
 MICROSOFT_QUANTUM_DECL uintq init_qcircuit(_In_ bool collapse);
 MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid);
 MICROSOFT_QUANTUM_DECL uintq qcircuit_inverse(_In_ uintq cid);
+MICROSOFT_QUANTUM_DECL uintq qcircuit_past_light_cone(_In_ uintq cid, _In_ uintq n, _In_reads_(n) uintq* q);
 MICROSOFT_QUANTUM_DECL void destroy_qcircuit(_In_ uintq cid);
 MICROSOFT_QUANTUM_DECL uintq get_qcircuit_qubit_count(_In_ uintq cid);
 MICROSOFT_QUANTUM_DECL void qcircuit_swap(_In_ uintq cid, _In_ uintq q1, _In_ uintq q2);
