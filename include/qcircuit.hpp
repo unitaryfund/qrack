@@ -649,7 +649,6 @@ public:
             nGates.insert(nGates.begin(), nGate);
         }
         gates = nGates;
-        gates.reverse();
     }
 
 #if ENABLE_ALU
