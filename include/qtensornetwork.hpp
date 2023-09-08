@@ -102,6 +102,22 @@ protected:
         }
     }
 
+    void RunMeasurmentLayer(size_t layerId)
+    {
+        const std::map<bitLenInt, bool>& mLayer = measurements[layerId];
+        std::vector<bitLenInt> bits;
+        bits.reserve(mLayer.size());
+        std::vector<bool> values;
+        values.reserve(mLayer.size());
+
+        for (const auto& m : mLayer) {
+            bits.push_back(m.first);
+            values.push_back(m.second);
+        }
+
+        layerStack->ForceM(bits, values);
+    }
+
     bitLenInt GetThresholdQb()
     {
 #if ENABLE_ENV_VARS
@@ -113,27 +129,27 @@ protected:
 #endif
     }
 
-    void MakeLayerStack();
+    void MakeLayerStack(const std::set<bitLenInt>& qubits = std::set<bitLenInt>());
 
-    template <typename Fn> void RunAsAmplitudes(Fn fn)
+    template <typename Fn> void RunAsAmplitudes(Fn fn, const std::set<bitLenInt>& qubits = std::set<bitLenInt>())
     {
         Finish();
-#if ENABLE_CUDA
         const bitLenInt maxQb = GetThresholdQb();
-        bitCapInt toRet;
         if (qubitCount <= maxQb) {
             MakeLayerStack();
-            return fn();
+            return fn(layerStack);
         } else {
+#if ENABLE_CUDA
             TensorNetworkMetaPtr network = MakeTensorNetwork();
-
             // TODO: Calculate result of measurement with cuTensorNetwork
             throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
-        }
 #else
-        MakeLayerStack();
-        return fn();
+            MakeLayerStack(qubits);
+            QInterfacePtr ls = layerStack;
+            layerStack = NULL;
+            return fn(ls);
 #endif
+        }
     }
 
 #if ENABLE_CUDA
@@ -203,7 +219,7 @@ public:
     {
         real1_f toRet;
         toCompare->MakeLayerStack();
-        RunAsAmplitudes([&] { toRet = layerStack->SumSqrDiff(toCompare->layerStack); });
+        RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->SumSqrDiff(toCompare->layerStack); });
         return toRet;
     }
 
@@ -238,7 +254,7 @@ public:
 
     void GetQuantumState(complex* state)
     {
-        RunAsAmplitudes([&] { layerStack->GetQuantumState(state); });
+        RunAsAmplitudes([&](QInterfacePtr ls) { ls->GetQuantumState(state); });
     }
     void SetQuantumState(const complex* state)
     {
@@ -250,13 +266,13 @@ public:
     }
     void GetProbs(real1* outputProbs)
     {
-        RunAsAmplitudes([&] { layerStack->GetProbs(outputProbs); });
+        RunAsAmplitudes([&](QInterfacePtr ls) { ls->GetProbs(outputProbs); });
     }
 
     complex GetAmplitude(bitCapInt perm)
     {
         complex toRet;
-        RunAsAmplitudes([&] { toRet = layerStack->GetAmplitude(perm); });
+        RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->GetAmplitude(perm); });
         return toRet;
     }
     void SetAmplitude(bitCapInt perm, complex amp)
@@ -305,16 +321,16 @@ public:
         return start;
     }
 
-    real1_f Prob(bitLenInt qubitIndex)
+    real1_f Prob(bitLenInt qubit)
     {
         real1_f toRet;
-        RunAsAmplitudes([&] { toRet = layerStack->Prob(qubitIndex); });
+        RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->Prob(qubit); }, { qubit });
         return toRet;
     }
     real1_f ProbAll(bitCapInt fullRegister)
     {
         real1_f toRet;
-        RunAsAmplitudes([&] { toRet = layerStack->ProbAll(fullRegister); });
+        RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->ProbAll(fullRegister); });
         return toRet;
     }
 
@@ -323,7 +339,18 @@ public:
     bitCapInt MAll()
     {
         bitCapInt toRet;
-        RunAsAmplitudes([&] { toRet = layerStack->MAll(); });
+
+        const bitLenInt maxQb = GetThresholdQb();
+        if (qubitCount <= maxQb) {
+            MakeLayerStack();
+            toRet = layerStack->MAll();
+        } else {
+            for (bitLenInt i = 0U; i < qubitCount; ++i) {
+                if (M(i)) {
+                    toRet |= pow2(i);
+                }
+            }
+        }
         SetPermutation(toRet);
         return toRet;
     }

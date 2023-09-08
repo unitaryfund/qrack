@@ -44,7 +44,7 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     SetPermutation(initState, phaseFac);
 }
 
-void QTensorNetwork::MakeLayerStack()
+void QTensorNetwork::MakeLayerStack(const std::set<bitLenInt>& qubits)
 {
     if (layerStack) {
         // We have a cached layerStack.
@@ -59,6 +59,16 @@ void QTensorNetwork::MakeLayerStack()
     layerStack->SetTInjection(useTGadget);
 
     Finish();
+
+    if (qubits.size() && (circuit.size() == 1U)) {
+        circuit[0U]->PastLightCone(qubits)->Run(layerStack);
+        if (measurements.size()) {
+            RunMeasurmentLayer(0U);
+        }
+
+        return;
+    }
+
     for (size_t i = 0U; i < circuit.size(); ++i) {
         circuit[i]->Run(layerStack);
 
@@ -66,18 +76,7 @@ void QTensorNetwork::MakeLayerStack()
             continue;
         }
 
-        const std::map<bitLenInt, bool>& mLayer = measurements[i];
-        std::vector<bitLenInt> bits;
-        bits.reserve(mLayer.size());
-        std::vector<bool> values;
-        values.reserve(mLayer.size());
-
-        for (const auto& m : mLayer) {
-            bits.push_back(m.first);
-            values.push_back(m.second);
-        }
-
-        layerStack->ForceM(bits, values);
+        RunMeasurmentLayer(i);
     }
 }
 
@@ -110,7 +109,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
     }
 
     bool toRet;
-    RunAsAmplitudes([&] { toRet = layerStack->ForceM(qubit, result, doForce, doApply); });
+    RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->ForceM(qubit, result, doForce, doApply); }, { qubit });
 
     if (!doApply) {
         return toRet;
