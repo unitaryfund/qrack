@@ -651,6 +651,45 @@ public:
         gates = nGates;
     }
 
+    /**
+     * Return (as a new QCircuit) just the gates on the past light cone of a set of qubit indices.
+     */
+    QCircuitPtr PastLightCone(std::set<bitLenInt> qubits)
+    {
+        // We're working from latest gate to earliest gate.
+        gates.reverse();
+
+        std::list<QCircuitGatePtr> nGates;
+        for (const QCircuitGatePtr& gate : gates) {
+            // Is the target qubit on the light cone?
+            if (qubits.find(gate->target) == qubits.end()) {
+                // The target isn't on the light cone, but the controls might be.
+                bool isNonCausal = true;
+                for (const bitLenInt& c : gate->controls) {
+                    if (qubits.find(c) != qubits.end()) {
+                        isNonCausal = false;
+                        break;
+                    }
+                }
+                if (isNonCausal) {
+                    // This gate is not on the past light cone.
+                    continue;
+                }
+            }
+
+            // This gate is on the past light cone.
+            nGates.insert(nGates.begin(), gate->Clone());
+
+            // Every qubit involved in this gate is now considered to be part of the past light cone.
+            qubits.insert(gate->target);
+            qubits.insert(gate->controls.begin(), gate->controls.end());
+        }
+        // Restore the original order of this QCircuit's gates.
+        gates.reverse();
+
+        return std::make_shared<QCircuit>(qubitCount, nGates, isCollapsed);
+    }
+
 #if ENABLE_ALU
     /** Add integer (without sign) */
     void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
