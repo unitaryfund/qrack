@@ -83,10 +83,11 @@ void QTensorNetwork::MakeLayerStack(const std::set<bitLenInt>& qubits)
 QInterfacePtr QTensorNetwork::Clone()
 {
     QTensorNetworkPtr clone = std::make_shared<QTensorNetwork>(engines, qubitCount, 0U, rand_generator, ONE_CMPLX,
-        doNormalize, randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false,
-        (real1_f)amplitudeFloor);
+        doNormalize, randGlobalPhase, useHostRam, devID, hardware_rand_generator != NULL, isSparse,
+        (real1_f)amplitudeFloor, deviceIDs);
 
     Finish();
+    clone->circuit.clear();
     for (const QCircuitPtr& c : circuit) {
         clone->circuit.push_back(c->Clone());
     }
