@@ -281,8 +281,10 @@ public:
     }
 
     using QInterface::Compose;
-    bitLenInt Compose(QTensorNetworkPtr toCopy, bitLenInt start) { return 0U; }
-    bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start) { return 0U; }
+    bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    {
+        throw std::domain_error("QTensorNetwork::Compose() not implemented!");
+    }
     void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         throw std::domain_error("QTensorNetwork::Decompose() not implemented!");
