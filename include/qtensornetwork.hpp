@@ -88,7 +88,7 @@ protected:
     {
         ++target;
         if (target > qubitCount) {
-            qubitCount = target;
+            SetQubitCount(target);
         }
     }
 
@@ -97,7 +97,7 @@ protected:
         CheckQubitCount(target);
         for (const bitLenInt& c : controls) {
             if ((c + 1U) > qubitCount) {
-                qubitCount = c + 1U;
+                SetQubitCount(c + 1U);
             }
         }
     }
@@ -287,7 +287,24 @@ public:
     using QInterface::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length)
     {
-        throw std::domain_error("QTensorNetwork::Allocate() not implemented!");
+        if (start > qubitCount) {
+            throw std::invalid_argument("QTensorNetwork::Allocate() 'start' argument is out-of-bounds!");
+        }
+
+        const bitLenInt origQubitCount = qubitCount;
+        SetQubitCount(qubitCount + length);
+
+        const bitLenInt movedQubits = origQubitCount - start;
+        if (!movedQubits) {
+            return start;
+        }
+
+        for (bitLenInt i = 0U; i < movedQubits; ++i) {
+            const bitLenInt q = start + movedQubits - (i + 1U);
+            Swap(q, q + length);
+        }
+
+        return start;
     }
 
     real1_f Prob(bitLenInt qubitIndex)
