@@ -21,14 +21,14 @@ namespace Qrack {
 class QTensorNetwork;
 typedef std::shared_ptr<QTensorNetwork> QTensorNetworkPtr;
 
-#if ENABLE_CUDA
-struct TensorMeta {
-    std::vector<std::vector<int32_t>> modes;
-    std::vector<std::vector<int64_t>> extents;
-};
-typedef std::vector<TensorMeta> TensorNetworkMeta;
-typedef std::shared_ptr<TensorNetworkMeta> TensorNetworkMetaPtr;
-#endif
+// #if ENABLE_CUDA
+// struct TensorMeta {
+//     std::vector<std::vector<int32_t>> modes;
+//     std::vector<std::vector<int64_t>> extents;
+// };
+// typedef std::vector<TensorMeta> TensorNetworkMeta;
+// typedef std::shared_ptr<TensorNetworkMeta> TensorNetworkMetaPtr;
+// #endif
 
 class QTensorNetwork : public QInterface {
 protected:
@@ -89,18 +89,15 @@ protected:
     {
         ++target;
         if (target > qubitCount) {
-            SetQubitCount(target);
+            throw std::invalid_argument("QTensorNetwork qubit index values must be within allocated qubit bounds!");
         }
     }
 
     void CheckQubitCount(bitLenInt target, const std::vector<bitLenInt>& controls)
     {
         CheckQubitCount(target);
-        for (const bitLenInt& c : controls) {
-            if ((c + 1U) > qubitCount) {
-                SetQubitCount(c + 1U);
-            }
-        }
+        ThrowIfQbIdArrayIsBad(
+            controls, qubitCount, "QTensorNetwork qubit index values must be within allocated qubit bounds!");
     }
 
     void RunMeasurmentLayer(size_t layerId)
@@ -159,9 +156,9 @@ protected:
         }
     }
 
-#if ENABLE_CUDA
-    TensorNetworkMetaPtr MakeTensorNetwork() { return NULL; }
-#endif
+// #if ENABLE_CUDA
+//     TensorNetworkMetaPtr MakeTensorNetwork() { return NULL; }
+// #endif
 
 public:
     QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,

@@ -10,10 +10,10 @@
 
 #include "qfactory.hpp"
 
-#if ENABLE_CUDA
-#include <cuda_runtime.h>
-#include <cutensornet.h>
-#endif
+// #if ENABLE_CUDA
+// #include <cuda_runtime.h>
+// #include <cutensornet.h>
+// #endif
 
 namespace Qrack {
 
