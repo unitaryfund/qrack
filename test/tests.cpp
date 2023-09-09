@@ -4742,10 +4742,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 {
-    if (QINTERFACE_GROVER_RESTRICTED) {
-        return;
-    }
-
     int i;
 
     // Grover's search inverts the function of a black box subroutine.
@@ -4761,9 +4757,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
     // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
-        QALU(qftReg)->DEC(100, 0, 8);
+        qftReg->DEC(100, 0, 8);
         qftReg->ZeroPhaseFlip(0, 8);
-        QALU(qftReg)->INC(100, 0, 8);
+        qftReg->INC(100, 0, 8);
         // This ends the "oracle."
         qftReg->H(0, 8);
         qftReg->ZeroPhaseFlip(0, 8);
