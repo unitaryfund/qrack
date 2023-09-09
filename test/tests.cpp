@@ -3842,16 +3842,11 @@ int qRand(int high, QInterfacePtr q)
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     int i;
 
     qftReg->SetPermutation(250);
     for (i = 0; i < 8; i++) {
-        QALU(qftReg)->INC(1, 0, 8);
+        qftReg->INC(1, 0, 8);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -3865,20 +3860,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
         int c = (a + b) & 0xFF;
 
         qftReg->SetPermutation(a);
-        QALU(qftReg)->INC(b, 0, 8);
+        qftReg->INC(b, 0, 8);
         REQUIRE_THAT(qftReg, HasProbability(0, 9, c));
     }
 
     qftReg->SetPermutation(255);
     qftReg->H(7);
-    QALU(qftReg)->INC(1, 0, 8);
+    qftReg->INC(1, 0, 8);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(128));
 
     qftReg->SetPermutation(255);
     qftReg->H(7);
     qftReg->H(1);
-    QALU(qftReg)->INC(1, 0, 8);
+    qftReg->INC(1, 0, 8);
     REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(126));
     REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(128));
@@ -3887,36 +3882,31 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
     qftReg->SetPermutation(0);
     qftReg->H(7);
     qftReg->H(1);
-    QALU(qftReg)->INC(1, 0, 8);
+    qftReg->INC(1, 0, 8);
     REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(1));
     REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(3));
     REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(129));
     REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(131));
 
     qftReg->SetPermutation(1);
-    QALU(qftReg)->INC(8, 0, 8);
-    QALU(qftReg)->DEC(8, 0, 8);
+    qftReg->INC(8, 0, 8);
+    qftReg->DEC(8, 0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(0);
-    QALU(qftReg)->INC(3, 0, 2);
-    QALU(qftReg)->INC(1, 1, 2);
+    qftReg->INC(3, 0, 2);
+    qftReg->INC(1, 1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 5));
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 8);
-    QALU(qftReg)->INC(20, 0, 8);
+    qftReg->INC(20, 0, 8);
     qftReg->H(0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     REQUIRE(!isOverflowAdd(1, 1, 128, 256));
     REQUIRE(isOverflowAdd(127, 127, 128, 256));
     REQUIRE(isOverflowAdd(128, 128, 128, 256));
@@ -3925,7 +3915,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 
     qftReg->SetPermutation(250);
     for (i = 0; i < 8; i++) {
-        QALU(qftReg)->INCS(1, 0, 8, 9);
+        qftReg->INCS(1, 0, 8, 9);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -3935,19 +3925,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 
     qftReg->SetPermutation(255);
     qftReg->H(8);
-    QALU(qftReg)->INCS(1, 0, 8, 8);
+    qftReg->INCS(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(256));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
-    QALU(qftReg)->INCS(1, 0, 8, 8);
+    qftReg->INCS(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(1));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(2));
 
     qftReg->SetPermutation(256);
     qftReg->H(7);
-    QALU(qftReg)->INCS(1, 0, 8, 8);
+    qftReg->INCS(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(257));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(385));
 }
@@ -4037,15 +4027,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(2));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     qftReg->SetPermutation(1);
-    QALU(qftReg)->CINC(1, 0, 8, std::vector<bitLenInt>());
+    qftReg->CINC(1, 0, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
     const std::vector<bitLenInt> controls{ 8 };
@@ -4056,7 +4041,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
         // Turn control on
         qftReg->X(controls[0]);
 
-        QALU(qftReg)->CINC(1, 0, 8, controls);
+        qftReg->CINC(1, 0, 8, controls);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -4066,7 +4051,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
         // Turn control off
         qftReg->X(controls[0]);
 
-        QALU(qftReg)->CINC(1, 0, 8, controls);
+        qftReg->CINC(1, 0, 8, controls);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -4077,28 +4062,23 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     int i;
     int start = 0x08;
 
     qftReg->SetPermutation(2);
-    QALU(qftReg)->CDEC(1, 0, 8, std::vector<bitLenInt>());
+    qftReg->CDEC(1, 0, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(start);
     for (i = 0; i < 8; i++) {
-        QALU(qftReg)->DEC(9, 0, 8);
+        qftReg->DEC(9, 0, 8);
         start -= 9;
         REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 8);
-    QALU(qftReg)->DEC(20, 0, 8);
+    qftReg->DEC(20, 0, 8);
     qftReg->H(0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 }
@@ -4119,7 +4099,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
 
     qftReg->SetPermutation(start);
     for (i = 0; i < 8; i++) {
-        QALU(qftReg)->DECS(9, 0, 8, 9);
+        qftReg->DECS(9, 0, 8, 9);
         start -= 9;
         REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
@@ -4181,13 +4161,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec", "[travis_xfail]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     int i;
 
     const std::vector<bitLenInt> controls{ 8 };
@@ -4197,13 +4172,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec", "[travis_xfail]")
         // Turn control on
         qftReg->X(controls[0]);
 
-        QALU(qftReg)->CDEC(9, 0, 8, controls);
+        qftReg->CDEC(9, 0, 8, controls);
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
 
         // Turn control off
         qftReg->X(controls[0]);
 
-        QALU(qftReg)->CDEC(9, 0, 8, controls);
+        qftReg->CDEC(9, 0, 8, controls);
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
     }
 }
@@ -4354,49 +4329,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     qftReg->SetPermutation(65);
-    QALU(qftReg)->MULModNOut(5, 256U, 0, 8, 8);
+    qftReg->MULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (69 << 8)));
 
     qftReg->SetPermutation(0);
     qftReg->H(3);
-    QALU(qftReg)->MULModNOut(2, 256U, 0, 8, 8);
+    qftReg->MULModNOut(2, 256U, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(8 | (16 << 8)));
 
     qftReg->SetPermutation(65);
-    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    qftReg->MULModNOut(5, 125U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (75 << 8)));
 
     qftReg->SetPermutation(126);
-    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    qftReg->MULModNOut(5, 125U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 126 | (5 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     qftReg->SetPermutation(65 | (69 << 8));
-    QALU(qftReg)->IMULModNOut(5, 256U, 0, 8, 8);
+    qftReg->IMULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
 
     qftReg->SetPermutation(65);
-    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
-    QALU(qftReg)->IMULModNOut(5, 125U, 0, 8, 8);
+    qftReg->MULModNOut(5, 125U, 0, 8, 8);
+    qftReg->IMULModNOut(5, 125U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
 
     qftReg->SetPermutation(126);
-    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
-    QALU(qftReg)->IMULModNOut(5, 125U, 0, 8, 8);
+    qftReg->MULModNOut(5, 125U, 0, 8, 8);
+    qftReg->IMULModNOut(5, 125U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 126));
 }
 
@@ -4481,69 +4446,59 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
-    QALU(qftReg)->CMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
+    qftReg->CMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 | (2 << 8)));
 
     qftReg->SetPermutation(3 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls);
+    qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (9 << 8)));
 
     qftReg->SetPermutation(3);
     qftReg->H(16);
-    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls);
+    qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3 | (9 << 8) | (1 << 16)));
 
     qftReg->SetPermutation(65 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls);
+    qftReg->CMULModNOut(5, 125U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (75 << 8)));
 
     qftReg->SetPermutation(126 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls);
+    qftReg->CMULModNOut(5, 125U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 126 | (5 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
 {
-    if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
-        // Not implemented
-        return;
-    }
-
     const std::vector<bitLenInt> controls{ 16 };
 
     qftReg->SetPermutation(1);
-    QALU(qftReg)->CMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
-    QALU(qftReg)->CIMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
+    qftReg->CMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
+    qftReg->CIMULModNOut(2, 256U, 0, 8, 8, std::vector<bitLenInt>());
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1));
 
     qftReg->SetPermutation(3 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls);
-    QALU(qftReg)->CIMULModNOut(3, 256U, 0, 8, 8, controls);
+    qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls);
+    qftReg->CIMULModNOut(3, 256U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3 | (1 << 16)));
 
     qftReg->SetPermutation(65 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls);
-    QALU(qftReg)->CIMULModNOut(5, 125U, 0, 8, 8, controls);
+    qftReg->CMULModNOut(5, 125U, 0, 8, 8, controls);
+    qftReg->CIMULModNOut(5, 125U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
 
     qftReg->SetPermutation(126 | (1 << 16));
-    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls);
-    QALU(qftReg)->CIMULModNOut(5, 125U, 0, 8, 8, controls);
+    qftReg->CMULModNOut(5, 125U, 0, 8, 8, controls);
+    qftReg->CIMULModNOut(5, 125U, 0, 8, 8, controls);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 126));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
 {
     if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
         // Not implemented
@@ -4567,7 +4522,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3 | (27 << 8) | (1 << 16)));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less", "[travis_xfail]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
 {
     if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
         // Not implemented
