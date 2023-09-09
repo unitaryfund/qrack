@@ -2655,7 +2655,7 @@ MICROSOFT_QUANTUM_DECL void MULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
         bitCapInt aTot = _combineA(na, a);
         bitCapInt mTot = _combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->MULModNOut(aTot, mTot, starts.start1, starts.start2, n);
+        simulator->MULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2670,7 +2670,7 @@ MICROSOFT_QUANTUM_DECL void DIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
         bitCapInt aTot = _combineA(na, a);
         bitCapInt mTot = _combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->IMULModNOut(aTot, mTot, starts.start1, starts.start2, n);
+        simulator->IMULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2741,7 +2741,7 @@ MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
         }
-        QALU(simulator)->CMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
+        simulator->CMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2760,7 +2760,7 @@ MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
         }
-        QALU(simulator)->CIMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
+        simulator->CIMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
