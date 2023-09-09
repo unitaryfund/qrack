@@ -134,6 +134,12 @@ protected:
     template <typename Fn> void RunAsAmplitudes(Fn fn, const std::set<bitLenInt>& qubits = std::set<bitLenInt>())
     {
         Finish();
+
+        if (!qubits.size()) {
+            MakeLayerStack();
+            return fn(layerStack);
+        }
+
         const bitLenInt maxQb = GetThresholdQb();
         if (qubitCount <= maxQb) {
             MakeLayerStack();
