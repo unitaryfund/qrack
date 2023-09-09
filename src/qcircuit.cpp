@@ -156,37 +156,41 @@ void QCircuit::Run(QInterfacePtr qsim)
         qsim->Allocate(qubitCount - qsim->GetQubitCount());
     }
 
-    std::list<QCircuitGatePtr>::iterator end = gates.begin();
-    std::advance(end, gates.size() - 2U);
     std::list<QCircuitGatePtr> nGates;
-    std::list<QCircuitGatePtr>::iterator gate;
-    for (gate = gates.begin(); gate != end; ++gate) {
-        if (!(*gate)->IsCnot()) {
+    if (gates.size() < 3U) {
+        nGates = gates;
+    } else {
+        std::list<QCircuitGatePtr>::iterator end = gates.begin();
+        std::advance(end, gates.size() - 2U);
+        std::list<QCircuitGatePtr>::iterator gate;
+        for (gate = gates.begin(); gate != end; ++gate) {
+            if (!(*gate)->IsCnot()) {
+                nGates.push_back(*gate);
+                continue;
+            }
+            std::list<QCircuitGatePtr>::iterator adv = gate;
+            ++adv;
+            if (!(*adv)->IsCnot() || ((*adv)->target != *((*gate)->controls.begin())) ||
+                ((*gate)->target != *((*adv)->controls.begin()))) {
+                nGates.push_back(*gate);
+                continue;
+            }
+            ++adv;
+            if (!(*adv)->IsCnot() || ((*adv)->target != (*gate)->target) ||
+                (*((*gate)->controls.begin()) != *((*adv)->controls.begin()))) {
+                nGates.push_back(*gate);
+                continue;
+            }
+            nGates.push_back(std::make_shared<QCircuitGate>((*gate)->target, *((*gate)->controls.begin())));
+            gate = adv;
+            if (std::distance(gate, gates.end()) < 3) {
+                ++gate;
+                break;
+            }
+        }
+        for (; gate != gates.end(); ++gate) {
             nGates.push_back(*gate);
-            continue;
         }
-        std::list<QCircuitGatePtr>::iterator adv = gate;
-        ++adv;
-        if (!(*adv)->IsCnot() || ((*adv)->target != *((*gate)->controls.begin())) ||
-            ((*gate)->target != *((*adv)->controls.begin()))) {
-            nGates.push_back(*gate);
-            continue;
-        }
-        ++adv;
-        if (!(*adv)->IsCnot() || ((*adv)->target != (*gate)->target) ||
-            (*((*gate)->controls.begin()) != *((*adv)->controls.begin()))) {
-            nGates.push_back(*gate);
-            continue;
-        }
-        nGates.push_back(std::make_shared<QCircuitGate>((*gate)->target, *((*gate)->controls.begin())));
-        gate = adv;
-        if (std::distance(gate, gates.end()) < 3) {
-            ++gate;
-            break;
-        }
-    }
-    for (; gate != gates.end(); ++gate) {
-        nGates.push_back(*gate);
     }
 
     for (const QCircuitGatePtr& gate : nGates) {
