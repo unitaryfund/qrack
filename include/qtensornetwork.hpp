@@ -37,6 +37,7 @@ protected:
     bool isReactiveSeparate;
     bool useTGadget;
     int64_t devID;
+    complex globalPhase;
     QInterfacePtr layerStack;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
@@ -244,16 +245,10 @@ public:
             }
         }
 
-        if (phaseFac == CMPLX_DEFAULT_ARG) {
-            if (randGlobalPhase) {
-                real1_f angle = Rand() * 2 * (real1_f)PI_R1;
-                phaseFac = complex((real1)cos(angle), (real1)sin(angle));
-            } else {
-                return;
-            }
+        if ((phaseFac == CMPLX_DEFAULT_ARG) && randGlobalPhase) {
+            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
+            globalPhase = complex((real1)cos(angle), (real1)sin(angle));
         }
-
-        Phase(phaseFac, phaseFac, 0U);
     }
 
     QInterfacePtr Clone();

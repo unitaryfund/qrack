@@ -27,6 +27,7 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     , isReactiveSeparate(true)
     , useTGadget(true)
     , devID(deviceId)
+    , globalPhase(phaseFac)
     , deviceIDs(devList)
     , engines(eng)
 {
@@ -41,7 +42,7 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
 #endif
     }
 
-    SetPermutation(initState, phaseFac);
+    SetPermutation(initState, globalPhase);
 }
 
 void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
@@ -70,7 +71,14 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
                 }
             }
             if (!qubits.size()) {
+                constexpr complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
                 c.push_back(std::make_shared<QCircuit>());
+                for (const auto& m : measurements[j]) {
+                    if (m.second) {
+                        c.back()->AppendGate(std::make_shared<QCircuitGate>(m.first, pauliX));
+                    }
+                }
+
                 break;
             }
             c.push_back(circuit[j]->PastLightCone(qubits));
