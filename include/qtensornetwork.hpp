@@ -340,7 +340,7 @@ public:
 
     bitCapInt MAll()
     {
-        bitCapInt toRet;
+        bitCapInt toRet = 0U;
 
         const bitLenInt maxQb = GetThresholdQb();
         if (qubitCount <= maxQb) {
@@ -353,7 +353,9 @@ public:
                 }
             }
         }
+
         SetPermutation(toRet);
+
         return toRet;
     }
 
