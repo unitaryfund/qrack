@@ -44,7 +44,7 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     SetPermutation(initState, phaseFac);
 }
 
-void QTensorNetwork::MakeLayerStack(const std::set<bitLenInt>& qubits)
+void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
 {
     if (layerStack) {
         // We have a cached layerStack.
@@ -60,23 +60,35 @@ void QTensorNetwork::MakeLayerStack(const std::set<bitLenInt>& qubits)
 
     Finish();
 
-    if (qubits.size() && (circuit.size() == 1U)) {
-        circuit[0U]->PastLightCone(qubits)->Run(layerStack);
-        if (measurements.size()) {
-            RunMeasurmentLayer(0U);
+    std::vector<QCircuitPtr> c;
+    if (qubits.size()) {
+        for (size_t i = 0U; i < circuit.size(); ++i) {
+            const size_t j = circuit.size() - (i + 1U);
+            if (j < measurements.size()) {
+                for (const auto& m : measurements[j]) {
+                    qubits.erase(m.first);
+                }
+            }
+            if (!qubits.size()) {
+                c.push_back(std::make_shared<QCircuit>());
+                break;
+            }
+            c.push_back(circuit[j]->PastLightCone(qubits));
         }
-
-        return;
+        std::reverse(c.begin(), c.end());
+    } else {
+        c = circuit;
     }
 
-    for (size_t i = 0U; i < circuit.size(); ++i) {
-        circuit[i]->Run(layerStack);
+    const size_t offset = circuit.size() - c.size();
+    for (size_t i = 0U; i < c.size(); ++i) {
+        c[i]->Run(layerStack);
 
-        if (measurements.size() <= i) {
+        if (measurements.size() <= (offset + i)) {
             continue;
         }
 
-        RunMeasurmentLayer(i);
+        RunMeasurmentLayer(offset + i);
     }
 }
 

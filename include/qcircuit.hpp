@@ -654,7 +654,7 @@ public:
     /**
      * Return (as a new QCircuit) just the gates on the past light cone of a set of qubit indices.
      */
-    QCircuitPtr PastLightCone(std::set<bitLenInt> qubits)
+    QCircuitPtr PastLightCone(std::set<bitLenInt>& qubits)
     {
         // We're working from latest gate to earliest gate.
         gates.reverse();

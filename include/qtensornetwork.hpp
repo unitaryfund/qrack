@@ -129,7 +129,7 @@ protected:
 #endif
     }
 
-    void MakeLayerStack(const std::set<bitLenInt>& qubits = std::set<bitLenInt>());
+    void MakeLayerStack(std::set<bitLenInt> qubits = std::set<bitLenInt>());
 
     template <typename Fn> void RunAsAmplitudes(Fn fn, const std::set<bitLenInt>& qubits = std::set<bitLenInt>())
     {
@@ -139,16 +139,16 @@ protected:
             MakeLayerStack();
             return fn(layerStack);
         } else {
-#if ENABLE_CUDA
-            TensorNetworkMetaPtr network = MakeTensorNetwork();
+            // #if ENABLE_CUDA
             // TODO: Calculate result of measurement with cuTensorNetwork
-            throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
-#else
+            // TensorNetworkMetaPtr network = MakeTensorNetwork();
+            // throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
+            // #else
             MakeLayerStack(qubits);
             QInterfacePtr ls = layerStack;
             layerStack = NULL;
             return fn(ls);
-#endif
+            // #endif
         }
     }
 
