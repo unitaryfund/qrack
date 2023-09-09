@@ -156,9 +156,9 @@ protected:
         }
     }
 
-// #if ENABLE_CUDA
-//     TensorNetworkMetaPtr MakeTensorNetwork() { return NULL; }
-// #endif
+    // #if ENABLE_CUDA
+    //     TensorNetworkMetaPtr MakeTensorNetwork() { return NULL; }
+    // #endif
 
 public:
     QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,

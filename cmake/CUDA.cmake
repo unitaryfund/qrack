@@ -1,17 +1,23 @@
 option (ENABLE_CUDA "Build CUDA-based QEngine type" OFF)
 
-find_package (CUDA)
-if (NOT CUDA_FOUND OR ENABLE_OPENCL)
+if (ENABLE_OPENCL)
     set(ENABLE_CUDA OFF)
 endif ()
+
+if (ENABLE_CUDA)
+    find_package (CUDAToolkit)
+    if (NOT CUDAToolkit_FOUND)
+        set(ENABLE_CUDA OFF)
+    endif ()
+endif()
 
 message ("CUDA Support is: ${ENABLE_CUDA}")
 
 if (ENABLE_CUDA)
     enable_language(CUDA)
     target_compile_definitions(qrack PUBLIC ENABLE_CUDA=1)
-    target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${CUDA_INCLUDE_DIRS})
-    target_compile_options (qrack PUBLIC ${CUDA_COMPILATION_OPTIONS})
+    target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${CUDAToolkit_INCLUDE_DIRS})
+    target_compile_options (qrack PUBLIC ${CUDAToolkit_COMPILATION_OPTIONS})
 
     if (NOT DEFINED QRACK_CUDA_ARCHITECTURES)
         # See https://stackoverflow.com/questions/68223398/how-can-i-get-cmake-to-automatically-detect-the-value-for-cuda-architectures#answer-68223399
@@ -25,7 +31,7 @@ if (ENABLE_CUDA)
             set(QRACK_CUDA_ARCHITECTURES native)
         endif (${CMAKE_VERSION} VERSION_LESS "3.24.0")
     endif (NOT DEFINED QRACK_CUDA_ARCHITECTURES)
-    set(QRACK_CUDA_LIBRARIES ${CUDA_LIBRARIES} cutensornet cutensor)
+    set(QRACK_CUDA_LIBRARIES ${CUDAToolkit_LIBRARIES} cutensornet cutensor)
 
     message("QRACK_CUDA_ARCHITECTURES: ${QRACK_CUDA_ARCHITECTURES}")
 
