@@ -236,8 +236,7 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
 #define DEVICE_COUNT (CUDAEngine::Instance().GetDeviceCount())
 #endif
 template <typename... Ts>
-QInterfacePtr CreateArrangedLayers(
-    bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool zxf, bool hy, bool oc, Ts... args)
+QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg, bool tn, bool hy, bool oc, Ts... args)
 {
 #if ENABLE_OPENCL || ENABLE_CUDA
     bool isOcl = oc && (DEVICE_COUNT > 0);
