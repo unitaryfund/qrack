@@ -17,6 +17,7 @@
 #define _USE_MATH_DEFINES
 
 #include <cmath>
+#include <math.h>
 #include <complex>
 #include <cstdint>
 #include <functional>
