@@ -387,11 +387,10 @@ public:
             GetCircuit(target)->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get()));
         });
     }
-    void MCMtrx(const std::vector<bitLenInt>& ctrls, const complex* mtrx, bitLenInt target)
+    void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
-        layerStack = NULL;
-        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
         Dispatch([this, target, controls, lMtrx] {
@@ -400,11 +399,10 @@ public:
                     std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
-    void MACMtrx(const std::vector<bitLenInt>& ctrls, const complex* mtrx, bitLenInt target)
+    void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
-        layerStack = NULL;
-        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
         Dispatch([this, target, controls, lMtrx] {
@@ -413,11 +411,10 @@ public:
                     target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
         });
     }
-    void MCPhase(const std::vector<bitLenInt>& ctrls, complex topLeft, complex bottomRight, bitLenInt target)
+    void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
     {
-        layerStack = NULL;
-        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = topLeft;
         lMtrx.get()[1U] = ZERO_CMPLX;
@@ -429,11 +426,10 @@ public:
                     std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
-    void MACPhase(const std::vector<bitLenInt>& ctrls, complex topLeft, complex bottomRight, bitLenInt target)
+    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
     {
-        layerStack = NULL;
-        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = topLeft;
         lMtrx.get()[1U] = ZERO_CMPLX;
@@ -445,11 +441,10 @@ public:
                     target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
         });
     }
-    void MCInvert(const std::vector<bitLenInt>& ctrls, complex topRight, complex bottomLeft, bitLenInt target)
+    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
-        layerStack = NULL;
-        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
         lMtrx.get()[1U] = topRight;
@@ -461,11 +456,10 @@ public:
                     std::set<bitLenInt>{ controls.begin(), controls.end() }, pow2(controls.size()) - 1U));
         });
     }
-    void MACInvert(const std::vector<bitLenInt>& ctrls, complex topRight, complex bottomLeft, bitLenInt target)
+    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
-        layerStack = NULL;
-        std::vector<bitLenInt> controls(ctrls);
         CheckQubitCount(target, controls);
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
         lMtrx.get()[1U] = topRight;
