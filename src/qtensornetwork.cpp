@@ -124,12 +124,7 @@ QInterfacePtr QTensorNetwork::Clone()
 
 bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    if ((qubit + 1U) > qubitCount) {
-        if (doForce && result) {
-            throw std::runtime_error("QTensorNetwork::ForceM() forced a measurement with 0 probability!");
-        }
-        return false;
-    }
+    CheckQubitCount(qubit);
 
     bool toRet;
     RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->ForceM(qubit, result, doForce, doApply); }, { qubit });
