@@ -59,6 +59,29 @@ void RandomInitQubit(QInterfacePtr sim, bitLenInt i)
     sim->U(i, theta, phi, lambda);
 }
 
+std::vector<QInterfaceEngine> BuildEngineStack()
+{
+    std::vector<QInterfaceEngine> engineStack;
+    if (optimal) {
+        engineStack.push_back(QINTERFACE_TENSOR_NETWORK);
+#if ENABLE_OPENCL
+        engineStack.push_back(
+            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+#endif
+    } else if (optimal_single) {
+        engineStack.push_back(QINTERFACE_TENSOR_NETWORK);
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+    } else {
+        engineStack.push_back(testEngineType);
+        engineStack.push_back(testSubEngineType);
+        engineStack.push_back(testSubSubEngineType);
+    }
+
+    return engineStack;
+}
+
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bitLenInt mxQbts,
     bool resetRandomPerm = true, bool hadamardRandomBits = false, bool logNormal = false, bool qUniverse = false)
 {
@@ -84,21 +107,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         mnQbts = min_qubits;
     }
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     for (bitLenInt numBits = mnQbts; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
@@ -4156,22 +4165,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
 
     int gate;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-        engineStack.push_back(QINTERFACE_TENSOR_NETWORK);
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
@@ -4471,21 +4465,7 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
 
     int gate;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
@@ -4666,21 +4646,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
 
     int gate;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
@@ -4929,21 +4895,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
@@ -5192,21 +5144,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
@@ -5433,21 +5371,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
@@ -5649,21 +5573,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
@@ -5908,21 +5818,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
@@ -6115,21 +6011,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
@@ -6300,21 +6182,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
@@ -6504,21 +6372,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
@@ -6879,21 +6733,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
     std::vector<int> lastSingleBitGates;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
@@ -7174,21 +7014,7 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
     std::vector<int> lastSingleBitGates;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
@@ -7398,21 +7224,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(n);
     std::vector<int> lastSingleBitGates;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
 
@@ -7611,21 +7423,7 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     const complex x[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
@@ -7755,21 +7553,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     const complex x[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
@@ -7933,21 +7717,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
     int d;
     int i;
 
-    std::vector<QInterfaceEngine> engineStack;
-    if (optimal) {
-#if ENABLE_OPENCL
-        engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-#endif
-    } else if (optimal_single) {
-        engineStack.push_back(QINTERFACE_OPTIMAL);
-    } else {
-        engineStack.push_back(testEngineType);
-        engineStack.push_back(testSubEngineType);
-        engineStack.push_back(testSubSubEngineType);
-    }
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     const complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
     const complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));

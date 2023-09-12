@@ -17,11 +17,11 @@
 #define _USE_MATH_DEFINES
 
 #include <cmath>
-#include <math.h>
 #include <complex>
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <math.h>
 #include <memory>
 
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
