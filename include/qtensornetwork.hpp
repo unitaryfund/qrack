@@ -307,6 +307,10 @@ public:
             throw std::invalid_argument("QTensorNetwork::Allocate() 'start' argument is out-of-bounds!");
         }
 
+        if (!length) {
+            return start;
+        }
+
         const bitLenInt movedQubits = qubitCount - start;
         SetQubitCount(qubitCount + length);
         if (!movedQubits) {
