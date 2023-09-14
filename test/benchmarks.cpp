@@ -3678,6 +3678,37 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
     });
 }
 
+TEST_CASE("test_random_circuit_sampling", "[speed]")
+{
+    // This is a "quantum volume" circuit, but we're measuring execution time, not "heavy-output probability."
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        std::set<bitLenInt> unusedBitSet;
+        for (bitLenInt i = 0; i < n; ++i) {
+            unusedBitSet.insert(i);
+        }
+
+        for (bitLenInt d = 0U; d < n; ++d) {
+            // Single-qubit gate layer
+            for (bitLenInt i = 0U; i < n; ++i) {
+                real1_f theta = 2 * M_PI * qReg->Rand();
+                real1_f phi = 2 * M_PI * qReg->Rand();
+                real1_f lambda = 2 * M_PI * qReg->Rand();
+
+                qReg->U(i, theta, phi, lambda);
+            }
+
+            // Two-qubit gate layer
+            std::set<bitLenInt> unusedBits(unusedBitSet);
+            while (unusedBits.size() > 1) {
+                const bitLenInt b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                const bitLenInt b2 = pickRandomBit(qReg->Rand(), &unusedBits);
+                qReg->CNOT(b1, b2);
+            }
+        }
+    });
+}
+
 TEST_CASE("test_cosmology", "[cosmos]")
 {
     // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
