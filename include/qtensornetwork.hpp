@@ -179,6 +179,13 @@ public:
 
     ~QTensorNetwork() { Dump(); }
 
+    virtual double GetUnitaryFidelity()
+    {
+        double toRet;
+        RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->GetUnitaryFidelity(); });
+        return toRet;
+    }
+
     void SetDevice(int64_t dID) { devID = dID; }
 
     void Finish()
