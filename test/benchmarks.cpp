@@ -7917,9 +7917,73 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
         << "s" << std::endl;
 }
 
-TEST_CASE("test_noisy_qft_ghz_estimate", "[supreme_estimate]")
+TEST_CASE("test_noisy_qft_cosmology_estimate", "[supreme_estimate]")
 {
     std::cout << ">>> 'test_noisy_qft_cosmology_estimate':" << std::endl;
+
+    const int w = max_qubits;
+    std::cout << "Circuit width: " << w << std::endl;
+
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
+
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    double sdrp = 1.0;
+
+    while (sdrp >= 0) {
+        start = std::chrono::high_resolution_clock::now();
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
+#else
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
+#endif
+
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0U);
+        for (bitLenInt i = 0; i < w; i++) {
+            RandomInitQubit(testCase, i);
+        }
+        const bitLenInt end = w - 1U;
+        for (bitLenInt i = 0U; i < w; ++i) {
+            const bitLenInt hBit = end - i;
+            for (bitLenInt j = 0U; j < i; ++j) {
+                const bitLenInt c = hBit;
+                const bitLenInt t = hBit + 1U + j;
+                testCase->CPhaseRootN(j + 2U, c, t);
+                testCase->TrySeparate(c, t);
+            }
+            testCase->H(hBit);
+        }
+        testCase->MAll();
+
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+        std::cout << "Unitary fidelity: " << testCase->GetUnitaryFidelity() << std::endl;
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
+
+        sdrp -= 0.025;
+        if (abs(sdrp) < FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
+    }
+}
+
+TEST_CASE("test_noisy_qft_ghz_estimate", "[supreme_estimate]")
+{
+    std::cout << ">>> 'test_noisy_qft_ghz_estimate':" << std::endl;
 
     const int w = max_qubits;
     std::cout << "Circuit width: " << w << std::endl;
