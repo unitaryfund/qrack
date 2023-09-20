@@ -7917,7 +7917,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
         << "s" << std::endl;
 }
 
-TEST_CASE("test_noisy_qft_cosmology_estimate", "[supreme_estimate]")
+TEST_CASE("test_noisy_qft_ghz_estimate", "[supreme_estimate]")
 {
     std::cout << ">>> 'test_noisy_qft_cosmology_estimate':" << std::endl;
 
@@ -7951,8 +7951,10 @@ TEST_CASE("test_noisy_qft_cosmology_estimate", "[supreme_estimate]")
 #endif
 
         QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0U);
-        for (bitLenInt i = 0; i < w; i++) {
-            RandomInitQubit(testCase, i);
+        testCase->H(0U);
+        const bitLenInt end = w - 1U;
+        for (bitLenInt i = 0; i < end; i++) {
+            testCase->CNOT(i, i + 1U);
         }
         testCase->QFT(0, w);
         testCase->MAll();
