@@ -115,8 +115,8 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
     for (bitLenInt i = 0U; i < length; ++i) {
         const bitLenInt hBit = end - i;
         for (bitLenInt j = 0U; j < i; ++j) {
-            bitLenInt c = hBit;
-            bitLenInt t = hBit + 1U + j;
+            const bitLenInt c = hBit;
+            const bitLenInt t = hBit + 1U + j;
             CPhaseRootN(j + 2U, c, t);
             if (trySeparate) {
                 TrySeparate(c, t);
