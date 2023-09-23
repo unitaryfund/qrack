@@ -87,8 +87,7 @@ protected:
 
     void CheckQubitCount(bitLenInt target)
     {
-        ++target;
-        if (target > qubitCount) {
+        if (target >= qubitCount) {
             throw std::invalid_argument("QTensorNetwork qubit index values must be within allocated qubit bounds!");
         }
     }
@@ -131,8 +130,6 @@ protected:
 
     template <typename Fn> void RunAsAmplitudes(Fn fn, const std::set<bitLenInt>& qubits = std::set<bitLenInt>())
     {
-        Finish();
-
         if (!qubits.size()) {
             MakeLayerStack();
             return fn(layerStack);
@@ -193,14 +190,17 @@ public:
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         dispatchQueue.finish();
 #endif
+        if (layerStack) {
+            layerStack->Finish();
+        }
     };
 
     bool isFinished()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        return dispatchQueue.isFinished();
+        return dispatchQueue.isFinished() && (!layerStack || layerStack->isFinished());
 #else
-        return true;
+        return !layerStack || layerStack->isFinished();
 #endif
     }
 
@@ -209,17 +209,24 @@ public:
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         dispatchQueue.dump();
 #endif
+        if (layerStack) {
+            layerStack->Dump();
+        }
     }
 
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
-        // Intentionally left blank.
+        if (layerStack) {
+            layerStack->UpdateRunningNorm(norm_thresh);
+        }
     }
 
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
-        // Intentionally left blank
+        if (layerStack) {
+            layerStack->NormalizeState(nrm, norm_thresh, phaseArg);
+        }
     }
 
     real1_f SumSqrDiff(QInterfacePtr toCompare)
@@ -318,6 +325,8 @@ public:
             return start;
         }
 
+        Finish();
+
         const bitLenInt movedQubits = qubitCount - start;
         SetQubitCount(qubitCount + length);
         if (!movedQubits) {
@@ -390,8 +399,8 @@ public:
 
     void Mtrx(const complex* mtrx, bitLenInt target)
     {
-        layerStack = NULL;
         CheckQubitCount(target);
+        layerStack = NULL;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         std::copy(mtrx, mtrx + 4U, lMtrx.get());
         Dispatch([this, target, lMtrx] {
