@@ -101,7 +101,7 @@ struct QCircuitGate {
      */
     bool CanCombine(QCircuitGatePtr other)
     {
-        if (target != other->target) {
+        if (!other || (target != other->target)) {
             return false;
         }
 
@@ -230,6 +230,10 @@ struct QCircuitGate {
      */
     void Combine(QCircuitGatePtr other)
     {
+        if (!other) {
+            return;
+        }
+
         std::set<bitLenInt> ctrlsToTest;
         std::set_intersection(controls.begin(), controls.end(), other->controls.begin(), other->controls.end(),
             std::inserter(ctrlsToTest, ctrlsToTest.begin()));
@@ -283,7 +287,7 @@ struct QCircuitGate {
      */
     bool TryCombine(QCircuitGatePtr other)
     {
-        if (!CanCombine(other)) {
+        if (!other || !CanCombine(other)) {
             return false;
         }
         Combine(other);
@@ -602,6 +606,9 @@ public:
      */
     void Combine(QCircuitPtr circuit)
     {
+        if (!circuit) {
+            return;
+        }
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }
