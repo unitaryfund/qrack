@@ -248,7 +248,8 @@ struct QCircuitGate {
             }
         }
 
-        for (const auto& payload : other->payloads) {
+        const std::map<bitCapInt, std::shared_ptr<complex>> oPayloads = other->payloads;
+        for (const auto& payload : oPayloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
                 const std::shared_ptr<complex>& p = payloads[payload.first] =
@@ -405,7 +406,8 @@ struct QCircuitGate {
             }
             const bitCapInt p = pow2(std::distance(other->controls.begin(), c));
             std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
-            for (const auto& payload : other->payloads) {
+            const std::map<bitCapInt, std::shared_ptr<complex>> oPayloads = other->payloads;
+            for (const auto& payload : oPayloads) {
                 bitCapInt pf = 0U;
                 for (size_t i = 0U; i < opfPows.size(); ++i) {
                     if (payload.first & opfPows[i]) {
@@ -597,7 +599,8 @@ public:
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }
-        gates.insert(gates.end(), circuit->gates.begin(), circuit->gates.end());
+        const std::list<QCircuitGatePtr> oGates = circuit->gates;
+        gates.insert(gates.end(), oGates.begin(), oGates.end());
     }
 
     /**
@@ -612,7 +615,8 @@ public:
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }
-        for (const QCircuitGatePtr& g : circuit->gates) {
+        const std::list<QCircuitGatePtr> oGates = circuit->gates;
+        for (const QCircuitGatePtr& g : oGates) {
             AppendGate(g);
         }
     }
