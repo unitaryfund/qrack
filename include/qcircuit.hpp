@@ -18,7 +18,6 @@
 #include <iostream>
 #include <iterator>
 #include <list>
-#include <mutex>
 
 #define amp_leq_0(x) (norm(x) <= FP_NORM_EPSILON)
 
@@ -32,7 +31,6 @@ typedef std::shared_ptr<QCircuitGate> QCircuitGatePtr;
 
 struct QCircuitGate {
     bitLenInt target;
-    std::mutex mutex;
     std::map<bitCapInt, std::shared_ptr<complex>> payloads;
     std::set<bitLenInt> controls;
 
@@ -96,23 +94,14 @@ struct QCircuitGate {
         }
     }
 
-    QCircuitGatePtr Clone()
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        return std::make_shared<QCircuitGate>(target, payloads, controls);
-    }
+    QCircuitGatePtr Clone() { return std::make_shared<QCircuitGate>(target, payloads, controls); }
 
     /**
      * Can I combine myself with gate `other`?
      */
     bool CanCombine(QCircuitGatePtr other)
     {
-        if (!other) {
-            return false;
-        }
-        std::lock_guard<std::mutex> lock(mutex);
-        std::lock_guard<std::mutex> oLock(other->mutex);
-        if (target != other->target) {
+        if (!other || (target != other->target)) {
             return false;
         }
 
@@ -129,7 +118,6 @@ struct QCircuitGate {
      */
     void Clear()
     {
-        std::lock_guard<std::mutex> lock(mutex);
         controls.clear();
         payloads.clear();
 
@@ -146,7 +134,6 @@ struct QCircuitGate {
      */
     void AddControl(bitLenInt c)
     {
-        std::lock_guard<std::mutex> lock(mutex);
         if (controls.find(c) != controls.end()) {
             return;
         }
@@ -177,7 +164,6 @@ struct QCircuitGate {
      */
     bool CanRemoveControl(bitLenInt c)
     {
-        std::lock_guard<std::mutex> lock(mutex);
         const size_t cpos = std::distance(controls.begin(), controls.find(c));
         const bitCapInt midPow = pow2(cpos);
 
@@ -211,7 +197,6 @@ struct QCircuitGate {
      */
     void RemoveControl(bitLenInt c)
     {
-        std::lock_guard<std::mutex> lock(mutex);
         const size_t cpos = std::distance(controls.begin(), controls.find(c));
         const bitCapInt midPow = pow2(cpos);
         const bitCapInt lowMask = midPow - 1U;
@@ -263,7 +248,6 @@ struct QCircuitGate {
             }
         }
 
-        std::lock_guard<std::mutex> oLock(other->mutex);
         for (const auto& payload : other->payloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
@@ -316,7 +300,6 @@ struct QCircuitGate {
      */
     bool IsIdentity()
     {
-        std::lock_guard<std::mutex> lock(mutex);
         if (controls.size()) {
             return false;
         }
@@ -339,7 +322,6 @@ struct QCircuitGate {
      */
     bool IsPhase()
     {
-        std::lock_guard<std::mutex> lock(mutex);
         for (const auto& payload : payloads) {
             complex* p = payload.second.get();
             if ((norm(p[1]) > FP_NORM_EPSILON) || (norm(p[2]) > FP_NORM_EPSILON)) {
@@ -355,7 +337,6 @@ struct QCircuitGate {
      */
     bool IsInvert()
     {
-        std::lock_guard<std::mutex> lock(mutex);
         for (const auto& payload : payloads) {
             complex* p = payload.second.get();
             if ((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON)) {
@@ -371,7 +352,6 @@ struct QCircuitGate {
      */
     bool IsPhaseInvert()
     {
-        std::lock_guard<std::mutex> lock(mutex);
         for (const auto& payload : payloads) {
             complex* p = payload.second.get();
             if (((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON)) &&
@@ -388,7 +368,6 @@ struct QCircuitGate {
      */
     bool IsCnot()
     {
-        std::lock_guard<std::mutex> lock(mutex);
         if ((controls.size() != 1U) || (payloads.size() != 1U) || (payloads.find(1U) == payloads.end())) {
             return false;
         }
@@ -457,7 +436,6 @@ struct QCircuitGate {
      */
     std::unique_ptr<complex[]> MakeUniformlyControlledPayload()
     {
-        std::lock_guard<std::mutex> lock(mutex);
         const bitCapIntOcl maxQPower = pow2Ocl(controls.size());
         std::unique_ptr<complex[]> toRet(new complex[maxQPower << 2U]);
         constexpr complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
@@ -479,18 +457,13 @@ struct QCircuitGate {
     /**
      * Convert my set of qubit indices to a vector
      */
-    std::vector<bitLenInt> GetControlsVector()
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        return std::vector<bitLenInt>(controls.begin(), controls.end());
-    }
+    std::vector<bitLenInt> GetControlsVector() { return std::vector<bitLenInt>(controls.begin(), controls.end()); }
 
     /**
      * Erase a control index, if it exists, (via post selection).
      */
     void PostSelectControl(bitLenInt c, bool eigen)
     {
-        std::lock_guard<std::mutex> lock(mutex);
         const auto controlIt = controls.find(c);
         if (controlIt == controls.end()) {
             return;
