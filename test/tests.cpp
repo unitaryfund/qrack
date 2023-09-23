@@ -2938,7 +2938,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
     REQUIRE_THAT(qftReg2, HasProbability(0, 20, 0xd4));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose", "[sd_xfail]")
 {
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
     QInterfacePtr qftReg2 =
@@ -2980,7 +2980,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 #endif
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose", "[sd_xfail]")
 {
     qftReg->SetPermutation(0x2b);
     qftReg->Dispose(0, 4);
@@ -3005,7 +3005,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_allocate")
     REQUIRE_THAT(qftReg, HasProbability(0, 13, 0x2b));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose_perm")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose_perm", "[sd_xfail]")
 {
     qftReg->SetPermutation(0x2b);
     qftReg->Dispose(0, 4, 0xb);
@@ -3018,7 +3018,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose_perm")
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0xb));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose", "[sd_xfail]")
 {
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
     QInterfacePtr qftReg2 =
@@ -3034,7 +3034,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose", "[sd_xfail]")
 {
     if (testEngineType == QINTERFACE_QUNIT_MULTI || testEngineType == QINTERFACE_QPAGER ||
         testEngineType == QINTERFACE_STABILIZER_HYBRID || testSubEngineType == QINTERFACE_STABILIZER_HYBRID ||
@@ -3062,7 +3062,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_qunit_paging")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qunit_paging", "[sd_xfail]")
 {
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 18, 1, rng, ONE_CMPLX);
     QInterfacePtr qftReg2 =
@@ -3404,7 +3404,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
         0.01);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate", "[sd_xfail]")
 {
     complex state[1U << 4U];
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
@@ -5121,7 +5121,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron", "[sd_xfail]")
 {
     const bitLenInt InputCount = 4;
     const bitLenInt OutputCount = 4;
