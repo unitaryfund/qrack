@@ -128,31 +128,31 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         }
     }
 
-    for (std::list<QCircuitGatePtr>::reverse_iterator gate = gates.rbegin(); gate != gates.rend(); ++gate) {
-        if ((*gate)->TryCombine(nGate)) {
-            if ((*gate)->IsIdentity()) {
-                std::list<QCircuitGatePtr>::reverse_iterator _gate = gate++;
-                std::list<QCircuitGatePtr> head(_gate.base(), gates.end());
-                gates.erase(gate.base(), gates.end());
-                for (std::list<QCircuitGatePtr>::iterator g = head.begin(); g != head.end(); ++g) {
-                    if (!nGate->CanCombine(*g) && !nGate->CanPass(*g)) {
-                        gates.push_back(*g);
+    for (std::list<QCircuitGatePtr>::reverse_iterator gateIt = gates.rbegin(); gateIt != gates.rend(); ++gateIt) {
+        const QCircuitGatePtr gate = *gateIt;
+        if (gate->TryCombine(nGate)) {
+            if (gate->IsIdentity()) {
+                std::list<QCircuitGatePtr>::reverse_iterator _gateIt = gateIt++;
+                std::list<QCircuitGatePtr> head(_gateIt.base(), gates.end());
+                gates.erase(gateIt.base(), gates.end());
+                for (std::list<QCircuitGatePtr>::iterator gIt = head.begin(); gIt != head.end(); ++gIt) {
+                    const QCircuitGatePtr g = *gIt;
+                    if (!nGate->CanCombine(g) && !nGate->CanPass(g)) {
+                        gates.push_back(g);
                     } else {
-                        AppendGate(*g);
+                        AppendGate(g);
                     }
                 }
             }
 
             InitReverse();
-
             return;
         }
-        if (!(*gate)->CanPass(nGate)) {
-            gates.insert(gate.base(), { nGate });
+        if (!gate->CanPass(nGate)) {
+            gates.insert(gateIt.base(), { nGate });
             InitReverse();
             return;
         }
-        InitReverse();
     }
 
     gates.push_front(nGate);
