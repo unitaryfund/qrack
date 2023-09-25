@@ -397,8 +397,7 @@ struct QCircuitGate {
             if (IsPhase()) {
                 return true;
             }
-            if (!IsPhaseInvert() ||
-                !std::includes(octrls.begin(), octrls.end(), controls.begin(), controls.end())) {
+            if (!IsPhaseInvert() || !std::includes(octrls.begin(), octrls.end(), controls.begin(), controls.end())) {
                 return false;
             }
 
