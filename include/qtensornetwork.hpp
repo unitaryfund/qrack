@@ -43,9 +43,9 @@ protected:
     std::vector<QInterfaceEngine> engines;
     std::vector<QCircuitPtr> circuit;
     std::vector<std::map<bitLenInt, bool>> measurements;
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    DispatchQueue dispatchQueue;
-#endif
+    // #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+    //     DispatchQueue dispatchQueue;
+    // #endif
 
     void Dispatch(DispatchFn fn)
     {
@@ -187,9 +187,9 @@ public:
 
     void Finish()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        dispatchQueue.finish();
-#endif
+        // #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        //         dispatchQueue.finish();
+        // #endif
         if (layerStack) {
             layerStack->Finish();
         }
@@ -197,18 +197,18 @@ public:
 
     bool isFinished()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        return dispatchQueue.isFinished() && (!layerStack || layerStack->isFinished());
-#else
+        // #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        //         return dispatchQueue.isFinished() && (!layerStack || layerStack->isFinished());
+        // #else
         return !layerStack || layerStack->isFinished();
-#endif
+        // #endif
     }
 
     void Dump()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        dispatchQueue.dump();
-#endif
+        // #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        //         dispatchQueue.dump();
+        // #endif
         if (layerStack) {
             layerStack->Dump();
         }
