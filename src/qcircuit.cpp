@@ -127,35 +127,33 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         }
     }
 
-    std::list<QCircuitGatePtr> nGates = gates;
-    for (std::list<QCircuitGatePtr>::reverse_iterator gate = nGates.rbegin(); gate != nGates.rend(); ++gate) {
+    for (std::list<QCircuitGatePtr>::reverse_iterator gate = gates.rbegin(); gate != gates.rend(); ++gate) {
         if ((*gate)->TryCombine(nGate)) {
             if ((*gate)->IsIdentity()) {
                 std::list<QCircuitGatePtr>::reverse_iterator _gate = gate++;
-                std::list<QCircuitGatePtr> head(_gate.base(), nGates.end());
-                gates.erase(gate.base(), nGates.end());
+                std::list<QCircuitGatePtr> head(_gate.base(), gates.end());
+                gates.erase(gate.base(), gates.end());
                 for (std::list<QCircuitGatePtr>::iterator g = head.begin(); g != head.end(); ++g) {
                     if (!nGate->CanCombine(*g) && !nGate->CanPass(*g)) {
-                        nGates.push_back(*g);
+                        gates.push_back(*g);
                     } else {
                         AppendGate(*g);
                     }
                 }
             }
 
-            gates = nGates;
+            InitReverse();
 
             return;
         }
         if (!(*gate)->CanPass(nGate)) {
-            nGates.insert(gate.base(), { nGate });
-            gates = nGates;
+            gates.insert(gate.base(), { nGate });
+            InitReverse();
             return;
         }
     }
 
-    nGates.push_front(nGate);
-    gates = nGates;
+    gates.push_front(nGate);
     InitReverse();
 }
 
