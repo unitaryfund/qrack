@@ -106,6 +106,8 @@ std::istream& operator>>(std::istream& is, QCircuitPtr& c)
 
 void QCircuit::AppendGate(QCircuitGatePtr nGate)
 {
+    std::lock_guard<std::mutex> lock(mutex);
+
     if (!isCollapsed) {
         gates.push_back(nGate);
         return;
@@ -158,6 +160,8 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
 
 void QCircuit::Run(QInterfacePtr qsim)
 {
+    std::lock_guard<std::mutex> lock(mutex);
+
     if (qsim->GetQubitCount() < qubitCount) {
         qsim->Allocate(qubitCount - qsim->GetQubitCount());
     }
