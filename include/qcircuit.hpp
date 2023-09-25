@@ -105,8 +105,9 @@ struct QCircuitGate {
             return false;
         }
 
-        if (std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end()) ||
-            std::includes(controls.begin(), controls.end(), other->controls.begin(), other->controls.end())) {
+        const std::set<bitLenInt> octrls(other->controls);
+        if (std::includes(octrls.begin(), octrls.end(), controls.begin(), controls.end()) ||
+            std::includes(controls.begin(), controls.end(), octrls.begin(), octrls.end())) {
             return true;
         }
 
@@ -234,21 +235,22 @@ struct QCircuitGate {
             return;
         }
 
+        const std::set<bitLenInt> octrls(other->controls);
         std::set<bitLenInt> ctrlsToTest;
-        std::set_intersection(controls.begin(), controls.end(), other->controls.begin(), other->controls.end(),
+        std::set_intersection(controls.begin(), controls.end(), octrls.begin(), octrls.end(),
             std::inserter(ctrlsToTest, ctrlsToTest.begin()));
 
-        if (controls.size() < other->controls.size()) {
-            for (const bitLenInt& oc : other->controls) {
+        if (controls.size() < octrls.size()) {
+            for (const bitLenInt& oc : octrls) {
                 AddControl(oc);
             }
-        } else if (controls.size() > other->controls.size()) {
+        } else if (controls.size() > octrls.size()) {
             for (const bitLenInt& c : controls) {
                 other->AddControl(c);
             }
         }
 
-        const std::map<bitCapInt, std::shared_ptr<complex>> oPayloads = other->payloads;
+        const std::map<bitCapInt, std::shared_ptr<complex>> oPayloads(other->payloads);
         for (const auto& payload : oPayloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
@@ -386,8 +388,9 @@ struct QCircuitGate {
      */
     bool CanPass(QCircuitGatePtr other)
     {
-        std::set<bitLenInt>::iterator c = other->controls.find(target);
-        if (c != other->controls.end()) {
+        const std::set<bitLenInt> octrls(other->controls);
+        std::set<bitLenInt>::iterator c = octrls.find(target);
+        if (c != octrls.end()) {
             if (controls.find(other->target) != controls.end()) {
                 return IsPhase() && other->IsPhase();
             }
@@ -395,18 +398,18 @@ struct QCircuitGate {
                 return true;
             }
             if (!IsPhaseInvert() ||
-                !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
+                !std::includes(octrls.begin(), octrls.end(), controls.begin(), controls.end())) {
                 return false;
             }
 
             std::vector<bitCapInt> opfPows;
             opfPows.reserve(controls.size());
             for (const bitLenInt& ctrl : controls) {
-                opfPows.emplace_back(pow2(std::distance(other->controls.begin(), other->controls.find(ctrl))));
+                opfPows.emplace_back(pow2(std::distance(octrls.begin(), octrls.find(ctrl))));
             }
-            const bitCapInt p = pow2(std::distance(other->controls.begin(), c));
+            const bitCapInt p = pow2(std::distance(octrls.begin(), c));
             std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
-            const std::map<bitCapInt, std::shared_ptr<complex>> oPayloads = other->payloads;
+            const std::map<bitCapInt, std::shared_ptr<complex>> oPayloads(other->payloads);
             for (const auto& payload : oPayloads) {
                 bitCapInt pf = 0U;
                 for (size_t i = 0U; i < opfPows.size(); ++i) {
@@ -599,7 +602,7 @@ public:
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }
-        const std::list<QCircuitGatePtr> oGates = circuit->gates;
+        const std::list<QCircuitGatePtr> oGates(circuit->gates);
         gates.insert(gates.end(), oGates.begin(), oGates.end());
     }
 
@@ -615,7 +618,7 @@ public:
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }
-        const std::list<QCircuitGatePtr> oGates = circuit->gates;
+        const std::list<QCircuitGatePtr> oGates(circuit->gates);
         for (const QCircuitGatePtr& g : oGates) {
             AppendGate(g);
         }
