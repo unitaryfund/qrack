@@ -66,7 +66,6 @@ struct QCircuitGate {
     QCircuitGate(bitLenInt trgt, const complex matrix[])
         : target(trgt)
     {
-        std::lock_guard<std::mutex> lock(mutex);
         payloads[0] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
         std::copy(matrix, matrix + 4, payloads[0].get());
     }
@@ -78,7 +77,6 @@ struct QCircuitGate {
         : target(trgt)
         , controls(ctrls)
     {
-        std::lock_guard<std::mutex> lock(mutex);
         const std::shared_ptr<complex>& p = payloads[perm] =
             std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
         std::copy(matrix, matrix + 4, p.get());
@@ -92,7 +90,6 @@ struct QCircuitGate {
         : target(trgt)
         , controls(ctrls)
     {
-        std::lock_guard<std::mutex> lock(mutex);
         for (const auto& payload : pylds) {
             payloads[payload.first] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
             std::copy(payload.second.get(), payload.second.get() + 4, payloads[payload.first].get());
@@ -613,7 +610,6 @@ public:
         : isCollapsed(collapse)
         , qubitCount(qbCount)
     {
-        std::lock_guard<std::mutex> lock(mutex);
         for (const QCircuitGatePtr& gate : g) {
             gates.push_back(gate->Clone());
         }
