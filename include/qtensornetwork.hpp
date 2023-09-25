@@ -49,11 +49,11 @@ protected:
 
     void Dispatch(DispatchFn fn)
     {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        dispatchQueue.dispatch(fn);
-#else
+        // #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        //         dispatchQueue.dispatch(fn);
+        // #else
         fn();
-#endif
+        // #endif
     }
 
     QCircuitPtr GetCircuit(bitLenInt target, std::vector<bitLenInt> controls = std::vector<bitLenInt>())

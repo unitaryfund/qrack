@@ -110,7 +110,6 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
     std::lock_guard<std::recursive_mutex> oLock(nGate->mutex);
 
     if (!isCollapsed) {
-        InitReverse();
         gates.push_back(nGate);
         InitReverse();
         return;
@@ -130,10 +129,8 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         }
     }
 
-    InitReverse();
     for (std::list<QCircuitGatePtr>::reverse_iterator gateIt = gates.rbegin(); gateIt != gates.rend(); ++gateIt) {
         const QCircuitGatePtr gate = *gateIt;
-        InitReverse();
         if (gate->TryCombine(nGate)) {
             if (gate->IsIdentity()) {
                 std::list<QCircuitGatePtr> head(gateIt.base(), gates.end());
@@ -142,6 +139,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
                     const QCircuitGatePtr g = *gIt;
                     if (!nGate->CanCombine(g) && !nGate->CanPass(g)) {
                         gates.push_back(g);
+                        InitReverse();
                     } else {
                         AppendGate(g);
                     }
