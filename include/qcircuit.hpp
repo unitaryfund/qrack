@@ -110,15 +110,17 @@ struct QCircuitGate {
      */
     bool CanCombine(QCircuitGatePtr other)
     {
-        if (!other || (target != other->target)) {
+        if (!other) {
             return false;
         }
 
-        std::set<bitLenInt> octrls;
-        if (true) {
-            std::lock_guard<std::mutex> lock(other->mutex);
-            octrls = other->controls;
+        std::lock_guard<std::mutex> lock(other->mutex);
+
+        if (target != other->target) {
+            return false;
         }
+
+        const std::set<bitLenInt> octrls(other->controls);
         if (std::includes(octrls.begin(), octrls.end(), controls.begin(), controls.end()) ||
             std::includes(controls.begin(), controls.end(), octrls.begin(), octrls.end())) {
             return true;
@@ -652,6 +654,7 @@ public:
     void Append(QCircuitPtr circuit)
     {
         std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> oLock(circuit->mutex);
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }

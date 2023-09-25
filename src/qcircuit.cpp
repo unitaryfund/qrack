@@ -110,6 +110,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
 
     if (!isCollapsed) {
         gates.push_back(nGate);
+        InitReverse();
         return;
     }
 
@@ -151,6 +152,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
             InitReverse();
             return;
         }
+        InitReverse();
     }
 
     gates.push_front(nGate);
