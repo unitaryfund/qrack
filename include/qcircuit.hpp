@@ -546,6 +546,13 @@ protected:
     bitLenInt qubitCount;
     std::mutex mutex;
     std::list<QCircuitGatePtr> gates;
+    std::list<QCircuitGatePtr> rGates;
+
+    void InitReverse()
+    {
+        rGates = gates;
+        rGates.reverse();
+    }
 
 public:
     /**
@@ -555,6 +562,7 @@ public:
         : isCollapsed(collapse)
         , qubitCount(0)
         , gates()
+        , rGates()
     {
         // Intentionally left blank
     }
@@ -570,6 +578,7 @@ public:
         for (const QCircuitGatePtr& gate : g) {
             gates.push_back(gate->Clone());
         }
+        InitReverse();
     }
 
     QCircuitPtr Clone()
@@ -588,6 +597,7 @@ public:
                 std::copy(inv, inv + 4U, p.second.get());
             }
         }
+        clone->rGates = gates;
         clone->gates.reverse();
 
         return clone;
@@ -647,6 +657,7 @@ public:
         }
         const std::list<QCircuitGatePtr> oGates(circuit->gates);
         gates.insert(gates.end(), oGates.begin(), oGates.end());
+        InitReverse();
     }
 
     /**
@@ -698,8 +709,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(mutex);
         std::list<QCircuitGatePtr> nGates;
-        gates.reverse();
-        for (const QCircuitGatePtr& gate : gates) {
+        for (const QCircuitGatePtr& gate : rGates) {
             if (gate->target == qubit) {
                 continue;
             }
@@ -708,6 +718,7 @@ public:
             nGates.insert(nGates.begin(), nGate);
         }
         gates = nGates;
+        InitReverse();
     }
 
     /**
@@ -717,11 +728,9 @@ public:
     {
         std::lock_guard<std::mutex> lock(mutex);
 
-        // We're working from latest gate to earliest gate.
-        gates.reverse();
-
         std::list<QCircuitGatePtr> nGates;
-        for (const QCircuitGatePtr& gate : gates) {
+        // We're working from latest gate to earliest gate.
+        for (const QCircuitGatePtr& gate : rGates) {
             // Is the target qubit on the light cone?
             if (qubits.find(gate->target) == qubits.end()) {
                 // The target isn't on the light cone, but the controls might be.
@@ -745,9 +754,6 @@ public:
             qubits.insert(gate->target);
             qubits.insert(gate->controls.begin(), gate->controls.end());
         }
-
-        // Restore the original order of this QCircuit's gates.
-        gates.reverse();
 
         return std::make_shared<QCircuit>(qubitCount, nGates, isCollapsed);
     }

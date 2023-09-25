@@ -156,6 +156,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
 
     nGates.push_front(nGate);
     gates = nGates;
+    InitReverse();
 }
 
 void QCircuit::Run(QInterfacePtr qsim)
