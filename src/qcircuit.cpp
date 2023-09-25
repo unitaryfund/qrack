@@ -107,9 +107,7 @@ std::istream& operator>>(std::istream& is, QCircuitPtr& c)
 void QCircuit::AppendGate(QCircuitGatePtr nGate)
 {
     if (!isCollapsed) {
-        std::lock_guard<std::mutex> lock(mutex);
         gates.push_back(nGate);
-        InitReverse();
         return;
     }
 
@@ -117,57 +115,43 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         return;
     }
 
-    if (true) {
-        std::lock_guard<std::mutex> lock(mutex);
-        if ((nGate->target + 1U) > qubitCount) {
-            qubitCount = nGate->target + 1U;
-        }
-        if (!(nGate->controls.empty())) {
-            const bitLenInt q = *(nGate->controls.rbegin());
-            if ((q + 1U) > qubitCount) {
-                qubitCount = (q + 1U);
-            }
+    if ((nGate->target + 1U) > qubitCount) {
+        qubitCount = nGate->target + 1U;
+    }
+    if (!(nGate->controls.empty())) {
+        const bitLenInt q = *(nGate->controls.rbegin());
+        if ((q + 1U) > qubitCount) {
+            qubitCount = (q + 1U);
         }
     }
 
-    for (std::list<QCircuitGatePtr>::reverse_iterator gateIt = gates.rbegin(); gateIt != gates.rend(); ++gateIt) {
-        const QCircuitGatePtr gate = *gateIt;
-        if (gate->TryCombine(nGate)) {
-            if (gate->IsIdentity()) {
-                std::list<QCircuitGatePtr> head(gateIt.base(), gates.end());
-                gates.erase(gateIt.base(), gates.end());
-                for (std::list<QCircuitGatePtr>::iterator gIt = head.begin(); gIt != head.end(); ++gIt) {
-                    const QCircuitGatePtr g = *gIt;
-                    if (!nGate->CanCombine(g) && !nGate->CanPass(g)) {
-                        std::lock_guard<std::mutex> lock(mutex);
-                        gates.push_back(g);
-                        InitReverse();
+    for (std::list<QCircuitGatePtr>::reverse_iterator gate = gates.rbegin(); gate != gates.rend(); ++gate) {
+        if ((*gate)->TryCombine(nGate)) {
+            if ((*gate)->IsIdentity()) {
+                std::list<QCircuitGatePtr>::reverse_iterator _gate = gate++;
+                std::list<QCircuitGatePtr> head(_gate.base(), gates.end());
+                gates.erase(gate.base(), gates.end());
+                for (std::list<QCircuitGatePtr>::iterator g = head.begin(); g != head.end(); ++g) {
+                    if (!nGate->CanCombine(*g) && !nGate->CanPass(*g)) {
+                        gates.push_back(*g);
                     } else {
-                        AppendGate(g);
+                        AppendGate(*g);
                     }
                 }
             }
-
-            InitReverse();
             return;
         }
-        if (!gate->CanPass(nGate)) {
-            std::lock_guard<std::mutex> lock(mutex);
-            gates.insert(gateIt.base(), { nGate });
-            InitReverse();
+        if (!(*gate)->CanPass(nGate)) {
+            gates.insert(gate.base(), { nGate });
             return;
         }
     }
 
-    std::lock_guard<std::mutex> lock(mutex);
     gates.push_front(nGate);
-    InitReverse();
 }
 
 void QCircuit::Run(QInterfacePtr qsim)
 {
-    std::lock_guard<std::mutex> lock(mutex);
-
     if (qsim->GetQubitCount() < qubitCount) {
         qsim->Allocate(qubitCount - qsim->GetQubitCount());
     }

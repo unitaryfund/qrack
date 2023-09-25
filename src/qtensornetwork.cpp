@@ -59,8 +59,6 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
     layerStack->SetReactiveSeparate(isReactiveSeparate);
     layerStack->SetTInjection(useTGadget);
 
-    Finish();
-
     std::vector<QCircuitPtr> c;
     if (qubits.size()) {
         for (size_t i = 0U; i < circuit.size(); ++i) {
@@ -106,7 +104,6 @@ QInterfacePtr QTensorNetwork::Clone()
         doNormalize, randGlobalPhase, useHostRam, devID, hardware_rand_generator != NULL, isSparse,
         (real1_f)amplitudeFloor, deviceIDs);
 
-    Finish();
     clone->circuit.clear();
     for (const QCircuitPtr& c : circuit) {
         clone->circuit.push_back(c->Clone());
