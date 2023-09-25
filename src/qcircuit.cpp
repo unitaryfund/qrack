@@ -106,9 +106,11 @@ std::istream& operator>>(std::istream& is, QCircuitPtr& c)
 
 void QCircuit::AppendGate(QCircuitGatePtr nGate)
 {
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<std::recursive_mutex> lock(mutex);
+    std::lock_guard<std::recursive_mutex> oLock(nGate->mutex);
 
     if (!isCollapsed) {
+        InitReverse();
         gates.push_back(nGate);
         InitReverse();
         return;
@@ -128,8 +130,10 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         }
     }
 
+    InitReverse();
     for (std::list<QCircuitGatePtr>::reverse_iterator gateIt = gates.rbegin(); gateIt != gates.rend(); ++gateIt) {
         const QCircuitGatePtr gate = *gateIt;
+        InitReverse();
         if (gate->TryCombine(nGate)) {
             if (gate->IsIdentity()) {
                 std::list<QCircuitGatePtr> head(gateIt.base(), gates.end());
@@ -160,7 +164,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
 
 void QCircuit::Run(QInterfacePtr qsim)
 {
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<std::recursive_mutex> lock(mutex);
 
     if (qsim->GetQubitCount() < qubitCount) {
         qsim->Allocate(qubitCount - qsim->GetQubitCount());
