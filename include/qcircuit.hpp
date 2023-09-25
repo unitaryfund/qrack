@@ -572,7 +572,11 @@ public:
         }
     }
 
-    QCircuitPtr Clone() { return std::make_shared<QCircuit>(qubitCount, gates, isCollapsed); }
+    QCircuitPtr Clone()
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        return std::make_shared<QCircuit>(qubitCount, gates, isCollapsed);
+    }
 
     QCircuitPtr Inverse()
     {
@@ -654,6 +658,7 @@ public:
         if (!circuit) {
             return;
         }
+        std::lock_guard<std::mutex> lock(circuit->mutex);
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }
@@ -691,6 +696,7 @@ public:
      */
     void DeletePhaseTarget(bitLenInt qubit, bool eigen)
     {
+        std::lock_guard<std::mutex> lock(mutex);
         std::list<QCircuitGatePtr> nGates;
         gates.reverse();
         for (const QCircuitGatePtr& gate : gates) {
@@ -709,6 +715,8 @@ public:
      */
     QCircuitPtr PastLightCone(std::set<bitLenInt>& qubits)
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         // We're working from latest gate to earliest gate.
         gates.reverse();
 
