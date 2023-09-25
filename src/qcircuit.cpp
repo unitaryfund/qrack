@@ -106,10 +106,8 @@ std::istream& operator>>(std::istream& is, QCircuitPtr& c)
 
 void QCircuit::AppendGate(QCircuitGatePtr nGate)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex);
-    std::lock_guard<std::recursive_mutex> oLock(nGate->mutex);
-
     if (!isCollapsed) {
+        std::lock_guard<std::mutex> lock(mutex);
         gates.push_back(nGate);
         InitReverse();
         return;
@@ -119,13 +117,16 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
         return;
     }
 
-    if ((nGate->target + 1U) > qubitCount) {
-        qubitCount = nGate->target + 1U;
-    }
-    if (!(nGate->controls.empty())) {
-        const bitLenInt q = *(nGate->controls.rbegin());
-        if ((q + 1U) > qubitCount) {
-            qubitCount = (q + 1U);
+    if (true) {
+        std::lock_guard<std::mutex> lock(mutex);
+        if ((nGate->target + 1U) > qubitCount) {
+            qubitCount = nGate->target + 1U;
+        }
+        if (!(nGate->controls.empty())) {
+            const bitLenInt q = *(nGate->controls.rbegin());
+            if ((q + 1U) > qubitCount) {
+                qubitCount = (q + 1U);
+            }
         }
     }
 
@@ -138,6 +139,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
                 for (std::list<QCircuitGatePtr>::iterator gIt = head.begin(); gIt != head.end(); ++gIt) {
                     const QCircuitGatePtr g = *gIt;
                     if (!nGate->CanCombine(g) && !nGate->CanPass(g)) {
+                        std::lock_guard<std::mutex> lock(mutex);
                         gates.push_back(g);
                         InitReverse();
                     } else {
@@ -150,19 +152,21 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
             return;
         }
         if (!gate->CanPass(nGate)) {
+            std::lock_guard<std::mutex> lock(mutex);
             gates.insert(gateIt.base(), { nGate });
             InitReverse();
             return;
         }
     }
 
+    std::lock_guard<std::mutex> lock(mutex);
     gates.push_front(nGate);
     InitReverse();
 }
 
 void QCircuit::Run(QInterfacePtr qsim)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex);
+    std::lock_guard<std::mutex> lock(mutex);
 
     if (qsim->GetQubitCount() < qubitCount) {
         qsim->Allocate(qubitCount - qsim->GetQubitCount());

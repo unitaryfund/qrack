@@ -50,7 +50,12 @@ protected:
     void Dispatch(DispatchFn fn)
     {
         // #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        //         dispatchQueue.dispatch(fn);
+        //         if (qubitCount >= GetPreferredConcurrencyPower()) {
+        //             dispatchQueue.dispatch(fn);
+        //         } else {
+        //             Finish();
+        //             fn();
+        //         }
         // #else
         fn();
         // #endif

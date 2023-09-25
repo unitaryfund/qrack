@@ -32,7 +32,7 @@ typedef std::shared_ptr<QCircuitGate> QCircuitGatePtr;
 
 struct QCircuitGate {
     bitLenInt target;
-    std::recursive_mutex mutex;
+    std::mutex mutex;
     std::map<bitCapInt, std::shared_ptr<complex>> payloads;
     std::set<bitLenInt> controls;
 
@@ -66,7 +66,7 @@ struct QCircuitGate {
     QCircuitGate(bitLenInt trgt, const complex matrix[])
         : target(trgt)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         payloads[0] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
         std::copy(matrix, matrix + 4, payloads[0].get());
     }
@@ -78,7 +78,7 @@ struct QCircuitGate {
         : target(trgt)
         , controls(ctrls)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         const std::shared_ptr<complex>& p = payloads[perm] =
             std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
         std::copy(matrix, matrix + 4, p.get());
@@ -92,18 +92,16 @@ struct QCircuitGate {
         : target(trgt)
         , controls(ctrls)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         for (const auto& payload : pylds) {
             payloads[payload.first] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
             std::copy(payload.second.get(), payload.second.get() + 4, payloads[payload.first].get());
         }
     }
 
-    ~QCircuitGate() { std::lock_guard<std::recursive_mutex> lock(mutex); }
-
     QCircuitGatePtr Clone()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         return std::make_shared<QCircuitGate>(target, payloads, controls);
     }
 
@@ -115,16 +113,15 @@ struct QCircuitGate {
         if (!other) {
             return false;
         }
-        std::lock_guard<std::recursive_mutex> lock(mutex);
-        std::lock_guard<std::recursive_mutex> oLock(other->mutex);
+        std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> oLock(other->mutex);
 
         if (target != other->target) {
             return false;
         }
 
-        const std::set<bitLenInt> octrls(other->controls);
-        if (std::includes(octrls.begin(), octrls.end(), controls.begin(), controls.end()) ||
-            std::includes(controls.begin(), controls.end(), octrls.begin(), octrls.end())) {
+        if (std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end()) ||
+            std::includes(controls.begin(), controls.end(), other->controls.begin(), other->controls.end())) {
             return true;
         }
 
@@ -136,7 +133,7 @@ struct QCircuitGate {
      */
     void Clear()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         controls.clear();
         payloads.clear();
 
@@ -153,7 +150,7 @@ struct QCircuitGate {
      */
     void AddControl(bitLenInt c)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         if (controls.find(c) != controls.end()) {
             return;
         }
@@ -184,7 +181,7 @@ struct QCircuitGate {
      */
     bool CanRemoveControl(bitLenInt c)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         const size_t cpos = std::distance(controls.begin(), controls.find(c));
         const bitCapInt midPow = pow2(cpos);
 
@@ -218,7 +215,7 @@ struct QCircuitGate {
      */
     void RemoveControl(bitLenInt c)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         const size_t cpos = std::distance(controls.begin(), controls.find(c));
         const bitCapInt midPow = pow2(cpos);
         const bitCapInt lowMask = midPow - 1U;
@@ -239,7 +236,6 @@ struct QCircuitGate {
      */
     bool TryRemoveControl(bitLenInt c)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
         if (!CanRemoveControl(c)) {
             return false;
         }
@@ -256,23 +252,34 @@ struct QCircuitGate {
         if (!other) {
             return;
         }
-        std::lock_guard<std::recursive_mutex> lock(mutex);
-        std::lock_guard<std::recursive_mutex> oLock(other->mutex);
 
+        bool isLess;
+        bool isGreater;
         std::set<bitLenInt> ctrlsToTest;
-        std::set_intersection(controls.begin(), controls.end(), other->controls.begin(), other->controls.end(),
-            std::inserter(ctrlsToTest, ctrlsToTest.begin()));
+        if (true) {
+            std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> oLock(other->mutex);
 
-        if (controls.size() < other->controls.size()) {
+            std::set_intersection(controls.begin(), controls.end(), other->controls.begin(), other->controls.end(),
+                std::inserter(ctrlsToTest, ctrlsToTest.begin()));
+
+            isLess = controls.size() < other->controls.size();
+            isGreater = controls.size() > other->controls.size();
+        }
+
+        if (isLess) {
+            std::lock_guard<std::mutex> oLock(other->mutex);
             for (const bitLenInt& oc : other->controls) {
                 AddControl(oc);
             }
-        } else if (controls.size() > other->controls.size()) {
+        } else if (isGreater) {
+            std::lock_guard<std::mutex> lock(mutex);
             for (const bitLenInt& c : controls) {
                 other->AddControl(c);
             }
         }
 
+        std::lock_guard<std::mutex> oLock(other->mutex);
         for (const auto& payload : other->payloads) {
             const auto& pit = payloads.find(payload.first);
             if (pit == payloads.end()) {
@@ -297,7 +304,12 @@ struct QCircuitGate {
             std::copy(out, out + 4U, p);
         }
 
-        if (!payloads.size()) {
+        bool isEmpty;
+        if (true) {
+            std::lock_guard<std::mutex> lock(mutex);
+            isEmpty = !payloads.size();
+        }
+        if (isEmpty) {
             Clear();
             return;
         }
@@ -315,8 +327,6 @@ struct QCircuitGate {
         if (!other) {
             return false;
         }
-        std::lock_guard<std::recursive_mutex> lock(mutex);
-        std::lock_guard<std::recursive_mutex> oLock(other->mutex);
         if (!CanCombine(other)) {
             return false;
         }
@@ -330,7 +340,7 @@ struct QCircuitGate {
      */
     bool IsIdentity()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
 
         if (controls.size()) {
             return false;
@@ -354,7 +364,7 @@ struct QCircuitGate {
      */
     bool IsPhase()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
 
         for (const auto& payload : payloads) {
             complex* p = payload.second.get();
@@ -371,7 +381,7 @@ struct QCircuitGate {
      */
     bool IsInvert()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
 
         for (const auto& payload : payloads) {
             complex* p = payload.second.get();
@@ -388,7 +398,7 @@ struct QCircuitGate {
      */
     bool IsPhaseInvert()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
 
         for (const auto& payload : payloads) {
             complex* p = payload.second.get();
@@ -406,7 +416,7 @@ struct QCircuitGate {
      */
     bool IsCnot()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
 
         if ((controls.size() != 1U) || (payloads.size() != 1U) || (payloads.find(1U) == payloads.end())) {
             return false;
@@ -428,10 +438,13 @@ struct QCircuitGate {
         if (!other) {
             return false;
         }
-        std::lock_guard<std::recursive_mutex> lock(mutex);
-        std::lock_guard<std::recursive_mutex> oLock(other->mutex);
 
-        std::set<bitLenInt>::iterator c = other->controls.find(target);
+        std::set<bitLenInt>::iterator c;
+        if (true) {
+            std::lock_guard<std::mutex> oLock(other->mutex);
+            c = other->controls.find(target);
+        }
+
         if (c != other->controls.end()) {
             if (controls.find(other->target) != controls.end()) {
                 return IsPhase() && other->IsPhase();
@@ -439,8 +452,14 @@ struct QCircuitGate {
             if (IsPhase()) {
                 return true;
             }
-            if (!IsPhaseInvert() ||
-                !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
+            if (!IsPhaseInvert()) {
+                return false;
+            }
+
+            std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> oLock(other->mutex);
+
+            if (std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
                 return false;
             }
 
@@ -470,11 +489,18 @@ struct QCircuitGate {
             return true;
         }
 
-        if (controls.find(other->target) != controls.end()) {
+        bool isSame;
+        if (true) {
+            std::lock_guard<std::mutex> lock(mutex);
+            c = controls.find(other->target);
+            isSame = (target == other->target);
+        }
+
+        if (c != controls.end()) {
             return other->IsPhase();
         }
 
-        return (target != other->target) || (IsPhase() && other->IsPhase());
+        return !isSame || (IsPhase() && other->IsPhase());
     }
 
     /**
@@ -482,7 +508,7 @@ struct QCircuitGate {
      */
     std::unique_ptr<complex[]> MakeUniformlyControlledPayload()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         const bitCapIntOcl maxQPower = pow2Ocl(controls.size());
         std::unique_ptr<complex[]> toRet(new complex[maxQPower << 2U]);
         constexpr complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
@@ -506,7 +532,7 @@ struct QCircuitGate {
      */
     std::vector<bitLenInt> GetControlsVector()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         return std::vector<bitLenInt>(controls.begin(), controls.end());
     }
 
@@ -515,7 +541,7 @@ struct QCircuitGate {
      */
     void PostSelectControl(bitLenInt c, bool eigen)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         const auto controlIt = controls.find(c);
         if (controlIt == controls.end()) {
             return;
@@ -555,7 +581,7 @@ class QCircuit {
 protected:
     bool isCollapsed;
     bitLenInt qubitCount;
-    std::recursive_mutex mutex;
+    std::mutex mutex;
     std::list<QCircuitGatePtr> gates;
     std::list<QCircuitGatePtr> rGates;
 
@@ -587,7 +613,7 @@ public:
         : isCollapsed(collapse)
         , qubitCount(qbCount)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         for (const QCircuitGatePtr& gate : g) {
             gates.push_back(gate->Clone());
         }
@@ -596,17 +622,14 @@ public:
 
     QCircuitPtr Clone()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         return std::make_shared<QCircuit>(qubitCount, gates, isCollapsed);
     }
 
-    ~QCircuit() { std::lock_guard<std::recursive_mutex> lock(mutex); }
-
     QCircuitPtr Inverse()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
         QCircuitPtr clone = Clone();
-        std::lock_guard<std::recursive_mutex> oLock(clone->mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         for (QCircuitGatePtr& gate : clone->gates) {
             for (auto& p : gate->payloads) {
                 const complex* m = p.second.get();
@@ -614,7 +637,7 @@ public:
                 std::copy(inv, inv + 4U, p.second.get());
             }
         }
-        clone->rGates = gates;
+        clone->rGates = clone->gates;
         clone->gates.reverse();
 
         return clone;
@@ -625,7 +648,7 @@ public:
      */
     bitLenInt GetQubitCount()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         return qubitCount;
     }
 
@@ -634,7 +657,7 @@ public:
      */
     void SetQubitCount(bitLenInt n)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         qubitCount = n;
     }
 
@@ -643,7 +666,7 @@ public:
      */
     std::list<QCircuitGatePtr> GetGateList()
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         return gates;
     }
 
@@ -652,7 +675,7 @@ public:
      */
     void SetGateList(std::list<QCircuitGatePtr> gl)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         gates = gl;
     }
 
@@ -674,7 +697,6 @@ public:
         constexpr complex m[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         const std::set<bitLenInt> s1 = { q1 };
         const std::set<bitLenInt> s2 = { q2 };
-        std::lock_guard<std::recursive_mutex> lock(mutex);
         AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
         AppendGate(std::make_shared<QCircuitGate>(q2, m, s1, 1U));
         AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
@@ -685,8 +707,8 @@ public:
      */
     void Append(QCircuitPtr circuit)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
-        std::lock_guard<std::recursive_mutex> oLock(circuit->mutex);
+        std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> oLock(circuit->mutex);
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }
@@ -703,11 +725,16 @@ public:
         if (!circuit) {
             return;
         }
-        std::lock_guard<std::recursive_mutex> lock(mutex);
-        std::lock_guard<std::recursive_mutex> oLock(circuit->mutex);
-        if (circuit->qubitCount > qubitCount) {
-            qubitCount = circuit->qubitCount;
+
+        std::lock_guard<std::mutex> oLock(circuit->mutex);
+
+        if (true) {
+            std::lock_guard<std::mutex> lock(mutex);
+            if (circuit->qubitCount > qubitCount) {
+                qubitCount = circuit->qubitCount;
+            }
         }
+
         for (const QCircuitGatePtr& g : circuit->gates) {
             AppendGate(g);
         }
@@ -727,7 +754,7 @@ public:
      */
     bool IsNonPhaseTarget(bitLenInt qubit)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         for (const QCircuitGatePtr& gate : gates) {
             if ((gate->target == qubit) && !(gate->IsPhase())) {
                 return true;
@@ -742,7 +769,7 @@ public:
      */
     void DeletePhaseTarget(bitLenInt qubit, bool eigen)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         std::list<QCircuitGatePtr> nGates;
         for (const QCircuitGatePtr& gate : rGates) {
             if (gate->target == qubit) {
@@ -761,7 +788,7 @@ public:
      */
     QCircuitPtr PastLightCone(std::set<bitLenInt>& qubits)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
 
         std::list<QCircuitGatePtr> nGates;
         // We're working from latest gate to earliest gate.
