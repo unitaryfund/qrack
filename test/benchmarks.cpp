@@ -3850,8 +3850,8 @@ TEST_CASE("test_qft_cosmology_inverse", "[cosmos]")
 
 TEST_CASE("test_bq_comparison", "[metriq]")
 {
-    const int GateCount1Qb = 6;
-    const int GateCountMultiQb = 2;
+    constexpr int GateCount1Qb = 6;
+    constexpr int GateCountMultiQb = 2;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         std::set<bitLenInt> allBits;
