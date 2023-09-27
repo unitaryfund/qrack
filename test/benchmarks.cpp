@@ -3848,6 +3848,53 @@ TEST_CASE("test_qft_cosmology_inverse", "[cosmos]")
         true, false, false, false);
 }
 
+TEST_CASE("test_bq_comparison", "[metriq]")
+{
+    const int GateCount1Qb = 6;
+    const int GateCountMultiQb = 2;
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        std::set<bitLenInt> allBits;
+        for (bitLenInt i = 0; i < n; ++i) {
+            allBits.insert(allBits.end(), i);
+        }
+        for (bitLenInt d = 0; d < n; ++d) {
+            bitCapInt zMask = 0U;
+            bitCapInt xMask = 0U;
+            for (bitLenInt i = 0; i < n; ++i) {
+                const real1_f gateRand = GateCount1Qb * qReg->Rand();
+                if (gateRand < 1) {
+                    qReg->H(i);
+                } else if (gateRand < 2) {
+                    zMask |= pow2(i);
+                } else if (gateRand < 3) {
+                    xMask |= pow2(i);
+                } else if (gateRand < 4) {
+                    qReg->Y(i);
+                } else if (gateRand < 5) {
+                    qReg->S(i);
+                } else {
+                    qReg->T(i);
+                }
+            }
+            qReg->ZMask(zMask);
+            qReg->XMask(xMask);
+
+            std::set<bitLenInt> unusedBits(allBits);
+            while (unusedBits.size() > 1) {
+                const bitLenInt b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+                const bitLenInt b2 = pickRandomBit(qReg->Rand(), &unusedBits);
+                const real1_f gateRand = GateCountMultiQb * qReg->Rand();
+                if (gateRand < ONE_R1) {
+                    qReg->CZ(b1, b2);
+                } else {
+                    qReg->CNOT(b1, b2);
+                }
+            }
+        }
+    });
+}
+
 TEST_CASE("test_n_bell", "[stabilizer]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) {
