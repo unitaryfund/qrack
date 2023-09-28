@@ -576,12 +576,14 @@ bitCapInt QEngine::MAll()
             lastNonzero = perm;
             totProb += partProb;
             if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                SetPermutation(perm);
                 return perm;
             }
         }
         ++perm;
     }
 
+    SetPermutation(lastNonzero);
     return lastNonzero;
 }
 

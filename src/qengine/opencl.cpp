@@ -2959,6 +2959,7 @@ bitCapInt QEngineOCL::MAll()
             lastNonzero = perm;
             totProb += partProb;
             if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                SetPermutation(perm);
                 return perm;
             }
         }
@@ -2971,10 +2972,12 @@ bitCapInt QEngineOCL::MAll()
         lastNonzero = perm;
         totProb += partProb;
         if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+            SetPermutation(perm);
             return perm;
         }
     }
 
+    SetPermutation(lastNonzero);
     return lastNonzero;
 }
 
