@@ -1607,6 +1607,29 @@ real1_f QEngineCPU::ProbParity(bitCapInt mask)
     return clampProb((real1_f)oddChance);
 }
 
+bitCapInt QEngineCPU::MAll()
+{
+    const real1_f rnd = Rand();
+    real1_f totProb = ZERO_R1_F;
+    bitCapInt lastNonzero = maxQPower - 1U;
+    bitCapInt perm = 0U;
+    while (perm < maxQPower) {
+        const real1_f partProb = ProbAll(perm);
+        if (partProb > REAL1_EPSILON) {
+            totProb += partProb;
+            if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                SetPermutation(perm);
+                return perm;
+            }
+            lastNonzero = perm;
+        }
+        ++perm;
+    }
+
+    SetPermutation(lastNonzero);
+    return lastNonzero;
+}
+
 bool QEngineCPU::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     if (mask >= maxQPowerOcl) {
