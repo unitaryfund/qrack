@@ -573,12 +573,12 @@ bitCapInt QEngine::MAll()
     while (perm < maxQPower) {
         const real1_f partProb = ProbAll(perm);
         if (partProb > REAL1_EPSILON) {
-            lastNonzero = perm;
             totProb += partProb;
             if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
                 SetPermutation(perm);
                 return perm;
             }
+            lastNonzero = perm;
         }
         ++perm;
     }

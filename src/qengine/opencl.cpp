@@ -2938,8 +2938,8 @@ bitCapInt QEngineOCL::MAll()
     // calls.
 
     const real1_f rnd = Rand();
-    real1_f totProb = ZERO_R1_F;
     const bitCapInt maxLcv = maxQPower - 1U;
+    real1_f totProb = ZERO_R1_F;
     bitCapInt lastNonzero = maxLcv;
     bitCapInt perm = 0U;
     complex amp;
@@ -2956,12 +2956,12 @@ bitCapInt QEngineOCL::MAll()
         });
         const real1_f partProb = (real1_f)norm(partAmp);
         if (partProb > REAL1_EPSILON) {
-            lastNonzero = perm;
             totProb += partProb;
             if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
                 SetPermutation(perm);
                 return perm;
             }
+            lastNonzero = perm;
         }
         ++perm;
     }
@@ -2969,12 +2969,12 @@ bitCapInt QEngineOCL::MAll()
     Finish();
     const real1_f partProb = (real1_f)norm(amp);
     if (partProb > REAL1_EPSILON) {
-        lastNonzero = perm;
         totProb += partProb;
         if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
             SetPermutation(perm);
             return perm;
         }
+        lastNonzero = perm;
     }
 
     SetPermutation(lastNonzero);
