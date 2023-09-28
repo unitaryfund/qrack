@@ -2926,6 +2926,58 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
     UpdateRunningNorm();
 }
 
+bitCapInt QEngineOCL::MAll()
+{
+    if (!stateBuffer) {
+        return 0U;
+    }
+
+    // It's much more costly, by the end, to read amplitudes one-at-a-time from the GPU instead of all-at-once. However,
+    // we might need to less work, overall, if we generate an (unbiased) sample before "walking" the full probability
+    // distribution. Hence, if we try this special-case approach, we should mask GPU-read latency with non-blocking
+    // calls.
+
+    const real1_f rnd = Rand();
+    real1_f totProb = ZERO_R1_F;
+    const bitCapInt maxLcv = maxQPower - 1U;
+    bitCapInt lastNonzero = maxLcv;
+    bitCapInt perm = 0U;
+    complex amp;
+    EventVecPtr waitVec = ResetWaitEvents();
+    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), &amp);
+    while (perm < maxLcv) {
+        Finish();
+        const complex partAmp = amp;
+        device_context->EmplaceEvent([&](cl::Event& event) {
+            tryOcl("Failed to read buffer", [&] {
+                return queue.enqueueReadBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)(perm + 1U),
+                    sizeof(complex), &amp, NULL, &event);
+            });
+        });
+        const real1_f partProb = (real1_f)norm(partAmp);
+        if (partProb > REAL1_EPSILON) {
+            lastNonzero = perm;
+            totProb += partProb;
+            if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                return perm;
+            }
+        }
+        ++perm;
+    }
+
+    Finish();
+    const real1_f partProb = (real1_f)norm(amp);
+    if (partProb > REAL1_EPSILON) {
+        lastNonzero = perm;
+        totProb += partProb;
+        if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+            return perm;
+        }
+    }
+
+    return lastNonzero;
+}
+
 complex QEngineOCL::GetAmplitude(bitCapInt perm)
 {
     if (perm >= maxQPower) {
