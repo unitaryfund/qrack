@@ -2940,9 +2940,8 @@ bitCapInt QEngineOCL::MAll()
     constexpr size_t cReadWidth = (QRACK_ALIGN_SIZE > sizeof(complex)) ? (QRACK_ALIGN_SIZE / sizeof(complex)) : 1U;
     const size_t alignSize = (maxQPower > cReadWidth) ? cReadWidth : (size_t)maxQPower;
     const real1_f rnd = Rand();
-    const bitCapInt maxLcv = maxQPower;
     real1_f totProb = ZERO_R1_F;
-    bitCapInt lastNonzero = maxLcv;
+    bitCapInt lastNonzero = maxQPower - 1U;
     bitCapInt perm = 0U;
     std::unique_ptr<complex[]> amp(new complex[alignSize]);
     EventVecPtr waitVec = ResetWaitEvents();
