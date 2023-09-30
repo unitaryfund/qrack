@@ -156,8 +156,8 @@ constexpr real1_f PI_R1 = (real1_f)M_PI;
 constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
 constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0f
-// Half of the amplitude of 16 maximally superposed qubits in any permutation
-#define REAL1_EPSILON 2e-17f
+// Half of the probability of 16 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 0.00000762939f
 #else
 constexpr real1 ZERO_R1 = (real1)0.0f;
 #define ZERO_R1_F 0.0f
@@ -167,8 +167,8 @@ constexpr real1_f PI_R1 = (real1_f)M_PI;
 constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
 constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 constexpr real1_f REAL1_DEFAULT_ARG = (real1_f)-999.0f;
-// Half of the amplitude of 16 maximally superposed qubits in any permutation
-constexpr real1 REAL1_EPSILON = (real1)2e-17f;
+// Half of the probability of 16 maximally superposed qubits in any permutation
+constexpr real1 REAL1_EPSILON = (real1)0.00000762939f;
 #endif
 #elif FPPOW < 6
 #define ZERO_R1 0.0f
@@ -179,8 +179,8 @@ constexpr real1_f PI_R1 = (real1_f)M_PI;
 constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
 constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0f
-// Half of the amplitude of 32 maximally superposed qubits in any permutation
-#define REAL1_EPSILON 2e-33f
+// Half of the probability of 32 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 1.1641532e-10
 #elif FPPOW < 7
 #define ZERO_R1 0.0
 #define ZERO_R1_F 0.0
@@ -190,8 +190,8 @@ constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define SQRT2_R1 M_SQRT2
 #define SQRT1_2_R1 M_SQRT1_2
 #define REAL1_DEFAULT_ARG -999.0
-// Half of the amplitude of 64 maximally superposed qubits in any permutation
-#define REAL1_EPSILON 2e-65
+// Half of the probability of 64 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 2.7105054e-20
 #else
 constexpr real1 ZERO_R1 = (real1)0.0;
 #define ZERO_R1_F 0.0
@@ -201,8 +201,8 @@ constexpr real1_f PI_R1 = (real1_f)M_PI;
 constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
 constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0
-// Half of the amplitude of 64 maximally superposed qubits in any permutation
-#define REAL1_EPSILON 2e-129
+// Half of the probability of 64 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 1.4693679e-39
 #endif
 
 #if ENABLE_CUDA
@@ -215,7 +215,7 @@ constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define qCudaReal1_f float
 #define make_qCudaCmplx make_half2
 constexpr qCudaReal1 ZERO_R1_CUDA = (qCudaReal1)0.0f;
-#define REAL1_EPSILON_CUDA 2e-17f
+#define REAL1_EPSILON_CUDA 0.00000762939f
 #define PI_R1_CUDA M_PI
 #elif FPPOW < 6
 #define qCudaReal1 float

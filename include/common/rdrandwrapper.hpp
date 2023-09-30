@@ -77,7 +77,7 @@ private:
     bool getRdRand(unsigned* pv)
     {
 #if ENABLE_RDRAND || ENABLE_DEVRAND
-        const int max_rdrand_tries = 10;
+        constexpr int max_rdrand_tries = 10;
         for (int i = 0; i < max_rdrand_tries; ++i) {
 #if ENABLE_DEVRAND
             if (sizeof(unsigned) == getrandom(reinterpret_cast<char*>(pv), sizeof(unsigned), 0))
