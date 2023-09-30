@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 8.17.8 DESCRIPTION "High Performance Quantum Bit Simulation")
+project (Qrack VERSION 8.18.3 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -32,6 +32,7 @@ add_library (qrack STATIC
     src/qstabilizer.cpp
     src/qstabilizerhybrid.cpp
     src/qcircuit.cpp
+    src/qtensornetwork.cpp
     )
 
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
@@ -257,8 +258,8 @@ set_target_properties (qrack_pinvoke PROPERTIES
 # Install common headers
 install (FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h
+    include/common/qrack_functions.hpp
     include/common/qrack_types.hpp
-    include/common/qrack_macros.hpp
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
     include/common/oclapi.hpp
@@ -291,6 +292,7 @@ install (FILES
     include/qengine_gpu_util.hpp
     include/qengine_opencl.hpp
     include/qengine_cuda.hpp
+    include/qtensornetwork.hpp
     include/qinterface.hpp
     include/qalu.hpp
     include/qparity.hpp

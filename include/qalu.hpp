@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
+#include "common/qrack_functions.hpp"
 
 namespace Qrack {
 

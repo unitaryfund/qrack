@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -2924,6 +2924,61 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
     DISPATCH_BLOCK_WRITE(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, inputState);
 
     UpdateRunningNorm();
+}
+
+bitCapInt QEngineOCL::MAll()
+{
+    if (!stateBuffer) {
+        return 0U;
+    }
+
+    // It's much more costly, by the end, to read amplitudes one-at-a-time from the GPU instead of all-at-once. However,
+    // we might need to less work, overall, if we generate an (unbiased) sample before "walking" the full probability
+    // distribution. Hence, if we try this special-case approach, we should mask GPU-read latency with non-blocking
+    // calls.
+
+    const real1_f rnd = Rand();
+    const bitCapInt maxLcv = maxQPower - 1U;
+    real1_f totProb = ZERO_R1_F;
+    bitCapInt lastNonzero = maxLcv;
+    bitCapInt perm = 0U;
+    complex amp;
+    EventVecPtr waitVec = ResetWaitEvents();
+    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), &amp);
+    while (perm < maxLcv) {
+        Finish();
+        const complex partAmp = amp;
+        device_context->EmplaceEvent([&](cl::Event& event) {
+            tryOcl("Failed to read buffer", [&] {
+                return queue.enqueueReadBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)(perm + 1U),
+                    sizeof(complex), &amp, NULL, &event);
+            });
+        });
+        const real1_f partProb = (real1_f)norm(partAmp);
+        if (partProb > REAL1_EPSILON) {
+            totProb += partProb;
+            if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                SetPermutation(perm);
+                return perm;
+            }
+            lastNonzero = perm;
+        }
+        ++perm;
+    }
+
+    Finish();
+    const real1_f partProb = (real1_f)norm(amp);
+    if (partProb > REAL1_EPSILON) {
+        totProb += partProb;
+        if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+            SetPermutation(perm);
+            return perm;
+        }
+        lastNonzero = perm;
+    }
+
+    SetPermutation(lastNonzero);
+    return lastNonzero;
 }
 
 complex QEngineOCL::GetAmplitude(bitCapInt perm)

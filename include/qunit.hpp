@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // QUnit maintains explicit separability of qubits as an optimization on a QEngine.
 // See https://arxiv.org/abs/1710.05867
@@ -30,10 +30,9 @@ class QUnit : public QAlu, public QParity, public QInterface {
 class QUnit : public QParity, public QInterface {
 #endif
 protected:
-    bool doNormalize;
+    bool freezeBasis2Qb;
     bool useHostRam;
     bool isSparse;
-    bool freezeBasis2Qb;
     bool isReactiveSeparate;
     bool useTGadget;
     bitLenInt thresholdQubits;
@@ -631,9 +630,9 @@ protected:
 
         shard.pauliBasis = PauliX;
 
-        const complex mtrx[4U]{ ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
-            ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
-            ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX) };
+        constexpr complex diag = complex(ONE_R1 / 2, ONE_R1 / 2);
+        constexpr complex cross = complex(ONE_R1 / 2, -ONE_R1 / 2);
+        constexpr complex mtrx[4U]{ diag, cross, cross, diag };
 
         if (shard.unit) {
             shard.unit->Mtrx(mtrx, shard.mapped);

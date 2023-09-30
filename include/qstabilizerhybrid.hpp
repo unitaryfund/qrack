@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -198,7 +198,7 @@ protected:
             angle += Period;
         }
 
-        int sector = std::round(angle / sectorAngle);
+        int sector = std::round((real1_s)(angle / sectorAngle));
         if (!isGateSuppressed) {
             switch (sector) {
             case 1U:
@@ -372,7 +372,8 @@ public:
         }
 
         std::unique_ptr<complex[]> dMtrx = GetQubitReducedDensityMatrix(qubit);
-        const complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        constexpr complex ONE_CMPLX_NEG = complex(-ONE_R1, ZERO_R1);
+        constexpr complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX_NEG };
         complex pMtrx[4];
         mul2x2(dMtrx.get(), pauliZ, pMtrx);
         return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;

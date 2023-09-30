@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // QBinaryDecision tree is an alternative approach to quantum state representation, as
 // opposed to state vector representation. This is a compressed form that can be
@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
+#include "common/qrack_functions.hpp"
 
 #include <mutex>
 

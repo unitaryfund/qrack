@@ -434,7 +434,7 @@ struct QCircuitGate {
     {
         const bitCapIntOcl maxQPower = pow2Ocl(controls.size());
         std::unique_ptr<complex[]> toRet(new complex[maxQPower << 2U]);
-        const complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
+        constexpr complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
             complex* mtrx = toRet.get() + (i << 2U);
             const auto& p = payloads.find(i);
@@ -454,6 +454,36 @@ struct QCircuitGate {
      * Convert my set of qubit indices to a vector
      */
     std::vector<bitLenInt> GetControlsVector() { return std::vector<bitLenInt>(controls.begin(), controls.end()); }
+
+    /**
+     * Erase a control index, if it exists, (via post selection).
+     */
+    void PostSelectControl(bitLenInt c, bool eigen)
+    {
+        const auto controlIt = controls.find(c);
+        if (controlIt == controls.end()) {
+            return;
+        }
+
+        const size_t cpos = std::distance(controls.begin(), controlIt);
+        const bitCapInt midPow = pow2(cpos);
+        const bitCapInt lowMask = midPow - 1U;
+        const bitCapInt highMask = ~(lowMask | midPow);
+        const bitCapInt qubitPow = pow2(cpos);
+        const bitCapInt eigenPow = eigen ? qubitPow : 0U;
+
+        std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
+        for (const auto& payload : payloads) {
+            if ((payload.first & qubitPow) != eigenPow) {
+                continue;
+            }
+            const bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) >> 1U);
+            nPayloads.emplace(nKey, payload.second);
+        }
+
+        payloads = nPayloads;
+        controls.erase(c);
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g);
@@ -547,12 +577,37 @@ public:
             std::swap(q1, q2);
         }
 
-        const complex m[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        constexpr complex m[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         const std::set<bitLenInt> s1 = { q1 };
         const std::set<bitLenInt> s2 = { q2 };
         AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
         AppendGate(std::make_shared<QCircuitGate>(q2, m, s1, 1U));
         AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
+    }
+
+    /**
+     * Append circuit (with identical qubit index mappings) at the end of this circuit.
+     */
+    void Append(QCircuitPtr circuit)
+    {
+        if (circuit->qubitCount > qubitCount) {
+            qubitCount = circuit->qubitCount;
+        }
+        gates.insert(gates.end(), circuit->gates.begin(), circuit->gates.end());
+    }
+
+    /**
+     * Combine circuit (with identical qubit index mappings) at the end of this circuit, by acting all additional gates
+     * in sequence.
+     */
+    void Combine(QCircuitPtr circuit)
+    {
+        if (circuit->qubitCount > qubitCount) {
+            qubitCount = circuit->qubitCount;
+        }
+        for (const QCircuitGatePtr& g : circuit->gates) {
+            AppendGate(g);
+        }
     }
 
     /**
@@ -563,6 +618,78 @@ public:
      * Run this circuit.
      */
     void Run(QInterfacePtr qsim);
+
+    /**
+     * Check if an index is any target qubit of this circuit.
+     */
+    bool IsNonPhaseTarget(bitLenInt qubit)
+    {
+        for (const QCircuitGatePtr& gate : gates) {
+            if ((gate->target == qubit) && !(gate->IsPhase())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * (If the qubit is not a target of a non-phase gate...) Delete this qubits' controls and phase targets.
+     */
+    void DeletePhaseTarget(bitLenInt qubit, bool eigen)
+    {
+        std::list<QCircuitGatePtr> nGates;
+        gates.reverse();
+        for (const QCircuitGatePtr& gate : gates) {
+            if (gate->target == qubit) {
+                continue;
+            }
+            QCircuitGatePtr nGate = gate->Clone();
+            nGate->PostSelectControl(qubit, eigen);
+            nGates.insert(nGates.begin(), nGate);
+        }
+        gates = nGates;
+    }
+
+    /**
+     * Return (as a new QCircuit) just the gates on the past light cone of a set of qubit indices.
+     */
+    QCircuitPtr PastLightCone(std::set<bitLenInt>& qubits)
+    {
+        // We're working from latest gate to earliest gate.
+        gates.reverse();
+
+        std::list<QCircuitGatePtr> nGates;
+        for (const QCircuitGatePtr& gate : gates) {
+            // Is the target qubit on the light cone?
+            if (qubits.find(gate->target) == qubits.end()) {
+                // The target isn't on the light cone, but the controls might be.
+                bool isNonCausal = true;
+                for (const bitLenInt& c : gate->controls) {
+                    if (qubits.find(c) != qubits.end()) {
+                        isNonCausal = false;
+                        break;
+                    }
+                }
+                if (isNonCausal) {
+                    // This gate is not on the past light cone.
+                    continue;
+                }
+            }
+
+            // This gate is on the past light cone.
+            nGates.insert(nGates.begin(), gate->Clone());
+
+            // Every qubit involved in this gate is now considered to be part of the past light cone.
+            qubits.insert(gate->target);
+            qubits.insert(gate->controls.begin(), gate->controls.end());
+        }
+
+        // Restore the original order of this QCircuit's gates.
+        gates.reverse();
+
+        return std::make_shared<QCircuit>(qubitCount, nGates, isCollapsed);
+    }
 
 #if ENABLE_ALU
     /** Add integer (without sign) */

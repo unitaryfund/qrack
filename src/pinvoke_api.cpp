@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
@@ -21,7 +21,6 @@
 #include <iostream>
 #include <map>
 #include <mutex>
-#include <vector>
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
@@ -597,8 +596,8 @@ MICROSOFT_QUANTUM_DECL int get_error(_In_ uintq sid)
 /**
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
-MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool bdt,
-    _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc, _In_ bool hp)
+MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bool md, _In_ bool sd, _In_ bool sh,
+    _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc, _In_ bool hp)
 {
     META_LOCK_GUARD()
 
@@ -649,6 +648,10 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
 
     if (sd) {
         simulatorType.push_back(isOclMulti ? QINTERFACE_QUNIT_MULTI : QINTERFACE_QUNIT);
+    }
+
+    if (tn) {
+        simulatorType.push_back(QINTERFACE_TENSOR_NETWORK);
     }
 
     // (...then reverse:)
@@ -726,17 +729,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
         }
     }
 
-    std::vector<QInterfaceEngine> simulatorType;
-
-#if ENABLE_OPENCL
-    simulatorType.push_back(
-        (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#elif ENABLE_CUDA
-    simulatorType.push_back(
-        (CUDAEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
-#else
-    simulatorType.push_back(QINTERFACE_OPTIMAL);
-#endif
+    const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK };
 
     bool isSuccess = true;
     QInterfacePtr simulator = NULL;
@@ -792,9 +785,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
         }
     }
 
-    std::vector<QInterfaceEngine> simulatorType;
-
-    simulatorType.push_back(QINTERFACE_OPTIMAL);
+    const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_OPTIMAL };
 
     std::vector<int64_t> deviceList;
 #if ENABLE_OPENCL
@@ -2664,7 +2655,7 @@ MICROSOFT_QUANTUM_DECL void MULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
         bitCapInt aTot = _combineA(na, a);
         bitCapInt mTot = _combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->MULModNOut(aTot, mTot, starts.start1, starts.start2, n);
+        simulator->MULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2679,7 +2670,7 @@ MICROSOFT_QUANTUM_DECL void DIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
         bitCapInt aTot = _combineA(na, a);
         bitCapInt mTot = _combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->IMULModNOut(aTot, mTot, starts.start1, starts.start2, n);
+        simulator->IMULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2750,7 +2741,7 @@ MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
         }
-        QALU(simulator)->CMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
+        simulator->CMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2769,7 +2760,7 @@ MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
         }
-        QALU(simulator)->CIMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
+        simulator->CIMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -3226,7 +3217,7 @@ MICROSOFT_QUANTUM_DECL uintq init_qcircuit(_In_ bool collapse)
     return cid;
 }
 
-uintq _init_qcircuit_copy(uintq cid, bool isInverse)
+uintq _init_qcircuit_copy(uintq cid, bool isInverse, std::set<bitLenInt> q)
 {
     META_LOCK_GUARD()
 
@@ -3249,7 +3240,7 @@ uintq _init_qcircuit_copy(uintq cid, bool isInverse)
         }
     }
 
-    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : circuit->Clone();
+    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : (q.size() ? circuit->PastLightCone(q) : circuit->Clone());
 
     if (ncid == circuits.size()) {
         circuitReservations.push_back(true);
@@ -3262,9 +3253,18 @@ uintq _init_qcircuit_copy(uintq cid, bool isInverse)
     return ncid;
 }
 
-MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid) { return _init_qcircuit_copy(cid, false); }
+MICROSOFT_QUANTUM_DECL uintq init_qcircuit_clone(_In_ uintq cid) { return _init_qcircuit_copy(cid, false, {}); }
 
-MICROSOFT_QUANTUM_DECL uintq qcircuit_inverse(_In_ uintq cid) { return _init_qcircuit_copy(cid, true); }
+MICROSOFT_QUANTUM_DECL uintq qcircuit_inverse(_In_ uintq cid) { return _init_qcircuit_copy(cid, true, {}); }
+
+MICROSOFT_QUANTUM_DECL uintq qcircuit_past_light_cone(_In_ uintq cid, _In_ uintq n, _In_reads_(n) uintq* q)
+{
+    std::set<bitLenInt> qubits;
+    for (uintq i = 0U; i < n; ++i) {
+        qubits.insert((bitLenInt)q[i]);
+    }
+    return _init_qcircuit_copy(cid, false, qubits);
+}
 
 MICROSOFT_QUANTUM_DECL void destroy_qcircuit(_In_ uintq cid)
 {

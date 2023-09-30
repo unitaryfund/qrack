@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -12,14 +12,13 @@
 
 #pragma once
 
+#include "common/oclengine.hpp"
+#include "qengine.hpp"
 #include "qengine_gpu_util.hpp"
 
 #if !ENABLE_OPENCL
 #error OpenCL has not been enabled
 #endif
-
-#include "common/oclengine.hpp"
-#include "qengine.hpp"
 
 #include <list>
 #include <mutex>
@@ -422,6 +421,7 @@ public:
     void SetQuantumState(const complex* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
+    bitCapInt MAll();
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp);
 

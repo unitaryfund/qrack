@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -214,6 +214,7 @@ public:
     real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
     real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
     real1_f ProbParity(bitCapInt mask);
+    bitCapInt MAll();
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);

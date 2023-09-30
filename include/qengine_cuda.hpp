@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -12,17 +12,15 @@
 
 #pragma once
 
+#include "common/cudaengine.cuh"
+#include "qengine.hpp"
 #include "qengine_gpu_util.hpp"
 
 #if !ENABLE_CUDA
 #error CUDA has not been enabled
 #endif
 
-#include "common/cudaengine.cuh"
-#include "qengine.hpp"
-
 #include <list>
-#include <mutex>
 
 #define BCI_ARG_LEN 10
 #define CMPLX_NORM_LEN 6
