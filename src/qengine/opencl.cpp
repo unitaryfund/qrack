@@ -2937,44 +2937,41 @@ bitCapInt QEngineOCL::MAll()
     // distribution. Hence, if we try this special-case approach, we should mask GPU-read latency with non-blocking
     // calls.
 
+    constexpr size_t cReadWidth = (QRACK_ALIGN_SIZE > sizeof(complex)) ? (QRACK_ALIGN_SIZE / sizeof(complex)) : 1U;
+    const size_t alignSize = (maxQPower > cReadWidth) ? cReadWidth : (size_t)maxQPower;
     const real1_f rnd = Rand();
-    const bitCapInt maxLcv = maxQPower - 1U;
+    const bitCapInt maxLcv = maxQPower;
     real1_f totProb = ZERO_R1_F;
     bitCapInt lastNonzero = maxLcv;
     bitCapInt perm = 0U;
-    complex amp;
+    std::unique_ptr<complex[]> amp(new complex[alignSize]);
     EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), &amp);
-    while (perm < maxLcv) {
+    DISPATCH_BLOCK_READ(
+        waitVec, *stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex) * alignSize, amp.get());
+    while (perm < maxQPower) {
         Finish();
-        const complex partAmp = amp;
-        device_context->EmplaceEvent([&](cl::Event& event) {
-            tryOcl("Failed to read buffer", [&] {
-                return queue.enqueueReadBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)(perm + 1U),
-                    sizeof(complex), &amp, NULL, &event);
+        const std::vector<complex> partAmp{ amp.get(), amp.get() + alignSize };
+        if ((perm + alignSize) < maxQPower) {
+            device_context->EmplaceEvent([&](cl::Event& event) {
+                tryOcl("Failed to read buffer", [&] {
+                    return queue.enqueueReadBuffer(*stateBuffer, CL_FALSE,
+                        sizeof(complex) * (bitCapIntOcl)(perm + alignSize), sizeof(complex) * alignSize, amp.get(),
+                        NULL, &event);
+                });
             });
-        });
-        const real1_f partProb = (real1_f)norm(partAmp);
-        if (partProb > REAL1_EPSILON) {
-            totProb += partProb;
-            if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
-                SetPermutation(perm);
-                return perm;
+        }
+        for (size_t i = 0U; i < alignSize; ++i) {
+            const real1_f partProb = (real1_f)norm(partAmp[i]);
+            if (partProb > REAL1_EPSILON) {
+                totProb += partProb;
+                if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                    SetPermutation(perm);
+                    return perm;
+                }
+                lastNonzero = perm;
             }
-            lastNonzero = perm;
+            ++perm;
         }
-        ++perm;
-    }
-
-    Finish();
-    const real1_f partProb = (real1_f)norm(amp);
-    if (partProb > REAL1_EPSILON) {
-        totProb += partProb;
-        if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
-            SetPermutation(perm);
-            return perm;
-        }
-        lastNonzero = perm;
     }
 
     SetPermutation(lastNonzero);
