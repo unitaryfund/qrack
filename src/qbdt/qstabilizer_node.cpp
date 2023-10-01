@@ -147,7 +147,10 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
-    if (!IS_NODE_0(scale)) {
+    if (IS_NODE_0(scale) || (ancillaCount >= qReg->GetQubitCount())) {
+        b0->SetZero();
+        b1->SetZero();
+    } else {
         // Swap gate decomposition:
         if (qReg->IsSeparableZ(0U)) {
             // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
@@ -232,24 +235,24 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
             // (Notice, we act X gate in nRoot |1> branch and no gate in |0> branch.)
             qReg1->X(0U);
         }
-    }
 
-    if ((ancillaCount + 1U) >= qReg->GetQubitCount()) {
-        // If this is the last stabilizer qubit, clear the container and reset the ancilla count.
-        qReg0->Clear();
-        qReg1->Clear();
-        b0->ancillaCount = 0U;
-        b1->ancillaCount = 0U;
-    } else if (qReg->CanDecomposeDispose(0U, 1U)) {
-        // If the stabilizer qubit can be disposed, avoid an ancilla.
-        qReg0->Dispose(0U, 1U);
-        qReg1->Dispose(0U, 1U);
-    } else {
-        // The stabilizer qubit becomes an ancilla.
-        qReg0->ROR(1U, 0U, qReg0->GetQubitCount());
-        qReg1->ROR(1U, 0U, qReg1->GetQubitCount());
-        ++(b0->ancillaCount);
-        ++(b1->ancillaCount);
+        if ((ancillaCount + 1U) >= qReg->GetQubitCount()) {
+            // If this is the last stabilizer qubit, clear the container and reset the ancilla count.
+            qReg0->Clear();
+            qReg1->Clear();
+            b0->ancillaCount = 0U;
+            b1->ancillaCount = 0U;
+        } else if (qReg->CanDecomposeDispose(0U, 1U)) {
+            // If the stabilizer qubit can be disposed, avoid an ancilla.
+            qReg0->Dispose(0U, 1U);
+            qReg1->Dispose(0U, 1U);
+        } else {
+            // The stabilizer qubit becomes an ancilla.
+            qReg0->ROR(1U, 0U, qReg0->GetQubitCount());
+            qReg1->ROR(1U, 0U, qReg1->GetQubitCount());
+            ++(b0->ancillaCount);
+            ++(b1->ancillaCount);
+        }
     }
 
     // This process might need to be repeated, recursively.
