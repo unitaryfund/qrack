@@ -71,7 +71,11 @@ public:
 
     virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
 
-    virtual bool isEqualBranch(QBdtNodeInterfacePtr r, const bool& b);
+    virtual bool isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
+    {
+        throw std::out_of_range("QBdtQStabilizerNode::isEqualBranch() not implemented! (Stabilizer nodes should always "
+                                "convert to QBDD, for comparison.)");
+    }
 
     virtual void Normalize(bitLenInt depth = 1U)
     {

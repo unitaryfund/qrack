@@ -47,56 +47,9 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    QBdtQStabilizerNodePtr rStab = r->IsStabilizer() ? std::dynamic_pointer_cast<QBdtQStabilizerNode>(r) : NULL;
-    const bool isRTerminal = rStab ? (rStab->ancillaCount >= rStab->qReg->GetQubitCount()) : !r->branches[0U];
+    QBdtNodeInterfacePtr lhs = PopSpecial();
 
-    if (ancillaCount >= qReg->GetQubitCount()) {
-        return isRTerminal;
-    }
-
-    if (isRTerminal) {
-        return false;
-    }
-
-    if (rStab) {
-        return isEqualBranch(r, 0U);
-    }
-
-    QBdtNodeInterfacePtr ths = PopSpecial();
-
-    return ths->isEqualBranch(r, 0U) && ths->isEqualBranch(r, 1U);
-}
-
-bool QBdtQStabilizerNode::isEqualBranch(QBdtNodeInterfacePtr r, const bool& unused)
-{
-    QBdtQStabilizerNodePtr rStab = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r);
-    QUnitCliffordPtr rReg = rStab->qReg;
-
-    if (qReg.get() == rReg.get()) {
-        return true;
-    }
-
-    QUnitCliffordPtr lReg = qReg;
-
-    if (ancillaCount < rStab->ancillaCount) {
-        lReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
-        lReg->Allocate(rStab->ancillaCount - ancillaCount);
-    } else if (ancillaCount > rStab->ancillaCount) {
-        rReg = std::dynamic_pointer_cast<QUnitClifford>(rReg->Clone());
-        rReg->Allocate(ancillaCount - rStab->ancillaCount);
-    }
-
-    if (!lReg->ApproxCompare(rReg)) {
-        return false;
-    }
-
-    if (ancillaCount > rStab->ancillaCount) {
-        qReg = rStab->qReg;
-    } else {
-        rStab->qReg = qReg;
-    }
-
-    return true;
+    return lhs->isEqualUnder(r);
 }
 
 void QBdtQStabilizerNode::Branch(bitLenInt depth, bitLenInt parDepth)
