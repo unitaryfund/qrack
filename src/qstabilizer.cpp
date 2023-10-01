@@ -908,12 +908,9 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
         },
         { c, t });
 
-    if (randGlobalPhase) {
-        return;
+    if (!randGlobalPhase) {
+        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
     }
-
-    const complex nAmp = GetAmplitude(ampEntry.permutation);
-    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 /// Apply an (anti-)CZ gate with control and target
@@ -945,12 +942,9 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
         },
         { c, t });
 
-    if (randGlobalPhase) {
-        return;
+    if (!randGlobalPhase) {
+        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
     }
-
-    const complex nAmp = GetAmplitude(ampEntry.permutation);
-    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 void QStabilizer::Swap(bitLenInt c, bitLenInt t)
@@ -1085,7 +1079,7 @@ void QStabilizer::H(bitLenInt t)
     if (nIsSepZ || ((entry.permutation & tPow) == 0U)) {
         const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
         if (norm(oAmp) > FP_NORM_EPSILON) {
-            phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+            phaseOffset *= std::polar(ONE_R1, std::arg(oAmp) - std::arg(entry.amplitude));
             return;
         }
     }
@@ -1100,7 +1094,7 @@ void QStabilizer::H(bitLenInt t)
         if (nIsSepZ || ((entry.permutation & tPow) == 0U)) {
             const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
             if (norm(oAmp) > FP_NORM_EPSILON) {
-                phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+                phaseOffset *= std::polar(ONE_R1, std::arg(oAmp) - std::arg(entry.amplitude));
                 return;
             }
         }
@@ -1169,11 +1163,8 @@ void QStabilizer::Z(bitLenInt t)
         { t });
 
     if (randGlobalPhase) {
-        return;
+        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
     }
-
-    const complex nAmp = GetAmplitude(ampEntry.permutation);
-    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -1201,8 +1192,9 @@ void QStabilizer::S(bitLenInt t)
         return;
     }
 
-    const complex nAmp = GetAmplitude(ampEntry.permutation);
-    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
+    if (randGlobalPhase) {
+        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
+    }
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -1230,8 +1222,9 @@ void QStabilizer::IS(bitLenInt t)
         return;
     }
 
-    const complex nAmp = GetAmplitude(ampEntry.permutation);
-    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
+    if (randGlobalPhase) {
+        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
+    }
 }
 
 /**
@@ -1626,8 +1619,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     const bitCapInt endMask = (oMaxQPower - 1U) ^ (pow2(start + length) - 1U);
     const bitCapInt nPerm = (ampEntry.permutation & startMask) | ((ampEntry.permutation & endMask) >> length);
 
-    const complex nAmp = GetAmplitude(nPerm);
-    phaseOffset *= (ampEntry.amplitude * abs(nAmp)) / (nAmp * abs(ampEntry.amplitude));
+    phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(nPerm)));
 }
 
 real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error_tol, bool isDiscrete)
