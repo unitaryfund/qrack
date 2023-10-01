@@ -264,9 +264,9 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         // This exactly cancels the amplitudes where the stabilizer qubit is |1>.
         // If the stabilizer qubit were separable, QBDD would end up a Z eigenstate.
         // However, we've handled that case, so "stabilizer rank" is 2.
-        // ...This ends up being just post selection for |0> in both stabilizers!
+        // ...This ends up being just post selection in both stabilizers!
         qReg0->ForceM(0U, false);
-        qReg1->ForceM(0U, false);
+        qReg1->ForceM(1U, false);
 
         // CNOT from QBdt qubit to stabilizer qubit...
         // (Notice, we act X gate in nRoot |1> branch and no gate in |0> branch.)
