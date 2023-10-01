@@ -36,7 +36,7 @@ public:
         , qReg(q)
         , ancillaCount(0)
     {
-        if (!qReg) {
+        if (!qReg || !(qReg.get())) {
             throw std::invalid_argument("QBdtQStabilizerNode constructor must receive a non-null argument!");
         }
     }
@@ -46,7 +46,7 @@ public:
         , qReg(q)
         , ancillaCount(ac)
     {
-        if (!qReg) {
+        if (!qReg || !(qReg.get())) {
             throw std::invalid_argument("QBdtQStabilizerNode constructor must receive a non-null argument!");
         }
     }
@@ -67,6 +67,14 @@ public:
     }
 
     virtual QUnitCliffordPtr GetReg() { return qReg; }
+
+    virtual void SetReg(QUnitCliffordPtr r)
+    {
+        if (!r || !(r.get())) {
+            throw std::invalid_argument("QBdtQStabilizerNode::SetReg() must receive a non-null argument!");
+        }
+        qReg = r;
+    }
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQStabilizerNode>(scale, qReg); }
 

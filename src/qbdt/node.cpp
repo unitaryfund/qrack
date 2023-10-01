@@ -147,37 +147,64 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     b0->scale /= phaseFac;
     b1->scale /= phaseFac;
 
+    if (!isCliffordBlocked && b0->IsStabilizer() && b1->IsStabilizer()) {
+        const QBdtQStabilizerNodePtr& b0s = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0);
+        const QBdtQStabilizerNodePtr& b1s = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1);
+        QUnitCliffordPtr qReg0 = b0s->GetReg();
+        QUnitCliffordPtr qReg1 = b1s->GetReg();
+        const bitLenInt qbCount0 = qReg0->GetQubitCount();
+        const bitLenInt qbCount1 = qReg1->GetQubitCount();
+        if (qbCount0 < qbCount1) {
+            qReg0 = std::dynamic_pointer_cast<QUnitClifford>(qReg0->Clone());
+            qReg0->Allocate(qbCount1 - qbCount0);
+        } else if (qbCount1 < qbCount0) {
+            qReg1 = std::dynamic_pointer_cast<QUnitClifford>(qReg1->Clone());
+            qReg1->Allocate(qbCount0 - qbCount1);
+        }
+        if (qReg0->ApproxCompare(qReg1)) {
+            if (IS_NODE_0(b0s->scale - b1s->scale)) {
+                branches[0U] = branches[1U];
+            } else if (qbCount0 < qbCount1) {
+                b1s->SetReg(b0s->GetReg());
+            } else {
+                b0s->SetReg(b1s->GetReg());
+            }
+        }
+    }
+
     if (b0->IsStabilizer() || b1->IsStabilizer()) {
-        if (!isCliffordBlocked) {
-            const bool isB0Stabilizer = IS_NODE_0(b1->scale) && b0->IsStabilizer();
-            const bool isB1Stabilizer = IS_NODE_0(b0->scale) && b1->IsStabilizer();
-            if (isB0Stabilizer || isB1Stabilizer || b0->isEqualUnder(b1)) {
-                const QBdtQStabilizerNodePtr& sNode =
-                    std::dynamic_pointer_cast<QBdtQStabilizerNode>(isB1Stabilizer ? b1 : b0);
-                const QUnitCliffordPtr qReg = sNode->GetReg();
-                const real1 prob = std::min(ONE_R1, std::max(ZERO_R1, norm(b1->scale)));
-                const real1 sqrtProb = sqrt(prob);
-                const real1 sqrt1MinProb = sqrt(std::min(ONE_R1, std::max(ZERO_R1, ONE_R1 - prob)));
-                const complex phase0 = IS_NODE_0(b0->scale) ? ONE_CMPLX : std::polar(ONE_R1, arg(b0->scale));
-                const complex phase1 = IS_NODE_0(b1->scale) ? ONE_CMPLX : std::polar(ONE_R1, arg(b1->scale));
-                const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1,
-                    -sqrt1MinProb * phase1 };
+        if (isCliffordBlocked) {
+            return shared_from_this();
+        }
 
-                if (IS_CLIFFORD(mtrx)) {
-                    if (sNode->ancillaCount) {
-                        // Reuse an ancilla if possible, before allocating a new qubit.
-                        --(sNode->ancillaCount);
-                        qReg->ROL(1U, 0U, qReg->GetQubitCount());
-                    } else {
-                        qReg->Allocate(0U, 1U);
-                    }
-                    qReg->Mtrx(mtrx, 0);
+        const bool isB0Stabilizer = IS_NODE_0(b1->scale) && b0->IsStabilizer();
+        const bool isB1Stabilizer = IS_NODE_0(b0->scale) && b1->IsStabilizer();
+        if (isB0Stabilizer || isB1Stabilizer || b0->isEqualUnder(b1)) {
+            const QBdtQStabilizerNodePtr& sNode =
+                std::dynamic_pointer_cast<QBdtQStabilizerNode>(isB1Stabilizer ? b1 : b0);
+            const QUnitCliffordPtr qReg = sNode->GetReg();
+            const real1 prob = std::min(ONE_R1, std::max(ZERO_R1, norm(b1->scale)));
+            const real1 sqrtProb = sqrt(prob);
+            const real1 sqrt1MinProb = sqrt(std::min(ONE_R1, std::max(ZERO_R1, ONE_R1 - prob)));
+            const complex phase0 = IS_NODE_0(b0->scale) ? ONE_CMPLX : std::polar(ONE_R1, arg(b0->scale));
+            const complex phase1 = IS_NODE_0(b1->scale) ? ONE_CMPLX : std::polar(ONE_R1, arg(b1->scale));
+            const complex mtrx[4U]{ sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1,
+                -sqrt1MinProb * phase1 };
 
-                    sNode->scale = scale;
-                    sNode->mtx = mtx;
-
-                    return sNode->Prune();
+            if (IS_CLIFFORD(mtrx)) {
+                if (sNode->ancillaCount) {
+                    // Reuse an ancilla if possible, before allocating a new qubit.
+                    --(sNode->ancillaCount);
+                    qReg->ROL(1U, 0U, qReg->GetQubitCount());
+                } else {
+                    qReg->Allocate(0U, 1U);
                 }
+                qReg->Mtrx(mtrx, 0);
+
+                sNode->scale = scale;
+                sNode->mtx = mtx;
+
+                return sNode->Prune();
             }
         }
 
