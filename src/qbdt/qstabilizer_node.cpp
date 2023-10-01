@@ -254,14 +254,23 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         // H on QBdt qubit - we initialized the QBDD qubit at this point.
 
         // H-Z-H is X
-        // qReg1->Z(0U);
+        qReg1->Z(0U);
 
-        // TODO: Second H on QBdt qubit
-        throw std::runtime_error("Entangled PopSpecial() not implemented!");
+        // Second H on QBdt qubit...
+        // Think about it: the QBDD qubit has equal scale factors in both branches.
+        // The stabilizer subsystems in each QBDD branch only differ by that last Z.
+        // Then, acting H is like applying 1/sqrt(2) to each branch and summing...
+        // This doubles the amplitudes where the stabilizer qubit is |0>.
+        // This exactly cancels the amplitudes where the stabilizer qubit is |1>.
+        // If the stabilizer qubit were separable, QBDD would end up a Z eigenstate.
+        // However, we've handled that case, so "stabilizer rank" is 2.
+        // ...This ends up being just post selection for |0> in both stabilizers!
+        qReg0->ForceM(0U, false);
+        qReg1->ForceM(0U, false);
 
         // CNOT from QBdt qubit to stabilizer qubit...
         // (Notice, we act X gate in nRoot |1> branch and no gate in |0> branch.)
-        // qReg1->X(0U);
+        qReg1->X(0U);
     }
 
     // The stabilizer qubit becomes an ancilla.
