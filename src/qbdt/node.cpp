@@ -164,7 +164,10 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
         if (qReg0->ApproxCompare(qReg1)) {
             if (IS_NODE_0(b0s->scale - b1s->scale)) {
                 branches[0U] = branches[1U];
-            } else if (qbCount0 < qbCount1) {
+                return shared_from_this();
+            }
+
+            if (qbCount0 < qbCount1) {
                 b1s->SetReg(b0s->GetReg());
             } else {
                 b0s->SetReg(b1s->GetReg());
