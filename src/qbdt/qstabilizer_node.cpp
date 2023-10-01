@@ -214,8 +214,9 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         }
     } else if (qReg->IsSeparableX(0U)) {
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
-        qReg->H(0U);
-        if (!qReg->M(0U)) {
+        qReg0->H(0U);
+        qReg1->H(0U);
+        if (!qReg0->M(0U)) {
             // |+>
             nRoot->branches[0U]->scale = complex(SQRT1_2_R1, ZERO_R1);
             nRoot->branches[1U]->scale = complex(SQRT1_2_R1, ZERO_R1);
@@ -227,12 +228,13 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
             qReg0->X(0U);
             qReg1->X(0U);
         }
-        qReg->H(0U);
     } else if (qReg->IsSeparableY(0U)) {
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
-        qReg->IS(0U);
-        qReg->H(0U);
-        if (!qReg->M(0U)) {
+        qReg0->IS(0U);
+        qReg0->H(0U);
+        qReg1->IS(0U);
+        qReg1->H(0U);
+        if (!qReg0->M(0U)) {
             // |"left">
             nRoot->branches[0U]->scale = complex(SQRT1_2_R1, ZERO_R1);
             nRoot->branches[1U]->scale = complex(ZERO_R1, SQRT1_2_R1);
@@ -244,8 +246,6 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
             qReg0->X(0U);
             qReg1->X(0U);
         }
-        qReg->H(0U);
-        qReg->S(0U);
     } else {
         // SWAP gate from QBdt qubit to stabilizer qubit with 3 CNOTs...
 
