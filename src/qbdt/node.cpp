@@ -164,13 +164,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                     -sqrt1MinProb * phase1 };
 
                 if (IS_CLIFFORD(mtrx)) {
-                    if (sNode->ancillaCount) {
-                        // Reuse an ancilla if possible, before allocating a new qubit.
-                        --(sNode->ancillaCount);
-                        qReg->ROL(1U, 0U, qReg->GetQubitCount());
-                    } else {
-                        qReg->Allocate(0U, 1U);
-                    }
+                    --(sNode->ancillaCount);
+                    qReg->ROL(1U, 0U, qReg->GetQubitCount());
+
                     qReg->Mtrx(mtrx, 0);
 
                     sNode->scale = scale;
