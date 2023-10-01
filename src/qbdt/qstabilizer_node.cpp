@@ -270,6 +270,9 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         // ...This ends up being just post selection in both stabilizers!
         qReg0->ForceM(0U, false);
         qReg1->ForceM(0U, true);
+        // This doesn't change logical state, but the stabilizer qubit is an "ancilla,"
+        // so we reset it to exactly |0>, across branches.
+        qReg1->X(0U);
 
         // CNOT from QBdt qubit to stabilizer qubit...
         // (Notice, we act X gate in nRoot |1> branch and no gate in |0> branch.)
