@@ -227,6 +227,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
             qReg0->X(0U);
             qReg1->X(0U);
         }
+        qReg->H(0U);
     } else if (qReg->IsSeparableY(0U)) {
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
         qReg->IS(0U);
@@ -243,6 +244,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
             qReg0->X(0U);
             qReg1->X(0U);
         }
+        qReg->H(0U);
+        qReg->S(0U);
     } else {
         // SWAP gate from QBdt qubit to stabilizer qubit with 3 CNOTs...
 
