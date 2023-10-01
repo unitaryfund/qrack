@@ -47,9 +47,43 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    QBdtNodeInterfacePtr lhs = PopSpecial();
+    if (!r->IsStabilizer()) {
+        QBdtNodeInterfacePtr lhs = PopSpecial();
+        return lhs->isEqualUnder(r);
+    }
 
-    return lhs->isEqualUnder(r);
+    // Both nodes are stabilizer.
+    QBdtQStabilizerNodePtr rhs = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r);
+    const bitLenInt lQbCount = qReg->GetQubitCount();
+    const bitLenInt rQbCount = rhs->qReg->GetQubitCount();
+    QInterfacePtr lReg = qReg;
+    QInterfacePtr rReg = rhs->qReg;
+
+    if (rQbCount < lQbCount) {
+        rReg = rReg->Clone();
+        rReg->Allocate(lQbCount - rQbCount);
+
+        const bool toRet = lReg->ApproxCompare(rReg);
+        if (toRet) {
+            qReg = rhs->qReg;
+            ancillaCount = rhs->ancillaCount;
+        }
+
+        return toRet;
+    }
+
+    if (lQbCount < rQbCount) {
+        lReg = lReg->Clone();
+        lReg->Allocate(rQbCount - lQbCount);
+    }
+
+    const bool toRet = lReg->ApproxCompare(rReg);
+    if (toRet) {
+        rhs->qReg = qReg;
+        rhs->ancillaCount = ancillaCount;
+    }
+
+    return toRet;
 }
 
 void QBdtQStabilizerNode::Branch(bitLenInt depth, bitLenInt parDepth)
