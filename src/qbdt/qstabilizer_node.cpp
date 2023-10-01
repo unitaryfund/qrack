@@ -270,8 +270,6 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     ++(b0->ancillaCount);
     ++(b1->ancillaCount);
 
-    nRoot = nRoot->Prune(2U, 1U, true);
-
     // This process might need to be repeated, recursively.
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     unsigned underThreads = (unsigned)(pow2(depth) / pStride);
