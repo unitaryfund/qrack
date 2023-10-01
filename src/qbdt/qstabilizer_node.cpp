@@ -213,158 +213,108 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         return nRoot;
     }
 
-#if 0
-    // If the stabilizer qubit to "pop" satisfies the separability condition and other assumptions of "Decompose(),"
-    // then we can completely avoid the quantum teleportation algorithm, and just duplicate the stabilizer qubit as a
-    // QBdtNode branch pair qubit, by direct query and preparation of state.
+    // Swap gate decomposition:
 
-    // TODO: Decompose() might not properly handle phase-sensitivity.
-
-    if (qReg->CanDecomposeDispose(0U, 1U)) {
-        QUnitCliffordPtr clone0 = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
-        QInterfacePtr qubit = clone0->Decompose(0U, 1U);
-        QUnitCliffordPtr clone1 = std::dynamic_pointer_cast<QUnitClifford>(clone0->Clone());
-        complex stateVec[2U];
-        qubit->GetQuantumState(stateVec);
-
-        QBdtNodeInterfacePtr& b0 = nRoot->branches[0U];
-        QBdtNodeInterfacePtr& b1 = nRoot->branches[1U];
-
-        b0 = std::make_shared<QBdtQStabilizerNode>(stateVec[0U], clone0, ancillaCount);
-        b1 = std::make_shared<QBdtQStabilizerNode>(stateVec[1U], clone1, ancillaCount);
-
-        if (IS_NORM_0(stateVec[0U])) {
-            b0->SetZero();
-        } else {
-            b0 = b0->PopSpecial(depth);
-        }
-        if (IS_NORM_0(stateVec[1U])) {
-            b1->SetZero();
-        } else {
-            b1 = b1->PopSpecial(depth);
-        }
-
-        nRoot = nRoot->Prune(2U, 1U, true);
-
-        return nRoot;
-    }
-#endif
-
-    // Quantum teleportation algorithm:
-
-    // We need a Bell pair for teleportation, with one end on each side of the QBDT/stabilizer domain wall.
-    const bitLenInt aliceBellBit = qReg->GetQubitCount() - ancillaCount;
     // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
-    // qubit reset to |+>, (or effectively |0> followed by H gate).
-    nRoot->branches[0U] =
-        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-    nRoot->branches[1U] =
-        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+    // qubit reset to |0>.
+
+    if (qReg->IsSeparableZ(0U)) {
+        // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
+        if (qReg->M(0U)) {
+            // |0>
+            nRoot->branches[0U] =
+                std::make_shared<QBdtQStabilizerNode>(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[0U] =
+                std::make_shared<QBdtQStabilizerNode>(ZERO_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+        } else {
+            // |1>
+            qReg->X(0U);
+            nRoot->branches[0U] =
+                std::make_shared<QBdtQStabilizerNode>(ZERO_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[1U] =
+                std::make_shared<QBdtQStabilizerNode>(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+        }
+    } else if (qReg->IsSeparableX(0U)) {
+        // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
+        qReg->H(0U);
+        if (qReg->M(0U)) {
+            // |+>
+            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
+                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
+                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+        } else {
+            // |->
+            qReg->X(0U);
+            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
+                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
+                -SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+        }
+    } else if (qReg->IsSeparableY(0U)) {
+        // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
+        qReg->IS(0U);
+        qReg->H(0U);
+        if (qReg->M(0U)) {
+            // |"left">
+            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
+                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
+                complex(ZERO_R1, SQRT1_2_R1), std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+        } else {
+            // |"right">
+            qReg->X(0U);
+            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
+                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
+                complex(ZERO_R1, -SQRT1_2_R1), std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+        }
+    } else {
+        // CNOT from QBdt qubit to stabilizer qubit...
+        // (We act X gate in nRoot |1> branch and no gate in |0> branch.)
+        // Since there's no probability of |1> branch, yet, we simply skip this.
+
+        // CNOT from stabilizer qubit to QBdt qubit...
+
+        // H QBdt
+        nRoot->branches[0U] =
+            std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+        nRoot->branches[1U] =
+            std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+        QBdtQStabilizerNodePtr b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
+        QBdtQStabilizerNodePtr b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
+        QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
+        QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+
+        // H-Z-H is X
+        qReg1->Z(0U);
+
+        // TODO: H QBdt
+        throw std::runtime_error("Not implemented!");
+
+        // CNOT from QBdt qubit to stabilizer qubit...
+        // (Notice, we act X gate in nRoot |1> branch and no gate in |0> branch.)
+        qReg1->X(0U);
+    }
+
     QBdtQStabilizerNodePtr b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
     QBdtQStabilizerNodePtr b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
     QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
-    // We allocate the other Bell pair end in the stabilizer simulator.
-    // We're trying to minimize the use of auxiliary qubits, and reuse them.
-    if (!ancillaCount) {
-        qReg0->Allocate(1U);
-        qReg1->Allocate(1U);
-        ++(b0->ancillaCount);
-        ++(b1->ancillaCount);
+    if (qReg->CanDecomposeDispose(0U, 1U)) {
+        qReg0->Dispose(0U, 1U);
+        qReg1->Dispose(0U, 1U);
+
+        nRoot = nRoot->Prune(2U, 1U, true);
+
+        return nRoot;
     }
 
-    // We act CNOT from |+> control to |0> target.
-    // (Notice, we act X gate in |1> branch and no gate in |0> branch.)
-    qReg1->X(aliceBellBit);
-
-    // This is the Bell pair "Eve" creates to distribute to "Alice" and "Bob," in quantum teleportation.
-
-    // "Alice" prepares and sends a qubit to "Bob"; stabilizer prepares and sends a qubit to QBDT.
-    // Alice's "prepared state" to teleport is the 0U index stabilizer qubit, (same in both branches).
-    // Alice uses the "prepared state" qubit as the control of a CNOT on the Bell pair.
-    qReg0->CNOT(0U, aliceBellBit);
-    qReg1->CNOT(0U, aliceBellBit);
-
-    // Alice acts H on her "prepared state":
-    qReg0->H(0U);
-    qReg1->H(0U);
-
-    // Alice now measures both of her bits, and records the results.
-
-    // First, measure Alice's Bell pair bit.
-    const real1 p01 = qReg0->Prob(aliceBellBit);
-    const real1 p11 = qReg1->Prob(aliceBellBit);
-    const bool q1 = (7 * ONE_R1 / 8) > ((p01 + p11) / 2);
-
-    const bool isB0 = !((q1 && IS_0_PROB(p01)) || (!q1 && IS_1_PROB(p01)));
-    if (isB0) {
-        qReg0->ForceM(aliceBellBit, q1);
-        // This is now considered an auxiliary qubit, at back of index order.
-        // We reset it to |0>, always, when done with it.
-        if (q1) {
-            qReg0->X(aliceBellBit);
-        }
-    } else {
-        b0->SetZero();
-    }
-
-    const bool isB1 = !((q1 && IS_0_PROB(p11)) || (!q1 && IS_1_PROB(p11)));
-    if (isB1) {
-        qReg1->ForceM(aliceBellBit, q1);
-        // This is now considered an auxiliary qubit, at back of index order.
-        // We reset it to |0>, always, when done with it.
-        if (q1) {
-            qReg1->X(aliceBellBit);
-        }
-    } else {
-        b1->SetZero();
-    }
-
-    // Next, measure Alice's "prepared state" bit.
-    const real1 p00 = isB0 ? qReg0->Prob(0U) : qReg1->Prob(0U);
-    const real1 p10 = isB1 ? qReg1->Prob(0U) : qReg0->Prob(0U);
-    const bool q0 = (7 * ONE_R1 / 8) > ((p00 + p10) / 2);
-
-    if (isB0) {
-        if ((q0 && IS_0_PROB(p00)) || (!q0 && IS_1_PROB(p00))) {
-            b0->SetZero();
-        } else {
-            qReg0->ForceM(0U, q0);
-            // This is now considered an (additional) auxiliary qubit.
-            ++(b0->ancillaCount);
-            // We reset it to |0>, always, when done with it.
-            if (q0) {
-                qReg0->X(0U);
-            }
-            // To place it at back of index order, we use a logical shift:
-            qReg0->ROR(1U, 0U, qReg0->GetQubitCount());
-        }
-    }
-
-    if (isB1) {
-        if ((q0 && IS_0_PROB(p10)) || (!q0 && IS_1_PROB(p10))) {
-            b1->SetZero();
-        } else {
-            qReg1->ForceM(0U, q0);
-            // This is now considered an (additional) auxiliary qubit.
-            ++(b1->ancillaCount);
-            // We reset it to |0>, always, when done with it.
-            if (q0) {
-                qReg1->X(0U);
-            }
-            // To place it at back of index order, we use a logical shift:
-            qReg1->ROR(1U, 0U, qReg1->GetQubitCount());
-        }
-    }
-
-    // Bob acts 0 to 2 corrective gates based upon Alice's measured bits.
-    if (q0 && nRoot->branches[1U]) {
-        nRoot->branches[1U]->scale = -nRoot->branches[1U]->scale;
-    }
-    if (q1) {
-        nRoot->branches[0U].swap(nRoot->branches[1U]);
-    }
+    qReg0->ROR(1U, 0U, qReg0->GetQubitCount());
+    qReg1->ROR(1U, 0U, qReg1->GetQubitCount());
+    ++(b0->ancillaCount);
+    ++(b1->ancillaCount);
 
     nRoot = nRoot->Prune(2U, 1U, true);
 
