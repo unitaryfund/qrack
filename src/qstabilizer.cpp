@@ -1646,6 +1646,11 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
         return ONE_R1_F;
     }
 
+    if (!qubitCount) {
+        // Both instances have 0 qubits, hence they are equal.
+        return ZERO_R1_F;
+    }
+
     toCompare->Finish();
     Finish();
 
