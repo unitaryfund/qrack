@@ -262,9 +262,9 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         // Then, acting H is like applying 1/sqrt(2) to each branch and summing...
         // If QBDD |0> branch is "A" and |1> branch is "B,"
         // then "A" becomes "A+B," and "B" becomes "A-B". For "A+B,"
-        // This doubles the amplitudes where the stabilizer qubit is |0>.
-        // This exactly cancels the amplitudes where the stabilizer qubit is |1>.
-        // For "A-B," The situation is exactly opposite.
+        // this doubles the amplitudes where the stabilizer qubit is |0>, and
+        // this exactly cancels the amplitudes where the stabilizer qubit is |1>.
+        // For "A-B," the situation is exactly opposite.
         // If the stabilizer qubit were separable, QBDD would end up a Z eigenstate.
         // However, we've handled that case, so "stabilizer rank" is 2.
         // ...This ends up being just post selection in both stabilizers!
