@@ -180,8 +180,8 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
             return shared_from_this();
         }
 
-        const bool isB0Stabilizer = IS_NODE_0(b1->scale) && b0->IsStabilizer();
-        const bool isB1Stabilizer = IS_NODE_0(b0->scale) && b1->IsStabilizer();
+        const bool isB0Stabilizer = !IS_NODE_0(b0->scale) && b0->IsStabilizer();
+        const bool isB1Stabilizer = !IS_NODE_0(b1->scale) && b1->IsStabilizer();
         if (isB0Stabilizer || isB1Stabilizer || b0->isEqualUnder(b1)) {
             const QBdtQStabilizerNodePtr& sNode =
                 std::dynamic_pointer_cast<QBdtQStabilizerNode>(isB1Stabilizer ? b1 : b0);
