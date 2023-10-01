@@ -185,7 +185,6 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
         if (isB0Stabilizer || isB1Stabilizer) {
             const QBdtQStabilizerNodePtr& sNode =
                 std::dynamic_pointer_cast<QBdtQStabilizerNode>(isB1Stabilizer ? b1 : b0);
-            const QUnitCliffordPtr qReg = sNode->GetReg();
             const real1 prob = std::min(ONE_R1, std::max(ZERO_R1, norm(b1->scale)));
             const real1 sqrtProb = sqrt(prob);
             const real1 sqrt1MinProb = sqrt(std::min(ONE_R1, std::max(ZERO_R1, ONE_R1 - prob)));
@@ -195,6 +194,7 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                 -sqrt1MinProb * phase1 };
 
             if (IS_CLIFFORD(mtrx)) {
+                const QUnitCliffordPtr qReg = sNode->GetReg();
                 if (sNode->ancillaCount) {
                     // Reuse an ancilla if possible, before allocating a new qubit.
                     --(sNode->ancillaCount);
