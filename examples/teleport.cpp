@@ -18,6 +18,13 @@
 
 using namespace Qrack;
 
+void PrintBit(QInterfacePtr qReg, bitLenInt qubit) {
+    std::cout << "Z Prob.=" << qReg->Prob(qubit) << std::endl;
+    qReg->H(qubit);
+    std::cout << "X Prob.=" << qReg->Prob(qubit) << std::endl;
+    qReg->H(qubit);
+}
+
 void StatePrep(QInterfacePtr qReg)
 {
     // "Alice" has a qubit to teleport.
@@ -27,10 +34,12 @@ void StatePrep(QInterfacePtr qReg)
     real1_f phi = (real1_f)(2 * PI_R1 * qReg->Rand());
     real1_f lambda = (real1_f)(2 * PI_R1 * qReg->Rand());
     qReg->U(0, theta, phi, lambda);
-    std::cout << "Alice is sending: U(theta=" << theta << ", phi=" << phi << ", lambda=" << lambda << ")" << std::endl;
 
     // (Try with and without just an X() gate, instead.)
     // qReg->X(0);
+
+    std::cout << "Alice is sending:" << std::endl;
+    PrintBit(qReg, 0U);
 }
 
 int main()
@@ -54,7 +63,8 @@ int main()
     if (q1) {
         qReg->X(2);
     }
-    std::cout << "Bob received: " << (int)qReg->M(2) << std::endl;
+    std::cout << "Bob received:" << std::endl;
+    PrintBit(qReg, 2U);
 
     // MWI unitary equivalent:
     qReg->SetPermutation(0);
@@ -70,7 +80,8 @@ int main()
     // Bob receives the classical message and prepares his half of the Bell pair to complete teleportation.
     qReg->CZ(0, 2);
     qReg->CNOT(1, 2);
-    std::cout << "Bob received: " << (int)qReg->M(2) << std::endl;
+    std::cout << "Bob received:" << std::endl;
+    PrintBit(qReg, 2U);
 
     // Another MWI unitary equivalent, with a caveat: This variant would specifically be "decoherent," if measurements
     // were used instead of unitary gates.
@@ -95,5 +106,6 @@ int main()
     // Alice and Bob "reverse control" again.
     qReg->H(1);
     qReg->H(2);
-    std::cout << "Bob received: " << (int)qReg->M(2) << std::endl;
+    std::cout << "Bob received:" << std::endl;
+    PrintBit(qReg, 2U);
 };
