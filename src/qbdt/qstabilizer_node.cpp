@@ -200,7 +200,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
 
     if (qReg->IsSeparableZ(0U)) {
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
-        if (qReg->M(0U)) {
+        if (!qReg->M(0U)) {
             // |0>
             nRoot->branches[0U]->scale = ONE_CMPLX;
             nRoot->branches[1U]->scale = ZERO_CMPLX;
@@ -215,7 +215,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     } else if (qReg->IsSeparableX(0U)) {
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
         qReg->H(0U);
-        if (qReg->M(0U)) {
+        if (!qReg->M(0U)) {
             // |+>
             nRoot->branches[0U]->scale = complex(SQRT1_2_R1, ZERO_R1);
             nRoot->branches[1U]->scale = complex(SQRT1_2_R1, ZERO_R1);
@@ -231,7 +231,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
         qReg->IS(0U);
         qReg->H(0U);
-        if (qReg->M(0U)) {
+        if (!qReg->M(0U)) {
             // |"left">
             nRoot->branches[0U]->scale = complex(SQRT1_2_R1, ZERO_R1);
             nRoot->branches[1U]->scale = complex(ZERO_R1, SQRT1_2_R1);
