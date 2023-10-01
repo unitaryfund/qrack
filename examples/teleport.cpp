@@ -18,7 +18,8 @@
 
 using namespace Qrack;
 
-void PrintBit(QInterfacePtr qReg, bitLenInt qubit) {
+void PrintBit(QInterfacePtr qReg, bitLenInt qubit)
+{
     std::cout << "Z Prob.=" << qReg->Prob(qubit) << std::endl;
     qReg->H(qubit);
     std::cout << "X Prob.=" << qReg->Prob(qubit) << std::endl;
