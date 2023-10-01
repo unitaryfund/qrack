@@ -62,7 +62,8 @@ public:
     {
         QBdtNodeInterface::SetZero();
         qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
-        qReg->SetPermutation(0U);
+        qReg->Clear();
+        ancillaCount = 0U;
     }
 
     virtual QUnitCliffordPtr GetReg() { return qReg; }
