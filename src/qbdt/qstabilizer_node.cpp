@@ -184,6 +184,14 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
 
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
     nRoot->mtx = mtx;
+    nRoot->branches[0U] =
+        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+    nRoot->branches[1U] =
+        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+    QBdtQStabilizerNodePtr b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
+    QBdtQStabilizerNodePtr b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
+    QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
+    QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
     // Swap gate decomposition:
 
@@ -194,34 +202,30 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
         if (qReg->M(0U)) {
             // |0>
-            nRoot->branches[0U] =
-                std::make_shared<QBdtQStabilizerNode>(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-            nRoot->branches[0U] =
-                std::make_shared<QBdtQStabilizerNode>(ZERO_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[0U]->scale = ONE_CMPLX;
+            nRoot->branches[1U]->scale = ZERO_CMPLX;
         } else {
             // |1>
-            qReg->X(0U);
-            nRoot->branches[0U] =
-                std::make_shared<QBdtQStabilizerNode>(ZERO_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-            nRoot->branches[1U] =
-                std::make_shared<QBdtQStabilizerNode>(ONE_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[0U]->scale = ZERO_CMPLX;
+            nRoot->branches[1U]->scale = ONE_CMPLX;
+
+            qReg0->X(0U);
+            qReg1->X(0U);
         }
     } else if (qReg->IsSeparableX(0U)) {
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
         qReg->H(0U);
         if (qReg->M(0U)) {
             // |+>
-            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
-                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
-                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[0U]->scale = complex(SQRT1_2_R1, ZERO_R1);
+            nRoot->branches[1U]->scale = complex(SQRT1_2_R1, ZERO_R1);
         } else {
             // |->
-            qReg->X(0U);
-            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
-                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
-                -SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[0U]->scale = complex(SQRT1_2_R1, ZERO_R1);
+            nRoot->branches[1U]->scale = complex(-SQRT1_2_R1, ZERO_R1);
+
+            qReg0->X(0U);
+            qReg1->X(0U);
         }
     } else if (qReg->IsSeparableY(0U)) {
         // If the stabilizer qubit is separable, we just prepare the QBDD qubit in the same state.
@@ -229,85 +233,55 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         qReg->H(0U);
         if (qReg->M(0U)) {
             // |"left">
-            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
-                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
-                complex(ZERO_R1, SQRT1_2_R1), std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[0U]->scale = complex(SQRT1_2_R1, ZERO_R1);
+            nRoot->branches[1U]->scale = complex(ZERO_R1, SQRT1_2_R1);
         } else {
             // |"right">
-            qReg->X(0U);
-            nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
-                SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-            nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
-                complex(ZERO_R1, -SQRT1_2_R1), std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+            nRoot->branches[0U]->scale = complex(SQRT1_2_R1, ZERO_R1);
+            nRoot->branches[1U]->scale = complex(ZERO_R1, -SQRT1_2_R1);
+
+            qReg0->X(0U);
+            qReg1->X(0U);
         }
     } else {
-        // CNOT from QBdt qubit to stabilizer qubit...
-        // (We act X gate in nRoot |1> branch and no gate in |0> branch.)
+        // SWAP gate from QBdt qubit to stabilizer qubit with 3 CNOTs...
+
+        // We initialize the QBdt qubit to |0>.
+
+        // We act X gate in nRoot |1> branch and no gate in |0> branch.
         // Since there's no probability of |1> branch, yet, we simply skip this.
 
-        // CNOT from stabilizer qubit to QBdt qubit...
-
-        // H QBdt
-        nRoot->branches[0U] =
-            std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-        nRoot->branches[1U] =
-            std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-        QBdtQStabilizerNodePtr b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
-        QBdtQStabilizerNodePtr b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
-        QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-        QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+        // H on QBdt qubit - we initialized the QBDD qubit at this point.
 
         // H-Z-H is X
-        qReg1->Z(0U);
+        // qReg1->Z(0U);
 
-        // TODO: H QBdt
-        throw std::runtime_error("Not implemented!");
+        // TODO: Second H on QBdt qubit
+        throw std::runtime_error("Entangled PopSpecial() not implemented!");
 
         // CNOT from QBdt qubit to stabilizer qubit...
         // (Notice, we act X gate in nRoot |1> branch and no gate in |0> branch.)
-        qReg1->X(0U);
+        // qReg1->X(0U);
     }
-
-    nRoot = nRoot->Prune(2U, 1U, true);
-
-    QBdtQStabilizerNodePtr b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
-    QBdtQStabilizerNodePtr b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
-    QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
     if ((ancillaCount + 1U) >= qReg->GetQubitCount()) {
         // If this is the last stabilizer qubit, clear the container and reset the ancilla count.
-        if (qReg0) {
-            qReg0->Clear();
-        }
-        if (qReg1) {
-            qReg1->Clear();
-        }
+        qReg0->Clear();
+        qReg1->Clear();
 
         b0->ancillaCount = 0U;
         b1->ancillaCount = 0U;
     } else if (qReg->CanDecomposeDispose(0U, 1U)) {
         // If the stabilizer qubit can be disposed, avoid an ancilla.
-        if (qReg0) {
-            qReg0->Dispose(0U, 1U);
-        }
-        if (qReg1 && (qReg0 != qReg1)) {
-            qReg1->Dispose(0U, 1U);
-        }
+        qReg0->Dispose(0U, 1U);
+        qReg1->Dispose(0U, 1U);
     } else {
         // Otherwise, the stabilizer qubit becomes an ancilla.
-        if (qReg0) {
-            qReg0->ROR(1U, 0U, qReg0->GetQubitCount());
-        }
-        if (qReg1 && (qReg0 != qReg1)) {
-            qReg1->ROR(1U, 0U, qReg1->GetQubitCount());
-        }
+        qReg0->ROR(1U, 0U, qReg0->GetQubitCount());
+        qReg1->ROR(1U, 0U, qReg1->GetQubitCount());
 
         ++(b0->ancillaCount);
-        if (b0.get() != b1.get()) {
-            ++(b1->ancillaCount);
-        }
+        ++(b1->ancillaCount);
     }
 
     nRoot = nRoot->Prune(2U, 1U, true);
