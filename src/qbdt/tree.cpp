@@ -708,8 +708,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 
             if (leaf->IsStabilizer()) {
                 leaf->Branch();
-                const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
-                qReg->Mtrx(mtrx, target - j);
+                NODE_TO_STABILIZER(leaf)->Mtrx(mtrx, target - j);
                 return (bitCapInt)(pow2(target - j) - ONE_BCI);
             }
 #if ENABLE_COMPLEX_X2
