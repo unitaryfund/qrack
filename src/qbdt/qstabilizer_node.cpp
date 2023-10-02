@@ -176,10 +176,10 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     // qubit reset to |0>.
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
     nRoot->mtx = mtx;
-    nRoot->branches[0U] =
-        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-    nRoot->branches[1U] =
-        std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
+    nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
+        SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()), ancillaCount);
+    nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
+        SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()), ancillaCount);
     const QBdtQStabilizerNodePtr& b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
     const QBdtQStabilizerNodePtr& b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
     const QUnitCliffordPtr& qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
@@ -302,8 +302,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {
         ++parDepth;
 
-        std::future<void> future0 = std::async(
-            std::launch::async, [&] { nRoot->branches[0U] = b0->PopSpecial(depth, parDepth); });
+        std::future<void> future0 =
+            std::async(std::launch::async, [&] { nRoot->branches[0U] = b0->PopSpecial(depth, parDepth); });
         nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
 
         future0.get();
