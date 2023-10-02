@@ -300,9 +300,7 @@ complex QBdt::GetAmplitude(bitCapInt perm)
             break;
         }
         if (leaf->IsStabilizer()) {
-            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
-            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
-            scale *= qReg->GetAmplitude(perm >> i);
+            scale *= NODE_TO_STABILIZER(leaf)->GetAmplitude(perm >> i);
             break;
         }
         leaf = leaf->branches[SelectBit(perm, i)];
@@ -413,9 +411,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
     }
 
     if (root->IsStabilizer()) {
-        const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
-        std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
-        return qReg->Prob(qubit);
+        return NODE_TO_STABILIZER(root)->Prob(qubit);
     }
 
     const bitCapInt qPower = pow2(qubit);
@@ -443,9 +439,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
         }
 
         if (leaf->IsStabilizer()) {
-            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
-            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
-            oneChanceBuff[cpu] += norm(scale) * qReg->Prob(qubit - j);
+            oneChanceBuff[cpu] += norm(scale) * NODE_TO_STABILIZER(leaf)->Prob(qubit - j);
             return;
         }
 
@@ -472,9 +466,7 @@ real1_f QBdt::ProbAll(bitCapInt perm)
             break;
         }
         if (leaf->IsStabilizer()) {
-            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
-            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
-            return clampProb(norm(scale) * qReg->ProbAll(perm >> i));
+            return clampProb(norm(scale) * NODE_TO_STABILIZER(leaf)->ProbAll(perm >> i));
         }
         leaf = leaf->branches[SelectBit(perm, i)];
         scale *= leaf->scale;

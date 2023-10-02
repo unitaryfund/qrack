@@ -114,9 +114,7 @@ protected:
                     break;
                 }
                 if (leaf->IsStabilizer()) {
-                    const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
-                    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
-                    scale *= qReg->GetAmplitude(i >> j);
+                    scale *= NODE_TO_STABILIZER(leaf)->GetAmplitude(i >> j);
                     break;
                 }
                 leaf = leaf->branches[SelectBit(i, j)];
