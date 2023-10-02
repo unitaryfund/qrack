@@ -26,6 +26,8 @@
 
 #include "qinterface.hpp"
 
+#include <mutex>
+
 namespace Qrack {
 
 struct AmplitudeEntry {
@@ -82,6 +84,8 @@ protected:
     }
 
 public:
+    std::shared_ptr<std::mutex> mtx;
+
     QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
         int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,

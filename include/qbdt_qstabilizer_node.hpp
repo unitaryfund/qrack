@@ -61,8 +61,10 @@ public:
     virtual void SetZero()
     {
         QBdtNodeInterface::SetZero();
-        qReg = qReg->CloneEmpty();
         ancillaCount = 0U;
+        const QUnitCliffordPtr reg = qReg;
+        std::lock_guard<std::mutex> lock(*(reg->mtx.get()));
+        qReg = qReg->CloneEmpty();
     }
 
     virtual QUnitCliffordPtr GetReg() { return qReg; }

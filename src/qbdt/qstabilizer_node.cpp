@@ -54,13 +54,22 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
 
     // Both nodes are stabilizer.
     QBdtQStabilizerNodePtr rhs = std::dynamic_pointer_cast<QBdtQStabilizerNode>(r);
-    const bitLenInt lQbCount = qReg->GetQubitCount();
-    const bitLenInt rQbCount = rhs->qReg->GetQubitCount();
-    QInterfacePtr lReg = qReg;
-    QInterfacePtr rReg = rhs->qReg;
+    QUnitCliffordPtr lReg = qReg;
+    QUnitCliffordPtr rReg = rhs->qReg;
+
+    if (lReg.get() == rReg.get()) {
+        return true;
+    }
+
+    std::lock(*(lReg->mtx.get()), *(rReg->mtx.get()));
+    std::lock_guard<std::mutex> lLock(*(lReg->mtx.get()), std::adopt_lock);
+    std::lock_guard<std::mutex> rLock(*(rReg->mtx.get()), std::adopt_lock);
+
+    const bitLenInt lQbCount = lReg->GetQubitCount();
+    const bitLenInt rQbCount = rReg->GetQubitCount();
 
     if (rQbCount < lQbCount) {
-        rReg = rReg->Clone();
+        rReg = std::dynamic_pointer_cast<QUnitClifford>(rReg->Clone());
         rReg->Allocate(lQbCount - rQbCount);
 
         const bool toRet = lReg->ApproxCompare(rReg);
@@ -75,7 +84,7 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
     }
 
     if (lQbCount < rQbCount) {
-        lReg = lReg->Clone();
+        lReg = std::dynamic_pointer_cast<QUnitClifford>(lReg->Clone());
         lReg->Allocate(rQbCount - lQbCount);
     }
 
@@ -101,6 +110,8 @@ void QBdtQStabilizerNode::Branch(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
+    QUnitCliffordPtr reg = qReg;
+    std::lock_guard<std::mutex> lock(*(reg->mtx.get()));
     if (qReg) {
         qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
     }
@@ -113,6 +124,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::Prune(bitLenInt depth, bitLenInt unuse
         return shared_from_this();
     }
 
+    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
     const real1_f phaseArg = qReg->FirstNonzeroPhase();
     qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
     scale *= std::polar(ONE_R1, (real1)phaseArg);
@@ -133,6 +145,7 @@ void QBdtQStabilizerNode::InsertAtDepth(
     }
 
     QBdtQStabilizerNodePtr bEng = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b);
+    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
     qReg->Compose(bEng->qReg, depth);
 }
 
@@ -151,6 +164,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
     QBdtQStabilizerNodePtr toRet = std::dynamic_pointer_cast<QBdtQStabilizerNode>(ShallowClone());
     toRet->scale /= abs(toRet->scale);
 
+    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
     if (!qReg) {
         return toRet;
     }
@@ -176,10 +190,15 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     // qubit reset to |0>.
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
     nRoot->mtx = mtx;
-    nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
-        SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()), ancillaCount);
-    nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
-        SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()), ancillaCount);
+
+    if (true) {
+        std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+        nRoot->branches[0U] = std::make_shared<QBdtQStabilizerNode>(
+            SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()), ancillaCount);
+        nRoot->branches[1U] = std::make_shared<QBdtQStabilizerNode>(
+            SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()), ancillaCount);
+    }
+
     const QBdtQStabilizerNodePtr& b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
     const QBdtQStabilizerNodePtr& b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
     const QUnitCliffordPtr& qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;

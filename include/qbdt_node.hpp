@@ -78,32 +78,7 @@ public:
     virtual QBdtNodeInterfacePtr Apply2x2(complex const* mtrx, bitLenInt depth);
 #endif
 
-    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
-    {
-        if (!depth) {
-            return shared_from_this();
-        }
-
-        if (norm(scale) <= _qrack_qbdt_sep_thresh) {
-            SetZero();
-            return shared_from_this();
-        }
-
-        --depth;
-
-        QBdtNodeInterfacePtr& b0 = branches[0U];
-        QBdtNodeInterfacePtr& b1 = branches[1U];
-
-        if (b0.get() == b1.get()) {
-            b0 = b0->PopSpecial(depth, parDepth);
-            b1 = b0;
-        } else {
-            b0 = b0->PopSpecial(depth, parDepth);
-            b1 = b1->PopSpecial(depth, parDepth);
-        }
-
-        return shared_from_this();
-    }
+    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
 };
 
 } // namespace Qrack

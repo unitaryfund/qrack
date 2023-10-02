@@ -23,6 +23,7 @@ QUnitClifford::QUnitClifford(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , phaseOffset(ONE_CMPLX)
 {
+    mtx = std::make_shared<std::mutex>();
     SetPermutation(perm, phaseFac);
 }
 

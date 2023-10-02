@@ -152,19 +152,24 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
         const QBdtQStabilizerNodePtr& b1s = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1);
         QUnitCliffordPtr qReg0 = b0s->GetReg();
         QUnitCliffordPtr qReg1 = b1s->GetReg();
-        const bitLenInt qbCount0 = qReg0->GetQubitCount();
-        const bitLenInt qbCount1 = qReg1->GetQubitCount();
-        if (qbCount0 < qbCount1) {
-            qReg0 = std::dynamic_pointer_cast<QUnitClifford>(qReg0->Clone());
-            qReg0->Allocate(qbCount1 - qbCount0);
-        } else if (qbCount1 < qbCount0) {
-            qReg1 = std::dynamic_pointer_cast<QUnitClifford>(qReg1->Clone());
-            qReg1->Allocate(qbCount0 - qbCount1);
-        }
-        if (qReg0->ApproxCompare(qReg1)) {
-            const real1_f phaseArg = b1s->GetReg()->FirstNonzeroPhase() - b0s->GetReg()->FirstNonzeroPhase();
-            b1s->scale *= std::polar(ONE_R1, phaseArg);
-            b1s->SetReg(b0s->GetReg());
+        if (qReg0.get() != qReg1.get()) {
+            std::lock(*(qReg0->mtx.get()), *(qReg1->mtx.get()));
+            std::lock_guard<std::mutex> lLock(*(qReg0->mtx.get()), std::adopt_lock);
+            std::lock_guard<std::mutex> rLock(*(qReg1->mtx.get()), std::adopt_lock);
+            const bitLenInt qbCount0 = qReg0->GetQubitCount();
+            const bitLenInt qbCount1 = qReg1->GetQubitCount();
+            if (qbCount0 < qbCount1) {
+                qReg0 = std::dynamic_pointer_cast<QUnitClifford>(qReg0->Clone());
+                qReg0->Allocate(qbCount1 - qbCount0);
+            } else if (qbCount1 < qbCount0) {
+                qReg1 = std::dynamic_pointer_cast<QUnitClifford>(qReg1->Clone());
+                qReg1->Allocate(qbCount0 - qbCount1);
+            }
+            if (qReg0->ApproxCompare(qReg1)) {
+                const real1_f phaseArg = b1s->GetReg()->FirstNonzeroPhase() - b0s->GetReg()->FirstNonzeroPhase();
+                b1s->scale *= std::polar(ONE_R1, phaseArg);
+                b1s->SetReg(b0s->GetReg());
+            }
         }
     }
 
@@ -188,17 +193,19 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
 
             if (IS_CLIFFORD(mtrx)) {
                 const QUnitCliffordPtr qReg = sNode->GetReg();
-                if (sNode->ancillaCount) {
-                    // Reuse an ancilla if possible, before allocating a new qubit.
-                    --(sNode->ancillaCount);
-                    qReg->ROL(1U, 0U, qReg->GetQubitCount());
-                } else {
-                    qReg->Allocate(0U, 1U);
-                }
-                qReg->Mtrx(mtrx, 0);
-
                 sNode->scale = scale;
                 sNode->mtx = mtx;
+                if (true) {
+                    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+                    if (sNode->ancillaCount) {
+                        // Reuse an ancilla if possible, before allocating a new qubit.
+                        --(sNode->ancillaCount);
+                        qReg->ROL(1U, 0U, qReg->GetQubitCount());
+                    } else {
+                        qReg->Allocate(0U, 1U);
+                    }
+                    qReg->Mtrx(mtrx, 0);
+                }
 
                 return sNode->Prune();
             }
@@ -364,6 +371,37 @@ void QBdtNode::Normalize(bitLenInt depth)
         b0->scale *= ONE_R1 / nrm;
         b1->scale *= ONE_R1 / nrm;
     }
+}
+
+QBdtNodeInterfacePtr QBdtNode::PopSpecial(bitLenInt depth, bitLenInt parDepth)
+{
+    if (!depth) {
+        return shared_from_this();
+    }
+
+    if (norm(scale) <= _qrack_qbdt_sep_thresh) {
+        SetZero();
+        return shared_from_this();
+    }
+
+    --depth;
+
+    QBdtNodeInterfacePtr b0 = branches[0U];
+    QBdtNodeInterfacePtr b1 = branches[1U];
+
+    if (b0.get() == b1.get()) {
+        std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
+        branches[0U] = b0->PopSpecial(depth, parDepth);
+        branches[1U] = branches[0U];
+    } else {
+        std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
+        branches[0U] = b0->PopSpecial(depth, parDepth);
+        branches[1U] = b1->PopSpecial(depth, parDepth);
+    }
+
+    return shared_from_this();
 }
 
 void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)

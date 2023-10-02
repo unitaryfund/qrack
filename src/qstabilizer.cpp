@@ -52,6 +52,8 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
         ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB")))
         : 28U - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
 
+    mtx = std::make_shared<std::mutex>();
+
     SetPermutation(perm, phaseFac);
 }
 
