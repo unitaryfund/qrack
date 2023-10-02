@@ -46,7 +46,7 @@ class QStabilizer : public QInterface {
 protected:
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
-    complex phaseOffset;
+    real1 phaseOffset;
     bitLenInt maxStateMapCacheQubitCount;
     bool isUnitarityBroken;
 
@@ -64,6 +64,22 @@ protected:
     void Dispatch(DispatchFn fn) { fn(); }
 
     void ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits);
+
+    void SetPhaseOffset(real1_f phaseArg)
+    {
+        phaseOffset = (real1)phaseArg;
+        const bool isNeg = phaseOffset < 0;
+        if (isNeg) {
+            phaseOffset = -phaseOffset;
+        }
+        phaseOffset -= (real1)(((size_t)(phaseOffset / (2 * PI_R1))) * (2 * PI_R1));
+        if (phaseOffset > PI_R1) {
+            phaseOffset -= 2 * PI_R1;
+        }
+        if (isNeg) {
+            phaseOffset = -phaseOffset;
+        }
+    }
 
 public:
     QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
@@ -83,8 +99,8 @@ public:
 
     bitCapInt GetMaxQPower() { return pow2(qubitCount); }
 
-    void ResetPhaseOffset() { phaseOffset = ONE_CMPLX; }
-    complex GetPhaseOffset() { return phaseOffset; }
+    void ResetPhaseOffset() { phaseOffset = ZERO_R1; }
+    complex GetPhaseOffset() { return std::polar(ONE_R1, phaseOffset); }
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
@@ -117,7 +133,7 @@ public:
         x.clear();
         z.clear();
         r.clear();
-        phaseOffset = ONE_CMPLX;
+        phaseOffset = ZERO_R1;
         qubitCount = 0U;
         maxQPower = 1U;
     }
@@ -355,7 +371,7 @@ public:
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         if (!randGlobalPhase) {
-            phaseOffset *= std::polar(ONE_R1, (real1)phaseArg);
+            SetPhaseOffset(phaseOffset + (real1)phaseArg);
         }
     }
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
@@ -385,7 +401,8 @@ public:
         real1 argDiff =
             abs((std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
                 (2 * PI_R1));
-        while (argDiff > (ONE_R1 / 2)) {
+        argDiff -= (real1)(size_t)argDiff;
+        if (argDiff > (ONE_R1 / 2)) {
             argDiff -= ONE_R1;
         }
         if (FP_NORM_EPSILON >= abs(argDiff)) {
