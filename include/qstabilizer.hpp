@@ -381,7 +381,9 @@ public:
     bool GlobalPhaseCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         const AmplitudeEntry thisAmpEntry = GetAnyAmplitude();
-        if (!IS_NORM_0(thisAmpEntry.amplitude - toCompare->GetAmplitude(thisAmpEntry.permutation))) {
+        if (FP_NORM_EPSILON >=
+            abs((std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
+                (2 * PI_R1))) {
             return false;
         }
         return error_tol >= ApproxCompareHelper(toCompare, error_tol, true);
