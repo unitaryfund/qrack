@@ -105,13 +105,13 @@ public:
         }
 
         if (true) {
-            QBdtNodeInterfacePtr b0 = branches[0U];
+            const QBdtNodeInterfacePtr b0 = branches[0U];
             std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
             branches[0U] = NULL;
         }
 
         if (true) {
-            QBdtNodeInterfacePtr b1 = branches[1U];
+            const QBdtNodeInterfacePtr b1 = branches[1U];
             std::lock_guard<std::mutex> lock(*(b1->mtx.get()));
             branches[1U] = NULL;
         }

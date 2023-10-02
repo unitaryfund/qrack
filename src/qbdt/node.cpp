@@ -393,8 +393,8 @@ QBdtNodeInterfacePtr QBdtNode::PopSpecial(bitLenInt depth, bitLenInt parDepth)
 
     --depth;
 
-    QBdtNodeInterfacePtr b0 = branches[0U];
-    QBdtNodeInterfacePtr b1 = branches[1U];
+    const QBdtNodeInterfacePtr b0 = branches[0U];
+    const QBdtNodeInterfacePtr b1 = branches[1U];
 
     if (b0.get() == b1.get()) {
         std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
