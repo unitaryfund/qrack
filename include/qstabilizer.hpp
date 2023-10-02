@@ -362,6 +362,16 @@ public:
             return start;
         }
 
+        if (start > qubitCount) {
+            throw std::out_of_range("QStabilizer::Allocate() cannot start past end of register!");
+        }
+
+        if (!qubitCount) {
+            SetQubitCount(length);
+            SetPermutation(0U);
+            return 0U;
+        }
+
         QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
             randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         return Compose(nQubits, start);
