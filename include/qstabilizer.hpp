@@ -387,7 +387,7 @@ public:
         while (argDiff > (ONE_R1 / 2)) {
             argDiff -= ONE_R1;
         }
-        if (FP_NORM_EPSILON >= argDiff) {
+        if (FP_NORM_EPSILON >= abs(argDiff)) {
             return false;
         }
         return error_tol >= ApproxCompareHelper(toCompare, error_tol, true);
