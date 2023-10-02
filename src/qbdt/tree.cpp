@@ -300,7 +300,9 @@ complex QBdt::GetAmplitude(bitCapInt perm)
             break;
         }
         if (leaf->IsStabilizer()) {
-            scale *= NODE_TO_STABILIZER(leaf)->GetAmplitude(perm >> i);
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+            scale *= qReg->GetAmplitude(perm >> i);
             break;
         }
         leaf = leaf->branches[SelectBit(perm, i)];
@@ -411,7 +413,9 @@ real1_f QBdt::Prob(bitLenInt qubit)
     }
 
     if (root->IsStabilizer()) {
-        return NODE_TO_STABILIZER(root)->Prob(qubit);
+        const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+        std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+        return qReg->Prob(qubit);
     }
 
     const bitCapInt qPower = pow2(qubit);
@@ -439,7 +443,9 @@ real1_f QBdt::Prob(bitLenInt qubit)
         }
 
         if (leaf->IsStabilizer()) {
-            oneChanceBuff[cpu] += norm(scale) * NODE_TO_STABILIZER(leaf)->Prob(qubit - j);
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+            oneChanceBuff[cpu] += norm(scale) * qReg->Prob(qubit - j);
             return;
         }
 
@@ -466,7 +472,9 @@ real1_f QBdt::ProbAll(bitCapInt perm)
             break;
         }
         if (leaf->IsStabilizer()) {
-            return clampProb(norm(scale) * NODE_TO_STABILIZER(leaf)->ProbAll(perm >> i));
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+            return clampProb(norm(scale) * qReg->ProbAll(perm >> i));
         }
         leaf = leaf->branches[SelectBit(perm, i)];
         scale *= leaf->scale;
@@ -484,7 +492,9 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     Finish();
 
     if (root->IsStabilizer()) {
-        return NODE_TO_STABILIZER(root)->ForceM(qubit, result, doForce, doApply);
+        const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+        std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+        return qReg->ForceM(qubit, result, doForce, doApply);
     }
 
     const real1_f oneChance = Prob(qubit);
@@ -501,20 +511,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     }
 
     shards[qubit] = NULL;
-
-    if (root->IsStabilizer()) {
-        const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
-        if (result) {
-            qReg->ForceM(qubit, true);
-            root = root->Prune();
-        } else {
-            qReg->ForceM(qubit, false);
-            root = root->Prune();
-        }
-        CheckRootRandomGlobalPhase();
-
-        return result;
-    }
 
     const bitCapInt qPower = pow2(qubit);
     root->scale = GetNonunitaryPhase();
@@ -548,12 +544,14 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                 if (Prob(sq) < (ONE_R1 / 4)) {
                     leaf->SetZero();
                 } else {
+                    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
                     qReg->ForceM(qubit - j, true);
                 }
             } else {
                 if (Prob(sq) > (3 * ONE_R1 / 4)) {
                     leaf->SetZero();
                 } else {
+                    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
                     qReg->ForceM(qubit - j, false);
                 }
             }
@@ -607,7 +605,9 @@ bitCapInt QBdt::MAll()
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         if (leaf->IsStabilizer()) {
-            result |= NODE_TO_STABILIZER(leaf)->MAll() << i;
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+            result |= qReg->MAll() << i;
             break;
         }
         real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1U]->scale));
@@ -662,6 +662,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 
         if (root->IsStabilizer()) {
             const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
             qReg->SetRandGlobalPhase(false);
             qReg->ResetPhaseOffset();
         }
@@ -670,7 +671,9 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     }
 
     if (root->IsStabilizer()) {
-        NODE_TO_STABILIZER(root)->Mtrx(mtrx, target);
+        const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+        std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+        qReg->Mtrx(mtrx, target);
 
         return;
     }
@@ -712,7 +715,9 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
             }
 
             if (leaf->IsStabilizer()) {
-                NODE_TO_STABILIZER(leaf)->Mtrx(mtrx, target - j);
+                const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+                std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+                qReg->Mtrx(mtrx, target - j);
                 return (bitCapInt)(pow2(target - j) - ONE_BCI);
             }
 #if ENABLE_COMPLEX_X2
@@ -786,6 +791,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
         if (root->IsStabilizer()) {
             const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
             qReg->SetRandGlobalPhase(false);
             qReg->ResetPhaseOffset();
         }
@@ -801,6 +807,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
     if (root->IsStabilizer()) {
         const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+        std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
         if (isAnti) {
             qReg->MACMtrx(controls, mtrx, target);
         } else {
@@ -872,6 +879,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
             if (leaf->IsStabilizer()) {
                 const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+                std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
                 if (control < j) {
                     qReg->Mtrx(mtrx, target - j);
                 } else if (isAnti) {

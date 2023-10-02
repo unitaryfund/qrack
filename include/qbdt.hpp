@@ -114,7 +114,9 @@ protected:
                     break;
                 }
                 if (leaf->IsStabilizer()) {
-                    scale *= NODE_TO_STABILIZER(leaf)->GetAmplitude(i >> j);
+                    const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+                    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+                    scale *= qReg->GetAmplitude(i >> j);
                     break;
                 }
                 leaf = leaf->branches[SelectBit(i, j)];
@@ -189,6 +191,7 @@ protected:
             return;
         }
         const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+        std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
         qReg->SetRandGlobalPhase(true);
         qReg->ResetPhaseOffset();
     }
