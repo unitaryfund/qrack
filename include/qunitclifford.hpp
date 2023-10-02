@@ -135,6 +135,7 @@ public:
     ~QUnitClifford() { Dump(); }
 
     QInterfacePtr Clone();
+    QUnitCliffordPtr CloneEmpty();
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };
@@ -167,6 +168,14 @@ public:
         }
 
         return permCount;
+    }
+
+    void Clear()
+    {
+        shards = std::vector<CliffordShard>();
+        phaseOffset = ONE_CMPLX;
+        qubitCount = 0U;
+        maxQPower = 1U;
     }
 
     real1_f ExpectationBitsFactorized(
@@ -377,6 +386,11 @@ public:
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::IsSeparable"));
         CliffordShard& shard = shards[t];
         return shard.unit->IsSeparable(shard.mapped);
+    }
+
+    bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
+    {
+        return std::dynamic_pointer_cast<QUnitClifford>(Clone())->EntangleAll()->CanDecomposeDispose(start, length);
     }
 
     using QInterface::Compose;

@@ -74,6 +74,7 @@ public:
     ~QStabilizer() { Dump(); }
 
     QInterfacePtr Clone();
+    QStabilizerPtr CloneEmpty();
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };
@@ -372,6 +373,24 @@ public:
     }
     bool ApproxCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
+        return error_tol >= ApproxCompareHelper(toCompare, error_tol, true);
+    }
+    bool GlobalPhaseCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return GlobalPhaseCompare(std::dynamic_pointer_cast<QStabilizer>(toCompare), error_tol);
+    }
+    bool GlobalPhaseCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        const AmplitudeEntry thisAmpEntry = GetAnyAmplitude();
+        real1 argDiff =
+            abs((std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
+                (2 * PI_R1));
+        while (argDiff > (ONE_R1 / 2)) {
+            argDiff -= ONE_R1;
+        }
+        if (FP_NORM_EPSILON >= abs(argDiff)) {
+            return false;
+        }
         return error_tol >= ApproxCompareHelper(toCompare, error_tol, true);
     }
 
