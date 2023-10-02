@@ -147,7 +147,7 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     b0->scale /= phaseFac;
     b1->scale /= phaseFac;
 
-    if (!isCliffordBlocked && b0->IsStabilizer() && b1->IsStabilizer()) {
+    if (b0->IsStabilizer() && b1->IsStabilizer()) {
         const QBdtQStabilizerNodePtr& b0s = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0);
         const QBdtQStabilizerNodePtr& b1s = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1);
         QUnitCliffordPtr qReg0 = b0s->GetReg();
@@ -162,11 +162,6 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
             qReg1->Allocate(qbCount0 - qbCount1);
         }
         if (qReg0->ApproxCompare(qReg1)) {
-            if (IS_NODE_0(b0s->scale - b1s->scale)) {
-                branches[0U] = branches[1U];
-                return shared_from_this();
-            }
-
             if (qbCount0 < qbCount1) {
                 b1s->SetReg(b0s->GetReg());
             } else {
