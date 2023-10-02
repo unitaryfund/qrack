@@ -83,7 +83,6 @@ QInterfacePtr QStabilizer::Clone()
     clone->z = z;
     clone->r = r;
     clone->phaseOffset = phaseOffset;
-    clone->randomSeed = randomSeed;
 
     return clone;
 }
