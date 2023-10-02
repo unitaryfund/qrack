@@ -165,10 +165,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                 qReg1 = std::dynamic_pointer_cast<QUnitClifford>(qReg1->Clone());
                 qReg1->Allocate(qbCount0 - qbCount1);
             }
-            if (qReg0->ApproxCompare(qReg1)) {
-                const real1_f phaseArg = b1s->GetReg()->FirstNonzeroPhase() - b0s->GetReg()->FirstNonzeroPhase();
-                b1s->scale *= std::polar(ONE_R1, phaseArg);
+            if (qReg0->GlobalPhaseCompare(qReg1)) {
                 b1s->SetReg(b0s->GetReg());
+                b1s->ancillaCount = b0s->ancillaCount;
             }
         }
     }

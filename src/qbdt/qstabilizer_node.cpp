@@ -72,10 +72,8 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
         rReg = std::dynamic_pointer_cast<QUnitClifford>(rReg->Clone());
         rReg->Allocate(lQbCount - rQbCount);
 
-        const bool toRet = lReg->ApproxCompare(rReg);
+        const bool toRet = lReg->GlobalPhaseCompare(rReg);
         if (toRet) {
-            const real1_f phaseArg = qReg->FirstNonzeroPhase() - rhs->qReg->FirstNonzeroPhase();
-            scale *= std::polar(ONE_R1, phaseArg);
             qReg = rhs->qReg;
             ancillaCount = rhs->ancillaCount;
         }
@@ -88,10 +86,8 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
         lReg->Allocate(rQbCount - lQbCount);
     }
 
-    const bool toRet = lReg->ApproxCompare(rReg);
+    const bool toRet = lReg->GlobalPhaseCompare(rReg);
     if (toRet) {
-        const real1_f phaseArg = rhs->qReg->FirstNonzeroPhase() - qReg->FirstNonzeroPhase();
-        rhs->scale *= std::polar(ONE_R1, phaseArg);
         rhs->qReg = qReg;
         rhs->ancillaCount = ancillaCount;
     }
