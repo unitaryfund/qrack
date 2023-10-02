@@ -68,6 +68,9 @@ protected:
 
     QStabilizerPtr EntangleAll()
     {
+        if (!qubitCount) {
+            return MakeStabilizer(0U);
+        }
         std::vector<bitLenInt> bits(qubitCount);
         std::vector<bitLenInt*> ebits(qubitCount);
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
@@ -134,8 +137,18 @@ public:
 
     ~QUnitClifford() { Dump(); }
 
-    QInterfacePtr Clone();
-    QUnitCliffordPtr CloneEmpty();
+    QInterfacePtr Clone()
+    {
+        QUnitCliffordPtr copyPtr = std::make_shared<QUnitClifford>(
+            qubitCount, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+
+        return CloneBody(copyPtr);
+    }
+    QUnitCliffordPtr CloneEmpty()
+    {
+        return std::make_shared<QUnitClifford>(
+            0U, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+    }
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };
@@ -189,7 +202,13 @@ public:
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-    QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U, complex phaseFac = CMPLX_DEFAULT_ARG);
+    QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U, complex phaseFac = CMPLX_DEFAULT_ARG)
+    {
+        QStabilizerPtr toRet = std::make_shared<QStabilizer>(
+            length, perm, rand_generator, phaseFac, false, randGlobalPhase, false, -1, useRDRAND);
+
+        return toRet;
+    }
 
     void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)

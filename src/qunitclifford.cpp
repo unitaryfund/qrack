@@ -26,28 +26,6 @@ QUnitClifford::QUnitClifford(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp
     SetPermutation(perm, phaseFac);
 }
 
-QStabilizerPtr QUnitClifford::MakeStabilizer(bitLenInt length, bitCapInt perm, complex phaseFac)
-{
-    QStabilizerPtr toRet = std::make_shared<QStabilizer>(
-        length, perm, rand_generator, phaseFac, false, randGlobalPhase, false, -1, useRDRAND);
-
-    return toRet;
-}
-
-QInterfacePtr QUnitClifford::Clone()
-{
-    QUnitCliffordPtr copyPtr = std::make_shared<QUnitClifford>(
-        qubitCount, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
-
-    return CloneBody(copyPtr);
-}
-
-QUnitCliffordPtr QUnitClifford::CloneEmpty()
-{
-    return std::make_shared<QUnitClifford>(
-        0U, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
-}
-
 QInterfacePtr QUnitClifford::CloneBody(QUnitCliffordPtr copyPtr)
 {
     std::map<QStabilizerPtr, QStabilizerPtr> dupeEngines;
