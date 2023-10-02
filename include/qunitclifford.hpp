@@ -135,6 +135,7 @@ public:
     ~QUnitClifford() { Dump(); }
 
     QInterfacePtr Clone();
+    QUnitCliffordPtr CloneEmpty();
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };

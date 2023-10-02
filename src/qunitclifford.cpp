@@ -42,6 +42,12 @@ QInterfacePtr QUnitClifford::Clone()
     return CloneBody(copyPtr);
 }
 
+QUnitCliffordPtr QUnitClifford::CloneEmpty()
+{
+    return std::make_shared<QUnitClifford>(
+        0U, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+}
+
 QInterfacePtr QUnitClifford::CloneBody(QUnitCliffordPtr copyPtr)
 {
     std::map<QStabilizerPtr, QStabilizerPtr> dupeEngines;

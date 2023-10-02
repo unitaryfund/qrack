@@ -61,8 +61,7 @@ public:
     virtual void SetZero()
     {
         QBdtNodeInterface::SetZero();
-        qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
-        qReg->Clear();
+        qReg = qReg->CloneEmpty();
         ancillaCount = 0U;
     }
 

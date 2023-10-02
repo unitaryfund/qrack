@@ -88,6 +88,16 @@ QInterfacePtr QStabilizer::Clone()
     return clone;
 }
 
+QStabilizerPtr QStabilizer::CloneEmpty()
+{
+    QStabilizerPtr clone = std::make_shared<QStabilizer>(
+        0U, 0U, rand_generator, ONE_CMPLX, false, randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+
+    clone->randomSeed = randomSeed;
+
+    return clone;
+}
+
 void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();
@@ -100,6 +110,14 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
         phaseOffset = std::polar(ONE_R1, (real1)(2 * PI_R1 * Rand()));
     } else {
         phaseOffset = ONE_CMPLX;
+    }
+
+    if (!qubitCount) {
+        x.clear();
+        z.clear();
+        r.clear();
+
+        return;
     }
 
     const bitLenInt rowCount = (qubitCount << 1U);
