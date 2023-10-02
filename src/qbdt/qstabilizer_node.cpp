@@ -98,11 +98,7 @@ void QBdtQStabilizerNode::Branch(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    const QUnitCliffordPtr reg = qReg;
-    std::lock_guard<std::mutex> lock(*(reg->mtx.get()));
-    if (qReg) {
-        qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
-    }
+    qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone());
 }
 
 QBdtNodeInterfacePtr QBdtQStabilizerNode::Prune(bitLenInt depth, bitLenInt unused, const bool& unused2)
