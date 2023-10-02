@@ -93,9 +93,9 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
 
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
 {
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     root->Branch(maxQubit);
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     const bitCapInt Stride = bdtStride;
     unsigned underThreads = (unsigned)(pow2(qubitCount - (maxQubit + 1U)) / Stride);
     if (underThreads == 1U) {
