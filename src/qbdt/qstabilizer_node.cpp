@@ -113,6 +113,10 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::Prune(bitLenInt depth, bitLenInt unuse
         return shared_from_this();
     }
 
+    const real1_f phaseArg = qReg->FirstNonzeroPhase();
+    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+    scale *= std::polar(ONE_R1, (real1)phaseArg);
+
     return shared_from_this();
 }
 
@@ -312,10 +316,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth, parDepth);
 #endif
 
-    nRoot = nRoot->Prune(!depth ? 2U : 1U, 1U, true);
-
-    // We're done! Just return the replacement for "this" pointer.
-    return nRoot;
+    return nRoot->Prune(!depth ? 2U : 1U, 1U, true);
 }
 
 } // namespace Qrack

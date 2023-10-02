@@ -36,7 +36,7 @@ public:
         , qReg(q)
         , ancillaCount(0)
     {
-        if (!qReg || !(qReg.get())) {
+        if (!qReg) {
             throw std::invalid_argument("QBdtQStabilizerNode constructor must receive a non-null argument!");
         }
     }
@@ -46,7 +46,7 @@ public:
         , qReg(q)
         , ancillaCount(ac)
     {
-        if (!qReg || !(qReg.get())) {
+        if (!qReg) {
             throw std::invalid_argument("QBdtQStabilizerNode constructor must receive a non-null argument!");
         }
     }
@@ -69,7 +69,7 @@ public:
 
     virtual void SetReg(QUnitCliffordPtr r)
     {
-        if (!r || !(r.get())) {
+        if (!r) {
             throw std::invalid_argument("QBdtQStabilizerNode::SetReg() must receive a non-null argument!");
         }
         qReg = r;
