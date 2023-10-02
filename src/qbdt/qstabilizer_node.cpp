@@ -180,10 +180,10 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
     nRoot->branches[1U] =
         std::make_shared<QBdtQStabilizerNode>(SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()));
-    QBdtQStabilizerNodePtr b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
-    QBdtQStabilizerNodePtr b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
-    QUnitCliffordPtr qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
-    QUnitCliffordPtr qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
+    const QBdtQStabilizerNodePtr& b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
+    const QBdtQStabilizerNodePtr& b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
+    const QUnitCliffordPtr& qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
+    const QUnitCliffordPtr& qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
     if (IS_NODE_0(scale) || (ancillaCount >= qReg->GetQubitCount())) {
         b0->SetZero();
@@ -303,17 +303,17 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         ++parDepth;
 
         std::future<void> future0 = std::async(
-            std::launch::async, [&] { nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth, parDepth); });
-        nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth, parDepth);
+            std::launch::async, [&] { nRoot->branches[0U] = b0->PopSpecial(depth, parDepth); });
+        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
 
         future0.get();
     } else {
-        nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth, parDepth);
-        nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth, parDepth);
+        nRoot->branches[0U] = b0->PopSpecial(depth, parDepth);
+        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
     }
 #else
-    nRoot->branches[0U] = nRoot->branches[0U]->PopSpecial(depth, parDepth);
-    nRoot->branches[1U] = nRoot->branches[1U]->PopSpecial(depth, parDepth);
+    nRoot->branches[0U] = b0->PopSpecial(depth, parDepth);
+    nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
 #endif
 
     return nRoot->Prune(!depth ? 2U : 1U, 1U, true);
