@@ -707,8 +707,8 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
             }
 
             if (leaf->IsStabilizer()) {
+                leaf->Branch();
                 const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
-                std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
                 qReg->Mtrx(mtrx, target - j);
                 return (bitCapInt)(pow2(target - j) - ONE_BCI);
             }
@@ -870,8 +870,8 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             }
 
             if (leaf->IsStabilizer()) {
+                leaf->Branch();
                 const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
-                std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
                 if (control < j) {
                     qReg->Mtrx(mtrx, target - j);
                 } else if (isAnti) {
