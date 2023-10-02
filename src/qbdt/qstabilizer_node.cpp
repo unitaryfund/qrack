@@ -63,7 +63,7 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
         rReg = rReg->Clone();
         rReg->Allocate(lQbCount - rQbCount);
 
-        const bool toRet = lReg->ApproxCompare(rReg);
+        const bool toRet = lReg->GlobalPhaseCompare(rReg);
         if (toRet) {
             qReg = rhs->qReg;
             ancillaCount = rhs->ancillaCount;
@@ -77,7 +77,7 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
         lReg->Allocate(rQbCount - lQbCount);
     }
 
-    const bool toRet = lReg->ApproxCompare(rReg);
+    const bool toRet = lReg->GlobalPhaseCompare(rReg);
     if (toRet) {
         rhs->qReg = qReg;
         rhs->ancillaCount = ancillaCount;

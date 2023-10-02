@@ -374,6 +374,18 @@ public:
     {
         return error_tol >= ApproxCompareHelper(toCompare, error_tol, true);
     }
+    bool GlobalPhaseCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return GlobalPhaseCompare(std::dynamic_pointer_cast<QStabilizer>(toCompare), error_tol);
+    }
+    bool GlobalPhaseCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        const AmplitudeEntry thisAmpEntry = GetAnyAmplitude();
+        if (!IS_NORM_0(thisAmpEntry.amplitude - toCompare->GetAmplitude(thisAmpEntry.permutation))) {
+            return false;
+        }
+        return error_tol >= ApproxCompareHelper(toCompare, error_tol, true);
+    }
 
     real1_f Prob(bitLenInt qubit);
 

@@ -2547,6 +2547,11 @@ public:
         return SumSqrDiff(toCompare) <= error_tol;
     }
 
+    virtual bool GlobalPhaseCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return ApproxCompare(toCompare, error_tol);
+    }
+
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare) = 0;
 
     virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON);

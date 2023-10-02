@@ -161,7 +161,7 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
             qReg1 = std::dynamic_pointer_cast<QUnitClifford>(qReg1->Clone());
             qReg1->Allocate(qbCount0 - qbCount1);
         }
-        if (qReg0->ApproxCompare(qReg1)) {
+        if (qReg0->GlobalPhaseCompare(qReg1)) {
             if (qbCount0 < qbCount1) {
                 b1s->SetReg(b0s->GetReg());
             } else {
