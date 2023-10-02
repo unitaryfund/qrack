@@ -141,7 +141,10 @@ void QBdtQStabilizerNode::InsertAtDepth(
     }
 
     QBdtQStabilizerNodePtr bEng = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b);
-    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+    const QUnitCliffordPtr bReg = bEng->qReg;
+    std::lock(*(qReg->mtx.get()), *(bReg->mtx.get()));
+    std::lock_guard<std::mutex> lLock(*(qReg->mtx.get()), std::adopt_lock);
+    std::lock_guard<std::mutex> rLock(*(bReg->mtx.get()), std::adopt_lock);
     qReg->Compose(bEng->qReg, depth);
 }
 
@@ -160,11 +163,14 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
     QBdtQStabilizerNodePtr toRet = std::dynamic_pointer_cast<QBdtQStabilizerNode>(ShallowClone());
     toRet->scale /= abs(toRet->scale);
 
-    std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
     if (!qReg) {
         return toRet;
     }
 
+    const QUnitCliffordPtr toRetReg = toRet->qReg;
+    std::lock(*(qReg->mtx.get()), *(toRetReg->mtx.get()));
+    std::lock_guard<std::mutex> lLock(*(qReg->mtx.get()), std::adopt_lock);
+    std::lock_guard<std::mutex> rLock(*(toRetReg->mtx.get()), std::adopt_lock);
     toRet->qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Decompose(depth, size));
 
     return toRet;
@@ -185,7 +191,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
     // qubit reset to |0>.
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
-    nRoot->mtx = mtx;
+    std::lock_guard<std::mutex> rootLock(*(nRoot->mtx.get()));
 
     if (true) {
         std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
