@@ -73,6 +73,9 @@ protected:
             phaseOffset = -phaseOffset;
         }
         phaseOffset -= (real1)(((size_t)(phaseOffset / (2 * PI_R1))) * (2 * PI_R1));
+        if (phaseOffset > PI_R1) {
+            phaseOffset -= 2 * PI_R1;
+        }
         if (isNeg) {
             phaseOffset = -phaseOffset;
         }
