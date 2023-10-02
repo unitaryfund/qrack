@@ -107,7 +107,7 @@ public:
         // Intentionally left blank
     }
 
-    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U, bool copyMutex = true);
+    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
 };
 
 } // namespace Qrack

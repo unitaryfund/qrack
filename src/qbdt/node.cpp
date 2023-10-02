@@ -372,7 +372,7 @@ void QBdtNode::Normalize(bitLenInt depth)
     }
 }
 
-QBdtNodeInterfacePtr QBdtNode::PopSpecial(bitLenInt depth, bitLenInt parDepth, bool ignored)
+QBdtNodeInterfacePtr QBdtNode::PopSpecial(bitLenInt depth, bitLenInt parDepth)
 {
     if (!depth) {
         return shared_from_this();
@@ -390,14 +390,14 @@ QBdtNodeInterfacePtr QBdtNode::PopSpecial(bitLenInt depth, bitLenInt parDepth, b
 
     if (b0.get() == b1.get()) {
         std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
-        branches[0U] = b0->PopSpecial(depth, parDepth, false);
+        branches[0U] = b0->PopSpecial(depth, parDepth);
         branches[1U] = branches[0U];
     } else {
         std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
         std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
         std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
-        branches[0U] = b0->PopSpecial(depth, parDepth, false);
-        branches[1U] = b1->PopSpecial(depth, parDepth, false);
+        branches[0U] = b0->PopSpecial(depth, parDepth);
+        branches[1U] = b1->PopSpecial(depth, parDepth);
     }
 
     return shared_from_this();

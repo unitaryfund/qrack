@@ -176,7 +176,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
     return toRet;
 }
 
-QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt parDepth, bool copyMutex)
+QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt parDepth)
 {
     if (!depth) {
         return shared_from_this();
@@ -191,9 +191,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
     // qubit reset to |0>.
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
-    if (copyMutex) {
-        nRoot->mtx = mtx;
-    }
+    nRoot->mtx = mtx;
 
     if (true) {
         std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
@@ -203,8 +201,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
             SQRT1_2_R1, std::dynamic_pointer_cast<QUnitClifford>(qReg->Clone()), ancillaCount);
     }
 
-    const QBdtQStabilizerNodePtr& b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
-    const QBdtQStabilizerNodePtr& b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
+    QBdtQStabilizerNodePtr b0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[0U]);
+    QBdtQStabilizerNodePtr b1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(nRoot->branches[1U]);
     const QUnitCliffordPtr& qReg0 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0)->qReg;
     const QUnitCliffordPtr& qReg1 = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1)->qReg;
 
@@ -316,28 +314,34 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         }
     }
 
-    // This process might need to be repeated, recursively.
+    if (true) {
+        std::lock(*(b0->mtx.get()), *(b1->mtx.get()));
+        std::lock_guard<std::mutex> lock0(*(b0->mtx.get()), std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(*(b1->mtx.get()), std::adopt_lock);
+
+        // This process might need to be repeated, recursively.
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    unsigned underThreads = (unsigned)(pow2(depth) / pStride);
-    if (underThreads == 1U) {
-        underThreads = 0U;
-    }
-    if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {
-        ++parDepth;
+        unsigned underThreads = (unsigned)(pow2(depth) / pStride);
+        if (underThreads == 1U) {
+            underThreads = 0U;
+        }
+        if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {
+            ++parDepth;
 
-        std::future<void> future0 =
-            std::async(std::launch::async, [&] { nRoot->branches[0U] = b0->PopSpecial(depth, parDepth, false); });
-        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth, false);
+            std::future<void> future0 =
+                std::async(std::launch::async, [&] { nRoot->branches[0U] = b0->PopSpecial(depth, parDepth); });
+            nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
 
-        future0.get();
-    } else {
-        nRoot->branches[0U] = b0->PopSpecial(depth, parDepth, false);
-        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth, false);
-    }
+            future0.get();
+        } else {
+            nRoot->branches[0U] = b0->PopSpecial(depth, parDepth);
+            nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
+        }
 #else
-    nRoot->branches[0U] = b0->PopSpecial(depth, parDepth, false);
-    nRoot->branches[1U] = b1->PopSpecial(depth, parDepth, false);
+        nRoot->branches[0U] = b0->PopSpecial(depth, parDepth);
+        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
 #endif
+    }
 
     return nRoot->Prune(!depth ? 2U : 1U, 1U, true);
 }
