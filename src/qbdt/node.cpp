@@ -644,6 +644,16 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         return;
     }
 
+    if (b0->IsStabilizer() != b1->IsStabilizer()) {
+        if (b0->IsStabilizer()) {
+            b0->Branch();
+            b0 = b0->PopSpecial();
+        } else {
+            b1->Branch();
+            b1 = b1->PopSpecial();
+        }
+    }
+
     if (b0->isEqualUnder(b1)) {
         complex2 qubit(b0->scale, b1->scale);
         qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
@@ -787,6 +797,16 @@ void QBdtNode::PushStateVector(
         b1->scale = mtrx[2U] * Y0 + mtrx[3U] * Y1;
 
         return;
+    }
+
+    if (b0->IsStabilizer() != b1->IsStabilizer()) {
+        if (b0->IsStabilizer()) {
+            b0->Branch();
+            b0 = b0->PopSpecial();
+        } else {
+            b1->Branch();
+            b1 = b1->PopSpecial();
+        }
     }
 
     if (b0->isEqualUnder(b1)) {
