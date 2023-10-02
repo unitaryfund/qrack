@@ -1499,8 +1499,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
         z[offset].insert(z[offset].end(), endLength, false);
     }
 
-    qubitCount = nQubitCount;
-    maxQPower = pow2(qubitCount);
+    SetQubitCount(nQubitCount);
 
     return start;
 }
@@ -1618,8 +1617,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     z.erase(z.begin() + start, z.begin() + end);
     r.erase(r.begin() + start, r.begin() + end);
 
-    qubitCount = nQubitCount;
-    maxQPower = pow2(nQubitCount);
+    SetQubitCount(nQubitCount);
 
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
 
