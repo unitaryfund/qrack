@@ -162,15 +162,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
             qReg1->Allocate(qbCount0 - qbCount1);
         }
         if (qReg0->ApproxCompare(qReg1)) {
-            if (qbCount0 < qbCount1) {
-                const real1_f phaseArg = b1s->GetReg()->FirstNonzeroPhase() - b0s->GetReg()->FirstNonzeroPhase();
-                b1s->SetReg(b0s->GetReg());
-                b1s->GetReg()->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, phaseArg);
-            } else {
-                const real1_f phaseArg = b0s->GetReg()->FirstNonzeroPhase() - b1s->GetReg()->FirstNonzeroPhase();
-                b0s->SetReg(b1s->GetReg());
-                b0s->GetReg()->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, phaseArg);
-            }
+            const real1_f phaseArg = b1s->GetReg()->FirstNonzeroPhase() - b0s->GetReg()->FirstNonzeroPhase();
+            b1s->scale *= std::polar(ONE_R1, phaseArg);
+            b1s->SetReg(b0s->GetReg());
         }
     }
 

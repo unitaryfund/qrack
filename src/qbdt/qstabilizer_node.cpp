@@ -62,16 +62,6 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
     if (rQbCount < lQbCount) {
         rReg = rReg->Clone();
         rReg->Allocate(lQbCount - rQbCount);
-
-        const bool toRet = lReg->ApproxCompare(rReg);
-        if (toRet) {
-            const real1_f phaseArg = qReg->FirstNonzeroPhase() - rhs->qReg->FirstNonzeroPhase();
-            qReg = rhs->qReg;
-            qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, phaseArg);
-            ancillaCount = rhs->ancillaCount;
-        }
-
-        return toRet;
     }
 
     if (lQbCount < rQbCount) {
@@ -82,8 +72,8 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
     const bool toRet = lReg->ApproxCompare(rReg);
     if (toRet) {
         const real1_f phaseArg = rhs->qReg->FirstNonzeroPhase() - qReg->FirstNonzeroPhase();
+        rhs->scale *= std::polar(ONE_R1, phaseArg);
         rhs->qReg = qReg;
-        rhs->qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, phaseArg);
         rhs->ancillaCount = ancillaCount;
     }
 
