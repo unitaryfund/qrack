@@ -84,7 +84,7 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 {
     const size_t _b = b ? 1U : 0U;
 
-    if ((!branches[_b]) != (!r->branches[_b])) {
+    if (!branches[_b] != !r->branches[_b]) {
         return false;
     }
 
