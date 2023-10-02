@@ -42,7 +42,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , rawRandBools(0U)
     , rawRandBoolsRemaining(0U)
-    , phaseOffset(ONE_CMPLX)
+    , phaseOffset(ZERO_R1)
     , isUnitarityBroken(false)
     , r((n << 1U) + 1U)
     , x((n << 1U) + 1U, BoolVector(n))
@@ -94,11 +94,11 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
     isUnitarityBroken = false;
 
     if (phaseFac != CMPLX_DEFAULT_ARG) {
-        phaseOffset = phaseFac;
+        phaseOffset = std::arg(phaseFac);
     } else if (randGlobalPhase) {
-        phaseOffset = std::polar(ONE_R1, (real1)(2 * PI_R1 * Rand()));
+        phaseOffset = (real1)(2 * PI_R1 * Rand() - PI_R1);
     } else {
-        phaseOffset = ONE_CMPLX;
+        phaseOffset = ZERO_R1;
     }
 
     const bitLenInt rowCount = (qubitCount << 1U);
@@ -289,7 +289,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     if (e & 2U) {
         amp *= -ONE_CMPLX;
     }
-    amp *= phaseOffset;
+    amp *= std::polar(ONE_R1, phaseOffset);
 
     bitCapInt perm = 0U;
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
@@ -908,7 +908,7 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
         { c, t });
 
     if (!randGlobalPhase) {
-        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
+        SetPhaseOffset(phaseOffset + std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
     }
 }
 
@@ -942,7 +942,7 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
         { c, t });
 
     if (!randGlobalPhase) {
-        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
+        SetPhaseOffset(phaseOffset + std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
     }
 }
 
@@ -1078,7 +1078,7 @@ void QStabilizer::H(bitLenInt t)
     if (nIsSepZ || ((entry.permutation & tPow) == 0U)) {
         const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
         if (norm(oAmp) > FP_NORM_EPSILON) {
-            phaseOffset *= std::polar(ONE_R1, std::arg(oAmp) - std::arg(entry.amplitude));
+            SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
             return;
         }
     }
@@ -1093,7 +1093,7 @@ void QStabilizer::H(bitLenInt t)
         if (nIsSepZ || ((entry.permutation & tPow) == 0U)) {
             const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
             if (norm(oAmp) > FP_NORM_EPSILON) {
-                phaseOffset *= std::polar(ONE_R1, std::arg(oAmp) - std::arg(entry.amplitude));
+                SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
                 return;
             }
         }
@@ -1146,7 +1146,7 @@ void QStabilizer::Z(bitLenInt t)
 {
     if (!randGlobalPhase && IsSeparableZ(t)) {
         if (M(t)) {
-            phaseOffset *= -ONE_CMPLX;
+            SetPhaseOffset(phaseOffset + PI_R1);
         }
         return;
     }
@@ -1162,7 +1162,7 @@ void QStabilizer::Z(bitLenInt t)
         { t });
 
     if (randGlobalPhase) {
-        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
+        SetPhaseOffset(phaseOffset + std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
     }
 }
 
@@ -1171,7 +1171,7 @@ void QStabilizer::S(bitLenInt t)
 {
     if (!randGlobalPhase && IsSeparableZ(t)) {
         if (M(t)) {
-            phaseOffset *= I_CMPLX;
+            SetPhaseOffset(phaseOffset + PI_R1 / 2);
         }
         return;
     }
@@ -1192,7 +1192,7 @@ void QStabilizer::S(bitLenInt t)
     }
 
     if (randGlobalPhase) {
-        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
+        SetPhaseOffset(phaseOffset + std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
     }
 }
 
@@ -1201,7 +1201,7 @@ void QStabilizer::IS(bitLenInt t)
 {
     if (!randGlobalPhase && IsSeparableZ(t)) {
         if (M(t)) {
-            phaseOffset *= -I_CMPLX;
+            SetPhaseOffset(phaseOffset - PI_R1 / 2);
         }
         return;
     }
@@ -1222,7 +1222,7 @@ void QStabilizer::IS(bitLenInt t)
     }
 
     if (randGlobalPhase) {
-        phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
+        SetPhaseOffset(phaseOffset + std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(ampEntry.permutation)));
     }
 }
 
@@ -1378,7 +1378,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         const AmplitudeEntry entry = getBasisAmp(nrm);
         const complex oAmp = clone->GetAmplitude(entry.permutation);
         if (norm(oAmp) > FP_NORM_EPSILON) {
-            phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+            SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
             return result;
         }
         for (bitCapInt t = 0U; t < permCountMin1; ++t) {
@@ -1391,7 +1391,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             const AmplitudeEntry entry = getBasisAmp(nrm);
             const complex oAmp = GetAmplitude(entry.permutation);
             if (norm(oAmp) > FP_NORM_EPSILON) {
-                phaseOffset *= (oAmp * abs(entry.amplitude)) / (entry.amplitude * abs(oAmp));
+                SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
                 return result;
             }
         }
@@ -1444,7 +1444,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     toCopy->Finish();
     Finish();
 
-    phaseOffset *= toCopy->phaseOffset;
+    SetPhaseOffset(phaseOffset + toCopy->phaseOffset);
 
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
     const bitLenInt length = toCopy->qubitCount;
@@ -1618,7 +1618,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     const bitCapInt endMask = (oMaxQPower - 1U) ^ (pow2(start + length) - 1U);
     const bitCapInt nPerm = (ampEntry.permutation & startMask) | ((ampEntry.permutation & endMask) >> length);
 
-    phaseOffset *= std::polar(ONE_R1, std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(nPerm)));
+    SetPhaseOffset(phaseOffset + std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(nPerm)));
 }
 
 real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error_tol, bool isDiscrete)
@@ -1763,21 +1763,21 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
     if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) && IS_SAME(mtrx[0U], -mtrx[3U])) {
         H(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
     if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) && IS_SAME(mtrx[0U], mtrx[3U])) {
         X(target);
         H(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
     if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) && IS_SAME(mtrx[0U], mtrx[3U])) {
         H(target);
         X(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1786,7 +1786,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         X(target);
         // Reverses sign
-        phaseOffset *= -mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]) + PI_R1);
         return;
     }
 
@@ -1794,7 +1794,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
         H(target);
         S(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1802,7 +1802,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
         H(target);
         IS(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1811,7 +1811,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         X(target);
         IS(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1820,7 +1820,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         X(target);
         S(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1828,7 +1828,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
         IS(target);
         H(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1836,7 +1836,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
         S(target);
         H(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1846,7 +1846,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         X(target);
         Z(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1856,7 +1856,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         X(target);
         Z(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1864,7 +1864,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         IS(target);
         H(target);
         IS(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1873,7 +1873,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         S(target);
         H(target);
         S(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1882,7 +1882,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         IS(target);
         H(target);
         S(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1891,7 +1891,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         S(target);
         H(target);
         IS(target);
-        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
         return;
     }
 
@@ -1901,25 +1901,25 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_SAME(topLeft, bottomRight)) {
-        phaseOffset *= topLeft;
+        SetPhaseOffset(phaseOffset + std::arg(topLeft));
         return;
     }
 
     if (IS_SAME(topLeft, -bottomRight)) {
         Z(target);
-        phaseOffset *= topLeft;
+        SetPhaseOffset(phaseOffset + std::arg(topLeft));
         return;
     }
 
     if (IS_SAME(topLeft, -I_CMPLX * bottomRight)) {
         S(target);
-        phaseOffset *= topLeft;
+        SetPhaseOffset(phaseOffset + std::arg(topLeft));
         return;
     }
 
     if (IS_SAME(topLeft, I_CMPLX * bottomRight)) {
         IS(target);
-        phaseOffset *= topLeft;
+        SetPhaseOffset(phaseOffset + std::arg(topLeft));
         return;
     }
 
@@ -1940,28 +1940,28 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 {
     if (IS_SAME(topRight, bottomLeft)) {
         X(target);
-        phaseOffset *= topRight;
+        SetPhaseOffset(phaseOffset + std::arg(topRight));
         return;
     }
 
     if (IS_SAME(topRight, -bottomLeft)) {
         Y(target);
         // Y is composed as IS, X, S, with overall -i phase
-        phaseOffset *= topRight * I_CMPLX;
+        SetPhaseOffset(phaseOffset + std::arg(topRight) + PI_R1 / 2);
         return;
     }
 
     if (IS_SAME(topRight, -I_CMPLX * bottomLeft)) {
         X(target);
         S(target);
-        phaseOffset *= topRight;
+        SetPhaseOffset(phaseOffset + std::arg(topRight));
         return;
     }
 
     if (IS_SAME(topRight, I_CMPLX * bottomLeft)) {
         X(target);
         IS(target);
-        phaseOffset *= topRight;
+        SetPhaseOffset(phaseOffset + std::arg(topRight));
         return;
     }
 
