@@ -249,6 +249,14 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
             std::lock_guard<std::mutex> lock0(*(lRef->mtx.get()), std::adopt_lock);
             std::lock_guard<std::mutex> lock1(*(rRef->mtx.get()), std::adopt_lock);
 
+            if (leaf0->IsStabilizer() || leaf1->IsStabilizer()) {
+                // Sets branches equal if true.
+                leaf0->isEqualUnder(leaf1);
+
+                // WARNING: Mutates loop control variable!
+                return (bitCapInt)(pow2(depth - j) - ONE_BCI);
+            }
+
             leaf0 = lRef->branches[bit];
             leaf1 = rRef->branches[bit];
 

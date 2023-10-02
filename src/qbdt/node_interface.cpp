@@ -116,7 +116,7 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
     rLeaf->scale = nScale;
 
     // Set the branches equal.
-    lLeaf = rLeaf;
+    rLeaf = lLeaf;
 
     return true;
 }
