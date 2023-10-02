@@ -164,7 +164,7 @@ public:
         throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }
 
-    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U, bool copyMutex = true)
     {
         throw std::out_of_range(
             "QBdtNodeInterface::PopSpecial() not implemented! (Check IsStabilizer() before PopSpecial().)");

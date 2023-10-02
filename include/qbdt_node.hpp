@@ -78,7 +78,7 @@ public:
     virtual QBdtNodeInterfacePtr Apply2x2(complex const* mtrx, bitLenInt depth);
 #endif
 
-    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
+    virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U, bool copyMutex = true);
 };
 
 } // namespace Qrack

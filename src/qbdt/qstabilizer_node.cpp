@@ -176,7 +176,7 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
     return toRet;
 }
 
-QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt parDepth)
+QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt parDepth, bool copyMutex)
 {
     if (!depth) {
         return shared_from_this();
@@ -191,7 +191,9 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
     // Creating a "new root" (to replace keyword "this" class instance node, on return) effectively allocates a new
     // qubit reset to |0>.
     QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(scale);
-    std::lock_guard<std::mutex> rootLock(*(nRoot->mtx.get()));
+    if (copyMutex) {
+        nRoot->mtx = mtx;
+    }
 
     if (true) {
         std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
@@ -324,17 +326,17 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
         ++parDepth;
 
         std::future<void> future0 =
-            std::async(std::launch::async, [&] { nRoot->branches[0U] = b0->PopSpecial(depth, parDepth); });
-        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
+            std::async(std::launch::async, [&] { nRoot->branches[0U] = b0->PopSpecial(depth, parDepth, false); });
+        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth, false);
 
         future0.get();
     } else {
-        nRoot->branches[0U] = b0->PopSpecial(depth, parDepth);
-        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
+        nRoot->branches[0U] = b0->PopSpecial(depth, parDepth, false);
+        nRoot->branches[1U] = b1->PopSpecial(depth, parDepth, false);
     }
 #else
-    nRoot->branches[0U] = b0->PopSpecial(depth, parDepth);
-    nRoot->branches[1U] = b1->PopSpecial(depth, parDepth);
+    nRoot->branches[0U] = b0->PopSpecial(depth, parDepth, false);
+    nRoot->branches[1U] = b1->PopSpecial(depth, parDepth, false);
 #endif
 
     return nRoot->Prune(!depth ? 2U : 1U, 1U, true);
