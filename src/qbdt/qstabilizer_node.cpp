@@ -159,10 +159,8 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::RemoveSeparableAtDepth(
         return toRet;
     }
 
-    const QUnitCliffordPtr toRetReg = toRet->qReg;
-    std::lock(*(qReg->mtx.get()), *(toRetReg->mtx.get()));
-    std::lock_guard<std::mutex> lLock(*(qReg->mtx.get()), std::adopt_lock);
-    std::lock_guard<std::mutex> rLock(*(toRetReg->mtx.get()), std::adopt_lock);
+    Branch();
+
     toRet->qReg = std::dynamic_pointer_cast<QUnitClifford>(qReg->Decompose(depth, size));
 
     return toRet;
