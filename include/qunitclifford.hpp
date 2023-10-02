@@ -213,7 +213,7 @@ public:
     void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)
     {
-        throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
+        throw std::domain_error("QUnitClifford::SetAmplitude() not implemented!");
     }
 
     /// Apply a CNOT gate with control and target
@@ -456,6 +456,16 @@ public:
     {
         if (!length) {
             return start;
+        }
+
+        if (start > qubitCount) {
+            throw std::out_of_range("QUnitClifford::Allocate() cannot start past end of register!");
+        }
+
+        if (!qubitCount) {
+            SetQubitCount(length);
+            SetPermutation(0U);
+            return 0U;
         }
 
         QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,

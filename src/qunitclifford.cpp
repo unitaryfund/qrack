@@ -727,7 +727,7 @@ void QUnitClifford::MultiShotMeasureMask(
 void QUnitClifford::SetQuantumState(const complex* inputState)
 {
     if (qubitCount > 1U) {
-        throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
+        throw std::domain_error("QUnitClifford::SetQuantumState() not generally implemented!");
     }
 
     SetPermutation(0U);
