@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <thread>
 
-#define IS_REAL_1(r) (abs(ONE_CMPLX - r) <= FP_NORM_EPSILON)
+#define IS_REAL_1(r) (abs(ONE_R1 - r) <= FP_NORM_EPSILON)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
     ((IS_REAL_1(std::real(top)) || IS_REAL_1(std::imag(bottom))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
 #define IS_CLIFFORD_PHASE_INVERT(top, bottom)                                                                          \

@@ -32,6 +32,7 @@ protected:
     bool isSparse;
     bool isReactiveSeparate;
     bool useTGadget;
+    bool isNearClifford;
     int64_t devID;
     complex globalPhase;
     QInterfacePtr layerStack;

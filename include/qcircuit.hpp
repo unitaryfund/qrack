@@ -20,6 +20,25 @@
 #include <list>
 
 #define amp_leq_0(x) (norm(x) <= FP_NORM_EPSILON)
+#define __IS_REAL_1(r) (abs(ONE_R1 - r) <= FP_NORM_EPSILON)
+#define __IS_SAME(a, b) (norm((a) - (b)) <= FP_NORM_EPSILON)
+#define __IS_CTRLED_CLIFFORD(top, bottom)                                                                              \
+    ((__IS_REAL_1(std::real(top)) || __IS_REAL_1(std::imag(bottom))) &&                                                \
+        (__IS_SAME(top, bottom) || __IS_SAME(top, -bottom)))
+#define __IS_CLIFFORD_PHASE_INVERT(top, bottom)                                                                        \
+    (__IS_SAME(top, bottom) || __IS_SAME(top, -bottom) || __IS_SAME(top, I_CMPLX * bottom) ||                          \
+        __IS_SAME(top, -I_CMPLX * bottom))
+#define __IS_CLIFFORD(mtrx)                                                                                            \
+    ((__IS_PHASE(mtrx) && __IS_CLIFFORD_PHASE_INVERT(mtrx[0], mtrx[3])) ||                                             \
+        (__IS_INVERT(mtrx) && __IS_CLIFFORD_PHASE_INVERT(mtrx[1], mtrx[2])) ||                                         \
+        ((__IS_SAME(mtrx[0U], mtrx[1U]) || __IS_SAME(mtrx[0U], -mtrx[1U]) ||                                           \
+             __IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) || __IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U])) &&                   \
+            (__IS_SAME(mtrx[0U], mtrx[2U]) || __IS_SAME(mtrx[0U], -mtrx[2U]) ||                                        \
+                __IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) || __IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U])) &&                \
+            (__IS_SAME(mtrx[0U], mtrx[3U]) || __IS_SAME(mtrx[0U], -mtrx[3U]) ||                                        \
+                __IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U]) || IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U]))))
+#define __IS_PHASE(mtrx) (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]))
+#define __IS_INVERT(mtrx) (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U]))
 
 namespace Qrack {
 
@@ -99,10 +118,21 @@ struct QCircuitGate {
     /**
      * Can I combine myself with gate `other`?
      */
-    bool CanCombine(QCircuitGatePtr other)
+    bool CanCombine(QCircuitGatePtr other, bool clifford = false)
     {
         if (target != other->target) {
             return false;
+        }
+
+        if (!controls.size() && !other->controls.size()) {
+            return true;
+        }
+
+        if (clifford && IsClifford() && other->IsClifford()) {
+            if ((controls.size() > 1U) || (other->controls.size() > 1U)) {
+                return false;
+            }
+            return !controls.size() || !other->controls.size() || (*(controls.begin()) == *(other->controls.begin()));
         }
 
         if (std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end()) ||
@@ -281,9 +311,9 @@ struct QCircuitGate {
     /**
      * Check if I can combine with gate `other`, and do so, if possible
      */
-    bool TryCombine(QCircuitGatePtr other)
+    bool TryCombine(QCircuitGatePtr other, bool clifford = false)
     {
-        if (!CanCombine(other)) {
+        if (!CanCombine(other, clifford)) {
             return false;
         }
         Combine(other);
@@ -371,6 +401,44 @@ struct QCircuitGate {
         if ((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON) ||
             (norm(ONE_CMPLX - p[1]) > FP_NORM_EPSILON) || (norm(ONE_CMPLX - p[2]) > FP_NORM_EPSILON)) {
             return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Am I a Clifford gate?
+     */
+    bool IsClifford()
+    {
+        if (!payloads.size()) {
+            // Swap gate is Clifford
+            return true;
+        }
+
+        if (controls.size() > 1U) {
+            return false;
+        }
+
+        if (!controls.size()) {
+            return __IS_CLIFFORD(payloads[0U].get());
+        }
+
+        for (const auto& kvPair : payloads) {
+            const complex* p = kvPair.second.get();
+            if ((norm(p[1U]) <= FP_NORM_EPSILON) && (norm(p[2U]) <= FP_NORM_EPSILON)) {
+                // Phase payload
+                if (!__IS_CLIFFORD_PHASE_INVERT(p[0U], p[3U])) {
+                    return false;
+                }
+            } else if ((norm(p[0U]) <= FP_NORM_EPSILON) && (norm(p[3U]) <= FP_NORM_EPSILON)) {
+                // Negation payload
+                if (!__IS_CLIFFORD_PHASE_INVERT(p[1U], p[2U])) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
         }
 
         return true;
@@ -498,6 +566,7 @@ typedef std::shared_ptr<QCircuit> QCircuitPtr;
 class QCircuit {
 protected:
     bool isCollapsed;
+    bool isNearClifford;
     bitLenInt qubitCount;
     std::list<QCircuitGatePtr> gates;
 
@@ -505,8 +574,9 @@ public:
     /**
      * Default constructor
      */
-    QCircuit(bool collapse = true)
+    QCircuit(bool collapse = true, bool clifford = false)
         : isCollapsed(collapse)
+        , isNearClifford(clifford)
         , qubitCount(0)
         , gates()
     {
@@ -516,8 +586,9 @@ public:
     /**
      * Manual constructor
      */
-    QCircuit(bitLenInt qbCount, const std::list<QCircuitGatePtr>& g, bool collapse = true)
+    QCircuit(bitLenInt qbCount, const std::list<QCircuitGatePtr>& g, bool collapse = true, bool clifford = false)
         : isCollapsed(collapse)
+        , isNearClifford(clifford)
         , qubitCount(qbCount)
     {
         for (const QCircuitGatePtr& gate : g) {
@@ -525,7 +596,7 @@ public:
         }
     }
 
-    QCircuitPtr Clone() { return std::make_shared<QCircuit>(qubitCount, gates, isCollapsed); }
+    QCircuitPtr Clone() { return std::make_shared<QCircuit>(qubitCount, gates, isCollapsed, isNearClifford); }
 
     QCircuitPtr Inverse()
     {
@@ -597,8 +668,8 @@ public:
     }
 
     /**
-     * Combine circuit (with identical qubit index mappings) at the end of this circuit, by acting all additional gates
-     * in sequence.
+     * Combine circuit (with identical qubit index mappings) at the end of this circuit, by acting all additional
+     * gates in sequence.
      */
     void Combine(QCircuitPtr circuit)
     {
