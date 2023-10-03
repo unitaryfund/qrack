@@ -461,11 +461,17 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    if (num_failed == 0 && qtensornetwork) {
+    if (num_failed == 0 && qtensornetwork && bdt) {
+        testEngineType = QINTERFACE_TENSOR_NETWORK;
+        testSubEngineType = QINTERFACE_QUNIT;
+        testSubSubEngineType = QINTERFACE_BDT;
+        session.config().stream() << "############ QTensorNetwork (QBdt) ############" << std::endl;
+        num_failed = session.run();
+    } else if (num_failed == 0 && qtensornetwork) {
         testEngineType = QINTERFACE_TENSOR_NETWORK;
         testSubEngineType = QINTERFACE_QUNIT;
         testSubSubEngineType = QINTERFACE_STABILIZER_HYBRID;
-        session.config().stream() << "############ QTensorNetwork ############" << std::endl;
+        session.config().stream() << "############ QTensorNetwork (QStabilizerHybrid) ############" << std::endl;
         num_failed = session.run();
     }
 
