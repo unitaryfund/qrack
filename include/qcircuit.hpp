@@ -128,11 +128,18 @@ struct QCircuitGate {
             return true;
         }
 
-        if (clifford && IsClifford() && other->IsClifford()) {
-            if ((controls.size() > 1U) || (other->controls.size() > 1U)) {
+        if (clifford) {
+            const bool mc = IsClifford();
+            const bool oc = other->IsClifford();
+
+            if (mc != oc) {
                 return false;
             }
-            return !controls.size() || !other->controls.size() || (*(controls.begin()) == *(other->controls.begin()));
+
+            if (mc) {
+                return !controls.size() || !other->controls.size() ||
+                    (*(controls.begin()) == *(other->controls.begin()));
+            }
         }
 
         if (std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end()) ||
