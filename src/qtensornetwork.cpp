@@ -26,6 +26,7 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     , isSparse(useSparseStateVec)
     , isReactiveSeparate(true)
     , useTGadget(true)
+    , isNearClifford(true)
     , devID(deviceId)
     , globalPhase(phaseFac)
     , deviceIDs(devList)
@@ -40,6 +41,17 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
 #else
         engines.push_back(QINTERFACE_OPTIMAL);
 #endif
+    }
+
+    for (const QInterfaceEngine& et : engines) {
+        if (et == QINTERFACE_STABILIZER_HYBRID) {
+            break;
+        }
+        if ((et == QINTERFACE_BDT) || (et == QINTERFACE_QPAGER) || (et == QINTERFACE_HYBRID) ||
+            (et == QINTERFACE_CPU) || (et == QINTERFACE_OPENCL) || (et == QINTERFACE_CUDA)) {
+            isNearClifford = false;
+            break;
+        }
     }
 
     SetPermutation(initState, globalPhase);
@@ -70,7 +82,7 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
             }
             if (!qubits.size()) {
                 constexpr complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-                c.push_back(std::make_shared<QCircuit>());
+                c.push_back(std::make_shared<QCircuit>(true, isNearClifford));
                 for (const auto& m : measurements[j]) {
                     if (m.second) {
                         c.back()->AppendGate(std::make_shared<QCircuitGate>(m.first, pauliX));
