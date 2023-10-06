@@ -2889,6 +2889,53 @@ void QEngineCUDA::SetQuantumState(const complex* inputState)
     UpdateRunningNorm();
 }
 
+bitCapInt QEngineCUDA::MAll()
+{
+    if (!stateBuffer) {
+        return 0U;
+    }
+
+    // It's much more costly, by the end, to read amplitudes one-at-a-time from the GPU instead of all-at-once. However,
+    // we might need to less work, overall, if we generate an (unbiased) sample before "walking" the full probability
+    // distribution. Hence, if we try this special-case approach, we should mask GPU-read latency with non-blocking
+    // calls.
+
+    constexpr size_t cReadWidth = (QRACK_ALIGN_SIZE > sizeof(complex)) ? (QRACK_ALIGN_SIZE / sizeof(complex)) : 1U;
+    const size_t alignSize = (maxQPower > cReadWidth) ? cReadWidth : (size_t)maxQPower;
+    const real1_f rnd = Rand();
+    real1_f totProb = ZERO_R1_F;
+    bitCapInt lastNonzero = maxQPower - 1U;
+    bitCapInt perm = 0U;
+    std::unique_ptr<complex[]> amp(new complex[alignSize]);
+    DISPATCH_BLOCK_READ(stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex) * alignSize, amp.get());
+    while (perm < maxQPower) {
+        Finish();
+        const std::vector<complex> partAmp{ amp.get(), amp.get() + alignSize };
+        if ((perm + alignSize) < maxQPower) {
+            tryCuda("Failed to read buffer", [&] {
+                return cudaMemcpyAsync((void*)amp.get(),
+                    (void*)(((complex*)stateBuffer.get()) + (size_t)(perm + alignSize)), sizeof(complex) * alignSize,
+                    cudaMemcpyDeviceToHost, queue);
+            });
+        }
+        for (size_t i = 0U; i < alignSize; ++i) {
+            const real1_f partProb = (real1_f)norm(partAmp[i]);
+            if (partProb > REAL1_EPSILON) {
+                totProb += partProb;
+                if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                    SetPermutation(perm);
+                    return perm;
+                }
+                lastNonzero = perm;
+            }
+            ++perm;
+        }
+    }
+
+    SetPermutation(lastNonzero);
+    return lastNonzero;
+}
+
 complex QEngineCUDA::GetAmplitude(bitCapInt perm)
 {
     if (perm >= maxQPower) {
