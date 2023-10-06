@@ -1064,24 +1064,20 @@ void QEngineCUDA::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, mask, otherMask, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ mask, otherMask, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
 
-    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngs = FixGroupSize(maxQPowerOcl, nrmGroupSize);
 
     const bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
         const complex phaseFac = std::polar(ONE_R1, (real1)(phase / 2));
         const complex cmplxArray[2]{ phaseFac, ONE_CMPLX / phaseFac };
         DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, 2U * sizeof(complex), cmplxArray);
-    }
-
-    if (isPhaseParity) {
-        QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
+        QueueCall(api_call, maxQPowerOcl, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
     } else {
-        QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
+        QueueCall(api_call, maxQPowerOcl, ngs, { stateBuffer, poolItem->ulongBuffer });
     }
 }
 

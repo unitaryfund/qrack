@@ -338,53 +338,46 @@ __global__ void xsinglewide(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
 
 __global__ void xmask(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
 {
+    const bitCapIntOcl lcv = ID;
+    const bitCapIntOcl mask = bitCapIntOclPtr[0];
+    const bitCapIntOcl otherMask = bitCapIntOclPtr[1];
 
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl mask = bitCapIntOclPtr[1];
-    const bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    const bitCapIntOcl otherRes = lcv & otherMask;
+    bitCapIntOcl setInt = lcv & mask;
+    bitCapIntOcl resetInt = setInt ^ mask;
 
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        const bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl setInt = lcv & mask;
-        bitCapIntOcl resetInt = setInt ^ mask;
-
-        if (setInt < resetInt) {
-            continue;
-        }
-
-        setInt |= otherRes;
-        resetInt |= otherRes;
-
-        const qCudaCmplx Y0 = stateVec[resetInt];
-        stateVec[resetInt] = stateVec[setInt];
-        stateVec[setInt] = Y0;
+    if (setInt < resetInt) {
+        return;
     }
+
+    setInt |= otherRes;
+    resetInt |= otherRes;
+
+    const qCudaCmplx Y0 = stateVec[resetInt];
+    stateVec[resetInt] = stateVec[setInt];
+    stateVec[setInt] = Y0;
 }
 
 __global__ void phaseparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* qCudaCmplxPtr)
 {
+    const bitCapIntOcl lcv = ID;
     const bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl mask = bitCapIntOclPtr[1];
-    const bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    const bitCapIntOcl mask = bitCapIntOclPtr[0];
+    const bitCapIntOcl otherMask = bitCapIntOclPtr[1];
     const qCudaCmplx phaseFac = qCudaCmplxPtr[0];
     const qCudaCmplx iPhaseFac = qCudaCmplxPtr[1];
 
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        bitCapIntOcl setInt = lcv & mask;
+    bitCapIntOcl setInt = lcv & mask;
 
-        bitCapIntOcl v = setInt;
-        for (bitCapIntOcl paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
-            v ^= v >> paritySize;
-        }
-        v &= 1U;
-
-        setInt |= lcv & otherMask;
-
-        stateVec[setInt] = zmul(v ? phaseFac : iPhaseFac, stateVec[setInt]);
+    bitCapIntOcl v = setInt;
+    for (bitCapIntOcl paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
+        v ^= v >> paritySize;
     }
+    v &= 1U;
+
+    setInt |= lcv & otherMask;
+
+    stateVec[setInt] = zmul(v ? phaseFac : iPhaseFac, stateVec[setInt]);
 }
 
 __global__ void zsingle(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
