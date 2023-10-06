@@ -1104,10 +1104,9 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
     // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
 
     // Load the integer kernel arguments buffer.
-    const bitCapIntOcl maxI = maxQPowerOcl >> ONE_BCI;
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxI, pow2Ocl(qubitIndex), (bitCapIntOcl)controls.size(),
-        (bitCapIntOcl)mtrxSkipPowers.size(), (bitCapIntOcl)mtrxSkipValueMask, 0U, 0U, 0U, 0U, 0U };
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 5, bciArgs);
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ pow2Ocl(qubitIndex), (bitCapIntOcl)controls.size(),
+        (bitCapIntOcl)mtrxSkipPowers.size(), (bitCapIntOcl)mtrxSkipValueMask, 0U, 0U, 0U, 0U, 0U, 0U };
+    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
 
     BufferPtr nrmInBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(real1));
     const real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
@@ -1126,8 +1125,8 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
-    const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const bitCapIntOcl maxI = maxQPowerOcl >> ONE_BCI;
+    const size_t ngs = FixGroupSize(maxI, nrmGroupSize);
 
     const size_t powBuffSize = sizeof(bitCapIntOcl) * (controls.size() + mtrxSkipPowers.size());
     AddAlloc(powBuffSize);
@@ -1137,7 +1136,7 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
     DISPATCH_WRITE(powersBuffer, powBuffSize, qPowers.get());
 
     // We call the kernel, with global buffers and one local buffer.
-    WaitCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
+    WaitCall(OCL_API_UNIFORMLYCONTROLLED, maxI, ngs,
         { stateBuffer, poolItem->ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer });
 
     uniformBuffer.reset();

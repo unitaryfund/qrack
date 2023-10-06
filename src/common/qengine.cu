@@ -450,55 +450,52 @@ __global__ void invertsinglewide(qCudaCmplx* stateVec, qCudaCmplx* qCudaCmplxPtr
 __global__ void uniformlycontrolled(
     qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, bitCapIntOcl* qPowers, qCudaReal1* mtrxs, qCudaReal1* nrmIn)
 {
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl targetPower = bitCapIntOclPtr[1];
+    const bitCapIntOcl lcv = ID;
+    const bitCapIntOcl targetPower = bitCapIntOclPtr[0];
     const bitCapIntOcl targetMask = targetPower - ONE_BCI;
-    const bitCapIntOcl controlLen = bitCapIntOclPtr[2];
-    const bitCapIntOcl mtrxSkipLen = bitCapIntOclPtr[3];
-    const bitCapIntOcl mtrxSkipValueMask = bitCapIntOclPtr[4];
+    const bitCapIntOcl controlLen = bitCapIntOclPtr[1];
+    const bitCapIntOcl mtrxSkipLen = bitCapIntOclPtr[2];
+    const bitCapIntOcl mtrxSkipValueMask = bitCapIntOclPtr[3];
     const qCudaReal1 nrm = nrmIn[0];
 
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        bitCapIntOcl i = lcv & targetMask;
-        i |= (lcv ^ i) << ONE_BCI;
+    bitCapIntOcl i = lcv & targetMask;
+    i |= (lcv ^ i) << ONE_BCI;
 
-        bitCapIntOcl offset = 0;
-        for (bitLenInt p = 0; p < controlLen; p++) {
-            if (i & qPowers[p]) {
-                offset |= ONE_BCI << p;
-            }
+    bitCapIntOcl offset = 0;
+    for (bitLenInt p = 0; p < controlLen; p++) {
+        if (i & qPowers[p]) {
+            offset |= ONE_BCI << p;
         }
-
-        bitCapIntOcl jHigh = offset;
-        bitCapIntOcl j = 0;
-        for (bitCapIntOcl p = 0; p < mtrxSkipLen; p++) {
-            const bitCapIntOcl jLow = jHigh & (qPowers[controlLen + p] - ONE_BCI);
-            j |= jLow;
-            jHigh = (jHigh ^ jLow) << ONE_BCI;
-        }
-        j |= jHigh;
-        offset = j | mtrxSkipValueMask;
-
-        const qCudaCmplx qubitLo = stateVec[i];
-        const qCudaCmplx qubitHi = stateVec[i | targetPower];
-#if FPPOW > 4
-        qCudaCmplx2 qubit = make_qCudaCmplx2(qubitLo.x, qubitLo.y, qubitHi.x, qubitHi.y);
-        qubit = zmatrixmul(nrm, mtrxs + (offset * 8U), qubit);
-#else
-        __half2 qubitIn[2] = { qubitLo, qubitHi };
-        __half2 qubit[2];
-        zmatrixmul(nrm, mtrxs + (offset * 8U), qubitIn, qubit);
-#endif
-
-#if FPPOW > 4
-        stateVec[i] = make_qCudaCmplx(qubit.x, qubit.y);
-        stateVec[i | targetPower] = make_qCudaCmplx(qubit.z, qubit.w);
-#else
-        stateVec[i] = qubit[0];
-        stateVec[i | targetPower] = qubit[1];
-#endif
     }
+
+    bitCapIntOcl jHigh = offset;
+    bitCapIntOcl j = 0;
+    for (bitCapIntOcl p = 0; p < mtrxSkipLen; p++) {
+        const bitCapIntOcl jLow = jHigh & (qPowers[controlLen + p] - ONE_BCI);
+        j |= jLow;
+        jHigh = (jHigh ^ jLow) << ONE_BCI;
+    }
+    j |= jHigh;
+    offset = j | mtrxSkipValueMask;
+
+    const qCudaCmplx qubitLo = stateVec[i];
+    const qCudaCmplx qubitHi = stateVec[i | targetPower];
+#if FPPOW > 4
+    qCudaCmplx2 qubit = make_qCudaCmplx2(qubitLo.x, qubitLo.y, qubitHi.x, qubitHi.y);
+    qubit = zmatrixmul(nrm, mtrxs + (offset * 8U), qubit);
+#else
+    __half2 qubitIn[2] = { qubitLo, qubitHi };
+    __half2 qubit[2];
+    zmatrixmul(nrm, mtrxs + (offset * 8U), qubitIn, qubit);
+#endif
+
+#if FPPOW > 4
+    stateVec[i] = make_qCudaCmplx(qubit.x, qubit.y);
+    stateVec[i | targetPower] = make_qCudaCmplx(qubit.z, qubit.w);
+#else
+    stateVec[i] = qubit[0];
+    stateVec[i | targetPower] = qubit[1];
+#endif
 }
 
 __global__ void uniformparityrz(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* qCudaCmplx_ptr)
