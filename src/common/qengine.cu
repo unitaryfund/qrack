@@ -500,40 +500,34 @@ __global__ void uniformlycontrolled(
 
 __global__ void uniformparityrz(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* qCudaCmplx_ptr)
 {
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl qMask = bitCapIntOclPtr[1];
+    const bitCapIntOcl lcv = ID;
+    const bitCapIntOcl qMask = bitCapIntOclPtr[0];
     const qCudaCmplx phaseFac = qCudaCmplx_ptr[0];
     const qCudaCmplx phaseFacAdj = qCudaCmplx_ptr[1];
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        bitCapIntOcl perm = lcv & qMask;
-        bitLenInt c;
-        for (c = 0; perm; c++) {
-            // clear the least significant bit set
-            perm &= perm - ONE_BCI;
-        }
-        stateVec[lcv] = zmul(stateVec[lcv], ((c & 1U) ? phaseFac : phaseFacAdj));
+    bitCapIntOcl perm = lcv & qMask;
+    bitLenInt c;
+    for (c = 0; perm; c++) {
+        // clear the least significant bit set
+        perm &= perm - ONE_BCI;
     }
+    stateVec[lcv] = zmul(stateVec[lcv], ((c & 1U) ? phaseFac : phaseFacAdj));
 }
 
 __global__ void uniformparityrznorm(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* qCudaCmplx_ptr)
 {
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl qMask = bitCapIntOclPtr[1];
+    const bitCapIntOcl lcv = ID;
+    const bitCapIntOcl qMask = bitCapIntOclPtr[0];
     const qCudaCmplx phaseFac = qCudaCmplx_ptr[0];
     const qCudaCmplx phaseFacAdj = qCudaCmplx_ptr[1];
     const qCudaCmplx nrm = qCudaCmplx_ptr[2];
 
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        bitCapIntOcl perm = lcv & qMask;
-        bitLenInt c;
-        for (c = 0; perm; c++) {
-            // clear the least significant bit set
-            perm &= perm - ONE_BCI;
-        }
-        stateVec[lcv] = zmul(nrm, zmul(stateVec[lcv], ((c & 1U) ? phaseFac : phaseFacAdj)));
+    bitCapIntOcl perm = lcv & qMask;
+    bitLenInt c;
+    for (c = 0; perm; c++) {
+        // clear the least significant bit set
+        perm &= perm - ONE_BCI;
     }
+    stateVec[lcv] = zmul(nrm, zmul(stateVec[lcv], ((c & 1U) ? phaseFac : phaseFacAdj)));
 }
 
 __global__ void cuniformparityrz(
