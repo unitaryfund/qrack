@@ -1206,7 +1206,7 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
     controlPowers.reset();
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), (bitCapIntOcl)mask,
-        controlMask, controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
+        controlMask, (bitCapIntOcl)controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
     const complex phaseFacs[2]{ complex(cosine, sine), complex(cosine, -sine) };
@@ -1948,8 +1948,8 @@ real1_f QEngineCUDA::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitC
 
     BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bits.size());
     DISPATCH_WRITE(bitMapBuffer, sizeof(bitCapIntOcl) * bits.size(), bitPowers.get());
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U,
-        0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U,
+        0U, 0U, 0U, 0U };
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -2137,7 +2137,7 @@ void QEngineCUDA::CINT(
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (regMask | controlMask);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), regMask, otherMask,
-        lengthPower, start, toMod, controls.size(), controlMask, 0U, 0U };
+        lengthPower, start, toMod, (bitCapIntOcl)controls.size(), controlMask, 0U, 0U };
 
     CArithmeticCall(api_call, bciArgs, controlPowers.get(), controls.size());
 }
@@ -2672,7 +2672,8 @@ void QEngineCUDA::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStar
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)(controls.size() + length)),
-        toMod, controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
+        toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart,
+        carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
     AddAlloc(sizeDiff);
@@ -2713,8 +2714,8 @@ void QEngineCUDA::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl mod
     }
     std::sort(skipPowers.get(), skipPowers.get() + controls.size() + length);
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, controls.size(), controlMask, inOutMask, carryMask,
-        modN, length, inOutStart, carryStart };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask,
+        carryMask, modN, length, inOutStart, carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
     AddAlloc(sizeDiff);
