@@ -247,11 +247,11 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
 
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
-    const size_t ngc = FixWorkItemCount(halfMaxQPower, nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngs = FixGroupSize(halfMaxQPower, nrmGroupSize);
 
     engineOcl->clFinish();
-    WaitCall(OCL_API_SHUFFLEBUFFERS, ngc, ngs, { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
+    WaitCall(
+        OCL_API_SHUFFLEBUFFERS, halfMaxQPower, ngs, { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;

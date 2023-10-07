@@ -1077,13 +1077,12 @@ __global__ void clearbuffer(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
 
 __global__ void shufflebuffers(qCudaCmplx* stateVec1, qCudaCmplx* stateVec2, bitCapIntOcl* bitCapIntOclPtr)
 {
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl halfMaxI = bitCapIntOclPtr[0];
-    for (bitCapIntOcl lcv = ID; lcv < halfMaxI; lcv += Nthreads) {
-        const qCudaCmplx amp0 = stateVec1[lcv + halfMaxI];
-        stateVec1[lcv + halfMaxI] = stateVec2[lcv];
-        stateVec2[lcv] = amp0;
-    }
+    const bitCapIntOcl lcv = ID;
+    const bitCapIntOcl halfMaxI = gridDim.x * blockDim.x;
+
+    const qCudaCmplx amp0 = stateVec1[lcv + halfMaxI];
+    stateVec1[lcv + halfMaxI] = stateVec2[lcv];
+    stateVec2[lcv] = amp0;
 }
 
 __global__ void rol(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* nStateVec)
