@@ -1227,10 +1227,10 @@ void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex 
     BufferPtr locCmplxBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(complex));
     DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex), &nrm);
 
-    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const bitCapIntOcl maxI = bciArgs[0];
+    const size_t ngs = FixGroupSize(maxI, nrmGroupSize);
 
-    QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
+    QueueCall(api_call, maxI, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
     QueueSetRunningNorm(ONE_R1_F);
 }
 
@@ -1717,7 +1717,7 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
 
     AddAlloc(sizeof(real1) * lengthPower);
     BufferPtr probsBuffer = MakeBuffer(CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);

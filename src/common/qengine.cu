@@ -1046,35 +1046,28 @@ __global__ void approxcompare(
 
 __global__ void applym(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* qCudaCmplx_ptr)
 {
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    const bitCapIntOcl lcv = ID;
     const bitCapIntOcl qPower = bitCapIntOclPtr[1];
     const bitCapIntOcl qMask = qPower - ONE_BCI;
     const bitCapIntOcl savePower = bitCapIntOclPtr[2];
     const bitCapIntOcl discardPower = qPower ^ savePower;
     const qCudaCmplx nrm = qCudaCmplx_ptr[0];
 
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        const bitCapIntOcl iLow = lcv & qMask;
-        const bitCapIntOcl i = iLow | ((lcv ^ iLow) << ONE_BCI);
+    const bitCapIntOcl iLow = lcv & qMask;
+    const bitCapIntOcl i = iLow | ((lcv ^ iLow) << ONE_BCI);
 
-        stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
-        stateVec[i | discardPower] = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
-    }
+    stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
+    stateVec[i | discardPower] = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
 }
 
 __global__ void applymreg(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* qCudaCmplx_ptr)
 {
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    const bitCapIntOcl lcv = ID;
     const bitCapIntOcl mask = bitCapIntOclPtr[1];
     const bitCapIntOcl result = bitCapIntOclPtr[2];
     const qCudaCmplx nrm = qCudaCmplx_ptr[0];
 
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        stateVec[lcv] =
-            ((lcv & mask) == result) ? zmul(nrm, stateVec[lcv]) : make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
-    }
+    stateVec[lcv] = ((lcv & mask) == result) ? zmul(nrm, stateVec[lcv]) : make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
 }
 
 __global__ void clearbuffer(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
