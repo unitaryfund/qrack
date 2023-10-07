@@ -3248,13 +3248,12 @@ void QEngineCUDA::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl 
 {
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    bitCapIntOcl bciArgs[2]{ size, offset };
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
+    bitCapIntOcl bciArgs[1]{ offset };
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
-    const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngs = FixGroupSize(size, nrmGroupSize);
 
-    QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
+    QueueCall(OCL_API_CLEARBUFFER, size, ngs, { buff, poolItem->ulongBuffer });
 }
 
 } // namespace Qrack
