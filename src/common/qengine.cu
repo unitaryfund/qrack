@@ -806,24 +806,21 @@ __global__ void probreg(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCu
 
 __global__ void probregall(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaReal1* sumBuffer)
 {
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl maxJ = bitCapIntOclPtr[1];
-    const bitLenInt start = (bitLenInt)bitCapIntOclPtr[2];
-    const bitLenInt len = (bitLenInt)bitCapIntOclPtr[3];
+    const bitCapIntOcl lcv1 = ID;
+    const bitCapIntOcl maxJ = bitCapIntOclPtr[0];
+    const bitLenInt start = (bitLenInt)bitCapIntOclPtr[1];
+    const bitLenInt len = (bitLenInt)bitCapIntOclPtr[2];
     const bitCapIntOcl qMask = (ONE_BCI << start) - ONE_BCI;
 
-    for (bitCapIntOcl lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
-        const bitCapIntOcl perm = lcv1 << start;
-        qCudaReal1 oneChancePart = ZERO_R1_CUDA;
-        for (bitCapIntOcl lcv2 = 0U; lcv2 < maxJ; lcv2++) {
-            bitCapIntOcl i = lcv2 & qMask;
-            i |= ((lcv2 ^ i) << len);
-            qCudaCmplx amp = stateVec[i | perm];
-            oneChancePart += qCudaDot(amp, amp);
-        }
-        sumBuffer[lcv1] = oneChancePart;
+    const bitCapIntOcl perm = lcv1 << start;
+    qCudaReal1 oneChancePart = ZERO_R1_CUDA;
+    for (bitCapIntOcl lcv2 = 0U; lcv2 < maxJ; lcv2++) {
+        bitCapIntOcl i = lcv2 & qMask;
+        i |= ((lcv2 ^ i) << len);
+        qCudaCmplx amp = stateVec[i | perm];
+        oneChancePart += qCudaDot(amp, amp);
     }
+    sumBuffer[lcv1] = oneChancePart;
 }
 
 __global__ void probmask(

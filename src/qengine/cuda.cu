@@ -1713,7 +1713,7 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
         return;
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ lengthPower, maxJ, start, length, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxJ, start, length, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1722,10 +1722,9 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
     AddAlloc(sizeof(real1) * lengthPower);
     BufferPtr probsBuffer = MakeBuffer(CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
-    const size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngs = FixGroupSize(lengthPower, nrmGroupSize);
 
-    QueueCall(OCL_API_PROBREGALL, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, probsBuffer });
+    QueueCall(OCL_API_PROBREGALL, lengthPower, ngs, { stateBuffer, poolItem->ulongBuffer, probsBuffer });
 
     DISPATCH_BLOCK_READ(probsBuffer, 0U, sizeof(real1) * lengthPower, probsArray);
 
