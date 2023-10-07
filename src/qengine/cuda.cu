@@ -669,7 +669,7 @@ void QEngineCUDA::SetDevice(int64_t dID)
 #endif
 
     const bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
-    nrmGroupCount = device_context->GetPreferredConcurrency();
+    nrmGroupCount = maxQPowerOcl;
     nrmGroupSize = device_context->GetPreferredSizeMultiple();
     if (nrmGroupSize > device_context->GetMaxWorkGroupSize()) {
         nrmGroupSize = device_context->GetMaxWorkGroupSize();
