@@ -1199,20 +1199,20 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
         CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controls.size(), controlPowers.get());
     controlPowers.reset();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), (bitCapIntOcl)mask,
-        controlMask, controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)mask, controlMask, controls.size(), 0U, 0U, 0U, 0U, 0U, 0U,
+        0U };
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
     const complex phaseFacs[2]{ complex(cosine, sine), complex(cosine, -sine) };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
     DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, &phaseFacs);
 
-    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-    QueueCall(OCL_API_CUNIFORMPARITYRZ, ngc, ngs,
+    const bitCapIntOcl maxI = (bitCapIntOcl)(maxQPowerOcl >> controls.size());
+    const size_t ngs = FixGroupSize(maxI, nrmGroupSize);
+    QueueCall(OCL_API_CUNIFORMPARITYRZ, maxI, ngs,
         { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer, controlBuffer });
     QueueSetRunningNorm(ONE_R1_F);
 }

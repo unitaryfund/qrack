@@ -533,32 +533,29 @@ __global__ void uniformparityrznorm(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIn
 __global__ void cuniformparityrz(
     qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* qCudaCmplx_ptr, bitCapIntOcl* qPowers)
 {
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl qMask = bitCapIntOclPtr[1];
-    const bitCapIntOcl cMask = bitCapIntOclPtr[2];
-    const bitLenInt cLen = (bitLenInt)bitCapIntOclPtr[3];
+    const bitCapIntOcl lcv = ID;
+    const bitCapIntOcl qMask = bitCapIntOclPtr[0];
+    const bitCapIntOcl cMask = bitCapIntOclPtr[1];
+    const bitLenInt cLen = (bitLenInt)bitCapIntOclPtr[2];
     const qCudaCmplx phaseFac = qCudaCmplx_ptr[0];
     const qCudaCmplx phaseFacAdj = qCudaCmplx_ptr[1];
 
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
-        bitCapIntOcl iHigh = lcv;
-        bitCapIntOcl i = 0U;
-        for (bitLenInt p = 0U; p < cLen; p++) {
-            bitCapIntOcl iLow = iHigh & (qPowers[p] - ONE_BCI);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << ONE_BCI;
-        }
-        i |= iHigh | cMask;
-
-        bitCapIntOcl perm = i & qMask;
-        bitLenInt c;
-        for (c = 0; perm; c++) {
-            // clear the least significant bit set
-            perm &= perm - ONE_BCI;
-        }
-        stateVec[i] = zmul(stateVec[i], ((c & 1U) ? phaseFac : phaseFacAdj));
+    bitCapIntOcl iHigh = lcv;
+    bitCapIntOcl i = 0U;
+    for (bitLenInt p = 0U; p < cLen; p++) {
+        bitCapIntOcl iLow = iHigh & (qPowers[p] - ONE_BCI);
+        i |= iLow;
+        iHigh = (iHigh ^ iLow) << ONE_BCI;
     }
+    i |= iHigh | cMask;
+
+    bitCapIntOcl perm = i & qMask;
+    bitLenInt c;
+    for (c = 0; perm; c++) {
+        // clear the least significant bit set
+        perm &= perm - ONE_BCI;
+    }
+    stateVec[i] = zmul(stateVec[i], ((c & 1U) ? phaseFac : phaseFacAdj));
 }
 
 __global__ void compose(
