@@ -1163,7 +1163,7 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
     DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 3, &phaseFacs);
 
     const size_t ngs = FixGroupSize(maxQPowerOcl, nrmGroupSize);
