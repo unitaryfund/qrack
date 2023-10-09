@@ -524,9 +524,6 @@ void QEngineCUDA::DispatchQueue()
     case OCL_API_APPLYMREG:
         CUDA_KERNEL_3(applymreg, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
         break;
-    case OCL_API_CLEARBUFFER:
-        CUDA_KERNEL_2(clearbuffer, qCudaCmplx, bitCapIntOcl);
-        break;
     case OCL_API_SHUFFLEBUFFERS:
         CUDA_KERNEL_3(shufflebuffers, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
         break;
