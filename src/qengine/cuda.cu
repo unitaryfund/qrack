@@ -3253,15 +3253,8 @@ void QEngineCUDA::ReinitBuffer()
 
 void QEngineCUDA::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size)
 {
-    PoolItemPtr poolItem = GetFreePoolItem();
-
-    bitCapIntOcl bciArgs[2]{ size, offset };
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
-
-    const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
+    tryCuda("Failed to enqueue buffer write",
+        [&] { return cudaMemsetAsync((void*)(((complex*)buff.get()) + offset), 0, size * sizeof(complex), queue); });
 }
 
 } // namespace Qrack

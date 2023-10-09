@@ -1099,17 +1099,6 @@ __global__ void applymreg(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, q
     }
 }
 
-__global__ void clearbuffer(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
-{
-    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0] + bitCapIntOclPtr[1];
-    const bitCapIntOcl offset = bitCapIntOclPtr[1];
-    const qCudaCmplx amp0 = make_qCudaCmplx(ZERO_R1_CUDA, ZERO_R1_CUDA);
-    for (bitCapIntOcl lcv = (ID + offset); lcv < maxI; lcv += Nthreads) {
-        stateVec[lcv] = amp0;
-    }
-}
-
 __global__ void shufflebuffers(qCudaCmplx* stateVec1, qCudaCmplx* stateVec2, bitCapIntOcl* bitCapIntOclPtr)
 {
     const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
