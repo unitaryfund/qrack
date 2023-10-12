@@ -37,12 +37,15 @@ namespace Qrack {
     });
 
 #define DISPATCH_TEMP_WRITE(buff, size, array)                                                                         \
-    tryCuda("Failed to write buffer",                                                                                  \
-        [&] { return cudaMemcpyAsync(buff.get(), array, size, cudaMemcpyHostToDevice, params_queue); });
+    tryCuda("Failed to write buffer", [&] {                                                                            \
+        return cudaMemcpyAsync(buff.get(), array, size, cudaMemcpyHostToDevice, device_context->params_queue);         \
+    });
 
 #define DISPATCH_WRITE(buff, size, array)                                                                              \
-    tryCuda("Failed to enqueue buffer write",                                                                          \
-        [&] { return cudaMemcpyAsync(buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, params_queue); });
+    tryCuda("Failed to enqueue buffer write", [&] {                                                                    \
+        return cudaMemcpyAsync(                                                                                        \
+            buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, device_context->params_queue);                   \
+    });
 
 #define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                               \
     clFinish();                                                                                                        \
@@ -63,11 +66,11 @@ namespace Qrack {
 
 #define GRID_SIZE (item.workItemCount / item.localGroupSize)
 // clang-format off
-#define CUDA_KERNEL_2(fn, t0, t1) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
-#define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
-#define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
-#define CUDA_KERNEL_5(fn, t0, t1, t2, t3, t4) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()))
-#define CUDA_KERNEL_6(fn, t0, t1, t2, t3, t4, t5) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()), (t5*)(args[5].get()))
+#define CUDA_KERNEL_2(fn, t0, t1) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
+#define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
+#define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
+#define CUDA_KERNEL_5(fn, t0, t1, t2, t3, t4) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()))
+#define CUDA_KERNEL_6(fn, t0, t1, t2, t3, t4, t5) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()), (t5*)(args[5].get()))
 // clang-format on
 
 QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
@@ -80,8 +83,6 @@ QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_ge
     , totalOclAllocSize(0U)
     , deviceID(devID)
     , nrmArray(new real1[0], [](real1* r) { delete[] r; })
-    , queue(0)
-    , params_queue(0)
 {
     InitOCL(devID);
     clFinish();
@@ -304,11 +305,11 @@ void QEngineCUDA::clFinish(bool doHard)
     if (doHard) {
         cudaDeviceSynchronize();
     } else {
-        if (params_queue) {
-            cudaStreamSynchronize(params_queue);
+        if (device_context->params_queue) {
+            cudaStreamSynchronize(device_context->params_queue);
         }
-        if (queue) {
-            cudaStreamSynchronize(queue);
+        if (device_context->queue) {
+            cudaStreamSynchronize(device_context->queue);
         }
     }
 
@@ -380,7 +381,7 @@ void QEngineCUDA::DispatchQueue()
         item = wait_queue_items.back();
 
         if (item.isSetDoNorm || item.isSetRunningNorm) {
-            cudaLaunchHostFunc(queue, _PopQueue, (void*)this);
+            cudaLaunchHostFunc(device_context->queue, _PopQueue, (void*)this);
             return;
         }
     }
@@ -614,7 +615,7 @@ void QEngineCUDA::DispatchQueue()
         throw std::runtime_error("Invalid CUDA kernel selected!");
     }
 
-    cudaLaunchHostFunc(queue, _PopQueue, (void*)this);
+    cudaLaunchHostFunc(device_context->queue, _PopQueue, (void*)this);
 }
 
 void QEngineCUDA::SetDevice(int64_t dID)
@@ -728,20 +729,7 @@ real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
     return (real1_f)totSum;
 }
 
-void QEngineCUDA::InitOCL(int64_t devID)
-{
-    cudaError_t error = cudaStreamCreate(&queue);
-    if (error != cudaSuccess) {
-        throw std::runtime_error("CUDA error code on main stream creation: " + std::to_string(error));
-    }
-
-    error = cudaStreamCreate(&params_queue);
-    if (error != cudaSuccess) {
-        throw std::runtime_error("CUDA error code on parameter stream creation: " + std::to_string(error));
-    }
-
-    SetDevice(devID);
-}
+void QEngineCUDA::InitOCL(int64_t devID) { SetDevice(devID); }
 
 void QEngineCUDA::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nStateBuffer; }
 
@@ -2842,7 +2830,7 @@ void QEngineCUDA::PhaseFlipX(OCLAPI api_call, const bitCapIntOcl* bciArgs)
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    cudaStreamSynchronize(params_queue);
+    cudaStreamSynchronize(device_context->params_queue);
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
 }
@@ -2916,7 +2904,7 @@ bitCapInt QEngineCUDA::MAll()
             tryCuda("Failed to read buffer", [&] {
                 return cudaMemcpyAsync((void*)amp.get(),
                     (void*)(((complex*)stateBuffer.get()) + (size_t)(perm + alignSize)), sizeof(complex) * alignSize,
-                    cudaMemcpyDeviceToHost, queue);
+                    cudaMemcpyDeviceToHost, device_context->queue);
             });
         }
         for (size_t i = 0U; i < alignSize; ++i) {
@@ -3250,8 +3238,10 @@ void QEngineCUDA::ReinitBuffer()
 
 void QEngineCUDA::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size)
 {
-    tryCuda("Failed to enqueue buffer write",
-        [&] { return cudaMemsetAsync((void*)(((complex*)buff.get()) + offset), 0, size * sizeof(complex), queue); });
+    tryCuda("Failed to enqueue buffer write", [&] {
+        return cudaMemsetAsync(
+            (void*)(((complex*)buff.get()) + offset), 0, size * sizeof(complex), device_context->queue);
+    });
 }
 
 } // namespace Qrack

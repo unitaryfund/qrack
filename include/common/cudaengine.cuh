@@ -34,6 +34,12 @@ typedef std::shared_ptr<std::vector<cudaEvent_t>> EventVecPtr;
 class CUDADeviceContext {
 public:
     const int64_t device_id;
+    // If we have ~16 streams, this doesn't scale to single-qubit QEngineCUDA instances under QUnit.
+    // However, we prefer QHybrid!
+    // That said, creating these streams once per simulator becomes very expensive in the simulator is trashed and
+    // recreated repeatedly.
+    cudaStream_t queue;
+    cudaStream_t params_queue;
 
 private:
     size_t globalLimit;
@@ -44,6 +50,8 @@ private:
 public:
     CUDADeviceContext(int64_t dev_id, int64_t maxAlloc = -1)
         : device_id(dev_id)
+        , queue(0)
+        , params_queue(0)
 #if ENABLE_OCL_MEM_GUARDS
         , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * properties.totalGlobalMem) >> 2U))
 #else
@@ -53,6 +61,23 @@ public:
         , preferredConcurrency(0U)
     {
         cudaGetDeviceProperties(&properties, device_id);
+
+        cudaError_t error = cudaStreamCreate(&queue);
+        if (error != cudaSuccess) {
+            throw std::runtime_error("CUDA error code on main stream creation: " + std::to_string(error));
+        }
+
+        error = cudaStreamCreate(&params_queue);
+        if (error != cudaSuccess) {
+            throw std::runtime_error("CUDA error code on parameter stream creation: " + std::to_string(error));
+        }
+    }
+
+    ~CUDADeviceContext()
+    {
+        // Theoretically, all user output is blocking, so don't throw in destructor.
+        cudaStreamDestroy(params_queue);
+        cudaStreamDestroy(queue);
     }
 
     size_t GetPreferredSizeMultiple()
