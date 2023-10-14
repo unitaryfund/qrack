@@ -37,12 +37,15 @@ namespace Qrack {
     });
 
 #define DISPATCH_TEMP_WRITE(buff, size, array)                                                                         \
-    tryCuda("Failed to write buffer",                                                                                  \
-        [&] { return cudaMemcpyAsync(buff.get(), array, size, cudaMemcpyHostToDevice, params_queue); });
+    tryCuda("Failed to write buffer", [&] {                                                                            \
+        return cudaMemcpyAsync(buff.get(), array, size, cudaMemcpyHostToDevice, device_context->params_queue);         \
+    });
 
 #define DISPATCH_WRITE(buff, size, array)                                                                              \
-    tryCuda("Failed to enqueue buffer write",                                                                          \
-        [&] { return cudaMemcpyAsync(buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, params_queue); });
+    tryCuda("Failed to enqueue buffer write", [&] {                                                                    \
+        return cudaMemcpyAsync(                                                                                        \
+            buff.get(), (void*)(array), size, cudaMemcpyHostToDevice, device_context->params_queue);                   \
+    });
 
 #define DISPATCH_BLOCK_READ(buff, offset, length, array)                                                               \
     clFinish();                                                                                                        \
@@ -63,11 +66,11 @@ namespace Qrack {
 
 #define GRID_SIZE (item.workItemCount / item.localGroupSize)
 // clang-format off
-#define CUDA_KERNEL_2(fn, t0, t1) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
-#define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
-#define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
-#define CUDA_KERNEL_5(fn, t0, t1, t2, t3, t4) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()))
-#define CUDA_KERNEL_6(fn, t0, t1, t2, t3, t4, t5) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()), (t5*)(args[5].get()))
+#define CUDA_KERNEL_2(fn, t0, t1) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()))
+#define CUDA_KERNEL_3(fn, t0, t1, t2) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()))
+#define CUDA_KERNEL_4(fn, t0, t1, t2, t3) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()))
+#define CUDA_KERNEL_5(fn, t0, t1, t2, t3, t4) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()))
+#define CUDA_KERNEL_6(fn, t0, t1, t2, t3, t4, t5) fn<<<GRID_SIZE, item.localGroupSize, item.localBuffSize, device_context->queue>>>((t0*)(args[0].get()), (t1*)(args[1].get()), (t2*)(args[2].get()), (t3*)(args[3].get()), (t4*)(args[4].get()), (t5*)(args[5].get()))
 // clang-format on
 
 QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
@@ -80,8 +83,6 @@ QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_ge
     , totalOclAllocSize(0U)
     , deviceID(devID)
     , nrmArray(new real1[0], [](real1* r) { delete[] r; })
-    , queue(0)
-    , params_queue(0)
 {
     InitOCL(devID);
     clFinish();
@@ -239,16 +240,19 @@ void QEngineCUDA::ShuffleBuffers(QEnginePtr engine)
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0U, engineOcl->maxQPowerOcl);
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
-        0U };
+    const bitCapIntOcl halfMaxQPower = (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI);
+
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ halfMaxQPower, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
 
+    const size_t ngc = FixWorkItemCount(halfMaxQPower, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
     engineOcl->clFinish();
-    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
+    WaitCall(OCL_API_SHUFFLEBUFFERS, ngc, ngs, { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;
@@ -301,11 +305,11 @@ void QEngineCUDA::clFinish(bool doHard)
     if (doHard) {
         cudaDeviceSynchronize();
     } else {
-        if (params_queue) {
-            cudaStreamSynchronize(params_queue);
+        if (device_context->params_queue) {
+            cudaStreamSynchronize(device_context->params_queue);
         }
-        if (queue) {
-            cudaStreamSynchronize(queue);
+        if (device_context->queue) {
+            cudaStreamSynchronize(device_context->queue);
         }
     }
 
@@ -377,7 +381,7 @@ void QEngineCUDA::DispatchQueue()
         item = wait_queue_items.back();
 
         if (item.isSetDoNorm || item.isSetRunningNorm) {
-            cudaLaunchHostFunc(queue, _PopQueue, (void*)this);
+            cudaLaunchHostFunc(device_context->queue, _PopQueue, (void*)this);
             return;
         }
     }
@@ -521,9 +525,6 @@ void QEngineCUDA::DispatchQueue()
     case OCL_API_APPLYMREG:
         CUDA_KERNEL_3(applymreg, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
         break;
-    case OCL_API_CLEARBUFFER:
-        CUDA_KERNEL_2(clearbuffer, qCudaCmplx, bitCapIntOcl);
-        break;
     case OCL_API_SHUFFLEBUFFERS:
         CUDA_KERNEL_3(shufflebuffers, qCudaCmplx, qCudaCmplx, bitCapIntOcl);
         break;
@@ -614,7 +615,7 @@ void QEngineCUDA::DispatchQueue()
         throw std::runtime_error("Invalid CUDA kernel selected!");
     }
 
-    cudaLaunchHostFunc(queue, _PopQueue, (void*)this);
+    cudaLaunchHostFunc(device_context->queue, _PopQueue, (void*)this);
 }
 
 void QEngineCUDA::SetDevice(int64_t dID)
@@ -728,20 +729,7 @@ real1_f QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
     return (real1_f)totSum;
 }
 
-void QEngineCUDA::InitOCL(int64_t devID)
-{
-    cudaError_t error = cudaStreamCreate(&queue);
-    if (error != cudaSuccess) {
-        throw std::runtime_error("CUDA error code on main stream creation: " + std::to_string(error));
-    }
-
-    error = cudaStreamCreate(&params_queue);
-    if (error != cudaSuccess) {
-        throw std::runtime_error("CUDA error code on parameter stream creation: " + std::to_string(error));
-    }
-
-    SetDevice(devID);
-}
+void QEngineCUDA::InitOCL(int64_t devID) { SetDevice(devID); }
 
 void QEngineCUDA::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nStateBuffer; }
 
@@ -1203,7 +1191,7 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
     controlPowers.reset();
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), (bitCapIntOcl)mask,
-        controlMask, controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
+        controlMask, (bitCapIntOcl)controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
     const complex phaseFacs[2]{ complex(cosine, sine), complex(cosine, -sine) };
@@ -1945,8 +1933,8 @@ real1_f QEngineCUDA::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitC
 
     BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bits.size());
     DISPATCH_WRITE(bitMapBuffer, sizeof(bitCapIntOcl) * bits.size(), bitPowers.get());
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U, 0U, 0U, 0U,
-        0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U,
+        0U, 0U, 0U, 0U };
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -2134,7 +2122,7 @@ void QEngineCUDA::CINT(
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (regMask | controlMask);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> controls.size()), regMask, otherMask,
-        lengthPower, start, toMod, controls.size(), controlMask, 0U, 0U };
+        lengthPower, start, toMod, (bitCapIntOcl)controls.size(), controlMask, 0U, 0U };
 
     CArithmeticCall(api_call, bciArgs, controlPowers.get(), controls.size());
 }
@@ -2669,7 +2657,8 @@ void QEngineCUDA::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStar
 
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> (bitCapIntOcl)(controls.size() + length)),
-        toMod, controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
+        toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart,
+        carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
     AddAlloc(sizeDiff);
@@ -2710,8 +2699,8 @@ void QEngineCUDA::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl mod
     }
     std::sort(skipPowers.get(), skipPowers.get() + controls.size() + length);
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, controls.size(), controlMask, inOutMask, carryMask,
-        modN, length, inOutStart, carryStart };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask,
+        carryMask, modN, length, inOutStart, carryStart };
 
     const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
     AddAlloc(sizeDiff);
@@ -2841,7 +2830,7 @@ void QEngineCUDA::PhaseFlipX(OCLAPI api_call, const bitCapIntOcl* bciArgs)
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    cudaStreamSynchronize(params_queue);
+    cudaStreamSynchronize(device_context->params_queue);
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
 }
@@ -2887,6 +2876,53 @@ void QEngineCUDA::SetQuantumState(const complex* inputState)
     DISPATCH_BLOCK_WRITE(stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, inputState);
 
     UpdateRunningNorm();
+}
+
+bitCapInt QEngineCUDA::MAll()
+{
+    if (!stateBuffer) {
+        return 0U;
+    }
+
+    // It's much more costly, by the end, to read amplitudes one-at-a-time from the GPU instead of all-at-once. However,
+    // we might need to less work, overall, if we generate an (unbiased) sample before "walking" the full probability
+    // distribution. Hence, if we try this special-case approach, we should mask GPU-read latency with non-blocking
+    // calls.
+
+    constexpr size_t cReadWidth = (QRACK_ALIGN_SIZE > sizeof(complex)) ? (QRACK_ALIGN_SIZE / sizeof(complex)) : 1U;
+    const size_t alignSize = (maxQPower > cReadWidth) ? cReadWidth : (size_t)maxQPower;
+    const real1_f rnd = Rand();
+    real1_f totProb = ZERO_R1_F;
+    bitCapInt lastNonzero = maxQPower - 1U;
+    bitCapInt perm = 0U;
+    std::unique_ptr<complex[]> amp(new complex[alignSize]);
+    DISPATCH_BLOCK_READ(stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex) * alignSize, amp.get());
+    while (perm < maxQPower) {
+        Finish();
+        const std::vector<complex> partAmp{ amp.get(), amp.get() + alignSize };
+        if ((perm + alignSize) < maxQPower) {
+            tryCuda("Failed to read buffer", [&] {
+                return cudaMemcpyAsync((void*)amp.get(),
+                    (void*)(((complex*)stateBuffer.get()) + (size_t)(perm + alignSize)), sizeof(complex) * alignSize,
+                    cudaMemcpyDeviceToHost, device_context->queue);
+            });
+        }
+        for (size_t i = 0U; i < alignSize; ++i) {
+            const real1_f partProb = (real1_f)norm(partAmp[i]);
+            if (partProb > REAL1_EPSILON) {
+                totProb += partProb;
+                if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                    SetPermutation(perm);
+                    return perm;
+                }
+                lastNonzero = perm;
+            }
+            ++perm;
+        }
+    }
+
+    SetPermutation(lastNonzero);
+    return lastNonzero;
 }
 
 complex QEngineCUDA::GetAmplitude(bitCapInt perm)
@@ -3202,15 +3238,10 @@ void QEngineCUDA::ReinitBuffer()
 
 void QEngineCUDA::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size)
 {
-    PoolItemPtr poolItem = GetFreePoolItem();
-
-    bitCapIntOcl bciArgs[2]{ size, offset };
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
-
-    const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
-    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
+    tryCuda("Failed to enqueue buffer write", [&] {
+        return cudaMemsetAsync(
+            (void*)(((complex*)buff.get()) + offset), 0, size * sizeof(complex), device_context->queue);
+    });
 }
 
 } // namespace Qrack

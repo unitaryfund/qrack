@@ -192,10 +192,6 @@ protected:
     complex permutationAmp;
     std::shared_ptr<complex> stateVec;
     std::mutex queue_mutex;
-    // If we have ~16 streams, this doesn't scale to single-qubit QEngineCUDA instances under QUnit.
-    // However, we prefer QHybrid!
-    cudaStream_t queue;
-    cudaStream_t params_queue;
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
     // QEngineCUDA itself, specifically by QEngineCUDAMulti.
     BufferPtr stateBuffer;
@@ -269,10 +265,6 @@ public:
     {
         // Make sure we track device allocation.
         FreeAll();
-
-        // Theoretically, all user output is blocking, so don't throw in destructor.
-        cudaStreamDestroy(params_queue);
-        cudaStreamDestroy(queue);
     }
 
     virtual bool isOpenCL() { return true; }
@@ -313,7 +305,7 @@ public:
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U, size_t deallocSize = 0U)
     {
-        cudaStreamSynchronize(params_queue);
+        cudaStreamSynchronize(device_context->params_queue);
         AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
     }
 
@@ -409,6 +401,7 @@ public:
     void SetQuantumState(complex const* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
+    bitCapInt MAll();
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp);
 

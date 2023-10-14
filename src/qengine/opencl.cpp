@@ -273,9 +273,11 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeArgsEvent);
     writeArgsEvent.wait();
 
+    const size_t ngc = FixWorkItemCount(halfMaxQPower, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
     engineOcl->clFinish();
-    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
+    WaitCall(OCL_API_SHUFFLEBUFFERS, ngc, ngs, { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
     // engineOcl->wait_refs.emplace_back(device_context->wait_events);
 
     runningNorm = REAL1_DEFAULT_ARG;
