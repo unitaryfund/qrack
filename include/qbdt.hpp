@@ -304,6 +304,12 @@ public:
         }
 
         if (root->IsStabilizer()) {
+            FlushNonPhaseBuffers();
+            FlushBuffer(q1);
+            FlushBuffer(q2);
+        }
+
+        if (root->IsStabilizer()) {
             const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
             std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
             qReg->Swap(q1, q2);
@@ -323,6 +329,12 @@ public:
         }
 
         if (root->IsStabilizer()) {
+            FlushNonPhaseBuffers();
+            FlushBuffer(q1);
+            FlushBuffer(q2);
+        }
+
+        if (root->IsStabilizer()) {
             const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
             std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
             qReg->ISwap(q1, q2);
@@ -339,6 +351,12 @@ public:
     {
         if (q1 == q2) {
             return;
+        }
+
+        if (root->IsStabilizer()) {
+            FlushNonPhaseBuffers();
+            FlushBuffer(q1);
+            FlushBuffer(q2);
         }
 
         if (root->IsStabilizer()) {
