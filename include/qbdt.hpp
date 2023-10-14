@@ -299,6 +299,14 @@ public:
 
     void Swap(bitLenInt q1, bitLenInt q2)
     {
+        if (root->IsStabilizer()) {
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+            qReg->Swap(q1, q2);
+
+            return;
+        }
+
         if (q2 < q1) {
             std::swap(q1, q2);
         }
@@ -306,6 +314,14 @@ public:
     }
     void ISwap(bitLenInt q1, bitLenInt q2)
     {
+        if (root->IsStabilizer()) {
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+            qReg->ISwap(q1, q2);
+
+            return;
+        }
+
         if (q2 < q1) {
             std::swap(q1, q2);
         }
@@ -313,6 +329,14 @@ public:
     }
     void IISwap(bitLenInt q1, bitLenInt q2)
     {
+        if (root->IsStabilizer()) {
+            const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
+            std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
+            qReg->IISwap(q1, q2);
+
+            return;
+        }
+
         if (q2 < q1) {
             std::swap(q1, q2);
         }

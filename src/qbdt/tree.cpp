@@ -772,6 +772,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             }
             ApplyControlledSingle(mtrx, c, c.size(), isAnti);
 
+            Swap(controls.size(), target);
             const bitLenInt last = rQubits.size() - 1U;
             for (size_t i = 0U; i < rQubits.size(); ++i) {
                 Swap(last - i, rQubits[last - i]);
