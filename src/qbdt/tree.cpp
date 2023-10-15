@@ -741,43 +741,44 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
     const bool isCtrledClifford = IS_CTRLED_CLIFFORD(mtrx);
     if (!isCtrledClifford || (controls.size() > 1U)) {
+        bool isOrdered = true;
         for (size_t i = 0U; i < controls.size(); ++i) {
-            if (controls[i] == i) {
-                continue;
+            if (controls[i] != i) {
+                isOrdered = false;
+                break;
             }
+        }
+        isOrdered = isOrdered && (target == controls.size());
 
-            const bitLenInt oldCtrl = controls[i];
-            controls[i] = i;
-            if (target == i) {
-                target = oldCtrl;
-            } else {
-                for (size_t j = i + 1U; j < controls.size(); ++j) {
-                    if (controls[j] == i) {
-                        controls[j] = oldCtrl;
-                        break;
-                    }
+        if (!isOrdered) {
+            // We Swap() non-Clifford gates into the lowest qubit indices,
+            // so non-Clifford depth is minimized.
+            std::vector<bitLenInt> rQubits;
+            rQubits.reserve(controls.size() + 1U);
+            for (size_t i = 0U; i < controls.size(); ++i) {
+                Swap(i, controls[i]);
+                rQubits.push_back(controls[i]);
+                if (i == target) {
+                    std::swap(target, controls[i]);
                 }
             }
+            Swap(controls.size(), target);
+            rQubits.push_back(target);
 
-            Swap(i, oldCtrl);
+            std::vector<bitLenInt> c;
+            c.reserve(controls.size());
+            for (size_t i = 0U; i < controls.size(); ++i) {
+                c.push_back(i);
+            }
 
             FlushNonPhaseBuffers();
             FlushIfBlocked(target, controls);
-            ApplyControlledSingle(mtrx, controls, target, isAnti);
+            ApplyControlledSingle(mtrx, c, c.size(), isAnti);
 
-            Swap(i, oldCtrl);
-
-            return;
-        }
-
-        if (target != controls.size()) {
-            Swap(controls.size(), target);
-
-            FlushNonPhaseBuffers();
-            FlushIfBlocked(target, controls);
-            ApplyControlledSingle(mtrx, controls, controls.size(), isAnti);
-
-            Swap(controls.size(), target);
+            const bitLenInt last = (bitLenInt)rQubits.size() - 1U;
+            for (size_t i = 0U; i < rQubits.size(); ++i) {
+                Swap(last - i, rQubits[last - i]);
+            }
 
             return;
         }
