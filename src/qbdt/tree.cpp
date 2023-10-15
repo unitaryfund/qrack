@@ -747,19 +747,24 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             }
 
             const bitLenInt oldCtrl = controls[i];
-            for (size_t j = i + 1U; j < controls.size(); ++j) {
-                if (controls[j] == i) {
-                    controls[j] = oldCtrl;
-                    break;
-                }
-            }
+            controls[i] = i;
             if (target == i) {
                 target = oldCtrl;
+            } else {
+                for (size_t j = i + 1U; j < controls.size(); ++j) {
+                    if (controls[j] == i) {
+                        controls[j] = oldCtrl;
+                        break;
+                    }
+                }
             }
-            controls[i] = i;
 
             Swap(i, oldCtrl);
+
+            FlushNonPhaseBuffers();
+            FlushIfBlocked(target, controls);
             ApplyControlledSingle(mtrx, controls, target, isAnti);
+
             Swap(i, oldCtrl);
 
             return;
@@ -767,7 +772,11 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
         if (target != controls.size()) {
             Swap(controls.size(), target);
+
+            FlushNonPhaseBuffers();
+            FlushIfBlocked(target, controls);
             ApplyControlledSingle(mtrx, controls, controls.size(), isAnti);
+
             Swap(controls.size(), target);
 
             return;
