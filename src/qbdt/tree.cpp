@@ -761,6 +761,11 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
                 if (i == target) {
                     std::swap(target, controls[i]);
                 }
+                for (size_t j = i + 1U; j < controls.size(); ++j) {
+                    if (i == controls[j]) {
+                        std::swap(controls[j], controls[i]);
+                    }
+                }
             }
             Swap(controls.size(), target);
             rQubits.push_back(target);
