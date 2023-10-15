@@ -178,7 +178,6 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
         }
 
         if (b0->isEqualUnder(b1)) {
-            // If we're in this conditional branch, b0 and b1 point to the same QUnitClifford.
             const real1 prob = std::min(ONE_R1, std::max(ZERO_R1, norm(b1->scale)));
             const real1 sqrtProb = sqrt(prob);
             const real1 sqrt1MinProb = sqrt(std::min(ONE_R1, std::max(ZERO_R1, ONE_R1 - prob)));
@@ -250,10 +249,12 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
 
             if (leaf0->IsStabilizer() || leaf1->IsStabilizer()) {
                 // Sets branches equal if true.
-                leaf0->isEqualUnder(leaf1);
+                if (leaf0->isEqualUnder(leaf1)) {
+                    // WARNING: Mutates loop control variable!
+                    return (bitCapInt)(pow2(depth - j) - ONE_BCI);
+                }
 
-                // WARNING: Mutates loop control variable!
-                return (bitCapInt)(pow2(depth - j) - ONE_BCI);
+                return (bitCapInt)0U;
             }
 
             leaf0 = lRef->branches[bit];
