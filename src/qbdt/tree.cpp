@@ -742,16 +742,27 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
     const bool isCtrledClifford = IS_CTRLED_CLIFFORD(mtrx);
     if (!isCtrledClifford || (controls.size() > 1U)) {
         for (size_t i = 0U; i < controls.size(); ++i) {
-            if (controls[i] != i) {
-                const bitLenInt oldCtrl = controls[i];
-                controls[i] = i;
-
-                Swap(i, oldCtrl);
-                ApplyControlledSingle(mtrx, controls, target, isAnti);
-                Swap(i, oldCtrl);
-
-                return;
+            if (controls[i] == i) {
+                continue;
             }
+
+            const bitLenInt oldCtrl = controls[i];
+            for (size_t j = i + 1U; j < controls.size(); ++j) {
+                if (controls[j] == i) {
+                    controls[j] = oldCtrl;
+                    break;
+                }
+            }
+            if (target == i) {
+                target = oldCtrl;
+            }
+            controls[i] = i;
+
+            Swap(i, oldCtrl);
+            ApplyControlledSingle(mtrx, controls, target, isAnti);
+            Swap(i, oldCtrl);
+
+            return;
         }
 
         if (target != controls.size()) {
