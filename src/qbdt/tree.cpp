@@ -741,41 +741,23 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
     const bool isCtrledClifford = IS_CTRLED_CLIFFORD(mtrx);
     if (!isCtrledClifford || (controls.size() > 1U)) {
-        bool isOrdered = true;
         for (size_t i = 0U; i < controls.size(); ++i) {
             if (controls[i] != i) {
-                isOrdered = false;
-                break;
+                const bitLenInt oldCtrl = controls[i];
+                controls[i] = i;
+
+                Swap(i, oldCtrl);
+                ApplyControlledSingle(mtrx, controls, target, isAnti);
+                Swap(i, oldCtrl);
+
+                return;
             }
         }
-        isOrdered = isOrdered && (target == controls.size());
 
-        if (!isOrdered) {
-            // We Swap() non-Clifford gates into the lowest qubit indices,
-            // so non-Clifford depth is minimized.
-            std::vector<bitLenInt> rQubits;
-            rQubits.reserve(controls.size() + 1U);
-            for (size_t i = 0U; i < controls.size(); ++i) {
-                Swap(i, controls[i]);
-                rQubits.push_back(controls[i]);
-                if (i == target) {
-                    std::swap(target, controls[i]);
-                }
-            }
+        if (target != controls.size()) {
             Swap(controls.size(), target);
-            rQubits.push_back(target);
-
-            std::vector<bitLenInt> c;
-            c.reserve(controls.size());
-            for (size_t i = 0U; i < controls.size(); ++i) {
-                c.push_back(i);
-            }
-            ApplyControlledSingle(mtrx, c, c.size(), isAnti);
-
-            const bitLenInt last = (bitLenInt)rQubits.size() - 1U;
-            for (size_t i = 0U; i < rQubits.size(); ++i) {
-                Swap(last - i, rQubits[last - i]);
-            }
+            ApplyControlledSingle(mtrx, controls, controls.size(), isAnti);
+            Swap(controls.size(), target);
 
             return;
         }

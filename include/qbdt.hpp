@@ -393,6 +393,13 @@ public:
         }
         QInterface::CSwap(controls, q1, q2);
     }
+    void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
+    {
+        if (q2 < q1) {
+            std::swap(q1, q2);
+        }
+        QInterface::AntiCSwap(controls, q1, q2);
+    }
     void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
     {
         if (q2 < q1) {
