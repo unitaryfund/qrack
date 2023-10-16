@@ -249,12 +249,10 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
 
             if (leaf0->IsStabilizer() || leaf1->IsStabilizer()) {
                 // Sets branches equal if true.
-                if (leaf0->isEqualUnder(leaf1)) {
-                    // WARNING: Mutates loop control variable!
-                    return (bitCapInt)(pow2(depth - j) - ONE_BCI);
-                }
+                leaf0->isEqualUnder(leaf1);
 
-                return (bitCapInt)0U;
+                // WARNING: Mutates loop control variable!
+                return (bitCapInt)(pow2(depth - j) - ONE_BCI);
             }
 
             leaf0 = lRef->branches[bit];
