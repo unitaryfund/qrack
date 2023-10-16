@@ -79,7 +79,10 @@ bool QBdtQStabilizerNode::isEqualUnder(QBdtNodeInterfacePtr r)
     }
 
     const bool toRet = lReg->GlobalPhaseCompare(rReg);
-    if (toRet) {
+    if (lQbCount < rQbCount) {
+        qReg = rhs->qReg;
+        ancillaCount = rhs->ancillaCount;
+    } else {
         rhs->qReg = qReg;
         rhs->ancillaCount = ancillaCount;
     }

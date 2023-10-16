@@ -147,31 +147,6 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
     b0->scale /= phaseFac;
     b1->scale /= phaseFac;
 
-    if (b0->IsStabilizer() && b1->IsStabilizer()) {
-        const QBdtQStabilizerNodePtr& b0s = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0);
-        const QBdtQStabilizerNodePtr& b1s = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b1);
-        QUnitCliffordPtr qReg0 = b0s->GetReg();
-        QUnitCliffordPtr qReg1 = b1s->GetReg();
-        if (qReg0.get() != qReg1.get()) {
-            std::lock(*(qReg0->mtx.get()), *(qReg1->mtx.get()));
-            std::lock_guard<std::mutex> lLock(*(qReg0->mtx.get()), std::adopt_lock);
-            std::lock_guard<std::mutex> rLock(*(qReg1->mtx.get()), std::adopt_lock);
-            const bitLenInt qbCount0 = qReg0->GetQubitCount();
-            const bitLenInt qbCount1 = qReg1->GetQubitCount();
-            if (qbCount0 < qbCount1) {
-                qReg0 = std::dynamic_pointer_cast<QUnitClifford>(qReg0->Clone());
-                qReg0->Allocate(qbCount1 - qbCount0);
-            } else if (qbCount1 < qbCount0) {
-                qReg1 = std::dynamic_pointer_cast<QUnitClifford>(qReg1->Clone());
-                qReg1->Allocate(qbCount0 - qbCount1);
-            }
-            if (qReg0->GlobalPhaseCompare(qReg1)) {
-                b1s->SetReg(b0s->GetReg());
-                b1s->ancillaCount = b0s->ancillaCount;
-            }
-        }
-    }
-
     if (b0->IsStabilizer() || b1->IsStabilizer()) {
         if (isCliffordBlocked) {
             return shared_from_this();
@@ -187,8 +162,9 @@ QBdtNodeInterfacePtr QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth, const 
                 -sqrt1MinProb * phase1 };
 
             if (IS_CLIFFORD(mtrx)) {
-                b0->Branch();
-                const QBdtQStabilizerNodePtr& sNode = std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0);
+                Branch(2U);
+                const QBdtQStabilizerNodePtr& sNode =
+                    std::dynamic_pointer_cast<QBdtQStabilizerNode>(b0->IsStabilizer() ? b0 : b1);
                 const QUnitCliffordPtr qReg = sNode->GetReg();
                 sNode->scale = scale;
                 sNode->mtx = mtx;
