@@ -191,7 +191,6 @@ protected:
         const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(root);
         std::lock_guard<std::mutex> lock(*(qReg->mtx.get()));
         qReg->SetRandGlobalPhase(true);
-        qReg->ResetPhaseOffset();
     }
 
 public:
