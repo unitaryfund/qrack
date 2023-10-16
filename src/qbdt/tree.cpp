@@ -879,15 +879,19 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             if (leaf->IsStabilizer()) {
                 leaf->Branch();
                 const QUnitCliffordPtr qReg = NODE_TO_STABILIZER(leaf);
+
                 if (control < j) {
                     qReg->Mtrx(mtrx, target - j);
-                } else if (isAnti) {
+                    return (bitCapInt)(pow2(target - j) - ONE_BCI);
+                }
+
+                if (isAnti) {
                     qReg->MACMtrx({ (bitLenInt)(control - j) }, mtrx, target - j);
                 } else {
                     qReg->MCMtrx({ (bitLenInt)(control - j) }, mtrx, target - j);
                 }
 
-                return (bitCapInt)(pow2(target - j) - ONE_BCI);
+                return (bitCapInt)(pow2(std::max(control, target) - j) - ONE_BCI);
             }
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
