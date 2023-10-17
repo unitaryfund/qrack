@@ -41,9 +41,10 @@ This section and the next will be updated, as needs change. Even if you've never
 
 ## Advanced Issues
 
-- **Embedding and wrapping in C#, F#, or Python**: Qrack tries to keep to the reasonably "low level" standard of C++ for portability and performance, but there's no reason not to give the Python and .NET developers some love. [We've looked at ProjectQ for Python wrapping and a quantum compiler](https://github.com/WrathfulSpatula/ProjectQ/tree/qrack_simulator), but this is still new territory for us.
+- **Embedding and wrapping in C#, F#, or other languages**: Qrack tries to keep to the reasonably "low level" standard of C++ for portability and performance, but there's no reason not to give the Python and .NET developers some love. We offer [PyQrack as a Python wrapper](https://github.com/unitaryfund/pyqrack), as well as [Qook as a Rust wrapper](https://github.com/unitaryfund/pyqrack), but there is still more that can be done.
 
 - **Backport to C**: Be the legendary hero, and have Linus Torvalds personally fall at your feet with gratitude for bringing the quantum revolution to the Linux kernel, or something like that. Yeah, maybe that's grandiose, but a "straight C" language backport **might** open up such wild possibilities, with potentially better performance, all wrapped up on top with a Python-based quantum compiler. This would honestly be pretty godly.
+
 ## Further Reading on Quantum Theory
 
 For quantum computation, Nielsen and Chuang's **Quantum Computation and Quantum Information** has come to be considered a standard and complete text. It's divided into sections intended to be useful to both, and respectively, those coming from physics and those coming from computer science, to bring everyone onto the same page by the end of the book. Also, come visit us at the [Advanced Computing Topics](https://discordapp.com/invite/Gj3CHDy) server, and we might have more timely and targeted suggestions for you.
