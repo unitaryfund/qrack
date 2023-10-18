@@ -35,6 +35,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     : QUnit(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
           useSparseStateVec, norm_thresh, devList, qubitThreshold, sep_thresh)
     , isQEngineOCL(false)
+    , deviceQbList({ (bitLenInt)-1 })
 {
 #if ENABLE_ENV_VARS
     isRedistributing = (bool)getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE");
@@ -106,6 +107,38 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
                 for (unsigned i = 0U; i < maxI; ++i) {
                     for (unsigned j = 0U; j < ids.size(); ++j) {
                         devList.push_back(ids[j]);
+                    }
+                }
+            }
+        }
+    }
+
+    if (getenv("QRACK_QUNITMULTI_DEVICES_MAX_QB")) {
+        std::string deviceQbListStr = std::string(getenv("QRACK_QUNITMULTI_DEVICES_MAX_QB"));
+        deviceQbList.clear();
+        if (deviceQbListStr.compare("")) {
+            std::stringstream deviceQbListStr_stream(deviceQbListStr);
+            // See
+            // https://stackoverflow.com/questions/7621727/split-a-string-into-words-by-multiple-delimiters#answer-58164098
+            std::regex re("[.]");
+            while (deviceQbListStr_stream.good()) {
+                std::string term;
+                getline(deviceQbListStr_stream, term, ',');
+                // the '-1' is what makes the regex split (-1 := what was not matched)
+                std::sregex_token_iterator first{ term.begin(), term.end(), re, -1 }, last;
+                std::vector<std::string> tokens{ first, last };
+                if (tokens.size() == 1U) {
+                    deviceQbList.push_back((bitLenInt)stoi(term));
+                    continue;
+                }
+                const unsigned maxI = stoi(tokens[0U]);
+                std::vector<int> ids(tokens.size() - 1U);
+                for (unsigned i = 1U; i < tokens.size(); ++i) {
+                    ids[i - 1U] = stoi(tokens[i]);
+                }
+                for (unsigned i = 0U; i < maxI; ++i) {
+                    for (unsigned j = 0U; j < ids.size(); ++j) {
+                        deviceQbList.push_back(ids[j]);
                     }
                 }
             }
@@ -196,10 +229,11 @@ void QUnitMulti::RedistributeQEngines()
 
     for (size_t i = 0U; i < qinfos.size(); ++i) {
         // We want to proactively set OpenCL devices for the event they cross threshold.
+        const bitLenInt qbc = qinfos[i].unit->GetQubitCount();
         if (!isRedistributing &&
-            !((qinfos[i].unit->GetMaxQPower() <= 2U) ||
-                (!isQEngineOCL && (qinfos[i].unit->GetQubitCount() < thresholdQubits)) ||
-                qinfos[i].unit->isClifford())) {
+            !((qinfos[i].unit->GetMaxQPower() <= 2U) || qinfos[i].unit->isClifford() ||
+                (!isQEngineOCL && (qbc < thresholdQubits)) ||
+                (qbc > deviceQbList[qinfos[i].deviceIndex % deviceQbList.size()]))) {
             continue;
         }
 

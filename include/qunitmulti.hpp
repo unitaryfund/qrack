@@ -69,6 +69,7 @@ protected:
     bool isQEngineOCL;
     size_t defaultDeviceID;
     std::vector<DeviceInfo> deviceList;
+    std::vector<bitLenInt> deviceQbList;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
