@@ -1276,7 +1276,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
         return;
     }
 
-    if (device_context->is_cpu && !toCopy->device_context->is_cpu) {
+    if (!device_context->is_gpu && toCopy->device_context->is_gpu) {
         SetDevice(toCopy->deviceID);
     }
 

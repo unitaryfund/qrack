@@ -91,7 +91,7 @@ public:
     const cl::Context context;
     const int64_t context_id;
     const int64_t device_id;
-    const bool is_cpu;
+    const bool is_gpu;
     cl::CommandQueue queue;
     EventVecPtr wait_events;
 
@@ -112,13 +112,13 @@ private:
 
 public:
     OCLDeviceContext(
-        cl::Platform& p, cl::Device& d, cl::Context& c, int64_t dev_id, int64_t cntxt_id, int64_t maxAlloc, bool isCpu)
+        cl::Platform& p, cl::Device& d, cl::Context& c, int64_t dev_id, int64_t cntxt_id, int64_t maxAlloc, bool isGpu)
         : platform(p)
         , device(d)
         , context(c)
         , context_id(cntxt_id)
         , device_id(dev_id)
-        , is_cpu(isCpu)
+        , is_gpu(isGpu)
         , wait_events(new EventVec())
 #if ENABLE_OCL_MEM_GUARDS
         , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * globalSize) >> 2U))

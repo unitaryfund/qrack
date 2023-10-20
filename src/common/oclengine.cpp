@@ -301,7 +301,7 @@ InitOClResult OCLEngine::InitOCL(
     // get all devices
     std::vector<cl::Platform> devPlatVec;
     std::vector<std::vector<cl::Device>> all_platforms_devices;
-    std::vector<bool> all_devices_is_cpu;
+    std::vector<bool> all_devices_is_gpu;
     for (size_t i = 0U; i < all_platforms.size(); ++i) {
         all_platforms_devices.push_back(std::vector<cl::Device>());
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &(all_platforms_devices[i]));
@@ -316,15 +316,15 @@ InitOClResult OCLEngine::InitOCL(
         }
         all_devices.insert(all_devices.end(), all_platforms_devices[i].begin(), all_platforms_devices[i].end());
 
-        std::vector<cl::Device> cpu_devices;
-        all_platforms[i].getDevices(CL_DEVICE_TYPE_CPU, &cpu_devices);
+        std::vector<cl::Device> gpu_devices;
+        all_platforms[i].getDevices(CL_DEVICE_TYPE_GPU, &gpu_devices);
         std::vector<bool> cpu_to_insert(all_platforms_devices[i].size(), false);
         const auto adb = all_platforms_devices[i].begin();
         const auto ade = all_platforms_devices[i].end();
-        for (size_t j = 0U; j < cpu_devices.size(); ++j) {
-            cpu_to_insert[std::distance(adb, std::find(adb, ade, cpu_devices[j]))] = true;
+        for (size_t j = 0U; j < gpu_devices.size(); ++j) {
+            cpu_to_insert[std::distance(adb, std::find(adb, ade, gpu_devices[j]))] = true;
         }
-        all_devices_is_cpu.insert(all_devices_is_cpu.end(), cpu_to_insert.begin(), cpu_to_insert.end());
+        all_devices_is_gpu.insert(all_devices_is_gpu.end(), cpu_to_insert.begin(), cpu_to_insert.end());
     }
     if (!all_devices.size()) {
         std::cout << " No devices found. Check OpenCL installation!\n";
@@ -357,7 +357,7 @@ InitOClResult OCLEngine::InitOCL(
         }
         DeviceContextPtr devCntxt =
             std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1U], i,
-                plat_id, maxAllocVec[i % maxAllocVec.size()], all_devices_is_cpu[i]);
+                plat_id, maxAllocVec[i % maxAllocVec.size()], all_devices_is_gpu[i]);
 
         std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;
         std::replace(fileName.begin(), fileName.end(), ' ', '_');
