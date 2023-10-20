@@ -1276,6 +1276,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
         return;
     }
 
+    if (device_context->is_cpu && !toCopy->device_context->is_cpu) {
+        SetDevice(toCopy->deviceID);
+    }
+
     const bitCapIntOcl oMaxQPower = maxQPowerOcl;
     const bitCapIntOcl nMaxQPower = bciArgs[0];
     const bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
