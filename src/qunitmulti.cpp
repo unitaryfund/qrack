@@ -230,10 +230,10 @@ void QUnitMulti::RedistributeQEngines()
     for (size_t i = 0U; i < qinfos.size(); ++i) {
         // We want to proactively set OpenCL devices for the event they cross threshold.
         const bitLenInt qbc = qinfos[i].unit->GetQubitCount();
+        const bitLenInt dqb = deviceQbList[qinfos[i].deviceIndex % deviceQbList.size()];
         if (!isRedistributing &&
             !((qinfos[i].unit->GetMaxQPower() <= 2U) || qinfos[i].unit->isClifford() ||
-                (!isQEngineOCL && (qbc < thresholdQubits)) ||
-                (qbc > deviceQbList[qinfos[i].deviceIndex % deviceQbList.size()]))) {
+                (!isQEngineOCL && (qbc < thresholdQubits)) || (qbc > dqb))) {
             continue;
         }
 
@@ -253,7 +253,8 @@ void QUnitMulti::RedistributeQEngines()
 
             // Find the device with the lowest load.
             for (size_t j = 0U; j < deviceList.size(); ++j) {
-                if ((devSizes[j] < sz) && ((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize)) {
+                const bitCapInt mqp = devSizes[j] + qinfos[i].unit->GetMaxQPower();
+                if ((devSizes[j] < sz) && (mqp <= deviceList[j].maxSize) && (qbc <= dqb)) {
                     deviceID = deviceList[j].id;
                     devIndex = j;
                     sz = devSizes[j];
