@@ -244,7 +244,7 @@ void QUnitMulti::RedistributeQEngines()
         // If the original device has 0 determined load, don't switch the unit.
         if (sz) {
             // If the default OpenCL device has equal load to the least, we prefer the default.
-            if (devSizes[0U] < sz) {
+            if ((devSizes[0U] < sz) && (qbc <= deviceQbList[0U])) {
                 deviceID = deviceList[0U].id;
                 devIndex = 0U;
                 sz = devSizes[0U];
