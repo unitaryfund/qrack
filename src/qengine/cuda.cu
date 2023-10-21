@@ -1265,7 +1265,7 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
         SetQubitCount(toCopy->qubitCount);
         toCopy->clFinish();
         runningNorm = toCopy->runningNorm;
-        stateVec = AllocStateVec(toCopy->maxQPowerOcl);
+        stateVec = AllocStateVec(toCopy->maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
         tryCuda("Failed to enqueue buffer copy", [&] {

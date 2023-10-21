@@ -1245,7 +1245,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
         SetQubitCount(toCopy->qubitCount);
         toCopy->clFinish();
         runningNorm = toCopy->runningNorm;
-        stateVec = AllocStateVec(toCopy->maxQPowerOcl);
+        stateVec = AllocStateVec(toCopy->maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
         if (device_context->context_id != toCopy->device_context->context_id) {
