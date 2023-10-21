@@ -1308,13 +1308,11 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-    const bool forceAlloc = !stateVec &&
-        (device_context->use_host_mem || ((OclMemDenom * nStateVecSize) > device_context->GetGlobalSize()));
 
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl, forceAlloc);
+    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     toCopy->clFinish();
