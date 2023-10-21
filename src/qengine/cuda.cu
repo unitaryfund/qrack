@@ -1304,7 +1304,7 @@ void QEngineCUDA::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineCU
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
+    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     toCopy->clFinish();
