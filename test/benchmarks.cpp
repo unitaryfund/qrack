@@ -250,7 +250,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 }
 
                 sampleFailureCount++;
-                isTrialSuccessful = false;
             }
         }
 
@@ -275,6 +274,15 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
         // Fastest (ms)
         std::cout << formatTime(trialClocks[0], logNormal) << ",";
+
+        if (trialClocks.size() == 1) {
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+            std::cout << sampleFailureCount << std::endl;
+            continue;
+        }
 
         // 1st Quartile (ms)
         if (trialClocks.size() < 8) {
