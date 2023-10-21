@@ -108,6 +108,11 @@ public:
         return (real1_f)runningNorm;
     }
 
+    /** Switch to/from host/device state vector bufffer */
+    virtual void SwitchHostPtr(bool useHostMem){};
+    /** Reset host/device state vector bufffer usage to default */
+    virtual void ResetHostPtr() { SwitchHostPtr(useHostRam); }
+
     /** Set all amplitudes to 0, and optionally temporarily deallocate state vector RAM */
     virtual void ZeroAmplitudes() = 0;
     /** Exactly copy the state vector of a different QEngine instance */

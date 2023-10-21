@@ -279,6 +279,33 @@ public:
         return QInterface::FirstNonzeroPhase();
     }
 
+    void SwitchHostPtr(bool useHostMem)
+    {
+        if (useHostMem == usingHostRam) {
+            return;
+        }
+
+        std::shared_ptr<complex> copyVec = AllocStateVec(maxQPowerOcl, true);
+        GetQuantumState(copyVec.get());
+
+        if (useHostMem) {
+            stateVec = copyVec;
+            stateBuffer = MakeStateVecBuffer(stateVec);
+        } else {
+            stateVec = NULL;
+            stateBuffer = MakeStateVecBuffer(stateVec);
+            clFinish();
+            tryCuda("Failed to write buffer", [&] {
+                return cudaMemcpy(
+                    stateBuffer.get(), (void*)(copyVec.get()), sizeof(complex) * maxQPowerOcl, cudaMemcpyHostToDevice);
+            });
+            wait_refs.clear();
+            copyVec.reset();
+        }
+
+        usingHostRam = useHostMem;
+    }
+
     void FreeAll();
     void ZeroAmplitudes();
     void CopyStateVec(QEnginePtr src);

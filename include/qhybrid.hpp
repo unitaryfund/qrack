@@ -110,11 +110,13 @@ public:
     {
         if (!isPager && usePager) {
             std::vector<QInterfaceEngine> engines = { isGpu ? QRACK_GPU_ENGINE : QINTERFACE_CPU };
+            engine->SwitchHostPtr(useHostRam);
             engine = std::make_shared<QPager>(engine, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
                 randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, 0U,
                 separabilityThreshold);
         } else if (isPager && !usePager) {
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
+            engine->ResetHostPtr();
         }
 
         isPager = usePager;

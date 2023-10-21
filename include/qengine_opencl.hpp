@@ -295,6 +295,32 @@ public:
         return QInterface::FirstNonzeroPhase();
     }
 
+    void SwitchHostPtr(bool useHostMem)
+    {
+        if (useHostMem == usingHostRam) {
+            return;
+        }
+
+        std::shared_ptr<complex> copyVec = AllocStateVec(maxQPowerOcl, true);
+        GetQuantumState(copyVec.get());
+
+        if (useHostMem) {
+            stateVec = copyVec;
+            stateBuffer = MakeStateVecBuffer(stateVec);
+        } else {
+            stateVec = NULL;
+            stateBuffer = MakeStateVecBuffer(stateVec);
+            tryOcl("Failed to write buffer", [&] {
+                return queue.enqueueWriteBuffer(
+                    *stateBuffer, CL_TRUE, 0U, sizeof(complex) * maxQPowerOcl, copyVec.get(), ResetWaitEvents().get());
+            });
+            wait_refs.clear();
+            copyVec.reset();
+        }
+
+        usingHostRam = useHostMem;
+    }
+
     void FreeAll();
     void ZeroAmplitudes();
     void CopyStateVec(QEnginePtr src);

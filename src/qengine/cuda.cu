@@ -635,36 +635,26 @@ void QEngineCUDA::SetDevice(int64_t dID)
     const DeviceContextPtr nDeviceContext = CUDAEngine::Instance().GetDeviceContextPtr(dID);
     const int64_t defDevId = (int)CUDAEngine::Instance().GetDefaultDeviceID();
 
-    std::unique_ptr<complex[]> copyVec = NULL;
-
     if (!didInit) {
         AddAlloc(sizeof(complex) * maxQPowerOcl);
     } else if ((dID == deviceID) || ((dID == -1) && (deviceID == defDevId)) ||
         ((deviceID == -1) && (dID == defDevId))) {
         // If we're "switching" to the device we already have, don't reinitialize.
         return;
-    } else if (stateBuffer && !stateVec) {
-        // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
-#if CPP_STD > 13
-        copyVec = std::make_unique<complex[]>(maxQPowerOcl);
-#else
-        copyVec = std::unique_ptr<complex[]>(new complex[maxQPowerOcl]);
-#endif
-        GetQuantumState(copyVec.get());
     }
 
     device_context = nDeviceContext;
     deviceID = dID;
 
     // If the user wants not to use host RAM, but we can't allocate enough on the device, fall back to host RAM anyway.
-#if ENABLE_OCL_MEM_GUARDS
     const size_t stateVecSize = maxQPowerOcl * sizeof(complex);
+#if ENABLE_OCL_MEM_GUARDS
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > device_context->GetMaxAlloc()) {
         throw bad_alloc("VRAM limits exceeded in QEngineCUDA::SetDevice()");
     }
-    usingHostRam = (useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize()));
 #endif
+    usingHostRam = (useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize()));
 
     const bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
     nrmGroupCount = device_context->GetPreferredConcurrency();
