@@ -151,6 +151,7 @@ public:
     {
         qPages.resize(1U);
         qPages[0U] = eng;
+        eng->SetDevice(deviceIDs[0]);
     }
 
     void ZeroAmplitudes()
