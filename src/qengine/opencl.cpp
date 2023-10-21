@@ -1526,8 +1526,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     const size_t ngc3 = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs3 = FixGroupSize(ngc, nrmGroupSize);
 
-    const size_t nStateVecSize = maxQPowerOcl * sizeof(complex);
-
     if (stateVec && !usingHostRam) {
         FreeStateVec();
     }
