@@ -562,15 +562,15 @@ void QEngineOCL::SetDevice(int64_t dID)
     queue = device_context->queue;
 
     // If the user wants not to use host RAM, but we can't allocate enough on the device, fall back to host RAM anyway.
-#if ENABLE_OCL_MEM_GUARDS
     const size_t stateVecSize = maxQPowerOcl * sizeof(complex);
+#if ENABLE_OCL_MEM_GUARDS
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > device_context->GetMaxAlloc()) {
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
     }
-    useHostRam |= device_context->use_host_mem;
-    usingHostRam = (useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize()));
 #endif
+    usingHostRam = (useHostRam || device_context->use_host_mem ||
+        ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize()));
 
     const bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
     nrmGroupCount = device_context->GetPreferredConcurrency();
