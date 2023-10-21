@@ -1564,10 +1564,10 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 
     if (length == qubitCount) {
         // This will be cleared by the destructor:
-        stateVec = AllocStateVec(2);
-        stateBuffer = MakeStateVecBuffer(stateVec);
-        SubtractAlloc(sizeof(complex) * (pow2Ocl(qubitCount) - 2U));
-        SetQubitCount(1);
+        stateVec = NULL;
+        stateBuffer = NULL;
+        SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
+        SetQubitCount(0U);
         return;
     }
 
