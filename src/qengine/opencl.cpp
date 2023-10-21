@@ -569,8 +569,7 @@ void QEngineOCL::SetDevice(int64_t dID)
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
     }
 #endif
-    usingHostRam = (useHostRam || device_context->use_host_mem ||
-        ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize()));
+    usingHostRam = useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize());
 
     const bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
     nrmGroupCount = device_context->GetPreferredConcurrency();
@@ -1424,7 +1423,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         SetQubitCount(0U);
         // This will be cleared by the destructor:
         SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
-        stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
+        usingHostRam = useHostRam;
+        stateVec = AllocStateVec(maxQPowerOcl, useHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
 
         return;
