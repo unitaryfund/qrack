@@ -253,10 +253,9 @@ void QUnitMulti::RedistributeQEngines()
 
             // Find the device with the lowest load.
             for (size_t j = 0U; j < deviceList.size(); ++j) {
-                const bitLenInt qb = qinfos[j].unit->GetQubitCount();
-                const bitLenInt dq = deviceQbList[qinfos[j].deviceIndex % deviceQbList.size()];
+                const bitLenInt dq = deviceQbList[j % deviceQbList.size()];
                 const bitCapInt mqp = devSizes[j] + qinfos[i].unit->GetMaxQPower();
-                if ((devSizes[j] < sz) && (mqp <= deviceList[j].maxSize) && (qb <= dq)) {
+                if ((devSizes[j] < sz) && (mqp <= deviceList[j].maxSize) && (qbc <= dq)) {
                     deviceID = deviceList[j].id;
                     devIndex = j;
                     sz = devSizes[j];
