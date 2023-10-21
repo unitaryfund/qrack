@@ -538,7 +538,7 @@ void QEngineOCL::SetDevice(int64_t dID)
     const DeviceContextPtr nDeviceContext = OCLEngine::Instance().GetDeviceContextPtr(dID);
     const int64_t defDevId = (int)OCLEngine::Instance().GetDefaultDeviceID();
 
-    std::unique_ptr<complex[]> copyVec = NULL;
+    std::shared_ptr<complex> copyVec = NULL;
 
     if (!didInit) {
         AddAlloc(sizeof(complex) * maxQPowerOcl);
@@ -548,11 +548,7 @@ void QEngineOCL::SetDevice(int64_t dID)
         return;
     } else if (stateBuffer && !stateVec) {
         // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
-#if CPP_STD > 13
-        copyVec = std::make_unique<complex[]>(maxQPowerOcl);
-#else
-        copyVec = std::unique_ptr<complex[]>(new complex[maxQPowerOcl]);
-#endif
+        copyVec = AllocStateVec(maxQPowerOcl, true);
         GetQuantumState(copyVec.get());
     }
 
@@ -569,7 +565,8 @@ void QEngineOCL::SetDevice(int64_t dID)
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
     }
 #endif
-    usingHostRam = useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize());
+    usingHostRam =
+        useHostRam || device_context->use_host_mem || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize());
 
     const bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
     nrmGroupCount = device_context->GetPreferredConcurrency();
@@ -624,21 +621,17 @@ void QEngineOCL::SetDevice(int64_t dID)
     if (didInit) {
         if (stateVec) {
             ResetStateBuffer(MakeStateVecBuffer(stateVec));
+        } else if (usingHostRam && copyVec) {
+            ResetStateBuffer(MakeStateVecBuffer(copyVec));
+        } else if (copyVec) {
+            tryOcl("Failed to write buffer", [&] {
+                return queue.enqueueWriteBuffer(
+                    *stateBuffer, CL_TRUE, 0U, sizeof(complex) * maxQPowerOcl, copyVec.get(), ResetWaitEvents().get());
+            });
+            wait_refs.clear();
+            copyVec.reset();
         } else {
-            ResetStateBuffer(MakeStateVecBuffer(NULL));
-
-            if (copyVec) {
-                EventVecPtr waitVec = ResetWaitEvents();
-                DISPATCH_WRITE(waitVec, *stateBuffer, sizeof(complex) * maxQPowerOcl, copyVec.get())
-                tryOcl("Failed to write buffer", [&] {
-                    return queue.enqueueWriteBuffer(
-                        *stateBuffer, CL_TRUE, 0U, sizeof(complex) * maxQPowerOcl, copyVec.get(), NULL);
-                });
-                wait_refs.clear();
-                copyVec.reset();
-            } else {
-                ClearBuffer(stateBuffer, 0U, maxQPowerOcl);
-            }
+            ClearBuffer(stateBuffer, 0U, maxQPowerOcl);
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
@@ -1315,7 +1308,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-    const bool forceAlloc = !stateVec && ((OclMemDenom * nStateVecSize) > device_context->GetGlobalSize());
+    const bool forceAlloc = !stateVec &&
+        (device_context->use_host_mem || ((OclMemDenom * nStateVecSize) > device_context->GetGlobalSize()));
 
     writeArgsEvent.wait();
     wait_refs.clear();
