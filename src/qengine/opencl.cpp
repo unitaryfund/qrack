@@ -565,7 +565,8 @@ void QEngineOCL::SetDevice(int64_t dID)
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
     }
 #endif
-    usingHostRam = useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize());
+    usingHostRam =
+        useHostRam || device_context->use_host_mem || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize());
 
     const bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
     nrmGroupCount = device_context->GetPreferredConcurrency();
