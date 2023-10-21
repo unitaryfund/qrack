@@ -1311,7 +1311,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
+    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     toCopy->clFinish();
