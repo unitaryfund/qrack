@@ -365,9 +365,12 @@ InitOClResult OCLEngine::InitOCL(
             plat_id = device_platform_id[i];
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
+        const std::string devName(all_devices[i].getInfo<CL_DEVICE_NAME>());
+        const bool useHostRam = all_devices_is_cpu[i] || (devName.find("Intel(R) UHD") != std::string::npos) ||
+            (devName.find("Iris") != std::string::npos);
         DeviceContextPtr devCntxt =
             std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1U], i,
-                plat_id, maxAllocVec[i % maxAllocVec.size()], all_devices_is_gpu[i], all_devices_is_cpu[i]);
+                plat_id, maxAllocVec[i % maxAllocVec.size()], all_devices_is_gpu[i], all_devices_is_cpu[i], useHostRam);
 
         std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;
         std::replace(fileName.begin(), fileName.end(), ' ', '_');

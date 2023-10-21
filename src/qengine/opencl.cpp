@@ -568,7 +568,7 @@ void QEngineOCL::SetDevice(int64_t dID)
     if (stateVecSize > device_context->GetMaxAlloc()) {
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
     }
-    useHostRam |= device_context->is_cpu;
+    useHostRam |= device_context->use_host_mem;
     usingHostRam = (useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize()));
 #endif
 
