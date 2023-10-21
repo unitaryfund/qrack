@@ -231,9 +231,9 @@ void QUnitMulti::RedistributeQEngines()
         // We want to proactively set OpenCL devices for the event they cross threshold.
         const bitLenInt qbc = qinfos[i].unit->GetQubitCount();
         const bitLenInt dqb = deviceQbList[qinfos[i].deviceIndex % deviceQbList.size()];
-        if (!isRedistributing &&
+        if (!isRedistributing && (qbc <= dqb) &&
             !((qinfos[i].unit->GetMaxQPower() <= 2U) || qinfos[i].unit->isClifford() ||
-                (!isQEngineOCL && (qbc < thresholdQubits)) || (qbc > dqb))) {
+                (!isQEngineOCL && (qbc < thresholdQubits)))) {
             continue;
         }
 
