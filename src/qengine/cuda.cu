@@ -1511,7 +1511,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
     ResetStateBuffer(NULL);
     SubtractAlloc(sizeof(complex) * oMaxQPower);
 
-    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl);
+    std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     stateVec = nStateVec;
