@@ -299,7 +299,6 @@ public:
                 return cudaMemcpy(
                     stateBuffer.get(), (void*)(copyVec.get()), sizeof(complex) * maxQPowerOcl, cudaMemcpyHostToDevice);
             });
-            wait_refs.clear();
             copyVec.reset();
         }
 
