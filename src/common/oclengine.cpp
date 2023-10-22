@@ -317,14 +317,17 @@ InitOClResult OCLEngine::InitOCL(
         }
         all_devices.insert(all_devices.end(), all_platforms_devices[i].begin(), all_platforms_devices[i].end());
 
-        const auto adb = all_platforms_devices[i].begin();
-        const auto ade = all_platforms_devices[i].end();
-
         std::vector<cl::Device> gpu_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_GPU, &gpu_devices);
         std::vector<bool> gpu_to_insert(all_platforms_devices[i].size(), false);
         for (size_t j = 0U; j < gpu_devices.size(); ++j) {
-            gpu_to_insert[std::distance(adb, std::find(adb, ade, (const cl::Device)gpu_devices[j]))] = true;
+            for (size_t k = 0U; k < all_platforms_devices[i].size(); ++k) {
+                if (gpu_devices[j] != all_platforms_devices[i][j]) {
+                    continue;
+                }
+                gpu_to_insert[k] = true;
+                break;
+            }
         }
         all_devices_is_gpu.insert(all_devices_is_gpu.end(), gpu_to_insert.begin(), gpu_to_insert.end());
 
@@ -332,7 +335,13 @@ InitOClResult OCLEngine::InitOCL(
         all_platforms[i].getDevices(CL_DEVICE_TYPE_CPU, &cpu_devices);
         std::vector<bool> cpu_to_insert(all_platforms_devices[i].size(), false);
         for (size_t j = 0U; j < cpu_devices.size(); ++j) {
-            cpu_to_insert[std::distance(adb, std::find(adb, ade, cpu_devices[j]))] = true;
+            for (size_t k = 0U; k < all_platforms_devices[i].size(); ++k) {
+                if (cpu_devices[j] != all_platforms_devices[i][j]) {
+                    continue;
+                }
+                cpu_to_insert[k] = true;
+                break;
+            }
         }
         all_devices_is_cpu.insert(all_devices_is_cpu.end(), cpu_to_insert.begin(), cpu_to_insert.end());
     }
