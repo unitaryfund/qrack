@@ -317,14 +317,15 @@ InitOClResult OCLEngine::InitOCL(
         }
         all_devices.insert(all_devices.end(), all_platforms_devices[i].begin(), all_platforms_devices[i].end());
 
-        auto adb = all_platforms_devices[i].begin();
-        auto ade = all_platforms_devices[i].end();
+        const auto adb = all_platforms_devices[i].begin();
+        const auto ade = all_platforms_devices[i].end();
 
         std::vector<cl::Device> gpu_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_GPU, &gpu_devices);
         std::vector<bool> gpu_to_insert(all_platforms_devices[i].size(), false);
         for (size_t j = 0U; j < gpu_devices.size(); ++j) {
-            gpu_to_insert[std::distance(adb, std::find(adb, ade, gpu_devices[j]))] = true;
+            const auto gdm = std::find(adb, ade, gpu_devices[j]);
+            gpu_to_insert[std::distance(adb, gdm)] = true;
         }
         all_devices_is_gpu.insert(all_devices_is_gpu.end(), gpu_to_insert.begin(), gpu_to_insert.end());
 
