@@ -317,8 +317,8 @@ InitOClResult OCLEngine::InitOCL(
         }
         all_devices.insert(all_devices.end(), all_platforms_devices[i].begin(), all_platforms_devices[i].end());
 
-        const auto adb = all_platforms_devices[i].begin();
-        const auto ade = all_platforms_devices[i].end();
+        auto adb = all_platforms_devices[i].begin();
+        auto ade = all_platforms_devices[i].end();
 
         std::vector<cl::Device> gpu_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_GPU, &gpu_devices);
