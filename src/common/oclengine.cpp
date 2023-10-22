@@ -332,7 +332,7 @@ InitOClResult OCLEngine::InitOCL(
         for (size_t j = 0U; j < gpu_devices.size(); ++j) {
 #if defined(__APPLE__)
             for (size_t k = 0U; k < all_platforms_devices[i].size(); ++k) {
-                if (gpu_devices[j].getInfo<CL_DEVICE_NAME>()) != all_platforms_devices[i][j].getInfo<CL_DEVICE_NAME>())) {
+                if (gpu_devices[j].getInfo<CL_DEVICE_NAME>() != all_platforms_devices[i][j].getInfo<CL_DEVICE_NAME>()) {
                     continue;
                 }
                 gpu_to_insert[k] = true;
@@ -350,7 +350,7 @@ InitOClResult OCLEngine::InitOCL(
         for (size_t j = 0U; j < cpu_devices.size(); ++j) {
 #if defined(__APPLE__)
             for (size_t k = 0U; k < all_platforms_devices[i].size(); ++k) {
-                if (cpu_devices[j].getInfo<CL_DEVICE_NAME>()) != all_platforms_devices[i][j].getInfo<CL_DEVICE_NAME>())) {
+                if (cpu_devices[j].getInfo<CL_DEVICE_NAME>() != all_platforms_devices[i][j].getInfo<CL_DEVICE_NAME>()) {
                     continue;
                 }
                 cpu_to_insert[k] = true;
