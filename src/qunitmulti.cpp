@@ -61,7 +61,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     } else {
         const bitLenInt gpuQubits =
             log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-        const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride()) - ONE_BCI);
+        const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
