@@ -232,7 +232,7 @@ void QUnitMulti::RedistributeQEngines()
         const bitLenInt qbc = qinfos[i].unit->GetQubitCount();
         const bitLenInt dqb = deviceQbList[qinfos[i].deviceIndex % deviceQbList.size()];
         if (!isRedistributing && (qbc <= dqb) && (qinfos[i].unit->GetMaxQPower() > 2U) &&
-            !qinfos[i].unit->isClifford() && (isQEngineOCL || (qbc >= thresholdQubits))) {
+            !qinfos[i].unit->isClifford() && (isQEngineOCL || (qbc > thresholdQubits))) {
             continue;
         }
 
