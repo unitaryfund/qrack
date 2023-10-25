@@ -408,9 +408,9 @@ public:
     bool GlobalPhaseCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         const AmplitudeEntry thisAmpEntry = GetAnyAmplitude();
-        real1 argDiff =
-            (real1)abs((std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
-                (2 * PI_R1));
+        real1 argDiff = (real1)abs(
+            (std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
+            (2 * PI_R1));
         argDiff -= (real1)(size_t)argDiff;
         if (argDiff > (ONE_R1 / 2)) {
             argDiff -= ONE_R1;

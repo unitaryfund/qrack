@@ -540,6 +540,16 @@ TEST_CASE("test_set_reg", "[aux]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->SetReg(0, n, 1); });
 }
 
+TEST_CASE("test_ghz", "[gates]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) {
+        qftReg->H(0U);
+        for (bitLenInt i = 1U; i < n; ++i) {
+            qftReg->CNOT(i - 1U, i);
+        }
+    });
+}
+
 #if ENABLE_ALU
 TEST_CASE("test_grover", "[grover]")
 {
