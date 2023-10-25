@@ -14,11 +14,11 @@
 
 namespace Qrack {
 
-constexpr complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-constexpr complex C_SQRT_I = complex(SQRT1_2_R1, SQRT1_2_R1);
-constexpr complex C_SQRT_N_I = complex(SQRT1_2_R1, -SQRT1_2_R1);
-constexpr complex I_CMPLX_NEG = complex(ZERO_R1, -ONE_R1);
-constexpr complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
+CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+CONST complex C_SQRT_I = complex(SQRT1_2_R1, SQRT1_2_R1);
+CONST complex C_SQRT_N_I = complex(SQRT1_2_R1, -SQRT1_2_R1);
+CONST complex I_CMPLX_NEG = complex(ZERO_R1, -ONE_R1);
+CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
 
 void QInterface::UCMtrx(
     const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
@@ -285,13 +285,13 @@ void QInterface::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1,
 
     MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
-    constexpr complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
+    CONST complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
     MCMtrx(controls, had, q1);
 
-    constexpr complex it[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
+    CONST complex it[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
     MCMtrx(controls, it, q2);
 
-    constexpr complex t[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
+    CONST complex t[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
     MCMtrx(controls, t, q1);
 
     MCMtrx(controls, had, q2);
@@ -310,10 +310,10 @@ void QInterface::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1,
 
     MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
-    constexpr complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX_NEG };
+    CONST complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX_NEG };
     MCMtrx(controls, is, q1);
 
-    constexpr complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    CONST complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
     MCMtrx(controls, s, q2);
 }
 
@@ -328,17 +328,17 @@ void QInterface::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1
     std::copy(controls.begin(), controls.end(), lControls.begin());
     lControls[controls.size()] = q1;
 
-    constexpr complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX_NEG };
+    CONST complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX_NEG };
     MCMtrx(controls, is, q2);
 
-    constexpr complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    CONST complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
     MCMtrx(controls, s, q1);
     MCInvert(lControls, ONE_CMPLX, ONE_CMPLX, q2);
 
-    constexpr complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
+    CONST complex had[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
     MCMtrx(controls, had, q1);
 
-    constexpr complex t[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
+    CONST complex t[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
     MCMtrx(controls, t, q1);
 
     MCMtrx(controls, had, q2);
@@ -351,7 +351,7 @@ void QInterface::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1
 
     MCMtrx(controls, had, q2);
 
-    constexpr complex it[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
+    CONST complex it[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
     MCMtrx(controls, it, q1);
 
     MCMtrx(controls, t, q2);

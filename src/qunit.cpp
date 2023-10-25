@@ -1537,7 +1537,7 @@ bitCapInt QUnit::MAll()
         }
     }
 
-    const real1_f origFidelity = logFidelity;
+    const double origFidelity = logFidelity;
     SetPermutation(toRet);
     logFidelity = origFidelity;
 

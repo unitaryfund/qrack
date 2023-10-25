@@ -147,41 +147,31 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 #define QRACK_ALIGN_SIZE 64U
 
 #if FPPOW < 5
-#ifdef __arm__
-#define ZERO_R1 0.0f
-#define ZERO_R1_F 0.0f
-#define ONE_R1 1.0f
-#define ONE_R1_F 1.0f
-constexpr real1_f PI_R1 = (real1_f)M_PI;
-constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
-constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
-#define REAL1_DEFAULT_ARG -999.0f
+#define CONST const
+const real1 ZERO_R1 = (real1)0.0f;
+constexpr real1_f ZERO_R1_F = 0.0f;
+const real1 ONE_R1 = (real1)1.0f;
+constexpr real1_f ONE_R1_F = 1.0f;
+const real1 REAL1_DEFAULT_ARG = (real1)-999.0f;
 // Half of the probability of 16 maximally superposed qubits in any permutation
-#define REAL1_EPSILON 0.00000762939f
-#else
-constexpr real1 ZERO_R1 = (real1)0.0f;
-#define ZERO_R1_F 0.0f
-constexpr real1 ONE_R1 = (real1)1.0f;
-#define ONE_R1_F 1.0f
-constexpr real1_f PI_R1 = (real1_f)M_PI;
-constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
-constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
-constexpr real1_f REAL1_DEFAULT_ARG = (real1_f)-999.0f;
-// Half of the probability of 16 maximally superposed qubits in any permutation
-constexpr real1 REAL1_EPSILON = (real1)0.00000762939f;
-#endif
+const real1 REAL1_EPSILON = (real1)0.00000762939f;
+const real1 PI_R1 = (real1)M_PI;
+const real1 SQRT2_R1 = (real1)M_SQRT2;
+const real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 #elif FPPOW < 6
+#define CONST constexpr
 #define ZERO_R1 0.0f
 #define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
 #define ONE_R1_F 1.0f
-constexpr real1_f PI_R1 = (real1_f)M_PI;
-constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
-constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
+constexpr real1 PI_R1 = (real1)M_PI;
+constexpr real1 SQRT2_R1 = (real1)M_SQRT2;
+constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0f
 // Half of the probability of 32 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 1.1641532e-10
 #elif FPPOW < 7
+#define CONST constexpr
 #define ZERO_R1 0.0
 #define ZERO_R1_F 0.0
 #define ONE_R1 1.0
@@ -193,6 +183,7 @@ constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 // Half of the probability of 64 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2.7105054e-20
 #else
+#define CONST constexpr
 constexpr real1 ZERO_R1 = (real1)0.0;
 #define ZERO_R1_F 0.0
 constexpr real1 ONE_R1 = (real1)1.0;
@@ -244,11 +235,11 @@ constexpr qCudaReal1 ZERO_R1_CUDA = (qCudaReal1)0.0f;
 #endif
 #endif
 
-constexpr complex ONE_CMPLX = complex(ONE_R1, ZERO_R1);
-constexpr complex ZERO_CMPLX = complex(ZERO_R1, ZERO_R1);
-constexpr complex I_CMPLX = complex(ZERO_R1, ONE_R1);
-constexpr complex CMPLX_DEFAULT_ARG = complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG);
-constexpr real1 FP_NORM_EPSILON = std::numeric_limits<real1>::epsilon();
+CONST complex ONE_CMPLX = complex(ONE_R1, ZERO_R1);
+CONST complex ZERO_CMPLX = complex(ZERO_R1, ZERO_R1);
+CONST complex I_CMPLX = complex(ZERO_R1, ONE_R1);
+CONST complex CMPLX_DEFAULT_ARG = complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG);
+CONST real1 FP_NORM_EPSILON = std::numeric_limits<real1>::epsilon();
+CONST real1_f TRYDECOMPOSE_EPSILON = (real1_f)(8 * FP_NORM_EPSILON);
 constexpr real1_f FP_NORM_EPSILON_F = std::numeric_limits<real1_f>::epsilon();
-constexpr real1_f TRYDECOMPOSE_EPSILON = (real1_f)(8 * FP_NORM_EPSILON);
 } // namespace Qrack

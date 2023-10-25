@@ -409,7 +409,7 @@ public:
     {
         const AmplitudeEntry thisAmpEntry = GetAnyAmplitude();
         real1 argDiff =
-            abs((std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
+            (real1)abs((std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
                 (2 * PI_R1));
         argDiff -= (real1)(size_t)argDiff;
         if (argDiff > (ONE_R1 / 2)) {
