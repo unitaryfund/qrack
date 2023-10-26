@@ -147,7 +147,7 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 #define QRACK_ALIGN_SIZE 64U
 
 #if FPPOW < 5
-#define CONST const
+#define QRACK_CONST const
 const real1 ZERO_R1 = (real1)0.0f;
 constexpr real1_f ZERO_R1_F = 0.0f;
 const real1 ONE_R1 = (real1)1.0f;
@@ -159,7 +159,7 @@ const real1 PI_R1 = (real1)M_PI;
 const real1 SQRT2_R1 = (real1)M_SQRT2;
 const real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 #elif FPPOW < 6
-#define CONST constexpr
+#define QRACK_CONST constexpr
 #define ZERO_R1 0.0f
 #define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
@@ -171,7 +171,7 @@ constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 // Half of the probability of 32 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 1.1641532e-10
 #elif FPPOW < 7
-#define CONST constexpr
+#define QRACK_CONST constexpr
 #define ZERO_R1 0.0
 #define ZERO_R1_F 0.0
 #define ONE_R1 1.0
@@ -183,7 +183,7 @@ constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 // Half of the probability of 64 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2.7105054e-20
 #else
-#define CONST constexpr
+#define QRACK_CONST constexpr
 constexpr real1 ZERO_R1 = (real1)0.0;
 #define ZERO_R1_F 0.0
 constexpr real1 ONE_R1 = (real1)1.0;
@@ -235,11 +235,11 @@ constexpr qCudaReal1 ZERO_R1_CUDA = (qCudaReal1)0.0f;
 #endif
 #endif
 
-CONST complex ONE_CMPLX = complex(ONE_R1, ZERO_R1);
-CONST complex ZERO_CMPLX = complex(ZERO_R1, ZERO_R1);
-CONST complex I_CMPLX = complex(ZERO_R1, ONE_R1);
-CONST complex CMPLX_DEFAULT_ARG = complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG);
-CONST real1 FP_NORM_EPSILON = std::numeric_limits<real1>::epsilon();
-CONST real1_f TRYDECOMPOSE_EPSILON = (real1_f)(8 * FP_NORM_EPSILON);
+QRACK_CONST complex ONE_CMPLX = complex(ONE_R1, ZERO_R1);
+QRACK_CONST complex ZERO_CMPLX = complex(ZERO_R1, ZERO_R1);
+QRACK_CONST complex I_CMPLX = complex(ZERO_R1, ONE_R1);
+QRACK_CONST complex CMPLX_DEFAULT_ARG = complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG);
+QRACK_CONST real1 FP_NORM_EPSILON = std::numeric_limits<real1>::epsilon();
+QRACK_CONST real1_f TRYDECOMPOSE_EPSILON = (real1_f)(8 * FP_NORM_EPSILON);
 constexpr real1_f FP_NORM_EPSILON_F = std::numeric_limits<real1_f>::epsilon();
 } // namespace Qrack

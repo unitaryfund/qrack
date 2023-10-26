@@ -81,7 +81,7 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
                 }
             }
             if (!qubits.size()) {
-                CONST complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                QRACK_CONST complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
                 c.push_back(std::make_shared<QCircuit>(true, isNearClifford));
                 for (const auto& m : measurements[j]) {
                     if (m.second) {
@@ -205,7 +205,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         }
 
         // If we did not return, this circuit layer is fully collapsed.
-        CONST complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        QRACK_CONST complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
 
         if (!layerId) {
             circuit[0U] = std::make_shared<QCircuit>();

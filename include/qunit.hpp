@@ -630,9 +630,9 @@ protected:
 
         shard.pauliBasis = PauliX;
 
-        CONST complex diag = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        CONST complex cross = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        CONST complex mtrx[4U]{ diag, cross, cross, diag };
+        QRACK_CONST complex diag = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex cross = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4U]{ diag, cross, cross, diag };
 
         if (shard.unit) {
             shard.unit->Mtrx(mtrx, shard.mapped);

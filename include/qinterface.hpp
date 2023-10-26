@@ -875,9 +875,9 @@ public:
      */
     virtual void H(bitLenInt qubit)
     {
-        CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
-        CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
         Mtrx(mtrx, qubit);
     }
 
@@ -888,13 +888,13 @@ public:
      */
     virtual void SqrtH(bitLenInt qubit)
     {
-        CONST complex m00 =
+        QRACK_CONST complex m00 =
             complex((real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)));
-        CONST complex m01 = complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2));
-        CONST complex m10 = m01;
-        CONST complex m11 =
+        QRACK_CONST complex m01 = complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2));
+        QRACK_CONST complex m10 = m01;
+        QRACK_CONST complex m11 =
             complex((real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)));
-        CONST complex mtrx[4]{ m00, m01, m10, m11 };
+        QRACK_CONST complex mtrx[4]{ m00, m01, m10, m11 };
         Mtrx(mtrx, qubit);
     }
 
@@ -905,10 +905,10 @@ public:
      */
     virtual void SH(bitLenInt qubit)
     {
-        CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        CONST complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
-        CONST complex C_I_SQRT1_2_NEG = complex(ZERO_R1, -SQRT1_2_R1);
-        CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, C_I_SQRT1_2_NEG };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
+        QRACK_CONST complex C_I_SQRT1_2_NEG = complex(ZERO_R1, -SQRT1_2_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, C_I_SQRT1_2_NEG };
         Mtrx(mtrx, qubit);
     }
 
@@ -919,10 +919,10 @@ public:
      */
     virtual void HIS(bitLenInt qubit)
     {
-        CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        CONST complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
-        CONST complex C_I_SQRT1_2_NEG = complex(ZERO_R1, -SQRT1_2_R1);
-        CONST complex mtrx[4]{ C_SQRT1_2, C_I_SQRT1_2_NEG, C_SQRT1_2, C_I_SQRT1_2 };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
+        QRACK_CONST complex C_I_SQRT1_2_NEG = complex(ZERO_R1, -SQRT1_2_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_I_SQRT1_2_NEG, C_SQRT1_2, C_I_SQRT1_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1102,9 +1102,9 @@ public:
      */
     virtual void SqrtX(bitLenInt qubit)
     {
-        CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        CONST complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
+        QRACK_CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1116,9 +1116,9 @@ public:
      */
     virtual void ISqrtX(bitLenInt qubit)
     {
-        CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        CONST complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2 };
+        QRACK_CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1131,9 +1131,9 @@ public:
      */
     virtual void SqrtY(bitLenInt qubit)
     {
-        CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        CONST complex ONE_PLUS_I_DIV_2_NEG = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        CONST complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2_NEG, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
+        QRACK_CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex ONE_PLUS_I_DIV_2_NEG = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2_NEG, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1146,9 +1146,9 @@ public:
      */
     virtual void ISqrtY(bitLenInt qubit)
     {
-        CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        CONST complex ONE_MINUS_I_DIV_2_NEG = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        CONST complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2_NEG, ONE_MINUS_I_DIV_2 };
+        QRACK_CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex ONE_MINUS_I_DIV_2_NEG = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2_NEG, ONE_MINUS_I_DIV_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1159,10 +1159,10 @@ public:
      */
     virtual void SqrtW(bitLenInt qubit)
     {
-        CONST complex diag = complex(SQRT1_2_R1, ZERO_R1);
-        CONST complex m01 = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        CONST complex m10 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        CONST complex mtrx[4]{ diag, m01, m10, diag };
+        QRACK_CONST complex diag = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex m01 = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex m10 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ diag, m01, m10, diag };
         Mtrx(mtrx, qubit);
     }
 
@@ -1173,10 +1173,10 @@ public:
      */
     virtual void ISqrtW(bitLenInt qubit)
     {
-        CONST complex diag = complex(SQRT1_2_R1, ZERO_R1);
-        CONST complex m01 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        CONST complex m10 = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        CONST complex mtrx[4]{ diag, m01, m10, diag };
+        QRACK_CONST complex diag = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex m01 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex m10 = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ diag, m01, m10, diag };
         Mtrx(mtrx, qubit);
     }
 
@@ -1189,9 +1189,9 @@ public:
     virtual void CH(bitLenInt control, bitLenInt target)
     {
         const std::vector<bitLenInt> controls{ control };
-        CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
-        CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
         MCMtrx(controls, mtrx, target);
     }
 
@@ -1204,9 +1204,9 @@ public:
     virtual void AntiCH(bitLenInt control, bitLenInt target)
     {
         const std::vector<bitLenInt> controls{ control };
-        CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
-        CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
         MACMtrx(controls, mtrx, target);
     }
 
