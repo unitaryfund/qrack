@@ -120,6 +120,7 @@ public:
     size_t GetMaxWorkGroupSize() { return properties.warpSize; }
     size_t GetMaxAlloc() { return properties.totalGlobalMem; }
     size_t GetGlobalSize() { return properties.totalGlobalMem; }
+    size_t GetLocalSize() { return properties.sharedMemPerBlock; }
     size_t GetGlobalAllocLimit() { return globalLimit; }
 
     friend class CUDAEngine;
