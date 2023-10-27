@@ -108,6 +108,7 @@ private:
     const size_t maxWorkGroupSize = device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
     const size_t maxAlloc = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     const size_t globalSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+    const size_t localSize = device.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
     size_t globalLimit;
     size_t preferredSizeMultiple;
     size_t preferredConcurrency;
@@ -214,6 +215,7 @@ public:
     size_t GetMaxWorkGroupSize() { return maxWorkGroupSize; }
     size_t GetMaxAlloc() { return maxAlloc; }
     size_t GetGlobalSize() { return globalSize; }
+    size_t GetLocalSize() { return localSize; }
     size_t GetGlobalAllocLimit() { return globalLimit; }
 
     friend class OCLEngine;

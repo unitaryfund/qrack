@@ -352,6 +352,9 @@ public:
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U, size_t deallocSize = 0U)
     {
+        if (localBuffSize > device_context->GetLocalSize()) {
+            throw bad_alloc("Local memory limits exceeded in QEngineOCL::QueueCall()");
+        }
         AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
     }
 
