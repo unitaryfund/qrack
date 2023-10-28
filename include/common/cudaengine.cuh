@@ -108,9 +108,6 @@ public:
         if (preferredConcurrency < 1U) {
             preferredConcurrency = 1U;
         }
-        if (preferredConcurrency > GetMaxWorkItems()) {
-            preferredConcurrency = GetMaxWorkItems();
-        }
 
         return preferredConcurrency;
     }
