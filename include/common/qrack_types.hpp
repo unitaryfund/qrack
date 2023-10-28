@@ -198,6 +198,7 @@ constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 
 #if ENABLE_CUDA
 #if FPPOW < 5
+#include <cuda_fp16.h>
 #define qCudaReal1 __half
 #define qCudaReal2 __half2
 #define qCudaReal4 __half2*
@@ -205,7 +206,7 @@ constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define qCudaCmplx2 __half2*
 #define qCudaReal1_f float
 #define make_qCudaCmplx make_half2
-constexpr qCudaReal1 ZERO_R1_CUDA = (qCudaReal1)0.0f;
+#define ZERO_R1_CUDA ((qCudaReal1)0.0f)
 #define REAL1_EPSILON_CUDA 0.00000762939f
 #define PI_R1_CUDA M_PI
 #elif FPPOW < 6
