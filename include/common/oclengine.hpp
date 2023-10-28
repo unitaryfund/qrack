@@ -203,10 +203,6 @@ public:
         }
         preferredConcurrency =
             hybridOffset > 0 ? (preferredConcurrency << hybridOffset) : (preferredConcurrency >> -hybridOffset);
-        if (preferredConcurrency > maxWorkItems) {
-            preferredConcurrency = maxWorkItems;
-        }
-
         if (preferredConcurrency < 1U) {
             preferredConcurrency = 1U;
         }
