@@ -10,8 +10,6 @@
 
 #include "qfactory.hpp"
 
-#include <thread>
-
 #if ENABLE_OPENCL
 #define QRACK_GPU_SINGLETON (OCLEngine::Instance())
 #define QRACK_GPU_ENGINE QINTERFACE_OPENCL
