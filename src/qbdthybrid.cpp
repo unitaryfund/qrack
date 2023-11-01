@@ -34,11 +34,11 @@ QBdtHybrid::QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
         deviceIDs, thresholdQubits, separabilityThreshold));
 }
 
-QInterfacePtr QBdtHybrid::MakeSimulator(bool isBdt)
+QInterfacePtr QBdtHybrid::MakeSimulator(bool isBdt, bitCapInt perm)
 {
     std::vector<QInterfaceEngine> e(engines);
     e.insert(e.begin(), isBdt ? QINTERFACE_BDT : QINTERFACE_HYBRID);
-    QInterfacePtr toRet = CreateQuantumInterface(e, isBdt ? qubitCount : 0U, 0U, rand_generator, phaseFactor,
+    QInterfacePtr toRet = CreateQuantumInterface(e, isBdt ? qubitCount : 0U, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
         thresholdQubits, separabilityThreshold);
     if (isBdt) {

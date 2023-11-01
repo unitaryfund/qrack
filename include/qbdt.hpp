@@ -150,8 +150,6 @@ protected:
     void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch = false);
     void _par_for(const bitCapInt& end, ParallelFuncBdt fn);
 
-    size_t CountBranches();
-
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
     void ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti);
@@ -186,8 +184,8 @@ public:
     }
 
     void SetRoot(QBdtNodeInterfacePtr r) { root = r; }
-
     QBdtNodeInterfacePtr GetRoot() { return root; }
+    size_t CountBranches();
 
     bool isBinaryDecisionTree() { return true; };
 

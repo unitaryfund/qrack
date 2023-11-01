@@ -39,6 +39,7 @@ protected:
     complex phaseFactor;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
+    const double threshold = 0.1;
 
     /**
      * Switches between QBdt and QEngine modes. (This will not incur a performance penalty, if the chosen mode matches
@@ -62,6 +63,18 @@ protected:
         }
     }
 
+    void CheckThreshold()
+    {
+        const size_t count = qbdt->CountBranches();
+#if (QBCAPPOW > 6) && BOOST_AVAILABLE
+        if ((threshold * maxQPower.convert_to<double>()) < count) {
+#else
+        if ((threshold * maxQPower) < count) {
+#endif
+            SwitchMode(false);
+        }
+    }
+
 public:
     QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -80,7 +93,19 @@ public:
     {
     }
 
-    QInterfacePtr MakeSimulator(bool isBdt);
+    QBdtHybrid(QBdtPtr q, QEnginePtr e, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
+        bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG,
+        bool doNorm = false, bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1,
+        bool useHardwareRNG = true, bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON,
+        std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F)
+        : QBdtHybrid(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
+              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
+    {
+        qbdt = q;
+        engine = e;
+    }
+
+    QInterfacePtr MakeSimulator(bool isBdt, bitCapInt perm = 0U);
 
     bool isBinaryDecisionTree() { return !engine; }
 
@@ -108,23 +133,28 @@ public:
     {
         SetQubitCount(qubitCount + toCopy->qubitCount);
         toCopy->SwitchMode(!engine);
-        if (qbdt) {
-            return qbdt->Compose(toCopy->qbdt);
-        } else {
+        if (engine) {
             return engine->Compose(toCopy->engine);
         }
-        // TODO: After every relevant if/else, QBdt::CountBranches();
+
+        const bitLenInt toRet = qbdt->Compose(toCopy->qbdt);
+        CheckThreshold();
+
+        return toRet;
     }
     bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QBdtHybrid>(toCopy)); }
     bitLenInt Compose(QBdtHybridPtr toCopy, bitLenInt start)
     {
         SetQubitCount(qubitCount + toCopy->qubitCount);
         toCopy->SwitchMode(!engine);
-        if (qbdt) {
-            return qbdt->Compose(toCopy->qbdt, start);
-        } else {
+        if (engine) {
             return engine->Compose(toCopy->engine, start);
         }
+
+        const bitLenInt toRet = qbdt->Compose(toCopy->qbdt, start);
+        CheckThreshold();
+
+        return toRet;
     }
     bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
@@ -134,28 +164,38 @@ public:
     {
         SetQubitCount(qubitCount + toCopy->qubitCount);
         toCopy->SwitchMode(!engine);
-        if (qbdt) {
-            return qbdt->ComposeNoClone(toCopy->qbdt);
-        } else {
+        if (engine) {
             return engine->ComposeNoClone(toCopy->engine);
         }
+
+        const bitLenInt toRet = qbdt->ComposeNoClone(toCopy->qbdt);
+        CheckThreshold();
+
+        return toRet;
     }
     bitLenInt ComposeNoClone(QInterfacePtr toCopy)
     {
         return ComposeNoClone(std::dynamic_pointer_cast<QBdtHybrid>(toCopy));
     }
     using QInterface::Decompose;
+    QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
+    {
+        SetQubitCount(qubitCount - length);
+        QBdtPtr q = NULL;
+        QEnginePtr e = NULL;
+        if (engine) {
+            e = std::dynamic_pointer_cast<QEngine>(engine->Decompose(start, length));
+        } else {
+            q = std::dynamic_pointer_cast<QBdt>(qbdt->Decompose(start, length));
+            CheckThreshold();
+        }
+        return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
+            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+            thresholdQubits, separabilityThreshold);
+    }
     void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         Decompose(start, std::dynamic_pointer_cast<QBdtHybrid>(dest));
-    }
-    QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
-    {
-        if (qbdt) {
-            return qbdt->Decompose(start, length);
-        } else {
-            return engine->Decompose(start, length);
-        }
     }
     bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
@@ -163,31 +203,34 @@ public:
     }
     void Decompose(bitLenInt start, QBdtHybridPtr dest)
     {
+        SetQubitCount(qubitCount - dest->qubitCount);
         dest->SwitchMode(!engine);
-        if (qbdt) {
-            qbdt->Decompose(start, dest->qbdt);
+        if (engine) {
+            engine->Decompose(start, dest->engine);
         } else {
-            engine->Decompose(start, dest->qbdt);
+            qbdt->Decompose(start, dest);
+            CheckThreshold();
         }
-        SetQubitCount(qubitCount - dest->GetQubitCount());
     }
     void Dispose(bitLenInt start, bitLenInt length)
     {
-        if (qbdt) {
-            qbdt->Dispose(start, length);
-        } else {
-            engine->Dispose(start, length);
-        }
         SetQubitCount(qubitCount - length);
+        if (engine) {
+            engine->Dispose(start, length);
+        } else {
+            qbdt->Dispose(start, length);
+            CheckThreshold();
+        }
     }
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
-        if (qbdt) {
-            qbdt->Dispose(start, length, disposedPerm);
-        } else {
-            engine->Dispose(start, length, disposedPerm);
-        }
         SetQubitCount(qubitCount - length);
+        if (engine) {
+            engine->Dispose(start, length, disposedPerm);
+        } else {
+            qbdt->Dispose(start, length, disposedPerm);
+            CheckThreshold();
+        }
     }
 
     using QInterface::Allocate;
@@ -257,7 +300,7 @@ public:
     void Mtrx(const complex* mtrx, bitLenInt qubitIndex)
     {
         if (qbdt) {
-            qbdt->Mtrx(mtrx, qubitIndex);
+            CheckThreshold();
         } else {
             engine->Mtrx(mtrx, qubitIndex);
         }
@@ -282,6 +325,7 @@ public:
     {
         if (qbdt) {
             qbdt->MCMtrx(controls, mtrx, target);
+            CheckThreshold();
         } else {
             engine->MCMtrx(controls, mtrx, target);
         }
@@ -290,6 +334,7 @@ public:
     {
         if (qbdt) {
             qbdt->MACMtrx(controls, mtrx, target);
+            CheckThreshold();
         } else {
             engine->MACMtrx(controls, mtrx, target);
         }
@@ -301,6 +346,7 @@ public:
     {
         if (qbdt) {
             qbdt->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
+            CheckThreshold();
         } else {
             engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
         }
@@ -326,10 +372,23 @@ public:
     real1_f CProb(bitLenInt control, bitLenInt target) { return qbdt->CProb(control, target); }
     real1_f ACProb(bitLenInt control, bitLenInt target) { return qbdt->ACProb(control, target); }
 
-    void UniformParityRZ(bitCapInt mask, real1_f angle) { qbdt->UniformParityRZ(mask, angle); }
+    void UniformParityRZ(bitCapInt mask, real1_f angle)
+    {
+        if (qbdt) {
+            qbdt->UniformParityRZ(mask, angle);
+            CheckThreshold();
+        } else {
+            engine->UniformParityRZ(mask, angle);
+        }
+    }
     void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
     {
-        qbdt->CUniformParityRZ(controls, mask, angle);
+        if (qbdt) {
+            qbdt->CUniformParityRZ(controls, mask, angle);
+            CheckThreshold();
+        } else {
+            engine->UniformParityRZ(mask, angle);
+        }
     }
 
     void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
@@ -342,24 +401,61 @@ public:
     }
     void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        qbdt->CSqrtSwap(controls, qubit1, qubit2);
+        if (qbdt) {
+            qbdt->CSqrtSwap(controls, qubit1, qubit2);
+            CheckThreshold();
+        } else {
+            engine->CSqrtSwap(controls, qubit1, qubit2);
+        }
     }
     void AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        qbdt->AntiCSqrtSwap(controls, qubit1, qubit2);
+        if (qbdt) {
+            qbdt->AntiCSqrtSwap(controls, qubit1, qubit2);
+            CheckThreshold();
+        } else {
+            engine->AntiCSqrtSwap(controls, qubit1, qubit2);
+        }
     }
     void CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        qbdt->CISqrtSwap(controls, qubit1, qubit2);
+        if (qbdt) {
+            qbdt->CISqrtSwap(controls, qubit1, qubit2);
+            CheckThreshold();
+        } else {
+            engine->CISqrtSwap(controls, qubit1, qubit2);
+        }
     }
     void AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        qbdt->AntiCISqrtSwap(controls, qubit1, qubit2);
+        if (qbdt) {
+            qbdt->AntiCISqrtSwap(controls, qubit1, qubit2);
+            CheckThreshold();
+        } else {
+            engine->AntiCISqrtSwap(controls, qubit1, qubit2);
+        }
     }
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        return qbdt->ForceM(qubit, result, doForce, doApply);
+        if (qbdt) {
+            return qbdt->ForceM(qubit, result, doForce, doApply);
+        }
+
+        return engine->ForceM(qubit, result, doForce, doApply);
+    }
+
+    bitCapInt MAll()
+    {
+        if (qbdt) {
+            return qbdt->MAll();
+        }
+
+        const bitCapInt toRet = engine->MAll();
+        qbdt = std::dynamic_pointer_cast<QBdt>(MakeSimulator(true, toRet));
+        engine = NULL;
+
+        return toRet;
     }
 
 #if ENABLE_ALU
