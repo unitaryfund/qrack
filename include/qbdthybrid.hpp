@@ -48,23 +48,30 @@ protected:
      */
     void SwitchMode(bool useBdt)
     {
-        if (!engine != useBdt) {
-            QInterfacePtr nEngine = MakeSimulator(useBdt);
-            std::unique_ptr<complex> sv(new complex[(size_t)maxQPower]);
+        if (!engine == useBdt) {
+            return;
+        }
+
+        QInterfacePtr nEngine = MakeSimulator(useBdt);
+        std::unique_ptr<complex> sv(new complex[(size_t)maxQPower]);
+        if (qbdt) {
             qbdt->GetQuantumState(sv.get());
-            nEngine->SetQuantumState(sv.get());
-            if (useBdt) {
-                qbdt = std::dynamic_pointer_cast<QBdt>(nEngine);
-                engine = NULL;
-            } else {
-                qbdt = NULL;
-                engine = std::dynamic_pointer_cast<QEngine>(nEngine);
-            }
+        } else {
+            engine->GetQuantumState(sv.get());
+        }
+        nEngine->SetQuantumState(sv.get());
+        if (useBdt) {
+            qbdt = std::dynamic_pointer_cast<QBdt>(nEngine);
+            engine = NULL;
+        } else {
+            qbdt = NULL;
+            engine = std::dynamic_pointer_cast<QEngine>(nEngine);
         }
     }
 
     void CheckThreshold()
     {
+        return;
         const size_t count = qbdt->CountBranches();
 #if (QBCAPPOW > 6) && BOOST_AVAILABLE
         if ((threshold * maxQPower.convert_to<double>()) < count) {
@@ -105,7 +112,7 @@ public:
         engine = e;
     }
 
-    QInterfacePtr MakeSimulator(bool isBdt, bitCapInt perm = 0U);
+    QInterfacePtr MakeSimulator(bool isBdt, bitCapInt perm = 0U, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     bool isBinaryDecisionTree() { return !engine; }
 
@@ -290,11 +297,12 @@ public:
     }
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
-        if (engine) {
-            qbdt = std::dynamic_pointer_cast<QBdt>(MakeSimulator(true, perm));
+        if (qbdt) {
+            qbdt->SetPermutation(perm, phaseFac);
+        } else {
+            qbdt = std::dynamic_pointer_cast<QBdt>(MakeSimulator(true, perm, phaseFac));
             engine = NULL;
         }
-        qbdt->SetPermutation(perm, phaseFac);
     }
 
     void Mtrx(const complex* mtrx, bitLenInt qubitIndex)
