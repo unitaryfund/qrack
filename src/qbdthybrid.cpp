@@ -23,6 +23,7 @@ QBdtHybrid::QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
+    , engine(NULL)
     , phaseFactor(phaseFac)
     , deviceIDs(devList)
     , engines(eng)
@@ -41,7 +42,7 @@ QInterfacePtr QBdtHybrid::MakeSimulator(bool isBdt, bitCapInt perm)
     QInterfacePtr toRet = CreateQuantumInterface(e, isBdt ? qubitCount : 0U, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
         thresholdQubits, separabilityThreshold);
-    if (isBdt) {
+    if (!isBdt) {
         std::dynamic_pointer_cast<QEngine>(toRet)->SetQubitCount(qubitCount);
     }
     toRet->SetConcurrency(GetConcurrencyLevel());

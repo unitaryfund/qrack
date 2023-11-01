@@ -290,17 +290,17 @@ public:
     }
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
-        if (qbdt) {
-            qbdt->SetPermutation(perm, phaseFac);
-        } else {
-            engine->SetPermutation(perm, phaseFac);
+        if (engine) {
+            qbdt = std::dynamic_pointer_cast<QBdt>(MakeSimulator(true, perm));
+            engine = NULL;
         }
+        qbdt->SetPermutation(perm, phaseFac);
     }
 
     void Mtrx(const complex* mtrx, bitLenInt qubitIndex)
     {
         if (qbdt) {
-            CheckThreshold();
+            qbdt->Mtrx(mtrx, qubitIndex);
         } else {
             engine->Mtrx(mtrx, qubitIndex);
         }
