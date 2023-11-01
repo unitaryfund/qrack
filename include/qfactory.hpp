@@ -58,7 +58,7 @@ QInterfacePtr CreateQuantumInterface(
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(engines, args...);
-    case QINTERFACE_HYBRID_BDT:
+    case QINTERFACE_BDT_HYBRID:
         return std::make_shared<QBdtHybrid>(engines, args...);
 #endif
     case QINTERFACE_QPAGER:
@@ -104,7 +104,7 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(engines, args...);
-    case QINTERFACE_HYBRID_BDT:
+    case QINTERFACE_BDT_HYBRID:
         return std::make_shared<QBdtHybrid>(engines, args...);
 #endif
     case QINTERFACE_QPAGER:
@@ -146,7 +146,7 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(args...);
-    case QINTERFACE_HYBRID_BDT:
+    case QINTERFACE_BDT_HYBRID:
         return std::make_shared<QBdtHybrid>(args...);
 #endif
     case QINTERFACE_QPAGER:
@@ -194,7 +194,7 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
             return std::make_shared<QBdt>(engines, args...);
         }
         return std::make_shared<QBdt>(args...);
-    case QINTERFACE_HYBRID_BDT:
+    case QINTERFACE_BDT_HYBRID:
         if (engines.size()) {
             return std::make_shared<QBdtHybrid>(engines, args...);
         }
@@ -300,7 +300,7 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
         if (hy && isOcl) {
 #if ENABLE_QBDT
             if (bdt) {
-                simulatorType.push_back(QINTERFACE_HYBRID_BDT);
+                simulatorType.push_back(QINTERFACE_BDT_HYBRID);
             } else {
                 simulatorType.push_back(QINTERFACE_HYBRID);
             }
@@ -316,7 +316,7 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
         }
 #else
         if (bdt) {
-            simulatorType.push_back(QINTERFACE_HYBRID_BDT);
+            simulatorType.push_back(QINTERFACE_BDT_HYBRID);
         } else {
             simulatorType.push_back(QINTERFACE_CPU);
         }

@@ -77,7 +77,7 @@ enum QInterfaceEngine {
     /**
      * Create a QBinaryDecisionTree, (CPU-based).
      */
-    QINTERFACE_HYBRID_BDT,
+    QINTERFACE_BDT_HYBRID,
 
     /**
      * Create a QStabilizer, limited to Clifford/Pauli operations, but efficient.

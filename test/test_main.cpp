@@ -74,9 +74,11 @@ int main(int argc, char* argv[])
     bool opencl = false;
     bool hybrid = false;
     bool bdt = false;
+    bool bdt_hybrid = false;
     bool stabilizer = false;
     bool stabilizer_qpager = false;
     bool stabilizer_bdt = false;
+    bool stabilizer_bdt_hybrid = false;
     bool cuda = false;
 
     std::string devListStr;
@@ -95,12 +97,14 @@ int main(int argc, char* argv[])
         Opt(qtensornetwork)["--layer-qtensornetwork"]("Enable QTensorNetwork implementation tests") |
         Opt(stabilizer_qpager)["--proc-stabilizer-qpager"](
             "Enable QStabilizerHybrid over QPager implementation tests") |
-        Opt(stabilizer_bdt)["--proc-stabilizer-bdt"](
-            "Enable QStabilizerHybrid over QBinaryDecisionTree implementation tests") |
+        Opt(stabilizer_bdt)["--proc-stabilizer-bdt"]("Enable QStabilizerHybrid over QBdt implementation tests") |
+        Opt(stabilizer_bdt_hybrid)["--proc-stabilizer-bdt-hybrid"](
+            "Enable QStabilizerHybrid over QBdtHybrid implementation tests") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl)["--proc-opencl"]("Single (parallel) processor OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
         Opt(bdt)["--proc-bdt"]("Enable binary decision tree implementation tests") |
+        Opt(bdt_hybrid)["--proc-bdt-hybrid"]("Enable \"hybrid\" binary decision tree implementation tests") |
         Opt(stabilizer)["--proc-stabilizer"]("Enable (hybrid) stabilizer implementation tests") |
         Opt(cuda)["--proc-cuda"]("Enable QEngineCUDA tests") |
         Opt(async_time)["--async-time"]("Time based on asynchronous return") |
@@ -164,7 +168,8 @@ int main(int argc, char* argv[])
         // qtensornetwork = true;
     }
 
-    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt && !cuda) {
+    if (!cpu && !opencl && !hybrid && !bdt && !bdt_hybrid && !stabilizer && !stabilizer_qpager && !stabilizer_bdt &&
+        !stabilizer_bdt_hybrid && !cuda) {
         cpu = true;
         opencl = true;
         cuda = true;
@@ -222,6 +227,13 @@ int main(int argc, char* argv[])
             testEngineType = QINTERFACE_BDT;
             testSubEngineType = QINTERFACE_OPTIMAL_BASE;
             session.config().stream() << "############ QBinaryDecisionTree ############" << std::endl;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && bdt_hybrid) {
+            testEngineType = QINTERFACE_BDT_HYBRID;
+            testSubEngineType = QINTERFACE_OPTIMAL_BASE;
+            session.config().stream() << "############ QBdtHybrid ############" << std::endl;
             num_failed = session.run();
         }
 
@@ -304,6 +316,13 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
+        if (num_failed == 0 && bdt_hybrid) {
+            session.config().stream() << "############ QUnit -> QBdtHybrid ############" << std::endl;
+            testSubEngineType = QINTERFACE_BDT_HYBRID;
+            testSubSubEngineType = QINTERFACE_OPTIMAL_BASE;
+            num_failed = session.run();
+        }
+
 #if ENABLE_OPENCL
         if (num_failed == 0 && opencl) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
@@ -339,6 +358,14 @@ int main(int argc, char* argv[])
                                       << std::endl;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_BDT;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_bdt_hybrid) {
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QBdtHybrid ############"
+                                      << std::endl;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT_HYBRID;
             num_failed = session.run();
         }
 
@@ -396,6 +423,15 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_BDT;
             num_failed = session.run();
         }
+
+        if (num_failed == 0 && stabilizer_bdt_hybrid) {
+            session.config().stream()
+                << "############ QUnitMulti -> QStabilizerHybrid -> QBinaryDecisionTree ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT_HYBRID;
+            num_failed = session.run();
+        }
 #else
         if (num_failed == 0 && stabilizer) {
             session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QEngineCPU ############"
@@ -412,6 +448,14 @@ int main(int argc, char* argv[])
             testEngineType = QINTERFACE_QUNIT;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_BDT;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_bdt_hybrid) {
+            session.config().stream() << "############ QUnit -> QBdtHybrid ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT_HYBRID;
             num_failed = session.run();
         }
 #endif
@@ -462,6 +506,12 @@ int main(int argc, char* argv[])
     }
 
     if (num_failed == 0 && qtensornetwork && bdt) {
+        testEngineType = QINTERFACE_TENSOR_NETWORK;
+        testSubEngineType = QINTERFACE_QUNIT;
+        testSubSubEngineType = QINTERFACE_BDT_HYBRID;
+        session.config().stream() << "############ QTensorNetwork (QBdtHybrid) ############" << std::endl;
+        num_failed = session.run();
+    } else if (num_failed == 0 && qtensornetwork && bdt) {
         testEngineType = QINTERFACE_TENSOR_NETWORK;
         testSubEngineType = QINTERFACE_QUNIT;
         testSubSubEngineType = QINTERFACE_BDT;

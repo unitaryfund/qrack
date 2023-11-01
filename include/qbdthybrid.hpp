@@ -395,7 +395,6 @@ public:
     {
         if (qbdt) {
             qbdt->CSwap(controls, qubit1, qubit2);
-            CheckThreshold();
         } else {
             engine->CSwap(controls, qubit1, qubit2);
         }
@@ -404,7 +403,6 @@ public:
     {
         if (qbdt) {
             qbdt->AntiCSwap(controls, qubit1, qubit2);
-            CheckThreshold();
         } else {
             engine->AntiCSwap(controls, qubit1, qubit2);
         }
@@ -776,49 +774,151 @@ public:
     }
 #endif
 
-    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { qbdt->Swap(qubitIndex1, qubitIndex2); }
-    void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { qbdt->ISwap(qubitIndex1, qubitIndex2); }
-    void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { qbdt->IISwap(qubitIndex1, qubitIndex2); }
-    void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { qbdt->SqrtSwap(qubitIndex1, qubitIndex2); }
-    void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { qbdt->ISqrtSwap(qubitIndex1, qubitIndex2); }
+    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        if (qbdt) {
+            qbdt->Swap(qubitIndex1, qubitIndex2);
+        } else {
+            engine->Swap(qubitIndex1, qubitIndex2);
+        }
+    }
+    void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        if (qbdt) {
+            qbdt->ISwap(qubitIndex1, qubitIndex2);
+            CheckThreshold();
+        } else {
+            engine->ISwap(qubitIndex1, qubitIndex2);
+        }
+    }
+    void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        if (qbdt) {
+            qbdt->IISwap(qubitIndex1, qubitIndex2);
+            CheckThreshold();
+        } else {
+            engine->IISwap(qubitIndex1, qubitIndex2);
+        }
+    }
+    void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        if (qbdt) {
+            qbdt->SqrtSwap(qubitIndex1, qubitIndex2);
+            CheckThreshold();
+        } else {
+            engine->SqrtSwap(qubitIndex1, qubitIndex2);
+        }
+    }
+    void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        if (qbdt) {
+            qbdt->ISqrtSwap(qubitIndex1, qubitIndex2);
+            CheckThreshold();
+        } else {
+            engine->ISqrtSwap(qubitIndex1, qubitIndex2);
+        }
+    }
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        qbdt->FSim(theta, phi, qubitIndex1, qubitIndex2);
+        if (qbdt) {
+            qbdt->FSim(theta, phi, qubitIndex1, qubitIndex2);
+            CheckThreshold();
+        } else {
+            engine->FSim(theta, phi, qubitIndex1, qubitIndex2);
+        }
     }
 
     real1_f Prob(bitLenInt qubitIndex) { return qbdt->Prob(qubitIndex); }
-    real1_f ProbAll(bitCapInt fullRegister) { return qbdt->ProbAll(fullRegister); }
-    real1_f ProbMask(bitCapInt mask, bitCapInt permutation) { return qbdt->ProbMask(mask, permutation); }
-    real1_f ProbParity(bitCapInt mask) { return qbdt->ProbParity(mask); }
+    real1_f ProbAll(bitCapInt fullRegister)
+    {
+        if (qbdt) {
+            return qbdt->ProbAll(fullRegister);
+        }
+        return engine->ProbAll(fullRegister);
+    }
+    real1_f ProbMask(bitCapInt mask, bitCapInt permutation)
+    {
+        if (qbdt) {
+            return qbdt->ProbMask(mask, permutation);
+        }
+        return engine->ProbMask(mask, permutation);
+    }
+    real1_f ProbParity(bitCapInt mask)
+    {
+        if (qbdt) {
+            return qbdt->ProbParity(mask);
+        }
+        return engine->ProbParity(mask);
+    }
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
-        return qbdt->ForceMParity(mask, result, doForce);
+        if (qbdt) {
+            return qbdt->ForceMParity(mask, result, doForce);
+        }
+        return engine->ForceMParity(mask, result, doForce);
     }
 
     real1_f SumSqrDiff(QInterfacePtr toCompare) { return SumSqrDiff(std::dynamic_pointer_cast<QBdtHybrid>(toCompare)); }
     real1_f SumSqrDiff(QBdtHybridPtr toCompare)
     {
         toCompare->SwitchMode(!engine);
-        return qbdt->SumSqrDiff(toCompare->qbdt);
+        if (qbdt) {
+            return qbdt->SumSqrDiff(toCompare->qbdt);
+        }
+        return engine->SumSqrDiff(toCompare->qbdt);
     }
 
-    void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG) { qbdt->UpdateRunningNorm(norm_thresh); }
+    void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        if (qbdt) {
+            qbdt->UpdateRunningNorm(norm_thresh);
+        } else {
+            engine->UpdateRunningNorm(norm_thresh);
+        }
+    }
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
-        qbdt->NormalizeState(nrm, norm_thresh, phaseArg);
+        if (qbdt) {
+            qbdt->NormalizeState(nrm, norm_thresh, phaseArg);
+        } else {
+            engine->NormalizeState(nrm, norm_thresh, phaseArg);
+        }
     }
 
     real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
     {
-        return qbdt->ExpectationBitsAll(bits, offset);
+        if (qbdt) {
+            return qbdt->ExpectationBitsAll(bits, offset);
+        }
+        return engine->ExpectationBitsAll(bits, offset);
     }
 
-    void Finish() { qbdt->Finish(); }
+    void Finish()
+    {
+        if (qbdt) {
+            qbdt->Finish();
+        } else {
+            engine->Finish();
+        }
+    }
 
-    bool isFinished() { return qbdt->isFinished(); }
+    bool isFinished()
+    {
+        if (qbdt) {
+            return qbdt->isFinished();
+        }
+        return engine->isFinished();
+    }
 
-    void Dump() { qbdt->Dump(); }
+    void Dump()
+    {
+        if (qbdt) {
+            qbdt->Dump();
+        } else {
+            engine->Dump();
+        }
+    }
 
     QInterfacePtr Clone()
     {
@@ -838,11 +938,21 @@ public:
     void SetDevice(int64_t dID)
     {
         devID = dID;
-        qbdt->SetDevice(dID);
+        if (qbdt) {
+            qbdt->SetDevice(dID);
+        } else {
+            engine->SetDevice(dID);
+        }
     }
 
     int64_t GetDevice() { return devID; }
 
-    bitCapIntOcl GetMaxSize() { return qbdt->GetMaxSize(); };
+    bitCapIntOcl GetMaxSize()
+    {
+        if (qbdt) {
+            return qbdt->GetMaxSize();
+        }
+        return engine->GetMaxSize();
+    };
 };
 } // namespace Qrack
