@@ -393,11 +393,21 @@ public:
 
     void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        qbdt->CSwap(controls, qubit1, qubit2);
+        if (qbdt) {
+            qbdt->CSwap(controls, qubit1, qubit2);
+            CheckThreshold();
+        } else {
+            engine->CSwap(controls, qubit1, qubit2);
+        }
     }
     void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
-        qbdt->AntiCSwap(controls, qubit1, qubit2);
+        if (qbdt) {
+            qbdt->AntiCSwap(controls, qubit1, qubit2);
+            CheckThreshold();
+        } else {
+            engine->AntiCSwap(controls, qubit1, qubit2);
+        }
     }
     void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
@@ -475,129 +485,294 @@ public:
     }
     void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
-        qbdt->CINC(toAdd, inOutStart, length, controls);
+        if (qbdt) {
+            qbdt->CINC(toAdd, inOutStart, length, controls);
+            CheckThreshold();
+        } else {
+            engine->CINC(toAdd, inOutStart, length, controls);
+        }
     }
     void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        qbdt->INCC(toAdd, start, length, carryIndex);
+        if (qbdt) {
+            qbdt->INCC(toAdd, start, length, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->INCC(toAdd, start, length, carryIndex);
+        }
     }
     void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
-        qbdt->INCS(toAdd, start, length, overflowIndex);
+        if (qbdt) {
+            qbdt->INCS(toAdd, start, length, overflowIndex);
+            CheckThreshold();
+        } else {
+            engine->INCS(toAdd, start, length, overflowIndex);
+        }
     }
     void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
-        qbdt->DECS(toAdd, start, length, overflowIndex);
+        if (qbdt) {
+            qbdt->DECS(toAdd, start, length, overflowIndex);
+            CheckThreshold();
+        } else {
+            engine->DECS(toAdd, start, length, overflowIndex);
+        }
     }
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        qbdt->INCSC(toAdd, start, length, overflowIndex, carryIndex);
+        if (qbdt) {
+            qbdt->INCSC(toAdd, start, length, overflowIndex, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
+        }
     }
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        qbdt->INCSC(toAdd, start, length, carryIndex);
+        if (qbdt) {
+            qbdt->INCSC(toAdd, start, length, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->INCSC(toAdd, start, length, carryIndex);
+        }
     }
     void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        qbdt->DECC(toSub, start, length, carryIndex);
+        if (qbdt) {
+            qbdt->DECC(toSub, start, length, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->DECC(toSub, start, length, carryIndex);
+        }
     }
     void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        qbdt->DECSC(toSub, start, length, overflowIndex, carryIndex);
+        if (qbdt) {
+            qbdt->DECSC(toSub, start, length, overflowIndex, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->DECSC(toSub, start, length, overflowIndex, carryIndex);
+        }
     }
     void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        qbdt->DECSC(toSub, start, length, carryIndex);
+        if (qbdt) {
+            qbdt->DECSC(toSub, start, length, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->DECSC(toSub, start, length, carryIndex);
+        }
     }
     void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        qbdt->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
+        if (qbdt) {
+            qbdt->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
+        }
     }
     void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        qbdt->INCDECSC(toAdd, start, length, carryIndex);
+        if (qbdt) {
+            qbdt->INCDECSC(toAdd, start, length, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->INCDECSC(toAdd, start, length, carryIndex);
+        }
     }
 #if ENABLE_BCD
-    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) { qbdt->INCBCD(toAdd, start, length); }
+    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+    {
+        if (qbdt) {
+            qbdt->INCBCD(toAdd, start, length);
+            CheckThreshold();
+        } else {
+            engine->INCBCD(toAdd, start, length);
+        }
+    }
     void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        qbdt->INCBCDC(toAdd, start, length, carryIndex);
+        if (qbdt) {
+            qbdt->INCBCDC(toAdd, start, length, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->INCBCDC(toAdd, start, length, carryIndex);
+        }
     }
     void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        qbdt->DECBCDC(toSub, start, length, carryIndex);
+        if (qbdt) {
+            qbdt->DECBCDC(toSub, start, length, carryIndex);
+            CheckThreshold();
+        } else {
+            engine->DECBCDC(toSub, start, length, carryIndex);
+        }
     }
 #endif
     void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
-        qbdt->MUL(toMul, inOutStart, carryStart, length);
+        if (qbdt) {
+            qbdt->MUL(toMul, inOutStart, carryStart, length);
+            CheckThreshold();
+        } else {
+            engine->MUL(toMul, inOutStart, carryStart, length);
+        }
     }
     void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
-        qbdt->DIV(toDiv, inOutStart, carryStart, length);
+        if (qbdt) {
+            qbdt->DIV(toDiv, inOutStart, carryStart, length);
+            CheckThreshold();
+        } else {
+            engine->DIV(toDiv, inOutStart, carryStart, length);
+        }
     }
     void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        qbdt->MULModNOut(toMul, modN, inStart, outStart, length);
+        if (qbdt) {
+            qbdt->MULModNOut(toMul, modN, inStart, outStart, length);
+            CheckThreshold();
+        } else {
+            engine->MULModNOut(toMul, modN, inStart, outStart, length);
+        }
     }
     void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        qbdt->IMULModNOut(toMul, modN, inStart, outStart, length);
+        if (qbdt) {
+            qbdt->IMULModNOut(toMul, modN, inStart, outStart, length);
+            CheckThreshold();
+        } else {
+            engine->IMULModNOut(toMul, modN, inStart, outStart, length);
+        }
     }
     void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        qbdt->POWModNOut(base, modN, inStart, outStart, length);
+        if (qbdt) {
+            qbdt->POWModNOut(base, modN, inStart, outStart, length);
+            CheckThreshold();
+        } else {
+            engine->POWModNOut(base, modN, inStart, outStart, length);
+        }
     }
     void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
-        qbdt->CMUL(toMul, inOutStart, carryStart, length, controls);
+        if (qbdt) {
+            qbdt->CMUL(toMul, inOutStart, carryStart, length, controls);
+            CheckThreshold();
+        } else {
+            engine->CMUL(toMul, inOutStart, carryStart, length, controls);
+        }
     }
     void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
-        qbdt->CDIV(toDiv, inOutStart, carryStart, length, controls);
+        if (qbdt) {
+            qbdt->CDIV(toDiv, inOutStart, carryStart, length, controls);
+            CheckThreshold();
+        } else {
+            engine->CDIV(toDiv, inOutStart, carryStart, length, controls);
+        }
     }
     void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
-        qbdt->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
+        if (qbdt) {
+            qbdt->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
+            CheckThreshold();
+        } else {
+            engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
+        }
     }
     void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
-        qbdt->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
+        if (qbdt) {
+            qbdt->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
+            CheckThreshold();
+        } else {
+            engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
+        }
     }
     void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
-        qbdt->CPOWModNOut(base, modN, inStart, outStart, length, controls);
+        if (qbdt) {
+            qbdt->CPOWModNOut(base, modN, inStart, outStart, length, controls);
+            CheckThreshold();
+        } else {
+            engine->CPOWModNOut(base, modN, inStart, outStart, length, controls);
+        }
     }
 
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         const unsigned char* values, bool resetValue = true)
     {
-        return qbdt->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
+        bitCapInt toRet;
+        if (qbdt) {
+            toRet = qbdt->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
+            CheckThreshold();
+        } else {
+            toRet = engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
+        }
+
+        return toRet;
     }
     bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         bitLenInt carryIndex, const unsigned char* values)
     {
-        return qbdt->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        bitCapInt toRet;
+        if (qbdt) {
+            toRet = qbdt->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+            CheckThreshold();
+        } else {
+            toRet = engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        }
+
+        return toRet;
     }
     bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         bitLenInt carryIndex, const unsigned char* values)
     {
-        return qbdt->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        bitCapInt toRet;
+        if (qbdt) {
+            toRet = qbdt->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+            CheckThreshold();
+        } else {
+            toRet = engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        }
+
+        return toRet;
     }
-    void Hash(bitLenInt start, bitLenInt length, const unsigned char* values) { qbdt->Hash(start, length, values); }
+    void Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
+    {
+        if (qbdt) {
+            qbdt->Hash(start, length, values);
+            CheckThreshold();
+        } else {
+            engine->Hash(start, length, values);
+        }
+    }
 
     void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
-        qbdt->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+        if (qbdt) {
+            qbdt->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+            CheckThreshold();
+        } else {
+            engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+        }
     }
     void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
-        qbdt->PhaseFlipIfLess(greaterPerm, start, length);
+        if (qbdt) {
+            qbdt->PhaseFlipIfLess(greaterPerm, start, length);
+            CheckThreshold();
+        } else {
+            engine->PhaseFlipIfLess(greaterPerm, start, length);
+        }
     }
 #endif
 
