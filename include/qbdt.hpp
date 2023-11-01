@@ -147,8 +147,10 @@ protected:
         return toRet;
     }
 
-    void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn);
+    void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch = false);
     void _par_for(const bitCapInt& end, ParallelFuncBdt fn);
+
+    size_t CountBranches();
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
@@ -182,6 +184,10 @@ public:
               deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
+
+    void SetRoot(QBdtNodeInterfacePtr r) { root = r; }
+
+    QBdtNodeInterfacePtr GetRoot() { return root; }
 
     bool isBinaryDecisionTree() { return true; };
 
