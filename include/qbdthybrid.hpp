@@ -313,7 +313,6 @@ public:
     }
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
-        engine->SetPermutation(perm, phaseFac);
         if (qbdt) {
             qbdt->SetPermutation(perm, phaseFac);
         } else {
