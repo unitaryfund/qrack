@@ -207,6 +207,24 @@ public:
     {
         return TryDecompose(start, std::dynamic_pointer_cast<QBdtHybrid>(dest), error_tol);
     }
+    bool TryDecompose(bitLenInt start, QBdtHybridPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        bool result;
+        dest->SwitchMode(!engine);
+        if (qbdt) {
+            result = qbdt->TryDecompose(start, dest->engine, error_tol);
+        } else {
+            result = engine->TryDecompose(start, dest->engine, error_tol);
+        }
+        if (result) {
+            SetQubitCount(qubitCount - dest->qubitCount);
+            if (qbdt) {
+                CheckThreshold();
+            }
+        }
+
+        return result;
+    }
     void Decompose(bitLenInt start, QBdtHybridPtr dest)
     {
         SetQubitCount(qubitCount - dest->qubitCount);
@@ -295,6 +313,7 @@ public:
     }
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
+        engine->SetPermutation(perm, phaseFac);
         if (qbdt) {
             qbdt->SetPermutation(perm, phaseFac);
         } else {
@@ -405,7 +424,7 @@ public:
             qbdt->CUniformParityRZ(controls, mask, angle);
             CheckThreshold();
         } else {
-            engine->UniformParityRZ(mask, angle);
+            engine->CUniformParityRZ(mask, angle);
         }
     }
 
