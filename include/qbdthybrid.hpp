@@ -71,7 +71,6 @@ protected:
 
     void CheckThreshold()
     {
-        return;
         const size_t count = qbdt->CountBranches();
 #if (QBCAPPOW > 6) && BOOST_AVAILABLE
         if ((threshold * maxQPower.convert_to<double>()) < count) {
@@ -130,9 +129,8 @@ public:
     {
         if (qbdt) {
             return qbdt->ProbReg(start, length, permutation);
-        } else {
-            return engine->ProbReg(start, length, permutation);
         }
+        return engine->ProbReg(start, length, permutation);
     }
 
     using QInterface::Compose;
@@ -283,9 +281,8 @@ public:
     {
         if (qbdt) {
             return qbdt->GetAmplitude(perm);
-        } else {
-            return engine->GetAmplitude(perm);
         }
+        return engine->GetAmplitude(perm);
     }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
@@ -377,8 +374,18 @@ public:
         }
     }
 
-    real1_f CProb(bitLenInt control, bitLenInt target) { return qbdt->CProb(control, target); }
-    real1_f ACProb(bitLenInt control, bitLenInt target) { return qbdt->ACProb(control, target); }
+    real1_f CProb(bitLenInt control, bitLenInt target) {
+        if (qbdt) {
+            return qbdt->CProb(control, target);
+        }
+        return engine->CProb(control, target);
+    }
+    real1_f ACProb(bitLenInt control, bitLenInt target) {
+        if (qbdt) {
+            return qbdt->ACProb(control, target);
+        }
+        return engine->ACProb(control, target);
+    }
 
     void UniformParityRZ(bitCapInt mask, real1_f angle)
     {
@@ -457,7 +464,6 @@ public:
         if (qbdt) {
             return qbdt->ForceM(qubit, result, doForce, doApply);
         }
-
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
