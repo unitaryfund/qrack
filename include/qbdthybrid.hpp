@@ -188,12 +188,13 @@ public:
         SetQubitCount(qubitCount - length);
         QBdtPtr q = NULL;
         QEnginePtr e = NULL;
-        if (engine) {
-            e = std::dynamic_pointer_cast<QEngine>(engine->Decompose(start, length));
-        } else {
+        if (qbdt) {
             q = std::dynamic_pointer_cast<QBdt>(qbdt->Decompose(start, length));
             CheckThreshold();
+        } else {
+            e = std::dynamic_pointer_cast<QEngine>(engine->Decompose(start, length));
         }
+
         return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
             randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
@@ -210,31 +211,31 @@ public:
     {
         SetQubitCount(qubitCount - dest->qubitCount);
         dest->SwitchMode(!engine);
-        if (engine) {
-            engine->Decompose(start, dest->engine);
-        } else {
+        if (qbdt) {
             qbdt->Decompose(start, dest);
             CheckThreshold();
+        } else {
+            engine->Decompose(start, dest->engine);
         }
     }
     void Dispose(bitLenInt start, bitLenInt length)
     {
         SetQubitCount(qubitCount - length);
-        if (engine) {
-            engine->Dispose(start, length);
-        } else {
+        if (qbdt) {
             qbdt->Dispose(start, length);
             CheckThreshold();
+        } else {
+            engine->Dispose(start, length);
         }
     }
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
         SetQubitCount(qubitCount - length);
-        if (engine) {
-            engine->Dispose(start, length, disposedPerm);
-        } else {
+        if (qbdt) {
             qbdt->Dispose(start, length, disposedPerm);
             CheckThreshold();
+        } else {
+            engine->Dispose(start, length, disposedPerm);
         }
     }
 
@@ -374,13 +375,15 @@ public:
         }
     }
 
-    real1_f CProb(bitLenInt control, bitLenInt target) {
+    real1_f CProb(bitLenInt control, bitLenInt target)
+    {
         if (qbdt) {
             return qbdt->CProb(control, target);
         }
         return engine->CProb(control, target);
     }
-    real1_f ACProb(bitLenInt control, bitLenInt target) {
+    real1_f ACProb(bitLenInt control, bitLenInt target)
+    {
         if (qbdt) {
             return qbdt->ACProb(control, target);
         }
