@@ -845,7 +845,13 @@ public:
         }
     }
 
-    real1_f Prob(bitLenInt qubitIndex) { return qbdt->Prob(qubitIndex); }
+    real1_f Prob(bitLenInt qubitIndex)
+    {
+        if (qbdt) {
+            return qbdt->Prob(qubitIndex);
+        }
+        return engine->Prob(qubitIndex);
+    }
     real1_f ProbAll(bitCapInt fullRegister)
     {
         if (qbdt) {
