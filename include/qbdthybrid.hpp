@@ -485,18 +485,53 @@ public:
 
 #if ENABLE_ALU
     using QInterface::M;
-    bool M(bitLenInt q) { return QInterface::M(q); }
+    bool M(bitLenInt q)
+    {
+        if (qbdt) {
+            return qbdt->M(q);
+        }
+        return engine->M(q);
+    }
     using QInterface::X;
-    void X(bitLenInt q) { QInterface::X(q); }
-    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
-    void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
+    void X(bitLenInt q)
+    {
+        if (qbdt) {
+            qbdt->X(q);
+        } else {
+            engine->X(q);
+        }
+    }
+    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+    {
+        if (qbdt) {
+            qbdt->INC(toAdd, start, length);
+        } else {
+            engine->INC(toAdd, start, length);
+        }
+    }
+    void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
+    {
+        if (qbdt) {
+            qbdt->DEC(toSub, start, length);
+        } else {
+            engine->DEC(toSub, start, length);
+        }
+    }
     void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
-        QInterface::CDEC(toSub, inOutStart, length, controls);
+        if (qbdt) {
+            qbdt->CDEC(toSub, inOutStart, length, controls);
+        } else {
+            engine->CDEC(toSub, inOutStart, length, controls);
+        }
     }
     void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        QInterface::INCDECC(toAdd, start, length, carryIndex);
+        if (qbdt) {
+            qbdt->INCDECC(toAdd, start, length, carryIndex);
+        } else {
+            engine->INCDECC(toAdd, start, length, carryIndex);
+        }
     }
     void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
