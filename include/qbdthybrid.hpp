@@ -923,7 +923,7 @@ public:
         if (qbdt) {
             return qbdt->SumSqrDiff(toCompare->qbdt);
         }
-        return engine->SumSqrDiff(toCompare->qbdt);
+        return engine->SumSqrDiff(toCompare->engine);
     }
 
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
