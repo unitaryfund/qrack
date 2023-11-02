@@ -424,7 +424,7 @@ public:
             qbdt->CUniformParityRZ(controls, mask, angle);
             CheckThreshold();
         } else {
-            engine->CUniformParityRZ(mask, angle);
+            engine->CUniformParityRZ(controls, mask, angle);
         }
     }
 
