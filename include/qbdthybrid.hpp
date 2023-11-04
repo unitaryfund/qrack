@@ -992,13 +992,14 @@ public:
 
     QInterfacePtr Clone()
     {
-        QBdtHybridPtr c = std::make_shared<QBdtHybrid>(qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
+        QBdtHybridPtr c = std::make_shared<QBdtHybrid>(engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
             randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
         c->SetConcurrency(GetConcurrencyLevel());
-        if (!engine) {
+        if (qbdt) {
             c->qbdt->SetRoot(qbdt->GetRoot()->ShallowClone());
         } else {
+            c->SwitchMode(false);
             c->engine->CopyStateVec(engine);
         }
 
