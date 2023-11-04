@@ -264,12 +264,14 @@ public:
             return start;
         }
 
-        QBdtHybridPtr nQubits = std::make_shared<QBdtHybrid>(length, 0U, rand_generator, phaseFactor, doNormalize,
-            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
-            thresholdQubits, separabilityThreshold);
-        nQubits->SetConcurrency(GetConcurrencyLevel());
+        if (qbdt) {
+            qbdt->Allocate(start, length);
+        } else {
+            engine->Allocate(start, length);
+        }
+        SetQubitCount(qubitCount + length);
 
-        return Compose(nQubits, start);
+        return start;
     }
 
     void SetQuantumState(const complex* inputState)
