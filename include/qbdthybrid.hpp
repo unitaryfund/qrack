@@ -96,6 +96,13 @@ public:
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
+    QBdtHybrid(QBdtPtr q, QEnginePtr e, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
+        bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG,
+        bool doNorm = false, bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1,
+        bool useHardwareRNG = true, bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON,
+        std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
+        real1_f separation_thresh = FP_NORM_EPSILON_F);
+
     QBdtHybrid(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
@@ -105,18 +112,6 @@ public:
               useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
               separation_thresh)
     {
-    }
-
-    QBdtHybrid(QBdtPtr q, QEnginePtr e, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
-        bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG,
-        bool doNorm = false, bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1,
-        bool useHardwareRNG = true, bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON,
-        std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F)
-        : QBdtHybrid(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
-              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
-    {
-        qbdt = q;
-        engine = e;
     }
 
     QInterfacePtr MakeSimulator(bool isBdt, bitCapInt perm = 0U, complex phaseFac = CMPLX_DEFAULT_ARG);
@@ -230,7 +225,7 @@ public:
         SetQubitCount(qubitCount - dest->qubitCount);
         dest->SwitchMode(!engine);
         if (qbdt) {
-            qbdt->Decompose(start, dest);
+            qbdt->Decompose(start, dest->qbdt);
             CheckThreshold();
         } else {
             engine->Decompose(start, dest->engine);

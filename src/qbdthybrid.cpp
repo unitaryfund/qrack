@@ -37,6 +37,25 @@ QBdtHybrid::QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
         thresholdQubits, separabilityThreshold));
 }
 
+QBdtHybrid::QBdtHybrid(QBdtPtr q, QEnginePtr e, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
+    bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem,
+    int64_t deviceId, bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
+    bitLenInt qubitThreshold, real1_f sep_thresh)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
+    , useRDRAND(useHardwareRNG)
+    , isSparse(useSparseStateVec)
+    , useHostRam(useHostMem)
+    , thresholdQubits(qubitThreshold)
+    , separabilityThreshold(sep_thresh)
+    , devID(deviceId)
+    , qbdt(q)
+    , engine(e)
+    , phaseFactor(phaseFac)
+    , deviceIDs(devList)
+    , engines(eng)
+{
+}
+
 QInterfacePtr QBdtHybrid::MakeSimulator(bool isBdt, bitCapInt perm, complex phaseFac)
 {
     std::vector<QInterfaceEngine> e(engines);
