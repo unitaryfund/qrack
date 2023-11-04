@@ -209,21 +209,13 @@ public:
     }
     bool TryDecompose(bitLenInt start, QBdtHybridPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
-        bool result;
-        dest->SwitchMode(!engine);
-        if (qbdt) {
-            result = qbdt->TryDecompose(start, dest->engine, error_tol);
-        } else {
-            result = engine->TryDecompose(start, dest->engine, error_tol);
-        }
-        if (result) {
+        SwitchMode(false);
+        dest->SwitchMode(false);
+        if (engine->TryDecompose(start, dest->engine, error_tol)) {
             SetQubitCount(qubitCount - dest->qubitCount);
-            if (qbdt) {
-                CheckThreshold();
-            }
+            return true;
         }
-
-        return result;
+        return false;
     }
     void Decompose(bitLenInt start, QBdtHybridPtr dest)
     {
