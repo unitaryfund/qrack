@@ -48,7 +48,8 @@ using namespace Qrack;
         (testSubEngineType == QINTERFACE_OPENCL) || (testSubSubEngineType == QINTERFACE_OPENCL) ||                     \
         (testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER) ||                           \
         (testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT) ||                                 \
-        (testEngineType == QINTERFACE_TENSOR_NETWORK))
+        (testEngineType == QINTERFACE_TENSOR_NETWORK) || (testEngineType == QINTERFACE_BDT_HYBRID) ||                  \
+        (testSubEngineType == QINTERFACE_BDT_HYBRID) || (testSubSubEngineType == QINTERFACE_BDT_HYBRID))
 
 #define QINTERFACE_GROVER_RESTRICTED                                                                                   \
     ((testEngineType == QINTERFACE_BDT) || (testSubEngineType == QINTERFACE_BDT) ||                                    \

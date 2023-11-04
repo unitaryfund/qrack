@@ -1000,7 +1000,7 @@ public:
             thresholdQubits, separabilityThreshold);
         c->SetConcurrency(GetConcurrencyLevel());
         if (qbdt) {
-            c->qbdt->SetRoot(qbdt->GetRoot()->ShallowClone());
+            c->qbdt = std::dynamic_pointer_cast<QBdt>(qbdt->Clone());
         } else {
             c->SwitchMode(false);
             c->engine->CopyStateVec(engine);
