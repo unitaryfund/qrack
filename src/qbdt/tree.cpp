@@ -16,7 +16,6 @@
 
 #include "qbdt.hpp"
 #include "qfactory.hpp"
-#include <unordered_set>
 
 #define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 

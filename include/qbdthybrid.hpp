@@ -39,7 +39,7 @@ protected:
     complex phaseFactor;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
-    const double threshold = 0.1;
+    const double threshold = 0.0625;
 
     /**
      * Switches between QBdt and QEngine modes. (This will not incur a performance penalty, if the chosen mode matches
