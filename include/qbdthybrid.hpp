@@ -75,6 +75,10 @@ protected:
         if (getenv("QRACK_QBDT_HYBRID_THRESHOLD")) {
             threshold = std::stod(getenv("QRACK_QBDT_HYBRID_THRESHOLD"));
         }
+        if ((1.0 - threshold) <= FP_NORM_EPSILON) {
+            // This definitely won't switch.
+            return;
+        }
         const size_t count = qbdt->CountBranches();
 #if (QBCAPPOW > 6) && BOOST_AVAILABLE
         if ((threshold * maxQPower.convert_to<double>()) < count) {
