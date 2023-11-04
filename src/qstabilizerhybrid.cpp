@@ -793,8 +793,15 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         amps = stabilizer->GetAmplitudes(perms);
     }
 
+    std::vector<QInterfaceEngine> et = engineTypes;
+    while (et.size() && (et[0] == QINTERFACE_BDT_HYBRID)) {
+        et.erase(et.begin());
+    }
+    if (!et.size()) {
+        et.push_back(QINTERFACE_OPTIMAL_BASE);
+    }
     QEnginePtr aEngine = std::dynamic_pointer_cast<QEngine>(
-        CreateQuantumInterface(engineTypes, ancillaCount, 0U, rand_generator, ONE_CMPLX, false, false, useHostRam,
+        CreateQuantumInterface(et, ancillaCount, 0U, rand_generator, ONE_CMPLX, false, false, useHostRam,
             devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
 
     for (bitCapIntOcl a = 0U; a < ancillaPow; ++a) {
