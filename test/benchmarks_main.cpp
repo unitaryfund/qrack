@@ -627,7 +627,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    if (num_failed == 0 && qtensornetwork && bdt) {
+    if (num_failed == 0 && qtensornetwork && stabilizer_bdt_hybrid) {
         testEngineType = QINTERFACE_TENSOR_NETWORK;
         testSubEngineType = QINTERFACE_QUNIT;
         testSubSubEngineType = QINTERFACE_BDT_HYBRID;
