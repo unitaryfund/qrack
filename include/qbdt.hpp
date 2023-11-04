@@ -147,7 +147,7 @@ protected:
         return toRet;
     }
 
-    void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch = false);
+    void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch = true);
     void _par_for(const bitCapInt& end, ParallelFuncBdt fn);
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
