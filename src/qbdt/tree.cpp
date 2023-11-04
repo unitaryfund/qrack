@@ -195,8 +195,9 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
 size_t QBdt::CountBranches()
 {
     const bitLenInt maxQubitIndex = qubitCount - 1U;
-    std::set<QBdtNodeInterfacePtr> nodes;
-    nodes.insert(root);
+    std::set<QBdtNodeInterface*> nodes;
+    std::mutex mtx;
+    nodes.insert(root.get());
     par_for_qbdt(
         maxQPower, maxQubitIndex,
         [&](const bitCapInt& i) {
@@ -208,7 +209,8 @@ size_t QBdt::CountBranches()
                     return (bitCapInt)(pow2(maxQubitIndex - j) - ONE_BCI);
                 }
                 leaf = leaf->branches[SelectBit(i, maxQubitIndex - (j + 1U))];
-                nodes.insert(leaf);
+                std::lock_guard<std::mutex> lock(mtx);
+                nodes.insert(leaf.get());
             }
 
             return (bitCapInt)0U;
