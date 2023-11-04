@@ -39,7 +39,7 @@ protected:
     complex phaseFactor;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
-    const double threshold = 0.0625;
+    double threshold = 0.0625;
 
     /**
      * Switches between QBdt and QEngine modes. (This will not incur a performance penalty, if the chosen mode matches
@@ -71,6 +71,10 @@ protected:
 
     void CheckThreshold()
     {
+        double threshold = 0.0625;
+        if (getenv("QRACK_QBDT_HYBRID_THRESHOLD")) {
+            threshold = std::stod(getenv("QRACK_QBDT_HYBRID_THRESHOLD"));
+        }
         const size_t count = qbdt->CountBranches();
 #if (QBCAPPOW > 6) && BOOST_AVAILABLE
         if ((threshold * maxQPower.convert_to<double>()) < count) {
@@ -992,8 +996,8 @@ public:
 
     QInterfacePtr Clone()
     {
-        QBdtHybridPtr c = std::make_shared<QBdtHybrid>(engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
-            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+        QBdtHybridPtr c = std::make_shared<QBdtHybrid>(engines, qubitCount, 0U, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
         c->SetConcurrency(GetConcurrencyLevel());
         if (qbdt) {
