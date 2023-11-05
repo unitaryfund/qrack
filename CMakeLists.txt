@@ -33,6 +33,7 @@ add_library (qrack STATIC
     src/qstabilizerhybrid.cpp
     src/qcircuit.cpp
     src/qtensornetwork.cpp
+    src/qbdthybrid.cpp
     )
 
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
@@ -304,6 +305,7 @@ install (FILES
     include/qbdt.hpp
     include/qbdt_node.hpp
     include/qbdt_node_interface.hpp
+    include/qbdthybrid.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 

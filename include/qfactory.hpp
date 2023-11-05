@@ -35,6 +35,7 @@
 
 #if ENABLE_QBDT
 #include "qbdt.hpp"
+#include "qbdthybrid.hpp"
 #endif
 
 namespace Qrack {
@@ -57,6 +58,8 @@ QInterfacePtr CreateQuantumInterface(
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(engines, args...);
+    case QINTERFACE_BDT_HYBRID:
+        return std::make_shared<QBdtHybrid>(engines, args...);
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
@@ -101,6 +104,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(engines, args...);
+    case QINTERFACE_BDT_HYBRID:
+        return std::make_shared<QBdtHybrid>(engines, args...);
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
@@ -141,6 +146,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(args...);
+    case QINTERFACE_BDT_HYBRID:
+        return std::make_shared<QBdtHybrid>(args...);
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(args...);
@@ -187,6 +194,11 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
             return std::make_shared<QBdt>(engines, args...);
         }
         return std::make_shared<QBdt>(args...);
+    case QINTERFACE_BDT_HYBRID:
+        if (engines.size()) {
+            return std::make_shared<QBdtHybrid>(engines, args...);
+        }
+        return std::make_shared<QBdtHybrid>(args...);
 #endif
     case QINTERFACE_QPAGER:
         if (engines.size()) {
@@ -262,9 +274,11 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
-    if (bdt) {
+#if ENABLE_QBDT
+    if (bdt && !hy) {
         simulatorType.push_back(QINTERFACE_BDT);
     }
+#endif
 
     if (sh && (!sd || simulatorType.size())) {
         simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
@@ -284,7 +298,15 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
     if (!simulatorType.size()) {
 #if ENABLE_OPENCL || ENABLE_CUDA
         if (hy && isOcl) {
+#if ENABLE_QBDT
+            if (bdt) {
+                simulatorType.push_back(QINTERFACE_BDT_HYBRID);
+            } else {
+                simulatorType.push_back(QINTERFACE_HYBRID);
+            }
+#else
             simulatorType.push_back(QINTERFACE_HYBRID);
+#endif
         } else {
 #if ENABLE_OPENCL
             simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
@@ -293,7 +315,11 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
 #endif
         }
 #else
-        simulatorType.push_back(QINTERFACE_CPU);
+        if (bdt) {
+            simulatorType.push_back(QINTERFACE_BDT_HYBRID);
+        } else {
+            simulatorType.push_back(QINTERFACE_CPU);
+        }
 #endif
     }
 

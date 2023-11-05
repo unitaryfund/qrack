@@ -66,9 +66,11 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
         doNormalize, false, false, devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs));
 }
 
-void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
+void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch)
 {
-    root->Branch(maxQubit);
+    if (branch) {
+        root->Branch(maxQubit);
+    }
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     const bitCapInt Stride = bdtStride;
@@ -86,7 +88,10 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
         for (bitCapInt j = 0U; j < end; ++j) {
             j |= fn(j);
         }
-        root->Prune(maxQubit);
+        if (branch) {
+            root->Prune(maxQubit);
+        }
+
         return;
     }
 
@@ -130,7 +135,10 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn)
         j |= fn(j);
     }
 #endif
-    root->Prune(maxQubit);
+
+    if (branch) {
+        root->Prune(maxQubit);
+    }
 }
 
 void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
@@ -182,6 +190,34 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
         fn(j, 0U);
     }
 #endif
+}
+
+size_t QBdt::CountBranches()
+{
+    const bitLenInt maxQubitIndex = qubitCount - 1U;
+    std::set<QBdtNodeInterface*> nodes;
+    std::mutex mtx;
+    nodes.insert(root.get());
+    par_for_qbdt(
+        maxQPower, maxQubitIndex,
+        [&](const bitCapInt& i) {
+            QBdtNodeInterfacePtr leaf = root;
+            // Iterate to qubit depth.
+            for (bitLenInt j = 0U; j < maxQubitIndex; ++j) {
+                if (IS_NODE_0(leaf->scale)) {
+                    // WARNING: Mutates loop control variable!
+                    return (bitCapInt)(pow2(maxQubitIndex - j) - ONE_BCI);
+                }
+                leaf = leaf->branches[SelectBit(i, maxQubitIndex - (j + 1U))];
+                std::lock_guard<std::mutex> lock(mtx);
+                nodes.insert(leaf.get());
+            }
+
+            return (bitCapInt)0U;
+        },
+        false);
+
+    return nodes.size();
 }
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)

@@ -147,7 +147,7 @@ protected:
         return toRet;
     }
 
-    void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn);
+    void par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch = true);
     void _par_for(const bitCapInt& end, ParallelFuncBdt fn);
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
@@ -182,6 +182,8 @@ public:
               deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
+
+    size_t CountBranches();
 
     bool isBinaryDecisionTree() { return true; };
 
@@ -411,16 +413,12 @@ public:
     void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) {
-            QINTERFACE_TO_QALU(eng)->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
-        });
+        QInterface::CMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
     void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) {
-            QINTERFACE_TO_QALU(eng)->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
-        });
+        QInterface::CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
     void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
