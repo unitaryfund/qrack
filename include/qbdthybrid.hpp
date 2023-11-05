@@ -70,10 +70,9 @@ protected:
 
     void CheckThreshold()
     {
-        double threshold = std::log2(-8 * qubitCount);
-        if (getenv("QRACK_QBDT_HYBRID_THRESHOLD")) {
-            threshold = std::stod(getenv("QRACK_QBDT_HYBRID_THRESHOLD"));
-        }
+        double threshold = getenv("QRACK_QBDT_HYBRID_THRESHOLD")
+            ? std::log2(qubitCount) * std::stod(getenv("QRACK_QBDT_HYBRID_THRESHOLD"))
+            : (std::log2(qubitCount) / 4);
         if ((1.0 - threshold) <= FP_NORM_EPSILON) {
             // This definitely won't switch.
             return;
