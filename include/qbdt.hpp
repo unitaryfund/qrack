@@ -183,8 +183,6 @@ public:
     {
     }
 
-    void SetRoot(QBdtNodeInterfacePtr r) { root = r; }
-    QBdtNodeInterfacePtr GetRoot() { return root; }
     size_t CountBranches();
 
     bool isBinaryDecisionTree() { return true; };
