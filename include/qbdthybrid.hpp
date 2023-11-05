@@ -584,21 +584,13 @@ public:
     }
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        if (qbdt) {
-            qbdt->INCSC(toAdd, start, length, overflowIndex, carryIndex);
-            CheckThreshold();
-        } else {
-            engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
-        }
+        SwitchMode(false);
+        engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
     }
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        if (qbdt) {
-            qbdt->INCSC(toAdd, start, length, carryIndex);
-            CheckThreshold();
-        } else {
-            engine->INCSC(toAdd, start, length, carryIndex);
-        }
+        SwitchMode(false);
+        engine->INCSC(toAdd, start, length, carryIndex);
     }
     void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
@@ -611,67 +603,39 @@ public:
     }
     void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        if (qbdt) {
-            qbdt->DECSC(toSub, start, length, overflowIndex, carryIndex);
-            CheckThreshold();
-        } else {
-            engine->DECSC(toSub, start, length, overflowIndex, carryIndex);
-        }
+        SwitchMode(false);
+        engine->DECSC(toSub, start, length, overflowIndex, carryIndex);
     }
     void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        if (qbdt) {
-            qbdt->DECSC(toSub, start, length, carryIndex);
-            CheckThreshold();
-        } else {
-            engine->DECSC(toSub, start, length, carryIndex);
-        }
+        SwitchMode(false);
+        engine->DECSC(toSub, start, length, carryIndex);
     }
     void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        if (qbdt) {
-            qbdt->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
-            CheckThreshold();
-        } else {
-            engine->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
-        }
+        SwitchMode(false);
+        engine->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
     }
     void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        if (qbdt) {
-            qbdt->INCDECSC(toAdd, start, length, carryIndex);
-            CheckThreshold();
-        } else {
-            engine->INCDECSC(toAdd, start, length, carryIndex);
-        }
+        SwitchMode(false);
+        engine->INCDECSC(toAdd, start, length, carryIndex);
     }
 #if ENABLE_BCD
     void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
-        if (qbdt) {
-            qbdt->INCBCD(toAdd, start, length);
-            CheckThreshold();
-        } else {
-            engine->INCBCD(toAdd, start, length);
-        }
+        SwitchMode(false);
+        engine->INCBCD(toAdd, start, length);
     }
     void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        if (qbdt) {
-            qbdt->INCBCDC(toAdd, start, length, carryIndex);
-            CheckThreshold();
-        } else {
-            engine->INCBCDC(toAdd, start, length, carryIndex);
-        }
+        SwitchMode(false);
+        engine->INCBCDC(toAdd, start, length, carryIndex);
     }
     void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        if (qbdt) {
-            qbdt->DECBCDC(toSub, start, length, carryIndex);
-            CheckThreshold();
-        } else {
-            engine->DECBCDC(toSub, start, length, carryIndex);
-        }
+        SwitchMode(false);
+        engine->DECBCDC(toSub, start, length, carryIndex);
     }
 #endif
     void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
@@ -712,12 +676,8 @@ public:
     }
     void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        if (qbdt) {
-            qbdt->POWModNOut(base, modN, inStart, outStart, length);
-            CheckThreshold();
-        } else {
-            engine->POWModNOut(base, modN, inStart, outStart, length);
-        }
+        SwitchMode(false);
+        engine->POWModNOut(base, modN, inStart, outStart, length);
     }
     void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
@@ -762,80 +722,43 @@ public:
     void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
-        if (qbdt) {
-            qbdt->CPOWModNOut(base, modN, inStart, outStart, length, controls);
-            CheckThreshold();
-        } else {
-            engine->CPOWModNOut(base, modN, inStart, outStart, length, controls);
-        }
+        SwitchMode(false);
+        engine->CPOWModNOut(base, modN, inStart, outStart, length, controls);
     }
 
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         const unsigned char* values, bool resetValue = true)
     {
-        bitCapInt toRet;
-        if (qbdt) {
-            toRet = qbdt->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
-            CheckThreshold();
-        } else {
-            toRet = engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
-        }
-
-        return toRet;
+        SwitchMode(false);
+        return engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
     }
     bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         bitLenInt carryIndex, const unsigned char* values)
     {
-        bitCapInt toRet;
-        if (qbdt) {
-            toRet = qbdt->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-            CheckThreshold();
-        } else {
-            toRet = engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-        }
-
-        return toRet;
+        SwitchMode(false);
+        return engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         bitLenInt carryIndex, const unsigned char* values)
     {
-        bitCapInt toRet;
-        if (qbdt) {
-            toRet = qbdt->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-            CheckThreshold();
-        } else {
-            toRet = engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-        }
-
-        return toRet;
+        SwitchMode(false);
+        return engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     void Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
     {
-        if (qbdt) {
-            qbdt->Hash(start, length, values);
-            CheckThreshold();
-        } else {
-            engine->Hash(start, length, values);
-        }
+        SwitchMode(false);
+        engine->Hash(start, length, values);
     }
 
     void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
-        if (qbdt) {
-            qbdt->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-            CheckThreshold();
-        } else {
-            engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-        }
+        SwitchMode(false);
+        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
     }
     void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
-        if (qbdt) {
-            qbdt->PhaseFlipIfLess(greaterPerm, start, length);
-            CheckThreshold();
-        } else {
-            engine->PhaseFlipIfLess(greaterPerm, start, length);
-        }
+        SwitchMode(false);
+        engine->PhaseFlipIfLess(greaterPerm, start, length);
     }
 #endif
 
