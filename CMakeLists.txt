@@ -88,10 +88,12 @@ if (NOT ENABLE_EMIT_LLVM)
 
     target_link_libraries (benchmarks ${QRACK_LIBS})
 
-    # Declare the OCL precompilation executable
-    add_executable (qrack_cl_precompile
-        src/qrack_cl_precompile.cpp
-        )
+    if (ENABLE_OPENCL OR ENABLE_CUDA)
+        # Declare the OCL precompilation executable
+        add_executable (qrack_cl_precompile
+            src/qrack_cl_precompile.cpp
+            )
+    endif (ENABLE_OPENCL OR ENABLE_CUDA)
 
     target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
 endif (NOT ENABLE_EMIT_LLVM)
