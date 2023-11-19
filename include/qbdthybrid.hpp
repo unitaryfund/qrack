@@ -52,7 +52,7 @@ protected:
         }
 
         QInterfacePtr nEngine = MakeSimulator(useBdt);
-        std::unique_ptr<complex> sv(new complex[(size_t)maxQPower]);
+        std::unique_ptr<complex[]> sv(new complex[(size_t)maxQPower]);
         if (qbdt) {
             qbdt->GetQuantumState(sv.get());
         } else {
