@@ -78,4 +78,14 @@ if (ENABLE_CUDA)
         src/qhybrid.cpp
         src/qunitmulti.cpp
         )
+
+    # Declare the OCL precompilation executable
+    add_executable (qrack_cl_precompile
+        src/qrack_cl_precompile.cpp
+        )
+
+    target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+    if (NOT ENABLE_EMIT_LLVM)
+        target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
+    endif (NOT ENABLE_EMIT_LLVM)
 endif(ENABLE_CUDA)
