@@ -45,6 +45,8 @@ if (ENABLE_CUDA)
             src/qrack_cl_precompile.cpp
             )
         target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+        target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
+        install(TARGETS qrack_cl_precompile DESTINATION bin)
 
         target_link_libraries (unittest ${QRACK_CUDA_LIBRARIES})
         set_target_properties(unittest PROPERTIES CUDA_ARCHITECTURES ${QRACK_CUDA_ARCHITECTURES})

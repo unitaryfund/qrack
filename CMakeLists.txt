@@ -233,13 +233,11 @@ target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 if (NOT ENABLE_EMIT_LLVM)
     target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
 endif (NOT ENABLE_EMIT_LLVM)
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 if (NOT ENABLE_EMIT_LLVM)
     target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
 endif (NOT ENABLE_EMIT_LLVM)
 
 set_target_properties (qrack PROPERTIES
@@ -319,9 +317,6 @@ endif (NOT ENABLE_EMIT_LLVM)
 # Install the pkg-config file
 configure_file (qrack.pc.in qrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
-if (NOT ENABLE_EMIT_LLVM)
-    install(TARGETS qrack_cl_precompile DESTINATION bin)
-endif (NOT ENABLE_EMIT_LLVM)
 
 include(InstallRequiredSystemLibraries)
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
