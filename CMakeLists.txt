@@ -93,9 +93,10 @@ if (NOT ENABLE_EMIT_LLVM)
         add_executable (qrack_cl_precompile
             src/qrack_cl_precompile.cpp
             )
+
+        target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
     endif (ENABLE_OPENCL OR ENABLE_CUDA)
 
-    target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
 endif (NOT ENABLE_EMIT_LLVM)
 
 # Included after the library and other modules have been declared
