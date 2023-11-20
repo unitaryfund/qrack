@@ -40,6 +40,12 @@ if (ENABLE_CUDA)
     target_link_libraries (qrack_pinvoke ${QRACK_CUDA_LIBRARIES})
     set_target_properties(qrack_pinvoke PROPERTIES CUDA_ARCHITECTURES ${QRACK_CUDA_ARCHITECTURES})
     if (NOT ENABLE_EMIT_LLVM)
+        # Declare the OCL precompilation executable
+        add_executable (qrack_cl_precompile
+            src/qrack_cl_precompile.cpp
+            )
+        target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+
         target_link_libraries (unittest ${QRACK_CUDA_LIBRARIES})
         set_target_properties(unittest PROPERTIES CUDA_ARCHITECTURES ${QRACK_CUDA_ARCHITECTURES})
         target_link_libraries (benchmarks ${QRACK_CUDA_LIBRARIES})
@@ -78,4 +84,5 @@ if (ENABLE_CUDA)
         src/qhybrid.cpp
         src/qunitmulti.cpp
         )
+
 endif(ENABLE_CUDA)

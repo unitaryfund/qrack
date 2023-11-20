@@ -79,6 +79,12 @@ if (ENABLE_OPENCL)
 
     target_link_libraries (qrack_pinvoke ${QRACK_OpenCL_LIBRARIES})
     if (NOT ENABLE_EMIT_LLVM)
+        # Declare the OCL precompilation executable
+        add_executable (qrack_cl_precompile
+            src/qrack_cl_precompile.cpp
+            )
+        target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+
         target_link_libraries (unittest ${QRACK_OpenCL_LIBRARIES})
         target_link_libraries (benchmarks ${QRACK_OpenCL_LIBRARIES})
         target_link_libraries (qrack_cl_precompile ${QRACK_OpenCL_LIBRARIES})
@@ -124,4 +130,5 @@ if (ENABLE_OPENCL)
         src/qhybrid.cpp
         src/qunitmulti.cpp
         )
+
 endif (ENABLE_OPENCL)
