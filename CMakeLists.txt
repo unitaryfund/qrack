@@ -331,6 +331,17 @@ add_custom_target(changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.g
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
     DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack"
 )
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
+    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/qrack_cl_precompile.1" > "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/qrack_cl_precompile.1"
+    COMMENT "Compressing qrack_cl_precompile.1"
+)
+add_custom_target(qrack_cl_precompile.1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1"
+)
 
 include(InstallRequiredSystemLibraries)
 set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
