@@ -1,0 +1,4 @@
+qrack (8.21.1) stable; urgency=low
+  [ Dan Strano and the Qrack contributors ]
+  * First official Debian package release!
+-- maintainer-name <dan@unitary.fund> 2023-11-23

@@ -246,7 +246,6 @@ set_target_properties (qrack PROPERTIES
 
 set_target_properties (qrack_pinvoke PROPERTIES
     VERSION ${PROJECT_VERSION}
-    COMPILE_FLAGS_RELEASE -s
     )
 
 # Install common headers
@@ -320,8 +319,24 @@ endif (NOT ENABLE_EMIT_LLVM)
 configure_file (qrack.pc.in qrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/copyright DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack)
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/changelog"
+    COMMENT "Compressing changelog"
+)
+add_custom_target(changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack"
+)
 
 include(InstallRequiredSystemLibraries)
+set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+    WORLD_READ WORLD_EXECUTE
+    )
 set(CPACK_PACKAGE_NAME "qrack")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
@@ -330,6 +345,8 @@ set(CPACK_PACKAGE_VERSION_MINOR "${Qrack_VERSION_MINOR}")
 set(CPACK_PACKAGE_VENDOR "vm6502q")
 set(CPACK_PACKAGE_CONTACT "dan@unitary.fund")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "unitaryfund/qrack quantum computer simulator library")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Offical Debian package for the unitaryfund/qrack (or vm6502q/qrack) quantum computer simulator library")
+set(CPACK_STRIP_FILES TRUE)
 if (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Daniel Strano <dan@unitary.fund>")
