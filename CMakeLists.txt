@@ -77,7 +77,7 @@ if (NOT ENABLE_EMIT_LLVM)
     target_link_libraries (unittest ${QRACK_LIBS})
 
     add_test (NAME qrack_tests
-        COMMAND unittest
+        COMMAND unittest [mirror]
         )
 
     # Declare the benchmark executable
