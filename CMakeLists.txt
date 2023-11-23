@@ -246,6 +246,7 @@ set_target_properties (qrack PROPERTIES
 
 set_target_properties (qrack_pinvoke PROPERTIES
     VERSION ${PROJECT_VERSION}
+    COMPILE_FLAGS_RELEASE -s
     )
 
 # Install common headers
@@ -318,6 +319,7 @@ endif (NOT ENABLE_EMIT_LLVM)
 # Install the pkg-config file
 configure_file (qrack.pc.in qrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
+install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/copyright DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack)
 
 include(InstallRequiredSystemLibraries)
 set(CPACK_PACKAGE_NAME "qrack")
