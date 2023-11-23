@@ -85,7 +85,7 @@ if (ENABLE_OPENCL)
             )
         target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
         target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
-        install(TARGETS qrack_cl_precompile DESTINATION bin)
+        install(TARGETS qrack_cl_precompile DESTINATION bin PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
         target_link_libraries (unittest ${QRACK_OpenCL_LIBRARIES})
         target_link_libraries (benchmarks ${QRACK_OpenCL_LIBRARIES})
