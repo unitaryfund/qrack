@@ -1,7 +1,7 @@
 #cmakedefine ENABLE_ALU 1
 #cmakedefine ENABLE_BCD 1
-#cmakedefine ENABLE_COMPLEX_X2 1
-#cmakedefine ENABLE_SSE3 1
+#cmakedefine ENABLE_COMPLEX_X2 (!(defined(__GNUC__) || defined(__MINGW32__)) || ((FPPOW == 5) && __SSE__) || ((FPPOW == 6) && __SSE2__))
+#cmakedefine ENABLE_SSE3 (!(defined(__GNUC__) || defined(__MINGW32__)) || __SSE3__)
 #cmakedefine ENABLE_DEVRAND 1
 #cmakedefine ENABLE_ENV_VARS 1
 #cmakedefine ENABLE_OCL_MEM_GUARDS 1
