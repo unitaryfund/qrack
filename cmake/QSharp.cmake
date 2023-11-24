@@ -10,3 +10,4 @@ if (BUILD_DLL)
     set(BUILD_DLL ON)
     target_compile_definitions (qrack_pinvoke PUBLIC BUILD_DLL=1)
 endif (BUILD_DLL)
+

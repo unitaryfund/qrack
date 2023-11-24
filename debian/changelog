@@ -1,3 +1,9 @@
+libqrack (9.0.2) focal; urgency=medium
+
+  * Fixing build system, for Launchpad
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 13:50:46 -0500
+
 libqrack (8.21.1) focal; urgency=medium
 
   * First official Debian package release!

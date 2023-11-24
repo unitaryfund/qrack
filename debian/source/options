@@ -1,0 +1,7 @@
+tar-ignore = "CMakeFiles"
+tar-ignore = "CMakeCache.txt"
+tar-ignore = "cmake_install.cmake"
+tar-ignore = "CPackConfig.cmake"
+tar-ignore = "CPackSourceConfig.cmake"
+tar-ignore = "CTestTestfile.cmake"
+tar-ignore = "Makefile"

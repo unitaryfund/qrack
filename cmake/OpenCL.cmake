@@ -130,10 +130,10 @@ if (ENABLE_OPENCL)
     # Add the OpenCL objects to the library
     target_sources (qrack PRIVATE
         ${COMPILED_RESOURCES}
-        src/common/oclengine.cpp
-        src/qengine/opencl.cpp
-        src/qhybrid.cpp
-        src/qunitmulti.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/src/common/oclengine.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/opencl.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/src/qhybrid.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/src/qunitmulti.cpp
         )
 
 endif (ENABLE_OPENCL)

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.0.0 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.0.3 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -18,42 +18,50 @@ if (PACK_DEBIAN)
     set(ENABLE_EXAMPLES OFF)
 endif (PACK_DEBIAN)
 
+file(COPY cmake DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY CMakeLists.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY libqrack.pc.in DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY include DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY src DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY test DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY examples DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 # Declare the library
 add_library (qrack STATIC
-    src/common/functions.cpp
-    src/common/parallel_for.cpp
-    src/qinterface/gates.cpp
-    src/qinterface/logic.cpp
-    src/qinterface/qinterface.cpp
-    src/qinterface/rotational.cpp
-    src/qengine/qengine.cpp
-    src/qengine/arithmetic.cpp
-    src/qengine/state.cpp
-    src/qengine/utility.cpp
-    src/qengineshard.cpp
-    src/qunit.cpp
-    src/qunitclifford.cpp
-    src/qpager.cpp
-    src/qstabilizer.cpp
-    src/qstabilizerhybrid.cpp
-    src/qcircuit.cpp
-    src/qtensornetwork.cpp
-    src/qbdthybrid.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/common/functions.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/common/parallel_for.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qinterface/gates.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qinterface/logic.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qinterface/qinterface.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qinterface/rotational.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/qengine.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/arithmetic.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/state.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/utility.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qengineshard.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qunit.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qunitclifford.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qpager.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qstabilizer.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qstabilizerhybrid.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qcircuit.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qtensornetwork.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/src/qbdthybrid.cpp
     )
 
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
     target_sources (qrack PRIVATE
-        src/common/dispatchqueue.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/src/common/dispatchqueue.cpp
         )
 endif (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
 
 if (ENABLE_EMIT_LLVM)
     add_library (qrack_pinvoke.so OBJECT
-        src/pinvoke_api.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/src/pinvoke_api.cpp
         )
 else (ENABLE_EMIT_LLVM)
     add_library (qrack_pinvoke SHARED
-        src/pinvoke_api.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/src/pinvoke_api.cpp
         )
 endif (ENABLE_EMIT_LLVM)
 
@@ -75,16 +83,16 @@ target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
 if (NOT ENABLE_EMIT_LLVM)
     # Declare the unittest executable
     add_executable (unittest
-        test/test_main.cpp
-        test/tests.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/test/test_main.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/test/tests.cpp
         )
 
     target_link_libraries (unittest ${QRACK_LIBS})
 
     # Declare the benchmark executable
     add_executable (benchmarks
-        test/benchmarks_main.cpp
-        test/benchmarks.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/test/benchmarks_main.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/test/benchmarks.cpp
         )
 
     target_link_libraries (benchmarks ${QRACK_LIBS})
@@ -253,53 +261,53 @@ set_target_properties (qrack_pinvoke PROPERTIES
 # Install common headers
 install (FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h
-    include/common/qrack_functions.hpp
-    include/common/qrack_types.hpp
-    include/common/complex16x2simd.hpp
-    include/common/complex8x2simd.hpp
-    include/common/oclapi.hpp
-    include/common/oclengine.hpp
-    include/common/cudaengine.cuh
-    include/common/cuda_kernels.cuh
-    include/common/parallel_for.hpp
-    include/common/rdrandwrapper.hpp
-    include/common/cuda_kernels.cuh
-    include/common/dispatchqueue.hpp
-    include/common/half.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/qrack_functions.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/qrack_types.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/complex16x2simd.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/complex8x2simd.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/oclapi.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/oclengine.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/cudaengine.cuh
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/cuda_kernels.cuh
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/parallel_for.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/rdrandwrapper.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/cuda_kernels.cuh
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/dispatchqueue.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/half.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
 # Install qrack library headers
 install (FILES
-    include/hamiltonian.hpp
-    include/statevector.hpp
-    include/pinvoke_api.hpp
-    include/qcircuit.hpp
-    include/qfactory.hpp
-    include/qengine.hpp
-    include/qengine_cpu.hpp
-    include/qubitswapmap.hpp
-    include/qengineshard.hpp
-    include/mpsshard.hpp
-    include/qunit.hpp
-    include/qunitclifford.hpp
-    include/qunitmulti.hpp
-    include/qengine_gpu_util.hpp
-    include/qengine_opencl.hpp
-    include/qengine_cuda.hpp
-    include/qtensornetwork.hpp
-    include/qinterface.hpp
-    include/qalu.hpp
-    include/qparity.hpp
-    include/qneuron.hpp
-    include/qpager.hpp
-    include/qhybrid.hpp
-    include/qstabilizer.hpp
-    include/qstabilizerhybrid.hpp
-    include/qbdt.hpp
-    include/qbdt_node.hpp
-    include/qbdt_node_interface.hpp
-    include/qbdthybrid.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/hamiltonian.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/statevector.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/pinvoke_api.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qcircuit.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qfactory.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine_cpu.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qubitswapmap.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qengineshard.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/mpsshard.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qunit.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qunitclifford.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qunitmulti.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine_gpu_util.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine_opencl.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine_cuda.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qtensornetwork.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qinterface.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qalu.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qparity.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qneuron.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qpager.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qhybrid.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qstabilizer.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qstabilizerhybrid.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qbdt.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qbdt_node.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qbdt_node_interface.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/qbdthybrid.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 
