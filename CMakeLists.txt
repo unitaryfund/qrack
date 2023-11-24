@@ -377,9 +377,16 @@ if (PACK_DEBIAN)
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/rules;${CMAKE_CURRENT_SOURCE_DIR}/debian/control;${CMAKE_CURRENT_SOURCE_DIR}/debian/triggers")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
     set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
+
     configure_file (debian/control.in debian/control @ONLY)
+
     file(COPY debian DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/debian/control.in)
+
+    if ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/qrack-${CMAKE_PROJECT_VERSION}")
+        # dan@unitary.fund is the official maintainer contact; remember to change or maintain this contact email as appropriate.
+        execute_process(COMMAND dh_make --createorig -a -l -c lgpl3 -e dan@unitary.fund -y WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endif ()
 else (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "TGZ")
 endif (PACK_DEBIAN)
