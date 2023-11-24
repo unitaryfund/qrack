@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Qrack
+Description: High Performance Quantum Bit Simulation
+Version: 9.0.5
+
+Requires:
+Libs: -L${libdir} -lqrack
+Cflags: -I${includedir}/qrack

@@ -16,13 +16,13 @@ set -e
 
 case "$1" in
     install|upgrade)
-        cp cmake ../cmake
+        cp -r cmake ../cmake
         cp CMakeLists.txt ../CMakeLists.txt
         cp libqrack.pc.in ../libqrack.pc.in
-        cp include ../include
-        cp src ../src
-        cp tests ../tests
-        cp debian ../debian
+        cp -r include ../include
+        cp -r src ../src
+        cp -r tests ../tests
+        cp -r debian ../debian
         cp LICENSE.md ../LICENSE.md
         cp README.md ../README.md
 

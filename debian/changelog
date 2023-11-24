@@ -1,8 +1,26 @@
+libqrack (9.0.6) focal; urgency=medium
+
+  * Removing garbage from .orig.tar.xz
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 17:30:14 -0500
+
+libqrack (9.0.5) focal; urgency=medium
+
+  * Fixing build system, for Launchpad
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 16:55:24 -0500
+
+libqrack (9.0.4) focal; urgency=medium
+
+  * Fixing build system, for Launchpad
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 16:24:13 -0500
+
 libqrack (9.0.3) focal; urgency=medium
 
   * Fixing build system, for Launchpad
 
- -- Daniel Strano <iamu@bastet>  Fri, 24 Nov 2023 15:39:24 -0500
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 15:39:24 -0500
 
 libqrack (9.0.2) focal; urgency=medium
 
