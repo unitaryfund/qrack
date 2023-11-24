@@ -305,21 +305,21 @@ install (FILES
 
 # Install the archive
 install (TARGETS qrack
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/qrack
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
 if (NOT ENABLE_EMIT_LLVM)
     install (TARGETS qrack_pinvoke
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/qrack
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE
         )
 endif (NOT ENABLE_EMIT_LLVM)
 
 # Install the pkg-config file
-configure_file (qrack.pc.in qrack.pc @ONLY)
-install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
+configure_file (libqrack.pc.in libqrack.pc @ONLY)
+install (FILES ${CMAKE_BINARY_DIR}/libqrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack)
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"

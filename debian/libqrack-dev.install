@@ -1,4 +1,3 @@
 usr/include/*
-usr/lib/qrack/libqrack.so
-usr/lib/qrack/pkgconfig/*
+usr/lib/qrack/libqrack_pinvoke.so
 usr/share/pkgconfig/*
