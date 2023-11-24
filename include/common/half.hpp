@@ -1,4 +1,4 @@
-/// half - IEEE 754-based half-precision floating-point library.
+// half - IEEE 754-based half-precision floating-point library.
 //
 // Copyright (c) 2012-2021 Christian Rau <rauy@users.sourceforge.net>
 //

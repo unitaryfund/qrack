@@ -1,3 +1,9 @@
+libqrack (9.0.3) focal; urgency=medium
+
+  * Fixing build system, for Launchpad
+
+ -- Daniel Strano <iamu@bastet>  Fri, 24 Nov 2023 15:39:24 -0500
+
 libqrack (9.0.2) focal; urgency=medium
 
   * Fixing build system, for Launchpad
