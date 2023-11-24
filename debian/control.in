@@ -1,8 +1,7 @@
 Source: qrack
 Priority: optional
 Maintainer: Daniel Strano <dan@unitary.fund>
-Build-Depends: @CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS@
-Depends: @CPACK_DEBIAN_PACKAGE_DEPENDS@
+Build-Depends: debhelper-compat (= 12), @CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS@
 Standards-Version: 4.4.1
 Section: libs
 Homepage: https://github.com/unitaryfund/qrack
