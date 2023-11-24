@@ -1,4 +1,4 @@
-libqrack (8.21.1) stable; urgency=low
+libqrack (8.21.1) focal; urgency=medium
 
   * First official Debian package release!
 
