@@ -1,4 +1,4 @@
 usr/include/*
-usr/lib/*/lib*.so
-usr/lib/*/pkgconfig/*
+usr/lib/qrack/libqrack.so
+usr/lib/qrack/pkgconfig/*
 usr/share/pkgconfig/*

@@ -13,6 +13,11 @@ include ("cmake/Pthread.cmake")
 
 include_directories ("include" "include/common")
 
+option (ENABLE_EXAMPLES "Include usage examples" ON)
+if (PACK_DEBIAN)
+    set(ENABLE_EXAMPLES OFF)
+endif (PACK_DEBIAN)
+
 # Declare the library
 add_library (qrack STATIC
     src/common/functions.cpp
@@ -76,10 +81,6 @@ if (NOT ENABLE_EMIT_LLVM)
 
     target_link_libraries (unittest ${QRACK_LIBS})
 
-    add_test (NAME qrack_tests
-        COMMAND unittest [mirror]
-        )
-
     # Declare the benchmark executable
     add_executable (benchmarks
         test/benchmarks_main.cpp
@@ -110,9 +111,9 @@ include ("cmake/RegGates.cmake")
 include ("cmake/RotApi.cmake")
 include ("cmake/UIntPow.cmake")
 include ("cmake/VM6502Q.cmake")
-if (NOT ENABLE_EMIT_LLVM)
+if (ENABLE_EXAMPLES AND NOT ENABLE_EMIT_LLVM)
     include ("cmake/Examples.cmake")
-endif (NOT ENABLE_EMIT_LLVM)
+endif (ENABLE_EXAMPLES AND NOT ENABLE_EMIT_LLVM)
 include ("cmake/OpenCL.cmake" )
 include ("cmake/CUDA.cmake")
 
