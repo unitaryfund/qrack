@@ -319,12 +319,12 @@ endif (NOT ENABLE_EMIT_LLVM)
 # Install the pkg-config file
 configure_file (qrack.pc.in qrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/copyright DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack)
+install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack)
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
-    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/changelog"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
     COMMENT "Compressing changelog"
 )
 add_custom_target(changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
@@ -333,9 +333,9 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
 )
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
-    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/qrack_cl_precompile.1" > "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
+    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1" > "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/qrack_cl_precompile.1"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1"
     COMMENT "Compressing qrack_cl_precompile.1"
 )
 add_custom_target(qrack_cl_precompile.1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz")
@@ -364,20 +364,22 @@ if (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Daniel Strano <dan@unitary.fund>")
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/unitaryfund/qrack")
+    if (QBCAPPOW GREATER 6)
+        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "libboost-dev")
+    endif (QBCAPPOW GREATER 6)
     if (ENABLE_OPENCL)
-        if (QBCAPPOW GREATER 6)
-            set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev, libboost-dev, libc6")
-        else (QBCAPPOW GREATER 6)
-            set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev, libc6")
-        endif (QBCAPPOW GREATER 6)
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev, libc6")
     else (ENABLE_OPENCL)
-        set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
     endif (ENABLE_OPENCL)
     set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
     set(CPACK_DEB_COMPONENT_INSTALL YES)
-    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/DEBIAN/triggers")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/control;${CMAKE_CURRENT_SOURCE_DIR}/debian/triggers")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
     set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
+    configure_file (debian/control.in debian/control @ONLY)
+    file(COPY debian DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/debian/control.in)
 else (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "TGZ")
 endif (PACK_DEBIAN)

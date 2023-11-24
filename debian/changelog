@@ -1,0 +1,5 @@
+qrack (8.21.1) stable; urgency=low
+
+  * First official Debian package release!
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 23 Nov 2023 19:54:39 -0500
