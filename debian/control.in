@@ -1,4 +1,4 @@
-Source: qrack
+Source: libqrack
 Priority: optional
 Maintainer: Daniel Strano <dan@unitary.fund>
 Build-Depends: debhelper-compat (= 12), @CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS@
@@ -8,15 +8,15 @@ Homepage: https://github.com/unitaryfund/qrack
 #Vcs-Browser: https://salsa.debian.org/debian/qrack
 #Vcs-Git: https://salsa.debian.org/debian/qrack.git
 
-Package: qrack-dev
+Package: libqrack-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
-Depends: qrack (= @CMAKE_PROJECT_VERSION@), @CPACK_DEBIAN_PACKAGE_DEPENDS@
+Depends: libqrack (= @CMAKE_PROJECT_VERSION@), @CPACK_DEBIAN_PACKAGE_DEPENDS@
 Description: unitaryfund/qrack quantum computer simulator library
  unitaryfund/qrack (or vm6502q/qrack) quantum computer simulator library
 
-Package: qrack
+Package: libqrack
 Architecture: any
 Multi-Arch: same
 Depends: @CPACK_DEBIAN_PACKAGE_DEPENDS@
