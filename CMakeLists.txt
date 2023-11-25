@@ -398,17 +398,19 @@ if (PACK_DEBIAN)
     configure_file (debian/control.in debian/control @ONLY)
     file(COPY debian DESTINATION ${CMAKE_BINARY_DIR})
 
-    file(GLOB ARCHIVE_FILES ${CMAKE_BINARY_DIR}/*)
-    file(COPY ${ARCHIVE_FILES} DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
-    file(COPY makefile DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
-    execute_process(
-        COMMAND make clean-cmake
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
-        )
-    execute_process(
-        COMMAND tar -C ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION} -cJf ${CMAKE_SOURCE_DIR}/libqrack_${CMAKE_PROJECT_VERSION}.orig.tar.xz .
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
-        )
+    if (NOT "${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}")
+        file(GLOB ARCHIVE_FILES ${CMAKE_BINARY_DIR}/*)
+        file(COPY ${ARCHIVE_FILES} DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
+        file(COPY makefile DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
+        execute_process(
+            COMMAND make clean-cmake
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
+            )
+        execute_process(
+            COMMAND tar -C ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION} -cJf ${CMAKE_SOURCE_DIR}/libqrack_${CMAKE_PROJECT_VERSION}.orig.tar.xz .
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
+            )
+    endif (NOT "${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}")
 else (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "TGZ")
 endif (PACK_DEBIAN)
