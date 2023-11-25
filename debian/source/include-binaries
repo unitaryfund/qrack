@@ -1,0 +1,3 @@
+libqrack.a
+libqrack_pinvoke.so
+qrack_cl_precompile
