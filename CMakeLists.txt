@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.0.11 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.0.13 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -181,13 +181,20 @@ else (MSVC)
     endif (EMSCRIPTEN)
 endif(MSVC)
 
-if (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5 AND NOT (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm"))
-    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mavx)
-endif (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5 AND NOT (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm"))
+include(CheckCXXCompilerFlag)
+if (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
+    check_cxx_compiler_flag(-mavx COMPILER_SUPPORTS_AVX_FLAG)
+    if (COMPILER_SUPPORTS_AVX_FLAG)
+        set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mavx)
+    endif (COMPILER_SUPPORTS_AVX_FLAG)
+endif (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
 
-if (ENABLE_SSE3 AND NOT (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm"))
-    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -msse3)
-endif (ENABLE_SSE3 AND NOT (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm"))
+if (ENABLE_SSE3)
+    check_cxx_compiler_flag(-msse3 COMPILER_SUPPORTS_SSE3_FLAG)
+    if (COMPILER_SUPPORTS_SSE3_FLAG)
+        set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -msse3)
+    endif (COMPILER_SUPPORTS_SSE3_FLAG)
+endif (ENABLE_SSE3)
 
 if (FPPOW LESS 5)
     if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -196,9 +203,20 @@ if (FPPOW LESS 5)
     endif ()
 endif (FPPOW LESS 5)
 
-if (EMSCRIPTEN AND ENABLE_COMPLEX_X2 AND NOT (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm"))
-    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -msimd128 -msse -msse2)
-endif (EMSCRIPTEN AND ENABLE_COMPLEX_X2 AND NOT (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm"))
+if (EMSCRIPTEN AND ENABLE_COMPLEX_X2)
+    check_cxx_compiler_flag(-msimd128 COMPILER_SUPPORTS_FLAG)
+    if (COMPILER_SUPPORTS_FLAG)
+        set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -msimd128)
+    endif (COMPILER_SUPPORTS_FLAG)
+    check_cxx_compiler_flag(-msse COMPILER_SUPPORTS_FLAG)
+    if (COMPILER_SUPPORTS_FLAG)
+        set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -msse)
+    endif (COMPILER_SUPPORTS_FLAG)
+    check_cxx_compiler_flag(-msse2 COMPILER_SUPPORTS_FLAG)
+    if (COMPILER_SUPPORTS_FLAG)
+        set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -msse2)
+    endif (COMPILER_SUPPORTS_FLAG)
+endif (EMSCRIPTEN AND ENABLE_COMPLEX_X2)
 
 if (ENABLE_EMIT_LLVM)
     set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -emit-llvm)
@@ -383,7 +401,7 @@ if (PACK_DEBIAN)
     endif (QBCAPPOW GREATER 6)
 
     if (ENABLE_OPENCL)
-        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}opencl-headers")
+        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}opencl-headers, ocl-icd-opencl-dev")
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev, libc6")
     else (ENABLE_OPENCL)
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
@@ -398,17 +416,19 @@ if (PACK_DEBIAN)
     configure_file (debian/control.in debian/control @ONLY)
     file(COPY debian DESTINATION ${CMAKE_BINARY_DIR})
 
-    file(GLOB ARCHIVE_FILES ${CMAKE_BINARY_DIR}/*)
-    file(COPY ${ARCHIVE_FILES} DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
     file(COPY makefile DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
-    execute_process(
-        COMMAND make clean-cmake
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
-        )
-    execute_process(
-        COMMAND tar -C ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION} -cJf ${CMAKE_SOURCE_DIR}/libqrack_${CMAKE_PROJECT_VERSION}.orig.tar.xz .
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
-        )
+    if (NOT "${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}")
+        file(GLOB ARCHIVE_FILES ${CMAKE_BINARY_DIR}/*)
+        file(COPY ${ARCHIVE_FILES} DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
+        execute_process(
+            COMMAND make clean-cmake
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
+            )
+        execute_process(
+            COMMAND tar -C ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION} -cJf ${CMAKE_SOURCE_DIR}/libqrack_${CMAKE_PROJECT_VERSION}.orig.tar.xz .
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
+            )
+    endif (NOT "${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}")
 else (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "TGZ")
 endif (PACK_DEBIAN)
