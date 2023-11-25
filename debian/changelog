@@ -1,6 +1,6 @@
-libqrack (9.0.17) bionic; urgency=medium
+libqrack (9.0.17) focal; urgency=medium
 
-  * debhelper-compat v11 for bionic
+  * Fixing riscv64 builds (supporting focal/jammy)
 
  -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 17:26:49 -0500
 
