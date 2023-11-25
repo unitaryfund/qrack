@@ -1,3 +1,9 @@
+libqrack (9.0.8) focal; urgency=medium
+
+  * Cleaning CMake build chain
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 19:53:18 -0500
+
 libqrack (9.0.6) focal; urgency=medium
 
   * Removing garbage from .orig.tar.xz
