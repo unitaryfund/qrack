@@ -1,3 +1,9 @@
+libqrack (9.0.14) focal; urgency=medium
+
+  * Add XXD dependency
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 13:49:01 -0500
+
 libqrack (9.0.13) focal; urgency=medium
 
   * Fix OpenCL build dependency

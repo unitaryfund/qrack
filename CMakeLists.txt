@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.0.13 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.0.14 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -401,7 +401,7 @@ if (PACK_DEBIAN)
     endif (QBCAPPOW GREATER 6)
 
     if (ENABLE_OPENCL)
-        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}opencl-headers, ocl-icd-opencl-dev")
+        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}opencl-headers, ocl-icd-opencl-dev, xxd")
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev, libc6")
     else (ENABLE_OPENCL)
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
