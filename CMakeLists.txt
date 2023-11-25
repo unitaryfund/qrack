@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.0.10 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.0.11 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -398,19 +398,17 @@ if (PACK_DEBIAN)
     configure_file (debian/control.in debian/control @ONLY)
     file(COPY debian DESTINATION ${CMAKE_BINARY_DIR})
 
-    if (NOT "${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}")
-        file(GLOB ARCHIVE_FILES ${CMAKE_BINARY_DIR}/*)
-        file(COPY ${ARCHIVE_FILES} DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
-        file(COPY makefile DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
-        execute_process(
-            COMMAND make clean-cmake
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
-            )
-        execute_process(
-            COMMAND tar -C ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION} -cJf ${CMAKE_SOURCE_DIR}/libqrack_${CMAKE_PROJECT_VERSION}.orig.tar.xz .
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
-            )
-    endif (NOT "${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}")
+    file(GLOB ARCHIVE_FILES ${CMAKE_BINARY_DIR}/*)
+    file(COPY ${ARCHIVE_FILES} DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
+    file(COPY makefile DESTINATION ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION})
+    execute_process(
+        COMMAND make clean-cmake
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
+        )
+    execute_process(
+        COMMAND tar -C ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION} -cJf ${CMAKE_SOURCE_DIR}/libqrack_${CMAKE_PROJECT_VERSION}.orig.tar.xz .
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}
+        )
 else (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "TGZ")
 endif (PACK_DEBIAN)

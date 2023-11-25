@@ -1,3 +1,9 @@
+libqrack (9.0.11) focal; urgency=medium
+
+  * Idempotent CMake build
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 12:23:12 -0500
+
 libqrack (9.0.10) focal; urgency=medium
 
   * Use extend-diff-ignore to exclude CMake
