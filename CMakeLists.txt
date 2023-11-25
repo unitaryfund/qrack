@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.0.5 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.0.6 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -373,14 +373,20 @@ if (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Daniel Strano <dan@unitary.fund>")
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/unitaryfund/qrack")
+
     if (QBCAPPOW GREATER 6)
-        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "libboost-dev")
+        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "libboost-dev, ")
+    else (QBCAPPOW GREATER 6)
+        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "")
     endif (QBCAPPOW GREATER 6)
+
     if (ENABLE_OPENCL)
+        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}opencl-headers")
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev, libc6")
     else (ENABLE_OPENCL)
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
     endif (ENABLE_OPENCL)
+
     set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
     set(CPACK_DEB_COMPONENT_INSTALL YES)
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/rules;${CMAKE_CURRENT_SOURCE_DIR}/debian/control;${CMAKE_CURRENT_SOURCE_DIR}/debian/triggers")
