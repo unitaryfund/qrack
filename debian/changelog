@@ -1,3 +1,9 @@
+libqrack (9.0.15) focal; urgency=medium
+
+  * Only link libqrack.a with OpenCL
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 14:13:52 -0500
+
 libqrack (9.0.14) focal; urgency=medium
 
   * Add XXD dependency
