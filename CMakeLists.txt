@@ -397,7 +397,16 @@ if (PACK_DEBIAN)
 
     configure_file (debian/control.in debian/control @ONLY)
     file(COPY debian DESTINATION ${CMAKE_BINARY_DIR})
-    file(REMOVE ${CMAKE_BINARY_DIR}/debian/control.in)
+
+    if ("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}")
+        file(REMOVE ${CMAKE_BINARY_DIR}/Makefile)
+        file(COPY Makefile DESTINATION ${CMAKE_BINARY_DIR})
+        # "tar cf - ./*" | xz -z - > "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}.orig.tar.xz"
+        execute_process(
+            COMMAND tar -C ${CMAKE_BINARY_DIR} -cf ../libqrack-${CMAKE_PROJECT_VERSION}.orig.tar.xz .
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            )
+    endif ("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/libqrack-${CMAKE_PROJECT_VERSION}")
 else (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "TGZ")
 endif (PACK_DEBIAN)
