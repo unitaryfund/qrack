@@ -18,50 +18,50 @@ if (PACK_DEBIAN)
     set(ENABLE_EXAMPLES OFF)
 endif (PACK_DEBIAN)
 
-file(COPY cmake DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY CMakeLists.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY libqrack.pc.in DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY include DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY src DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY test DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY examples DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY cmake DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY CMakeLists.txt DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY libqrack.pc.in DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY include DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY src DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY test DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY examples DESTINATION ${CMAKE_BINARY_DIR})
 
 # Declare the library
 add_library (qrack STATIC
-    ${CMAKE_CURRENT_BINARY_DIR}/src/common/functions.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/common/parallel_for.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qinterface/gates.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qinterface/logic.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qinterface/qinterface.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qinterface/rotational.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/qengine.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/arithmetic.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/state.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/utility.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qengineshard.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qunit.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qunitclifford.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qpager.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qstabilizer.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qstabilizerhybrid.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qcircuit.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qtensornetwork.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/src/qbdthybrid.cpp
+    ${CMAKE_BINARY_DIR}/src/common/functions.cpp
+    ${CMAKE_BINARY_DIR}/src/common/parallel_for.cpp
+    ${CMAKE_BINARY_DIR}/src/qinterface/gates.cpp
+    ${CMAKE_BINARY_DIR}/src/qinterface/logic.cpp
+    ${CMAKE_BINARY_DIR}/src/qinterface/qinterface.cpp
+    ${CMAKE_BINARY_DIR}/src/qinterface/rotational.cpp
+    ${CMAKE_BINARY_DIR}/src/qengine/qengine.cpp
+    ${CMAKE_BINARY_DIR}/src/qengine/arithmetic.cpp
+    ${CMAKE_BINARY_DIR}/src/qengine/state.cpp
+    ${CMAKE_BINARY_DIR}/src/qengine/utility.cpp
+    ${CMAKE_BINARY_DIR}/src/qengineshard.cpp
+    ${CMAKE_BINARY_DIR}/src/qunit.cpp
+    ${CMAKE_BINARY_DIR}/src/qunitclifford.cpp
+    ${CMAKE_BINARY_DIR}/src/qpager.cpp
+    ${CMAKE_BINARY_DIR}/src/qstabilizer.cpp
+    ${CMAKE_BINARY_DIR}/src/qstabilizerhybrid.cpp
+    ${CMAKE_BINARY_DIR}/src/qcircuit.cpp
+    ${CMAKE_BINARY_DIR}/src/qtensornetwork.cpp
+    ${CMAKE_BINARY_DIR}/src/qbdthybrid.cpp
     )
 
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
     target_sources (qrack PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}/src/common/dispatchqueue.cpp
+        ${CMAKE_BINARY_DIR}/src/common/dispatchqueue.cpp
         )
 endif (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
 
 if (ENABLE_EMIT_LLVM)
     add_library (qrack_pinvoke.so OBJECT
-        ${CMAKE_CURRENT_BINARY_DIR}/src/pinvoke_api.cpp
+        ${CMAKE_BINARY_DIR}/src/pinvoke_api.cpp
         )
 else (ENABLE_EMIT_LLVM)
     add_library (qrack_pinvoke SHARED
-        ${CMAKE_CURRENT_BINARY_DIR}/src/pinvoke_api.cpp
+        ${CMAKE_BINARY_DIR}/src/pinvoke_api.cpp
         )
 endif (ENABLE_EMIT_LLVM)
 
@@ -83,16 +83,16 @@ target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
 if (NOT ENABLE_EMIT_LLVM)
     # Declare the unittest executable
     add_executable (unittest
-        ${CMAKE_CURRENT_BINARY_DIR}/test/test_main.cpp
-        ${CMAKE_CURRENT_BINARY_DIR}/test/tests.cpp
+        ${CMAKE_BINARY_DIR}/test/test_main.cpp
+        ${CMAKE_BINARY_DIR}/test/tests.cpp
         )
 
     target_link_libraries (unittest ${QRACK_LIBS})
 
     # Declare the benchmark executable
     add_executable (benchmarks
-        ${CMAKE_CURRENT_BINARY_DIR}/test/benchmarks_main.cpp
-        ${CMAKE_CURRENT_BINARY_DIR}/test/benchmarks.cpp
+        ${CMAKE_BINARY_DIR}/test/benchmarks_main.cpp
+        ${CMAKE_BINARY_DIR}/test/benchmarks.cpp
         )
 
     target_link_libraries (benchmarks ${QRACK_LIBS})
@@ -207,7 +207,7 @@ endif (ENABLE_EMIT_LLVM)
 include ("cmake/Random.cmake")
 
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
+include_directories(${CMAKE_BINARY_DIR}/include/common)
 
 if (NOT ENABLE_EMIT_LLVM)
     enable_testing()
@@ -260,54 +260,54 @@ set_target_properties (qrack_pinvoke PROPERTIES
 
 # Install common headers
 install (FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/qrack_functions.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/qrack_types.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/complex16x2simd.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/complex8x2simd.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/oclapi.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/oclengine.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/cudaengine.cuh
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/cuda_kernels.cuh
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/parallel_for.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/rdrandwrapper.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/cuda_kernels.cuh
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/dispatchqueue.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/common/half.hpp
+    ${CMAKE_BINARY_DIR}/include/common/config.h
+    ${CMAKE_BINARY_DIR}/include/common/qrack_functions.hpp
+    ${CMAKE_BINARY_DIR}/include/common/qrack_types.hpp
+    ${CMAKE_BINARY_DIR}/include/common/complex16x2simd.hpp
+    ${CMAKE_BINARY_DIR}/include/common/complex8x2simd.hpp
+    ${CMAKE_BINARY_DIR}/include/common/oclapi.hpp
+    ${CMAKE_BINARY_DIR}/include/common/oclengine.hpp
+    ${CMAKE_BINARY_DIR}/include/common/cudaengine.cuh
+    ${CMAKE_BINARY_DIR}/include/common/cuda_kernels.cuh
+    ${CMAKE_BINARY_DIR}/include/common/parallel_for.hpp
+    ${CMAKE_BINARY_DIR}/include/common/rdrandwrapper.hpp
+    ${CMAKE_BINARY_DIR}/include/common/cuda_kernels.cuh
+    ${CMAKE_BINARY_DIR}/include/common/dispatchqueue.hpp
+    ${CMAKE_BINARY_DIR}/include/common/half.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
 # Install qrack library headers
 install (FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/include/hamiltonian.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/statevector.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/pinvoke_api.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qcircuit.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qfactory.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine_cpu.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qubitswapmap.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qengineshard.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/mpsshard.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qunit.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qunitclifford.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qunitmulti.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine_gpu_util.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine_opencl.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qengine_cuda.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qtensornetwork.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qinterface.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qalu.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qparity.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qneuron.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qpager.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qhybrid.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qstabilizer.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qstabilizerhybrid.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qbdt.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qbdt_node.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qbdt_node_interface.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/qbdthybrid.hpp
+    ${CMAKE_BINARY_DIR}/include/hamiltonian.hpp
+    ${CMAKE_BINARY_DIR}/include/statevector.hpp
+    ${CMAKE_BINARY_DIR}/include/pinvoke_api.hpp
+    ${CMAKE_BINARY_DIR}/include/qcircuit.hpp
+    ${CMAKE_BINARY_DIR}/include/qfactory.hpp
+    ${CMAKE_BINARY_DIR}/include/qengine.hpp
+    ${CMAKE_BINARY_DIR}/include/qengine_cpu.hpp
+    ${CMAKE_BINARY_DIR}/include/qubitswapmap.hpp
+    ${CMAKE_BINARY_DIR}/include/qengineshard.hpp
+    ${CMAKE_BINARY_DIR}/include/mpsshard.hpp
+    ${CMAKE_BINARY_DIR}/include/qunit.hpp
+    ${CMAKE_BINARY_DIR}/include/qunitclifford.hpp
+    ${CMAKE_BINARY_DIR}/include/qunitmulti.hpp
+    ${CMAKE_BINARY_DIR}/include/qengine_gpu_util.hpp
+    ${CMAKE_BINARY_DIR}/include/qengine_opencl.hpp
+    ${CMAKE_BINARY_DIR}/include/qengine_cuda.hpp
+    ${CMAKE_BINARY_DIR}/include/qtensornetwork.hpp
+    ${CMAKE_BINARY_DIR}/include/qinterface.hpp
+    ${CMAKE_BINARY_DIR}/include/qalu.hpp
+    ${CMAKE_BINARY_DIR}/include/qparity.hpp
+    ${CMAKE_BINARY_DIR}/include/qneuron.hpp
+    ${CMAKE_BINARY_DIR}/include/qpager.hpp
+    ${CMAKE_BINARY_DIR}/include/qhybrid.hpp
+    ${CMAKE_BINARY_DIR}/include/qstabilizer.hpp
+    ${CMAKE_BINARY_DIR}/include/qstabilizerhybrid.hpp
+    ${CMAKE_BINARY_DIR}/include/qbdt.hpp
+    ${CMAKE_BINARY_DIR}/include/qbdt_node.hpp
+    ${CMAKE_BINARY_DIR}/include/qbdt_node_interface.hpp
+    ${CMAKE_BINARY_DIR}/include/qbdthybrid.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 
@@ -328,27 +328,27 @@ endif (NOT ENABLE_EMIT_LLVM)
 # Install the pkg-config file
 configure_file (libqrack.pc.in libqrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/libqrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack)
+install (FILES ${CMAKE_SOURCE_DIR}/debian/copyright DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack)
 add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
-    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
+    OUTPUT "${CMAKE_BINARY_DIR}/changelog.gz"
+    COMMAND gzip -cn9 "${CMAKE_SOURCE_DIR}/debian/changelog" > "${CMAKE_BINARY_DIR}/changelog.gz"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    DEPENDS "${CMAKE_SOURCE_DIR}/debian/changelog"
     COMMENT "Compressing changelog"
 )
-add_custom_target(changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+add_custom_target(changelog ALL DEPENDS "${CMAKE_BINARY_DIR}/changelog.gz")
+install(FILES "${CMAKE_BINARY_DIR}/changelog.gz"
     DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack"
 )
 add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
-    COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1" > "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1"
+    OUTPUT "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
+    COMMAND gzip -cn9 "${CMAKE_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1" > "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    DEPENDS "${CMAKE_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1"
     COMMENT "Compressing qrack_cl_precompile.1"
 )
-add_custom_target(qrack_cl_precompile.1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz")
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/qrack_cl_precompile.1.gz"
+add_custom_target(qrack_cl_precompile.1 ALL DEPENDS "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz")
+install(FILES "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1"
 )
 
@@ -359,10 +359,10 @@ set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
     WORLD_READ WORLD_EXECUTE
     )
 set(CPACK_PACKAGE_NAME "qrack")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
-file(COPY LICENSE.md DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
-file(COPY README.md DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.md")
+file(COPY LICENSE.md DESTINATION ${CMAKE_BINARY_DIR})
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+file(COPY README.md DESTINATION ${CMAKE_BINARY_DIR})
 set(CPACK_PACKAGE_VERSION_MAJOR "${Qrack_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${Qrack_VERSION_MINOR}")
 set(CPACK_PACKAGE_VENDOR "vm6502q")
@@ -391,13 +391,13 @@ if (PACK_DEBIAN)
 
     set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
     set(CPACK_DEB_COMPONENT_INSTALL YES)
-    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/rules;${CMAKE_CURRENT_SOURCE_DIR}/debian/control;${CMAKE_CURRENT_SOURCE_DIR}/debian/triggers")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_BINARY_DIR}/debian/rules;${CMAKE_BINARY_DIR}/debian/control;${CMAKE_BINARY_DIR}/debian/triggers")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
     set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
 
     configure_file (debian/control.in debian/control @ONLY)
-    file(COPY debian DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-    file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/debian/control.in)
+    file(COPY debian DESTINATION ${CMAKE_BINARY_DIR})
+    file(REMOVE ${CMAKE_BINARY_DIR}/debian/control.in)
 else (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "TGZ")
 endif (PACK_DEBIAN)
