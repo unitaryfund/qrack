@@ -1,4 +1,4 @@
-tar-ignore = "CMakeFiles/*"
+tar-ignore = "CMakeFiles"
 tar-ignore = "CMakeFiles/CMakeOutput.log"
 tar-ignore = "CMakeCache.txt"
 tar-ignore = "cmake_install.cmake"
