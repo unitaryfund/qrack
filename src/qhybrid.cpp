@@ -41,11 +41,14 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     }
 
     pagerThresholdQubits = log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+    pagerThresholdQubits = (pagerThresholdQubits > 3U) ? pagerThresholdQubits - 1U : 3U;
 
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_MAX_PAGE_QB")) {
-        const bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
-        pagerThresholdQubits = (maxPageSetting < pagerThresholdQubits) ? maxPageSetting : 3U;
+        pagerThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
+        if (pagerThresholdQubits < 3U) {
+            pagerThresholdQubits = 3U;
+        }
         if ((pagerThresholdQubits - 1U) < gpuThresholdQubits) {
             gpuThresholdQubits = pagerThresholdQubits - 1U;
         }
