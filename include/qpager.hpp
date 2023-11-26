@@ -447,6 +447,7 @@ public:
 #if ENABLE_OPENCL
         if (rootEngine != QINTERFACE_CPU) {
             maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+            maxPageQubits = (maxPageQubits > 1U) ? maxPageQubits - 1U : 1U;
             maxPageQubits = (maxPageSetting < maxPageQubits) ? maxPageSetting : 1U;
         }
 

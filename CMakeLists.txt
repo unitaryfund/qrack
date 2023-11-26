@@ -80,7 +80,7 @@ if (FPPOW GREATER 6)
 endif (FPPOW GREATER 6)
 
 target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
-if (NOT ENABLE_EMIT_LLVM)
+if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
     # Declare the unittest executable
     add_executable (unittest
         ${CMAKE_BINARY_DIR}/test/test_main.cpp
@@ -97,7 +97,7 @@ if (NOT ENABLE_EMIT_LLVM)
 
     target_link_libraries (benchmarks ${QRACK_LIBS})
 
-endif (NOT ENABLE_EMIT_LLVM)
+endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
@@ -227,13 +227,10 @@ include ("cmake/Random.cmake")
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories(${CMAKE_BINARY_DIR}/include/common)
 
-if (NOT ENABLE_EMIT_LLVM)
-    enable_testing()
-    # Run the unittest executable on 'make test'
-
+if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
     target_include_directories (unittest PUBLIC test)
     target_include_directories (benchmarks PUBLIC test)
-endif (NOT ENABLE_EMIT_LLVM)
+endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 
 if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
@@ -258,15 +255,10 @@ else (ENABLE_CUDA)
 endif (ENABLE_CUDA)
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 set_property(TARGET qrack_pinvoke PROPERTY SOVERSION ".so.${CMAKE_PROJECT_VERSION}" )
-if (NOT ENABLE_EMIT_LLVM)
+if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
     target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-endif (NOT ENABLE_EMIT_LLVM)
-target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
-if (NOT ENABLE_EMIT_LLVM)
-    target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-endif (NOT ENABLE_EMIT_LLVM)
+endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
