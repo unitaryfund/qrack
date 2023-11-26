@@ -1,3 +1,9 @@
+libqrack (9.0.22) jammy; urgency=low
+
+  * Native Jammy bump (tested on Bionic)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 18:28:13 -0500
+
 libqrack (9.0.21) bionic; urgency=medium
 
   * Back-port CMake version for Bionic compatibility
