@@ -52,7 +52,7 @@ if (ENABLE_OPENCL)
     message ("    Includes:  ${QRACK_OpenCL_INCLUDE_DIRS}")
     message ("    Options:   ${QRACK_OpenCL_COMPILATION_OPTIONS}")
 
-    target_link_directories (qrack PRIVATE ${QRACK_OpenCL_LINK_DIRS})
+    link_directories (${QRACK_OpenCL_LINK_DIRS})
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${QRACK_OpenCL_INCLUDE_DIRS})
     target_compile_options (qrack PUBLIC ${QRACK_OpenCL_COMPILATION_OPTIONS})
     target_link_libraries (qrack ${QRACK_OpenCL_LIBRARIES})
