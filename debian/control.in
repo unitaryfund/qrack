@@ -1,7 +1,7 @@
 Source: libqrack
 Priority: optional
 Maintainer: Daniel Strano <dan@unitary.fund>
-Build-Depends: debhelper-compat (= 12), make, gcc, g++, cmake (>= 3.9), @CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS@
+Build-Depends: debhelper-compat (= @DEBHELPER_COMPAT_VERSION@), make, gcc, g++, cmake (>= 3.9), @CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS@
 Standards-Version: 4.4.1
 Section: libs
 Homepage: https://github.com/unitaryfund/qrack
