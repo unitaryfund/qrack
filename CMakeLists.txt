@@ -419,10 +419,17 @@ if (PACK_DEBIAN)
     set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
     set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
 
+
+    configure_file (makefile.in makefile @ONLY)
     configure_file (debian/control.in debian/control @ONLY)
+    configure_file (debian/libqrack.dirs.in debian/${CPACK_PACKAGE_NAME}.dirs @ONLY)
+    configure_file (debian/libqrack.install.in debian/${CPACK_PACKAGE_NAME}.install @ONLY)
+    configure_file (debian/libqrack-dev.dirs.in debian/${CPACK_PACKAGE_NAME}-dev.dirs @ONLY)
+    configure_file (debian/libqrack-dev.install.in debian/${CPACK_PACKAGE_NAME}-dev.install @ONLY)
+    configure_file (debian/libqrack-docs.docs.in debian/${CPACK_PACKAGE_NAME}-docs.docs @ONLY)
     file(COPY debian DESTINATION ${CMAKE_BINARY_DIR})
 
-    file(COPY makefile DESTINATION ${CMAKE_SOURCE_DIR}/${CPACK_PACKAGE_NAME}-${CMAKE_PROJECT_VERSION})
+    file(COPY makefile.in DESTINATION ${CMAKE_SOURCE_DIR}/${CPACK_PACKAGE_NAME}-${CMAKE_PROJECT_VERSION})
     if (NOT "${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/${CPACK_PACKAGE_NAME}-${CMAKE_PROJECT_VERSION}")
         file(GLOB ARCHIVE_FILES ${CMAKE_BINARY_DIR}/*)
         file(COPY ${ARCHIVE_FILES} DESTINATION ${CMAKE_SOURCE_DIR}/${CPACK_PACKAGE_NAME}-${CMAKE_PROJECT_VERSION})
