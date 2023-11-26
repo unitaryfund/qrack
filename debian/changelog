@@ -1,3 +1,9 @@
+libqrack (9.0.18) focal; urgency=medium
+
+  * Change default "QPager" threshold of "QHybrid"
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 09:05:39 -0500
+
 libqrack (9.0.17) focal; urgency=medium
 
   * Fixing riscv64 builds (supporting focal/jammy)
