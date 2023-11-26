@@ -119,7 +119,6 @@ void QPager::Init()
 #if ENABLE_OPENCL || ENABLE_CUDA
     if (rootEngine != QINTERFACE_CPU) {
         maxPageQubits = log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-        maxPageQubits = (maxPageQubits > 1U) ? maxPageQubits - 1U : 1U;
         maxPageQubits = (maxPageSetting < maxPageQubits) ? maxPageSetting : 1U;
     }
 
