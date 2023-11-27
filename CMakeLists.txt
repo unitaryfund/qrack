@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.0.22 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.0.23 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -224,7 +224,6 @@ endif (ENABLE_EMIT_LLVM)
 
 include ("cmake/Random.cmake")
 
-configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories(${CMAKE_BINARY_DIR}/include/common)
 
 if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
@@ -403,6 +402,9 @@ if (PACK_DEBIAN)
             set(DEBHELPER_COMPAT_VERSION "12")
         endif (DEBIAN_DISTRO_SERIES STREQUAL "focal")
     endif (DEBHELPER_COMPAT_VERSION)
+    if (DEBHELPER_COMPAT_VERSION STREQUAL "13")
+        set(OPENCL_V3 ON)
+    endif (DEBHELPER_COMPAT_VERSION STREQUAL "13")
 
     if (QBCAPPOW GREATER 6)
         set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "libboost-dev, ")
@@ -450,3 +452,5 @@ else (PACK_DEBIAN)
     set(CPACK_SOURCE_GENERATOR "TGZ")
 endif (PACK_DEBIAN)
 include(CPack)
+
+configure_file(include/common/config.h.in include/common/config.h @ONLY)

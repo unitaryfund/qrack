@@ -1,3 +1,9 @@
+libqrack (9.0.23) jammy; urgency=low
+
+  * Jammy uses OpenCL v3 header (see 9.0.22 build log failure)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 19:05:24 -0500
+
 libqrack (9.0.22) jammy; urgency=low
 
   * Native Jammy bump (tested on Bionic)
