@@ -1,8 +1,14 @@
+libqrack (9.0.25) focal; urgency=medium
+
+  * Support PowerPC (without OpenCL)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 09:41:37 -0500
+
 libqrack (9.0.24) jammy; urgency=low
 
   * Sign on Jammy to publish on Jammy (9.0.23 was Focal)
 
- -- Daniel Strano <iamu@sekhmet>  Mon, 27 Nov 2023 07:59:37 -0500
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 07:59:37 -0500
 
 libqrack (9.0.23) jammy; urgency=low
 
