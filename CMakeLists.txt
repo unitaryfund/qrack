@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.0.25 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.0.27 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -13,6 +13,7 @@ include ("cmake/Pthread.cmake")
 
 include_directories ("include" "include/common")
 
+option (ENABLE_MAKE_CLEAN_OVERRIDE "Override the 'make clean' recipe for Debian packaging" ON)
 option (ENABLE_EXAMPLES "Include usage examples" ON)
 if (PACK_DEBIAN)
     set(ENABLE_EXAMPLES OFF)
@@ -426,7 +427,9 @@ if (PACK_DEBIAN)
     set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
 
 
-    configure_file (makefile.in makefile @ONLY)
+    if (ENABLE_MAKE_CLEAN_OVERRIDE)
+        configure_file (makefile.in makefile @ONLY)
+    endif (ENABLE_MAKE_CLEAN_OVERRIDE)
     configure_file (debian/control.in debian/control @ONLY)
     configure_file (debian/libqrack.dirs.in debian/${CPACK_PACKAGE_NAME}.dirs @ONLY)
     configure_file (debian/libqrack.install.in debian/${CPACK_PACKAGE_NAME}.install @ONLY)

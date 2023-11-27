@@ -1,3 +1,15 @@
+libqrack (9.0.27) bionic; urgency=medium
+
+  * Bump for native Bionic builds (tested on Focal)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 11:01:30 -0500
+
+libqrack (9.0.26) focal; urgency=medium
+
+  * Fix make clean (for idempotent builds on different series)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 10:05:43 -0500
+
 libqrack (9.0.25) focal; urgency=medium
 
   * Support PowerPC (without OpenCL)
