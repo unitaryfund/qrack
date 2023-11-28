@@ -1,4 +1,4 @@
-libqrack (9.0.33) UNRELEASED; urgency=medium
+libqrack (9.0.33) focal; urgency=medium
 
   * Only set OPENCL_V3 automatically on target
 
