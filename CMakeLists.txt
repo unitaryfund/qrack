@@ -260,11 +260,25 @@ if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
     target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 
+if (NOT ENABLE_EMIT_LLVM)
+    # Declare the OCL precompilation executable
+    add_executable (qrack_cl_precompile
+        ${CMAKE_BINARY_DIR}/src/qrack_cl_precompile.cpp
+        )
+    target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+    target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
+    install(TARGETS qrack_cl_precompile RUNTIME DESTINATION bin PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+endif (NOT ENABLE_EMIT_LLVM)
+
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
     )
 
 set_target_properties (qrack_pinvoke PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    )
+
+set_target_properties (qrack_cl_precompile PROPERTIES
     VERSION ${PROJECT_VERSION}
     )
 
