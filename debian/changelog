@@ -1,3 +1,9 @@
+libqrack (9.0.40) focal; urgency=medium
+
+  * Copy antecedent of symlink libqrack_pinvoke.so
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 14:38:24 -0500
+
 libqrack (9.0.39) jammy; urgency=medium
 
   * Fix *.install files for Jammy
