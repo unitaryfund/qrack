@@ -1,3 +1,9 @@
+libqrack (9.0.32) focal; urgency=medium
+
+  * Allow stabilizer and QBDD at same time
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 09:28:26 -0500
+
 libqrack (9.0.31) jammy; urgency=medium
 
   * Typo: 'dh_auto_configure' -> 'dh_auto_install'
