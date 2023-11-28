@@ -278,10 +278,6 @@ set_target_properties (qrack_pinvoke PROPERTIES
     VERSION ${PROJECT_VERSION}
     )
 
-set_target_properties (qrack_cl_precompile PROPERTIES
-    VERSION ${PROJECT_VERSION}
-    )
-
 # Install common headers
 install (FILES
     ${CMAKE_BINARY_DIR}/include/common/config.h

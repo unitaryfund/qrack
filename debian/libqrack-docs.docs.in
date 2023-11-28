@@ -1,3 +1,5 @@
 README.source
 README.Debian
-qrack_cl_precompile.1.gz share/man/man1
+usr/share/doc/qrack/changelog.gz usr/share/doc/qrack
+usr/share/doc/qrack/copyright usr/share/doc/qrack
+usr/share/man/man1/qrack_cl_precompile.1.gz usr/share/man/man1
