@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.0.28 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.0.29 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -405,6 +405,7 @@ if (PACK_DEBIAN)
     endif (DEBHELPER_COMPAT_VERSION)
     if (DEBHELPER_COMPAT_VERSION STREQUAL "13")
         set(OPENCL_V3 ON)
+        set(CMAKE_INSTALL_LIBDIR "/usr/lib")
     endif (DEBHELPER_COMPAT_VERSION STREQUAL "13")
 
     if (QBCAPPOW GREATER 6)

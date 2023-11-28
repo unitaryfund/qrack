@@ -1,3 +1,9 @@
+libqrack (9.0.29) jammy; urgency=low
+
+  * Change CMAKE_INSTALL_LIBDIR to /usr/lib, for Jammy
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 20:17:40 -0500
+
 libqrack (9.0.28) jammy; urgency=medium
 
   * Bump for native Jammy builds (tested on Focal and Bionic)
