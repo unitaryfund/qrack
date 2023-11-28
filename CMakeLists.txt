@@ -57,7 +57,7 @@ if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
 endif (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
 
 if (ENABLE_EMIT_LLVM)
-    add_library (qrack_pinvoke.so OBJECT
+    add_library (qrack_pinvoke OBJECT
         ${CMAKE_BINARY_DIR}/src/pinvoke_api.cpp
         )
 else (ENABLE_EMIT_LLVM)
@@ -254,7 +254,7 @@ else (ENABLE_CUDA)
     target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS})
 endif (ENABLE_CUDA)
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
-set_property(TARGET qrack_pinvoke PROPERTY SOVERSION ".so.${CMAKE_PROJECT_VERSION}" )
+set_property(TARGET qrack_pinvoke PROPERTY SOVERSION ${CMAKE_PROJECT_VERSION} )
 if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
     target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)

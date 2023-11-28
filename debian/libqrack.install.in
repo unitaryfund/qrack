@@ -1,1 +1,2 @@
 libqrack.a usr/lib/qrack
+qrack_cl_precompile usr/bin
