@@ -1,3 +1,9 @@
+libqrack (9.0.33) UNRELEASED; urgency=medium
+
+  * Only set OPENCL_V3 automatically on target
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 09:51:29 -0500
+
 libqrack (9.0.32) focal; urgency=medium
 
   * Allow stabilizer and QBDD at same time
