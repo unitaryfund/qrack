@@ -1,3 +1,9 @@
+libqrack (9.0.42) focal; urgency=medium
+
+  * Always build qrack_cl_precompile (to fix PowerPC)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 15:33:45 -0500
+
 libqrack (9.0.41) focal; urgency=medium
 
   * Always build qrack_cl_precompile (to fix PowerPC)

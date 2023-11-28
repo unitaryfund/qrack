@@ -37,16 +37,6 @@ if (ENABLE_CUDA)
 
     target_link_libraries (qrack ${QRACK_CUDA_LIBRARIES})
     set_target_properties(qrack PROPERTIES CUDA_ARCHITECTURES ${QRACK_CUDA_ARCHITECTURES})
-
-    if (NOT ENABLE_EMIT_LLVM)
-        # Declare the OCL precompilation executable
-        add_executable (qrack_cl_precompile
-            src/qrack_cl_precompile.cpp
-            )
-        target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
-        target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
-        install(TARGETS qrack_cl_precompile RUNTIME DESTINATION bin PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    endif (NOT ENABLE_EMIT_LLVM)
     
     # Add the CUDA objects to the library
     target_sources (qrack PRIVATE
@@ -58,3 +48,13 @@ if (ENABLE_CUDA)
         )
 
 endif(ENABLE_CUDA)
+
+if (NOT ENABLE_EMIT_LLVM)
+    # Declare the OCL precompilation executable
+    add_executable (qrack_cl_precompile
+        src/qrack_cl_precompile.cpp
+        )
+    target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+    target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
+    install(TARGETS qrack_cl_precompile RUNTIME DESTINATION bin PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+endif (NOT ENABLE_EMIT_LLVM)
