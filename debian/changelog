@@ -1,4 +1,16 @@
-libqrack (9.0.42) focal; urgency=medium
+libqrack (9.0.44) bionic; urgency=medium
+
+  * 3/3 bump for Bionic (after Focal and Jammy)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 17:54:14 -0500
+
+libqrack (9.0.43) focal; urgency=medium
+
+  * 2/3 bump for Focal (then Bionic) after 1st native Jammy build
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 17:14:50 -0500
+
+libqrack (9.0.42) jammy; urgency=medium
 
   * Always build qrack_cl_precompile (to fix PowerPC)
 
