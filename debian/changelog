@@ -1,3 +1,9 @@
+libqrack (9.0.35) focal; urgency=medium
+
+  * Disable rules override
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 10:35:13 -0500
+
 libqrack (9.0.34) focal; urgency=medium
 
   * Set OPENCL_V3=OFF on Focal and Bionic

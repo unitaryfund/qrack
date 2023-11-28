@@ -19,6 +19,6 @@
 
 
 # dh_make generated override targets
-override_dh_auto_install:
-	dh_auto_install --destdir=/
+# override_dh_auto_install:
+#	dh_auto_install --destdir=/
 
