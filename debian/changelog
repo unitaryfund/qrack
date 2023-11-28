@@ -1,6 +1,6 @@
-libqrack (9.0.37) bionic; urgency=medium
+libqrack (9.0.37) focal; urgency=medium
 
-  * Bump Bionic for stabilizer/QBDD interop
+  * Fix 'make clean' recipe
 
  -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 11:17:34 -0500
 
