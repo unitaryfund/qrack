@@ -1,3 +1,9 @@
+libqrack (9.0.39) jammy; urgency=medium
+
+  * Fix *.install files for Jammy
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 14:06:46 -0500
+
 libqrack (9.0.38) bionic; urgency=medium
 
   * Bump for Bionic stabilizer/QBDD interop
