@@ -75,12 +75,34 @@ Qrack has a community home at the Advanced Computing Topics server on Discord, a
 
 For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Installing Qrack
+
+If you're on Ubuntu 18.04, 20.04, or 22.04 LTS, you're in luck: Qrack manages a PPA that provides binary installers for _all_ available CPU architectures (except any that require administrative attention from Ubuntu or Canonical).
+
+```sh
+    $ sudo add-apt-repository ppa:wrathfulspatula/vm6502q
+    $ sudo apt update
+    $ sudo apt install libqrack-dev
+```
+
+(You might need to install the `add-apt-repository` tool first, through `apt` itself.)
+
+Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page.
+
+If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
+
 ## test/tests.cpp
 
 The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
 
 ```sh
     $ _build/unittest
+```
+
+Similarly, benchmarks are in `test/benchmarks.cpp`:
+
+```sh
+    $ _build/benchmarks [--optimal] [--max-qubits=30] [test_qft_cosmology]
 ```
 
 ## Installing OpenCL on VMWare
@@ -100,22 +122,6 @@ Most platforms offer a standardized way of installing OpenCL. However, a method 
 While the OpenCL framework is available by default on most modern Macs, the C++ header `cl.hpp` is usually not. One option for building for OpenCL on Mac is to download this header file and include it in the Qrack project folder under include/OpenCL (as `cl.hpp`). The OpenCL C++ header can be found at the Khronos OpenCL registry:
 
 https://www.khronos.org/registry/OpenCL/
-
-## Installing Qrack
-
-If you're on Ubuntu 18.04, 20.04, or 22.04 LTS, you're in luck: Qrack manages a PPA that provides binary installers for _all_ available CPU architectures (except any that require administrative attention from Ubuntu or Canonical).
-
-```sh
-    $ sudo add-apt-repository ppa:wrathfulspatula/vm6502q
-    $ sudo apt update
-    $ sudo apt install libqrack-dev
-```
-
-(You might need to install the `add-apt-repository` tool first, through `apt` itself.)
-
-Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page.
-
-If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
 
 ## Building and Installing Qrack on Windows
 
