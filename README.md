@@ -101,6 +101,22 @@ While the OpenCL framework is available by default on most modern Macs, the C++ 
 
 https://www.khronos.org/registry/OpenCL/
 
+## Installing Qrack
+
+If you're on Ubuntu 18.04, 20.04, or 22.04 LTS, you're in luck: Qrack manages a PPA that provides binary installers for _all_ available CPU architectures (except any that require administrative attention from Ubuntu or Canonical).
+
+```sh
+    $ sudo add-apt-repository ppa:wrathfulspatula/vm6502q
+    $ sudo apt update
+    $ sudo apt install libqrack-dev
+```
+
+(You might need to install the `add-apt-repository` tool first, through `apt` itself.)
+
+Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page.
+
+If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
+
 ## Building and Installing Qrack on Windows
 
 Qrack supports building on Windows, but some special configuration is required. Windows 10 usually comes with default OpenCL libraries for Intel (or AMD) CPUs and their graphics coprocessors, but NVIDIA graphics card support might require the CUDA Toolkit. The CUDA Toolkit also provides an OpenCL development environment, which is generally necessary to build Qrack.
