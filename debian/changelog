@@ -1,3 +1,9 @@
+libqrack (9.0.47) bionic; urgency=medium
+
+  * Fix "layer stack" construction in qfactory.hpp
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 30 Nov 2023 17:41:10 -0500
+
 libqrack (9.0.46) jammy; urgency=medium
 
   * Bump to fix SONAME of libqrack_pinvoke.so on Jammy
