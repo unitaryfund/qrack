@@ -1,3 +1,15 @@
+libqrack (9.0.49) jammy; urgency=medium
+
+  * Fix "layer stack" construction in qfactory.hpp (Jammy, 3/3)
+
+ -- Daniel Strano <iamu@bastet>  Thu, 30 Nov 2023 18:58:07 -0500
+
+libqrack (9.0.48) focal; urgency=medium
+
+  * Fix "layer stack" construction in qfactory.hpp (Focal, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 30 Nov 2023 18:11:09 -0500
+
 libqrack (9.0.47) bionic; urgency=medium
 
   * Fix "layer stack" construction in qfactory.hpp
