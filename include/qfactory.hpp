@@ -298,15 +298,7 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
     if (!simulatorType.size()) {
 #if ENABLE_OPENCL || ENABLE_CUDA
         if (hy && isOcl) {
-#if ENABLE_QBDT
-            if (bdt) {
-                simulatorType.push_back(QINTERFACE_BDT_HYBRID);
-            } else {
-                simulatorType.push_back(QINTERFACE_HYBRID);
-            }
-#else
             simulatorType.push_back(QINTERFACE_HYBRID);
-#endif
         } else {
 #if ENABLE_OPENCL
             simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
@@ -315,11 +307,7 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
 #endif
         }
 #else
-        if (bdt) {
-            simulatorType.push_back(QINTERFACE_BDT_HYBRID);
-        } else {
-            simulatorType.push_back(QINTERFACE_CPU);
-        }
+        simulatorType.push_back(QINTERFACE_CPU);
 #endif
     }
 
