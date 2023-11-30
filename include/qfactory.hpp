@@ -261,16 +261,16 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
     std::vector<QInterfaceEngine> simulatorType;
 
 #if ENABLE_OPENCL
-    if (!hy || !isOcl) {
+    if (!hy) {
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
 #elif ENABLE_CUDA
-    if (!hy || !isOcl) {
+    if (!hy) {
         simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
     }
 #endif
 
-    if (pg && !sh && simulatorType.size()) {
+    if (pg && simulatorType.size()) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
