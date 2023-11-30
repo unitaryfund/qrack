@@ -276,7 +276,7 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
 
 #if ENABLE_QBDT
     if (bdt && !hy) {
-        simulatorType.push_back(QINTERFACE_BDT);
+        simulatorType.push_back(QINTERFACE_BDT_HYBRID);
     }
 #endif
 
