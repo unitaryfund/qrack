@@ -427,7 +427,7 @@ if (PACK_DEBIAN)
     endif (QBCAPPOW GREATER 6)
 
     if (ENABLE_OPENCL)
-        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}opencl-headers, ocl-icd-opencl-dev, xxd")
+        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}nvidia-cuda-toolkit, opencl-headers, ocl-icd-opencl-dev, xxd")
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev, libc6")
     else (ENABLE_OPENCL)
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
