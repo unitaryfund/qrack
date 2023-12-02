@@ -1,3 +1,9 @@
+libqrack (9.0.57) jammy; urgency=medium
+
+  * Exclude qrack_cl_precompile (Jammy, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 20:37:05 -0500
+
 libqrack (9.0.56) focal; urgency=medium
 
   * Exclude qrack_cl_precompile (Focal, 2/3)
