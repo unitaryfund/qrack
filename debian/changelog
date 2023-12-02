@@ -1,3 +1,9 @@
+libqrack (9.0.56) focal; urgency=medium
+
+  * Exclude qrack_cl_precompile (Focal, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 19:53:17 -0500
+
 libqrack (9.0.55) bionic; urgency=medium
 
   * Exclude qrack_cl_precompile (Bionic, 1/3)
