@@ -1,3 +1,9 @@
+libqrack (9.0.55) bionic; urgency=medium
+
+  * Exclude qrack_cl_precompile (Bionic, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 19:26:31 -0500
+
 libqrack (9.0.54) jammy; urgency=medium
 
   * Build qrack_cl_precompile with nvidia-cuda-toolkit (Jammy, 3/3)
