@@ -2564,6 +2564,11 @@ public:
      */
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare) = 0;
 
+    /**
+     * Attempt to `Decompose()` a bit range. If the result can `Compose()` again to the original state vector with
+     * (1 - <\psi_e|\psi_c>) <= `error_tol`, return "true" and complete `Decompose()`; otherwise, restore the original
+     * state and return "false."
+     */
     virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
     /**
