@@ -336,8 +336,18 @@ public:
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(toCopy, qubitCount); }
+    /**
+     * This is a variant of `Compose()` for a `toCopy` argument that will definitely not be reused once "Composed,"
+     * hence more aggressive optimization can be done.
+     */
     virtual bitLenInt ComposeNoClone(QInterfacePtr toCopy) { return Compose(toCopy); }
+    /**
+     * `Compose()` a vector of peer `QInterface` targets, in sequence.
+     */
     virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
+    /**
+     * `Compose()` a `QInterface` peer, inserting its qubit into index order at `start` index.
+     */
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start);
 
     /**
@@ -2537,8 +2547,8 @@ public:
     }
 
     /**
-     * Compare state vectors approximately, component by component, to determine whether this state vector is the same
-     * as the target.
+     * Compare state vectors approximately, to determine whether this state vector is the same as the target.
+     * (If (1 - <\psi_e|\psi_c>) <= `error_tol` between states |\psi_c> and |\psi_e>, they are "the same.")
      *
      * \warning PSEUDO-QUANTUM
      */
@@ -2547,6 +2557,11 @@ public:
         return SumSqrDiff(toCompare) <= error_tol;
     }
 
+    /**
+     * Calculates (1 - <\psi_e|\psi_c>) between states |\psi_c> and |\psi_e>.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare) = 0;
 
     virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON);
