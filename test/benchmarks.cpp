@@ -451,12 +451,12 @@ TEST_CASE("test_rol", "[gates]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ROL(1, 0, n); });
 }
 
-#if ENABLE_ALU
 TEST_CASE("test_inc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INC(1, 0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INC(1, 0, n); });
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_incs", "[arithmetic]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCS(1, 0, n - 1, n - 1); });
