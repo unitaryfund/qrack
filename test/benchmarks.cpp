@@ -493,14 +493,14 @@ void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> 
 {
     const bitCapIntOcl wordLength = (max_qubits / 16U + 1U);
     const bitCapIntOcl indexLength = ((bitCapIntOcl)ONE_BCI << (max_qubits / 2U));
-    unsigned char* testPage = new unsigned char[wordLength * indexLength];
+    std::unique_ptr<unsigned char[]> testPage(new unsigned char[wordLength * indexLength]);
     for (bitCapIntOcl j = 0; j < indexLength; j++) {
         for (bitCapIntOcl i = 0; i < wordLength; i++) {
-            testPage[j * wordLength + i] = (j & (0xff << (8U * i))) >> (8U * i);
+            testPage.get()[j * wordLength + i] = (j & (0xff << (8U * i))) >> (8U * i);
         }
     }
-    benchmarkLoop([fn, testPage](QInterfacePtr qftReg, bitLenInt n) { fn(qftReg, n, testPage); });
-    delete[] testPage;
+    unsigned char *tp = testPage.get();
+    benchmarkLoop([fn, tp](QInterfacePtr qftReg, bitLenInt n) { fn(qftReg, n, tp); });
 }
 
 TEST_CASE("test_superposition_reg", "[indexed]")
