@@ -395,7 +395,7 @@ public:
     // TODO: QPager not yet used in Q#, but this would need a real implementation:
     real1_f ProbParity(bitCapInt mask)
     {
-        if (!mask) {
+        if (bi_compare_0(&mask) == 0) {
             return ZERO_R1_F;
         }
 
@@ -404,7 +404,7 @@ public:
     }
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
-        if (!mask) {
+        if (bi_compare_0(&mask) == 0) {
             return ZERO_R1_F;
         }
 
@@ -455,7 +455,7 @@ public:
 
 #if ENABLE_OPENCL
         if (rootEngine != QINTERFACE_CPU) {
-            maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+            maxPageQubits = log2Ocl(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
             maxPageQubits = (maxPageSetting < maxPageQubits) ? maxPageSetting : 1U;
         }
 

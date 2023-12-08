@@ -130,7 +130,7 @@ protected:
     }
 
 public:
-    QUnitClifford(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QUnitClifford(bitLenInt n, bitCapInt perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phasFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
         int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
         std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
@@ -172,11 +172,12 @@ public:
     bitCapInt PermCount()
     {
         std::map<QStabilizerPtr, QStabilizerPtr> engines;
-        bitCapInt permCount = 1U;
+        bitCapInt permCount = ONE_BCI;
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             QStabilizerPtr unit = shards[i].unit;
             if (engines.find(unit) == engines.end()) {
-                permCount *= pow2(unit->gaussian());
+                const bitCapInt pg = pow2(unit->gaussian());
+                permCount = bi_mul(&permCount, &pg);
             }
         }
 
@@ -188,11 +189,11 @@ public:
         shards = std::vector<CliffordShard>();
         phaseOffset = ONE_CMPLX;
         qubitCount = 0U;
-        maxQPower = 1U;
+        maxQPower = ONE_BCI;
     }
 
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI);
 
     real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
 
@@ -202,7 +203,7 @@ public:
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-    QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U, complex phaseFac = CMPLX_DEFAULT_ARG)
+    QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = ZERO_BCI, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
         QStabilizerPtr toRet = std::make_shared<QStabilizer>(
             length, perm, rand_generator, phaseFac, false, randGlobalPhase, false, -1, useRDRAND);
@@ -464,7 +465,7 @@ public:
 
         if (!qubitCount) {
             SetQubitCount(length);
-            SetPermutation(0U);
+            SetPermutation(ZERO_BCI);
             return 0U;
         }
 
