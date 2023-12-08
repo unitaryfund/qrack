@@ -67,8 +67,8 @@ protected:
     std::vector<MpsShardPtr> shards;
     std::map<bitCapInt, complex> stateMapCache;
 
-    QUnitCliffordPtr MakeStabilizer(bitCapInt perm = 0U);
-    QInterfacePtr MakeEngine(bitCapInt perm = 0U);
+    QUnitCliffordPtr MakeStabilizer(bitCapInt perm = ZERO_BCI);
+    QInterfacePtr MakeEngine(bitCapInt perm = ZERO_BCI);
     QInterfacePtr MakeEngine(bitCapInt perm, bitLenInt qbCount);
 
     void InvertBuffer(bitLenInt qubit);
@@ -159,10 +159,12 @@ protected:
                 break;
             }
 
-            bitCapInt sample = 0U;
+            bitCapInt sample = ZERO_BCI;
             for (size_t i = 0U; i < qPowers.size(); ++i) {
-                if (m & qPowers[i]) {
-                    sample |= pow2(i);
+                const bitCapInt p = bi_and(&m, &qPowers[i]);
+                if (bi_compare_0(&p) != 0) {
+                    const bitCapInt b = pow2(i);
+                    bi_or_ip(&sample, &b);
                 }
             }
             fn(sample, shot);
@@ -317,13 +319,13 @@ protected:
     complex GetAmplitudeOrProb(bitCapInt perm, bool isProb = false);
 
 public:
-    QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
+    QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QStabilizerHybrid(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QStabilizerHybrid(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
@@ -755,7 +757,7 @@ public:
 
     real1_f ProbAllRdm(bool roundRz, bitCapInt fullRegister);
     real1_f ProbMaskRdm(bool roundRz, bitCapInt mask, bitCapInt permutation);
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
     {
         if (stabilizer) {
             return QInterface::ExpectationBitsAll(bits, offset);
@@ -763,7 +765,7 @@ public:
 
         return engine->ExpectationBitsAll(bits, offset);
     }
-    real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
     {
         if (engine) {
             return engine->ExpectationBitsAllRdm(roundRz, bits, offset);
@@ -778,7 +780,7 @@ public:
         return RdmCloneHelper()->stabilizer->ExpectationBitsAll(bits, offset);
     }
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
     {
         if (stabilizer) {
             return QInterface::ExpectationBitsFactorized(bits, perms, offset);
@@ -787,7 +789,7 @@ public:
         return engine->ExpectationBitsFactorized(bits, perms, offset);
     }
     real1_f ExpectationBitsFactorizedRdm(
-        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
     {
         return ExpectationFactorized(false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }
@@ -802,7 +804,7 @@ public:
     real1_f ExpectationFloatsFactorizedRdm(
         bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
     {
-        return ExpectationFactorized(true, bits, std::vector<bitCapInt>(), weights, 0U, roundRz);
+        return ExpectationFactorized(true, bits, std::vector<bitCapInt>(), weights, ZERO_BCI, roundRz);
     }
 
     bool TrySeparate(bitLenInt qubit);
