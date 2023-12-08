@@ -113,7 +113,7 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 void QInterface::XMask(bitCapInt mask)
 {
     bitCapInt v = mask;
-    while (bi_compare_0(&mask)) {
+    while (bi_compare_0(&mask) != 0) {
         bitCapInt w = v;
         bi_decrement(&w, 1U);
         bi_and_ip(&v, &w);
@@ -140,7 +140,7 @@ void QInterface::YMask(bitCapInt mask)
 
     int parity = 0;
     bitCapInt v = mask;
-    while (bi_compare_0(&v)) {
+    while (bi_compare_0(&v) != 0) {
         bitCapInt w = v;
         bi_decrement(&w, 1U);
         bi_and_ip(&v, &w);
@@ -159,7 +159,7 @@ void QInterface::YMask(bitCapInt mask)
 void QInterface::ZMask(bitCapInt mask)
 {
     bitCapInt v = mask;
-    while (bi_compare_0(&mask)) {
+    while (bi_compare_0(&mask) != 0) {
         bitCapInt w = v;
         bi_decrement(&w, 1U);
         bi_and_ip(&v, &w);
@@ -414,7 +414,7 @@ void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
 
     std::vector<bitLenInt> qubits;
     bitCapInt v = mask;
-    while (bi_compare_0(&mask)) {
+    while (bi_compare_0(&mask) != 0) {
        bitCapInt w = v;
         bi_decrement(&w, 1U);
         bi_and_ip(&v, &w);
