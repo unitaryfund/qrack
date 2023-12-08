@@ -167,7 +167,6 @@ else (MSVC)
             set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror -fPIC)
         endif (ENABLE_PTHREAD)
         set(TEST_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
-        set_target_properties(qrack PROPERTIES COMPILE_FLAGS "-s USE_BOOST_HEADERS=1" LINK_FLAGS "-s USE_BOOST_HEADERS=1")
     else (EMSCRIPTEN)
         set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror -fPIC)
         set(TEST_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
@@ -285,6 +284,7 @@ install (FILES
     include/common/rdrandwrapper.hpp
     include/common/cuda_kernels.cuh
     include/common/dispatchqueue.hpp
+    include/common/big_integer.hpp
     include/common/half.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
@@ -422,16 +422,17 @@ if (PACK_DEBIAN)
         set(OPENCL_V3 OFF)
     endif (DEBHELPER_COMPAT_VERSION STREQUAL "13")
 
-    if (QBCAPPOW GREATER 6)
+    if (FPPOW GREATER 6)
         set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "libboost-dev, ")
-    else (QBCAPPOW GREATER 6)
+    else (FPPOW GREATER 6)
         set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "")
-    endif (QBCAPPOW GREATER 6)
+    endif (FPPOW GREATER 6)
 
     if (ENABLE_OPENCL)
         set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}opencl-headers, ocl-icd-opencl-dev, xxd")
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev, libc6")
     else (ENABLE_OPENCL)
+        set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "")
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
     endif (ENABLE_OPENCL)
 

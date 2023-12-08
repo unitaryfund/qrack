@@ -189,9 +189,10 @@ protected:
 
     template <typename Fn> void MACWrapper(const std::vector<bitLenInt>& controls, Fn fn)
     {
-        bitCapInt xMask = 0U;
+        bitCapInt xMask = ZERO_BCI;
         for (size_t i = 0U; i < controls.size(); ++i) {
-            xMask |= pow2(controls[i]);
+            const bitCapInt p = pow2(controls[i]);
+            bi_or_ip(&xMask, &p);
         }
 
         XMask(xMask);
@@ -204,10 +205,12 @@ protected:
         QInterfacePtr clone = Clone();
 
         const bitCapInt rawSample = clone->MAll();
-        bitCapInt sample = 0U;
+        bitCapInt sample = ZERO_BCI;
         for (size_t i = 0U; i < qPowers.size(); ++i) {
-            if (rawSample & qPowers[i]) {
-                sample |= pow2(i);
+            const bitCapInt a = bi_and(&rawSample, &qPowers[i]);
+            if (bi_compare_0(&a) != 0U) {
+                const bitCapInt p = pow2(i);
+                bi_or_ip(&sample, &p);
             }
         }
 
@@ -226,7 +229,7 @@ public:
         , qubitCount(0U)
         , randomSeed(0)
         , amplitudeFloor(REAL1_EPSILON)
-        , maxQPower(1U)
+        , maxQPower(ONE_BCI)
         , rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
     {
@@ -600,7 +603,7 @@ public:
     virtual void UniformlyControlledSingleBit(
         const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const complex* mtrxs)
     {
-        UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), 0);
+        UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), ZERO_BCI);
     }
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
         const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
@@ -1031,7 +1034,7 @@ public:
             return;
         }
 
-        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), qubit);
+        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / pow2Ocl(n - 1U))), qubit);
     }
 
     /**
@@ -1045,7 +1048,7 @@ public:
             return;
         }
 
-        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), qubit);
+        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / pow2Ocl(n - 1U))), qubit);
     }
 
     /**
@@ -1305,7 +1308,7 @@ public:
         }
 
         const std::vector<bitLenInt> controls{ control };
-        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / pow2Ocl(n - 1U))), target);
     }
 
     /**
@@ -1321,7 +1324,7 @@ public:
         }
 
         const std::vector<bitLenInt> controls{ control };
-        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / pow2Ocl(n - 1U))), target);
     }
 
     /**
@@ -1337,7 +1340,7 @@ public:
         }
 
         const std::vector<bitLenInt> controls{ control };
-        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / pow2Ocl(n - 1U))), target);
     }
 
     /**
@@ -1353,7 +1356,7 @@ public:
         }
 
         const std::vector<bitLenInt> controls{ control };
-        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / pow2Ocl(n - 1U))), target);
     }
 
     /** @} */
@@ -2260,7 +2263,7 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, 0, false); }
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, ZERO_BCI, false); }
 
     /** Measure permutation state of all coherent bits */
     virtual bitCapInt MAll() { return MReg(0, qubitCount); }
@@ -2401,12 +2404,12 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
     {
         std::vector<bitCapInt> perms;
         perms.reserve(bits.size() << 1U);
         for (size_t i = 0U; i < bits.size(); ++i) {
-            perms.push_back(0U);
+            perms.push_back(ZERO_BCI);
             perms.push_back(pow2(i));
         }
 
@@ -2422,7 +2425,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI);
 
     /**
      * Get (reduced density matrix) expectation value of bits, given an array of qubit weights
@@ -2434,7 +2437,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationBitsFactorizedRdm(
-        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0)
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
     {
         return ExpectationBitsFactorized(bits, perms, offset);
     }
@@ -2499,7 +2502,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    virtual real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
     {
         return ExpectationBitsAll(bits, offset);
     }
@@ -2729,11 +2732,11 @@ public:
     virtual real1_f FirstNonzeroPhase()
     {
         complex amp;
-        bitCapInt perm = 0U;
+        bitCapInt perm = ZERO_BCI;
         do {
             amp = GetAmplitude(perm);
-            ++perm;
-        } while ((abs(amp) <= REAL1_EPSILON) && (perm < maxQPower));
+            bi_increment(&perm, 1U);
+        } while ((abs(amp) <= REAL1_EPSILON) && (bi_compare(&perm, &maxQPower) < 0));
 
         return (real1_f)std::arg(amp);
     }

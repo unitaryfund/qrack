@@ -12,11 +12,8 @@
 
 #pragma once
 
-#include "config.h"
-
 #define _USE_MATH_DEFINES
 
-#include <cmath>
 #include <complex>
 #include <cstdint>
 #include <functional>
@@ -24,13 +21,11 @@
 #include <math.h>
 #include <memory>
 
+#include "big_integer.hpp"
+
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
 #define IS_OPPOSITE(c1, c2) (IS_NORM_0((c1) + (c2)))
-
-#if QBCAPPOW > 6 && defined(BOOST_AVAILABLE) || QBCAPPOW > 7
-#include <boost/multiprecision/cpp_int.hpp>
-#endif
 
 #if ENABLE_CUDA
 #include <cuda_runtime.h>
@@ -87,38 +82,19 @@ typedef double real1_s;
 #endif
 
 #if UINTPOW < 4
-constexpr uint8_t ONE_BCI = 1U;
 #define bitCapIntOcl uint8_t
 #elif UINTPOW < 5
-constexpr uint16_t ONE_BCI = 1U;
 #define bitCapIntOcl uint16_t
 #elif UINTPOW < 6
-#define ONE_BCI 1U
 #define bitCapIntOcl uint32_t
 #else
-#define ONE_BCI 1UL
 #define bitCapIntOcl uint64_t
 #endif
 
-#if QBCAPPOW < 6
-#define bitsInCap 32
-#define bitCapInt uint32_t
-#elif QBCAPPOW < 7
-#define bitsInCap 64
-#define bitCapInt uint64_t
-#elif QBCAPPOW < 8
-#define bitsInCap 128
-#ifdef BOOST_AVAILABLE
-#define bitCapInt boost::multiprecision::uint128_t
-#else
-#define bitCapInt __uint128_t
-#endif
-#else
+#define bitCapInt BigInteger
+const bitCapInt ONE_BCI = bi_create(1U);
+const bitCapInt ZERO_BCI = bi_create(0U);
 constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << (QBCAPPOW + 3U);
-#define bitCapInt                                                                                                      \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << QBCAPPOW, 1ULL << QBCAPPOW,           \
-        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-#endif
 
 typedef std::shared_ptr<complex> BitOp;
 

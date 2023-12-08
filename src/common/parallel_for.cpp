@@ -32,8 +32,8 @@ namespace Qrack {
 ParallelFor::ParallelFor()
 #if ENABLE_ENV_VARS
     : pStride(getenv("QRACK_PSTRIDEPOW")
-              ? ((bitCapIntOcl)ONE_BCI << (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))))
-              : ((bitCapIntOcl)ONE_BCI << (bitLenInt)PSTRIDEPOW))
+              ? ((bitCapIntOcl)1U << (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))))
+              : ((bitCapIntOcl)1U << (bitLenInt)PSTRIDEPOW))
 #else
     : pStride((bitCapIntOcl)ONE_BCI << PSTRIDEPOW)
 #endif
@@ -43,8 +43,8 @@ ParallelFor::ParallelFor()
     , numCores(1)
 #endif
 {
-    const bitLenInt pStridePow = log2(pStride);
-    const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;
+    const bitLenInt pStridePow = log2Ocl(pStride);
+    const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2Ocl(numCores - 1U)) : 0U;
     dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 }
 
@@ -116,7 +116,7 @@ void ParallelFor::par_for_skip(const bitCapIntOcl begin, const bitCapIntOcl end,
         return;
     }
 
-    const bitCapIntOcl lowMask = (bitCapIntOcl)skipMask - ONE_BCI;
+    const bitCapIntOcl lowMask = skipMask - 1U;
     const bitCapIntOcl highMask = ~lowMask;
 
     IncrementFunc incFn;
@@ -155,7 +155,7 @@ void ParallelFor::par_for_mask(
             /* Push i apart, one mask at a time. */
             bitCapIntOcl i = iConst;
             for (bitLenInt m = 0U; m < maskLen; ++m) {
-                i = ((i << ONE_BCI) & masks[m][1U]) | (i & masks[m][0U]);
+                i = ((i << 1U) & masks[m][1U]) | (i & masks[m][0U]);
             }
             return i;
         };

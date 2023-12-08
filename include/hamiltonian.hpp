@@ -82,7 +82,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
 
         uniform = true;
 
-        bitCapIntOcl mtrxTermCount = ((bitCapIntOcl)ONE_BCI << controlLen) * 4U;
+        bitCapIntOcl mtrxTermCount = ((bitCapIntOcl)1U << controlLen) * 4U;
         BitOp m(new complex[mtrxTermCount], std::default_delete<complex[]>());
         matrix = std::move(m);
         for (bitCapIntOcl i = 0U; i < mtrxTermCount; ++i) {

@@ -107,11 +107,11 @@ public:
 
     void QueueSetDoNormalize(bool doNorm)
     {
-        Dispatch(1U, [this, doNorm] { doNormalize = doNorm; });
+        Dispatch(ONE_BCI, [this, doNorm] { doNormalize = doNorm; });
     }
     void QueueSetRunningNorm(real1_f runningNrm)
     {
-        Dispatch(1U, [this, runningNrm] { runningNorm = runningNrm; });
+        Dispatch(ONE_BCI, [this, runningNrm] { runningNorm = runningNrm; });
     }
 
     void SetQuantumState(const complex* inputState);
@@ -233,7 +233,9 @@ protected:
     void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((workItemCount >= pow2Ocl(GetPreferredConcurrencyPower())) && (workItemCount < GetStride())) {
+        const bitCapInt c = pow2(GetPreferredConcurrencyPower());
+        const bitCapInt d = bi_create(GetStride());
+        if ((bi_compare(&workItemCount, &c) >= 0) && (bi_compare(&workItemCount, &d) < 0)) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();

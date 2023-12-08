@@ -19,47 +19,51 @@
 
 namespace Qrack {
 
-inline bitCapInt pow2(const bitLenInt& p) { return (bitCapInt)ONE_BCI << p; }
-inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)ONE_BCI << p; }
-inline bitCapInt pow2Mask(const bitLenInt& p) { return ((bitCapInt)ONE_BCI << p) - ONE_BCI; }
-inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return ((bitCapIntOcl)ONE_BCI << p) - ONE_BCI; }
-inline bitLenInt log2(bitCapInt n)
-{
-#if __GNUC__ && QBCAPPOW < 7
+inline bitCapInt pow2(const bitLenInt& p) { return bi_lshift(&ONE_BCI, p); }
+inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)1U << p; }
+inline bitCapInt pow2Mask(const bitLenInt& p) {
+    bitCapInt toRet = bi_lshift(&ONE_BCI, p);
+    bi_decrement(&toRet, 1U);
+    return toRet;
+}
+inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return ((bitCapIntOcl)1U << p) - 1U; }
+inline bitLenInt log2(bitCapInt n) { return (bitLenInt)bi_log2(&n); }
+inline bitLenInt log2Ocl(bitCapIntOcl n) {
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
 #if QBCAPPOW < 6
     return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
 #else
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #endif
-#else
-    bitLenInt pow = 0U;
-    bitCapInt p = n >> ONE_BCI;
-    while (p) {
-        p >>= ONE_BCI;
-        ++pow;
-    }
-    return pow;
-#endif
 }
 inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source)
 {
-    return ((bitCapInt)ONE_BCI << bit) & source;
+    bitCapInt toRet = bi_lshift(&ONE_BCI, bit);
+    bi_and_ip(&toRet, &source);
+    return toRet;
 }
 inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source)
 {
-    return ((bitCapIntOcl)ONE_BCI << bit) & source;
+    return ((bitCapIntOcl)1U << bit) & source;
 }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
 {
-    return (((bitCapInt)ONE_BCI << length) - ONE_BCI) << start;
+    bitCapInt toRet = bi_lshift(&ONE_BCI, length);
+    bi_decrement(&toRet, 1U);
+    bi_lshift_ip(&toRet, start);
+    return toRet;
 }
 inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& length)
 {
-    return (((bitCapIntOcl)ONE_BCI << length) - ONE_BCI) << start;
+    return (((bitCapIntOcl)1U << length) - 1U) << start;
 }
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
+inline bool isPowerOfTwo(const bitCapInt& x) {
+    bitCapInt y = x;
+    bi_decrement(&y, 1U);
+    bi_and_ip(&y, &x);
+    return (bi_compare_0(&x) != 0) && (bi_compare_0(&y) == 0);
+}
 inline bool isBadBitRange(const bitLenInt& start, const bitLenInt& length, const bitLenInt& qubitCount)
 {
     return ((start + length) > qubitCount) || ((bitLenInt)(start + length) < start);
@@ -92,15 +96,11 @@ void mul2x2(complex const* left, complex const* right, complex* out);
 void exp2x2(complex const* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex const* matrix2x2, complex* outMatrix2x2);
 void inv2x2(complex const* matrix2x2, complex* outMatrix2x2);
-bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
-bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
+bool isOverflowAdd(bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower);
+bool isOverflowSub(bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
-#if QBCAPPOW == 7U
-std::ostream& operator<<(std::ostream& os, bitCapInt b);
-std::istream& operator>>(std::istream& is, bitCapInt& b);
-#endif
 
 #if ENABLE_ENV_VARS
 const real1_f _qrack_qbdt_sep_thresh = getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")
