@@ -47,13 +47,13 @@ protected:
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
 public:
-    QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
+    QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devIDs = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QUnit(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QUnit(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devIDs = {}, bitLenInt qubitThreshold = 0U,
@@ -126,7 +126,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetAmplitude(bitCapInt perm, complex amp)
     {
-        if (perm >= maxQPower) {
+        if (bi_compare(&perm, &maxQPower) >= 0) {
             throw std::invalid_argument("QUnit::SetAmplitude argument out-of-bounds!");
         }
 
@@ -196,22 +196,26 @@ public:
     virtual void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex);
     virtual void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
     {
-        UCPhase(controls, topLeft, bottomRight, target, pow2(controls.size()) - 1U);
+        bitCapInt m = pow2(controls.size());
+        bi_decrement(&m, 1U);
+        UCPhase(controls, topLeft, bottomRight, target, m);
     }
     virtual void MCInvert(
         const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
-        UCInvert(controls, topRight, bottomLeft, target, pow2(controls.size()) - 1U);
+        bitCapInt m = pow2(controls.size());
+        bi_decrement(&m, 1U);
+        UCInvert(controls, topRight, bottomLeft, target, m);
     }
     virtual void MACPhase(
         const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
     {
-        UCPhase(controls, topLeft, bottomRight, target, 0U);
+        UCPhase(controls, topLeft, bottomRight, target, ZERO_BCI);
     }
     virtual void MACInvert(
         const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
-        UCInvert(controls, topRight, bottomLeft, target, 0U);
+        UCInvert(controls, topRight, bottomLeft, target, ZERO_BCI);
     }
     virtual void UCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target,
         bitCapInt controlPerm);
@@ -220,11 +224,13 @@ public:
     virtual void Mtrx(const complex* mtrx, bitLenInt qubit);
     virtual void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
-        UCMtrx(controls, mtrx, target, pow2(controls.size()) - 1U);
+        bitCapInt m = pow2(controls.size());
+        bi_decrement(&m, 1U);
+        UCMtrx(controls, mtrx, target, m);
     }
     virtual void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
-        UCMtrx(controls, mtrx, target, 0U);
+        UCMtrx(controls, mtrx, target, ZERO_BCI);
     }
     virtual void UCMtrx(
         const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm);
@@ -398,12 +404,12 @@ public:
     }
     virtual real1_f SumSqrDiff(QUnitPtr toCompare);
     virtual real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
     {
         return ExpectationFactorized(false, false, bits, perms, std::vector<real1_f>(), offset, false);
     }
     virtual real1_f ExpectationBitsFactorizedRdm(
-        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U)
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
     {
         return ExpectationFactorized(true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }
@@ -740,12 +746,12 @@ protected:
         }
 
         if (norm(shard.amp1) <= FP_NORM_EPSILON) {
-            shard.unit = MakeEngine(1U, 0U);
+            shard.unit = MakeEngine(1U, ZERO_BCI);
         } else if (norm(shard.amp0) <= FP_NORM_EPSILON) {
-            shard.unit = MakeEngine(1U, 1U);
+            shard.unit = MakeEngine(1U, ONE_BCI);
         } else {
             complex bitState[2U]{ shard.amp0, shard.amp1 };
-            shard.unit = MakeEngine(1U, 0U);
+            shard.unit = MakeEngine(1U, ZERO_BCI);
             shard.unit->SetQuantumState(bitState);
         }
     }
