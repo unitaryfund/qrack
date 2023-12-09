@@ -41,8 +41,8 @@ protected:
     int64_t devID;
     QInterfaceEngine rootEngine;
     bitCapIntOcl basePageMaxQPower;
+    bitCapIntOcl basePageCount;
     complex phaseFactor;
-    bitCapInt basePageCount;
     std::vector<bool> devicesHostPointer;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
@@ -54,7 +54,7 @@ protected:
     {
         QInterface::SetQubitCount(qb);
         baseQubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
-        basePageCount = pow2(qubitCount - baseQubitsPerPage);
+        basePageCount = pow2Ocl(qubitCount - baseQubitsPerPage);
         basePageMaxQPower = pow2Ocl(baseQubitsPerPage);
     }
 
