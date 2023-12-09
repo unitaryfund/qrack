@@ -75,7 +75,7 @@ QInterfacePtr QStabilizer::Clone()
 {
     Finish();
 
-    QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
+    QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
         randGlobalPhase, false, -1, hardware_rand_generator != NULL);
     clone->Finish();
 
@@ -117,12 +117,12 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
         }
     }
 
-    if (!perm) {
+    if (bi_compare_0(perm) == 0) {
         return;
     }
 
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
-        if ((perm >> j) & 1U) {
+        if (bi_and_1(bi_rshift(perm, j))) {
             X(j);
         }
     }
@@ -291,10 +291,10 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     }
     amp *= std::polar(ONE_R1, phaseOffset);
 
-    bitCapInt perm = 0U;
+    bitCapInt perm = ZERO_BCI;
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         if (xRow[j]) {
-            perm |= pow2(j);
+            bi_or_ip(&perm, pow2(j));
         }
     }
 
@@ -305,7 +305,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    stateVec[(size_t)entry.permutation] = entry.amplitude;
+    stateVec[entry.permutation.bits[0U]] = entry.amplitude;
 }
 
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
@@ -326,22 +326,18 @@ void QStabilizer::setBasisState(const real1_f& nrm, std::map<bitCapInt, complex>
 void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    outputProbs[(size_t)entry.permutation] = norm(entry.amplitude);
+    outputProbs[entry.permutation.bits[0U]] = norm(entry.amplitude);
 }
 
 real1_f QStabilizer::getExpectation(
     const real1_f& nrm, const std::vector<bitCapInt>& bitPowers, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    bitCapInt retIndex = 0U;
+    bitCapInt retIndex = ZERO_BCI;
     for (size_t b = 0U; b < bitPowers.size(); ++b) {
-        retIndex += (entry.permutation & bitPowers[b]) ? perms[(b << 1U) | 1U] : perms[b << 1U];
+        bi_add_ip(&retIndex, (bi_compare_0(bi_and(entry.permutation, bitPowers[b])) != 0) ? perms[(b << 1U) | 1U] : perms[b << 1U]);
     }
-#if (QBCAPPOW > 6) && BOOST_AVAILABLE
-    return (offset + retIndex).convert_to<real1_f>() * norm(entry.amplitude);
-#else
-    return (offset + retIndex) * norm(entry.amplitude);
-#endif
+    return ((real1_f)bi_to_double(bi_add(offset, retIndex))) * norm(entry.amplitude);
 }
 
 real1_f QStabilizer::getExpectation(
@@ -350,7 +346,7 @@ real1_f QStabilizer::getExpectation(
     const AmplitudeEntry entry = getBasisAmp(nrm);
     real1_f weight = ZERO_R1_F;
     for (size_t b = 0U; b < bitPowers.size(); ++b) {
-        weight += (entry.permutation & bitPowers[b]) ? weights[(b << 1U) | 1U] : weights[b << 1U];
+        weight += (bi_compare_0(bi_and(entry.permutation, bitPowers[b])) != 0) ? weights[(b << 1U) | 1U] : weights[b << 1U];
     }
     return weight * norm(entry.amplitude);
 }
@@ -366,9 +362,9 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
@@ -376,10 +372,10 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
     setBasisState(nrm, stateVec);
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -395,21 +391,21 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     // init stateVec as all 0 values
-    eng->SetPermutation(0U);
-    eng->SetAmplitude(0U, ZERO_CMPLX);
+    eng->SetPermutation(ZERO_BCI);
+    eng->SetAmplitude(ZERO_BCI, ZERO_CMPLX);
 
     setBasisState(nrm, eng);
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -425,19 +421,19 @@ std::map<bitCapInt, complex> QStabilizer::GetQuantumState()
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     std::map<bitCapInt, complex> stateMap;
 
     setBasisState(nrm, stateMap);
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -455,9 +451,9 @@ void QStabilizer::GetProbs(real1* outputProbs)
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
@@ -465,10 +461,10 @@ void QStabilizer::GetProbs(real1* outputProbs)
     std::fill(outputProbs, outputProbs + pow2Ocl(qubitCount), ZERO_R1);
 
     setBasisProb(nrm, outputProbs);
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; t < permCountMin1; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -484,25 +480,25 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    if (entry.permutation == perm) {
+    if (bi_compare(entry.permutation, perm) == 0) {
         return entry.amplitude;
     }
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
         const AmplitudeEntry entry = getBasisAmp(nrm);
-        if (entry.permutation == perm) {
+        if (bi_compare(entry.permutation, perm) == 0) {
             return entry.amplitude;
         }
     }
@@ -521,9 +517,9 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
@@ -532,10 +528,10 @@ std::vector<complex> QStabilizer::GetAmplitudes(std::vector<bitCapInt> perms)
         amps[entry.permutation] = entry.amplitude;
     }
     if (amps.size() < perms.size()) {
-        for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-            const bitCapInt t2 = t ^ (t + 1U);
+        for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+            const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
             for (bitLenInt i = 0U; i < g; ++i) {
-                if ((t2 >> i) & 1U) {
+                if (bi_and_1(bi_rshift(t2, i))) {
                     rowmult(elemCount, qubitCount + i);
                 }
             }
@@ -573,37 +569,37 @@ AmplitudeEntry QStabilizer::GetAnyAmplitude()
 AmplitudeEntry QStabilizer::GetQubitAmplitude(bitLenInt t, bool m)
 {
     const bitCapInt tPow = pow2(t);
-    const bitCapInt mPow = m ? tPow : 0U;
+    const bitCapInt mPow = m ? tPow : ZERO_BCI;
 
     Finish();
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    if ((entry.permutation & tPow) == mPow) {
+    if (bi_compare(bi_and(entry.permutation, tPow), mPow) == 0) {
         return entry;
     }
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
         const AmplitudeEntry entry = getBasisAmp(nrm);
-        if ((entry.permutation & tPow) == mPow) {
+        if (bi_compare(bi_and(entry.permutation, tPow), mPow) == 0) {
             return entry;
         }
     }
 
-    return AmplitudeEntry(0U, ZERO_CMPLX);
+    return AmplitudeEntry(ZERO_BCI, ZERO_CMPLX);
 }
 
 real1_f QStabilizer::ExpectationBitsFactorized(
@@ -625,17 +621,17 @@ real1_f QStabilizer::ExpectationBitsFactorized(
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     real1 expectation = (real1)getExpectation(nrm, bitPowers, perms, offset);
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -665,17 +661,17 @@ real1_f QStabilizer::ExpectationFloatsFactorized(
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     real1_f expectation = getExpectation(nrm, bitPowers, weights);
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -695,31 +691,31 @@ real1_f QStabilizer::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
         return ProbAll(perm);
     }
 
-    const bitCapInt qubitMask = pow2(ancillaeStart) - 1U;
-    perm &= qubitMask;
+    const bitCapInt qubitMask = bi_sub(pow2(ancillaeStart), ONE_BCI);
+    bi_and_ip(&perm, qubitMask);
 
     Finish();
 
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     const AmplitudeEntry firstAmp = getBasisAmp(nrm);
-    real1 prob = ((firstAmp.permutation & qubitMask) == perm) ? norm(firstAmp.amplitude) : ZERO_R1;
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    real1 prob = (bi_compare(bi_and(firstAmp.permutation, qubitMask), perm) == 0) ? norm(firstAmp.amplitude) : ZERO_R1;
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
         const AmplitudeEntry amp = getBasisAmp(nrm);
-        if (perm == (amp.permutation & qubitMask)) {
+        if (bi_compare(perm, bi_and(amp.permutation, qubitMask)) == 0) {
             prob += norm(amp.amplitude);
         }
     }
@@ -734,23 +730,23 @@ real1_f QStabilizer::ProbMask(bitCapInt mask, bitCapInt perm)
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     const AmplitudeEntry firstAmp = getBasisAmp(nrm);
-    real1 prob = ((firstAmp.permutation & mask) == perm) ? norm(firstAmp.amplitude) : ZERO_R1;
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    real1 prob = (bi_compare(bi_and(firstAmp.permutation, mask), perm) == 0) ? norm(firstAmp.amplitude) : ZERO_R1;
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
         const AmplitudeEntry amp = getBasisAmp(nrm);
-        if (perm == (amp.permutation & mask)) {
+        if (bi_compare(perm, bi_and(amp.permutation, mask))) {
             prob += norm(amp.amplitude);
         }
     }
@@ -889,7 +885,7 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(c, false);
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(c, false);
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -923,7 +919,7 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(c, true);
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(c, true);
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -1068,30 +1064,30 @@ void QStabilizer::H(bitLenInt t)
     const bitCapInt tPow = pow2(t);
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
     seed(g);
 
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    if (nIsSepZ || ((entry.permutation & tPow) == 0U)) {
-        const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
+    if (nIsSepZ || (bi_compare_0(bi_and(entry.permutation, tPow)) == 0U)) {
+        const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : bi_and(entry.permutation, bi_not(tPow)));
         if (norm(oAmp) > FP_NORM_EPSILON) {
             SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
             return;
         }
     }
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
         const AmplitudeEntry entry = getBasisAmp(nrm);
-        if (nIsSepZ || ((entry.permutation & tPow) == 0U)) {
-            const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
+        if (nIsSepZ || (bi_compare_0(bi_and(entry.permutation, tPow)) == 0U)) {
+            const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : bi_and(entry.permutation, bi_not(tPow)));
             if (norm(oAmp) > FP_NORM_EPSILON) {
                 SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
                 return;
@@ -1151,7 +1147,7 @@ void QStabilizer::Z(bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
 
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -1176,7 +1172,7 @@ void QStabilizer::S(bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
 
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -1206,7 +1202,7 @@ void QStabilizer::IS(bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(0U, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
 
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -1369,9 +1365,9 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
         const bitLenInt g = gaussian();
         const bitCapInt permCount = pow2(g);
-        const bitCapInt permCountMin1 = permCount - ONE_BCI;
+        const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
         const bitLenInt elemCount = qubitCount << 1U;
-        const real1_f nrm = sqrt(ONE_R1_F / (real1_f)permCount);
+        const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
 
         seed(g);
 
@@ -1381,10 +1377,10 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
             return result;
         }
-        for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-            const bitCapInt t2 = t ^ (t + 1U);
+        for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+            const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
             for (bitLenInt i = 0U; i < g; ++i) {
-                if ((t2 >> i) & 1U) {
+                if (bi_and_1(bi_rshift(t2, i))) {
                     rowmult(elemCount, qubitCount + i);
                 }
             }
@@ -1487,7 +1483,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 }
 QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
 {
-    QStabilizerPtr dest = std::make_shared<QStabilizer>(length, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
+    QStabilizerPtr dest = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
         randGlobalPhase, false, -1, hardware_rand_generator != NULL);
     Decompose(start, dest);
 
@@ -1561,7 +1557,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     }
     Finish();
 
-    const AmplitudeEntry ampEntry = (randGlobalPhase || dest) ? AmplitudeEntry(0U, ONE_CMPLX) : GetAnyAmplitude();
+    const AmplitudeEntry ampEntry = (randGlobalPhase || dest) ? AmplitudeEntry(ZERO_BCI, ONE_CMPLX) : GetAnyAmplitude();
 
     // We want to have the maximum number of 0 cross terms possible.
     gaussian();
@@ -1612,9 +1608,9 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         return;
     }
 
-    const bitCapInt startMask = pow2(start) - 1U;
-    const bitCapInt endMask = (oMaxQPower - 1U) ^ (pow2(start + length) - 1U);
-    const bitCapInt nPerm = (ampEntry.permutation & startMask) | ((ampEntry.permutation & endMask) >> length);
+    const bitCapInt startMask = bi_sub(pow2(start), ONE_BCI);
+    const bitCapInt endMask = bi_xor(bi_sub(oMaxQPower, ONE_BCI), bi_sub(pow2(start + length), ONE_BCI));
+    const bitCapInt nPerm = bi_or(bi_and(ampEntry.permutation, startMask), bi_rshift(bi_and(ampEntry.permutation, endMask), length));
 
     SetPhaseOffset(phaseOffset + std::arg(ampEntry.amplitude) - std::arg(GetAmplitude(nPerm)));
 }
@@ -1646,9 +1642,9 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
     // log_2 of number of nonzero basis states
     const bitLenInt g = gaussian();
     const bitCapInt permCount = pow2(g);
-    const bitCapInt permCountMin1 = permCount - ONE_BCI;
+    const bitCapInt permCountMin1 = bi_sub(permCount, ONE_BCI);
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f pNrm = ONE_R1_F / (real1_f)permCount;
+    const real1_f pNrm = ONE_R1_F / (real1_f)bi_to_double(permCount);
     const real1_f nrm = sqrt(pNrm);
 
     seed(g);
@@ -1660,10 +1656,10 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
         if ((potential - abs(proj)) > error_tol) {
             return ONE_R1_F;
         }
-        for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-            const bitCapInt t2 = t ^ (t + 1U);
+        for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+            const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
             for (bitLenInt i = 0U; i < g; ++i) {
-                if ((t2 >> i) & 1U) {
+                if (bi_and_1(bi_rshift(t2, i))) {
                     rowmult(elemCount, qubitCount + i);
                 }
             }
@@ -1687,10 +1683,10 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
         if (it != stateMapCache.end()) {
             proj += conj(entry.amplitude) * it->second;
         }
-        for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-            const bitCapInt t2 = t ^ (t + 1U);
+        for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+            const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
             for (bitLenInt i = 0U; i < g; ++i) {
-                if ((t2 >> i) & 1U) {
+                if (bi_and_1(bi_rshift(t2, i))) {
                     rowmult(elemCount, qubitCount + i);
                 }
             }
@@ -1706,10 +1702,10 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, real1_f error
 
     const AmplitudeEntry entry = getBasisAmp(nrm);
     complex proj = conj(entry.amplitude) * toCompare->GetAmplitude(entry.permutation);
-    for (bitCapInt t = 0U; t < permCountMin1; ++t) {
-        const bitCapInt t2 = t ^ (t + 1U);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = bi_xor(t, bi_add(t, ONE_BCI));
         for (bitLenInt i = 0U; i < g; ++i) {
-            if ((t2 >> i) & 1U) {
+            if (bi_and_1(bi_rshift(t2, i))) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -1726,7 +1722,7 @@ void QStabilizer::SetQuantumState(const complex* inputState)
         throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
     }
 
-    SetPermutation(0U);
+    SetPermutation(ZERO_BCI);
 
     const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
     const real1 sqrtProb = sqrt(prob);
