@@ -255,15 +255,16 @@ bool isOverflowSub(
 
 bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers)
 {
+    if (!skipPowers.size()) {
+        return perm;
+    }
+
     bitCapInt iHigh = perm;
     bitCapInt i = ZERO_BCI;
-    for (size_t p = 0U; p < skipPowers.size(); ++p) {
-        bitCapInt iLow = skipPowers[p];
-        bi_decrement(&iLow, 1U);
-        bi_and_ip(&iLow, iHigh);
+    for (bitCapIntOcl p = 0U; p < skipPowers.size(); ++p) {
+        bitCapInt iLow = iHigh & (skipPowers[p] - ONE_BCI);
         bi_or_ip(&i, iLow);
-        bi_xor_ip(&iHigh, iLow);
-        bi_lshift_ip(&iHigh, 1U);
+        iHigh = (iHigh ^ iLow) << 1U;
     }
     bi_or_ip(&i, iHigh);
 

@@ -159,8 +159,8 @@ TEST_CASE("test_complex")
 TEST_CASE("test_push_apart_bits")
 {
     bitCapInt perm = bi_create(0x13U);
-    const std::vector<bitCapInt> skipPowers{ 1U << 2U };
-    REQUIRE(pushApartBits(perm, skipPowers).bits[0U] == 0x23U);
+    const std::vector<bitCapInt> skipPowers{ pow2(2U) };
+    REQUIRE(bi_compare(pushApartBits(perm, skipPowers), bi_create(0x23U)) == 0);
 }
 
 #if UINTPOW > 3
