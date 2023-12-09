@@ -122,7 +122,7 @@ inline int bi_compare_1(const BigInteger& left)
     return 0;
 }
 
-inline BigInteger bi_add(const BigInteger& left, const BigInteger& right)
+inline BigInteger operator+(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
     result.bits[0] = 0;
@@ -148,7 +148,7 @@ inline void bi_add_ip(BigInteger* left, const BigInteger& right)
     left->bits[BIG_INTEGER_MAX_WORD_INDEX] += right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-inline BigInteger bi_sub(const BigInteger& left, const BigInteger& right)
+inline BigInteger operator-(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
     result.bits[0] = 0;
@@ -515,7 +515,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
             }
         }
         if (wordSize == BIG_INTEGER_WORD_SIZE) {
-            return bi_mul_small(left, (BIG_INTEGER_HALF_WORD)(right->bits[0]));
+            return left * (BIG_INTEGER_HALF_WORD)(right->bits[0]);
         }
     }
 
@@ -527,7 +527,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
             }
         }
         if (wordSize == BIG_INTEGER_WORD_SIZE) {
-            return bi_mul_small(right, (BIG_INTEGER_HALF_WORD)(left.bits[0]));
+            return right & (BIG_INTEGER_HALF_WORD)(left.bits[0]);
         }
     }
 

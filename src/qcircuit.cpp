@@ -197,7 +197,7 @@ void QCircuit::Run(QInterfacePtr qsim)
         const bitLenInt& t = gate->target;
 
         if (!gate->controls.size()) {
-            qsim->Mtrx(gate->payloads[0].get(), t);
+            qsim->Mtrx(gate->payloads[ZERO_BCI].get(), t);
 
             continue;
         }

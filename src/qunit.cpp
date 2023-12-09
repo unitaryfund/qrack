@@ -1059,7 +1059,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
     bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
-        bi_and_ip(&nV, bi_sub(v, ONE_BCI)); // clear the least significant bit set
+        bi_and_ip(&nV, v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
         ToPermBasisProb(qIndices.back());
     }
@@ -1135,7 +1135,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
     bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
-        bi_and_ip(&nV, bi_sub(v, ONE_BCI)); // clear the least significant bit set
+        bi_and_ip(&nV, v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
 
         RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
@@ -1195,7 +1195,7 @@ bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
     bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
-        bi_and_ip(&nV, bi_sub(v, ONE_BCI)); // clear the least significant bit set
+        bi_and_ip(&nV, v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
         ToPermBasisProb(qIndices.back());
     }
@@ -1261,7 +1261,7 @@ void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt 
     bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
-        bi_and_ip(&nV, bi_sub(v, ONE_BCI)); // clear the least significant bit set
+        bi_and_ip(&nV, v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
     }
 
@@ -2247,7 +2247,7 @@ void QUnit::ZBase(bitLenInt target)
         return;                                                                                                        \
     }                                                                                                                  \
     std::vector<bitLenInt> controlVec;                                                                                 \
-    bitCapInt _perm = anti ? ZERO_BCI : bi_sub(pow2(controls.size()), ONE_BCI);                                        \
+    bitCapInt _perm = anti ? ZERO_BCI : (pow2(controls.size()) - ONE_BCI);                                             \
     if (TrimControls(controls, controlVec, &_perm)) {                                                                  \
         return;                                                                                                        \
     }                                                                                                                  \
@@ -3335,7 +3335,7 @@ void QUnit::DECC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLen
         bi_increment(&toSub, 1U);
     }
 
-    bitCapInt invToSub = bi_sub(pow2(length), toSub);
+    bitCapInt invToSub = pow2(length) - toSub;
     INT(invToSub, inOutStart, length, carryIndex, true);
 }
 

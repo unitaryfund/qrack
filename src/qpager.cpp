@@ -49,7 +49,7 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
         return;
     }
 
-    bi_and_ip(&initState, bi_sub(maxQPower, ONE_BCI));
+    bi_and_ip(&initState, maxQPower + ONE_BCI);
     const bitCapIntOcl initStateOcl = initState.bits[0U];
     bitCapIntOcl pagePerm = 0U;
     for (bitCapIntOcl i = 0U; i < basePageCount; ++i) {

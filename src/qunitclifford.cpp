@@ -144,7 +144,7 @@ real1_f QUnitClifford::ProbMask(bitCapInt mask, bitCapInt perm)
     std::vector<bitLenInt> bits;
     while (bi_compare_0(v) != 0) {
         bitCapInt oldV = v;
-        bi_and_ip(&v, bi_sub(v, ONE_BCI)); // clear the least significant bit set
+        bi_and_ip(&v, v - ONE_BCI); // clear the least significant bit set
         bits.push_back(log2((v ^ oldV) & oldV));
     }
 

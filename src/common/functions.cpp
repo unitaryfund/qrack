@@ -270,4 +270,49 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
     return i;
 }
 
+std::ostream& operator<<(std::ostream& os, bitCapInt b)
+{
+    if (bi_compare_0(b) == 0) {
+        os << "0";
+        return os;
+    }
+
+    // Calculate the base-10 digits, from lowest to highest.
+    std::vector<std::string> digits;
+    while (bi_compare_0(b) != 0) {
+        bitCapInt quo;
+        unsigned rem;
+        bi_div_mod_small(b, 10U, &quo, &rem);
+        digits.push_back(std::to_string((unsigned char)rem));
+        b = quo;
+    }
+
+    // Reversing order, print the digits from highest to lowest.
+    for (size_t i = digits.size() - 1U; i > 0; --i) {
+        os << digits[i];
+    }
+    // Avoid the need for a signed comparison.
+    os << digits[0];
+
+    return os;
+}
+
+std::istream& operator>>(std::istream& is, bitCapInt& b)
+{
+    // Get the whole input string at once.
+    std::string input;
+    is >> input;
+
+    // Start the output address value at 0.
+    b = ZERO_BCI;
+    for (size_t i = 0; i < input.size(); ++i) {
+        // Left shift by 1 base-10 digit.
+        b = b * 10;
+        // Add the next lowest base-10 digit.
+        bi_increment(&b, (input[i] - 48U));
+    }
+
+    return is;
+}
+
 } // namespace Qrack

@@ -496,9 +496,8 @@ real1_f QInterface::ExpectationBitsFactorized(
 
     if (bits.size() == 1U) {
         const real1_f prob = Prob(bits[0]);
-        const bitCapInt p0 = bi_add(perms[0U], offset);
-        const bitCapInt p1 = bi_add(perms[1U], offset);
-        return (real1_f)bi_to_double(p0) * (ONE_R1_F - prob) + (real1_f)bi_to_double(p1) * prob;
+        return (real1_f)bi_to_double(perms[0U] + offset) * (ONE_R1_F - prob) +
+            (real1_f)bi_to_double(perms[1U] + offset) * prob;
     }
 
     std::vector<bitCapInt> bitPowers(bits.size());

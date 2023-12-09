@@ -107,6 +107,9 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
 
+std::ostream& operator<<(std::ostream& os, bitCapInt b);
+std::istream& operator>>(std::istream& is, bitCapInt& b);
+
 #if ENABLE_ENV_VARS
 const real1_f _qrack_qbdt_sep_thresh = getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")
     ? (real1_f)std::stof(std::string(getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")))
