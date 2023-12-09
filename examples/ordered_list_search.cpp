@@ -74,7 +74,7 @@ int main()
     // general ordered list. Changing the composition of the list, just above, allows you test different cases.
 
     // This is the theoretical starting point of the algorithm.
-    qReg->SetPermutation(0);
+    qReg->SetPermutation(ZERO_BCI);
     partLength = indexLength;
 
     for (i = 0; i < (indexLength / 2); i++) {
@@ -89,7 +89,7 @@ int main()
         bitLenInt unfixedLength = indexLength - fixedLength;
         bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
         bitCapIntOcl unfixedMask = (1 << unfixedLength) - 1;
-        bitCapIntOcl key = ((bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl key = qReg->MReg(2 * valueLength, indexLength).bits[0U] & fixedLengthMask;
 
         // (We could either manipulate the quantum bits directly to check the bounds, or rely on auxiliary classical
         // computing components, as need and efficiency dictate).
@@ -135,8 +135,8 @@ int main()
             qReg->X(valueLength - 1);
             qReg->X(2 * valueLength - 1);
             // Subtract from the value registers with the bits to borrow from:
-            qAlu->DEC(TARGET_VALUE, 0, valueLength);
-            qAlu->DEC(TARGET_VALUE, valueLength, valueLength);
+            qAlu->DEC(bi_create(TARGET_VALUE), 0, valueLength);
+            qAlu->DEC(bi_create(TARGET_VALUE), valueLength, valueLength);
             // If both are higher, this is not the quadrant, and neither flips the borrow.
             // If both are lower, this is not the quadrant, and both flip the borrow.
             // If one is higher and one is lower, the low register borrow bit is flipped, and high register borrow is
@@ -148,8 +148,8 @@ int main()
             // Reverse everything but the phase flip:
             qReg->CCNOT(valueLength - 1, 2 * valueLength - 1, carryIndex);
             qReg->X(valueLength - 1);
-            qAlu->INC(TARGET_VALUE, valueLength, valueLength);
-            qAlu->INC(TARGET_VALUE, 0, valueLength);
+            qAlu->INC(bi_create(TARGET_VALUE), valueLength, valueLength);
+            qAlu->INC(bi_create(TARGET_VALUE), 0, valueLength);
             qReg->X(2 * valueLength - 1);
             qReg->X(valueLength - 1);
             // This ends the "oracle."
@@ -157,11 +157,11 @@ int main()
             // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
 
             // We map from input to output.
-            qAlu->DEC(TARGET_VALUE, 0, valueLength - 1);
+            qAlu->DEC(bi_create(TARGET_VALUE), 0, valueLength - 1);
             // Phase flip the target state.
             qReg->ZeroPhaseFlip(0, valueLength - 1);
             // We map back from outputs to inputs.
-            qAlu->INC(TARGET_VALUE, 0, valueLength - 1);
+            qAlu->INC(bi_create(TARGET_VALUE), 0, valueLength - 1);
         }
 
         // Now, we flip the phase of the input state:
@@ -197,7 +197,7 @@ int main()
     if (!foundPerm && (i == (indexLength / 2))) {
         // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
         // one match.
-        bitCapIntOcl key = (bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength);
+        bitCapIntOcl key = qReg->MReg(2 * valueLength, indexLength).bits[0U];
         if (toLoad[key] == TARGET_VALUE) {
             foundPerm = true;
         }
@@ -214,13 +214,13 @@ int main()
         bitLenInt unfixedLength = indexLength - fixedLength;
         bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
         bitCapIntOcl checkIncrement = 1 << (unfixedLength - 2);
-        bitCapIntOcl key = ((bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl key = qReg->MReg(2 * valueLength, indexLength).bits[0U] & fixedLengthMask;
         for (i = 0; i < 4; i++) {
             // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
             // computing components, as need and efficiency dictate).
             if (toLoad[key | (i * checkIncrement)] == TARGET_VALUE) {
                 foundPerm = true;
-                qReg->SetReg(2 * valueLength, indexLength, key | (i * checkIncrement));
+                qReg->SetReg(2 * valueLength, indexLength, bi_create(key | (i * checkIncrement)));
                 break;
             }
         }
@@ -239,7 +239,7 @@ int main()
     std::cout << "Full index/value pair:";
     bitCapInt endState = qReg->MReg(0, 20);
     for (j = 19; j >= 0; j--) {
-        if (endState & (1U << j)) {
+        if (bi_compare_0(endState & pow2(j)) != 0) {
             std::cout << "1";
         } else {
             std::cout << "0";

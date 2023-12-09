@@ -130,13 +130,13 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         for (int sample = 0; sample < benchmarkSamples; sample++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
-                    bitCapInt perm = (bitCapInt)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower());
-                    if (perm >= qftReg->GetMaxQPower()) {
+                    bitCapInt perm = bi_create((bitCapIntOcl)(qftReg->Rand() * bi_to_double(qftReg->GetMaxQPower())));
+                    if (bi_compare(perm, qftReg->GetMaxQPower()) >= 0) {
                         perm = qftReg->GetMaxQPower() - ONE_BCI;
                     }
                     qftReg->SetPermutation(perm);
                 } else {
-                    qftReg->SetPermutation(0);
+                    qftReg->SetPermutation(ZERO_BCI);
                 }
                 if (hadamardRandomBits) {
                     for (bitLenInt j = 0; j < numBits; j++) {
@@ -146,7 +146,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     }
                 }
             } else {
-                qftReg->SetPermutation(0);
+                qftReg->SetPermutation(ZERO_BCI);
                 for (bitLenInt i = 0; i < numBits; i++) {
                     RandomInitQubit(qftReg, i);
                 }
@@ -455,28 +455,28 @@ TEST_CASE("test_rol", "[gates]")
 
 TEST_CASE("test_inc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INC(1, 0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INC(ONE_BCI, 0, n); });
 }
 
 #if ENABLE_ALU
 TEST_CASE("test_incs", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCS(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCS(ONE_BCI, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_incc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCC(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCC(ONE_BCI, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_incsc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCSC(1, 0, n - 2, n - 2, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCSC(ONE_BCI, 0, n - 2, n - 2, n - 1); });
 }
 
 TEST_CASE("test_c_phase_flip_if_less", "[phaseflip]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->CPhaseFlipIfLess(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->CPhaseFlipIfLess(ONE_BCI, 0, n - 1, n - 1); });
 }
 #endif
 
@@ -494,7 +494,7 @@ TEST_CASE("test_phase_flip", "[phaseflip]")
 void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> fn)
 {
     const bitCapIntOcl wordLength = (max_qubits / 16U + 1U);
-    const bitCapIntOcl indexLength = ((bitCapIntOcl)ONE_BCI << (max_qubits / 2U));
+    const bitCapIntOcl indexLength = pow2Ocl(max_qubits / 2U);
     std::unique_ptr<unsigned char[]> testPage(new unsigned char[wordLength * indexLength]);
     for (bitCapIntOcl j = 0; j < indexLength; j++) {
         for (bitCapIntOcl i = 0; i < wordLength; i++) {
@@ -534,12 +534,12 @@ TEST_CASE("test_setbit", "[aux]")
 
 TEST_CASE("test_proball", "[aux]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ProbAll(0x02); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ProbAll(bi_create(0x02)); });
 }
 
 TEST_CASE("test_set_reg", "[aux]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->SetReg(0, n, 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->SetReg(0, n, ONE_BCI); });
 }
 
 TEST_CASE("test_ghz", "[gates]")
@@ -562,17 +562,17 @@ TEST_CASE("test_grover", "[grover]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) {
         // Twelve iterations maximizes the probablity for 256 searched elements, for example.
         // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
-        const int optIter = M_PI / (4.0 * asin(1.0 / sqrt((real1_s)pow2(n))));
+        const int optIter = M_PI / (4.0 * asin(1.0 / sqrt((real1_s)pow2Ocl(n))));
 
         // Our input to the subroutine "oracle" is 8 bits.
-        qftReg->SetPermutation(0);
+        qftReg->SetPermutation(ZERO_BCI);
         qftReg->H(0, n);
 
         for (int i = 0; i < optIter; i++) {
             // Our "oracle" is true for an input of "3" and false for all other inputs.
-            QALU(qftReg)->DEC(3, 0, n);
+            QALU(qftReg)->DEC(bi_create(3), 0, n);
             qftReg->ZeroPhaseFlip(0, n);
-            QALU(qftReg)->INC(3, 0, n);
+            QALU(qftReg)->INC(bi_create(3), 0, n);
             // This ends the "oracle."
             qftReg->H(0, n);
             qftReg->ZeroPhaseFlip(0, n);
@@ -649,16 +649,16 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
         [&](QInterfacePtr qReg, bitLenInt n) {
             for (int d = 0; d < benchmarkDepth; d++) {
 
-                bitCapInt xMask = 0U;
-                bitCapInt yMask = 0U;
+                bitCapInt xMask = ZERO_BCI;
+                bitCapInt yMask = ZERO_BCI;
                 for (bitLenInt i = 0; i < n; i++) {
                     const real1_f gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         // qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        xMask |= pow2(i);
+                        bi_or_ip(&xMask, pow2(i));
                     } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
-                        yMask |= pow2(i);
+                        bi_or_ip(&yMask, pow2(i));
                     } else {
                         qReg->T(i);
                     }
@@ -707,16 +707,16 @@ TEST_CASE("test_stabilizer", "[supreme]")
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
             for (int d = 0; d < benchmarkDepth; d++) {
-                bitCapInt xMask = 0U;
-                bitCapInt yMask = 0U;
+                bitCapInt xMask = ZERO_BCI;
+                bitCapInt yMask = ZERO_BCI;
                 for (bitLenInt i = 0; i < n; i++) {
                     const real1_f gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        xMask |= pow2(i);
+                        bi_or_ip(&xMask, pow2(i));
                     } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
-                        yMask |= pow2(i);
+                        bi_or_ip(&yMask, pow2(i));
                     } else {
                         qReg->S(i);
                     }
@@ -755,7 +755,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         for (int d = 0; d < benchmarkDepth; d++) {
-            bitCapInt zMask = 0U;
+            bitCapInt zMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -796,14 +796,14 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                     qReg->S(i);
                 } else if (gateRand < (3 * ONE_R1)) {
                     // Z^(3/4)
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                     qReg->IT(i);
                 } else if (gateRand < (4 * ONE_R1)) {
                     // Z
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 } else if (gateRand < (5 * ONE_R1)) {
                     // Z^(-3/4)
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                     qReg->T(i);
                 } else if (gateRand < (6 * ONE_R1)) {
                     // Z^(-1/2)
@@ -874,7 +874,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         for (int d = 0; d < benchmarkDepth; d++) {
-            bitCapInt zMask = 0U;
+            bitCapInt zMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -915,14 +915,14 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                     qReg->S(i);
                 } else if (gateRand < (3 * ONE_R1)) {
                     // Z^(3/4)
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                     qReg->IT(i);
                 } else if (gateRand < (4 * ONE_R1)) {
                     // Z
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 } else if (gateRand < (5 * ONE_R1)) {
                     // Z^(-3/4)
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                     qReg->T(i);
                 } else if (gateRand < (6 * ONE_R1)) {
                     // Z^(-1/2)
@@ -1223,7 +1223,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
         const auto iterClock = std::chrono::high_resolution_clock::now();
 
         for (int d = 0; d < benchmarkDepth; d++) {
-            bitCapInt zMask = 0U;
+            bitCapInt zMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -1255,7 +1255,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                 // Discrete Z root gates option:
                 gateRand = 2 * qReg->Rand();
                 if (gateRand < ONE_R1) {
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 }
 
                 gateRand = 2 * qReg->Rand();
@@ -1460,7 +1460,7 @@ TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
         const auto iterClock = std::chrono::high_resolution_clock::now();
 
         for (int d = 0; d < benchmarkDepth; d++) {
-            bitCapInt zMask = 0U;
+            bitCapInt zMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -1492,7 +1492,7 @@ TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
                 // Discrete Z root gates option:
                 gateRand = 2 * qReg->Rand();
                 if (gateRand < ONE_R1) {
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 }
 
                 gateRand = 2 * qReg->Rand();
@@ -2069,24 +2069,24 @@ TEST_CASE("test_circuit_t_nn", "[supreme]")
                     if ((2 * qReg->Rand()) < ONE_R1) {
                         if (gateRand < ONE_R1) {
                             // qReg->AntiCNOT(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, ZERO_BCI));
                         } else if (gateRand < (2 * ONE_R1)) {
                             // qReg->AntiCY(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, ZERO_BCI));
                         } else {
                             // qReg->AntiCZ(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, ZERO_BCI));
                         }
                     } else {
                         if (gateRand < ONE_R1) {
                             // qReg->CNOT(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, ONE_BCI));
                         } else if (gateRand < (2 * ONE_R1)) {
                             // qReg->CY(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, ONE_BCI));
                         } else {
                             // qReg->CZ(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, ONE_BCI));
                         }
                     }
                 }
@@ -2235,24 +2235,24 @@ TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
                     if ((2 * qReg->Rand()) < ONE_R1) {
                         if (gateRand < ONE_R1) {
                             // qReg->AntiCNOT(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, ZERO_BCI));
                         } else if (gateRand < (2 * ONE_R1)) {
                             // qReg->AntiCY(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, ZERO_BCI));
                         } else {
                             // qReg->AntiCZ(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, ZERO_BCI));
                         }
                     } else {
                         if (gateRand < ONE_R1) {
                             // qReg->CNOT(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, ONE_BCI));
                         } else if (gateRand < (2 * ONE_R1)) {
                             // qReg->CY(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, ONE_BCI));
                         } else {
                             // qReg->CZ(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, ONE_BCI));
                         }
                     }
                 }
@@ -3344,16 +3344,16 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
 
             for (d = 0; d < benchmarkDepth; d++) {
 
-                bitCapInt xMask = 0U;
-                bitCapInt yMask = 0U;
+                bitCapInt xMask = ZERO_BCI;
+                bitCapInt yMask = ZERO_BCI;
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        xMask |= pow2(i);
+                        bi_or_ip(&xMask, pow2(i));
                     } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
-                        yMask |= pow2(i);
+                        bi_or_ip(&yMask, pow2(i));
                     } else {
                         qReg->T(i);
                     }
@@ -3487,16 +3487,16 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
             for (d = 0; d < benchmarkDepth; d++) {
 
-                bitCapInt zMask = 0U;
-                bitCapInt xMask = 0U;
+                bitCapInt zMask = ZERO_BCI;
+                bitCapInt xMask = ZERO_BCI;
                 for (i = 0; i < n; i++) {
                     gateRand = GateCount1Qb * qReg->Rand();
                     if (gateRand < 1) {
                         qReg->H(i);
                     } else if (gateRand < 2) {
-                        zMask |= pow2(i);
+                        bi_or_ip(&zMask, pow2(i));
                     } else if (gateRand < 3) {
-                        xMask |= pow2(i);
+                        bi_or_ip(&xMask, pow2(i));
                     } else {
                         // Identity;
                     }
@@ -3879,16 +3879,16 @@ TEST_CASE("test_bq_comparison", "[metriq]")
             allBits.insert(allBits.end(), i);
         }
         for (bitLenInt d = 0; d < n; ++d) {
-            bitCapInt zMask = 0U;
-            bitCapInt xMask = 0U;
+            bitCapInt zMask = ZERO_BCI;
+            bitCapInt xMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; ++i) {
                 const real1_f gateRand = GateCount1Qb * qReg->Rand();
                 if (gateRand < 1) {
                     qReg->H(i);
                 } else if (gateRand < 2) {
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 } else if (gateRand < 3) {
-                    xMask |= pow2(i);
+                    bi_or_ip(&xMask, pow2(i));
                 } else if (gateRand < 4) {
                     qReg->Y(i);
                 } else if (gateRand < 5) {
@@ -4011,16 +4011,16 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
-        bitCapInt xMask = 0U;
-        bitCapInt yMask = 0U;
+        bitCapInt xMask = ZERO_BCI;
+        bitCapInt yMask = ZERO_BCI;
         for (i = 0; i < layer1QbRands.size(); i++) {
             int gate1Qb = layer1QbRands[i];
             if (gate1Qb == 0) {
                 goldStandard->H(i);
             } else if (gate1Qb == 1) {
-                xMask |= pow2(i);
+                bi_or_ip(&xMask, pow2(i));
             } else if (gate1Qb == 2) {
-                yMask |= pow2(i);
+                bi_or_ip(&yMask, pow2(i));
             } else {
                 goldStandard->T(i);
             }
@@ -4052,10 +4052,10 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     std::map<bitCapInt, int>::iterator measurementBin;
 
-    real1_f uniformRandomCount = ITERATIONS / (real1_f)permCount;
+    real1_f uniformRandomCount = (real1_f)(ITERATIONS / bi_to_double(permCount));
     int goldBinResult;
     real1_f crossEntropy = ZERO_R1_F;
-    for (perm = 0; perm < permCount; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, permCount) < 0; bi_increment(&perm, 1U)) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
             goldBinResult = 0;
@@ -4074,7 +4074,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     int testBinResult;
     crossEntropy = ZERO_R1_F;
-    for (perm = 0; perm < permCount; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, permCount) < 0; bi_increment(&perm, 1U)) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
             goldBinResult = 0;
@@ -4108,19 +4108,19 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::map<bitCapInt, int> testCaseResult;
 
     for (int iter = 0; iter < ITERATIONS; iter++) {
-        testCase->SetPermutation(0);
+        testCase->SetPermutation(ZERO_BCI);
         for (d = 0; d < Depth; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
-            bitCapInt xMask = 0U;
-            bitCapInt yMask = 0U;
+            bitCapInt xMask = ZERO_BCI;
+            bitCapInt yMask = ZERO_BCI;
             for (i = 0; i < layer1QbRands.size(); i++) {
                 int gate1Qb = layer1QbRands[i];
                 if (gate1Qb == 0) {
                     testCase->H(i);
                 } else if (gate1Qb == 1) {
-                    xMask |= pow2(i);
+                    bi_or_ip(&xMask, pow2(i));
                 } else if (gate1Qb == 2) {
-                    yMask |= pow2(i);
+                    bi_or_ip(&yMask, pow2(i));
                 } else {
                     testCase->T(i);
                 }
@@ -4155,7 +4155,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     // testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
 
     crossEntropy = ZERO_R1_F;
-    for (perm = 0; perm < permCount; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, permCount) < 0; bi_increment(&perm, 1U)) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
             goldBinResult = 0;
@@ -4179,20 +4179,20 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     std::map<bitCapInt, int> testCaseResult2;
 
-    testCase->SetPermutation(0);
+    testCase->SetPermutation(ZERO_BCI);
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
-        bitCapInt xMask = 0U;
-        bitCapInt yMask = 0U;
+        bitCapInt xMask = ZERO_BCI;
+        bitCapInt yMask = ZERO_BCI;
         for (i = 0; i < layer1QbRands.size(); i++) {
             int gate1Qb = layer1QbRands[i];
             if (gate1Qb == 0) {
                 testCase->H(i);
             } else if (gate1Qb == 1) {
-                xMask |= pow2(i);
+                bi_or_ip(&xMask, pow2(i));
             } else if (gate1Qb == 2) {
-                yMask |= pow2(i);
+                bi_or_ip(&yMask, pow2(i));
             } else {
                 testCase->T(i);
             }
@@ -4217,7 +4217,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     testCaseResult2 = testCase->MultiShotMeasureMask(qPowers, ITERATIONS);
 
     crossEntropy = ZERO_R1_F;
-    for (perm = 0; perm < permCount; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, permCount) < 0; bi_increment(&perm, 1U)) {
         measurementBin = testCaseResult.find(perm);
         if (measurementBin == testCaseResult.end()) {
             goldBinResult = 0;
@@ -5105,37 +5105,37 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, bi_create(3U)));
                 } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, bi_create(3U)));
                 } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, bi_create(3U)));
                 } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, ZERO_BCI));
                 }
             }
         }
@@ -5354,38 +5354,38 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, bi_create(3U)));
                 } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, bi_create(3U)));
                 } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, bi_create(3U)));
                 } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, ZERO_BCI));
                 }
             }
         }
@@ -5581,38 +5581,38 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, bi_create(3U)));
                 } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, bi_create(3U)));
                 } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, bi_create(3U)));
                 } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, ZERO_BCI));
                 }
             }
         }
@@ -5635,7 +5635,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
 
-    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(bi_create(randPerm)) << std::endl;
     std::cout
         << "Execution time: "
         << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()
@@ -5783,38 +5783,38 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, bi_create(3U)));
                 } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, bi_create(3U)));
                 } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, bi_create(3U)));
                 } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, ZERO_BCI));
                 }
             }
         }
@@ -5984,26 +5984,26 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -6177,26 +6177,26 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -6348,26 +6348,26 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -6770,7 +6770,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        const real1_f rawFidelity = testCase->ProbAll(randPerm);
+        const real1_f rawFidelity = testCase->ProbAll(bi_create(randPerm));
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
@@ -7581,26 +7581,26 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
             const std::set<bitLenInt> control{ (bitLenInt)b1 };
             if (gate == 0) {
                 circuit->Swap(b1, b2);
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                 circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
             } else if (gate == 1) {
                 circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                 circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 circuit->Swap(b1, b2);
             } else if (gate == 2) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
             } else if (gate == 3) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
             } else if (gate == 4) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
             } else if (gate == 5) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
             } else if (gate == 6) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
             } else {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
             }
         }
     }
@@ -7617,7 +7617,7 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
 
-    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(bi_create(randPerm)) << std::endl;
     std::cout
         << "Execution time: "
         << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()
@@ -7737,26 +7737,26 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -7779,7 +7779,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
 
-    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(bi_create(randPerm)) << std::endl;
     std::cout
         << "Execution time: "
         << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()
@@ -7935,26 +7935,26 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -7977,7 +7977,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
 
-    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(bi_create(randPerm)) << std::endl;
     std::cout
         << "Execution time: "
         << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()

@@ -58,9 +58,9 @@ int main()
 
     // Both CPU and GPU types share the QInterface API.
 #if ENABLE_OPENCL
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, totBits, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, totBits, ZERO_BCI);
 #else
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, totBits, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, totBits, ZERO_BCI);
 #endif
     QAluPtr qAlu = std::dynamic_pointer_cast<QAlu>(qReg);
 
@@ -83,7 +83,7 @@ int main()
     for (i = 0; i < optIter; i++) {
         // The "oracle" tags one value permutation, which we know. We don't know the key, yet, but the search will
         // return it.
-        TagValue(TARGET_VALUE, qReg, indexLength, valueLength);
+        TagValue(bi_create(TARGET_VALUE), qReg, indexLength, valueLength);
 
         qReg->X(carryIndex);
         qAlu->IndexedSBC(0, indexLength, indexLength, valueLength, carryIndex, toLoad);
@@ -94,13 +94,15 @@ int main()
         // qReg->PhaseFlip();
         qAlu->IndexedADC(0, indexLength, indexLength, valueLength, carryIndex, toLoad);
         std::cout << "\t" << std::setw(2) << i
-                  << "> chance of match:" << qReg->ProbAll(TARGET_KEY | (TARGET_VALUE << indexLength)) << std::endl;
+                  << "> chance of match:" << qReg->ProbAll(bi_create(TARGET_KEY | (TARGET_VALUE << indexLength)))
+                  << std::endl;
     }
 
     qReg->MReg(0, 8);
 
     std::cout << "After measurement (of value, key, or both):" << std::endl;
-    std::cout << "Chance of match:" << qReg->ProbAll(TARGET_KEY | (TARGET_VALUE << indexLength)) << std::endl;
+    std::cout << "Chance of match:" << qReg->ProbAll(bi_create(TARGET_KEY | (TARGET_VALUE << indexLength)))
+              << std::endl;
 
     delete[] toLoad;
 }

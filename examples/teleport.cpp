@@ -68,7 +68,7 @@ int main()
     PrintBit(qReg, 2U);
 
     // MWI unitary equivalent:
-    qReg->SetPermutation(0);
+    qReg->SetPermutation(ZERO_BCI);
     // Eve prepares a Bell pair.
     qReg->H(1);
     qReg->CNOT(1, 2);
@@ -86,7 +86,7 @@ int main()
 
     // Another MWI unitary equivalent, with a caveat: This variant would specifically be "decoherent," if measurements
     // were used instead of unitary gates.
-    qReg->SetPermutation(0);
+    qReg->SetPermutation(ZERO_BCI);
     // Eve prepares a Bell pair.
     qReg->H(1);
     qReg->CNOT(1, 2);

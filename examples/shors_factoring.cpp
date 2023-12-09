@@ -24,14 +24,19 @@ using namespace Qrack;
 
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
-    if (n2 == 0)
+    if (bi_compare_0(n2) == 0)
         return n1;
-    return gcd(n2, n1 % n2);
+
+    bitCapInt rem;
+    bi_div_mod(n1, n2, NULL, &rem);
+
+    return gcd(n2, rem);
 }
 
 bitCapInt continued_fraction_step(bitCapInt* numerator, bitCapInt* denominator)
 {
-    bitCapInt intPart = (*numerator) / (*denominator);
+    bitCapInt intPart;
+    bi_div_mod(*numerator, *denominator, &intPart, NULL);
     bitCapInt partDenominator = (*numerator) - intPart * (*denominator);
     bitCapInt partNumerator = (*denominator);
 

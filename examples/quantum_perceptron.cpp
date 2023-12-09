@@ -21,7 +21,7 @@ using namespace Qrack;
 int main()
 {
     const bitLenInt ControlCount = 4;
-    const bitCapInt ControlPower = 1U << ControlCount;
+    const bitCapInt ControlPower = bi_create(1U << ControlCount);
     const bitLenInt ControlLog = 2;
     const real1 eta = ONE_R1 / (real1)2.0f;
 
@@ -40,15 +40,15 @@ int main()
     bool isPowerOf2;
     bitCapInt perm;
     std::cout << "Learning (to recognize powers of 2)..." << std::endl;
-    for (perm = 0; perm < ControlPower; perm++) {
-        std::cout << "Epoch " << (perm + 1U) << " out of " << ControlPower << std::endl;
+    for (perm = ZERO_BCI; bi_compare(perm, ControlPower) < 0; bi_increment(&perm, 1U)) {
+        std::cout << "Epoch " << (perm + ONE_BCI) << " out of " << ControlPower << std::endl;
         qReg->SetPermutation(perm);
-        isPowerOf2 = ((perm != 0) && ((perm & (perm - 1U)) == 0));
+        isPowerOf2 = (bi_compare_0(perm) != 0) && (bi_compare_0(perm & (perm - ONE_BCI)) == 0);
         qPerceptron->LearnPermutation((real1_f)eta, isPowerOf2);
     }
 
     std::cout << "Should be close to 1 for powers of two, and close to 0 for all else..." << std::endl;
-    for (perm = 0; perm < ControlPower; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, ControlPower) < 0; bi_increment(&perm, 1U)) {
         qReg->SetPermutation(perm);
         std::cout << "Permutation: " << perm << ", Probability: " << qPerceptron->Predict() << std::endl;
     }
@@ -62,7 +62,7 @@ int main()
     QInterfacePtr qReg2 = CreateQuantumInterface(QINTERFACE_OPTIMAL, ControlLog, 0);
 
     qReg->Compose(qReg2);
-    qReg->SetPermutation(1U << (ControlCount + 1));
+    qReg->SetPermutation(bi_create(1U << (ControlCount + 1)));
     qReg->H(ControlCount + 1, ControlLog);
     std::dynamic_pointer_cast<QAlu>(qReg)->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
     qReg->H(ControlCount + 1, ControlLog);
