@@ -47,7 +47,7 @@ protected:
     std::vector<int64_t> deviceIDs;
 
 public:
-    QHybrid(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QHybrid(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
@@ -490,7 +490,7 @@ public:
         engine->NormalizeState(nrm, norm_thresh, phaseArg);
     }
 
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
     {
         return engine->ExpectationBitsAll(bits, offset);
     }
