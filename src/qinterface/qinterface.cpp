@@ -98,7 +98,7 @@ void QInterface::SetPermutation(bitCapInt perm, complex ignored)
 {
     const bitCapInt measured = MAll();
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        bitCapInt p = bi_xor(perm, measured);
+        bitCapInt p = perm ^ measured;
         bi_rshift_ip(&p, i);
         if (bi_and_1(p)) {
             X(i);
@@ -218,7 +218,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
     bitCapInt res = ZERO_BCI;
     for (bitLenInt bit = 0U; bit < length; ++bit) {
         const bitCapInt power = pow2(bit);
-        bitCapInt c = bi_and(power, result);
+        bitCapInt c = power & result;
         if (ForceM(start + bit, (bool)(bi_compare_0(c) != 0), doForce, doApply)) {
             bi_or_ip(&res, power);
         }
@@ -288,7 +288,7 @@ real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
 
     real1 prob = ZERO_R1;
     for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
-        m = bi_and(lcv, mask);
+        m = lcv & mask;
         if (bi_compare(m, permutation) == 0) {
             prob += ProbAll(lcv);
         }
@@ -433,7 +433,7 @@ void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
         bitCapInt oldV = v;
         bi_decrement(&v, 1U);
         bi_and_ip(&v, oldV);
-        bitPowers.push_back(bi_and(oldV, bi_xor(v, oldV)));
+        bitPowers.push_back(oldV & (v ^ oldV));
     }
 
     std::fill(probsArray, probsArray + pow2Ocl(bitPowers.size()), ZERO_R1);
@@ -441,7 +441,7 @@ void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
     for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
         bitCapIntOcl retIndex = 0U;
         for (size_t p = 0U; p < bitPowers.size(); ++p) {
-            if (bi_compare_0(bi_and(lcv, bitPowers[p])) != 0) {
+            if (bi_compare_0(lcv & bitPowers[p]) != 0) {
                 retIndex |= pow2Ocl(p);
             }
         }
@@ -474,7 +474,7 @@ void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArr
     for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
         bitCapIntOcl retIndex = 0U;
         for (size_t p = 0U; p < bits.size(); ++p) {
-            if (bi_compare_0(bi_and(lcv, bitPowers[p])) != 0) {
+            if (bi_compare_0(lcv & bitPowers[p]) != 0) {
                 retIndex |= pow2Ocl(p);
             }
         }
@@ -508,7 +508,7 @@ real1_f QInterface::ExpectationBitsFactorized(
     for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
         bitCapInt retIndex = offset;
         for (size_t p = 0U; p < bits.size(); ++p) {
-            const bitCapInt b = bi_and(lcv, bitPowers[p]);
+            const bitCapInt b = lcv & bitPowers[p];
             bi_add_ip(&retIndex, (bi_compare_0(b) != 0) ? perms[(p << 1U) | 1U] : perms[p << 1U]);
         }
         expectation += (real1_f)bi_to_double(retIndex) * ProbAll(lcv);
@@ -540,7 +540,7 @@ real1_f QInterface::ExpectationFloatsFactorized(const std::vector<bitLenInt>& bi
     for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
         real1_f weight = 0U;
         for (size_t p = 0U; p < bits.size(); ++p) {
-            const bitCapInt b = bi_and(lcv, bitPowers[p]);
+            const bitCapInt b = lcv & bitPowers[p];
             weight += (bi_compare_0(b) != 0) ? weights[(p << 1U) | 1U] : weights[p << 1U];
         }
         expectation += weight * ProbAll(lcv);

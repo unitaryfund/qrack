@@ -115,7 +115,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     shards = QEngineShardMap();
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        shards.push_back(QEngineShard(bi_and_1(bi_rshift(perm, i)) != 0U, GetNonunitaryPhase()));
+        shards.push_back(QEngineShard(bi_and_1(perm >> i) != 0U, GetNonunitaryPhase()));
     }
 }
 
@@ -242,14 +242,14 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         QEngineShard& shard = shards[i];
 
         if (!shard.unit) {
-            result *= bi_and_1(bi_rshift(perm, i)) ? shard.amp1 : shard.amp0;
+            result *= bi_and_1(perm >> i) ? shard.amp1 : shard.amp0;
             continue;
         }
 
         if (perms.find(shard.unit) == perms.end()) {
             perms[shard.unit] = ZERO_BCI;
         }
-        if (bi_and_1(bi_rshift(perm, i))) {
+        if (bi_and_1(perm >> i)) {
             bi_or_ip(&(perms[shard.unit]), pow2(shard.mapped));
         }
     }
@@ -1051,7 +1051,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 
     bitCapInt maskMin1 = mask;
     bi_decrement(&maskMin1, 1U);
-    if (bi_compare_0(bi_and(mask, maskMin1)) == 0) {
+    if (bi_compare_0(mask & maskMin1) == 0) {
         Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         return;
     }
@@ -1060,7 +1060,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
         bi_and_ip(&nV, bi_sub(v, ONE_BCI)); // clear the least significant bit set
-        qIndices.push_back(log2(bi_and(bi_xor(v, nV), v)));
+        qIndices.push_back(log2((v ^ nV) & v));
         ToPermBasisProb(qIndices.back());
     }
 
@@ -1128,7 +1128,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
 
     bitCapInt maskMin1 = mask;
     bi_decrement(&maskMin1, 1U);
-    if (bi_compare_0(bi_and(mask, maskMin1)) == 0) {
+    if (bi_compare_0(mask & maskMin1) == 0) {
         return Prob(log2(mask));
     }
 
@@ -1136,7 +1136,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
         bi_and_ip(&nV, bi_sub(v, ONE_BCI)); // clear the least significant bit set
-        qIndices.push_back(log2(bi_and(bi_xor(v, nV), v)));
+        qIndices.push_back(log2((v ^ nV) & v));
 
         RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
 
@@ -1188,7 +1188,7 @@ bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
     bitCapInt maskMin1 = mask;
     bi_decrement(&maskMin1, 1U);
-    if (bi_compare_0(bi_and(mask, maskMin1)) == 0) {
+    if (bi_compare_0(mask & maskMin1) == 0) {
         return ForceM(log2(mask), result, doForce);
     }
 
@@ -1196,7 +1196,7 @@ bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
         bi_and_ip(&nV, bi_sub(v, ONE_BCI)); // clear the least significant bit set
-        qIndices.push_back(log2(bi_and(bi_xor(v, nV), v)));
+        qIndices.push_back(log2((v ^ nV) & v));
         ToPermBasisProb(qIndices.back());
     }
 
@@ -1262,7 +1262,7 @@ void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt 
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
         bi_and_ip(&nV, bi_sub(v, ONE_BCI)); // clear the least significant bit set
-        qIndices.push_back(log2(bi_and(bi_xor(v, nV), v)));
+        qIndices.push_back(log2((v ^ nV) & v));
     }
 
     bool flipResult = false;
@@ -1603,7 +1603,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
         for (const auto& unitResult : unitResults) {
             bitCapInt mask = ZERO_BCI;
             for (size_t i = 0U; i < subQPower.second.size(); ++i) {
-                if (bi_and_1(bi_rshift(unitResult.first, i))) {
+                if (bi_and_1(unitResult.first >> i)) {
                     bi_or_ip(&mask, subIQPowers[unit][i]);
                 }
             }
@@ -1633,7 +1633,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
         if (topLevelResults.size() == 1U) {
             const auto pickIter = topLevelResults.begin();
             for (const auto& combinedResult : combinedResults) {
-                nCombinedResults[bi_or(combinedResult.first, pickIter->first)] = combinedResult.second;
+                nCombinedResults[combinedResult.first | pickIter->first] = combinedResult.second;
             }
             combinedResults = nCombinedResults;
             continue;
@@ -1657,7 +1657,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
                     count += pickIter->second;
                 }
 
-                ++(nCombinedResults[bi_or(combinedResult.first, pickIter->first)]);
+                ++(nCombinedResults[combinedResult.first | pickIter->first]);
 
                 --(pickIter->second);
                 if (!pickIter->second) {
@@ -1679,12 +1679,12 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
         std::map<bitCapInt, int> nCombinedResults;
         if (prob == ONE_R1) {
             for (const auto& combinedResult : combinedResults) {
-                nCombinedResults[bi_or(combinedResult.first, iQPowers[index])] = combinedResult.second;
+                nCombinedResults[combinedResult.first | iQPowers[index]] = combinedResult.second;
             }
         } else {
             for (const auto& combinedResult : combinedResults) {
                 bitCapInt zeroPerm = combinedResult.first;
-                bitCapInt onePerm = bi_or(combinedResult.first, iQPowers[index]);
+                bitCapInt onePerm = combinedResult.first | iQPowers[index];
                 for (int shot = 0; shot < combinedResult.second; ++shot) {
                     if (Rand() > prob) {
                         ++(nCombinedResults[zeroPerm]);
@@ -1707,7 +1707,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const std::vector<bitCapInt
 
         for (size_t i = 0U; i < qIndices.size(); ++i) {
             QEngineShard& shard = shards[qIndices[i]];
-            ShardToPhaseMap controlsShards = bi_and_1(bi_rshift(perm, i)) ? shard.controlsShards : shard.antiControlsShards;
+            ShardToPhaseMap controlsShards = bi_and_1(perm >> i) ? shard.controlsShards : shard.antiControlsShards;
             for (const auto& phaseShard : controlsShards) {
                 if (!phaseShard.second->isInvert) {
                     continue;
@@ -1795,7 +1795,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     MReg(start, length);
 
     for (bitLenInt i = 0U; i < length; ++i) {
-        bool bitState = bi_and_1(bi_rshift(value, i)) != 0U;
+        bool bitState = bi_and_1(value >> i) != 0U;
         shards[i + start] = QEngineShard(bitState, GetNonunitaryPhase());
     }
 }
@@ -2638,7 +2638,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
 
     // First, no probability checks or buffer flushing.
     for (size_t i = 0U; i < controls.size(); ++i) {
-        const bool anti = bi_and_1(bi_rshift(*perm, i)) == 0;
+        const bool anti = bi_and_1(*perm >> i) == 0;
         if ((anti && CACHED_ONE(controls[i])) || (!anti && CACHED_ZERO(controls[i]))) {
             // This gate does nothing, so return without applying anything.
             return true;
@@ -2658,13 +2658,13 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
-            if (bi_and_1(bi_rshift(*perm, i))) {
+            if (bi_and_1(*perm >> i)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
         } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
-            if (!bi_and_1(bi_rshift(*perm, i))) {
+            if (!bi_and_1(*perm >> i)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
@@ -2686,13 +2686,13 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
-            if (bi_and_1(bi_rshift(*perm, i))) {
+            if (bi_and_1(*perm >> i)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
         } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
-            if (!bi_and_1(bi_rshift(*perm, i))) {
+            if (!bi_and_1(*perm >> i)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
@@ -2712,7 +2712,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (IS_NORM_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
-            if (bi_and_1(bi_rshift(*perm, i))) {
+            if (bi_and_1(*perm >> i)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
@@ -2720,7 +2720,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
             isEigenstate = true;
         } else if (IS_NORM_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
-            if (!bi_and_1(bi_rshift(*perm, i))) {
+            if (!bi_and_1(*perm >> i)) {
                 // This gate does nothing, so return without applying anything.
                 return true;
             }
@@ -2729,7 +2729,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         }
 
         if (!isEigenstate) {
-            bi_or_ip(&outPerm, bi_create(bi_and_1(bi_rshift(*perm, i)) << controlVec.size()));
+            bi_or_ip(&outPerm, bi_create(bi_and_1(*perm >> i) << controlVec.size()));
             controlVec.push_back(controls[i]);
         }
     }
@@ -3176,7 +3176,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         bool toAdd = bi_and_1(toMod) != 0U;
 
         if (toAdd == carry) {
-            bi_rshift(toMod, 1U);
+            bi_rshift_ip(&toMod, 1U);
             ++start;
             --length;
             ++i;
@@ -3214,7 +3214,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
 
             // Load the first bit:
             bitCapInt bitMask = ONE_BCI;
-            bitCapInt partMod = bi_and(toMod, bitMask);
+            bitCapInt partMod = toMod & bitMask;
             bitLenInt partLength = 1U;
             bitLenInt partStart;
             ++i;
@@ -3223,10 +3223,10 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 // Guaranteed to need to load the second bit
                 ++partLength;
                 ++i;
-                bi_lshift(bitMask, 1U);
+                bi_lshift_ip(&bitMask, 1U);
 
-                toAdd = bi_compare_0(bi_and(toMod, bitMask)) != 0U;
-                bi_or_ip(&partMod, bi_and(toMod, bitMask));
+                toAdd = bi_compare_0(toMod & bitMask) != 0U;
+                bi_or_ip(&partMod, toMod & bitMask);
 
                 partStart = start + partLength - 1U;
                 if (!CheckBitsPermutation(partStart)) {
@@ -3369,7 +3369,7 @@ void QUnit::INTS(
         return;
     }
 
-    const bool addendNeg = bi_compare_0(bi_and(toMod, pow2(length - 1U))) != 0;
+    const bool addendNeg = bi_compare_0(toMod & pow2(length - 1U)) != 0;
     const bool knewSign = CheckBitsPermutation(signBit);
     const bool quantumNeg = SHARD_STATE(shards[signBit]);
 
@@ -3463,9 +3463,9 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
 
     if (CheckBitsPermutation(inOutStart, length)) {
         const bitCapInt lengthMask = pow2Mask(length);
-        const bitCapInt res = bi_mul(GetCachedPermutation(inOutStart, length), toMul);
-        SetReg(inOutStart, length, bi_and(res, lengthMask));
-        SetReg(carryStart, length, bi_and(bi_rshift(res, length), lengthMask));
+        const bitCapInt res = GetCachedPermutation(inOutStart, length) * toMul;
+        SetReg(inOutStart, length, res & lengthMask);
+        SetReg(carryStart, length, (res >> length) & lengthMask);
         return;
     }
 
@@ -3495,12 +3495,12 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     if (CheckBitsPermutation(inOutStart, length) && CheckBitsPermutation(carryStart, length)) {
         const bitCapInt lengthMask = pow2Mask(length);
         const bitCapInt origRes =
-            bi_or(GetCachedPermutation(inOutStart, length), bi_lshift(GetCachedPermutation(carryStart, length), length));
+            GetCachedPermutation(inOutStart, length) | (GetCachedPermutation(carryStart, length) << length);
         bitCapInt res;
         bi_div_mod(origRes, toDiv, &res, NULL);
-        if (bi_compare(origRes, bi_mul(res, toDiv)) == 0) {
-            SetReg(inOutStart, length, bi_and(res, lengthMask));
-            SetReg(carryStart, length, bi_and(bi_rshift(res, length), lengthMask));
+        if (bi_compare(origRes, res * toDiv) == 0) {
+            SetReg(inOutStart, length, res & lengthMask);
+            SetReg(carryStart, length, (res >> length) & lengthMask);
         }
         return;
     }
@@ -3699,7 +3699,7 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLengt
     const bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt value = ZERO_BCI;
     for (bitCapIntOcl j = 0U; j < valueBytes; ++j) {
-        bi_or_ip(&value, bi_lshift(bi_create(values[indexInt * valueBytes + j]), (8U * j)));
+        bi_or_ip(&value, bi_create(values[indexInt * valueBytes + j]) << (8U * j));
     }
 
     return value;
@@ -3711,7 +3711,7 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, const u
     const bitLenInt bytes = (length + 7U) / 8U;
     bitCapInt value = ZERO_BCI;
     for (bitCapIntOcl j = 0U; j < bytes; ++j) {
-        bi_or_ip(&value, bi_lshift(bi_create(values[indexInt * bytes + j]), (8U * j)));
+        bi_or_ip(&value, bi_create(values[indexInt * bytes + j]) << (8U * j));
     }
 
     return value;

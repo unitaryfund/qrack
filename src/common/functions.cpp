@@ -65,10 +65,10 @@ bitCapInt intPow(bitCapInt base, bitCapInt power)
         return base;
     }
 
-    bitCapInt tmp = intPow(base, bi_rshift(power, 1U));
-    tmp = bi_mul(tmp, tmp);
+    bitCapInt tmp = intPow(base, power >> 1U);
+    tmp = tmp * tmp;
     if (bi_and_1(power)) {
-        tmp = bi_mul(tmp, base);
+        tmp = tmp * base;
     }
 
     return tmp;

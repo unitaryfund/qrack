@@ -117,7 +117,7 @@ real1_f QUnitClifford::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
 
     std::map<QStabilizerPtr, bitCapInt> permMap;
     for (size_t i = 0U; i < ancillaeStart; ++i) {
-        if (bi_compare_0(bi_and(perm, pow2(i))) == 0) {
+        if (bi_compare_0(perm & pow2(i)) == 0) {
             continue;
         }
         const CliffordShard& shard = shards[i];
@@ -145,7 +145,7 @@ real1_f QUnitClifford::ProbMask(bitCapInt mask, bitCapInt perm)
     while (bi_compare_0(v) != 0) {
         bitCapInt oldV = v;
         bi_and_ip(&v, bi_sub(v, ONE_BCI)); // clear the least significant bit set
-        bits.push_back(log2(bi_and(bi_xor(v, oldV), oldV)));
+        bits.push_back(log2((v ^ oldV) & oldV));
     }
 
     std::map<QStabilizerPtr, bitCapInt> maskMap;
@@ -153,7 +153,7 @@ real1_f QUnitClifford::ProbMask(bitCapInt mask, bitCapInt perm)
     for (size_t i = 0U; i < bits.size(); ++i) {
         const CliffordShard& shard = shards[bits[i]];
         bi_or_ip(&(maskMap[shard.unit]), pow2(shard.mapped));
-        if (bi_compare_0(bi_and(pow2(bits[i]), perm)) != 0) {
+        if (bi_compare_0(pow2(bits[i]) & perm) != 0) {
             bi_or_ip(&(permMap[shard.unit]), pow2(shard.mapped));
         }
     }
@@ -181,7 +181,7 @@ void QUnitClifford::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        shards.emplace_back(0U, MakeStabilizer(1U, bi_create(bi_and_1(bi_rshift(perm, i))), ONE_CMPLX));
+        shards.emplace_back(0U, MakeStabilizer(1U, bi_create(bi_and_1(perm >> i)), ONE_CMPLX));
     }
 }
 
@@ -432,7 +432,7 @@ complex QUnitClifford::GetAmplitude(bitCapInt perm)
         if (perms.find(shard.unit) == perms.end()) {
             perms[shard.unit] = ZERO_BCI;
         }
-        if (bi_and_1(bi_rshift(perm, i))) {
+        if (bi_and_1(perm >> i)) {
             bi_or_ip(&(perms[shard.unit]), pow2(shard.mapped));
         }
     }
@@ -459,7 +459,7 @@ std::vector<complex> QUnitClifford::GetAmplitudes(std::vector<bitCapInt> perms)
             if (permMap.find(shard.unit) == permMap.end()) {
                 permMap[shard.unit] = ZERO_BCI;
             }
-            if (bi_and_1(bi_rshift(perm, i))) {
+            if (bi_and_1(perm >> i)) {
                 bi_or_ip(&(permMap[shard.unit]), pow2(shard.mapped));
             }
         }
@@ -481,7 +481,7 @@ std::vector<complex> QUnitClifford::GetAmplitudes(std::vector<bitCapInt> perms)
             if (permMap.find(shard.unit) == permMap.end()) {
                 permMap[shard.unit] = ZERO_BCI;
             }
-            if (bi_and_1(bi_rshift(perm, i))) {
+            if (bi_and_1(perm >> i)) {
                 bi_or_ip(&(permMap[shard.unit]), pow2(shard.mapped));
             }
         }
@@ -599,7 +599,7 @@ std::map<bitCapInt, int> QUnitClifford::MultiShotMeasureMask(const std::vector<b
         for (const auto& unitResult : unitResults) {
             bitCapInt mask = ZERO_BCI;
             for (size_t i = 0U; i < subQPower.second.size(); ++i) {
-                if (bi_and_1(bi_rshift(unitResult.first, i))) {
+                if (bi_and_1(unitResult.first >> i)) {
                     bi_or_ip(&mask, subIQPowers[unit][i]);
                 }
             }
@@ -629,7 +629,7 @@ std::map<bitCapInt, int> QUnitClifford::MultiShotMeasureMask(const std::vector<b
         if (topLevelResults.size() == 1U) {
             const auto pickIter = topLevelResults.begin();
             for (const auto& combinedResult : combinedResults) {
-                nCombinedResults[bi_or(combinedResult.first, pickIter->first)] = combinedResult.second;
+                nCombinedResults[combinedResult.first | pickIter->first] = combinedResult.second;
             }
             combinedResults = nCombinedResults;
             continue;
@@ -653,7 +653,7 @@ std::map<bitCapInt, int> QUnitClifford::MultiShotMeasureMask(const std::vector<b
                     count += pickIter->second;
                 }
 
-                ++(nCombinedResults[bi_or(combinedResult.first, pickIter->first)]);
+                ++(nCombinedResults[combinedResult.first | pickIter->first]);
 
                 --(pickIter->second);
                 if (!pickIter->second) {

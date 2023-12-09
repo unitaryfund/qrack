@@ -65,7 +65,7 @@ void QEngine::UCMtrx(
     bitCapIntOcl fullMask = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
-        if (bi_and_1(bi_rshift(controlPerm, i))) {
+        if (bi_and_1(controlPerm >> i)) {
             fullMask |= qPowersSorted[i];
         }
     }
@@ -529,7 +529,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     real1 nrmlzr = ONE_R1;
 
     if (doForce) {
-        nrmlzr = ProbMask(bi_create(regMask), bi_lshift(result, start));
+        nrmlzr = ProbMask(bi_create(regMask), result << start);
     } else {
         bitCapIntOcl lcv = 0;
         std::unique_ptr<real1[]> probArray(new real1[lengthPower]);
@@ -557,7 +557,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     }
 
     if (doApply) {
-        const bitCapInt resultPtr = bi_lshift(result, start);
+        const bitCapInt resultPtr = result << start;
         const complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt((real1_s)nrmlzr));
         ApplyM(bi_create(regMask), resultPtr, nrm);
     }

@@ -181,11 +181,11 @@ struct QCircuitGate {
         const bitCapInt midPow = pow2(cpos);
         bitCapInt lowMask = midPow;
         bi_decrement(&lowMask, 1U);
-        const bitCapInt highMask = bi_not(lowMask);
+        const bitCapInt highMask = ~lowMask;
 
         std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
         for (const auto& payload : payloads) {
-            bitCapInt nKey = bi_or(bi_and(payload.first, lowMask), bi_lshift(bi_and(payload.first, highMask), 1U));
+            bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) << 1U);
 
             nPayloads.emplace(nKey, payload.second);
 
@@ -207,10 +207,10 @@ struct QCircuitGate {
         const bitCapInt midPow = pow2(cpos);
 
         for (const auto& payload : payloads) {
-            bitCapInt nKey = bi_and(bi_not(midPow), payload.first);
+            bitCapInt nKey = ~midPow & payload.first;
 
             if (bi_compare(nKey, payload.first) == 0) {
-                if (payloads.find(bi_or(nKey, midPow)) == payloads.end()) {
+                if (payloads.find(nKey | midPow) == payloads.end()) {
                     return false;
                 }
             } else {
@@ -241,11 +241,11 @@ struct QCircuitGate {
         const bitCapInt midPow = pow2(cpos);
         bitCapInt lowMask = midPow;
         bi_decrement(&lowMask, 1U);
-        const bitCapInt highMask = bi_not(bi_or(lowMask, midPow));
+        const bitCapInt highMask = ~(lowMask | midPow);
 
         std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
         for (const auto& payload : payloads) {
-            nPayloads.emplace(bi_or(bi_and(payload.first, lowMask), bi_rshift(bi_and(payload.first, highMask), 1U)), payload.second);
+            nPayloads.emplace((payload.first & lowMask) | ((payload.first & highMask) >> 1U), payload.second);
         }
 
         payloads = nPayloads;
@@ -482,7 +482,7 @@ struct QCircuitGate {
             for (const auto& payload : other->payloads) {
                 bitCapInt pf = ZERO_BCI;
                 for (size_t i = 0U; i < opfPows.size(); ++i) {
-                    if (bi_compare_0(bi_and(payload.first, opfPows[i])) != 0) {
+                    if (bi_compare_0(payload.first & opfPows[i]) != 0) {
                         bi_or_ip(&pf, pow2(i));
                     }
                 }
@@ -490,7 +490,7 @@ struct QCircuitGate {
                 if ((poi == payloads.end()) || (norm(poi->second.get()[0]) > FP_NORM_EPSILON)) {
                     nPayloads[payload.first] = payload.second;
                 } else {
-                    nPayloads[bi_xor(payload.first, p)] = payload.second;
+                    nPayloads[payload.first ^ p] = payload.second;
                 }
             }
             other->payloads = nPayloads;
@@ -547,16 +547,16 @@ struct QCircuitGate {
         const bitCapInt midPow = pow2(cpos);
         bitCapInt lowMask = midPow;
         bi_decrement(&lowMask, 1U);
-        const bitCapInt highMask = bi_not(bi_or(lowMask, midPow));
+        const bitCapInt highMask = ~(lowMask | midPow);
         const bitCapInt qubitPow = pow2(cpos);
         const bitCapInt eigenPow = eigen ? qubitPow : ZERO_BCI;
 
         std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
         for (const auto& payload : payloads) {
-            if (bi_compare(bi_and(payload.first, qubitPow), eigenPow) != 0) {
+            if (bi_compare(payload.first & qubitPow, eigenPow) != 0) {
                 continue;
             }
-            nPayloads.emplace(bi_or(bi_and(payload.first, lowMask), bi_rshift(bi_and(payload.first, highMask), 1U)), payload.second);
+            nPayloads.emplace((payload.first & lowMask) | ((payload.first & highMask) >> 1U), payload.second);
         }
 
         payloads = nPayloads;

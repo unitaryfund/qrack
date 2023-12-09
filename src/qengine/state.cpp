@@ -380,7 +380,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
         runningNorm = ONE_R1;
     }
 
-    Dispatch(bi_rshift(maxQPower, bitCount),
+    Dispatch(maxQPower >> bitCount,
         [this, mtrxS, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
             complex* mtrx = mtrxS.get();
 
@@ -935,7 +935,7 @@ void QEngineCPU::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCa
     std::vector<bitLenInt> controls(cControls.begin(), cControls.end());
     std::sort(controls.begin(), controls.end());
 
-    Dispatch(bi_rshift(maxQPower, cControls.size()), [this, controls, mask, angle] {
+    Dispatch(maxQPower >> cControls.size(), [this, controls, mask, angle] {
         bitCapIntOcl controlMask = 0U;
         std::vector<bitCapIntOcl> controlPowers(controls.size());
         for (size_t i = 0U; i < controls.size(); ++i) {

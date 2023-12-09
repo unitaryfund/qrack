@@ -19,10 +19,10 @@
 
 namespace Qrack {
 
-inline bitCapInt pow2(const bitLenInt& p) { return bi_lshift(ONE_BCI, p); }
+inline bitCapInt pow2(const bitLenInt& p) { return ONE_BCI << p; }
 inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)1U << p; }
 inline bitCapInt pow2Mask(const bitLenInt& p) {
-    bitCapInt toRet = bi_lshift(ONE_BCI, p);
+    bitCapInt toRet = ONE_BCI << p;
     bi_decrement(&toRet, 1U);
     return toRet;
 }
@@ -38,7 +38,7 @@ inline bitLenInt log2Ocl(bitCapIntOcl n) {
 }
 inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source)
 {
-    bitCapInt toRet = bi_lshift(ONE_BCI, bit);
+    bitCapInt toRet = ONE_BCI << bit;
     bi_and_ip(&toRet, source);
     return toRet;
 }
@@ -48,7 +48,7 @@ inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source
 }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
 {
-    bitCapInt toRet = bi_lshift(ONE_BCI, length);
+    bitCapInt toRet = ONE_BCI << length;
     bi_decrement(&toRet, 1U);
     bi_lshift_ip(&toRet, start);
     return toRet;

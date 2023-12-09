@@ -207,7 +207,7 @@ protected:
         const bitCapInt rawSample = clone->MAll();
         bitCapInt sample = ZERO_BCI;
         for (size_t i = 0U; i < qPowers.size(); ++i) {
-            const bitCapInt a = bi_and(rawSample, qPowers[i]);
+            const bitCapInt a = rawSample & qPowers[i];
             if (bi_compare_0(a) != 0U) {
                 bi_or_ip(&sample, pow2(i));
             }

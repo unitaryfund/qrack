@@ -25,20 +25,20 @@ void QInterface::UCMtrx(
 {
     size_t setCount = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
-        if (bi_and_1(bi_rshift(controlPerm, i)) != 0) {
+        if (bi_and_1(controlPerm >> i) != 0) {
             ++setCount;
         }
     }
 
     if ((setCount << 1U) > controls.size()) {
         for (size_t i = 0U; i < controls.size(); ++i) {
-            if (bi_and_1(bi_rshift(controlPerm, i)) == 0) {
+            if (bi_and_1(controlPerm >> i) == 0) {
                 X(controls[i]);
             }
         }
         MCMtrx(controls, mtrx, target);
         for (size_t i = 0U; i < controls.size(); ++i) {
-            if (bi_and_1(bi_rshift(controlPerm, i)) == 0) {
+            if (bi_and_1(controlPerm >> i) == 0) {
                 X(controls[i]);
             }
         }
@@ -47,13 +47,13 @@ void QInterface::UCMtrx(
     }
 
     for (size_t i = 0U; i < controls.size(); ++i) {
-        if (bi_and_1(bi_rshift(controlPerm, i)) != 0) {
+        if (bi_and_1(controlPerm >> i) != 0) {
             X(controls[i]);
         }
     }
     MACMtrx(controls, mtrx, target);
     for (size_t i = 0U; i < controls.size(); ++i) {
-        if (bi_and_1(bi_rshift(controlPerm, i)) != 0) {
+        if (bi_and_1(controlPerm >> i) != 0) {
             X(controls[i]);
         }
     }
@@ -112,7 +112,7 @@ void QInterface::XMask(bitCapInt mask)
         bitCapInt w = v;
         bi_decrement(&w, 1U);
         bi_and_ip(&v, w);
-        X(log2(bi_xor(mask, v)));
+        X(log2(mask ^ v));
         mask = v;
     }
 }
@@ -158,7 +158,7 @@ void QInterface::ZMask(bitCapInt mask)
         bitCapInt w = v;
         bi_decrement(&w, 1U);
         bi_and_ip(&v, w);
-        Z(log2(bi_xor(mask, v)));
+        Z(log2(mask ^ v));
         mask = v;
     }
 }
@@ -413,7 +413,7 @@ void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
        bitCapInt w = v;
         bi_decrement(&w, 1U);
         bi_and_ip(&v, w);
-        qubits.push_back(log2(bi_xor(mask, v)));
+        qubits.push_back(log2(mask ^ v));
         mask = v;
     }
 

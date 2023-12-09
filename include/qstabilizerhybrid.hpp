@@ -161,7 +161,7 @@ protected:
 
             bitCapInt sample = ZERO_BCI;
             for (size_t i = 0U; i < qPowers.size(); ++i) {
-                if (bi_compare_0(bi_and(m, qPowers[i])) != 0) {
+                if (bi_compare_0(m & qPowers[i]) != 0) {
                     bi_or_ip(&sample, pow2(i));
                 }
             }

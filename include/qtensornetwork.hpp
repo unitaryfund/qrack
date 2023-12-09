@@ -220,7 +220,7 @@ public:
         circuit.push_back(std::make_shared<QCircuit>());
 
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            if (bi_compare_0(bi_and(pow2(i), initState)) != 0) {
+            if (bi_compare_0(pow2(i) & initState) != 0) {
                 X(i);
             }
         }

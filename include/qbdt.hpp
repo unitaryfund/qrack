@@ -154,12 +154,12 @@ protected:
 
     void ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti);
 
-    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)bi_and_1(bi_rshift(perm, bit)); }
+    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)bi_and_1(perm >> bit); }
 
     static bitCapInt RemovePower(bitCapInt perm, bitCapInt power)
     {
         bi_decrement(&power, 1U);
-        return bi_or(bi_and(perm, power), (bi_and(bi_rshift(perm, 1U), bi_not(power))));
+        return (perm & power) | ((perm >> 1U) & ~power);
     }
 
     void ApplySingle(const complex* mtrx, bitLenInt target);
@@ -336,7 +336,7 @@ public:
 
         bitCapInt maskMin1 = mask;
         bi_decrement(&maskMin1, 1U);
-        if (bi_compare_0(bi_and(mask, maskMin1)) == 0) {
+        if (bi_compare_0(mask & maskMin1) == 0) {
             return Prob(log2(mask));
         }
 
@@ -360,7 +360,7 @@ public:
         // If only one bit in mask:
         bitCapInt maskMin1 = mask;
         bi_decrement(&maskMin1, 1U);
-        if (bi_compare_0(bi_and(mask, maskMin1)) == 0) {
+        if (bi_compare_0(mask & maskMin1) == 0) {
             return ForceM(log2(mask), result, doForce);
         }
 
