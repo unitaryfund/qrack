@@ -47,7 +47,7 @@ bitCapInt continued_fraction_step(bitCapInt* numerator, bitCapInt* denominator)
 
 real1_f calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* numerator, bitCapInt* denominator)
 {
-    bitCapInt approxNumer = 1;
+    bitCapInt approxNumer = ONE_BCI;
     bitCapInt approxDenom = denominators.back();
     bitCapInt temp;
 
@@ -59,7 +59,7 @@ real1_f calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* 
 
     (*numerator) = approxNumer;
     (*denominator) = approxDenom;
-    return ((real1_f)approxNumer) / (bitCapIntOcl)approxDenom;
+    return ((real1_f)bi_to_double(approxNumer)) / approxDenom.bits[0U];
 }
 
 int main()
@@ -73,17 +73,19 @@ int main()
     const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto iterClock = std::chrono::high_resolution_clock::now();
 
-    bitLenInt qubitCount = ceil(Qrack::log2(toFactor));
+    bitLenInt qubitCount = ceil(Qrack::log2Ocl(toFactor));
 
     // Choose a base at random:
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
     std::uniform_int_distribution<> rand_dist(2, toFactor - 1);
-    base = (bitCapInt)(rand_dist(rand_gen));
+    base = bi_create(rand_dist(rand_gen));
 
-    bitCapInt testFactor = gcd(toFactor, base);
-    if (testFactor != 1) {
-        std::cout << "Chose non- relative prime: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
+    bitCapInt testFactor = gcd(bi_create(toFactor), base);
+    if (bi_compare_1(testFactor) != 0) {
+        bitCapInt quo;
+        bi_div_mod(bi_create(toFactor), testFactor, &quo, NULL);
+        std::cout << "Chose non- relative prime: " << testFactor << " * " << quo << std::endl;
         auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - iterClock);
         std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
@@ -92,25 +94,25 @@ int main()
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, qubitCount * 2, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, qubitCount * 2, ZERO_BCI);
     QAluPtr qAlu = std::dynamic_pointer_cast<QAlu>(qReg);
     // TODO: This shouldn't be necessary:
     qReg->Finish();
 
     // This is the period-finding subroutine of Shor's algorithm.
     qReg->H(0, qubitCount);
-    qAlu->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
+    qAlu->POWModNOut(base, bi_create(toFactor), 0, qubitCount, qubitCount);
     qReg->IQFT(0, qubitCount);
 
     bitCapInt y = qReg->MAll() & (pow2(qubitCount) - ONE_BCI);
-    if (y == 0) {
+    if (bi_compare_0(y) == 0) {
         std::cout << "Failed: y = 0 in period estimation subroutine." << std::endl;
         auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - iterClock);
         std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
         return 0;
     }
-    bitCapInt qubitPower = 1U << qubitCount;
+    bitCapInt qubitPower = Qrack::pow2(qubitCount);
 
     // Value is always fractional, so skip first step, by flipping numerator and denominator:
     bitCapInt numerator = qubitPower;
@@ -122,7 +124,7 @@ int main()
     do {
         denominators.push_back(continued_fraction_step(&numerator, &denominator));
         calc_continued_fraction(denominators, &approxNumer, &approxDenom);
-    } while ((denominator > 0) && (approxDenom < toFactor));
+    } while ((bi_compare_0(denominator) > 0) && (bi_compare(approxDenom, bi_create(toFactor)) < 0));
     denominators.pop_back();
 
     bitCapInt r;
@@ -133,12 +135,12 @@ int main()
     }
 
     // Try to determine the factors
-    if (r & 1U) {
-        r *= 2;
+    if (bi_and_1(r)) {
+        bi_lshift_ip(&r, 1U);
     }
-    bitCapInt apowrhalf = ((bitCapInt)pow((double)base, (double)(r >> 1U))) % toFactor;
-    bitCapIntOcl f1 = (bitCapIntOcl)gcd(apowrhalf + 1, toFactor);
-    bitCapIntOcl f2 = (bitCapIntOcl)gcd(apowrhalf - 1, toFactor);
+    bitCapInt apowrhalf = bi_create(((bitCapIntOcl)pow(bi_to_double(base), bi_to_double(r >> 1U))) % toFactor);
+    bitCapIntOcl f1 = gcd(apowrhalf + ONE_BCI, bi_create(toFactor)).bits[0U];
+    bitCapIntOcl f2 = gcd(apowrhalf - ONE_BCI, bi_create(toFactor)).bits[0U];
     bitCapIntOcl res1 = f1;
     bitCapIntOcl res2 = f2;
     if (((f1 * f2) != toFactor) && ((f1 * f2) > 1) &&

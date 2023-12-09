@@ -45,7 +45,7 @@ void StatePrep(QInterfacePtr qReg)
 
 int main()
 {
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, 3, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, 3, ZERO_BCI);
     // "Eve" prepares a Bell pair.
     qReg->H(1);
     qReg->CNOT(1, 2);

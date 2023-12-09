@@ -39,9 +39,9 @@ int main()
 
     // Both CPU and GPU types share the QInterface API.
 #if ENABLE_OPENCL
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, ZERO_BCI);
 #else
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, ZERO_BCI);
 #endif
     QAluPtr qAlu = std::dynamic_pointer_cast<QAlu>(qReg);
 

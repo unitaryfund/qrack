@@ -3370,7 +3370,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
 {
-    qftReg->SetPermutation(bi_create(0x0));
+    qftReg->SetPermutation(ZERO_BCI);
     qftReg->H(0, 4);
 
     REQUIRE_FLOAT(qftReg->ProbMask(bi_create(0xF), ZERO_BCI), 0.0625);
@@ -3389,7 +3389,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
     REQUIRE(qftReg->ProbMask(bi_create(0x7), bi_create(0x2)) > 0.99);
     REQUIRE_FLOAT(qftReg->ProbMask(bi_create(0xF), bi_create(0x2)), 0.5);
 
-    qftReg->SetPermutation(bi_create(0x0));
+    qftReg->SetPermutation(ZERO_BCI);
     qftReg->H(1);
     qftReg->CNOT(1, 2);
     qftReg->CNOT(2, 3);
