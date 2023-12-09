@@ -435,11 +435,11 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 {
     SetReg(carryStart, length, ZERO_BCI);
 
-    if (bi_compare_0(&toMul) == 0) {
+    if (bi_compare_0(toMul) == 0) {
         SetReg(inOutStart, length, ZERO_BCI);
         return;
     }
-    if (bi_compare_1(&toMul) == 0) {
+    if (bi_compare_1(toMul) == 0) {
         return;
     }
 
@@ -449,10 +449,10 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 
 void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    if (bi_compare_0(&toDiv) == 0) {
+    if (bi_compare_0(toDiv) == 0) {
         throw std::invalid_argument("DIV by zero");
     }
-    if (bi_compare_1(&toDiv) == 0) {
+    if (bi_compare_1(toDiv) == 0) {
         return;
     }
 
@@ -536,11 +536,11 @@ void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 
     SetReg(carryStart, length, ZERO_BCI);
 
-    if (bi_compare_0(&toMul) == 0) {
+    if (bi_compare_0(toMul) == 0) {
         SetReg(inOutStart, length, ZERO_BCI);
         return;
     }
-    if (bi_compare_1(&toMul) == 0) {
+    if (bi_compare_1(toMul) == 0) {
         return;
     }
 
@@ -557,10 +557,10 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
         return;
     }
 
-    if (bi_compare_0(&toDiv) == 0) {
+    if (bi_compare_0(toDiv) == 0) {
         throw std::invalid_argument("CDIV by zero");
     }
-    if (bi_compare_1(&toDiv) == 0) {
+    if (bi_compare_1(toDiv) == 0) {
         return;
     }
 
@@ -613,7 +613,7 @@ void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, 
 {
     SetReg(outStart, length, ZERO_BCI);
 
-    if (bi_compare_0(&toMod) == 0) {
+    if (bi_compare_0(toMod) == 0) {
         return;
     }
 
@@ -623,7 +623,7 @@ void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, 
 
 void QEngineCPU::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    if (bi_compare_0(&toMod) == 0) {
+    if (bi_compare_0(toMod) == 0) {
         return;
     }
 
@@ -633,7 +633,7 @@ void QEngineCPU::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
 
 void QEngineCPU::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    if (bi_compare_1(&toMod) == 0) {
+    if (bi_compare_1(toMod) == 0) {
         SetReg(outStart, length, ONE_BCI);
         return;
     }

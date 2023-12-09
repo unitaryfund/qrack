@@ -58,17 +58,17 @@ void cl_free(void* toFree)
 // See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
 bitCapInt intPow(bitCapInt base, bitCapInt power)
 {
-    if (bi_compare_0(&power) == 0U) {
+    if (bi_compare_0(power) == 0U) {
         return ONE_BCI;
     }
-    if (bi_compare_1(&power) == 0U) {
+    if (bi_compare_1(power) == 0U) {
         return base;
     }
 
-    bitCapInt tmp = intPow(base, bi_rshift(&power, 1U));
-    tmp = bi_mul(&tmp, &tmp);
-    if (bi_and_1(&power)) {
-        tmp = bi_mul(&tmp, &base);
+    bitCapInt tmp = intPow(base, bi_rshift(power, 1U));
+    tmp = bi_mul(tmp, tmp);
+    if (bi_and_1(power)) {
+        tmp = bi_mul(tmp, base);
     }
 
     return tmp;
@@ -258,12 +258,12 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
     for (size_t p = 0U; p < skipPowers.size(); ++p) {
         bitCapInt iLow = skipPowers[p];
         bi_decrement(&iLow, 1U);
-        bi_and_ip(&iLow, &iHigh);
-        bi_or_ip(&i, &iLow);
-        bi_xor_ip(&iHigh, &iLow);
+        bi_and_ip(&iLow, iHigh);
+        bi_or_ip(&i, iLow);
+        bi_xor_ip(&iHigh, iLow);
         bi_lshift_ip(&iHigh, 1U);
     }
-    bi_or_ip(&i, &iHigh);
+    bi_or_ip(&i, iHigh);
 
     return i;
 }

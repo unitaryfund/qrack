@@ -88,13 +88,13 @@ protected:
         }
     }
 
-    QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = 0U);
+    QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = ZERO_BCI);
 
     template <typename Fn> void GetTraversal(Fn getLambda)
     {
         FlushBuffers();
 
-        for (bitCapInt i = 0U; i < maxQPower; ++i) {
+        _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
             QBdtNodeInterfacePtr leaf = root;
             complex scale = leaf->scale;
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
@@ -105,8 +105,8 @@ protected:
                 scale *= leaf->scale;
             }
 
-            getLambda((bitCapIntOcl)i, scale);
-        }
+            getLambda(i.bits[0U], scale);
+        });
     }
     template <typename Fn> void SetTraversal(Fn setLambda)
     {
@@ -154,11 +154,11 @@ protected:
 
     void ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti);
 
-    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
+    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)bi_and_1(bi_rshift(perm, bit)); }
 
     static bitCapInt RemovePower(bitCapInt perm, bitCapInt power)
     {
-        bitCapInt mask = power - ONE_BCI;
+        const bitCapInt mask = power - ONE_BCI;
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
@@ -167,13 +167,13 @@ protected:
     void Init();
 
 public:
-    QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
+    QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> ignored = {},
         bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QBdt(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QBdt(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,

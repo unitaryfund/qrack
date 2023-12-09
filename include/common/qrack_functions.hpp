@@ -19,15 +19,15 @@
 
 namespace Qrack {
 
-inline bitCapInt pow2(const bitLenInt& p) { return bi_lshift(&ONE_BCI, p); }
+inline bitCapInt pow2(const bitLenInt& p) { return bi_lshift(ONE_BCI, p); }
 inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)1U << p; }
 inline bitCapInt pow2Mask(const bitLenInt& p) {
-    bitCapInt toRet = bi_lshift(&ONE_BCI, p);
+    bitCapInt toRet = bi_lshift(ONE_BCI, p);
     bi_decrement(&toRet, 1U);
     return toRet;
 }
 inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return ((bitCapIntOcl)1U << p) - 1U; }
-inline bitLenInt log2(bitCapInt n) { return (bitLenInt)bi_log2(&n); }
+inline bitLenInt log2(bitCapInt n) { return (bitLenInt)bi_log2(n); }
 inline bitLenInt log2Ocl(bitCapIntOcl n) {
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
 #if QBCAPPOW < 6
@@ -38,8 +38,8 @@ inline bitLenInt log2Ocl(bitCapIntOcl n) {
 }
 inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source)
 {
-    bitCapInt toRet = bi_lshift(&ONE_BCI, bit);
-    bi_and_ip(&toRet, &source);
+    bitCapInt toRet = bi_lshift(ONE_BCI, bit);
+    bi_and_ip(&toRet, source);
     return toRet;
 }
 inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source)
@@ -48,7 +48,7 @@ inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source
 }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
 {
-    bitCapInt toRet = bi_lshift(&ONE_BCI, length);
+    bitCapInt toRet = bi_lshift(ONE_BCI, length);
     bi_decrement(&toRet, 1U);
     bi_lshift_ip(&toRet, start);
     return toRet;
@@ -61,8 +61,8 @@ inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& lengt
 inline bool isPowerOfTwo(const bitCapInt& x) {
     bitCapInt y = x;
     bi_decrement(&y, 1U);
-    bi_and_ip(&y, &x);
-    return (bi_compare_0(&x) != 0) && (bi_compare_0(&y) == 0);
+    bi_and_ip(&y, x);
+    return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
 }
 inline bool isBadBitRange(const bitLenInt& start, const bitLenInt& length, const bitLenInt& qubitCount)
 {

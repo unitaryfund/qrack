@@ -233,9 +233,7 @@ protected:
     void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        const bitCapInt c = pow2(GetPreferredConcurrencyPower());
-        const bitCapInt d = bi_create(GetStride());
-        if ((bi_compare(&workItemCount, &c) >= 0) && (bi_compare(&workItemCount, &d) < 0)) {
+        if ((bi_compare(workItemCount, pow2(GetPreferredConcurrencyPower())) >= 0) && (bi_compare(workItemCount, bi_create(GetStride())) < 0)) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();

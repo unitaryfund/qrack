@@ -64,29 +64,29 @@ inline void bi_set_0(BigInteger* p)
     }
 }
 
-inline BigInteger bi_copy(const BigInteger* in)
+inline BigInteger bi_copy(const BigInteger& in)
 {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = in->bits[i];
+        result.bits[i] = in.bits[i];
     }
     return result;
 }
 
-inline void bi_copy_ip(const BigInteger* in, BigInteger* out)
+inline void bi_copy_ip(const BigInteger& in, BigInteger* out)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        out->bits[i] = in->bits[i];
+        out->bits[i] = in.bits[i];
     }
 }
 
-inline int bi_compare(const BigInteger* left, const BigInteger* right)
+inline int bi_compare(const BigInteger& left, const BigInteger& right)
 {
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
-        if (left->bits[i] > right->bits[i]) {
+        if (left.bits[i] > right.bits[i]) {
             return 1;
         }
-        if (left->bits[i] < right->bits[i]) {
+        if (left.bits[i] < right.bits[i]) {
             return -1;
         }
     }
@@ -94,10 +94,10 @@ inline int bi_compare(const BigInteger* left, const BigInteger* right)
     return 0;
 }
 
-inline int bi_compare_0(const BigInteger* left)
+inline int bi_compare_0(const BigInteger& left)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        if (left->bits[i]) {
+        if (left.bits[i]) {
             return 1;
         }
     }
@@ -105,73 +105,73 @@ inline int bi_compare_0(const BigInteger* left)
     return 0;
 }
 
-inline int bi_compare_1(const BigInteger* left)
+inline int bi_compare_1(const BigInteger& left)
 {
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i > 0; --i) {
-        if (left->bits[i]) {
+        if (left.bits[i]) {
             return 1;
         }
     }
-    if (left->bits[0] > 1) {
+    if (left.bits[0] > 1) {
         return 1;
     }
-    if (left->bits[0] < 1) {
+    if (left.bits[0] < 1) {
         return -1;
     }
 
     return 0;
 }
 
-inline BigInteger bi_add(const BigInteger* left, const BigInteger* right)
+inline BigInteger bi_add(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
     result.bits[0] = 0;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
-        result.bits[i] += left->bits[i] + right->bits[i];
-        result.bits[i + 1] = (result.bits[i] < left->bits[i]) ? 1 : 0;
+        result.bits[i] += left.bits[i] + right.bits[i];
+        result.bits[i + 1] = (result.bits[i] < left.bits[i]) ? 1 : 0;
     }
-    result.bits[BIG_INTEGER_MAX_WORD_INDEX] += right->bits[BIG_INTEGER_MAX_WORD_INDEX];
+    result.bits[BIG_INTEGER_MAX_WORD_INDEX] += right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 
     return result;
 }
 
-inline void bi_add_ip(BigInteger* left, const BigInteger* right)
+inline void bi_add_ip(BigInteger* left, const BigInteger& right)
 {
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         BIG_INTEGER_WORD temp = left->bits[i];
-        left->bits[i] += right->bits[i];
+        left->bits[i] += right.bits[i];
         int j = i;
         while ((j < BIG_INTEGER_MAX_WORD_INDEX) && (left->bits[j] < temp)) {
             temp = left->bits[++j]++;
         }
     }
-    left->bits[BIG_INTEGER_MAX_WORD_INDEX] += right->bits[BIG_INTEGER_MAX_WORD_INDEX];
+    left->bits[BIG_INTEGER_MAX_WORD_INDEX] += right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-inline BigInteger bi_sub(const BigInteger* left, const BigInteger* right)
+inline BigInteger bi_sub(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
     result.bits[0] = 0;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
-        result.bits[i] += left->bits[i] - right->bits[i];
-        result.bits[i + 1] = (result.bits[i] > left->bits[i]) ? -1 : 0;
+        result.bits[i] += left.bits[i] - right.bits[i];
+        result.bits[i + 1] = (result.bits[i] > left.bits[i]) ? -1 : 0;
     }
-    result.bits[BIG_INTEGER_MAX_WORD_INDEX] -= right->bits[BIG_INTEGER_MAX_WORD_INDEX];
+    result.bits[BIG_INTEGER_MAX_WORD_INDEX] -= right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 
     return result;
 }
 
-inline void bi_sub_ip(BigInteger* left, const BigInteger* right)
+inline void bi_sub_ip(BigInteger* left, const BigInteger& right)
 {
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         BIG_INTEGER_WORD temp = left->bits[i];
-        left->bits[i] -= right->bits[i];
+        left->bits[i] -= right.bits[i];
         int j = i;
         while ((j < BIG_INTEGER_MAX_WORD_INDEX) && (left->bits[j] > temp)) {
             temp = left->bits[++j]--;
         }
     }
-    left->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right->bits[BIG_INTEGER_MAX_WORD_INDEX];
+    left->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
 inline void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
@@ -225,15 +225,15 @@ inline BigInteger bi_load(BIG_INTEGER_WORD* a)
     return result;
 }
 
-inline BigInteger bi_lshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult)
+inline BigInteger bi_lshift_word(const BigInteger& left, BIG_INTEGER_WORD rightMult)
 {
     if (!rightMult) {
-        return *left;
+        return left;
     }
 
     BigInteger result;
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = left->bits[i - rightMult];
+        result.bits[i] = left.bits[i - rightMult];
     }
     for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
         result.bits[i] = 0;
@@ -255,15 +255,15 @@ inline void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     }
 }
 
-inline BigInteger bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult)
+inline BigInteger bi_rshift_word(const BigInteger& left, BIG_INTEGER_WORD rightMult)
 {
     if (!rightMult) {
-        return *left;
+        return left;
     }
 
     BigInteger result;
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i - rightMult] = left->bits[i];
+        result.bits[i - rightMult] = left.bits[i];
     }
     for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
         result.bits[BIG_INTEGER_MAX_WORD_INDEX - i] = 0;
@@ -285,7 +285,7 @@ inline void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     }
 }
 
-inline BigInteger bi_lshift(const BigInteger* left, BIG_INTEGER_WORD right)
+inline BigInteger bi_lshift(const BigInteger& left, BIG_INTEGER_WORD right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -325,7 +325,7 @@ inline void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     }
 }
 
-inline BigInteger bi_rshift(const BigInteger* left, BIG_INTEGER_WORD right)
+inline BigInteger bi_rshift(const BigInteger& left, BIG_INTEGER_WORD right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -365,75 +365,75 @@ inline void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     }
 }
 
-inline int bi_log2(const BigInteger* n)
+inline int bi_log2(const BigInteger& n)
 {
     int pw = 0;
     BigInteger p = bi_rshift(n, 1U);
-    while (bi_compare_0(&p) != 0) {
+    while (bi_compare_0(p) != 0) {
         bi_rshift_ip(&p, 1U);
         ++pw;
     }
     return pw;
 }
 
-inline int bi_and_1(const BigInteger* left) { return left->bits[0] & 1; }
+inline int bi_and_1(const BigInteger& left) { return left.bits[0] & 1; }
 
-inline BigInteger bi_and(const BigInteger* left, const BigInteger* right)
+inline BigInteger bi_and(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = left->bits[i] & right->bits[i];
+        result.bits[i] = left.bits[i] & right.bits[i];
     }
 
     return result;
 }
 
-inline void bi_and_ip(BigInteger* left, const BigInteger* right)
+inline void bi_and_ip(BigInteger* left, const BigInteger& right)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        left->bits[i] &= right->bits[i];
+        left->bits[i] &= right.bits[i];
     }
 }
 
-inline BigInteger bi_or(const BigInteger* left, const BigInteger* right)
+inline BigInteger bi_or(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = left->bits[i] | right->bits[i];
+        result.bits[i] = left.bits[i] | right.bits[i];
     }
 
     return result;
 }
 
-inline void bi_or_ip(BigInteger* left, const BigInteger* right)
+inline void bi_or_ip(BigInteger* left, const BigInteger& right)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        left->bits[i] |= right->bits[i];
+        left->bits[i] |= right.bits[i];
     }
 }
 
-inline BigInteger bi_xor(const BigInteger* left, const BigInteger* right)
+inline BigInteger bi_xor(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = left->bits[i] ^ right->bits[i];
+        result.bits[i] = left.bits[i] ^ right.bits[i];
     }
 
     return result;
 }
 
-inline void bi_xor_ip(BigInteger* left, const BigInteger* right)
+inline void bi_xor_ip(BigInteger* left, const BigInteger& right)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        left->bits[i] ^= right->bits[i];
+        left->bits[i] ^= right.bits[i];
     }
 }
 
-inline BigInteger bi_not(const BigInteger* left)
+inline BigInteger bi_not(const BigInteger& left)
 {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = ~(left->bits[i]);
+        result.bits[i] = ~(left.bits[i]);
     }
 
     return result;
@@ -448,18 +448,18 @@ inline void bi_not_ip(BigInteger* left)
 
 // "Schoolbook multiplication" (on half words)
 // Complexity - O(x^2)
-BigInteger bi_mul_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right)
+BigInteger bi_mul_small(const BigInteger& left, BIG_INTEGER_HALF_WORD right)
 {
     BigInteger result = bi_create(0);
     BIG_INTEGER_WORD carry = 0;
     for (int i = 0; i < BIG_INTEGER_HALF_WORD_SIZE; ++i) {
         const int i2 = i >> 1;
         if (i & 1) {
-            BIG_INTEGER_WORD temp = right * (left->bits[i2] >> BIG_INTEGER_HALF_WORD_BITS) + carry;
+            BIG_INTEGER_WORD temp = right * (left.bits[i2] >> BIG_INTEGER_HALF_WORD_BITS) + carry;
             carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
             result.bits[i2] |= (temp & BIG_INTEGER_HALF_WORD_MASK) << BIG_INTEGER_HALF_WORD_BITS;
         } else {
-            BIG_INTEGER_WORD temp = right * (left->bits[i2] & BIG_INTEGER_HALF_WORD_MASK) + carry;
+            BIG_INTEGER_WORD temp = right * (left.bits[i2] & BIG_INTEGER_HALF_WORD_MASK) + carry;
             carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
             result.bits[i2] |= temp & BIG_INTEGER_HALF_WORD_MASK;
         }
@@ -471,12 +471,12 @@ BigInteger bi_mul_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right)
 #if BIG_INTEGER_BITS > 80
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
-BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
+BigInteger bi_mul(const BigInteger& left, const BigInteger& right)
 {
     int rightLog2 = bi_log2(right);
     if (rightLog2 == 0) {
         // right == 1
-        return *left;
+        return left;
     }
     int maxI = BIG_INTEGER_BITS - rightLog2;
 
@@ -484,11 +484,11 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
     bi_set_0(&result);
     for (int i = 0; i < maxI; ++i) {
         BigInteger partMul = bi_lshift(right, i);
-        if (bi_compare_0(&partMul) == 0) {
+        if (bi_compare_0(partMul) == 0) {
             break;
         }
         const int iWord = i / BIG_INTEGER_WORD_BITS;
-        if (1 & (left->bits[iWord] >> (i - (iWord * BIG_INTEGER_WORD_BITS)))) {
+        if (1 & (left.bits[iWord] >> (i - (iWord * BIG_INTEGER_WORD_BITS)))) {
             for (int j = iWord; j < BIG_INTEGER_WORD_SIZE; j++) {
                 BIG_INTEGER_WORD temp = result.bits[j];
                 result.bits[j] += partMul.bits[j];
@@ -505,7 +505,7 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 #else
 // "Schoolbook multiplication" (on half words)
 // Complexity - O(x^2)
-BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
+BigInteger bi_mul(const BigInteger& left, const BigInteger& right)
 {
     if (right->bits[0] < BIG_INTEGER_HALF_WORD_POW) {
         int wordSize;
@@ -519,15 +519,15 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
         }
     }
 
-    if (left->bits[0] < BIG_INTEGER_HALF_WORD_POW) {
+    if (left.bits[0] < BIG_INTEGER_HALF_WORD_POW) {
         int wordSize;
         for (wordSize = 1; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
-            if (left->bits[wordSize]) {
+            if (left.bits[wordSize]) {
                 break;
             }
         }
         if (wordSize == BIG_INTEGER_WORD_SIZE) {
-            return bi_mul_small(right, (BIG_INTEGER_HALF_WORD)(left->bits[0]));
+            return bi_mul_small(right, (BIG_INTEGER_HALF_WORD)(left.bits[0]));
         }
     }
 
@@ -544,14 +544,14 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
                 const int i2j2 = i2 + j2;
                 if (isJEven) {
                     BIG_INTEGER_WORD temp =
-                        (right->bits[j2] & BIG_INTEGER_HALF_WORD_MASK) * (left->bits[i2] & BIG_INTEGER_HALF_WORD_MASK) +
+                        (right->bits[j2] & BIG_INTEGER_HALF_WORD_MASK) * (left.bits[i2] & BIG_INTEGER_HALF_WORD_MASK) +
                         (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK) + carry;
                     carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
                     result.bits[i2j2] =
                         (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK_NOT) | (temp & BIG_INTEGER_HALF_WORD_MASK);
                 } else {
                     BIG_INTEGER_WORD temp = (right->bits[j2] >> BIG_INTEGER_HALF_WORD_BITS) *
-                            (left->bits[i2] & BIG_INTEGER_HALF_WORD_MASK) +
+                            (left.bits[i2] & BIG_INTEGER_HALF_WORD_MASK) +
                         (result.bits[i2j2] >> BIG_INTEGER_HALF_WORD_BITS) + carry;
                     carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
                     result.bits[i2j2] = (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK) |
@@ -565,14 +565,14 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
                 const int i2j2 = isJEven ? (i2 + j2) : (i2 + j2 + 1);
                 if (isJEven) {
                     BIG_INTEGER_WORD temp =
-                        (right->bits[j2] & BIG_INTEGER_HALF_WORD_MASK) * (left->bits[i2] >> BIG_INTEGER_HALF_WORD_BITS) +
+                        (right->bits[j2] & BIG_INTEGER_HALF_WORD_MASK) * (left.bits[i2] >> BIG_INTEGER_HALF_WORD_BITS) +
                         (result.bits[i2j2] >> BIG_INTEGER_HALF_WORD_BITS) + carry;
                     carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
                     result.bits[i2j2] = (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK) |
                         ((temp & BIG_INTEGER_HALF_WORD_MASK) << BIG_INTEGER_HALF_WORD_BITS);
                 } else {
                     BIG_INTEGER_WORD temp =
-                        (right->bits[j2] >> BIG_INTEGER_HALF_WORD_BITS) * (left->bits[i2] >> BIG_INTEGER_HALF_WORD_BITS) +
+                        (right->bits[j2] >> BIG_INTEGER_HALF_WORD_BITS) * (left.bits[i2] >> BIG_INTEGER_HALF_WORD_BITS) +
                         (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK) + carry;
                     carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
                     result.bits[i2j2] =
@@ -588,7 +588,7 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 
 // "Schoolbook division" (on half words)
 // Complexity - O(x^2)
-void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigInteger* quotient, BIG_INTEGER_HALF_WORD* rmndr)
+void bi_div_mod_small(const BigInteger& left, BIG_INTEGER_HALF_WORD right, BigInteger* quotient, BIG_INTEGER_HALF_WORD* rmndr)
 {
     BIG_INTEGER_WORD carry = 0;
     if (quotient) {
@@ -597,10 +597,10 @@ void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigIn
             const int i2 = i >> 1;
             carry <<= BIG_INTEGER_HALF_WORD_BITS;
             if (i & 1) {
-                carry |= left->bits[i2] >> BIG_INTEGER_HALF_WORD_BITS;
+                carry |= left.bits[i2] >> BIG_INTEGER_HALF_WORD_BITS;
                 quotient->bits[i2] |= (carry / right) << BIG_INTEGER_HALF_WORD_BITS;
             } else {
-                carry |= left->bits[i2] & BIG_INTEGER_HALF_WORD_MASK;
+                carry |= left.bits[i2] & BIG_INTEGER_HALF_WORD_MASK;
                 quotient->bits[i2] |= (carry / right);
             }
             carry %= right;
@@ -610,10 +610,10 @@ void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigIn
             const int i2 = i >> 1;
             carry <<= BIG_INTEGER_HALF_WORD_BITS;
             if (i & 1) {
-                carry |= left->bits[i2] >> BIG_INTEGER_HALF_WORD_BITS;
+                carry |= left.bits[i2] >> BIG_INTEGER_HALF_WORD_BITS;
 
             } else {
-                carry |= left->bits[i2] & BIG_INTEGER_HALF_WORD_MASK;
+                carry |= left.bits[i2] & BIG_INTEGER_HALF_WORD_MASK;
             }
             carry %= right;
         }
@@ -626,7 +626,7 @@ void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigIn
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
-void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quotient, BigInteger* rmndr)
+void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quotient, BigInteger* rmndr)
 {
     const int lrCompare = bi_compare(left, right);
 
@@ -659,10 +659,10 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
 
     // Otherwise, past this point, left > right.
 
-    if (right->bits[0] < BIG_INTEGER_HALF_WORD_POW) {
+    if (right.bits[0] < BIG_INTEGER_HALF_WORD_POW) {
         int wordSize;
         for (wordSize = 1; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
-            if (right->bits[wordSize]) {
+            if (right.bits[wordSize]) {
                 break;
             }
         }
@@ -670,13 +670,13 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
             // We can use the small division variant.
             if (rmndr) {
                 BIG_INTEGER_HALF_WORD t;
-                bi_div_mod_small(left, (BIG_INTEGER_HALF_WORD)(right->bits[0]), quotient, &t);
+                bi_div_mod_small(left, (BIG_INTEGER_HALF_WORD)(right.bits[0]), quotient, &t);
                 rmndr->bits[0] = t;
                 for (int i = 1; i < BIG_INTEGER_WORD_SIZE; ++i) {
                     rmndr->bits[i] = 0;
                 }
             } else {
-                bi_div_mod_small(left, (BIG_INTEGER_HALF_WORD)(right->bits[0]), quotient, 0);
+                bi_div_mod_small(left, (BIG_INTEGER_HALF_WORD)(right.bits[0]), quotient, 0);
             }
             return;
         }
@@ -684,32 +684,32 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
 
     BigInteger bi1 = bi_create(1U);
     int rightLog2 = bi_log2(right);
-    BigInteger rightTest = bi_lshift(&bi1, rightLog2);
-    if (bi_compare(right, &rightTest) < 0) {
+    BigInteger rightTest = bi_lshift(bi1, rightLog2);
+    if (bi_compare(right, rightTest) < 0) {
         ++rightLog2;
     }
     BigInteger rem;
     bi_copy_ip(left, &rem);
     if (quotient) {
         bi_set_0(quotient);
-        while (bi_compare(&rem, right) >= 0) {
-            int logDiff = bi_log2(&rem) - rightLog2;
+        while (bi_compare(rem, right) >= 0) {
+            int logDiff = bi_log2(rem) - rightLog2;
             if (logDiff > 0) {
                 BigInteger partMul = bi_lshift(right, logDiff);
-                BigInteger partQuo = bi_lshift(&bi1, logDiff);
-                bi_sub_ip(&rem, &partMul);
-                bi_add_ip(quotient, &partQuo);
+                BigInteger partQuo = bi_lshift(bi1, logDiff);
+                bi_sub_ip(&rem, partMul);
+                bi_add_ip(quotient, partQuo);
             } else {
                 bi_sub_ip(&rem, right);
                 bi_increment(quotient, 1U);
             }
         }
     } else {
-        while (bi_compare(&rem, right) >= 0) {
-            int logDiff = bi_log2(&rem) - rightLog2;
+        while (bi_compare(rem, right) >= 0) {
+            int logDiff = bi_log2(rem) - rightLog2;
             if (logDiff > 0) {
                 BigInteger partMul = bi_lshift(right, logDiff);
-                bi_sub_ip(&rem, &partMul);
+                bi_sub_ip(&rem, partMul);
             } else {
                 bi_sub_ip(&rem, right);
             }
@@ -720,16 +720,16 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
     }
 }
 
-inline double bi_to_double(const BigInteger* in)
+inline double bi_to_double(const BigInteger& in)
 {
     double toRet = 0.0;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        toRet += in->bits[i] * pow(2.0, 64 * i);
+        toRet += in.bits[i] * pow(2.0, 64 * i);
     }
     
     return toRet;
 }
 
 inline bool operator<(const BigInteger& left, const BigInteger& right) {
-    return bi_compare(&left, &right) < 0;
+    return bi_compare(left, right) < 0;
 }
