@@ -386,7 +386,7 @@ public:
         layerStack = NULL;
         GetCircuit(target, controls)
             ->AppendGate(std::make_shared<QCircuitGate>(
-                target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+                target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, ZERO_BCI));
     }
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
     {
@@ -414,7 +414,7 @@ public:
         lMtrx.get()[3U] = bottomRight;
         GetCircuit(target, controls)
             ->AppendGate(std::make_shared<QCircuitGate>(
-                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, ZERO_BCI));
     }
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
@@ -442,7 +442,7 @@ public:
         lMtrx.get()[3U] = ZERO_CMPLX;
         GetCircuit(target, controls)
             ->AppendGate(std::make_shared<QCircuitGate>(
-                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, 0U));
+                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, ZERO_BCI));
     }
 
     void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);

@@ -140,14 +140,14 @@ public:
     QInterfacePtr Clone()
     {
         QUnitCliffordPtr copyPtr = std::make_shared<QUnitClifford>(
-            qubitCount, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+            qubitCount, ZERO_BCI, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
 
         return CloneBody(copyPtr);
     }
     QUnitCliffordPtr CloneEmpty()
     {
         return std::make_shared<QUnitClifford>(
-            0U, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+            0U, ZERO_BCI, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
     }
 
     bool isClifford() { return true; };
@@ -444,7 +444,7 @@ public:
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
     {
         QUnitCliffordPtr dest = std::make_shared<QUnitClifford>(
-            length, 0U, rand_generator, CMPLX_DEFAULT_ARG, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+            length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
 
         Decompose(start, dest);
 
@@ -469,7 +469,7 @@ public:
             return 0U;
         }
 
-        QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
+        QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
             randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         return Compose(nQubits, start);
     }

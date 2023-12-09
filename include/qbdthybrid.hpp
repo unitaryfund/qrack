@@ -192,7 +192,7 @@ public:
             e = std::dynamic_pointer_cast<QEngine>(engine->Decompose(start, length));
         }
 
-        return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
+        return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
             randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
     }
@@ -912,7 +912,7 @@ public:
 
     QInterfacePtr Clone()
     {
-        QBdtHybridPtr c = std::make_shared<QBdtHybrid>(engines, qubitCount, 0U, rand_generator, phaseFactor,
+        QBdtHybridPtr c = std::make_shared<QBdtHybrid>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
             doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
         c->SetConcurrency(GetConcurrencyLevel());

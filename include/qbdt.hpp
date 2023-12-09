@@ -123,7 +123,7 @@ protected:
                 leaf = leaf->branches[SelectBit(i, j)];
             }
 
-            setLambda((bitCapIntOcl)i, leaf);
+            setLambda(i.bits[0U], leaf);
         });
 
         root->PopStateVector(qubitCount);

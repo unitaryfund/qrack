@@ -661,9 +661,9 @@ public:
         QRACK_CONST complex m[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         const std::set<bitLenInt> s1 = { q1 };
         const std::set<bitLenInt> s2 = { q2 };
-        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
-        AppendGate(std::make_shared<QCircuitGate>(q2, m, s1, 1U));
-        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
+        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, ONE_BCI));
+        AppendGate(std::make_shared<QCircuitGate>(q2, m, s1, ONE_BCI));
+        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, ONE_BCI));
     }
 
     /**

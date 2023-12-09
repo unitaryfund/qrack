@@ -110,7 +110,7 @@ public:
     {
         if (!isPager && usePager) {
             std::vector<QInterfaceEngine> engines = { isGpu ? QRACK_GPU_ENGINE : QINTERFACE_CPU };
-            engine = std::make_shared<QPager>(engine, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
+            engine = std::make_shared<QPager>(engine, engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
                 randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, 0U,
                 separabilityThreshold);
         } else if (isPager && !usePager) {
@@ -236,7 +236,7 @@ public:
             return start;
         }
 
-        QHybridPtr nQubits = std::make_shared<QHybrid>(length, 0U, rand_generator, phaseFactor, doNormalize,
+        QHybridPtr nQubits = std::make_shared<QHybrid>(length, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
             randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             gpuThresholdQubits, separabilityThreshold);
         nQubits->SetConcurrency(GetConcurrencyLevel());
@@ -503,7 +503,7 @@ public:
 
     QInterfacePtr Clone()
     {
-        QHybridPtr c = std::make_shared<QHybrid>(qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
+        QHybridPtr c = std::make_shared<QHybrid>(qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
             randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             gpuThresholdQubits, separabilityThreshold);
         c->runningNorm = runningNorm;
