@@ -70,11 +70,14 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        unsigned underThreads = (unsigned)(pow2(depth) / pStride);
+        bitCapInt _t;
+        bi_div_mod(pow2(depth), pStride, &_t, NULL);
+        unsigned underThreads = _t.bits[0U];
+
         if (underThreads == 1U) {
             underThreads = 0U;
         }
-        if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {
+        if ((depth >= pStridePow) && (bi_compare((pow2(parDepth) * (underThreads + 1U)), bi_create(numThreads)) <= 0)) {
             ++parDepth;
 
             std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
@@ -188,7 +191,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
             }
         }
 
-        return (bitCapInt)0U;
+        return ZERO_BCI;
     });
 
     if (b0 == b1) {
@@ -225,7 +228,7 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     b1 = branches[1U];
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth <= pStridePow) || (pow2(parDepth) > numThreads)) {
+    if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), bi_create(numThreads)) > 0)) {
         b0->Branch(depth, parDepth);
         b1->Branch(depth, parDepth);
         return;
@@ -436,7 +439,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             std::lock_guard<std::mutex> nLock1(n1->mtx);
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+            if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), bi_create(numThreads)) <= 0)) {
                 ++parDepth;
 
                 std::future<void> future0 =
@@ -462,7 +465,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+    if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), bi_create(numThreads)) <= 0)) {
         ++parDepth;
 
         std::future<void> future0 =
@@ -614,7 +617,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+    if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), bi_create(numThreads)) <= 0)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async,

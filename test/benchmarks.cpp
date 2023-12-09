@@ -110,7 +110,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     for (bitLenInt numBits = mnQbts; numBits <= mxQbts; numBits++) {
-        QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
+        QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG,
             enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
         if (disable_t_injection) {
             qftReg->SetTInjection(false);
@@ -168,8 +168,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 qftReg = NULL;
 
                 // Re-alloc:
-                qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
-                    true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+                qftReg =
+                    CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG, enable_normalization,
+                        true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
                 if (disable_t_injection) {
                     qftReg->SetTInjection(false);
                 }
@@ -192,7 +193,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                             qftReg = NULL;
 
                             // Re-alloc:
-                            qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
+                            qftReg = CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG,
                                 enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
                                 REAL1_EPSILON, devList);
                             if (disable_t_injection) {
@@ -240,8 +241,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 qftReg = NULL;
 
                 // Re-alloc:
-                qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
-                    true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+                qftReg =
+                    CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG, enable_normalization,
+                        true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
                 if (disable_t_injection) {
                     qftReg->SetTInjection(false);
                 }
@@ -3963,7 +3965,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
     int maxGates;
 
-    QInterfacePtr goldStandard = CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, n, 0, rng,
+    QInterfacePtr goldStandard = CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, n, ZERO_BCI, rng,
         ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng);
     if (disable_t_injection) {
         goldStandard->SetTInjection(false);
@@ -4094,7 +4096,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     crossEntropy = ONE_R1_F - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. gold standard cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
-    QInterfacePtr testCase = CreateQuantumInterface({ testEngineType, testSubEngineType }, n, 0, rng, ONE_CMPLX,
+    QInterfacePtr testCase = CreateQuantumInterface({ testEngineType, testSubEngineType }, n, ZERO_BCI, rng, ONE_CMPLX,
         enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse);
     if (disable_t_injection) {
         testCase->SetTInjection(false);
@@ -4263,7 +4265,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -4326,7 +4328,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
 
@@ -4426,7 +4428,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
         for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -4563,7 +4565,7 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -4638,7 +4640,7 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
         for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -4744,7 +4746,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -4864,7 +4866,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
         for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -5001,7 +5003,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5159,7 +5161,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
     circuit->Run(goldStandard);
@@ -5191,7 +5193,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -5250,7 +5252,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5421,7 +5423,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -5477,7 +5479,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5628,7 +5630,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
     circuit->Run(testCase);
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
@@ -5679,7 +5681,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5856,7 +5858,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -5924,7 +5926,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -6027,7 +6029,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
     circuit->Run(goldStandard);
@@ -6059,7 +6061,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -6117,7 +6119,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -6232,7 +6234,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -6288,7 +6290,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -6409,7 +6411,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -6470,7 +6472,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -6574,7 +6576,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
 
@@ -6653,7 +6655,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
         for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -6831,7 +6833,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         std::vector<int> layer1QbRands;
@@ -6922,7 +6924,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
 
@@ -6999,7 +7001,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
         for (d = 0; d < n; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -7112,7 +7114,7 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         std::vector<int> layer1QbRands;
@@ -7212,7 +7214,7 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
         for (d = 0; d < n; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -7322,7 +7324,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         std::vector<int> layer1QbRands;
@@ -7433,7 +7435,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
 
         for (d = 0; d < n; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -7535,7 +7537,7 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>(false);
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (int d = 0; d < n; d++) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -7610,7 +7612,7 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
     circuit->Run(testCase);
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
@@ -7660,7 +7662,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>(false);
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -7772,7 +7774,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
     circuit->Run(testCase);
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
@@ -7831,7 +7833,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>(false);
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -7970,7 +7972,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
     circuit->Run(testCase);
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
@@ -7991,7 +7993,7 @@ TEST_CASE("test_noisy_qft_cosmology_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     auto start = std::chrono::high_resolution_clock::now();
     double sdrp = 1.0;
@@ -8015,7 +8017,7 @@ TEST_CASE("test_noisy_qft_cosmology_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0U);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, ZERO_BCI);
         for (bitLenInt i = 0; i < w; i++) {
             RandomInitQubit(testCase, i);
         }
@@ -8055,7 +8057,7 @@ TEST_CASE("test_noisy_qft_ghz_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     auto start = std::chrono::high_resolution_clock::now();
     double sdrp = 1.0;
@@ -8079,7 +8081,7 @@ TEST_CASE("test_noisy_qft_ghz_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0U);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, ZERO_BCI);
         testCase->H(0U);
         const bitLenInt end = w - 1U;
         for (bitLenInt i = 0; i < end; i++) {

@@ -21,6 +21,7 @@ endif (PACK_DEBIAN)
 
 # Declare the library
 add_library (qrack STATIC
+    src/common/big_integer.cpp
     src/common/functions.cpp
     src/common/parallel_for.cpp
     src/qinterface/gates.cpp

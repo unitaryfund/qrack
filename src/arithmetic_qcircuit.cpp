@@ -29,7 +29,7 @@ void QCircuit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
 
     if (length == 1U) {
-        if (toAdd & 1U) {
+        if (bi_and_1(toAdd) != 0) {
             AppendGate(std::make_shared<QCircuitGate>(start, x));
         }
         return;
@@ -43,7 +43,7 @@ void QCircuit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     const bitLenInt lengthMin1 = length - 1U;
 
     for (bitLenInt i = 0U; i < length; ++i) {
-        if (!((toAdd >> i) & 1U)) {
+        if (bi_and_1(toAdd >> i) == 0) {
             continue;
         }
         const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
@@ -51,7 +51,7 @@ void QCircuit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
         for (bitLenInt j = 0U; j < (lengthMin1 - i); ++j) {
 
             // gather up arguments for QCircuitGate creation
-            bitCapInt permutationOfControlsToActivateGate = 0;
+            bitCapInt permutationOfControlsToActivateGate = ZERO_BCI;
             bitLenInt targetQubitIndex = start + ((i + j + 1U) % length);
             const std::set<bitLenInt> controlQubitIndices{ bits.begin() + i, bits.begin() + i + j + 1U };
 

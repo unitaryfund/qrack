@@ -54,10 +54,10 @@ struct QEngineInfo {
 
 struct DeviceInfo {
     size_t id;
-    bitCapInt maxSize;
+    bitCapIntOcl maxSize;
 
-    bool operator<(const DeviceInfo& other) const { return bi_compare(maxSize, other.maxSize) < 0; }
-    bool operator>(const DeviceInfo& other) const { return bi_compare(maxSize, other.maxSize) > 0; }
+    bool operator<(const DeviceInfo& other) const { return maxSize < other.maxSize; }
+    bool operator>(const DeviceInfo& other) const { return maxSize > other.maxSize; }
 };
 
 class QUnitMulti;

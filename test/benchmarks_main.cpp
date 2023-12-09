@@ -63,7 +63,7 @@ bool optimal_single = false;
 #endif
 #define SHOW_OCL_BANNER()                                                                                              \
     if (QRACK_GPU_SINGLETON.GetDeviceCount()) {                                                                        \
-        CreateQuantumInterface(QRACK_GPU_ENUM, 1, 0).reset();                                                          \
+        CreateQuantumInterface(QRACK_GPU_ENUM, 1, ZERO_BCI).reset();                                                   \
     }
 
 int main(int argc, char* argv[])

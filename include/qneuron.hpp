@@ -150,7 +150,7 @@ public:
 
     bitLenInt GetInputCount() { return inputIndices.size(); }
 
-    bitCapInt GetInputPower() { return inputPower; }
+    bitCapIntOcl GetInputPower() { return inputPower; }
 
     /** Predict a binary classification.
      *
@@ -295,7 +295,7 @@ public:
             return;
         }
 
-        for (bitCapInt perm = 0U; perm < inputPower; ++perm) {
+        for (bitCapIntOcl perm = 0U; perm < inputPower; ++perm) {
             startProb = LearnInternal(expected, eta, perm, startProb);
             if (0 > startProb) {
                 break;
@@ -320,18 +320,19 @@ public:
             return;
         }
 
-        bitCapInt perm = 0U;
+        bitCapIntOcl perm = 0U;
         for (size_t i = 0U; i < inputIndices.size(); ++i) {
-            perm |= qReg->M(inputIndices[i]) ? pow2(i) : 0U;
+            if (qReg->M(inputIndices[i])) {
+                perm |= pow2Ocl(i);
+            }
         }
 
         LearnInternal(expected, eta, perm, startProb);
     }
 
 protected:
-    real1_f LearnInternal(bool expected, real1_f eta, bitCapInt perm, real1_f startProb)
+    real1_f LearnInternal(bool expected, real1_f eta, bitCapIntOcl permOcl, real1_f startProb)
     {
-        bitCapIntOcl permOcl = (bitCapIntOcl)perm;
         const real1 origAngle = angles.get()[permOcl];
         real1& angle = angles.get()[permOcl];
 

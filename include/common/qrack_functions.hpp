@@ -67,6 +67,7 @@ inline bool isPowerOfTwo(const bitCapInt& x)
     bi_and_ip(&y, x);
     return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
 }
+inline bool isPowerOfTwoOcl(const bitCapIntOcl& x) { return x && !(x & (x - 1U)); }
 inline bool isBadBitRange(const bitLenInt& start, const bitLenInt& length, const bitLenInt& qubitCount)
 {
     return ((start + length) > qubitCount) || ((bitLenInt)(start + length) < start);

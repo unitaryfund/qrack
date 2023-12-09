@@ -89,10 +89,10 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
     bitCapInt i;
 
     float maxProb = 0;
-    bitCapInt maxProbIdx = 0;
+    bitCapInt maxProbIdx = ZERO_BCI;
 
     // Iterate through all possible values of the bit array
-    for (i = 0; i < qftReg->GetMaxQPower(); i++) {
+    for (i = ZERO_BCI; bi_compare(i, qftReg->GetMaxQPower()) < 0; bi_increment(&i, 1U)) {
         float prob = (float)qftReg->ProbAll(i);
         if (prob > maxProb) {
             maxProb = prob;
@@ -106,8 +106,8 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
     os << qftReg->GetQubitCount() << "/";
 
     // Print the resulting maximum probability bit pattern.
-    for (i = qftReg->GetMaxQPower() >> 1UL; i > 0; i >>= 1UL) {
-        if (i & maxProbIdx) {
+    for (i = qftReg->GetMaxQPower() >> 1U; bi_compare_0(i) > 0; bi_rshift_ip(&i, 1U)) {
+        if (bi_compare_0(i & maxProbIdx) != 0) {
             os << "1";
         } else {
             os << "0";
@@ -174,7 +174,7 @@ public:
         for (bitLenInt j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
             bool bit = (qftReg->Prob(j + start) > QRACK_TEST_EPSILON);
-            if (bit == !(mask & (1ULL << j))) {
+            if (bit == (bi_compare_0(mask & Qrack::pow2(j)) == 0)) {
                 return false;
             }
         }
@@ -186,7 +186,7 @@ public:
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
         for (int j = (length - 1); j >= 0; j--) {
-            ss << !!((int)(mask & (1ULL << j)));
+            ss << (bi_compare_0(mask & Qrack::pow2(j)) != 0);
         }
         return ss.str();
     }

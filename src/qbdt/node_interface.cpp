@@ -131,7 +131,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
 
         QBdtNodeInterfacePtr toRet1, toRet2;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+        if ((depth >= pStridePow) && (pow2Ocl(parDepth) <= numThreads)) {
             ++parDepth;
             std::future<QBdtNodeInterfacePtr> future0 = std::async(
                 std::launch::async, [&] { return branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth); });
@@ -170,20 +170,22 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     const bitCapInt Stride = pStride;
-    unsigned threads = (unsigned)(end / pStride);
+    bitCapInt _t;
+    bi_div_mod(end, pStride, &_t, NULL);
+    unsigned threads = _t.bits[0U];
     if (threads > numThreads) {
         threads = numThreads;
     }
 
     if (threads <= 1U) {
-        for (bitCapInt j = 0U; j < end; ++j) {
-            j |= fn(j);
+        for (bitCapInt j = ZERO_BCI; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
+            bi_or_ip(&j, fn(j));
         }
         return;
     }
 
     std::mutex myMutex;
-    bitCapInt idx = 0U;
+    bitCapInt idx = ZERO_BCI;
     std::vector<std::future<void>> futures;
     futures.reserve(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
@@ -192,21 +194,24 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
                 bitCapInt i;
                 if (true) {
                     std::lock_guard<std::mutex> lock(myMutex);
-                    i = idx++;
+                    i = idx;
+                    bi_increment(&idx, 1U);
                 }
                 const bitCapInt l = i * Stride;
-                if (l >= end) {
+                if (bi_compare(l, end) >= 0) {
                     break;
                 }
                 const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
                 bitCapInt j;
-                for (j = 0U; j < maxJ; ++j) {
+                for (j = ZERO_BCI; bi_compare(j, maxJ) < 0; bi_increment(&j, 1U)) {
                     bitCapInt k = j + l;
-                    k |= fn(k);
+                    bi_or_ip(&k, fn(k));
                     j = k - l;
-                    if (j >= maxJ) {
+                    if (bi_compare(j, maxJ) >= 0) {
                         std::lock_guard<std::mutex> lock(myMutex);
-                        idx |= j / Stride;
+                        bitCapInt _j;
+                        bi_div_mod(j, Stride, &_j, NULL);
+                        bi_or_ip(&idx, _j);
                         break;
                     }
                 }

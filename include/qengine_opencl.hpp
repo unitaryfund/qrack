@@ -301,7 +301,7 @@ public:
             return;
         }
 
-        std::shared_ptr<complex> copyVec = AllocStateVec(maxQPower, true);
+        std::shared_ptr<complex> copyVec = AllocStateVec(maxQPowerOcl, true);
         GetQuantumState(copyVec.get());
 
         if (useHostMem) {
@@ -527,7 +527,7 @@ protected:
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
-    std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    std::shared_ptr<complex> AllocStateVec(bitCapIntOcl elemCount, bool doForceAlloc = false);
     void FreeStateVec() { stateVec = NULL; }
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
