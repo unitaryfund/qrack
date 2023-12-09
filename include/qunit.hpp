@@ -126,7 +126,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetAmplitude(bitCapInt perm, complex amp)
     {
-        if (bi_compare(&perm, &maxQPower) >= 0) {
+        if (bi_compare(perm, maxQPower) >= 0) {
             throw std::invalid_argument("QUnit::SetAmplitude argument out-of-bounds!");
         }
 

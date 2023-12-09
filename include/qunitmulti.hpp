@@ -41,9 +41,7 @@ struct QEngineInfo {
 
     bool operator<(const QEngineInfo& other) const
     {
-        const bitCapInt mQPow = unit->GetMaxQPower();
-        const bitCapInt oQPow = other.unit->GetMaxQPower();
-        const int v = bi_compare(&mQPow, &oQPow);
+        const int v = bi_compare(unit->GetMaxQPower(), other.unit->GetMaxQPower());
         if (v == 0) {
             // "Larger" QEngineInfo instances get first scheduling priority, and low device indices have greater
             // capacity, so larger deviceIndices get are "<"
@@ -58,8 +56,8 @@ struct DeviceInfo {
     size_t id;
     bitCapInt maxSize;
 
-    bool operator<(const DeviceInfo& other) const { return bi_compare(&maxSize, &(other.maxSize)) < 0; }
-    bool operator>(const DeviceInfo& other) const { return bi_compare(&maxSize, &(other.maxSize)) > 0; }
+    bool operator<(const DeviceInfo& other) const { return bi_compare(maxSize, other.maxSize) < 0; }
+    bool operator>(const DeviceInfo& other) const { return bi_compare(maxSize, other.maxSize) > 0; }
 };
 
 class QUnitMulti;

@@ -177,7 +177,7 @@ public:
             QStabilizerPtr unit = shards[i].unit;
             if (engines.find(unit) == engines.end()) {
                 const bitCapInt pg = pow2(unit->gaussian());
-                permCount = bi_mul(&permCount, &pg);
+                permCount = bi_mul(permCount, pg);
             }
         }
 

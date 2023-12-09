@@ -60,7 +60,7 @@ protected:
 
     bitCapIntOcl pageMaxQPower() {
         bitCapInt toRet;
-        bi_div_mod_small(&maxQPower, qPages.size(), &toRet, NULL);
+        bi_div_mod_small(maxQPower, qPages.size(), &toRet, NULL);
         return toRet.bits[0U];
     }
     bitLenInt pagedQubitCount() { return log2Ocl(qPages.size()); }
@@ -280,23 +280,20 @@ public:
     void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm)
     {
-        const bitCapInt pmqp = bi_create(pageMaxQPower());
         bitCapInt p, a;
-        bi_div_mod(&perm, &pmqp, &p, &a);
+        bi_div_mod(perm, bi_create(pageMaxQPower()), &p, &a);
         return qPages[p.bits[0U]]->GetAmplitude(a);
     }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
-        const bitCapInt pmqp = bi_create(pageMaxQPower());
         bitCapInt p, a;
-        bi_div_mod(&perm, &pmqp, &p, &a);
+        bi_div_mod(perm, bi_create(pageMaxQPower()), &p, &a);
         qPages[p.bits[0U]]->SetAmplitude(a, amp);
     }
     real1_f ProbAll(bitCapInt perm)
     {
-        const bitCapInt pmqp = bi_create(pageMaxQPower());
         bitCapInt p, a;
-        bi_div_mod(&perm, &pmqp, &p, &a);
+        bi_div_mod(perm, bi_create(pageMaxQPower()), &p, &a);
         return qPages[p.bits[0U]]->ProbAll(a);
     }
 
@@ -395,7 +392,7 @@ public:
     // TODO: QPager not yet used in Q#, but this would need a real implementation:
     real1_f ProbParity(bitCapInt mask)
     {
-        if (bi_compare_0(&mask) == 0) {
+        if (bi_compare_0(mask) == 0) {
             return ZERO_R1_F;
         }
 
@@ -404,7 +401,7 @@ public:
     }
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
-        if (bi_compare_0(&mask) == 0) {
+        if (bi_compare_0(mask) == 0) {
             return ZERO_R1_F;
         }
 

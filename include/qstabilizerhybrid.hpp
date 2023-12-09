@@ -161,10 +161,8 @@ protected:
 
             bitCapInt sample = ZERO_BCI;
             for (size_t i = 0U; i < qPowers.size(); ++i) {
-                const bitCapInt p = bi_and(&m, &qPowers[i]);
-                if (bi_compare_0(&p) != 0) {
-                    const bitCapInt b = pow2(i);
-                    bi_or_ip(&sample, &b);
+                if (bi_compare_0(bi_and(m, qPowers[i])) != 0) {
+                    bi_or_ip(&sample, pow2(i));
                 }
             }
             fn(sample, shot);
