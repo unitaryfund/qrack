@@ -21,14 +21,16 @@ namespace Qrack {
 
 inline bitCapInt pow2(const bitLenInt& p) { return ONE_BCI << p; }
 inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)1U << p; }
-inline bitCapInt pow2Mask(const bitLenInt& p) {
+inline bitCapInt pow2Mask(const bitLenInt& p)
+{
     bitCapInt toRet = ONE_BCI << p;
     bi_decrement(&toRet, 1U);
     return toRet;
 }
 inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return ((bitCapIntOcl)1U << p) - 1U; }
 inline bitLenInt log2(bitCapInt n) { return (bitLenInt)bi_log2(n); }
-inline bitLenInt log2Ocl(bitCapIntOcl n) {
+inline bitLenInt log2Ocl(bitCapIntOcl n)
+{
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
 #if QBCAPPOW < 6
     return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
@@ -58,7 +60,8 @@ inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& lengt
     return (((bitCapIntOcl)1U << length) - 1U) << start;
 }
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const bitCapInt& x) {
+inline bool isPowerOfTwo(const bitCapInt& x)
+{
     bitCapInt y = x;
     bi_decrement(&y, 1U);
     bi_and_ip(&y, x);
@@ -96,8 +99,10 @@ void mul2x2(complex const* left, complex const* right, complex* out);
 void exp2x2(complex const* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex const* matrix2x2, complex* outMatrix2x2);
 void inv2x2(complex const* matrix2x2, complex* outMatrix2x2);
-bool isOverflowAdd(bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower);
-bool isOverflowSub(bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower);
+bool isOverflowAdd(
+    bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower);
+bool isOverflowSub(
+    bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);

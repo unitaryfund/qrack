@@ -221,7 +221,8 @@ public:
     }
     void SetQuantumState(QInterfacePtr eng)
     {
-        SetTraversal([eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = eng->GetAmplitude(bi_create(i)); });
+        SetTraversal(
+            [eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = eng->GetAmplitude(bi_create(i)); });
     }
     void GetProbs(real1* outputProbs)
     {

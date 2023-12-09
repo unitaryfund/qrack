@@ -260,9 +260,9 @@ void QPager::Init()
 
 QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapIntOcl pageId)
 {
-    QEnginePtr toRet =
-        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, 0U, ZERO_BCI, rand_generator, phaseFactor, false,
-            false, GetPageHostPointer(pageId), GetPageDevice(pageId), useRDRAND, isSparse, (real1_f)amplitudeFloor));
+    QEnginePtr toRet = std::dynamic_pointer_cast<QEngine>(
+        CreateQuantumInterface(engines, 0U, ZERO_BCI, rand_generator, phaseFactor, false, false,
+            GetPageHostPointer(pageId), GetPageDevice(pageId), useRDRAND, isSparse, (real1_f)amplitudeFloor));
     toRet->SetQubitCount(length);
     toRet->SetConcurrency(GetConcurrencyLevel());
     toRet->SetTInjection(useTGadget);
@@ -1514,8 +1514,9 @@ real1_f QPager::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt
         if (i != iF) {
             expectation += futures[iF].get();
         }
-        futures[iF] = std::async(std::launch::async,
-            [engine, bits, pagePerm, offset]() { return engine->ExpectationBitsAll(bits, bi_create(pagePerm + offset.bits[0U])); });
+        futures[iF] = std::async(std::launch::async, [engine, bits, pagePerm, offset]() {
+            return engine->ExpectationBitsAll(bits, bi_create(pagePerm + offset.bits[0U]));
+        });
 #else
         expectation += engine->ExpectationBitsAll(bits, pagePerm + offset);
 #endif

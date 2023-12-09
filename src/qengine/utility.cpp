@@ -21,8 +21,8 @@ QInterfacePtr QEngineCPU::Clone()
     }
 
     QEngineCPUPtr clone =
-        std::make_shared<QEngineCPU>(qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
-            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+        std::make_shared<QEngineCPU>(qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+            false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
 
     Finish();
     clone->Finish();
@@ -34,8 +34,9 @@ QInterfacePtr QEngineCPU::Clone()
 
 QEnginePtr QEngineCPU::CloneEmpty()
 {
-    QEngineCPUPtr clone = std::make_shared<QEngineCPU>(0U, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+    QEngineCPUPtr clone =
+        std::make_shared<QEngineCPU>(0U, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
 
     clone->SetQubitCount(qubitCount);
 
@@ -53,8 +54,8 @@ bitLenInt QEngineCPU::Allocate(bitLenInt start, bitLenInt length)
     }
 
     QEngineCPUPtr nQubits =
-        std::make_shared<QEngineCPU>(length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
-            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+        std::make_shared<QEngineCPU>(length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+            -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
     return Compose(nQubits, start);
 }
 

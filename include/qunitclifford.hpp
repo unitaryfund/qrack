@@ -203,7 +203,8 @@ public:
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-    QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = ZERO_BCI, complex phaseFac = CMPLX_DEFAULT_ARG)
+    QStabilizerPtr MakeStabilizer(
+        bitLenInt length = 1U, bitCapInt perm = ZERO_BCI, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
         QStabilizerPtr toRet = std::make_shared<QStabilizer>(
             length, perm, rand_generator, phaseFac, false, randGlobalPhase, false, -1, useRDRAND);
@@ -469,8 +470,8 @@ public:
             return 0U;
         }
 
-        QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+        QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
+            false, randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         return Compose(nQubits, start);
     }
 

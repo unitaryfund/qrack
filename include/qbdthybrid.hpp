@@ -192,8 +192,8 @@ public:
             e = std::dynamic_pointer_cast<QEngine>(engine->Decompose(start, length));
         }
 
-        return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
-            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+        return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
     }
     void Decompose(bitLenInt start, QInterfacePtr dest)

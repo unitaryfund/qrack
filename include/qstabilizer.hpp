@@ -372,8 +372,8 @@ public:
             return 0U;
         }
 
-        QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+        QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
+            false, randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         return Compose(nQubits, start);
     }
 

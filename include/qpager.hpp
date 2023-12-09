@@ -58,7 +58,8 @@ protected:
         basePageMaxQPower = pow2Ocl(baseQubitsPerPage);
     }
 
-    bitCapIntOcl pageMaxQPower() {
+    bitCapIntOcl pageMaxQPower()
+    {
         bitCapInt toRet;
         bi_div_mod_small(maxQPower, qPages.size(), &toRet, NULL);
         return toRet.bits[0U];

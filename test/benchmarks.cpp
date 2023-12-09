@@ -499,7 +499,7 @@ void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> 
             testPage.get()[j * wordLength + i] = (j & (0xff << (8U * i))) >> (8U * i);
         }
     }
-    unsigned char *tp = testPage.get();
+    unsigned char* tp = testPage.get();
     benchmarkLoop([fn, tp](QInterfacePtr qftReg, bitLenInt n) { fn(qftReg, n, tp); });
 }
 

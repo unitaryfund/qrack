@@ -408,8 +408,8 @@ public:
     {
         return ExpectationFactorized(false, false, bits, perms, std::vector<real1_f>(), offset, false);
     }
-    virtual real1_f ExpectationBitsFactorizedRdm(
-        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+    virtual real1_f ExpectationBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
+        const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
     {
         return ExpectationFactorized(true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }

@@ -4017,8 +4017,7 @@ real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
     }
 
     if (CheckBitsPermutation(0U, qubitCount) && toCompare->CheckBitsPermutation(0U, qubitCount)) {
-        if (bi_compare(GetCachedPermutation(0U, qubitCount),
-            toCompare->GetCachedPermutation(0U, qubitCount))) {
+        if (bi_compare(GetCachedPermutation(0U, qubitCount), toCompare->GetCachedPermutation(0U, qubitCount))) {
             return ZERO_R1_F;
         }
 

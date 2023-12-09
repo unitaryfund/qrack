@@ -550,8 +550,8 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
                     result.bits[i2j2] =
                         (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK_NOT) | (temp & BIG_INTEGER_HALF_WORD_MASK);
                 } else {
-                    BIG_INTEGER_WORD temp = (right->bits[j2] >> BIG_INTEGER_HALF_WORD_BITS) *
-                            (left.bits[i2] & BIG_INTEGER_HALF_WORD_MASK) +
+                    BIG_INTEGER_WORD temp =
+                        (right->bits[j2] >> BIG_INTEGER_HALF_WORD_BITS) * (left.bits[i2] & BIG_INTEGER_HALF_WORD_MASK) +
                         (result.bits[i2j2] >> BIG_INTEGER_HALF_WORD_BITS) + carry;
                     carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
                     result.bits[i2j2] = (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK) |
@@ -571,8 +571,8 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
                     result.bits[i2j2] = (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK) |
                         ((temp & BIG_INTEGER_HALF_WORD_MASK) << BIG_INTEGER_HALF_WORD_BITS);
                 } else {
-                    BIG_INTEGER_WORD temp =
-                        (right->bits[j2] >> BIG_INTEGER_HALF_WORD_BITS) * (left.bits[i2] >> BIG_INTEGER_HALF_WORD_BITS) +
+                    BIG_INTEGER_WORD temp = (right->bits[j2] >> BIG_INTEGER_HALF_WORD_BITS) *
+                            (left.bits[i2] >> BIG_INTEGER_HALF_WORD_BITS) +
                         (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK) + carry;
                     carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
                     result.bits[i2j2] =
@@ -588,7 +588,8 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
 
 // "Schoolbook division" (on half words)
 // Complexity - O(x^2)
-void bi_div_mod_small(const BigInteger& left, BIG_INTEGER_HALF_WORD right, BigInteger* quotient, BIG_INTEGER_HALF_WORD* rmndr)
+void bi_div_mod_small(
+    const BigInteger& left, BIG_INTEGER_HALF_WORD right, BigInteger* quotient, BIG_INTEGER_HALF_WORD* rmndr)
 {
     BIG_INTEGER_WORD carry = 0;
     if (quotient) {
@@ -726,7 +727,7 @@ inline double bi_to_double(const BigInteger& in)
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         toRet += in.bits[i] * pow(2.0, 64 * i);
     }
-    
+
     return toRet;
 }
 

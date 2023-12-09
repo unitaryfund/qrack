@@ -335,7 +335,8 @@ real1_f QStabilizer::getExpectation(
     const AmplitudeEntry entry = getBasisAmp(nrm);
     bitCapInt retIndex = ZERO_BCI;
     for (size_t b = 0U; b < bitPowers.size(); ++b) {
-        bi_add_ip(&retIndex, (bi_compare_0(entry.permutation & bitPowers[b]) != 0) ? perms[(b << 1U) | 1U] : perms[b << 1U]);
+        bi_add_ip(
+            &retIndex, (bi_compare_0(entry.permutation & bitPowers[b]) != 0) ? perms[(b << 1U) | 1U] : perms[b << 1U]);
     }
     return ((real1_f)bi_to_double(bi_add(offset, retIndex))) * norm(entry.amplitude);
 }
@@ -885,7 +886,8 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(c, false);
+    const AmplitudeEntry ampEntry =
+        randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(c, false);
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
@@ -1147,7 +1149,8 @@ void QStabilizer::Z(bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+    const AmplitudeEntry ampEntry =
+        randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
 
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -1172,7 +1175,8 @@ void QStabilizer::S(bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+    const AmplitudeEntry ampEntry =
+        randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
 
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -1202,7 +1206,8 @@ void QStabilizer::IS(bitLenInt t)
         return;
     }
 
-    const AmplitudeEntry ampEntry = randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
+    const AmplitudeEntry ampEntry =
+        randGlobalPhase ? AmplitudeEntry(ZERO_BCI, ZERO_CMPLX) : GetQubitAmplitude(t, false);
 
     ParFor(
         [this, t](const bitLenInt& i) {

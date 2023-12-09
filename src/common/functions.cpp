@@ -212,7 +212,8 @@ void inv2x2(complex const* matrix2x2, complex* outMatrix2x2)
 }
 
 /// Check if an addition with overflow sets the flag
-bool isOverflowAdd(bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower)
+bool isOverflowAdd(
+    bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower)
 {
     // Both negative:
     if (inOutInt & inInt & signMask) {
@@ -233,7 +234,8 @@ bool isOverflowAdd(bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl
 }
 
 /// Check if a subtraction with overflow sets the flag
-bool isOverflowSub(bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower)
+bool isOverflowSub(
+    bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower)
 {
     // First negative:
     if (inOutInt & (~inInt) & (signMask)) {

@@ -400,8 +400,8 @@ public:
         bitCapInt m = pow2(controls.size());
         bi_decrement(&m, 1U);
         GetCircuit(target, controls)
-            ->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get(),
-                std::set<bitLenInt>{ controls.begin(), controls.end() }, m));
+            ->AppendGate(std::make_shared<QCircuitGate>(
+                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, m));
     }
     void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
     {
@@ -428,8 +428,8 @@ public:
         bitCapInt m = pow2(controls.size());
         bi_decrement(&m, 1U);
         GetCircuit(target, controls)
-            ->AppendGate(std::make_shared<QCircuitGate>(target, lMtrx.get(),
-                std::set<bitLenInt>{ controls.begin(), controls.end() }, m));
+            ->AppendGate(std::make_shared<QCircuitGate>(
+                target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, m));
     }
     void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
     {
