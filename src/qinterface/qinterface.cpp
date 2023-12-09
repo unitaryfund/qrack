@@ -496,8 +496,7 @@ real1_f QInterface::ExpectationBitsFactorized(
 
     if (bits.size() == 1U) {
         const real1_f prob = Prob(bits[0]);
-        return (real1_f)bi_to_double(perms[0U] + offset) * (ONE_R1_F - prob) +
-            (real1_f)bi_to_double(perms[1U] + offset) * prob;
+        return (real1)(bi_to_double(perms[0U] + offset) * (ONE_R1_F - prob) + bi_to_double(perms[1U] + offset) * prob);
     }
 
     std::vector<bitCapInt> bitPowers(bits.size());
@@ -507,10 +506,9 @@ real1_f QInterface::ExpectationBitsFactorized(
     for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
         bitCapInt retIndex = offset;
         for (size_t p = 0U; p < bits.size(); ++p) {
-            const bitCapInt b = lcv & bitPowers[p];
-            bi_add_ip(&retIndex, (bi_compare_0(b) != 0) ? perms[(p << 1U) | 1U] : perms[p << 1U]);
+            bi_add_ip(&retIndex, (bi_compare_0(lcv & bitPowers[p]) != 0) ? perms[(p << 1U) | 1U] : perms[p << 1U]);
         }
-        expectation += (real1_f)bi_to_double(retIndex) * ProbAll(lcv);
+        expectation += (real1)(bi_to_double(retIndex) * ProbAll(lcv));
     }
 
     return (real1_f)expectation;
@@ -539,8 +537,7 @@ real1_f QInterface::ExpectationFloatsFactorized(const std::vector<bitLenInt>& bi
     for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
         real1_f weight = 0U;
         for (size_t p = 0U; p < bits.size(); ++p) {
-            const bitCapInt b = lcv & bitPowers[p];
-            weight += (bi_compare_0(b) != 0) ? weights[(p << 1U) | 1U] : weights[p << 1U];
+            weight += (bi_compare_0(lcv & bitPowers[p]) != 0) ? weights[(p << 1U) | 1U] : weights[p << 1U];
         }
         expectation += weight * ProbAll(lcv);
     }
