@@ -387,7 +387,7 @@ void QInterface::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenIn
 
 void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
 {
-    if (bi_compare_0(mask) != 0) {
+    if (bi_compare_0(mask) == 0) {
         return;
     }
 
