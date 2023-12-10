@@ -94,7 +94,7 @@ typedef double real1_s;
 #define bitCapInt BigInteger
 const bitCapInt ONE_BCI = 1U;
 const bitCapInt ZERO_BCI = 0U;
-constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << (QBCAPPOW + 3U);
+constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);
 
 typedef std::shared_ptr<complex> BitOp;
 
