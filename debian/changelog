@@ -1,3 +1,9 @@
+libqrack (9.1.1) jammy; urgency=medium
+
+  * 9.1 bump for Jammy
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 10 Dec 2023 16:23:31 -0500
+
 libqrack (9.1.0) focal; urgency=medium
 
   * Remove dependence on Boost for arbitrary precision
