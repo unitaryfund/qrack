@@ -37,11 +37,12 @@
 #include "config.h"
 
 #include <cmath>
+#include <cstdint>
 
 #define BIG_INTEGER_WORD_BITS 64U
 #define BIG_INTEGER_WORD_POWER 6U
-#define BIG_INTEGER_WORD unsigned long
-#define BIG_INTEGER_HALF_WORD unsigned
+#define BIG_INTEGER_WORD uint64_t
+#define BIG_INTEGER_HALF_WORD uint32_t
 #define BIG_INTEGER_HALF_WORD_POW 0x100000000ULL
 #define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFFULL
 #define BIG_INTEGER_HALF_WORD_MASK_NOT 0xFFFFFFFF00000000ULL
