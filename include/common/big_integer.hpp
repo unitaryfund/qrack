@@ -66,15 +66,15 @@ typedef struct BigInteger {
     inline BigInteger(const BigInteger& val)
     {
         for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-            this->bits[i] = val.bits[i];
+            bits[i] = val.bits[i];
         }
     }
 
     inline BigInteger(const BIG_INTEGER_WORD& val)
     {
-        this->bits[0] = val;
+        bits[0] = val;
         for (int i = 1; i < BIG_INTEGER_WORD_SIZE; ++i) {
-            this->bits[i] = 0U;
+            bits[i] = 0U;
         }
     }
 } BigInteger;
@@ -147,7 +147,7 @@ inline int bi_compare_1(const BigInteger& left)
 inline BigInteger operator+(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
-    result.bits[0] = 0U;
+    result.bits[0U] = 0U;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         result.bits[i] += left.bits[i] + right.bits[i];
         result.bits[i + 1] = (result.bits[i] < left.bits[i]) ? 1 : 0;
@@ -173,7 +173,7 @@ inline void bi_add_ip(BigInteger* left, const BigInteger& right)
 inline BigInteger operator-(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
-    result.bits[0] = 0U;
+    result.bits[0U] = 0U;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         result.bits[i] += left.bits[i] - right.bits[i];
         result.bits[i + 1] = (result.bits[i] > left.bits[i]) ? -1 : 0;
