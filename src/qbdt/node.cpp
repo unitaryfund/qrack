@@ -769,7 +769,7 @@ void QBdtNode::PushStateVector(
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+    if ((depth >= pStridePow) && (bi_compare(pow2(parDepth), numThreads) <= 0)) {
         ++parDepth;
 
         std::future<void> future0 =
