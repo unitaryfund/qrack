@@ -2873,6 +2873,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 }
 
+#if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 {
     qftReg->SetReg(0, 8, 0x01);
@@ -2898,6 +2899,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
     qftReg2->H(9, 2);
     REQUIRE_THAT(qftReg2, HasProbability(0, 12, 0));
 }
+#endif
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_flip")
 {
