@@ -1374,7 +1374,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         }
 
         const bitCapInt qPower = pow2(qubit);
-        const size_t maxLcv = (maxQPower >> 1U).bits[0U];
+        const bitCapInt maxLcv = maxQPower >> 1U;
         real1_f partProb = ZERO_R1_F;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         const unsigned numCores =
