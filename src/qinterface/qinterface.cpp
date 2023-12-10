@@ -229,9 +229,8 @@ bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vect
             "QInterface::ForceM() boolean values vector length does not match bit vector length!");
     }
 
-    bitCapInt result = ZERO_BCI;
-
     if (values.size()) {
+        bitCapInt result = ZERO_BCI;
         for (size_t bit = 0U; bit < bits.size(); ++bit) {
             if (ForceM(bits[bit], values[bit], true, doApply)) {
                 bi_or_ip(&result, pow2(bits[bit]));
@@ -241,6 +240,7 @@ bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vect
     }
 
     if (doApply) {
+        bitCapInt result = ZERO_BCI;
         for (size_t bit = 0U; bit < bits.size(); ++bit) {
             if (M(bits[bit])) {
                 bi_or_ip(&result, pow2(bits[bit]));
@@ -251,9 +251,8 @@ bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vect
 
     std::vector<bitCapInt> qPowers(bits.size());
     std::transform(bits.begin(), bits.end(), qPowers.begin(), pow2);
-    result = MultiShotMeasureMask(qPowers, 1).begin()->first;
 
-    return result;
+    return MultiShotMeasureMask(qPowers, 1).begin()->first;
 }
 
 /// Returns probability of permutation of the register
