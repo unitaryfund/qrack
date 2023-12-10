@@ -338,7 +338,7 @@ real1_f QStabilizer::getExpectation(
         bi_add_ip(
             &retIndex, (bi_compare_0(entry.permutation & bitPowers[b]) != 0) ? perms[(b << 1U) | 1U] : perms[b << 1U]);
     }
-    return ((real1_f)bi_to_double(offset + retIndex)) * norm(entry.amplitude);
+    return (real1_f)(bi_to_double(offset + retIndex) * norm(entry.amplitude));
 }
 
 real1_f QStabilizer::getExpectation(
@@ -466,7 +466,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
     std::fill(outputProbs, outputProbs + pow2Ocl(qubitCount), ZERO_R1);
 
     setBasisProb(nrm, outputProbs);
-    for (bitCapInt t = ZERO_BCI; t < permCountMin1; bi_increment(&t, 1U)) {
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
         const bitCapInt t2 = t ^ (t + ONE_BCI);
         for (bitLenInt i = 0U; i < g; ++i) {
             if (bi_and_1(t2 >> i)) {
@@ -759,7 +759,7 @@ real1_f QStabilizer::ProbMask(bitCapInt mask, bitCapInt perm)
             }
         }
         const AmplitudeEntry amp = getBasisAmp(nrm);
-        if (bi_compare(perm, amp.permutation & mask)) {
+        if (bi_compare(perm, amp.permutation & mask) == 0) {
             prob += norm(amp.amplitude);
         }
     }
