@@ -191,8 +191,7 @@ protected:
     {
         bitCapInt xMask = ZERO_BCI;
         for (size_t i = 0U; i < controls.size(); ++i) {
-            const bitCapInt p = pow2(controls[i]);
-            bi_or_ip(&xMask, p);
+            bi_or_ip(&xMask, pow2(controls[i]));
         }
 
         XMask(xMask);
@@ -207,8 +206,7 @@ protected:
         const bitCapInt rawSample = clone->MAll();
         bitCapInt sample = ZERO_BCI;
         for (size_t i = 0U; i < qPowers.size(); ++i) {
-            const bitCapInt a = rawSample & qPowers[i];
-            if (bi_compare_0(a) != 0U) {
+            if (bi_compare_0(rawSample & qPowers[i]) != 0) {
                 bi_or_ip(&sample, pow2(i));
             }
         }
@@ -2735,7 +2733,7 @@ public:
         do {
             amp = GetAmplitude(perm);
             bi_increment(&perm, 1U);
-        } while ((abs(amp) <= REAL1_EPSILON) && (bi_compare(perm, maxQPower) < 0));
+        } while ((abs(amp) <= REAL1_EPSILON) && (perm < maxQPower));
 
         return (real1_f)std::arg(amp);
     }
