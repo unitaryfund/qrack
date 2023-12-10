@@ -195,10 +195,9 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
     std::vector<bitLenInt> controls(1);
     for (bitLenInt i = 0U; i < length; ++i) {
         controls[0] = inStart + i;
-        const bitCapInt partMul = (toMul * pow2(i));
-        bitCapInt rem;
-        bi_div_mod(partMul, modN, NULL, &rem);
-        if (bi_compare_0(rem) == 0) {
+        bitCapInt partMul;
+        bi_div_mod(toMul * pow2(i), modN, NULL, &partMul);
+        if (bi_compare_0(partMul) == 0) {
             continue;
         }
         CINC(partMul, outStart, oLength, controls);
@@ -208,9 +207,8 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
         return;
     }
 
-    const bitCapInt p = pow2(length);
     bitCapInt diffPow;
-    bi_div_mod(p, modN, &diffPow, NULL);
+    bi_div_mod(pow2(length), modN, &diffPow, NULL);
     const bitLenInt lDiff = log2(diffPow);
     controls[0] = inStart + length - (lDiff + 1U);
     for (bitCapInt i = ZERO_BCI; bi_compare(i, diffPow) < 0; bi_increment(&i, 1U)) {
@@ -231,9 +229,8 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
-    const bitCapInt p = pow2(length);
     bitCapInt diffPow;
-    bi_div_mod(p, modN, &diffPow, NULL);
+    bi_div_mod(pow2(length), modN, &diffPow, NULL);
     const bitLenInt lDiff = log2(diffPow);
     std::vector<bitLenInt> controls{ (bitLenInt)(inStart + length - (lDiff + 1U)) };
 
@@ -251,10 +248,9 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 
     for (bitLenInt i = 0U; i < length; ++i) {
         controls[0] = inStart + i;
-        const bitCapInt partMul = (toMul * pow2(i));
-        bitCapInt rem;
-        bi_div_mod(partMul, modN, NULL, &rem);
-        if (bi_compare_0(rem) == 0) {
+        bitCapInt partMul;
+        bi_div_mod(toMul * pow2(i), modN, NULL, &partMul);
+        if (bi_compare_0(partMul) == 0) {
             continue;
         }
         CDEC(partMul, outStart, oLength, controls);
@@ -273,10 +269,9 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     std::copy(controls.begin(), controls.end(), lControls.begin());
     for (bitLenInt i = 0U; i < length; ++i) {
         lControls[controls.size()] = inStart + i;
-        const bitCapInt partMul = (toMul * pow2(i));
-        bitCapInt rem;
-        bi_div_mod(partMul, modN, NULL, &rem);
-        if (bi_compare_0(rem) == 0) {
+        bitCapInt partMul;
+        bi_div_mod(toMul * pow2(i), modN, NULL, &partMul);
+        if (bi_compare_0(partMul) == 0) {
             continue;
         }
         CINC(partMul, outStart, oLength, lControls);
@@ -286,9 +281,8 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
         return;
     }
 
-    const bitCapInt p = pow2(length);
     bitCapInt diffPow;
-    bi_div_mod(p, modN, &diffPow, NULL);
+    bi_div_mod(pow2(length), modN, &diffPow, NULL);
     const bitLenInt lDiff = log2(diffPow);
     lControls[controls.size()] = inStart + length - (lDiff + 1U);
     for (bitCapInt i = ZERO_BCI; bi_compare(i, diffPow) < 0; bi_increment(&i, 1U)) {
@@ -312,9 +306,8 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
     std::vector<bitLenInt> lControls(controls.size() + 1U);
     std::copy(controls.begin(), controls.end(), lControls.begin());
-    const bitCapInt p = pow2(length);
     bitCapInt diffPow;
-    bi_div_mod(p, modN, &diffPow, NULL);
+    bi_div_mod(pow2(length), modN, &diffPow, NULL);
     const bitLenInt lDiff = log2(diffPow);
     lControls[controls.size()] = inStart + length - (lDiff + 1U);
 
@@ -332,10 +325,9 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
 
     for (bitLenInt i = 0U; i < length; ++i) {
         lControls[controls.size()] = inStart + i;
-        const bitCapInt partMul = (toMul * pow2(i));
-        bitCapInt rem;
-        bi_div_mod(partMul, modN, NULL, &rem);
-        if (bi_compare_0(rem) == 0) {
+        bitCapInt partMul;
+        bi_div_mod(toMul * pow2(i), modN, NULL, &partMul);
+        if (bi_compare_0(partMul) == 0) {
             continue;
         }
         CDEC(partMul, outStart, oLength, lControls);
