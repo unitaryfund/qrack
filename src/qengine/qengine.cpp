@@ -65,7 +65,7 @@ void QEngine::UCMtrx(
     bitCapIntOcl fullMask = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
-        if ((controlPerm >> i) & 1) {
+        if (bi_and_1(controlPerm >> i)) {
             fullMask |= qPowersSorted[i];
         }
     }
@@ -128,33 +128,34 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
             if (M(bits[0U])) {
                 return pow2(bits[0U]);
             } else {
-                return 0U;
+                return ZERO_BCI;
             }
         } else {
             if (ForceM(bits[0U], values[0U], true, doApply)) {
                 return pow2(bits[0U]);
             } else {
-                return 0U;
+                return ZERO_BCI;
             }
         }
     }
 
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[bits.size()]);
-    bitCapInt regMask = 0U;
+    bitCapInt regMask = ZERO_BCI;
     for (bitCapIntOcl i = 0U; i < bits.size(); ++i) {
         qPowers[i] = pow2(bits[i]);
-        regMask |= qPowers[i];
+        bi_or_ip(&regMask, qPowers[i]);
     }
     std::sort(qPowers.get(), qPowers.get() + bits.size());
 
     const complex phase = GetNonunitaryPhase();
     real1 nrmlzr = ONE_R1;
-    bitCapInt result;
     complex nrm;
     if (values.size()) {
-        bitCapInt result = 0U;
+        bitCapIntOcl result = 0U;
         for (size_t j = 0U; j < bits.size(); ++j) {
-            result |= values[j] ? pow2(bits[j]) : 0U;
+            if (values[j]) {
+                result |= pow2Ocl(bits[j]);
+            }
         }
         nrmlzr = ProbMask(regMask, result);
         nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
@@ -178,7 +179,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
 
     bitCapIntOcl lcv = 0U;
     real1 lowerProb = probArray[0U];
-    result = lengthPower - ONE_BCI;
+    bitCapIntOcl result = lengthPower - 1U;
 
     /*
      * The value of 'lcv' should not exceed lengthPower unless the stateVec is
@@ -202,8 +203,8 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
 
     bitCapIntOcl i = 0U;
     for (size_t p = 0U; p < bits.size(); ++p) {
-        if (pow2(p) & result) {
-            i |= (bitCapIntOcl)qPowers[p];
+        if (result & pow2Ocl(p)) {
+            i |= qPowers[p].bits[0U];
         }
     }
     result = i;
@@ -499,9 +500,9 @@ real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt 
 
 void QEngine::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray)
 {
-    const bitCapIntOcl lengthMask = pow2Ocl(length) - ONE_BCI;
-    std::fill(probsArray, probsArray + lengthMask + ONE_BCI, ZERO_R1);
-    for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
+    const bitCapIntOcl lengthMask = pow2Ocl(length) - 1U;
+    std::fill(probsArray, probsArray + lengthMask + 1U, ZERO_R1);
+    for (bitCapIntOcl i = 0U; i < maxQPowerOcl; ++i) {
         bitCapIntOcl reg = (i >> start) & lengthMask;
         probsArray[reg] += ProbAll(i);
     }
@@ -516,19 +517,15 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
-        if (ForceM(start, ((bitCapIntOcl)result) & ONE_BCI, doForce, doApply)) {
-            return ONE_BCI;
-        } else {
-            return 0U;
-        }
+        return ForceM(start, bi_and_1(result), doForce, doApply) ? ONE_BCI : ZERO_BCI;
     }
 
     const bitCapIntOcl lengthPower = pow2Ocl(length);
-    const bitCapIntOcl regMask = (lengthPower - ONE_BCI) << (bitCapIntOcl)start;
+    const bitCapIntOcl regMask = (lengthPower - 1U) << (bitCapIntOcl)start;
     real1 nrmlzr = ONE_R1;
 
     if (doForce) {
-        nrmlzr = ProbMask(regMask, result << (bitCapIntOcl)start);
+        nrmlzr = ProbMask(regMask, result << start);
     } else {
         bitCapIntOcl lcv = 0;
         std::unique_ptr<real1[]> probArray(new real1[lengthPower]);
@@ -536,7 +533,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
         const real1_f prob = Rand();
         real1_f lowerProb = ZERO_R1_F;
-        result = lengthPower - ONE_BCI;
+        result = lengthPower - 1U;
 
         /*
          * The value of 'lcv' should not exceed lengthPower unless the stateVec is
@@ -556,7 +553,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     }
 
     if (doApply) {
-        const bitCapInt resultPtr = result << (bitCapIntOcl)start;
+        const bitCapInt resultPtr = result << start;
         const complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt((real1_s)nrmlzr));
         ApplyM(regMask, resultPtr, nrm);
     }

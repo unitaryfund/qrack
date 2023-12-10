@@ -35,12 +35,12 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         gpuThresholdQubits = qubitThreshold;
     } else {
         const bitLenInt gpuQubits =
-            log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-        const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
+            log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        const bitLenInt cpuQubits = (GetStride() <= 1U) ? 0U : (log2Ocl(GetStride() - 1U) + 1U);
         gpuThresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
-    pagerThresholdQubits = log2(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+    pagerThresholdQubits = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_MAX_PAGE_QB")) {
         pagerThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
@@ -70,8 +70,8 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
 QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
 {
     QEnginePtr toRet =
-        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QRACK_GPU_ENGINE : QINTERFACE_CPU, 0U, 0U,
-            rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QRACK_GPU_ENGINE : QINTERFACE_CPU, 0U,
+            ZERO_BCI, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
             (real1_f)amplitudeFloor, deviceIDs, pagerThresholdQubits, separabilityThreshold));
     toRet->SetQubitCount(qubitCount);
     toRet->SetConcurrency(GetConcurrencyLevel());

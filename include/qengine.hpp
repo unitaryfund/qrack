@@ -98,7 +98,7 @@ public:
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
-        maxQPowerOcl = (bitCapIntOcl)maxQPower;
+        maxQPowerOcl = maxQPower.bits[0U];
     }
 
     /** Get in-flight renormalization factor */
@@ -153,7 +153,7 @@ public:
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm)
     {
-        bitCapInt powerTest = result ? qPower : 0U;
+        const bitCapInt powerTest = result ? qPower : ZERO_BCI;
         ApplyM(qPower, powerTest, nrm);
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;

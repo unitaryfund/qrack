@@ -88,13 +88,13 @@ protected:
         }
     }
 
-    QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = 0U);
+    QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = ZERO_BCI);
 
     template <typename Fn> void GetTraversal(Fn getLambda)
     {
         FlushBuffers();
 
-        for (bitCapInt i = 0U; i < maxQPower; ++i) {
+        _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
             QBdtNodeInterfacePtr leaf = root;
             complex scale = leaf->scale;
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
@@ -105,8 +105,8 @@ protected:
                 scale *= leaf->scale;
             }
 
-            getLambda((bitCapIntOcl)i, scale);
-        }
+            getLambda(i.bits[0U], scale);
+        });
     }
     template <typename Fn> void SetTraversal(Fn setLambda)
     {
@@ -123,7 +123,7 @@ protected:
                 leaf = leaf->branches[SelectBit(i, j)];
             }
 
-            setLambda((bitCapIntOcl)i, leaf);
+            setLambda(i.bits[0U], leaf);
         });
 
         root->PopStateVector(qubitCount);
@@ -154,12 +154,12 @@ protected:
 
     void ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti);
 
-    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
+    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)bi_and_1(perm >> bit); }
 
     static bitCapInt RemovePower(bitCapInt perm, bitCapInt power)
     {
-        bitCapInt mask = power - ONE_BCI;
-        return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
+        bi_decrement(&power, 1U);
+        return (perm & power) | ((perm >> 1U) & ~power);
     }
 
     void ApplySingle(const complex* mtrx, bitLenInt target);
@@ -167,13 +167,13 @@ protected:
     void Init();
 
 public:
-    QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
+    QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> ignored = {},
         bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QBdt(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QBdt(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
@@ -330,11 +330,13 @@ public:
 
     real1_f ProbParity(bitCapInt mask)
     {
-        if (!mask) {
+        if (bi_compare_0(mask) == 0) {
             return ZERO_R1_F;
         }
 
-        if (!(mask & (mask - ONE_BCI))) {
+        bitCapInt maskMin1 = mask;
+        bi_decrement(&maskMin1, 1U);
+        if (bi_compare_0(mask & maskMin1) == 0) {
             return Prob(log2(mask));
         }
 
@@ -351,12 +353,14 @@ public:
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
         // If no bits in mask:
-        if (!mask) {
+        if (bi_compare_0(mask) == 0) {
             return false;
         }
 
         // If only one bit in mask:
-        if (!(mask & (mask - ONE_BCI))) {
+        bitCapInt maskMin1 = mask;
+        bi_decrement(&maskMin1, 1U);
+        if (bi_compare_0(mask & maskMin1) == 0) {
             return ForceM(log2(mask), result, doForce);
         }
 

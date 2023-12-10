@@ -41,19 +41,20 @@ struct QEngineInfo {
 
     bool operator<(const QEngineInfo& other) const
     {
-        if (unit->GetMaxQPower() == other.unit->GetMaxQPower()) {
+        const int v = bi_compare(unit->GetMaxQPower(), other.unit->GetMaxQPower());
+        if (v == 0) {
             // "Larger" QEngineInfo instances get first scheduling priority, and low device indices have greater
             // capacity, so larger deviceIndices get are "<"
             return other.deviceIndex < deviceIndex;
         } else {
-            return unit->GetMaxQPower() < other.unit->GetMaxQPower();
+            return v < 0;
         }
     }
 };
 
 struct DeviceInfo {
     size_t id;
-    bitCapInt maxSize;
+    bitCapIntOcl maxSize;
 
     bool operator<(const DeviceInfo& other) const { return maxSize < other.maxSize; }
     bool operator>(const DeviceInfo& other) const { return maxSize > other.maxSize; }
@@ -74,13 +75,13 @@ protected:
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
 public:
-    QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
+    QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceID = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
@@ -98,7 +99,7 @@ public:
             RevertBasis2Qb(i);
         }
 
-        QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, 0U, rand_generator, phaseFactor,
+        QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
             doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
             deviceIDs, thresholdQubits, separabilityThreshold);
 

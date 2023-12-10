@@ -56,26 +56,40 @@ void cl_free(void* toFree)
 }
 
 // See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
-#define _INTPOW(type, fn)                                                                                              \
-    type fn(type base, type power)                                                                                     \
-    {                                                                                                                  \
-        if (power == 0U) {                                                                                             \
-            return ONE_BCI;                                                                                            \
-        }                                                                                                              \
-        if (power == ONE_BCI) {                                                                                        \
-            return base;                                                                                               \
-        }                                                                                                              \
-                                                                                                                       \
-        type tmp = fn(base, power >> 1U);                                                                              \
-        if (power & 1U) {                                                                                              \
-            return base * tmp * tmp;                                                                                   \
-        }                                                                                                              \
-                                                                                                                       \
-        return tmp * tmp;                                                                                              \
+bitCapInt intPow(bitCapInt base, bitCapInt power)
+{
+    if (bi_compare_0(power) == 0U) {
+        return ONE_BCI;
+    }
+    if (bi_compare_1(power) == 0U) {
+        return base;
     }
 
-_INTPOW(bitCapInt, intPow)
-_INTPOW(bitCapIntOcl, intPowOcl)
+    bitCapInt tmp = intPow(base, power >> 1U);
+    tmp = tmp * tmp;
+    if (bi_and_1(power)) {
+        tmp = tmp * base;
+    }
+
+    return tmp;
+}
+bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
+{
+    if (power == 0U) {
+        return 1U;
+    }
+    if (power == 1U) {
+        return base;
+    }
+
+    bitCapIntOcl tmp = intPowOcl(base, power >> 1U);
+    tmp *= tmp;
+    if (power & 1U) {
+        tmp *= base;
+    }
+
+    return tmp;
+}
 
 #if ENABLE_COMPLEX_X2
 void mul2x2(complex const* left, complex const* right, complex* out)
@@ -198,12 +212,13 @@ void inv2x2(complex const* matrix2x2, complex* outMatrix2x2)
 }
 
 /// Check if an addition with overflow sets the flag
-bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower)
+bool isOverflowAdd(
+    bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower)
 {
     // Both negative:
     if (inOutInt & inInt & signMask) {
-        inOutInt = ((~inOutInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
-        inInt = ((~inInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
+        inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
+        inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
         if ((inOutInt + inInt) > signMask) {
             return true;
         }
@@ -219,17 +234,18 @@ bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 }
 
 /// Check if a subtraction with overflow sets the flag
-bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower)
+bool isOverflowSub(
+    bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower)
 {
     // First negative:
     if (inOutInt & (~inInt) & (signMask)) {
-        inOutInt = ((~inOutInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
+        inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
         if ((inOutInt + inInt) > signMask)
             return true;
     }
     // First positive:
     else if ((~inOutInt) & inInt & (signMask)) {
-        inInt = ((~inInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
+        inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
         if ((inOutInt + inInt) >= signMask)
             return true;
     }
@@ -244,30 +260,32 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
     }
 
     bitCapInt iHigh = perm;
-    bitCapInt i = 0U;
+    bitCapInt i = ZERO_BCI;
     for (bitCapIntOcl p = 0U; p < skipPowers.size(); ++p) {
         bitCapInt iLow = iHigh & (skipPowers[p] - ONE_BCI);
-        i |= iLow;
-        iHigh = (iHigh ^ iLow) << ONE_BCI;
+        bi_or_ip(&i, iLow);
+        iHigh = (iHigh ^ iLow) << 1U;
     }
-    i |= iHigh;
+    bi_or_ip(&i, iHigh);
 
     return i;
 }
 
-#if QBCAPPOW == 7U
 std::ostream& operator<<(std::ostream& os, bitCapInt b)
 {
-    if (b == 0) {
+    if (bi_compare_0(b) == 0) {
         os << "0";
         return os;
     }
 
     // Calculate the base-10 digits, from lowest to highest.
     std::vector<std::string> digits;
-    while (b) {
-        digits.push_back(std::to_string((unsigned char)(b % 10U)));
-        b /= 10U;
+    while (bi_compare_0(b) != 0) {
+        bitCapInt quo;
+        unsigned rem;
+        bi_div_mod_small(b, 10U, &quo, &rem);
+        digits.push_back(std::to_string((unsigned char)rem));
+        b = quo;
     }
 
     // Reversing order, print the digits from highest to lowest.
@@ -287,16 +305,15 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
     is >> input;
 
     // Start the output address value at 0.
-    b = 0;
+    b = ZERO_BCI;
     for (size_t i = 0; i < input.size(); ++i) {
         // Left shift by 1 base-10 digit.
-        b *= 10;
+        b = b * 10;
         // Add the next lowest base-10 digit.
-        b += (input[i] - 48U);
+        bi_increment(&b, (input[i] - 48U));
     }
 
     return is;
 }
-#endif
 
 } // namespace Qrack

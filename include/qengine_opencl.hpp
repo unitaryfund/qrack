@@ -442,7 +442,7 @@ public:
     void ProbMaskAll(bitCapInt mask, real1* probsArray);
     real1_f ProbParity(bitCapInt mask);
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI);
 
     void SetDevice(int64_t dID);
     int64_t GetDevice() { return deviceID; }
@@ -527,7 +527,7 @@ protected:
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
-    std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    std::shared_ptr<complex> AllocStateVec(bitCapIntOcl elemCount, bool doForceAlloc = false);
     void FreeStateVec() { stateVec = NULL; }
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
@@ -584,7 +584,7 @@ protected:
         }
 
         // Otherwise, clamp to a power of two
-        return (size_t)pow2(log2(wic));
+        return pow2Ocl(log2Ocl(wic));
     }
 
     size_t FixGroupSize(size_t wic, size_t gs)

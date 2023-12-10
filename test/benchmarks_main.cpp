@@ -63,7 +63,7 @@ bool optimal_single = false;
 #endif
 #define SHOW_OCL_BANNER()                                                                                              \
     if (QRACK_GPU_SINGLETON.GetDeviceCount()) {                                                                        \
-        CreateQuantumInterface(QRACK_GPU_ENUM, 1, 0).reset();                                                          \
+        CreateQuantumInterface(QRACK_GPU_ENUM, 1, ZERO_BCI).reset();                                                   \
     }
 
 int main(int argc, char* argv[])
@@ -283,9 +283,9 @@ int main(int argc, char* argv[])
             size_t maxAlloc = device_context->GetMaxAlloc() / sizeof(complex);
 
             // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
-            max_qubits = Qrack::log2(maxAlloc);
-            if ((QRACK_GPU_CLASS::OclMemDenom * pow2(max_qubits)) > maxMem) {
-                max_qubits = Qrack::log2(maxMem / QRACK_GPU_CLASS::OclMemDenom);
+            max_qubits = Qrack::log2Ocl(maxAlloc);
+            if ((QRACK_GPU_CLASS::OclMemDenom * pow2Ocl(max_qubits)) > maxMem) {
+                max_qubits = Qrack::log2Ocl(maxMem / QRACK_GPU_CLASS::OclMemDenom);
             }
 #else
             // With OpenCL tests disabled, it's ambiguous what device we want to set the limit by.

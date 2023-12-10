@@ -52,7 +52,7 @@ protected:
         }
 
         QInterfacePtr nEngine = MakeSimulator(useBdt);
-        std::unique_ptr<complex[]> sv(new complex[(size_t)maxQPower]);
+        std::unique_ptr<complex[]> sv(new complex[maxQPower.bits[0U]]);
         if (qbdt) {
             qbdt->GetQuantumState(sv.get());
         } else {
@@ -78,30 +78,26 @@ protected:
             return;
         }
         const size_t count = qbdt->CountBranches();
-#if (QBCAPPOW > 6) && BOOST_AVAILABLE
-        if ((threshold * maxQPower.convert_to<double>()) < count) {
-#else
-        if ((threshold * maxQPower) < count) {
-#endif
+        if ((threshold * bi_to_double(maxQPower)) < count) {
             SwitchMode(false);
         }
     }
 
 public:
-    QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
+    QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     QBdtHybrid(QBdtPtr q, QEnginePtr e, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
-        bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG,
+        bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG,
         bool doNorm = false, bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1,
         bool useHardwareRNG = true, bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON,
         std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QBdtHybrid(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QBdtHybrid(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
@@ -112,7 +108,7 @@ public:
     {
     }
 
-    QInterfacePtr MakeSimulator(bool isBdt, bitCapInt perm = 0U, complex phaseFac = CMPLX_DEFAULT_ARG);
+    QInterfacePtr MakeSimulator(bool isBdt, bitCapInt perm = ZERO_BCI, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     bool isBinaryDecisionTree() { return !engine; }
 
@@ -196,8 +192,8 @@ public:
             e = std::dynamic_pointer_cast<QEngine>(engine->Decompose(start, length));
         }
 
-        return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
-            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+        return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
     }
     void Decompose(bitLenInt start, QInterfacePtr dest)
@@ -880,7 +876,7 @@ public:
         }
     }
 
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0)
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
     {
         if (qbdt) {
             return qbdt->ExpectationBitsAll(bits, offset);
@@ -916,7 +912,7 @@ public:
 
     QInterfacePtr Clone()
     {
-        QBdtHybridPtr c = std::make_shared<QBdtHybrid>(engines, qubitCount, 0U, rand_generator, phaseFactor,
+        QBdtHybridPtr c = std::make_shared<QBdtHybrid>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
             doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
         c->SetConcurrency(GetConcurrencyLevel());

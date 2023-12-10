@@ -53,7 +53,7 @@ std::vector<int64_t> devList;
 #endif
 #define SHOW_OCL_BANNER()                                                                                              \
     if (QRACK_GPU_SINGLETON.GetDeviceCount()) {                                                                        \
-        CreateQuantumInterface(QRACK_GPU_ENUM, 1, 0).reset();                                                          \
+        CreateQuantumInterface(QRACK_GPU_ENUM, 1, ZERO_BCI).reset();                                                   \
     }
 
 int main(int argc, char* argv[])
@@ -535,8 +535,8 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 20, 0, rng, ONE_CMPLX,
-        enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 20, ZERO_BCI, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     if (disable_t_injection) {
         qftReg->SetTInjection(false);

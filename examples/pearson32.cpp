@@ -44,9 +44,9 @@ bitCapInt Pearson(const unsigned char* x, size_t len, const unsigned char* T)
         hh[j] = h;
     }
 
-    bitCapInt result = 0;
+    bitCapInt result = ZERO_BCI;
     for (j = 0; j < HASH_SIZE; j++) {
-        result |= ((bitCapInt)hh[j]) << ((HASH_SIZE - (j + 1U)) * 8U);
+        bi_or_ip(&result, hh[j] << ((HASH_SIZE - (j + 1U)) * 8U));
     }
 
     return result;
@@ -76,19 +76,19 @@ void QPearson(size_t len, unsigned char* T, QAluPtr qReg)
             qReg->Hash(h_index, 8, T);
         }
         if (j < (HASH_SIZE - 1U)) {
-            qReg->INC(1, 0, 8);
+            qReg->INC(ONE_BCI, 0, 8);
         }
         h_index -= 8;
     }
-    qReg->DEC((HASH_SIZE - 2U), 0, 8);
+    qReg->DEC(HASH_SIZE - 2U, 0, 8);
 }
 
 int main()
 {
     size_t i;
 
-    QInterfacePtr qi = CreateQuantumInterface({ QINTERFACE_QUNIT, QINTERFACE_CPU }, 8U * (KEY_SIZE + HASH_SIZE), 0,
-        nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
+    QInterfacePtr qi = CreateQuantumInterface({ QINTERFACE_QUNIT, QINTERFACE_CPU }, 8U * (KEY_SIZE + HASH_SIZE),
+        ZERO_BCI, nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
     QAluPtr qReg = std::dynamic_pointer_cast<QAlu>(qi);
 
     unsigned char T[TABLE_SIZE];
@@ -103,9 +103,9 @@ int main()
         x[i] = (int)(256 * qi->Rand());
     }
 
-    bitCapInt xFull = 0;
+    bitCapInt xFull = ZERO_BCI;
     for (i = 0; i < KEY_SIZE; i++) {
-        xFull |= ((bitCapInt)x[i]) << (i * 8U);
+        bi_or_ip(&xFull, x[i] << (i * 8U));
     }
     qi->SetPermutation(xFull);
     QPearson(KEY_SIZE, T, qReg);
@@ -113,10 +113,10 @@ int main()
     bitCapInt classicalResult = Pearson(x, KEY_SIZE, T);
     bitCapInt quantumResult = qi->MReg(8 * KEY_SIZE, 8 * HASH_SIZE);
 
-    std::cout << "Classical result: " << (int)classicalResult << std::endl;
-    std::cout << "Quantum result:   " << (int)quantumResult << std::endl;
+    std::cout << "Classical result: " << classicalResult.bits[0U] << std::endl;
+    std::cout << "Quantum result:   " << quantumResult.bits[0U] << std::endl;
 
-    qi->SetPermutation(0);
+    qi->SetPermutation(ZERO_BCI);
     qi->H(0, 8);
     QPearson(KEY_SIZE, T, qReg);
 
@@ -129,5 +129,6 @@ int main()
 
     bitCapInt quantumKey = qi->MReg(0, 8U * KEY_SIZE);
     quantumResult = qi->MReg(8U * KEY_SIZE, 8U * HASH_SIZE);
-    std::cout << "Even result:      (key: " << (int)quantumKey << ", hash: " << (int)quantumResult << ")" << std::endl;
+    std::cout << "Even result:      (key: " << quantumKey.bits[0U] << ", hash: " << quantumResult.bits[0U] << ")"
+              << std::endl;
 };

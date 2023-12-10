@@ -34,10 +34,10 @@ int main()
 {
 #if ENABLE_OPENCL
     // OpenCL type, if available.
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, ZERO_BCI);
 #else
     // Non-OpenCL type, if OpenCL is not available.
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, ZERO_BCI);
 #endif
 
     // All simulator types share the QInterface API.
@@ -45,7 +45,7 @@ int main()
     int i;
 
     // Our input to the subroutine "oracle" is 8 bits.
-    qReg->SetPermutation(0);
+    qReg->SetPermutation(ZERO_BCI);
     qReg->H(0, 8);
 
     std::cout << "Iterations:" << std::endl;

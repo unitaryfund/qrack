@@ -82,7 +82,7 @@ protected:
     }
 
 public:
-    QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QStabilizer(bitLenInt n, bitCapInt perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
         int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
         std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
@@ -135,7 +135,7 @@ public:
         r.clear();
         phaseOffset = ZERO_R1;
         qubitCount = 0U;
-        maxQPower = 1U;
+        maxQPower = ONE_BCI;
     }
 
 protected:
@@ -303,7 +303,7 @@ public:
 
     /// Get expectation qubits, interpreting each permutation as an unsigned integer.
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI);
 
     /// Get expectation qubits, interpreting each permutation as a floating-point value.
     real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
@@ -368,12 +368,12 @@ public:
 
         if (!qubitCount) {
             SetQubitCount(length);
-            SetPermutation(0U);
+            SetPermutation(ZERO_BCI);
             return 0U;
         }
 
-        QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+        QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
+            false, randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         return Compose(nQubits, start);
     }
 

@@ -197,7 +197,7 @@ public:
 
     void shuffle(StateVectorArrayPtr svp)
     {
-        std::swap_ranges(amplitudes.get() + (capacity >> ONE_BCI), amplitudes.get() + capacity, svp->amplitudes.get());
+        std::swap_ranges(amplitudes.get() + (capacity >> 1U), amplitudes.get() + capacity, svp->amplitudes.get());
     }
 
     void get_probs(real1* outArray)
@@ -391,7 +391,7 @@ public:
 
     void shuffle(StateVectorSparsePtr svp)
     {
-        const size_t halfCap = (size_t)(capacity >> ONE_BCI);
+        const size_t halfCap = (size_t)(capacity >> 1U);
         std::lock_guard<std::mutex> lock(mtx);
         for (bitCapIntOcl i = 0U; i < halfCap; ++i) {
             complex amp = svp->read(i);
@@ -407,7 +407,7 @@ public:
         }
     }
 
-    bool is_sparse() { return (amplitudes.size() < (size_t)(capacity >> ONE_BCI)); }
+    bool is_sparse() { return (amplitudes.size() < (size_t)(capacity >> 1U)); }
 
     std::vector<bitCapIntOcl> iterable()
     {

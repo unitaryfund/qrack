@@ -25,20 +25,20 @@ void QInterface::UCMtrx(
 {
     size_t setCount = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
-        if ((controlPerm >> i) & 1U) {
+        if (bi_and_1(controlPerm >> i)) {
             ++setCount;
         }
     }
 
     if ((setCount << 1U) > controls.size()) {
         for (size_t i = 0U; i < controls.size(); ++i) {
-            if (!((controlPerm >> i) & 1U)) {
+            if (!bi_and_1(controlPerm >> i)) {
                 X(controls[i]);
             }
         }
         MCMtrx(controls, mtrx, target);
         for (size_t i = 0U; i < controls.size(); ++i) {
-            if (!((controlPerm >> i) & 1U)) {
+            if (!bi_and_1(controlPerm >> i)) {
                 X(controls[i]);
             }
         }
@@ -47,13 +47,13 @@ void QInterface::UCMtrx(
     }
 
     for (size_t i = 0U; i < controls.size(); ++i) {
-        if ((controlPerm >> i) & 1U) {
+        if (bi_and_1(controlPerm >> i)) {
             X(controls[i]);
         }
     }
     MACMtrx(controls, mtrx, target);
     for (size_t i = 0U; i < controls.size(); ++i) {
-        if ((controlPerm >> i) & 1U) {
+        if (bi_and_1(controlPerm >> i)) {
             X(controls[i]);
         }
     }
@@ -65,20 +65,20 @@ void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
     for (const bitLenInt& control : controls) {
         X(control);
     }
-    const bitCapInt maxI = pow2(controls.size()) - ONE_BCI;
-    for (bitCapInt lcv = 0U; lcv < maxI; ++lcv) {
+    const bitCapInt maxI = pow2Ocl(controls.size()) - 1U;
+    for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxI) < 0; bi_increment(&lcv, 1U)) {
         const bitCapInt index = pushApartBits(lcv, mtrxSkipPowers) | mtrxSkipValueMask;
-        MCMtrx(controls, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
+        MCMtrx(controls, mtrxs + index.bits[0U] * 4U, qubitIndex);
 
         const bitCapInt lcvDiff = lcv ^ (lcv + ONE_BCI);
         for (size_t bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
-            if ((lcvDiff >> bit_pos) & ONE_BCI) {
+            if (bi_and_1(lcvDiff >> bit_pos)) {
                 X(controls[bit_pos]);
             }
         }
     }
     const bitCapInt index = pushApartBits(maxI, mtrxSkipPowers) | mtrxSkipValueMask;
-    MCMtrx(controls, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
+    MCMtrx(controls, mtrxs + index.bits[0U] * 4U, qubitIndex);
 }
 
 void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
@@ -102,7 +102,7 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 void QInterface::XMask(bitCapInt mask)
 {
     bitCapInt v = mask;
-    while (mask) {
+    while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
         X(log2(mask ^ v));
         mask = v;
@@ -112,7 +112,7 @@ void QInterface::XMask(bitCapInt mask)
 void QInterface::YMask(bitCapInt mask)
 {
     bitLenInt bit = log2(mask);
-    if (pow2(bit) == mask) {
+    if (bi_compare(pow2(bit), mask) == 0) {
         Y(bit);
         return;
     }
@@ -126,7 +126,7 @@ void QInterface::YMask(bitCapInt mask)
 
     int parity = 0;
     bitCapInt v = mask;
-    while (v) {
+    while (bi_compare_0(v) != 0) {
         v = v & (v - ONE_BCI);
         parity = (parity + 1) & 3;
     }
@@ -143,7 +143,7 @@ void QInterface::YMask(bitCapInt mask)
 void QInterface::ZMask(bitCapInt mask)
 {
     bitCapInt v = mask;
-    while (mask) {
+    while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
         Z(log2(mask ^ v));
         mask = v;
@@ -257,9 +257,9 @@ void QInterface::CSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bit
 
 void QInterface::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
-    bitCapInt m = 0U;
+    bitCapInt m = ZERO_BCI;
     for (const bitLenInt& control : controls) {
-        m |= pow2(control);
+        bi_or_ip(&m, pow2(control));
     }
 
     XMask(m);
@@ -363,9 +363,9 @@ void QInterface::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1
 
 void QInterface::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
-    bitCapInt m = 0U;
+    bitCapInt m = ZERO_BCI;
     for (const bitLenInt& control : controls) {
-        m |= pow2(control);
+        bi_or_ip(&m, pow2(control));
     }
 
     XMask(m);
@@ -375,9 +375,9 @@ void QInterface::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt
 
 void QInterface::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
-    bitCapInt m = 0U;
+    bitCapInt m = ZERO_BCI;
     for (const bitLenInt& control : controls) {
-        m |= pow2(control);
+        bi_or_ip(&m, pow2(control));
     }
 
     XMask(m);
@@ -387,13 +387,13 @@ void QInterface::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenIn
 
 void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
 {
-    if (!mask) {
+    if (bi_compare_0(mask) == 0) {
         return;
     }
 
     std::vector<bitLenInt> qubits;
     bitCapInt v = mask;
-    while (mask) {
+    while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
         qubits.push_back(log2(mask ^ v));
         mask = v;
