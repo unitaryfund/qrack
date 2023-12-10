@@ -1049,9 +1049,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 
     complex phaseFac = complex((real1)cos(radians / 2), (real1)sin(radians / 2));
 
-    bitCapInt maskMin1 = mask;
-    bi_decrement(&maskMin1, 1U);
-    if (bi_compare_0(mask & maskMin1) == 0) {
+    if (isPowerOfTwo(mask)) {
         Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         return;
     }
@@ -1126,9 +1124,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
         return ZERO_R1_F;
     }
 
-    bitCapInt maskMin1 = mask;
-    bi_decrement(&maskMin1, 1U);
-    if (bi_compare_0(mask & maskMin1) == 0) {
+    if (isPowerOfTwo(mask)) {
         return Prob(log2(mask));
     }
 
@@ -1186,9 +1182,7 @@ bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
         return false;
     }
 
-    bitCapInt maskMin1 = mask;
-    bi_decrement(&maskMin1, 1U);
-    if (bi_compare_0(mask & maskMin1) == 0) {
+    if (isPowerOfTwo(mask)) {
         return ForceM(log2(mask), result, doForce);
     }
 
@@ -1795,8 +1789,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     MReg(start, length);
 
     for (bitLenInt i = 0U; i < length; ++i) {
-        bool bitState = bi_and_1(value >> i) != 0U;
-        shards[i + start] = QEngineShard(bitState, GetNonunitaryPhase());
+        shards[i + start] = QEngineShard(bi_and_1(value >> i) != 0U, GetNonunitaryPhase());
     }
 }
 
@@ -1990,7 +1983,9 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
             trimmedControls.push_back(controls[i]);
         } else {
             skipPowers.push_back(pow2(i));
-            bi_or_ip(&skipValueMask, SHARD_STATE(shards[controls[i]]) ? pow2(i) : ZERO_BCI);
+            if (SHARD_STATE(shards[controls[i]])) {
+                bi_or_ip(&skipValueMask, pow2(i));
+            }
         }
     }
 
@@ -1998,8 +1993,7 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
     if (!trimmedControls.size()) {
         bitCapInt controlPerm = GetCachedPermutation(controls);
         complex mtrx[4U];
-        const size_t cp = controlPerm.bits[0U];
-        std::copy(mtrxs + (cp * 4U), mtrxs + ((cp + 1U) * 4U), mtrx);
+        std::copy(mtrxs + controlPerm.bits[0U] * 4U, mtrxs + (controlPerm.bits[0U] + 1U) * 4U, mtrx);
         Mtrx(mtrx, qubitIndex);
         return;
     }
@@ -2415,8 +2409,8 @@ void QUnit::UCPhase(const std::vector<bitLenInt>& lControls, complex topLeft, co
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
-        const bool isCp = bi_compare_0(controlPerm) != 0;
-        if (isCp) {
+        const bool isNonzeroCtrlPerm = bi_compare_0(controlPerm) != 0;
+        if (isNonzeroCtrlPerm) {
             RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
             RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL, {}, { control });
         } else {
@@ -2428,7 +2422,7 @@ void QUnit::UCPhase(const std::vector<bitLenInt>& lControls, complex topLeft, co
             (!ARE_CLIFFORD(cShard, tShard) ||
                 !((IS_SAME(ONE_CMPLX, topLeft) || IS_SAME(-ONE_CMPLX, topLeft)) &&
                     (IS_SAME(ONE_CMPLX, bottomRight) || IS_SAME(-ONE_CMPLX, bottomRight))))) {
-            if (isCp) {
+            if (isNonzeroCtrlPerm) {
                 tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
                 OptimizePairBuffers(control, target, false);
             } else {
@@ -2475,8 +2469,8 @@ void QUnit::UCInvert(const std::vector<bitLenInt>& lControls, complex topRight, 
         QEngineShard& tShard = shards[target];
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        const bool isCp = bi_compare_0(controlPerm) != 0;
-        if (isCp) {
+        const bool isNonzeroCtrlPerm = bi_compare_0(controlPerm) != 0;
+        if (isNonzeroCtrlPerm) {
             RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
             RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
         } else {
@@ -2490,7 +2484,7 @@ void QUnit::UCInvert(const std::vector<bitLenInt>& lControls, complex topRight, 
                       (IS_SAME(ONE_CMPLX, bottomLeft) || IS_SAME(-ONE_CMPLX, bottomLeft))) ||
                     (((IS_SAME(I_CMPLX, topRight) || IS_SAME(-I_CMPLX, topRight)) &&
                         (IS_SAME(I_CMPLX, bottomLeft) || IS_SAME(-I_CMPLX, bottomLeft))))))) {
-            if (isCp) {
+            if (isNonzeroCtrlPerm) {
                 tShard.AddInversionAngles(&cShard, topRight, bottomLeft);
                 OptimizePairBuffers(control, target, false);
             } else {
@@ -2638,7 +2632,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
 
     // First, no probability checks or buffer flushing.
     for (size_t i = 0U; i < controls.size(); ++i) {
-        const bool anti = bi_and_1(*perm >> i) == 0;
+        const bool anti = !bi_and_1(*perm >> i);
         if ((anti && CACHED_ONE(controls[i])) || (!anti && CACHED_ZERO(controls[i]))) {
             // This gate does nothing, so return without applying anything.
             return true;
@@ -3104,18 +3098,18 @@ bool QUnit::INTSCOptimize(
     const bitCapIntOcl inInt = toMod.bits[0U];
 
     bool isOverflow;
-    bitCapIntOcl outInt;
+    bitCapInt outInt;
     if (isAdd) {
         isOverflow = (overflowIndex != (bitLenInt)(-1)) && isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
-        outInt = inOutInt + inInt;
+        outInt = inOutInt + toMod;
     } else {
         isOverflow = (overflowIndex != (bitLenInt)(-1)) && isOverflowSub(inOutInt, inInt, signMask, lengthPower);
-        outInt = (inOutInt + lengthPower) - inInt;
+        outInt = (inOutInt + lengthPower) - toMod;
     }
 
-    bool carryOut = (outInt >= lengthPower);
+    const bool carryOut = bi_compare(outInt, lengthPower) >= 0;
     if (carryOut) {
-        outInt &= (lengthPower - 1U);
+        bi_and_ip(&outInt, lengthPower - ONE_BCI);
     }
     if (carry && (carryIn != carryOut)) {
         X(carryIndex);
@@ -3496,11 +3490,11 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
         const bitCapInt lengthMask = pow2Mask(length);
         const bitCapInt origRes =
             GetCachedPermutation(inOutStart, length) | (GetCachedPermutation(carryStart, length) << length);
-        bitCapInt res;
-        bi_div_mod(origRes, toDiv, &res, NULL);
-        if (bi_compare(origRes, res * toDiv) == 0) {
-            SetReg(inOutStart, length, res & lengthMask);
-            SetReg(carryStart, length, (res >> length) & lengthMask);
+        bitCapInt quo, rem;
+        bi_div_mod(origRes, toDiv, &quo, &rem);
+        if (bi_compare_0(rem) == 0) {
+            SetReg(inOutStart, length, quo & lengthMask);
+            SetReg(carryStart, length, (quo >> length) & lengthMask);
         }
         return;
     }
@@ -4017,7 +4011,8 @@ real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
     }
 
     if (CheckBitsPermutation(0U, qubitCount) && toCompare->CheckBitsPermutation(0U, qubitCount)) {
-        if (bi_compare(GetCachedPermutation(0U, qubitCount), toCompare->GetCachedPermutation(0U, qubitCount))) {
+        if (bi_compare(GetCachedPermutation((bitLenInt)0U, qubitCount),
+                toCompare->GetCachedPermutation((bitLenInt)0U, qubitCount)) == 0) {
             return ZERO_R1_F;
         }
 
