@@ -282,19 +282,19 @@ public:
     complex GetAmplitude(bitCapInt perm)
     {
         bitCapInt p, a;
-        bi_div_mod(perm, bi_create(pageMaxQPower()), &p, &a);
+        bi_div_mod(perm, pageMaxQPower(), &p, &a);
         return qPages[p.bits[0U]]->GetAmplitude(a);
     }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
         bitCapInt p, a;
-        bi_div_mod(perm, bi_create(pageMaxQPower()), &p, &a);
+        bi_div_mod(perm, pageMaxQPower(), &p, &a);
         qPages[p.bits[0U]]->SetAmplitude(a, amp);
     }
     real1_f ProbAll(bitCapInt perm)
     {
         bitCapInt p, a;
-        bi_div_mod(perm, bi_create(pageMaxQPower()), &p, &a);
+        bi_div_mod(perm, pageMaxQPower(), &p, &a);
         return qPages[p.bits[0U]]->ProbAll(a);
     }
 

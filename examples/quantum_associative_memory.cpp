@@ -23,7 +23,7 @@ int main()
 {
     const bitLenInt InputCount = 4;
     const bitLenInt OutputCount = 4;
-    const bitCapInt InputPower = bi_create(1U << InputCount);
+    const bitCapInt InputPower = 1U << InputCount;
     // const bitCapInt OutputPower = 1U << OutputCount;
     const real1 eta = ONE_R1 / (real1)2.0f;
 

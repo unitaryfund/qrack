@@ -46,7 +46,7 @@ bitCapInt Pearson(const unsigned char* x, size_t len, const unsigned char* T)
 
     bitCapInt result = ZERO_BCI;
     for (j = 0; j < HASH_SIZE; j++) {
-        bi_or_ip(&result, bi_create(hh[j]) << ((HASH_SIZE - (j + 1U)) * 8U));
+        bi_or_ip(&result, hh[j] << ((HASH_SIZE - (j + 1U)) * 8U));
     }
 
     return result;
@@ -80,7 +80,7 @@ void QPearson(size_t len, unsigned char* T, QAluPtr qReg)
         }
         h_index -= 8;
     }
-    qReg->DEC(bi_create(HASH_SIZE - 2U), 0, 8);
+    qReg->DEC(HASH_SIZE - 2U, 0, 8);
 }
 
 int main()
@@ -105,7 +105,7 @@ int main()
 
     bitCapInt xFull = ZERO_BCI;
     for (i = 0; i < KEY_SIZE; i++) {
-        bi_or_ip(&xFull, bi_create(x[i]) << (i * 8U));
+        bi_or_ip(&xFull, x[i] << (i * 8U));
     }
     qi->SetPermutation(xFull);
     QPearson(KEY_SIZE, T, qReg);

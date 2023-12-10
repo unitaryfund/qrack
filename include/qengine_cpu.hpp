@@ -234,7 +234,7 @@ protected:
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         if ((bi_compare(workItemCount, pow2(GetPreferredConcurrencyPower())) >= 0) &&
-            (bi_compare(workItemCount, bi_create(GetStride())) < 0)) {
+            (bi_compare(workItemCount, GetStride()) < 0)) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();

@@ -231,7 +231,7 @@ void QUnitMulti::RedistributeQEngines()
         // We want to proactively set OpenCL devices for the event they cross threshold.
         const bitLenInt qbc = qinfos[i].unit->GetQubitCount();
         const bitLenInt dqb = deviceQbList[qinfos[i].deviceIndex % deviceQbList.size()];
-        if (!isRedistributing && (qbc <= dqb) && (bi_compare(qinfos[i].unit->GetMaxQPower(), bi_create(2U)) > 0) &&
+        if (!isRedistributing && (qbc <= dqb) && (bi_compare(qinfos[i].unit->GetMaxQPower(), 2U) > 0) &&
             !qinfos[i].unit->isClifford() && (isQEngineOCL || (qbc > thresholdQubits))) {
             continue;
         }
@@ -253,8 +253,8 @@ void QUnitMulti::RedistributeQEngines()
             // Find the device with the lowest load.
             for (size_t j = 0U; j < deviceList.size(); ++j) {
                 const bitLenInt dq = deviceQbList[j % deviceQbList.size()];
-                const bitCapInt mqp = bi_create(devSizes[j]) + qinfos[i].unit->GetMaxQPower();
-                if ((devSizes[j] < sz) && (bi_compare(mqp, bi_create(deviceList[j].maxSize)) <= 0) && (qbc <= dq)) {
+                const bitCapInt mqp = devSizes[j] + qinfos[i].unit->GetMaxQPower();
+                if ((devSizes[j] < sz) && (bi_compare(mqp, deviceList[j].maxSize) <= 0) && (qbc <= dq)) {
                     deviceID = deviceList[j].id;
                     devIndex = j;
                     sz = devSizes[j];
@@ -266,8 +266,7 @@ void QUnitMulti::RedistributeQEngines()
         }
 
         // Update the size of buffers handles by this device.
-        if (bi_compare(bi_create(deviceList[devIndex].maxSize),
-                bi_create(devSizes[devIndex]) + qinfos[i].unit->GetMaxQPower()) < 0) {
+        if (bi_compare(deviceList[devIndex].maxSize, devSizes[devIndex] + qinfos[i].unit->GetMaxQPower()) < 0) {
             throw bad_alloc("QUnitMulti: device allocation limits exceeded.");
         }
         devSizes[devIndex] += qinfos[i].unit->GetMaxQPower().bits[0U];

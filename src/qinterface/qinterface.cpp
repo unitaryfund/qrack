@@ -271,7 +271,7 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
     for (bitCapIntOcl lcv = 0U; lcv < maxLcv; ++lcv) {
         bitCapIntOcl i = lcv & startMask;
         i |= ((lcv ^ i) | p) << length;
-        prob += ProbAll(bi_create(i));
+        prob += ProbAll(i);
     }
 
     return (real1_f)clampProb(prob);

@@ -156,7 +156,7 @@ public:
     ProbPattern(bitLenInt s, bitLenInt l, bitCapIntOcl m)
         : start(s)
         , length(l)
-        , mask(bi_create(m))
+        , mask(m)
     {
     }
 

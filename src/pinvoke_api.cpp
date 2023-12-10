@@ -571,7 +571,7 @@ bitCapInt _combineA(uintq na, const uintq* a)
     bitCapInt aTot = ZERO_BCI;
     for (uintq i = 0U; i < na; ++i) {
         bi_lshift_ip(&aTot, bitsInCap);
-        bi_or_ip(&aTot, bi_create(a[na - (i + 1U)]));
+        bi_or_ip(&aTot, a[na - (i + 1U)]);
     }
     return aTot;
 #else
@@ -1025,7 +1025,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback)
     for (size_t i = 0U; i < wfnl; ++i) {
         complex amp;
         try {
-            amp = simulator->GetAmplitude(bi_create(i));
+            amp = simulator->GetAmplitude(i);
         } catch (const std::exception& ex) {
             simulatorErrors[sid] = 1;
             std::cout << ex.what() << std::endl;
@@ -1704,7 +1704,7 @@ MICROSOFT_QUANTUM_DECL void UCMtrx(
 
     MAP_CONTROLS_AND_LOCK(sid, n)
     try {
-        simulator->UCMtrx(ctrlsArray, mtrx, shards[simulator.get()][q], bi_create(p));
+        simulator->UCMtrx(ctrlsArray, mtrx, shards[simulator.get()][q], p);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -1835,7 +1835,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
             TransformPauliBasis(simulator, n, b, q);
 
             std::size_t mask = make_mask(qVec);
-            QPARITY(simulator)->UniformParityRZ(bi_create(mask), (real1_f)(-phi));
+            QPARITY(simulator)->UniformParityRZ(mask, (real1_f)(-phi));
 
             RevertPauliBasis(simulator, n, b, q);
         }
@@ -1875,7 +1875,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) in
             TransformPauliBasis(simulator, n, b, q);
 
             std::size_t mask = make_mask(qVec);
-            QPARITY(simulator)->CUniformParityRZ(csVec, bi_create(mask), (real1_f)(-phi));
+            QPARITY(simulator)->CUniformParityRZ(csVec, mask, (real1_f)(-phi));
 
             RevertPauliBasis(simulator, n, b, q);
         }
@@ -2423,7 +2423,7 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
             bitCapInt perm = ZERO_BCI;
             for (uintq j = 0U; j < m; ++j) {
                 bi_lshift_ip(&perm, 64U);
-                bi_or_ip(&perm, bi_create(c[i * m + j]));
+                bi_or_ip(&perm, c[i * m + j]);
             }
             _c.push_back(perm);
         }
@@ -3308,7 +3308,7 @@ MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
     bitCapInt _p = ZERO_BCI;
     std::set<bitLenInt> ctrls;
     for (uintq i = 0U; i < n; ++i) {
-        bi_or_ip(&_p, bi_create((p >> i) & 1U) << indices[i]);
+        bi_or_ip(&_p, ((p >> i) & 1U) << indices[i]);
         ctrls.insert(c[i]);
     }
 

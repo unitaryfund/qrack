@@ -38,8 +38,8 @@
 // Complexity - O(x^2)
 BigInteger operator*(const BigInteger& left, BIG_INTEGER_HALF_WORD right)
 {
-    BigInteger result = bi_create(0);
-    BIG_INTEGER_WORD carry = 0;
+    BigInteger result = 0U;
+    BIG_INTEGER_WORD carry = 0U;
     for (int i = 0; i < BIG_INTEGER_HALF_WORD_SIZE; ++i) {
         const int i2 = i >> 1;
         if (i & 1) {
@@ -119,9 +119,9 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
         }
     }
 
-    BigInteger result = bi_create(0);
+    BigInteger result = 0U;
     for (int i = 0; i < BIG_INTEGER_HALF_WORD_SIZE; ++i) {
-        BIG_INTEGER_WORD carry = 0;
+        BIG_INTEGER_WORD carry = 0U;
         const bool isIEven = ((i & 1) == 0);
         const int i2 = i >> 1;
         const int maxJ = BIG_INTEGER_HALF_WORD_SIZE - i;
@@ -179,7 +179,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
 void bi_div_mod_small(
     const BigInteger& left, BIG_INTEGER_HALF_WORD right, BigInteger* quotient, BIG_INTEGER_HALF_WORD* rmndr)
 {
-    BIG_INTEGER_WORD carry = 0;
+    BIG_INTEGER_WORD carry = 0U;
     if (quotient) {
         bi_set_0(quotient);
         for (int i = BIG_INTEGER_HALF_WORD_SIZE - 1; i >= 0; --i) {
@@ -262,7 +262,7 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
                 bi_div_mod_small(left, (BIG_INTEGER_HALF_WORD)(right.bits[0]), quotient, &t);
                 rmndr->bits[0] = t;
                 for (int i = 1; i < BIG_INTEGER_WORD_SIZE; ++i) {
-                    rmndr->bits[i] = 0;
+                    rmndr->bits[i] = 0U;
                 }
             } else {
                 bi_div_mod_small(left, (BIG_INTEGER_HALF_WORD)(right.bits[0]), quotient, 0);
@@ -271,7 +271,7 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
         }
     }
 
-    BigInteger bi1 = bi_create(1U);
+    BigInteger bi1 = 1U;
     int rightLog2 = bi_log2(right);
     BigInteger rightTest = bi1 << rightLog2;
     if (bi_compare(right, rightTest) < 0) {

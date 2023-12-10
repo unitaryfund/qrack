@@ -130,7 +130,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         for (int sample = 0; sample < benchmarkSamples; sample++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
-                    bitCapInt perm = bi_create((bitCapIntOcl)(qftReg->Rand() * bi_to_double(qftReg->GetMaxQPower())));
+                    bitCapInt perm = (bitCapIntOcl)(qftReg->Rand() * bi_to_double(qftReg->GetMaxQPower()));
                     if (bi_compare(perm, qftReg->GetMaxQPower()) >= 0) {
                         perm = qftReg->GetMaxQPower() - ONE_BCI;
                     }
@@ -534,7 +534,7 @@ TEST_CASE("test_setbit", "[aux]")
 
 TEST_CASE("test_proball", "[aux]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ProbAll(bi_create(0x02)); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ProbAll(0x02); });
 }
 
 TEST_CASE("test_set_reg", "[aux]")
@@ -570,9 +570,9 @@ TEST_CASE("test_grover", "[grover]")
 
         for (int i = 0; i < optIter; i++) {
             // Our "oracle" is true for an input of "3" and false for all other inputs.
-            QALU(qftReg)->DEC(bi_create(3), 0, n);
+            QALU(qftReg)->DEC(3, 0, n);
             qftReg->ZeroPhaseFlip(0, n);
-            QALU(qftReg)->INC(bi_create(3), 0, n);
+            QALU(qftReg)->INC(3, 0, n);
             // This ends the "oracle."
             qftReg->H(0, n);
             qftReg->ZeroPhaseFlip(0, n);
@@ -4328,7 +4328,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
 
@@ -4428,7 +4428,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -4640,7 +4640,7 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -4866,7 +4866,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -5125,11 +5125,11 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                 } else if (gate == 7) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
                 } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
                 } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
                 } else if (gate == 11) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
@@ -5161,7 +5161,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
     circuit->Run(goldStandard);
@@ -5193,7 +5193,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -5375,11 +5375,11 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                 } else if (gate == 7) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
                 } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
                 } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
                 } else if (gate == 11) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
@@ -5423,7 +5423,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -5602,11 +5602,11 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
                 } else if (gate == 7) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
                 } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
                 } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
                 } else if (gate == 11) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
@@ -5630,12 +5630,12 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
     circuit->Run(testCase);
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
 
-    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(bi_create(randPerm)) << std::endl;
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
     std::cout
         << "Execution time: "
         << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()
@@ -5804,11 +5804,11 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                 } else if (gate == 7) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
                 } else if (gate == 9) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 3U));
                 } else if (gate == 10) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, bi_create(3U)));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
                 } else if (gate == 11) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
@@ -5858,7 +5858,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -6029,7 +6029,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
     circuit->Run(goldStandard);
@@ -6061,7 +6061,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -6234,7 +6234,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -6411,7 +6411,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
         circuit->Run(testCase);
         testCase->Finish();
 
@@ -6576,7 +6576,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
 
@@ -6655,7 +6655,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < n; d++) {
             std::vector<SingleQubitGate>& layer1QbRands = gate1QbRands[d];
@@ -6770,7 +6770,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
         testCase->Finish();
 
         // We mirrored for half, hence the "gold standard" is identically |randPerm>.
-        const real1_f rawFidelity = testCase->ProbAll(bi_create(randPerm));
+        const real1_f rawFidelity = testCase->ProbAll(randPerm);
         const real1_f signalFraction = ONE_R1_F / (ONE_R1_F + exp(-tan(PI_R1 * (ONE_R1_F / 2 - sdrp))));
         const real1_f fidelity = diophantine_fidelity_correction(signalFraction * rawFidelity, sdrp);
 
@@ -6924,7 +6924,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
     unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
 #endif
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr goldStandard = CreateQuantumInterface(engineStack, w, randPerm);
 
     std::cout << "Dispatching \"gold standard\" (noiseless) simulation...";
 
@@ -7001,7 +7001,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < n; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -7214,7 +7214,7 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < n; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -7435,7 +7435,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
 
         for (d = 0; d < n; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -7612,12 +7612,12 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
     circuit->Run(testCase);
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
 
-    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(bi_create(randPerm)) << std::endl;
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
     std::cout
         << "Execution time: "
         << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()
@@ -7774,12 +7774,12 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
     circuit->Run(testCase);
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
 
-    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(bi_create(randPerm)) << std::endl;
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
     std::cout
         << "Execution time: "
         << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()
@@ -7972,12 +7972,12 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, bi_create(randPerm));
+    QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, randPerm);
     circuit->Run(testCase);
     circuit->Inverse()->Run(testCase);
     testCase->Finish();
 
-    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(bi_create(randPerm)) << std::endl;
+    std::cout << "Mirror circuit fidelity: " << testCase->ProbAll(randPerm) << std::endl;
     std::cout
         << "Execution time: "
         << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count()

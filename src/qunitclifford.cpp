@@ -181,7 +181,7 @@ void QUnitClifford::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        shards.emplace_back(0U, MakeStabilizer(1U, bi_create(bi_and_1(perm >> i)), ONE_CMPLX));
+        shards.emplace_back(0U, MakeStabilizer(1U, bi_and_1(perm >> i), ONE_CMPLX));
     }
 }
 
@@ -517,7 +517,7 @@ bool QUnitClifford::SeparateBit(bool value, bitLenInt qubit)
         return false;
     }
 
-    shard.unit = MakeStabilizer(1U, bi_create(value));
+    shard.unit = MakeStabilizer(1U, value);
     shard.mapped = 0U;
 
     unit->Dispose(mapped, 1U);

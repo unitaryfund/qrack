@@ -515,7 +515,7 @@ struct QCircuitGate {
         QRACK_CONST complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
             complex* mtrx = toRet.get() + (i << 2U);
-            const auto& p = payloads.find(bi_create(i));
+            const auto& p = payloads.find(i);
             if (p == payloads.end()) {
                 std::copy(identity, identity + 4, mtrx);
                 continue;

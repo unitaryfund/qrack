@@ -135,8 +135,8 @@ int main()
             qReg->X(valueLength - 1);
             qReg->X(2 * valueLength - 1);
             // Subtract from the value registers with the bits to borrow from:
-            qAlu->DEC(bi_create(TARGET_VALUE), 0, valueLength);
-            qAlu->DEC(bi_create(TARGET_VALUE), valueLength, valueLength);
+            qAlu->DEC(TARGET_VALUE, 0, valueLength);
+            qAlu->DEC(TARGET_VALUE, valueLength, valueLength);
             // If both are higher, this is not the quadrant, and neither flips the borrow.
             // If both are lower, this is not the quadrant, and both flip the borrow.
             // If one is higher and one is lower, the low register borrow bit is flipped, and high register borrow is
@@ -148,8 +148,8 @@ int main()
             // Reverse everything but the phase flip:
             qReg->CCNOT(valueLength - 1, 2 * valueLength - 1, carryIndex);
             qReg->X(valueLength - 1);
-            qAlu->INC(bi_create(TARGET_VALUE), valueLength, valueLength);
-            qAlu->INC(bi_create(TARGET_VALUE), 0, valueLength);
+            qAlu->INC(TARGET_VALUE, valueLength, valueLength);
+            qAlu->INC(TARGET_VALUE, 0, valueLength);
             qReg->X(2 * valueLength - 1);
             qReg->X(valueLength - 1);
             // This ends the "oracle."
@@ -157,11 +157,11 @@ int main()
             // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
 
             // We map from input to output.
-            qAlu->DEC(bi_create(TARGET_VALUE), 0, valueLength - 1);
+            qAlu->DEC(TARGET_VALUE, 0, valueLength - 1);
             // Phase flip the target state.
             qReg->ZeroPhaseFlip(0, valueLength - 1);
             // We map back from outputs to inputs.
-            qAlu->INC(bi_create(TARGET_VALUE), 0, valueLength - 1);
+            qAlu->INC(TARGET_VALUE, 0, valueLength - 1);
         }
 
         // Now, we flip the phase of the input state:
@@ -220,7 +220,7 @@ int main()
             // computing components, as need and efficiency dictate).
             if (toLoad[key | (i * checkIncrement)] == TARGET_VALUE) {
                 foundPerm = true;
-                qReg->SetReg(2 * valueLength, indexLength, bi_create(key | (i * checkIncrement)));
+                qReg->SetReg(2 * valueLength, indexLength, key | (i * checkIncrement));
                 break;
             }
         }

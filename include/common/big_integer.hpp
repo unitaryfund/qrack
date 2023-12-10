@@ -57,12 +57,32 @@ constexpr int BIG_INTEGER_MAX_WORD_INDEX = BIG_INTEGER_WORD_SIZE - 1U;
 
 typedef struct BigInteger {
     BIG_INTEGER_WORD bits[BIG_INTEGER_WORD_SIZE];
+
+    inline BigInteger()
+    {
+        // Intentionally left blank.
+    }
+
+    inline BigInteger(const BigInteger& val)
+    {
+        for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
+            this->bits[i] = val.bits[i];
+        }
+    }
+
+    inline BigInteger(const BIG_INTEGER_WORD& val)
+    {
+        this->bits[0] = val;
+        for (int i = 1; i < BIG_INTEGER_WORD_SIZE; ++i) {
+            this->bits[i] = 0U;
+        }
+    }
 } BigInteger;
 
 inline void bi_set_0(BigInteger* p)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        p->bits[i] = 0;
+        p->bits[i] = 0U;
     }
 }
 
@@ -127,7 +147,7 @@ inline int bi_compare_1(const BigInteger& left)
 inline BigInteger operator+(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
-    result.bits[0] = 0;
+    result.bits[0] = 0U;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         result.bits[i] += left.bits[i] + right.bits[i];
         result.bits[i + 1] = (result.bits[i] < left.bits[i]) ? 1 : 0;
@@ -153,7 +173,7 @@ inline void bi_add_ip(BigInteger* left, const BigInteger& right)
 inline BigInteger operator-(const BigInteger& left, const BigInteger& right)
 {
     BigInteger result;
-    result.bits[0] = 0;
+    result.bits[0] = 0U;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         result.bits[i] += left.bits[i] - right.bits[i];
         result.bits[i + 1] = (result.bits[i] > left.bits[i]) ? -1 : 0;
@@ -206,17 +226,6 @@ inline void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
     }
 }
 
-inline BigInteger bi_create(BIG_INTEGER_WORD val)
-{
-    BigInteger result;
-    result.bits[0] = val;
-    for (int i = 1; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = 0;
-    }
-
-    return result;
-}
-
 inline BigInteger bi_load(BIG_INTEGER_WORD* a)
 {
     BigInteger result;
@@ -237,8 +246,8 @@ inline BigInteger bi_lshift_word(const BigInteger& left, BIG_INTEGER_WORD rightM
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] = left.bits[i - rightMult];
     }
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        result.bits[i] = 0;
+    for (BIG_INTEGER_WORD i = 0U; i < rightMult; ++i) {
+        result.bits[i] = 0U;
     }
 
     return result;
@@ -253,8 +262,8 @@ inline void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         left->bits[i] = left->bits[i - rightMult];
     }
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        left->bits[i] = 0;
+    for (BIG_INTEGER_WORD i = 0U; i < rightMult; ++i) {
+        left->bits[i] = 0U;
     }
 }
 
@@ -268,8 +277,8 @@ inline BigInteger bi_rshift_word(const BigInteger& left, BIG_INTEGER_WORD rightM
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i - rightMult] = left.bits[i];
     }
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        result.bits[BIG_INTEGER_MAX_WORD_INDEX - i] = 0;
+    for (BIG_INTEGER_WORD i = 0U; i < rightMult; ++i) {
+        result.bits[BIG_INTEGER_MAX_WORD_INDEX - i] = 0U;
     }
 
     return result;
@@ -283,8 +292,8 @@ inline void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         left->bits[i - rightMult] = left->bits[i];
     }
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        left->bits[BIG_INTEGER_MAX_WORD_INDEX - i] = 0;
+    for (BIG_INTEGER_WORD i = 0U; i < rightMult; ++i) {
+        left->bits[BIG_INTEGER_MAX_WORD_INDEX - i] = 0U;
     }
 }
 
@@ -299,7 +308,7 @@ inline BigInteger operator<<(const BigInteger& left, BIG_INTEGER_WORD right)
     }
 
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
-    BIG_INTEGER_WORD carry = 0;
+    BIG_INTEGER_WORD carry = 0U;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         right = result.bits[i];
         result.bits[i] = carry | (right << rMod);
@@ -320,7 +329,7 @@ inline void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     }
 
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
-    BIG_INTEGER_WORD carry = 0;
+    BIG_INTEGER_WORD carry = 0U;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         right = left->bits[i];
         left->bits[i] = carry | (right << rMod);
@@ -339,7 +348,7 @@ inline BigInteger operator>>(const BigInteger& left, BIG_INTEGER_WORD right)
     }
 
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
-    BIG_INTEGER_WORD carry = 0;
+    BIG_INTEGER_WORD carry = 0U;
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
         right = result.bits[i];
         result.bits[i] = carry | (right >> rMod);
@@ -360,7 +369,7 @@ inline void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     }
 
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
-    BIG_INTEGER_WORD carry = 0;
+    BIG_INTEGER_WORD carry = 0U;
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
         right = left->bits[i];
         left->bits[i] = carry | (right >> rMod);

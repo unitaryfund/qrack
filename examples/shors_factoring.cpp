@@ -79,12 +79,12 @@ int main()
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
     std::uniform_int_distribution<> rand_dist(2, toFactor - 1);
-    base = bi_create(rand_dist(rand_gen));
+    base = rand_dist(rand_gen);
 
-    bitCapInt testFactor = gcd(bi_create(toFactor), base);
+    bitCapInt testFactor = gcd(toFactor, base);
     if (bi_compare_1(testFactor) != 0) {
         bitCapInt quo;
-        bi_div_mod(bi_create(toFactor), testFactor, &quo, NULL);
+        bi_div_mod(toFactor, testFactor, &quo, NULL);
         std::cout << "Chose non- relative prime: " << testFactor << " * " << quo << std::endl;
         auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - iterClock);
@@ -101,7 +101,7 @@ int main()
 
     // This is the period-finding subroutine of Shor's algorithm.
     qReg->H(0, qubitCount);
-    qAlu->POWModNOut(base, bi_create(toFactor), 0, qubitCount, qubitCount);
+    qAlu->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
     qReg->IQFT(0, qubitCount);
 
     bitCapInt y = qReg->MAll() & (pow2(qubitCount) - ONE_BCI);
@@ -124,7 +124,7 @@ int main()
     do {
         denominators.push_back(continued_fraction_step(&numerator, &denominator));
         calc_continued_fraction(denominators, &approxNumer, &approxDenom);
-    } while ((bi_compare_0(denominator) > 0) && (bi_compare(approxDenom, bi_create(toFactor)) < 0));
+    } while ((bi_compare_0(denominator) > 0) && (bi_compare(approxDenom, toFactor) < 0));
     denominators.pop_back();
 
     bitCapInt r;
@@ -138,9 +138,9 @@ int main()
     if (bi_and_1(r)) {
         bi_lshift_ip(&r, 1U);
     }
-    bitCapInt apowrhalf = bi_create(((bitCapIntOcl)pow(bi_to_double(base), bi_to_double(r >> 1U))) % toFactor);
-    bitCapIntOcl f1 = gcd(apowrhalf + ONE_BCI, bi_create(toFactor)).bits[0U];
-    bitCapIntOcl f2 = gcd(apowrhalf - ONE_BCI, bi_create(toFactor)).bits[0U];
+    bitCapInt apowrhalf = ((bitCapIntOcl)pow(bi_to_double(base), bi_to_double(r >> 1U))) % toFactor;
+    bitCapIntOcl f1 = gcd(apowrhalf + ONE_BCI, toFactor).bits[0U];
+    bitCapIntOcl f2 = gcd(apowrhalf - ONE_BCI, toFactor).bits[0U];
     bitCapIntOcl res1 = f1;
     bitCapIntOcl res2 = f2;
     if (((f1 * f2) != toFactor) && ((f1 * f2) > 1) &&

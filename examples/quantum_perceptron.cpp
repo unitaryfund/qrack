@@ -21,7 +21,7 @@ using namespace Qrack;
 int main()
 {
     const bitLenInt ControlCount = 4;
-    const bitCapInt ControlPower = bi_create(1U << ControlCount);
+    const bitCapInt ControlPower = 1U << ControlCount;
     const bitLenInt ControlLog = 2;
     const real1 eta = ONE_R1 / (real1)2.0f;
 
@@ -62,7 +62,7 @@ int main()
     QInterfacePtr qReg2 = CreateQuantumInterface(QINTERFACE_OPTIMAL, ControlLog, ZERO_BCI);
 
     qReg->Compose(qReg2);
-    qReg->SetPermutation(bi_create(1U << (ControlCount + 1)));
+    qReg->SetPermutation(Qrack::pow2(ControlCount + 1));
     qReg->H(ControlCount + 1, ControlLog);
     std::dynamic_pointer_cast<QAlu>(qReg)->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
     qReg->H(ControlCount + 1, ControlLog);

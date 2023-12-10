@@ -24,9 +24,9 @@ const int TARGET_INPUT = 100;
 void Oracle(QInterfacePtr qReg)
 {
     // Our "oracle" is true for an input of "TARGET_INPUT" and false for all other inputs.
-    qReg->DEC(bi_create(TARGET_INPUT), 0, 8);
+    qReg->DEC(TARGET_INPUT, 0, 8);
     qReg->ZeroPhaseFlip(0, 8);
-    qReg->INC(bi_create(TARGET_INPUT), 0, 8);
+    qReg->INC(TARGET_INPUT, 0, 8);
     // This ends the "oracle."
 }
 
@@ -58,12 +58,11 @@ int main()
         qReg->ZeroPhaseFlip(0, 8);
         qReg->H(0, 8);
         qReg->PhaseFlip();
-        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qReg->ProbAll(bi_create(TARGET_INPUT))
-                  << std::endl;
+        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qReg->ProbAll(TARGET_INPUT) << std::endl;
     }
 
     qReg->MReg(0, 8);
 
     std::cout << "After measurement:" << std::endl;
-    std::cout << "Chance of match:" << qReg->ProbAll(bi_create(TARGET_INPUT)) << std::endl;
+    std::cout << "Chance of match:" << qReg->ProbAll(TARGET_INPUT) << std::endl;
 }

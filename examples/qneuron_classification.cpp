@@ -148,7 +148,7 @@ void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QIn
             }
         }
 
-        qReg->SetPermutation(bi_create(perm));
+        qReg->SetPermutation(perm);
         for (i = 0; i < permH.size(); i++) {
             qReg->H(permH[i]);
         }
@@ -191,7 +191,7 @@ std::vector<dfObservation> predict(
             }
         }
 
-        qReg->SetPermutation(bi_create(perm));
+        qReg->SetPermutation(perm);
         for (i = 0; i < permH.size(); i++) {
             qReg->H(permH[i]);
         }

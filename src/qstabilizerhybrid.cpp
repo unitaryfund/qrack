@@ -424,15 +424,15 @@ void QStabilizerHybrid::SwitchToEngine()
             const bitCapInt p = i;
             std::vector<std::future<complex>> futures;
             for (unsigned j = 0U; j < numCores; ++j) {
-                futures.push_back(std::async(
-                    std::launch::async, [j, p, &clones]() { return clones[j]->GetAmplitude(bi_create(j) + p); }));
+                futures.push_back(
+                    std::async(std::launch::async, [j, p, &clones]() { return clones[j]->GetAmplitude(j + p); }));
                 bi_increment(&i, 1U);
                 if (bi_compare(i, maxQPower) >= 0) {
                     break;
                 }
             }
             for (size_t j = 0U; j < futures.size(); ++j) {
-                e->SetAmplitude(bi_create(j) + p, futures[j].get());
+                e->SetAmplitude(j + p, futures[j].get());
             }
         }
         clones.clear();
@@ -772,7 +772,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     const bitLenInt aStride = indices.size() + 1U;
     const bitCapIntOcl ancillaPow = pow2Ocl(ancillaCount);
     for (bitCapIntOcl i = 1U; i < ancillaPow; ++i) {
-        const bitCapInt ancillaPerm = bi_create(i) << qubitCount;
+        const bitCapInt ancillaPerm = i << qubitCount;
         for (size_t j = 0U; j < aStride; ++j) {
             perms.push_back(perms[j] | ancillaPerm);
         }
@@ -818,7 +818,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
                 amp = mtrx[0U] * amp + mtrx[1U] * amps[i + offset];
             }
         }
-        aEngine->SetAmplitude(bi_create(a), amp);
+        aEngine->SetAmplitude(a, amp);
     }
 
     for (bitLenInt i = 0U; i < ancillaCount; ++i) {
@@ -1378,7 +1378,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         real1_f partProb = ZERO_R1_F;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         const unsigned numCores =
-            (bi_compare(maxLcv, bi_create(GetConcurrencyLevel())) < 0) ? maxLcv.bits[0U] : GetConcurrencyLevel();
+            (bi_compare(maxLcv, GetConcurrencyLevel()) < 0) ? maxLcv.bits[0U] : GetConcurrencyLevel();
         std::vector<QStabilizerHybridPtr> clones;
         for (unsigned i = 0U; i < numCores; ++i) {
             clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
@@ -1389,7 +1389,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             std::vector<std::future<real1>> futures;
             for (unsigned j = 0U; j < numCores; ++j) {
                 futures.push_back(std::async(std::launch::async, [j, p, qPower, &clones]() {
-                    const bitCapInt l = bi_create(j) + p;
+                    const bitCapInt l = j + p;
                     bitCapInt k = qPower;
                     bi_decrement(&k, 1U);
                     bi_and_ip(&k, l);
@@ -1565,7 +1565,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bool foundM = false;
 
     const unsigned numCores =
-        (bi_compare(maxQPower, bi_create(GetConcurrencyLevel())) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
@@ -1576,15 +1576,15 @@ bitCapInt QStabilizerHybrid::MAll()
         const bitCapInt p = i;
         std::vector<std::future<real1>> futures;
         for (unsigned j = 0U; j < numCores; ++j) {
-            futures.push_back(std::async(
-                std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(bi_create(j) + p)); }));
+            futures.push_back(
+                std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); }));
             bi_increment(&i, 1U);
             if (bi_compare(i, maxQPower) >= 0) {
                 break;
             }
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
-            CHECK_WIDE_SHOT(j, bi_create(j) + p)
+            CHECK_WIDE_SHOT(j, j + p)
         }
         if (foundM) {
             break;
@@ -1681,7 +1681,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const unsigned numCores =
-        (bi_compare(maxQPower, bi_create(GetConcurrencyLevel())) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
@@ -1692,8 +1692,8 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         const bitCapInt p = i;
         std::vector<std::future<real1>> futures;
         for (unsigned j = 0U; j < numCores; ++j) {
-            futures.push_back(std::async(
-                std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(bi_create(j) + p)); }));
+            futures.push_back(
+                std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); }));
             bi_increment(&i, 1U);
             if (bi_compare(i, maxQPower) >= 0) {
                 break;
@@ -1701,7 +1701,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
             const real1 prob = futures[j].get();
-            CHECK_SHOTS_IF_ANY(bi_create(j) + p, shotFunc);
+            CHECK_SHOTS_IF_ANY(j + p, shotFunc);
         }
         if (!rng.size()) {
             break;
@@ -1770,7 +1770,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const unsigned numCores =
-        (bi_compare(maxQPower, bi_create(GetConcurrencyLevel())) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
@@ -1781,8 +1781,8 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         const bitCapInt p = i;
         std::vector<std::future<real1>> futures;
         for (unsigned j = 0U; j < numCores; ++j) {
-            futures.push_back(std::async(
-                std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(bi_create(j) + p)); }));
+            futures.push_back(
+                std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); }));
             bi_increment(&i, 1U);
             if (bi_compare(i, maxQPower) >= 0) {
                 break;
@@ -1790,7 +1790,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         }
         for (size_t j = 0U; j < futures.size(); ++j) {
             const real1 prob = futures[j].get();
-            CHECK_SHOTS_IF_ANY(bi_create(j) + p, shotFunc);
+            CHECK_SHOTS_IF_ANY(j + p, shotFunc);
         }
         if (!rng.size()) {
             break;

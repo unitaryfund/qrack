@@ -2729,7 +2729,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
         }
 
         if (!isEigenstate) {
-            bi_or_ip(&outPerm, bi_create(bi_and_1(*perm >> i) << controlVec.size()));
+            bi_or_ip(&outPerm, bi_and_1(*perm >> i) << controlVec.size());
             controlVec.push_back(controls[i]);
         }
     }
@@ -3121,7 +3121,7 @@ bool QUnit::INTSCOptimize(
         X(carryIndex);
     }
 
-    SetReg(start, length, bi_create(outInt));
+    SetReg(start, length, outInt);
 
     if (isOverflow) {
         Z(overflowIndex);
@@ -3699,7 +3699,7 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLengt
     const bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt value = ZERO_BCI;
     for (bitCapIntOcl j = 0U; j < valueBytes; ++j) {
-        bi_or_ip(&value, bi_create(values[indexInt * valueBytes + j]) << (8U * j));
+        bi_or_ip(&value, values[indexInt * valueBytes + j] << (8U * j));
     }
 
     return value;
@@ -3711,7 +3711,7 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, const u
     const bitLenInt bytes = (length + 7U) / 8U;
     bitCapInt value = ZERO_BCI;
     for (bitCapIntOcl j = 0U; j < bytes; ++j) {
-        bi_or_ip(&value, bi_create(values[indexInt * bytes + j]) << (8U * j));
+        bi_or_ip(&value, values[indexInt * bytes + j] << (8U * j));
     }
 
     return value;

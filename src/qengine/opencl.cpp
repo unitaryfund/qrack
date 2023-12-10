@@ -2779,7 +2779,7 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, pow2Ocl(indexLength) * valueBytes);
 
 #if ENABLE_VM6502Q_DEBUG
-    return bi_create((bitCapIntOcl)(GetExpectation(valueStart, valueLength) + (real1_f)0.5f));
+    return (bitCapIntOcl)(GetExpectation(valueStart, valueLength) + (real1_f)0.5f);
 #else
     return ZERO_BCI;
 #endif
@@ -2838,16 +2838,14 @@ bitCapIntOcl QEngineOCL::OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLen
 bitCapInt QEngineOCL::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
 {
-    return bi_create(
-        OpIndexed(OCL_API_INDEXEDADC, 0U, indexStart, indexLength, valueStart, valueLength, carryIndex, values));
+    return OpIndexed(OCL_API_INDEXEDADC, 0U, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 /** Subtract based on an indexed load from classical memory */
 bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
 {
-    return bi_create(
-        OpIndexed(OCL_API_INDEXEDSBC, 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values));
+    return OpIndexed(OCL_API_INDEXEDSBC, 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 /** Set 8 bit register bits based on read from classical memory */
@@ -2962,8 +2960,8 @@ bitCapInt QEngineOCL::MAll()
             if (partProb > REAL1_EPSILON) {
                 totProb += partProb;
                 if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
-                    SetPermutation(bi_create(perm));
-                    return bi_create(perm);
+                    SetPermutation(perm);
+                    return perm;
                 }
                 lastNonzero = perm;
             }
@@ -2971,9 +2969,9 @@ bitCapInt QEngineOCL::MAll()
         }
     }
 
-    const bitCapInt lnz = bi_create(lastNonzero);
-    SetPermutation(lnz);
-    return lnz;
+    SetPermutation(lastNonzero);
+
+    return lastNonzero;
 }
 
 complex QEngineOCL::GetAmplitude(bitCapInt perm)

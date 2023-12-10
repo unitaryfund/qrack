@@ -92,8 +92,8 @@ typedef double real1_s;
 #endif
 
 #define bitCapInt BigInteger
-const bitCapInt ONE_BCI = bi_create(1U);
-const bitCapInt ZERO_BCI = bi_create(0U);
+const bitCapInt ONE_BCI = 1U;
+const bitCapInt ZERO_BCI = 0U;
 constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << (QBCAPPOW + 3U);
 
 typedef std::shared_ptr<complex> BitOp;

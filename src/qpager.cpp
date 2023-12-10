@@ -53,12 +53,12 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     const bitCapIntOcl initStateOcl = initState.bits[0U];
     bitCapIntOcl pagePerm = 0U;
     for (bitCapIntOcl i = 0U; i < basePageCount; ++i) {
-        bool isPermInPage = bi_compare(initState, bi_create(pagePerm)) >= 0;
+        bool isPermInPage = bi_compare(initState, pagePerm) >= 0;
         pagePerm += basePageMaxQPower;
         isPermInPage &= (initStateOcl < pagePerm);
         if (isPermInPage) {
             qPages.push_back(MakeEngine(baseQubitsPerPage, i));
-            qPages.back()->SetPermutation(bi_create(initStateOcl - (pagePerm - basePageMaxQPower)));
+            qPages.back()->SetPermutation(initStateOcl - (pagePerm - basePageMaxQPower));
         } else {
             qPages.push_back(MakeEngine(baseQubitsPerPage, i));
         }
@@ -637,7 +637,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
             oOffset += oPagePow << 1U;
         }
 
-        const complex amp = toCopy->GetAmplitude(bi_create(i));
+        const complex amp = toCopy->GetAmplitude(i);
 
         if (IS_NORM_0(amp)) {
             for (bitCapIntOcl j = 0U; j < qPages.size(); ++j) {
@@ -657,7 +657,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
         }
     }
 
-    const complex amp = toCopy->GetAmplitude(bi_create(maxI));
+    const complex amp = toCopy->GetAmplitude(maxI);
     if (willDestroy) {
         toCopy->qPages.back() = NULL;
     }
@@ -891,7 +891,7 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
         isPermInPage &= (permOcl < pagePerm);
 
         if (isPermInPage) {
-            qPages[i]->SetPermutation(bi_create(permOcl - (pagePerm - pagePower)), phaseFac);
+            qPages[i]->SetPermutation(permOcl - (pagePerm - pagePower), phaseFac);
             continue;
         }
 
@@ -991,15 +991,15 @@ void QPager::ApplyEitherControlledSingleBit(
     }
 
     auto sg = [intraCtrlPerm, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
-        engine->UCMtrx(intraControls, mtrx, lTarget, bi_create(intraCtrlPerm));
+        engine->UCMtrx(intraControls, mtrx, lTarget, intraCtrlPerm);
     };
 
     if (!metaControls.size()) {
         SingleBitGate(target, sg, isSqiCtrl, isAnti);
     } else if (target < qpp) {
-        SemiMetaControlled(bi_create(metaCtrlPerm), metaControls, target, sg);
+        SemiMetaControlled(metaCtrlPerm, metaControls, target, sg);
     } else {
-        MetaControlled(bi_create(metaCtrlPerm), metaControls, target, sg, mtrx, isSqiCtrl, intraControls.size());
+        MetaControlled(metaCtrlPerm, metaControls, target, sg, mtrx, isSqiCtrl, intraControls.size());
     }
 }
 
@@ -1029,7 +1029,7 @@ void QPager::XMask(bitCapInt mask)
     }
 
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-        qPages[i]->XMask(bi_create(intraMask));
+        qPages[i]->XMask(intraMask);
     }
 }
 
@@ -1052,7 +1052,7 @@ void QPager::PhaseParity(real1_f radians, bitCapInt mask)
         v &= 1U;
 
         if (intraMask) {
-            engine->PhaseParity(v ? -radians : radians, bi_create(intraMask));
+            engine->PhaseParity(v ? -radians : radians, intraMask);
         } else if (v) {
             engine->Phase(phaseFac, phaseFac, 0U);
         } else {
@@ -1095,7 +1095,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     if (qubit < qpp) {
         const bitCapIntOcl qPower = pow2Ocl(qubit);
         for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            qPages[i]->ApplyM(bi_create(qPower), result, nrm);
+            qPages[i]->ApplyM(qPower, result, nrm);
         }
     } else {
         const bitLenInt metaQubit = qubit - qpp;
@@ -1515,7 +1515,7 @@ real1_f QPager::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt
             expectation += futures[iF].get();
         }
         futures[iF] = std::async(std::launch::async, [engine, bits, pagePerm, offset]() {
-            return engine->ExpectationBitsAll(bits, bi_create(pagePerm + offset.bits[0U]));
+            return engine->ExpectationBitsAll(bits, pagePerm + offset.bits[0U]);
         });
 #else
         expectation += engine->ExpectationBitsAll(bits, pagePerm + offset);
