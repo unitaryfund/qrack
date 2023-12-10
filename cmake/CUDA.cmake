@@ -40,11 +40,11 @@ if (ENABLE_CUDA)
     
     # Add the CUDA objects to the library
     target_sources (qrack PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}/src/common/cudaengine.cu
-        ${CMAKE_CURRENT_BINARY_DIR}/src/common/qengine.cu
-        ${CMAKE_CURRENT_BINARY_DIR}/src/qengine/cuda.cu
-        ${CMAKE_CURRENT_BINARY_DIR}/src/qhybrid.cpp
-        ${CMAKE_CURRENT_BINARY_DIR}/src/qunitmulti.cpp
+        src/common/cudaengine.cu
+        src/common/qengine.cu
+        src/qengine/cuda.cu
+        src/qhybrid.cpp
+        src/qunitmulti.cpp
         )
 
 endif(ENABLE_CUDA)

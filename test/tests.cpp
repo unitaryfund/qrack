@@ -3203,7 +3203,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expectationbitsall")
     REQUIRE_FLOAT(qftReg->ExpectationBitsAll(bits), 127 + (ONE_R1_F / 2))
 }
 
-#if  0
+#if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
 {
     if (testEngineType == QINTERFACE_TENSOR_NETWORK) {

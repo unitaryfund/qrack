@@ -1335,7 +1335,7 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
     const bitCapIntOcl nQubitCount = qubitCount + oQubitCount;
     const bitCapIntOcl nMaxQPower = pow2Ocl(nQubitCount);
     const bitCapIntOcl startMask = maxQPowerOcl - 1U;
-    const bitCapIntOcl endMask = (toCopy->maxQPowerOcl - 1U) << (bitCapIntOcl)qubitCount;
+    const bitCapIntOcl endMask = (toCopy->maxQPowerOcl - 1U) << qubitCount;
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ nMaxQPower, qubitCount, startMask, endMask, 0U, 0U, 0U, 0U, 0U, 0U };
 
     OCLAPI api_call;
@@ -1583,7 +1583,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     const bitCapIntOcl remainderPower = pow2Ocl(nLength);
     const size_t sizeDiff = sizeof(complex) * maxQPowerOcl;
     const bitCapIntOcl skipMask = pow2Ocl(start) - 1U;
-    const bitCapIntOcl disposedRes = disposedPerm.bits[0U] << (bitCapIntOcl)start;
+    const bitCapIntOcl disposedRes = (disposedPerm << start).bits[0U];
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ remainderPower, length, skipMask, disposedRes, 0U, 0U, 0U, 0U, 0U, 0U };
 
@@ -1709,7 +1709,7 @@ real1_f QEngineOCL::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
         return ProbAll(permutation);
     }
 
-    const bitCapIntOcl perm = permutation.bits[0U] << (bitCapIntOcl)start;
+    const bitCapIntOcl perm = (permutation << start).bits[0U];
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> length, perm, start, length, 0U, 0U, 0U, 0U, 0U, 0U };
 
     return Probx(OCL_API_PROBREG, bciArgs);
@@ -1837,7 +1837,7 @@ void QEngineOCL::ProbMaskAll(bitCapInt mask, real1* probsArray)
         return;
     }
 
-    v = (~mask.bits[0U]) & (maxQPowerOcl - 1U); // count the number of bits set in v
+    v = ~mask.bits[0U] & (maxQPowerOcl - 1U); // count the number of bits set in v
     bitCapIntOcl skipPower;
     bitLenInt skipLength = 0U; // c accumulates the total bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
@@ -2953,9 +2953,8 @@ bitCapInt QEngineOCL::MAll()
         if ((perm + alignSize) < maxQPowerOcl) {
             device_context->EmplaceEvent([&](cl::Event& event) {
                 tryOcl("Failed to read buffer", [&] {
-                    return queue.enqueueReadBuffer(*stateBuffer, CL_FALSE,
-                        sizeof(complex) * (bitCapIntOcl)(perm + alignSize), sizeof(complex) * alignSize, amp.get(),
-                        NULL, &event);
+                    return queue.enqueueReadBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * perm + alignSize,
+                        sizeof(complex) * alignSize, amp.get(), NULL, &event);
                 });
             });
         }
