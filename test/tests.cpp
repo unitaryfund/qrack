@@ -1763,6 +1763,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cai")
     qftReg->CS(1, 0);
     qftReg->CH(1, 0);
     real1_f testY = qftReg->CProb(1, 0);
+    qftReg->CH(1, 0);
     qftReg->CIS(1, 0);
     qftReg->CH(1, 0);
 
