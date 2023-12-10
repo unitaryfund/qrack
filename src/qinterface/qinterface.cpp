@@ -201,8 +201,7 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
     const bitCapInt regVal = MReg(start, length);
     for (bitLenInt i = 0U; i < length; ++i) {
-        const bool bitVal = bi_compare_0(bitSlice(i, regVal)) != 0;
-        if (bitVal == (bi_compare_0(bitSlice(i, value)) == 0)) {
+        if ((bi_compare_0(bitSlice(i, regVal)) != 0) == !(bi_compare_0(bitSlice(i, value)) != 0)) {
             X(start + i);
         }
     }
