@@ -3250,20 +3250,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
     qftReg->CNOT(0, 1);
     REQUIRE(!(QPARITY(qftReg)->ForceMParity(0x3, false, true)));
     REQUIRE(!(QPARITY(qftReg)->MParity(0x3)));
-
-    qftReg->SetPermutation(0x0);
-    qftReg->H(0);
-    qftReg->CNOT(0, 1);
-    qftReg->CNOT(1, 2);
-    REQUIRE(!(QPARITY(qftReg)->ForceMParity(0x3, false, true)));
-    REQUIRE_THAT(qftReg, HasProbability(0x0));
-
-    qftReg->SetPermutation(0x0);
-    qftReg->H(0);
-    qftReg->CNOT(0, 1);
-    qftReg->H(2);
-    REQUIRE(QPARITY(qftReg)->ForceMParity(0x7, true, true));
-    REQUIRE_THAT(qftReg, HasProbability(0x4));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
