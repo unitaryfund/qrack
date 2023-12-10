@@ -1808,11 +1808,11 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
 real1_f QStabilizerHybrid::ProbParity(bitCapInt mask)
 {
-    if (bi_compare_0(mask) != 0) {
+    if (bi_compare_0(mask) == 0) {
         return ZERO_R1_F;
     }
 
-    if (bi_compare_0(mask & (mask - ONE_BCI)) != 0) {
+    if (isPowerOfTwo(mask)) {
         return Prob(log2(mask));
     }
 
@@ -1822,12 +1822,12 @@ real1_f QStabilizerHybrid::ProbParity(bitCapInt mask)
 bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     // If no bits in mask:
-    if (bi_compare_0(mask) != 0) {
+    if (bi_compare_0(mask) == 0) {
         return false;
     }
 
     // If only one bit in mask:
-    if (bi_compare_0(mask & (mask - ONE_BCI)) != 0) {
+    if (isPowerOfTwo(mask)) {
         return ForceM(log2(mask), result, doForce);
     }
 
