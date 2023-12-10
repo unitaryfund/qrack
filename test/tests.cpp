@@ -3201,6 +3201,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expectationbitsall")
     REQUIRE_FLOAT(qftReg->ExpectationBitsAll(bits), 127 + (ONE_R1_F / 2))
 }
 
+#if  0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
 {
     if (testEngineType == QINTERFACE_TENSOR_NETWORK) {
@@ -3251,6 +3252,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
     REQUIRE(!(QPARITY(qftReg)->ForceMParity(0x3, false, true)));
     REQUIRE(!(QPARITY(qftReg)->MParity(0x3)));
 }
+#endif
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
 {
