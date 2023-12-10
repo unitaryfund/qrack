@@ -1086,7 +1086,7 @@ void QStabilizer::H(bitLenInt t)
     seed(g);
 
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    if (nIsSepZ || (bi_compare_0(entry.permutation & tPow) == 0U)) {
+    if (nIsSepZ || (bi_compare_0(entry.permutation & tPow) == 0)) {
         const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
         if (norm(oAmp) > FP_NORM_EPSILON) {
             SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
@@ -1101,7 +1101,7 @@ void QStabilizer::H(bitLenInt t)
             }
         }
         const AmplitudeEntry entry = getBasisAmp(nrm);
-        if (nIsSepZ || (bi_compare_0(entry.permutation & tPow) == 0U)) {
+        if (nIsSepZ || (bi_compare_0(entry.permutation & tPow) == 0)) {
             const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
             if (norm(oAmp) > FP_NORM_EPSILON) {
                 SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));

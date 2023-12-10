@@ -1374,7 +1374,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         }
 
         const bitCapInt qPower = pow2(qubit);
-        const bitCapInt maxLcv = maxQPower >> 1U;
+        const size_t maxLcv = (maxQPower >> 1U).bits[0U];
         real1_f partProb = ZERO_R1_F;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         const unsigned numCores =
@@ -1389,11 +1389,8 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             std::vector<std::future<real1>> futures;
             for (unsigned j = 0U; j < numCores; ++j) {
                 futures.push_back(std::async(std::launch::async, [j, p, qPower, &clones]() {
-                    const bitCapInt l = j + p;
-                    bitCapInt k = qPower;
-                    bi_decrement(&k, 1U);
-                    bi_and_ip(&k, l);
-                    bi_or_ip(&k, (l ^ k) << 1U);
+                    bitCapInt k = (j + p) & (qPower - 1U);
+                    bi_or_ip(&k, ((j + p) ^ k) << 1U);
                     return norm(clones[j]->GetAmplitude(k | qPower));
                 }));
                 bi_increment(&i, 1U);
@@ -1777,7 +1774,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
     }
     bitCapInt i = ZERO_BCI;
-    while (i < maxQPower) {
+    while (bi_compare(i, maxQPower) < 0) {
         const bitCapInt p = i;
         std::vector<std::future<real1>> futures;
         for (unsigned j = 0U; j < numCores; ++j) {
