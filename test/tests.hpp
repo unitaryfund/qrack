@@ -153,7 +153,7 @@ class ProbPattern : public Catch::MatcherBase<Qrack::QInterfacePtr> {
     bitCapInt mask;
 
 public:
-    ProbPattern(bitLenInt s, bitLenInt l, bitCapIntOcl m)
+    ProbPattern(bitLenInt s, bitLenInt l, bitCapInt m)
         : start(s)
         , length(l)
         , mask(m)
@@ -192,5 +192,5 @@ public:
     }
 };
 
-inline ProbPattern HasProbability(bitLenInt s, bitLenInt l, bitCapIntOcl m) { return ProbPattern(s, l, m); }
-inline ProbPattern HasProbability(bitCapIntOcl m) { return ProbPattern(0, 0, m); }
+inline ProbPattern HasProbability(bitLenInt s, bitLenInt l, bitCapInt m) { return ProbPattern(s, l, m); }
+inline ProbPattern HasProbability(bitCapInt m) { return ProbPattern(0, 0, m); }
