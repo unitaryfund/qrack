@@ -1474,7 +1474,7 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 
     CHECK_ZERO_SKIP();
 
-    Dispatch(maxQPower, [this, greaterPerm, start, length, flagIndex] {
+    Dispatch(maxQPowerOcl, [this, greaterPerm, start, length, flagIndex] {
         const bitCapIntOcl regMask = bitRegMaskOcl(start, length);
         const bitCapIntOcl flagMask = pow2Ocl(flagIndex);
         const bitCapIntOcl greaterPermOcl = greaterPerm.bits[0U];
@@ -1495,7 +1495,7 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 
     CHECK_ZERO_SKIP();
 
-    Dispatch(maxQPower, [this, greaterPerm, start, length] {
+    Dispatch(maxQPowerOcl, [this, greaterPerm, start, length] {
         const bitCapIntOcl regMask = bitRegMaskOcl(start, length);
         const bitCapIntOcl greaterPermOcl = greaterPerm.bits[0U];
 

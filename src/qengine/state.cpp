@@ -380,7 +380,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
         runningNorm = ONE_R1;
     }
 
-    Dispatch(maxQPower >> bitCount,
+    Dispatch(maxQPowerOcl >> bitCount,
         [this, mtrxS, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
             complex* mtrx = mtrxS.get();
 
@@ -572,7 +572,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
         runningNorm = ONE_R1;
     }
 
-    Dispatch(maxQPower >> bitCount,
+    Dispatch(maxQPowerOcl >> bitCount,
         [this, mtrxS, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
             complex* mtrx = mtrxS.get();
             const complex mtrx0 = mtrx[0U];
@@ -701,7 +701,7 @@ void QEngineCPU::XMask(bitCapInt mask)
         return;
     }
 
-    Dispatch(maxQPower, [this, mask] {
+    Dispatch(maxQPowerOcl, [this, mask] {
         const bitCapIntOcl maskOcl = mask.bits[0U];
         const bitCapIntOcl otherMask = (maxQPowerOcl - 1U) ^ maskOcl;
         ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
@@ -748,7 +748,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
         return;
     }
 
-    Dispatch(maxQPower, [this, mask, radians] {
+    Dispatch(maxQPowerOcl, [this, mask, radians] {
         const bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
         const complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
         const complex iPhaseFac = ONE_CMPLX / phaseFac;
@@ -887,7 +887,7 @@ void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
 
     CHECK_ZERO_SKIP();
 
-    Dispatch(maxQPower, [this, mask, angle] {
+    Dispatch(maxQPowerOcl, [this, mask, angle] {
         const real1 cosine = (real1)cos(angle);
         const real1 sine = (real1)sin(angle);
         const complex phaseFac(cosine, sine);
@@ -929,7 +929,7 @@ void QEngineCPU::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCa
     std::vector<bitLenInt> controls(cControls.begin(), cControls.end());
     std::sort(controls.begin(), controls.end());
 
-    Dispatch(maxQPower >> cControls.size(), [this, controls, mask, angle] {
+    Dispatch(maxQPowerOcl >> cControls.size(), [this, controls, mask, angle] {
         bitCapIntOcl controlMask = 0U;
         std::vector<bitCapIntOcl> controlPowers(controls.size());
         for (size_t i = 0U; i < controls.size(); ++i) {
@@ -1755,7 +1755,7 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
     CHECK_ZERO_SKIP();
 
-    Dispatch(maxQPower, [this, regMask, result, nrm] {
+    Dispatch(maxQPowerOcl, [this, regMask, result, nrm] {
         const bitCapIntOcl regMaskOcl = regMask.bits[0U];
         const bitCapIntOcl resultOcl = result.bits[0U];
         ParallelFunc fn = [&](const bitCapIntOcl& i, const unsigned& cpu) {

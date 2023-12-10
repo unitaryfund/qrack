@@ -107,11 +107,11 @@ public:
 
     void QueueSetDoNormalize(bool doNorm)
     {
-        Dispatch(ONE_BCI, [this, doNorm] { doNormalize = doNorm; });
+        Dispatch(1U, [this, doNorm] { doNormalize = doNorm; });
     }
     void QueueSetRunningNorm(real1_f runningNrm)
     {
-        Dispatch(ONE_BCI, [this, runningNrm] { runningNorm = runningNrm; });
+        Dispatch(1U, [this, runningNrm] { runningNorm = runningNrm; });
     }
 
     void SetQuantumState(const complex* inputState);
@@ -230,11 +230,10 @@ protected:
     StateVectorPtr AllocStateVec(bitCapIntOcl elemCount);
     void ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
 
-    void Dispatch(bitCapInt workItemCount, DispatchFn fn)
+    void Dispatch(bitCapIntOcl workItemCount, DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((bi_compare(workItemCount, pow2(GetPreferredConcurrencyPower())) >= 0) &&
-            (bi_compare(workItemCount, GetStride()) < 0)) {
+        if ((workItemCount >= pow2Ocl(GetPreferredConcurrencyPower())) && (workItemCount < GetStride())) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();

@@ -38,12 +38,7 @@ inline bitLenInt log2Ocl(bitCapIntOcl n)
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #endif
 }
-inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source)
-{
-    bitCapInt toRet = ONE_BCI << bit;
-    bi_and_ip(&toRet, source);
-    return toRet;
-}
+inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (ONE_BCI << bit) & source; }
 inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source)
 {
     return ((bitCapIntOcl)1U << bit) & source;
