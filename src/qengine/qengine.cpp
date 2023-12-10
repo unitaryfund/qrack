@@ -517,11 +517,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
-        if (ForceM(start, bi_and_1(result), doForce, doApply)) {
-            return ONE_BCI;
-        } else {
-            return ZERO_BCI;
-        }
+        return ForceM(start, bi_and_1(result), doForce, doApply) ? ONE_BCI : ZERO_BCI;
     }
 
     const bitCapIntOcl lengthPower = pow2Ocl(length);
