@@ -173,8 +173,8 @@ public:
 
         for (bitLenInt j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
-            bool bit = (qftReg->Prob(j + start) > QRACK_TEST_EPSILON);
-            if (bit == (bi_compare_0(mask & Qrack::pow2(j)) == 0)) {
+            const bool bit = qftReg->Prob(j + start) > QRACK_TEST_EPSILON;
+            if (bit == (bi_and_1(mask >> j) == 0)) {
                 return false;
             }
         }
@@ -186,7 +186,7 @@ public:
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
         for (int j = (length - 1); j >= 0; j--) {
-            ss << (bi_compare_0(mask & Qrack::pow2(j)) != 0);
+            ss << (bi_and_1(mask >> j) != 0);
         }
         return ss.str();
     }
