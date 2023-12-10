@@ -691,10 +691,7 @@ void QEngineCPU::XMask(bitCapInt mask)
         return;
     }
 
-    bitCapInt maskMin1 = mask;
-    bi_decrement(&maskMin1, 1U);
-    bi_and_ip(&maskMin1, mask);
-    if (bi_compare_0(maskMin1) == 0) {
+    if (isPowerOfTwo(mask)) {
         X(log2(mask));
         return;
     }
@@ -740,10 +737,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
         return;
     }
 
-    bitCapInt maskMin1 = mask;
-    bi_decrement(&maskMin1, 1U);
-    bi_and_ip(&maskMin1, mask);
-    if (bi_compare_0(maskMin1) == 0) {
+    if (isPowerOfTwo(mask)) {
         const complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
         Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         return;
