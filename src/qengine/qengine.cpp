@@ -124,18 +124,10 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
 
     // Single bit operations are better optimized for this special case:
     if (bits.size() == 1U) {
-        if (!values.size()) {
-            if (M(bits[0U])) {
-                return pow2(bits[0U]);
-            } else {
-                return ZERO_BCI;
-            }
+        if (ForceM(bits[0U], values.size() ? values[0U] : false, false, doApply)) {
+            return pow2(bits[0U]);
         } else {
-            if (ForceM(bits[0U], values[0U], true, doApply)) {
-                return pow2(bits[0U]);
-            } else {
-                return ZERO_BCI;
-            }
+            return ZERO_BCI;
         }
     }
 
@@ -148,18 +140,16 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
     std::sort(qPowers.get(), qPowers.get() + bits.size());
 
     const complex phase = GetNonunitaryPhase();
-    real1 nrmlzr = ONE_R1;
-    complex nrm;
     if (values.size()) {
         bitCapIntOcl result = 0U;
-        for (size_t j = 0U; j < bits.size(); ++j) {
+        for (size_t j = 0U; j < values.size(); ++j) {
             if (values[j]) {
                 result |= pow2Ocl(bits[j]);
             }
         }
-        nrmlzr = ProbMask(regMask, result);
-        nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
-        if (nrmlzr != ONE_R1) {
+        real1 nrmlzr = ProbMask(regMask, result);
+        complex nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
+        if ((ONE_R1 - nrmlzr) > FP_NORM_EPSILON) {
             ApplyM(regMask, result, nrm);
         }
 
@@ -186,6 +176,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
      * in a bug-induced topology - some value in stateVec must always be a
      * vector.
      */
+    real1 nrmlzr = ONE_R1;
     while ((lowerProb < prob) && (lcv < lengthPower)) {
         ++lcv;
         lowerProb += probArray[lcv];
@@ -211,7 +202,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
 
     qPowers.reset();
 
-    nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
+    const complex nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
 
     if (doApply && ((ONE_R1 - nrmlzr) > REAL1_EPSILON)) {
         ApplyM(regMask, result, nrm);
