@@ -737,7 +737,7 @@ void QEngineOCL::XMask(bitCapInt mask)
         return;
     }
 
-    if (bi_compare_0(mask & (mask - ONE_BCI)) == 0) {
+    if (isPowerOfTwo(mask)) {
         X(log2(mask));
         return;
     }
@@ -750,7 +750,7 @@ void QEngineOCL::PhaseParity(real1_f radians, bitCapInt mask)
         return;
     }
 
-    if (bi_compare_0(mask & (mask - ONE_BCI)) == 0) {
+    if (isPowerOfTwo(mask)) {
         complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
         Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         return;
@@ -1900,7 +1900,7 @@ real1_f QEngineOCL::ProbParity(bitCapInt mask)
     }
 
     // If only one bit in mask:
-    if (bi_compare_0(mask & (mask - ONE_BCI)) == 0) {
+    if (isPowerOfTwo(mask)) {
         return Prob(log2(mask));
     }
 
@@ -1921,7 +1921,7 @@ bool QEngineOCL::ForceMParity(bitCapInt mask, bool result, bool doForce)
     }
 
     // If only one bit in mask:
-    if (bi_compare_0(mask & (mask - ONE_BCI)) == 0) {
+    if (isPowerOfTwo(mask)) {
         return ForceM(log2(mask), result, doForce);
     }
 
