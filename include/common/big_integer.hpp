@@ -464,7 +464,7 @@ inline double bi_to_double(const BigInteger& in)
     double toRet = 0.0;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         if (in.bits[i]) {
-            toRet += in.bits[i] * pow(2.0, 64 * i);
+            toRet += in.bits[i] * pow(2.0, BIG_INTEGER_WORD_BITS * i);
         }
     }
 
