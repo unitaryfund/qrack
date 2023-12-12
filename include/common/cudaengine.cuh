@@ -113,7 +113,7 @@ public:
     }
 
     size_t GetProcElementCount() { return properties.multiProcessorCount; }
-    size_t GetMaxWorkItems() { return properties.maxBlocksPerMultiProcessor; }
+    size_t GetMaxWorkItems() { return properties.maxThreadsPerMultiProcessor; }
     size_t GetMaxWorkGroupSize() { return properties.warpSize; }
     size_t GetMaxAlloc() { return properties.totalGlobalMem; }
     size_t GetGlobalSize() { return properties.totalGlobalMem; }

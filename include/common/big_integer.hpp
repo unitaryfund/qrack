@@ -79,7 +79,7 @@ typedef struct BigInteger {
         }
     }
 
-    explicit operator BIG_INTEGER_WORD() const { return bits[0U]; }
+    inline explicit operator BIG_INTEGER_WORD() const { return bits[0U]; }
 } BigInteger;
 
 inline void bi_set_0(BigInteger* p)

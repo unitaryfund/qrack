@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.1.6 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.1.7 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -140,9 +140,9 @@ message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
 
 if (QBCAPPOW GREATER 6)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Xcompiler -fpermissive -Xcompiler -fPIC -Xptxas -O3,)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Xcompiler -fpermissive --compiler-options -fPIC -Xptxas -O3,)
 else (QBCAPPOW GREATER 6)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Werror all-warnings -Xcompiler -fPIC -Xptxas -O3,)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Werror all-warnings --compiler-options -fPIC -Xptxas -O3,)
 endif (QBCAPPOW GREATER 6)
 
 if (CPP_STD GREATER_EQUAL 20)
