@@ -17,7 +17,11 @@
 #include <regex>
 #include <sstream>
 
-#if (QBCAPPOW < 6) || (UINTPOW < 6)
+#if UINTPOW < 4
+#include "qheader_uint8cl.hpp"
+#elif UINTPOW < 5
+#include "qheader_uint16cl.hpp"
+#elif UINTPOW < 6
 #include "qheader_uint32cl.hpp"
 #else
 #include "qheader_uint64cl.hpp"
@@ -198,7 +202,11 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::
     }
 
     cl::Program::Sources sources;
-#if (QBCAPPOW < 6) || (UINTPOW < 6)
+#if UINTPOW < 4
+    sources.push_back({ (const char*)qheader_uint8_cl, (long unsigned int)qheader_uint8_cl_len });
+#elif UINTPOW < 5
+    sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
+#elif UINTPOW < 6
     sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
 #else
     sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
