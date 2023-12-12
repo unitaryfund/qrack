@@ -1,3 +1,9 @@
+libqrack (9.1.8) jammy; urgency=medium
+
+  * Fix QBCAPPOW/UINTPOW in source (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Dec 2023 10:47:59 -0500
+
 libqrack (9.1.7) focal; urgency=medium
 
   * Fix QBCAPPOW/UINTPOW in source (Focal, 1/3) (CUDA)
