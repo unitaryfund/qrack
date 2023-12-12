@@ -44,16 +44,23 @@
 #define bitLenInt uint64_t
 #endif
 
+#if UINTPOW < 4
+#define bitCapIntOcl uint8_t
+#elif UINTPOW < 5
+#define bitCapIntOcl uint16_t
+#elif UINTPOW < 6
+#define bitCapIntOcl uint32_t
+#else
+#define bitCapIntOcl uint64_t
+#endif
+
 #if QBCAPPOW < 6
 #define bitCapInt uint32_t
-#define bitCapIntOcl uint32_t
 #elif QBCAPPOW < 7
 #define bitCapInt uint64_t
-#define bitCapIntOcl uint64_t
 #else
 #include "big_integer.hpp"
 #define bitCapInt BigInteger
-#define bitCapIntOcl uint64_t
 #endif
 
 #if FPPOW < 5

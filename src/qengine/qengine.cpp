@@ -150,7 +150,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
         real1 nrmlzr = ProbMask(regMask, result);
         complex nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
         if ((ONE_R1 - nrmlzr) > FP_NORM_EPSILON) {
-            ApplyM(regMask, result, nrm);
+            ApplyM(regMask, (bitCapInt)result, nrm);
         }
 
         // No need to check against probabilities:
@@ -205,7 +205,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
     const complex nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
 
     if (doApply && ((ONE_R1 - nrmlzr) > REAL1_EPSILON)) {
-        ApplyM(regMask, result, nrm);
+        ApplyM(regMask, (bitCapInt)result, nrm);
     }
 
     return result;
