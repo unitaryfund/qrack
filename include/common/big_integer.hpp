@@ -135,10 +135,10 @@ inline int bi_compare_1(const BigInteger& left)
             return 1;
         }
     }
-    if (left.bits[0] > 1) {
+    if (left.bits[0] > 1U) {
         return 1;
     }
-    if (left.bits[0] < 1) {
+    if (left.bits[0] < 1U) {
         return -1;
     }
 
@@ -197,7 +197,7 @@ inline void bi_sub_ip(BigInteger* left, const BigInteger& right)
     left->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-inline void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
+inline void bi_increment(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 {
     BIG_INTEGER_WORD temp = pBigInt->bits[0];
     pBigInt->bits[0] += value;
@@ -212,7 +212,7 @@ inline void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
     }
 }
 
-inline void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
+inline void bi_decrement(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 {
     BIG_INTEGER_WORD temp = pBigInt->bits[0];
     pBigInt->bits[0] -= value;
@@ -237,7 +237,7 @@ inline BigInteger bi_load(BIG_INTEGER_WORD* a)
     return result;
 }
 
-inline BigInteger bi_lshift_word(const BigInteger& left, BIG_INTEGER_WORD rightMult)
+inline BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult)
 {
     if (!rightMult) {
         return left;
@@ -254,7 +254,7 @@ inline BigInteger bi_lshift_word(const BigInteger& left, BIG_INTEGER_WORD rightM
     return result;
 }
 
-inline void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
+inline void bi_lshift_word_ip(BigInteger* left, const BIG_INTEGER_WORD& rightMult)
 {
     rightMult &= 63U;
     if (!rightMult) {
@@ -268,7 +268,7 @@ inline void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     }
 }
 
-inline BigInteger bi_rshift_word(const BigInteger& left, BIG_INTEGER_WORD rightMult)
+inline BigInteger bi_rshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult)
 {
     if (!rightMult) {
         return left;
@@ -285,7 +285,7 @@ inline BigInteger bi_rshift_word(const BigInteger& left, BIG_INTEGER_WORD rightM
     return result;
 }
 
-inline void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
+inline void bi_rshift_word_ip(BigInteger* left, const BIG_INTEGER_WORD& rightMult)
 {
     if (!rightMult) {
         return;
@@ -298,7 +298,7 @@ inline void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     }
 }
 
-inline BigInteger operator<<(const BigInteger& left, BIG_INTEGER_WORD right)
+inline BigInteger operator<<(const BigInteger& left, const BIG_INTEGER_WORD& right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -319,7 +319,7 @@ inline BigInteger operator<<(const BigInteger& left, BIG_INTEGER_WORD right)
     return result;
 }
 
-inline void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
+inline void bi_lshift_ip(BigInteger* left, const BIG_INTEGER_WORD& right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -338,7 +338,7 @@ inline void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     }
 }
 
-inline BigInteger operator>>(const BigInteger& left, BIG_INTEGER_WORD right)
+inline BigInteger operator>>(const BigInteger& left, const BIG_INTEGER_WORD& right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -359,7 +359,7 @@ inline BigInteger operator>>(const BigInteger& left, BIG_INTEGER_WORD right)
     return result;
 }
 
-inline void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
+inline void bi_rshift_ip(BigInteger* left, const BIG_INTEGER_WORD& right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
