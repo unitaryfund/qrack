@@ -67,7 +67,7 @@ inline int bi_compare_0(const uint32_t& left) { return (int)(bool)left; }
 inline int bi_compare_1(const uint32_t& left) { _bi_compare_1(left); }
 
 inline void bi_div_mod(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
-inline void bi_div_mod_small(const uint32_t& left, const uint32_t& right, uint32_t* quotient, unsigned int* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
+inline void bi_div_mod_small(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
 
 inline int bi_compare(const uint32_t& left, const uint32_t& right) { _bi_compare(left, right) }
 #elif QBCAPPOW < 7
@@ -90,7 +90,7 @@ inline int bi_compare_0(const uint64_t& left) { return (int)(bool)left; }
 inline int bi_compare_1(const uint64_t& left) { _bi_compare_1(left) }
 
 inline void bi_div_mod(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
-inline void bi_div_mod_small(const uint64_t& left, const uint64_t& right, uint64_t* quotient, unsigned int* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
+inline void bi_div_mod_small(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
 
 inline int bi_compare(const uint64_t& left, const uint64_t& right) { _bi_compare(left, right) }
 #endif
