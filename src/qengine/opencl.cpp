@@ -1114,7 +1114,7 @@ void QEngineOCL::UniformParityRZ(bitCapInt mask, real1_f angle)
     PoolItemPtr poolItem = GetFreePoolItem();
 
     cl::Event writeArgsEvent, writeNormEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) << 1U, bciArgs, writeArgsEvent);
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 3, &phaseFacs, writeNormEvent);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
@@ -2703,7 +2703,7 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> ((bitLenInt)controls.size() + length), toMod,
         (bitCapIntOcl)controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
 
-    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
+    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() << 1U) + length);
     AddAlloc(sizeDiff);
     BufferPtr controlBuffer = MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeDiff, skipPowers.get());
     skipPowers.reset();
@@ -2745,7 +2745,7 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask,
         carryMask, modN, length, inOutStart, carryStart };
 
-    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
+    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() << 1U) + length);
     AddAlloc(sizeDiff);
     BufferPtr controlBuffer = MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeDiff, skipPowers.get());
     skipPowers.reset();
@@ -3197,7 +3197,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
 
     complex c_args[2]{ complex((real1)norm_thresh, ZERO_R1), std::polar((real1)nrm, (real1)phaseArg) };
     cl::Event writeRealArgsEvent;
-    DISPATCH_LOC_WRITE(*(poolItem->cmplxBuffer), sizeof(complex) * 2, c_args, writeRealArgsEvent);
+    DISPATCH_LOC_WRITE(*(poolItem->cmplxBuffer), sizeof(complex) << 1U, c_args, writeRealArgsEvent);
 
     bitCapIntOcl bciArgs[1]{ maxQPowerOcl };
     cl::Event writeBCIArgsEvent;
@@ -3321,7 +3321,7 @@ void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl s
 
     bitCapIntOcl bciArgs[2]{ size, offset };
     cl::Event writeArgsEvent;
-    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) << 1U, bciArgs, writeArgsEvent);
 
     const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);

@@ -1143,7 +1143,7 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 2, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 1U, bciArgs);
     DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 3, &phaseFacs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
@@ -2644,7 +2644,7 @@ void QEngineCUDA::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStar
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> ((bitLenInt)controls.size() + length), toMod,
         (bitCapIntOcl)controls.size(), controlMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
 
-    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
+    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() << 1U) + length);
     AddAlloc(sizeDiff);
     BufferPtr controlBuffer = MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeDiff, skipPowers.get());
     skipPowers.reset();
@@ -2686,7 +2686,7 @@ void QEngineCUDA::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl mod
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, toMod, (bitCapIntOcl)controls.size(), controlMask, inOutMask,
         carryMask, modN, length, inOutStart, carryStart };
 
-    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() * 2U) + length);
+    const size_t sizeDiff = sizeof(bitCapIntOcl) * ((controls.size() << 1U) + length);
     AddAlloc(sizeDiff);
     BufferPtr controlBuffer = MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeDiff, skipPowers.get());
     skipPowers.reset();
@@ -3115,7 +3115,7 @@ void QEngineCUDA::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phase
     PoolItemPtr poolItem = GetFreePoolItem();
 
     complex c_args[2]{ complex((real1)norm_thresh, ZERO_R1), std::polar((real1)nrm, (real1)phaseArg) };
-    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, c_args);
+    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) << 1U, c_args);
 
     bitCapIntOcl bciArgs[1]{ maxQPowerOcl };
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl), bciArgs);
