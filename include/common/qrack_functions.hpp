@@ -62,14 +62,15 @@ inline void bi_rshift_ip(uint32_t* left, const uint32_t& right) { *left >>= righ
 
 inline int bi_and_1(const uint32_t& left) { return left & 1; }
 
+inline int bi_compare(const uint32_t& left, const uint32_t& right) { _bi_compare(left, right) }
 inline int bi_compare_0(const uint32_t& left) { return (int)(bool)left; }
-
 inline int bi_compare_1(const uint32_t& left) { _bi_compare_1(left); }
+
+inline void bi_add_ip(uint32_t* left, const uint32_t& right) { *left += right; }
+inline void bi_sub_ip(uint32_t* left, const uint32_t& right) { *left -= right; }
 
 inline void bi_div_mod(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
 inline void bi_div_mod_small(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
-
-inline int bi_compare(const uint32_t& left, const uint32_t& right) { _bi_compare(left, right) }
 #elif QBCAPPOW < 7
 inline void bi_not_ip(uint64_t* left) { *left = ~(*left); }
 inline void bi_and_ip(uint64_t* left, const uint64_t& right) { *left &= right; }
@@ -85,14 +86,15 @@ inline void bi_rshift_ip(uint64_t* left, const uint64_t& right) { *left >>= righ
 
 inline int bi_and_1(const uint64_t& left) { return left & 1; }
 
+inline int bi_compare(const uint64_t& left, const uint64_t& right) { _bi_compare(left, right) }
 inline int bi_compare_0(const uint64_t& left) { return (int)(bool)left; }
-
 inline int bi_compare_1(const uint64_t& left) { _bi_compare_1(left) }
+
+inline void bi_add_ip(uint64_t* left, const uint64_t& right) { *left += right; }
+inline void bi_sub_ip(uint64_t* left, const uint64_t& right) { *left -= right; }
 
 inline void bi_div_mod(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
 inline void bi_div_mod_small(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
-
-inline int bi_compare(const uint64_t& left, const uint64_t& right) { _bi_compare(left, right) }
 #endif
 
 inline bitLenInt log2Ocl(bitCapIntOcl n)

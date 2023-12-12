@@ -1775,7 +1775,7 @@ void QUnit::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned
     std::map<bitCapInt, int>::iterator it = results.begin();
     while (it != results.end() && (j < shots)) {
         for (int i = 0; i < it->second; ++i) {
-            shotsArray[j] = (unsigned)it->first.bits[0U];
+            shotsArray[j] = (unsigned)(bitCapIntOcl)it->first;
             ++j;
         }
 
@@ -1993,7 +1993,7 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
     if (!trimmedControls.size()) {
         bitCapInt controlPerm = GetCachedPermutation(controls);
         complex mtrx[4U];
-        std::copy(mtrxs + controlPerm.bits[0U] * 4U, mtrxs + (controlPerm.bits[0U] + 1U) * 4U, mtrx);
+        std::copy(mtrxs + ((bitCapIntOcl)controlPerm << 2U), mtrxs + (((bitCapIntOcl)controlPerm + 1U) << 2U), mtrx);
         Mtrx(mtrx, qubitIndex);
         return;
     }
@@ -3094,8 +3094,8 @@ bool QUnit::INTSCOptimize(
 
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl signMask = pow2Ocl(length - 1U);
-    const bitCapIntOcl inOutInt = GetCachedPermutation(start, length).bits[0U];
-    const bitCapIntOcl inInt = toMod.bits[0U];
+    const bitCapIntOcl inOutInt = (bitCapIntOcl)GetCachedPermutation(start, length);
+    const bitCapIntOcl inInt = (bitCapIntOcl)toMod;
 
     bool isOverflow;
     bitCapInt outInt;
@@ -3689,7 +3689,7 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 bitCapInt QUnit::GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, const unsigned char* values)
 {
-    const bitCapIntOcl indexInt = GetCachedPermutation(indexStart, indexLength).bits[0U];
+    const bitCapIntOcl indexInt = (bitCapIntOcl)GetCachedPermutation(indexStart, indexLength);
     const bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt value = ZERO_BCI;
     for (bitCapIntOcl j = 0U; j < valueBytes; ++j) {
@@ -3701,7 +3701,7 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLengt
 
 bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
-    const bitCapIntOcl indexInt = GetCachedPermutation(start, length).bits[0U];
+    const bitCapIntOcl indexInt = (bitCapIntOcl)GetCachedPermutation(start, length);
     const bitLenInt bytes = (length + 7U) / 8U;
     bitCapInt value = ZERO_BCI;
     for (bitCapIntOcl j = 0U; j < bytes; ++j) {

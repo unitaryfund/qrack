@@ -195,7 +195,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
     bitCapIntOcl i = 0U;
     for (size_t p = 0U; p < bits.size(); ++p) {
         if (result & pow2Ocl(p)) {
-            i |= qPowers[p].bits[0U];
+            i |= (bitCapIntOcl)qPowers[p];
         }
     }
     result = i;

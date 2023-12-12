@@ -51,17 +51,9 @@
 #define bitCapInt uint64_t
 #define bitCapIntOcl uint64_t
 #else
-#define bitCapInt BigInteger
 #include "big_integer.hpp"
-#if UINTPOW < 4
-#define bitCapIntOcl uint8_t
-#elif UINTPOW < 5
-#define bitCapIntOcl uint16_t
-#elif UINTPOW < 6
-#define bitCapIntOcl uint32_t
-#else
+#define bitCapInt BigInteger
 #define bitCapIntOcl uint64_t
-#endif
 #endif
 
 #if FPPOW < 5

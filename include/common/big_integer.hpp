@@ -42,7 +42,7 @@
 #define BIG_INTEGER_WORD_BITS 64U
 #define BIG_INTEGER_WORD_POWER 6U
 #define BIG_INTEGER_WORD uint64_t
-#define BIG_INTEGER_HALF_WORD uint32_t
+#define BIG_INTEGER_HALF_WORD uint64_t
 #define BIG_INTEGER_HALF_WORD_POW 0x100000000ULL
 #define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFFULL
 #define BIG_INTEGER_HALF_WORD_MASK_NOT 0xFFFFFFFF00000000ULL
@@ -78,6 +78,8 @@ typedef struct BigInteger {
             bits[i] = 0U;
         }
     }
+
+    explicit operator BIG_INTEGER_WORD() const { return bits[0U]; }
 } BigInteger;
 
 inline void bi_set_0(BigInteger* p)
@@ -237,7 +239,7 @@ inline BigInteger bi_load(BIG_INTEGER_WORD* a)
     return result;
 }
 
-inline BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult)
+inline BigInteger bi_lshift_word(const BigInteger& left, BIG_INTEGER_WORD rightMult)
 {
     if (!rightMult) {
         return left;
@@ -254,7 +256,7 @@ inline BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD&
     return result;
 }
 
-inline void bi_lshift_word_ip(BigInteger* left, const BIG_INTEGER_WORD& rightMult)
+inline void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
 {
     rightMult &= 63U;
     if (!rightMult) {
@@ -298,7 +300,7 @@ inline void bi_rshift_word_ip(BigInteger* left, const BIG_INTEGER_WORD& rightMul
     }
 }
 
-inline BigInteger operator<<(const BigInteger& left, const BIG_INTEGER_WORD& right)
+inline BigInteger operator<<(const BigInteger& left, BIG_INTEGER_WORD right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -319,7 +321,7 @@ inline BigInteger operator<<(const BigInteger& left, const BIG_INTEGER_WORD& rig
     return result;
 }
 
-inline void bi_lshift_ip(BigInteger* left, const BIG_INTEGER_WORD& right)
+inline void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -338,7 +340,7 @@ inline void bi_lshift_ip(BigInteger* left, const BIG_INTEGER_WORD& right)
     }
 }
 
-inline BigInteger operator>>(const BigInteger& left, const BIG_INTEGER_WORD& right)
+inline BigInteger operator>>(const BigInteger& left, BIG_INTEGER_WORD right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -359,7 +361,7 @@ inline BigInteger operator>>(const BigInteger& left, const BIG_INTEGER_WORD& rig
     return result;
 }
 
-inline void bi_rshift_ip(BigInteger* left, const BIG_INTEGER_WORD& right)
+inline void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
