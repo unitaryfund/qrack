@@ -1067,7 +1067,7 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (!controls.size()) {
-        Mtrx(mtrxs + mtrxSkipValueMask.bits[0U] * 4U, qubitIndex);
+        Mtrx(mtrxs + (mtrxSkipValueMask.bits[0U] << 2U), qubitIndex);
         return;
     }
 
@@ -1092,11 +1092,11 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
     const real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
     DISPATCH_WRITE(nrmInBuffer, sizeof(real1), &nrm);
 
-    const size_t sizeDiff = sizeof(complex) * 4U * pow2Ocl(controls.size() + mtrxSkipPowers.size());
+    const size_t sizeDiff = sizeof(complex) * pow2Ocl(controls.size() + mtrxSkipPowers.size()) << 2U;
     AddAlloc(sizeDiff);
     BufferPtr uniformBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeDiff);
 
-    DISPATCH_WRITE(uniformBuffer, sizeof(complex) * 4U * pow2Ocl(controls.size() + mtrxSkipPowers.size()), mtrxs);
+    DISPATCH_WRITE(uniformBuffer, sizeof(complex) * pow2Ocl(controls.size() + mtrxSkipPowers.size()) << 2U, mtrxs);
 
     std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controls.size() + mtrxSkipPowers.size()]);
     std::transform(controls.begin(), controls.end(), qPowers.get(), pow2Ocl);
@@ -1188,8 +1188,8 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
-    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 2, &phaseFacs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 2U, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) << 1U, &phaseFacs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -1427,7 +1427,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 2U, bciArgs);
 
     const bitCapIntOcl largerPower = partPower > remainderPower ? partPower : remainderPower;
 
@@ -1552,7 +1552,7 @@ void QEngineCUDA::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedP
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ remainderPower, length, skipMask, disposedRes, 0U, 0U, 0U, 0U, 0U, 0U };
 
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 2U, bciArgs);
 
     SetQubitCount(nLength);
 
@@ -1593,7 +1593,7 @@ real1_f QEngineCUDA::Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs)
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 2U, bciArgs);
 
     const bitCapIntOcl maxI = bciArgs[0];
     const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
@@ -1693,7 +1693,7 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 2U, bciArgs);
 
     AddAlloc(sizeof(real1) * lengthPower);
     BufferPtr probsBuffer = MakeBuffer(CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
@@ -1739,7 +1739,7 @@ real1_f QEngineCUDA::ProbMask(bitCapInt mask, bitCapInt permutation)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 2U, bciArgs);
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[length]);
     std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers.get());
@@ -1809,7 +1809,7 @@ void QEngineCUDA::ProbMaskAll(bitCapInt mask, real1* probsArray)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4, bciArgs);
+    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 2U, bciArgs);
 
     size_t sizeDiff = sizeof(real1) * lengthPower + sizeof(bitCapIntOcl) * length + sizeof(bitCapIntOcl) * skipLength;
     AddAlloc(sizeDiff);
@@ -2286,7 +2286,7 @@ void QEngineCUDA::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, b
     }
 
     const bitLenInt nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
+    if ((nibbleCount << 2U) != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 
@@ -2326,7 +2326,7 @@ void QEngineCUDA::INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, 
     }
 
     const bitLenInt nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
+    if ((nibbleCount << 2U) != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 

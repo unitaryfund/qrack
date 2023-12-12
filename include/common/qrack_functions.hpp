@@ -17,16 +17,6 @@
 #include <set>
 #include <vector>
 
-#define _bi_compare_1(left) \
-    if (left > 1U) { \
-        return 1; \
-    } \
-    if (left < 1U) { \
-        return -1; \
-    } \
-\
-    return 0;
-
 #define _bi_div_mod(left, right, quotient, rmndr) \
     if (quotient) { \
         *quotient = left / right; \
@@ -62,7 +52,7 @@ inline int bi_and_1(const uint32_t& left) { return left & 1; }
 
 inline int bi_compare(const uint32_t& left, const uint32_t& right) { _bi_compare(left, right) }
 inline int bi_compare_0(const uint32_t& left) { return (int)(bool)left; }
-inline int bi_compare_1(const uint32_t& left) { _bi_compare_1(left); }
+inline int bi_compare_1(const uint32_t& left) { _bi_compare(left, 1U); }
 
 inline void bi_add_ip(uint32_t* left, const uint32_t& right) { *left += right; }
 inline void bi_sub_ip(uint32_t* left, const uint32_t& right) { *left -= right; }
@@ -86,7 +76,7 @@ inline int bi_and_1(const uint64_t& left) { return left & 1; }
 
 inline int bi_compare(const uint64_t& left, const uint64_t& right) { _bi_compare(left, right) }
 inline int bi_compare_0(const uint64_t& left) { return (int)(bool)left; }
-inline int bi_compare_1(const uint64_t& left) { _bi_compare_1(left) }
+inline int bi_compare_1(const uint64_t& left) { _bi_compare(left, 1U) }
 
 inline void bi_add_ip(uint64_t* left, const uint64_t& right) { *left += right; }
 inline void bi_sub_ip(uint64_t* left, const uint64_t& right) { *left -= right; }
