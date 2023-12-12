@@ -49,7 +49,7 @@ if (ENABLE_CUDA)
     message("QRACK_CUDA_ARCHITECTURES: ${QRACK_CUDA_ARCHITECTURES}")
 
     target_link_libraries (qrack ${QRACK_CUDA_LIBRARIES})
-    set_target_properties(qrack PROPERTIES CUDA_ARCHITECTURES ${QRACK_CUDA_ARCHITECTURES})
+    set_target_properties(qrack PROPERTIES CUDA_ARCHITECTURES "${QRACK_CUDA_ARCHITECTURES}")
     
     # Add the CUDA objects to the library
     target_sources (qrack PRIVATE
