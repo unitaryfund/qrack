@@ -1020,7 +1020,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    bitCapIntOcl wfnl = simulator->GetMaxQPower().bits[0U];
+    bitCapIntOcl wfnl = (bitCapIntOcl)simulator->GetMaxQPower();
 
     for (size_t i = 0U; i < wfnl; ++i) {
         complex amp;
@@ -1925,7 +1925,7 @@ MICROSOFT_QUANTUM_DECL uintq MAll(_In_ uintq sid)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
     try {
-        return simulators[sid]->MAll().bits[0U];
+        return (bitCapIntOcl)simulators[sid]->MAll();
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;

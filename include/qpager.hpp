@@ -62,7 +62,7 @@ protected:
     {
         bitCapInt toRet;
         bi_div_mod_small(maxQPower, qPages.size(), &toRet, NULL);
-        return toRet.bits[0U];
+        return (bitCapIntOcl)toRet;
     }
     bitLenInt pagedQubitCount() { return log2Ocl(qPages.size()); }
     bitLenInt qubitsPerPage() { return log2Ocl(pageMaxQPower()); }
@@ -283,19 +283,19 @@ public:
     {
         bitCapInt p, a;
         bi_div_mod(perm, pageMaxQPower(), &p, &a);
-        return qPages[p.bits[0U]]->GetAmplitude(a);
+        return qPages[(bitCapIntOcl)p]->GetAmplitude(a);
     }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
         bitCapInt p, a;
         bi_div_mod(perm, pageMaxQPower(), &p, &a);
-        qPages[p.bits[0U]]->SetAmplitude(a, amp);
+        qPages[(bitCapIntOcl)p]->SetAmplitude(a, amp);
     }
     real1_f ProbAll(bitCapInt perm)
     {
         bitCapInt p, a;
         bi_div_mod(perm, pageMaxQPower(), &p, &a);
-        return qPages[p.bits[0U]]->ProbAll(a);
+        return qPages[(bitCapIntOcl)p]->ProbAll(a);
     }
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);

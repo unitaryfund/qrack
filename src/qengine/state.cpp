@@ -58,9 +58,9 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     stateVec->clear();
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
-        stateVec->write(initState.bits[0U], GetNonunitaryPhase());
+        stateVec->write((bitCapIntOcl)initState, GetNonunitaryPhase());
     } else {
-        stateVec->write(initState.bits[0U], phaseFac);
+        stateVec->write((bitCapIntOcl)initState, phaseFac);
     }
 }
 
@@ -205,7 +205,7 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
         return ZERO_CMPLX;
     }
 
-    return stateVec->read(perm.bits[0U]);
+    return stateVec->read((bitCapIntOcl)perm);
 }
 
 void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
@@ -222,7 +222,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     if (runningNorm != REAL1_DEFAULT_ARG) {
-        runningNorm += norm(amp) - norm(stateVec->read(perm.bits[0U]));
+        runningNorm += norm(amp) - norm(stateVec->read((bitCapIntOcl)perm));
     }
 
     if (!stateVec) {
@@ -230,7 +230,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
         stateVec->clear();
     }
 
-    stateVec->write(perm.bits[0U], amp);
+    stateVec->write((bitCapIntOcl)perm, amp);
 }
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -251,10 +251,10 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
         } else {
             phase = ONE_CMPLX;
         }
-        stateVec->write(perm.bits[0U], phase);
+        stateVec->write((bitCapIntOcl)perm, phase);
     } else {
         real1 nrm = abs(phaseFac);
-        stateVec->write(perm.bits[0U], phaseFac / nrm);
+        stateVec->write((bitCapIntOcl)perm, phaseFac / nrm);
     }
 
     runningNorm = ONE_R1;
@@ -702,7 +702,7 @@ void QEngineCPU::XMask(bitCapInt mask)
     }
 
     Dispatch(maxQPowerOcl, [this, mask] {
-        const bitCapIntOcl maskOcl = mask.bits[0U];
+        const bitCapIntOcl maskOcl = (bitCapIntOcl)mask;
         const bitCapIntOcl otherMask = (maxQPowerOcl - 1U) ^ maskOcl;
         ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             const bitCapIntOcl otherRes = lcv & otherMask;
@@ -752,7 +752,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
         const bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
         const complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
         const complex iPhaseFac = ONE_CMPLX / phaseFac;
-        const bitCapIntOcl maskOcl = mask.bits[0U];
+        const bitCapIntOcl maskOcl = (bitCapIntOcl)mask;
         const bitCapIntOcl otherMask = (maxQPowerOcl - 1U) ^ maskOcl;
         ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             const bitCapIntOcl otherRes = lcv & otherMask;
@@ -780,7 +780,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (!controls.size()) {
-        Mtrx(mtrxs + (mtrxSkipValueMask.bits[0U] * 4U), qubitIndex);
+        Mtrx(mtrxs + ((bitCapIntOcl)mtrxSkipValueMask * 4U), qubitIndex);
         return;
     }
 
@@ -797,9 +797,9 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     std::vector<bitCapIntOcl> mtrxSkipPowersOcl(mtrxSkipPowers.size());
     std::transform(mtrxSkipPowers.begin(), mtrxSkipPowers.end(), mtrxSkipPowersOcl.begin(),
-        [](bitCapInt i) { return i.bits[0U]; });
+        [](bitCapInt i) { return (bitCapIntOcl)i; });
 
-    const bitCapIntOcl mtrxSkipValueMaskOcl = mtrxSkipValueMask.bits[0U];
+    const bitCapIntOcl mtrxSkipValueMaskOcl = (bitCapIntOcl)mtrxSkipValueMask;
 
     const real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
 
@@ -893,7 +893,7 @@ void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
         const complex phaseFac(cosine, sine);
         const complex phaseFacAdj(cosine, -sine);
         ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl perm = lcv & mask.bits[0U];
+            bitCapIntOcl perm = lcv & (bitCapIntOcl)mask;
             // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
             // c accumulates the total bits set in v
             bitLenInt c;
@@ -943,7 +943,7 @@ void QEngineCPU::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCa
         const complex phaseFacAdj(cosine, -sine);
 
         ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl perm = lcv & mask.bits[0U];
+            bitCapIntOcl perm = lcv & (bitCapIntOcl)mask;
             // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
             // c accumulates the total bits set in v
             bitLenInt c;
@@ -1329,7 +1329,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         return;
     }
 
-    const bitCapIntOcl disposedPermOcl = disposedPerm.bits[0U];
+    const bitCapIntOcl disposedPermOcl = (bitCapIntOcl)disposedPerm;
     const bitCapIntOcl remainderPower = pow2Ocl(nLength);
     const bitCapIntOcl skipMask = pow2Ocl(start) - 1U;
     const bitCapIntOcl disposedRes = disposedPermOcl << (bitCapIntOcl)start;
@@ -1495,7 +1495,7 @@ real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
     const unsigned num_threads = GetConcurrencyLevel();
     std::unique_ptr<real1[]> probs(new real1[num_threads]());
 
-    const bitCapIntOcl perm = permutation.bits[0U] << ((bitCapIntOcl)start);
+    const bitCapIntOcl perm = (bitCapIntOcl)permutation << ((bitCapIntOcl)start);
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         probs[cpu] += norm(stateVec->read(lcv | perm));
     };
@@ -1532,7 +1532,7 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
         return ZERO_R1_F;
     }
 
-    bitCapIntOcl v = mask.bits[0U]; // count the number of bits set in v
+    bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
     while (v) {
         bitCapIntOcl oldV = v;
@@ -1543,7 +1543,7 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
     const unsigned num_threads = GetConcurrencyLevel();
     std::unique_ptr<real1[]> probs(new real1[num_threads]());
 
-    const bitCapIntOcl permutationOcl = permutation.bits[0U];
+    const bitCapIntOcl permutationOcl = (bitCapIntOcl)permutation;
     stateVec->isReadLocked = false;
     par_for_mask(0U, maxQPowerOcl, skipPowersVec, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         probs[cpu] += norm(stateVec->read(lcv | permutationOcl));
@@ -1578,7 +1578,7 @@ real1_f QEngineCPU::ProbParity(bitCapInt mask)
     const unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<real1[]> oddChanceBuff(new real1[numCores]());
 
-    const bitCapIntOcl maskOcl = mask.bits[0U];
+    const bitCapIntOcl maskOcl = (bitCapIntOcl)mask;
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         bool parity = false;
         bitCapIntOcl v = lcv & maskOcl;
@@ -1650,7 +1650,7 @@ bool QEngineCPU::ForceMParity(bitCapInt mask, bool result, bool doForce)
     const unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<real1[]> oddChanceBuff(new real1[numCores]());
 
-    const bitCapIntOcl maskOcl = mask.bits[0U];
+    const bitCapIntOcl maskOcl = (bitCapIntOcl)mask;
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         bool parity = false;
         bitCapIntOcl v = lcv & maskOcl;
@@ -1756,8 +1756,8 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
     CHECK_ZERO_SKIP();
 
     Dispatch(maxQPowerOcl, [this, regMask, result, nrm] {
-        const bitCapIntOcl regMaskOcl = regMask.bits[0U];
-        const bitCapIntOcl resultOcl = result.bits[0U];
+        const bitCapIntOcl regMaskOcl = (bitCapIntOcl)regMask;
+        const bitCapIntOcl resultOcl = (bitCapIntOcl)result;
         ParallelFunc fn = [&](const bitCapIntOcl& i, const unsigned& cpu) {
             if ((i & regMaskOcl) == resultOcl) {
                 stateVec->write(i, nrm * stateVec->read(i));

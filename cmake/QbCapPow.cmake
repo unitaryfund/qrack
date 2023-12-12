@@ -1,4 +1,15 @@
-set(QBCAPPOW "7" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 6, equivalent to >= 64 qubits)")
-if (QBCAPPOW LESS 6)
-    message(FATAL_ERROR "QBCAPPOW must be at least 6, equivalent to >= 64 qubits!")
-endif (QBCAPPOW LESS 6)
+set(QBCAPPOW "7" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
+
+if (QBCAPPOW LESS 5)
+    message(FATAL_ERROR "QBCAPPOW must be at least 5, equivalent to >= 32 qubits!")
+endif (QBCAPPOW LESS 5)
+
+if (QBCAPPOW LESS UINTPOW)
+    message(FATAL_ERROR "QBCAPPOW must be greater than or equal to UINTPOW!")
+endif (QBCAPPOW LESS UINTPOW)
+
+if (QBCAPPOW GREATER 6)
+    target_sources(qrack PRIVATE
+        src/common/big_integer.cpp
+        )
+endif (QBCAPPOW GREATER 6)

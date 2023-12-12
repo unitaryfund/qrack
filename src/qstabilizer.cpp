@@ -305,7 +305,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    stateVec[entry.permutation.bits[0U]] = entry.amplitude;
+    stateVec[(bitCapIntOcl)entry.permutation] = entry.amplitude;
 }
 
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
@@ -326,7 +326,7 @@ void QStabilizer::setBasisState(const real1_f& nrm, std::map<bitCapInt, complex>
 void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    outputProbs[entry.permutation.bits[0U]] = norm(entry.amplitude);
+    outputProbs[(bitCapIntOcl)entry.permutation] = norm(entry.amplitude);
 }
 
 real1_f QStabilizer::getExpectation(

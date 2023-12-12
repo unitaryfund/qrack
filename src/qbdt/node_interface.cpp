@@ -172,7 +172,7 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
     const bitCapInt Stride = pStride;
     bitCapInt _t;
     bi_div_mod(end, pStride, &_t, NULL);
-    unsigned threads = _t.bits[0U];
+    unsigned threads = (bitCapIntOcl)_t;
     if (threads > numThreads) {
         threads = numThreads;
     }

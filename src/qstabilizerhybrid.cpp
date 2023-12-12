@@ -1378,7 +1378,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         real1_f partProb = ZERO_R1_F;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         const unsigned numCores =
-            (bi_compare(maxLcv, GetConcurrencyLevel()) < 0) ? maxLcv.bits[0U] : GetConcurrencyLevel();
+            (bi_compare(maxLcv, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxLcv : GetConcurrencyLevel();
         std::vector<QStabilizerHybridPtr> clones;
         for (unsigned i = 0U; i < numCores; ++i) {
             clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
@@ -1562,7 +1562,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bool foundM = false;
 
     const unsigned numCores =
-        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
@@ -1678,7 +1678,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const unsigned numCores =
-        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
@@ -1719,7 +1719,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
     if (rng.size()) {                                                                                                  \
         for (unsigned shot = 0U; shot < rng.size(); ++shot) {                                                          \
-            shotsArray[shot + (shots - rng.size())] = d.bits[0U];                                                      \
+            shotsArray[shot + (shots - rng.size())] = (bitCapIntOcl)d;                                                 \
         }                                                                                                              \
     }                                                                                                                  \
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();                                       \
@@ -1751,13 +1751,13 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
     if (!IsProbBuffered()) {
         par_for(0U, shots,
-            [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = SampleClone(qPowers).bits[0U]; });
+            [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (bitCapIntOcl)SampleClone(qPowers); });
 
         return;
     }
 
     std::vector<real1_f> rng = GenerateShotProbs(shots);
-    const auto shotFunc = [&](bitCapInt sample, unsigned shot) { shotsArray[shot] = sample.bits[0U]; };
+    const auto shotFunc = [&](bitCapInt sample, unsigned shot) { shotsArray[shot] = (bitCapIntOcl)sample; };
     real1 partProb = ZERO_R1;
     bitCapInt d = ZERO_BCI;
 
@@ -1767,7 +1767,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     const unsigned numCores =
-        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? maxQPower.bits[0U] : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {

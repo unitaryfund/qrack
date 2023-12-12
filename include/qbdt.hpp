@@ -105,7 +105,7 @@ protected:
                 scale *= leaf->scale;
             }
 
-            getLambda(i.bits[0U], scale);
+            getLambda((bitCapIntOcl)i, scale);
         });
     }
     template <typename Fn> void SetTraversal(Fn setLambda)
@@ -123,7 +123,7 @@ protected:
                 leaf = leaf->branches[SelectBit(i, j)];
             }
 
-            setLambda(i.bits[0U], leaf);
+            setLambda((bitCapIntOcl)i, leaf);
         });
 
         root->PopStateVector(qubitCount);

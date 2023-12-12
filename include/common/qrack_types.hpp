@@ -14,13 +14,13 @@
 
 #define _USE_MATH_DEFINES
 
+#include "config.h"
+
 #include <complex>
 #include <functional>
 #include <limits>
 #include <math.h>
 #include <memory>
-
-#include "big_integer.hpp"
 
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
@@ -42,6 +42,25 @@
 #define bitLenInt uint32_t
 #else
 #define bitLenInt uint64_t
+#endif
+
+#if UINTPOW < 4
+#define bitCapIntOcl uint8_t
+#elif UINTPOW < 5
+#define bitCapIntOcl uint16_t
+#elif UINTPOW < 6
+#define bitCapIntOcl uint32_t
+#else
+#define bitCapIntOcl uint64_t
+#endif
+
+#if QBCAPPOW < 6
+#define bitCapInt uint32_t
+#elif QBCAPPOW < 7
+#define bitCapInt uint64_t
+#else
+#include "big_integer.hpp"
+#define bitCapInt BigInteger
 #endif
 
 #if FPPOW < 5
@@ -80,17 +99,6 @@ typedef boost::multiprecision::float128 real1_f;
 typedef double real1_s;
 #endif
 
-#if UINTPOW < 4
-#define bitCapIntOcl uint8_t
-#elif UINTPOW < 5
-#define bitCapIntOcl uint16_t
-#elif UINTPOW < 6
-#define bitCapIntOcl uint32_t
-#else
-#define bitCapIntOcl uint64_t
-#endif
-
-#define bitCapInt BigInteger
 const bitCapInt ONE_BCI = 1U;
 const bitCapInt ZERO_BCI = 0U;
 constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);

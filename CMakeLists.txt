@@ -21,7 +21,6 @@ endif (PACK_DEBIAN)
 
 # Declare the library
 add_library (qrack STATIC
-    src/common/big_integer.cpp
     src/common/functions.cpp
     src/common/parallel_for.cpp
     src/qinterface/gates.cpp
@@ -106,12 +105,12 @@ include ("cmake/FpPow.cmake")
 include ("cmake/OclMemGuards.cmake")
 include ("cmake/Pstridepow.cmake")
 include ("cmake/Pure32.cmake")
+include ("cmake/UIntPow.cmake")
 include ("cmake/QbCapPow.cmake")
 include ("cmake/Qbdt.cmake")
 include ("cmake/QUnit_CPU_Parallel.cmake")
 include ("cmake/RegGates.cmake")
 include ("cmake/RotApi.cmake")
-include ("cmake/UIntPow.cmake")
 include ("cmake/VM6502Q.cmake")
 if (ENABLE_EXAMPLES AND NOT ENABLE_EMIT_LLVM)
     include ("cmake/Examples.cmake")

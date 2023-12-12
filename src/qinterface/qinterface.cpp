@@ -258,8 +258,8 @@ bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vect
 real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {
     const bitCapIntOcl startMask = pow2Ocl(start) - 1U;
-    const bitCapIntOcl maxLcv = (maxQPower >> length).bits[0U];
-    const bitCapIntOcl p = permutation.bits[0U];
+    const bitCapIntOcl maxLcv = (bitCapIntOcl)(maxQPower >> length);
+    const bitCapIntOcl p = (bitCapIntOcl)permutation;
     real1 prob = ZERO_R1;
     for (bitCapIntOcl lcv = 0U; lcv < maxLcv; ++lcv) {
         bitCapIntOcl i = lcv & startMask;
@@ -559,7 +559,7 @@ void QInterface::MultiShotMeasureMask(
     }
 
     par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
-        shotsArray[shot] = (unsigned)SampleClone(qPowers).bits[0U];
+        shotsArray[shot] = (unsigned)(bitCapIntOcl)SampleClone(qPowers);
     });
 }
 

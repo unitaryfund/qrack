@@ -271,6 +271,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
     return i;
 }
 
+#if QBCAPPOW > 6
 std::ostream& operator<<(std::ostream& os, bitCapInt b)
 {
     if (bi_compare_0(b) == 0) {
@@ -282,7 +283,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
     std::vector<std::string> digits;
     while (bi_compare_0(b) != 0) {
         bitCapInt quo;
-        unsigned rem;
+        BIG_INTEGER_HALF_WORD rem;
         bi_div_mod_small(b, 10U, &quo, &rem);
         digits.push_back(std::to_string((unsigned char)rem));
         b = quo;
@@ -315,5 +316,5 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
 
     return is;
 }
-
+#endif
 } // namespace Qrack

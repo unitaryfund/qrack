@@ -68,7 +68,7 @@ void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
     const bitCapInt maxI = pow2Ocl(controls.size()) - 1U;
     for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxI) < 0; bi_increment(&lcv, 1U)) {
         const bitCapInt index = pushApartBits(lcv, mtrxSkipPowers) | mtrxSkipValueMask;
-        MCMtrx(controls, mtrxs + index.bits[0U] * 4U, qubitIndex);
+        MCMtrx(controls, mtrxs + (((bitCapIntOcl)index) << 2U), qubitIndex);
 
         const bitCapInt lcvDiff = lcv ^ (lcv + ONE_BCI);
         for (size_t bit_pos = 0U; bit_pos < controls.size(); ++bit_pos) {
@@ -78,7 +78,7 @@ void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
         }
     }
     const bitCapInt index = pushApartBits(maxI, mtrxSkipPowers) | mtrxSkipValueMask;
-    MCMtrx(controls, mtrxs + index.bits[0U] * 4U, qubitIndex);
+    MCMtrx(controls, mtrxs + (((bitCapIntOcl)index) << 2U), qubitIndex);
 }
 
 void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)

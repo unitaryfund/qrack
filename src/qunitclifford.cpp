@@ -716,7 +716,7 @@ void QUnitClifford::MultiShotMeasureMask(
     std::map<bitCapInt, int>::iterator it = results.begin();
     while (it != results.end() && (j < shots)) {
         for (int i = 0; i < it->second; ++i) {
-            shotsArray[j] = it->first.bits[0U];
+            shotsArray[j] = (bitCapIntOcl)it->first;
             ++j;
         }
 

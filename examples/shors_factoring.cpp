@@ -59,7 +59,7 @@ real1_f calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* 
 
     (*numerator) = approxNumer;
     (*denominator) = approxDenom;
-    return ((real1_f)bi_to_double(approxNumer)) / approxDenom.bits[0U];
+    return ((real1_f)bi_to_double(approxNumer)) / (bitCapIntOcl)approxDenom;
 }
 
 int main()
@@ -139,8 +139,8 @@ int main()
         bi_lshift_ip(&r, 1U);
     }
     bitCapInt apowrhalf = ((bitCapIntOcl)pow(bi_to_double(base), bi_to_double(r >> 1U))) % toFactor;
-    bitCapIntOcl f1 = gcd(apowrhalf + ONE_BCI, toFactor).bits[0U];
-    bitCapIntOcl f2 = gcd(apowrhalf - ONE_BCI, toFactor).bits[0U];
+    bitCapIntOcl f1 = (bitCapIntOcl)gcd(apowrhalf + ONE_BCI, toFactor);
+    bitCapIntOcl f2 = (bitCapIntOcl)gcd(apowrhalf - ONE_BCI, toFactor);
     bitCapIntOcl res1 = f1;
     bitCapIntOcl res2 = f2;
     if (((f1 * f2) != toFactor) && ((f1 * f2) > 1) &&

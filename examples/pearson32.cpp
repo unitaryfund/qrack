@@ -113,8 +113,8 @@ int main()
     bitCapInt classicalResult = Pearson(x, KEY_SIZE, T);
     bitCapInt quantumResult = qi->MReg(8 * KEY_SIZE, 8 * HASH_SIZE);
 
-    std::cout << "Classical result: " << classicalResult.bits[0U] << std::endl;
-    std::cout << "Quantum result:   " << quantumResult.bits[0U] << std::endl;
+    std::cout << "Classical result: " << (bitCapIntOcl)classicalResult << std::endl;
+    std::cout << "Quantum result:   " << (bitCapIntOcl)quantumResult << std::endl;
 
     qi->SetPermutation(ZERO_BCI);
     qi->H(0, 8);
@@ -129,6 +129,6 @@ int main()
 
     bitCapInt quantumKey = qi->MReg(0, 8U * KEY_SIZE);
     quantumResult = qi->MReg(8U * KEY_SIZE, 8U * HASH_SIZE);
-    std::cout << "Even result:      (key: " << quantumKey.bits[0U] << ", hash: " << quantumResult.bits[0U] << ")"
+    std::cout << "Even result:      (key: " << (bitCapIntOcl)quantumKey << ", hash: " << (bitCapIntOcl)quantumResult << ")"
               << std::endl;
 };

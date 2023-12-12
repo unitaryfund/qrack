@@ -78,6 +78,8 @@ typedef struct BigInteger {
             bits[i] = 0U;
         }
     }
+
+    explicit operator BIG_INTEGER_WORD() const { return bits[0U]; }
 } BigInteger;
 
 inline void bi_set_0(BigInteger* p)
@@ -135,10 +137,10 @@ inline int bi_compare_1(const BigInteger& left)
             return 1;
         }
     }
-    if (left.bits[0] > 1) {
+    if (left.bits[0] > 1U) {
         return 1;
     }
-    if (left.bits[0] < 1) {
+    if (left.bits[0] < 1U) {
         return -1;
     }
 
@@ -197,7 +199,7 @@ inline void bi_sub_ip(BigInteger* left, const BigInteger& right)
     left->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-inline void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
+inline void bi_increment(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 {
     BIG_INTEGER_WORD temp = pBigInt->bits[0];
     pBigInt->bits[0] += value;
@@ -212,7 +214,7 @@ inline void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
     }
 }
 
-inline void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
+inline void bi_decrement(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 {
     BIG_INTEGER_WORD temp = pBigInt->bits[0];
     pBigInt->bits[0] -= value;
@@ -268,7 +270,7 @@ inline void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     }
 }
 
-inline BigInteger bi_rshift_word(const BigInteger& left, BIG_INTEGER_WORD rightMult)
+inline BigInteger bi_rshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult)
 {
     if (!rightMult) {
         return left;
@@ -285,7 +287,7 @@ inline BigInteger bi_rshift_word(const BigInteger& left, BIG_INTEGER_WORD rightM
     return result;
 }
 
-inline void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
+inline void bi_rshift_word_ip(BigInteger* left, const BIG_INTEGER_WORD& rightMult)
 {
     if (!rightMult) {
         return;
