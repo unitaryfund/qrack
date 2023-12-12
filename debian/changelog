@@ -1,3 +1,9 @@
+libqrack (9.1.6) focal; urgency=medium
+
+  * Fix QBCAPPOW/UINTPOW in source (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Dec 2023 09:07:11 -0500
+
 libqrack (9.1.5) bionic; urgency=medium
 
   * Bionic bump for source (3/3)
