@@ -76,13 +76,13 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bo
     const bitCapInt Stride = bdtStride;
     bitCapInt _t;
     bi_div_mod(pow2(qubitCount - (maxQubit + 1U)), Stride, &_t, NULL);
-    unsigned underThreads = _t.bits[0U];
+    unsigned underThreads = (bitCapIntOcl)_t;
     if (underThreads == 1U) {
         underThreads = 0U;
     }
     const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underThreads + 1U));
     bi_div_mod(end, Stride, &_t, NULL);
-    unsigned threads = _t.bits[0U];
+    unsigned threads = (bitCapIntOcl)_t;
     if (threads > nmCrs) {
         threads = nmCrs;
     }
@@ -154,7 +154,7 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
     const unsigned nmCrs = GetConcurrencyLevel();
     bitCapInt _t;
     bi_div_mod(end, Stride, &_t, NULL);
-    unsigned threads = _t.bits[0U];
+    unsigned threads = (bitCapIntOcl)_t;
     if (threads > nmCrs) {
         threads = nmCrs;
     }

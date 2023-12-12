@@ -269,7 +269,7 @@ void QUnitMulti::RedistributeQEngines()
         if (bi_compare(deviceList[devIndex].maxSize, devSizes[devIndex] + qinfos[i].unit->GetMaxQPower()) < 0) {
             throw bad_alloc("QUnitMulti: device allocation limits exceeded.");
         }
-        devSizes[devIndex] += qinfos[i].unit->GetMaxQPower().bits[0U];
+        devSizes[devIndex] += (bitCapIntOcl)qinfos[i].unit->GetMaxQPower();
     }
 }
 } // namespace Qrack

@@ -271,6 +271,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
     return i;
 }
 
+#if QBCAPPOW > 6
 std::ostream& operator<<(std::ostream& os, bitCapInt b)
 {
     if (bi_compare_0(b) == 0) {
@@ -315,5 +316,5 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
 
     return is;
 }
-
+#endif
 } // namespace Qrack

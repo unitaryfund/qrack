@@ -89,7 +89,7 @@ int main()
         bitLenInt unfixedLength = indexLength - fixedLength;
         bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
         bitCapIntOcl unfixedMask = (1 << unfixedLength) - 1;
-        bitCapIntOcl key = qReg->MReg(2 * valueLength, indexLength).bits[0U] & fixedLengthMask;
+        bitCapIntOcl key = (bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength) & fixedLengthMask;
 
         // (We could either manipulate the quantum bits directly to check the bounds, or rely on auxiliary classical
         // computing components, as need and efficiency dictate).
@@ -197,7 +197,7 @@ int main()
     if (!foundPerm && (i == (indexLength / 2))) {
         // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
         // one match.
-        bitCapIntOcl key = qReg->MReg(2 * valueLength, indexLength).bits[0U];
+        bitCapIntOcl key = (bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength);
         if (toLoad[key] == TARGET_VALUE) {
             foundPerm = true;
         }
@@ -214,7 +214,7 @@ int main()
         bitLenInt unfixedLength = indexLength - fixedLength;
         bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
         bitCapIntOcl checkIncrement = 1 << (unfixedLength - 2);
-        bitCapIntOcl key = qReg->MReg(2 * valueLength, indexLength).bits[0U] & fixedLengthMask;
+        bitCapIntOcl key = (bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength) & fixedLengthMask;
         for (i = 0; i < 4; i++) {
             // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
             // computing components, as need and efficiency dictate).

@@ -17,8 +17,6 @@
 #include <set>
 #include <vector>
 
-namespace Qrack {
-
 #define _bi_compare_1(left) \
     if (left > 1U) { \
         return 1; \
@@ -96,6 +94,9 @@ inline void bi_sub_ip(uint64_t* left, const uint64_t& right) { *left -= right; }
 inline void bi_div_mod(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
 inline void bi_div_mod_small(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
 #endif
+
+
+namespace Qrack {
 
 inline bitLenInt log2Ocl(bitCapIntOcl n)
 {
@@ -187,8 +188,10 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
 
+#if QBCAPPOW > 6
 std::ostream& operator<<(std::ostream& os, bitCapInt b);
 std::istream& operator>>(std::istream& is, bitCapInt& b);
+#endif
 
 #if ENABLE_ENV_VARS
 const real1_f _qrack_qbdt_sep_thresh = getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")

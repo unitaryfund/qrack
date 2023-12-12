@@ -72,7 +72,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         bitCapInt _t;
         bi_div_mod(pow2(depth), pStride, &_t, NULL);
-        unsigned underThreads = _t.bits[0U];
+        unsigned underThreads = (bitCapIntOcl)_t;
 
         if (underThreads == 1U) {
             underThreads = 0U;
