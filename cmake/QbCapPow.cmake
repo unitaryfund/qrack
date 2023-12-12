@@ -4,6 +4,10 @@ if (QBCAPPOW LESS 5)
     message(FATAL_ERROR "QBCAPPOW must be at least 5, equivalent to >= 32 qubits!")
 endif (QBCAPPOW LESS 5)
 
+if (QBCAPPOW LESS UINTPOW)
+    message(FATAL_ERROR "QBCAPPOW must be greater than or equal to UINTPOW!")
+endif (QBCAPPOW LESS UINTPOW)
+
 if (QBCAPPOW GREATER 6)
     target_sources(qrack PRIVATE
         src/common/big_integer.cpp
