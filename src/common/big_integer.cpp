@@ -81,7 +81,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
                 BIG_INTEGER_WORD temp = result.bits[j];
                 result.bits[j] += partMul.bits[j];
                 int k = j;
-                while ((k < BIG_INTEGER_WORD_SIZE) && (temp > result.bits[k])) {
+                while ((k < BIG_INTEGER_MAX_WORD_INDEX) && (temp > result.bits[k])) {
                     temp = result.bits[++k]++;
                 }
             }
