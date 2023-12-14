@@ -1,3 +1,9 @@
+libqrack (9.1.11) jammy; urgency=medium
+
+  * Fix SEGFAULT in big_integer.cpp multiplication (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 13 Dec 2023 19:56:51 -0500
+
 libqrack (9.1.10) focal; urgency=medium
 
   * Fix SEGFAULT in big_integer.cpp multiplication (Focal, 1/3)
