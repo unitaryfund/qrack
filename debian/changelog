@@ -1,3 +1,9 @@
+libqrack (9.1.12) bionic; urgency=medium
+
+  * Fix SEGFAULT in big_integer.cpp multiplication (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 13 Dec 2023 21:16:59 -0500
+
 libqrack (9.1.11) jammy; urgency=medium
 
   * Fix SEGFAULT in big_integer.cpp multiplication (Jammy, 2/3)
