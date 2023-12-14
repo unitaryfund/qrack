@@ -147,9 +147,9 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
                 result |= pow2Ocl(bits[j]);
             }
         }
-        real1 nrmlzr = ProbMask(regMask, result);
+        real1_f nrmlzr = ProbMask(regMask, result);
         complex nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
-        if ((ONE_R1 - nrmlzr) > FP_NORM_EPSILON) {
+        if ((ONE_R1_F - nrmlzr) > FP_NORM_EPSILON) {
             ApplyM(regMask, (bitCapInt)result, nrm);
         }
 
