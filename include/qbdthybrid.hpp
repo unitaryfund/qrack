@@ -86,7 +86,7 @@ protected:
             ? std::stod(getenv("QRACK_QBDT_HYBRID_THRESHOLD"))
             : std::log2(strideBits - qubitCount);
 
-        if ((1.0 - threshold) <= FP_NORM_EPSILON) {
+        if ((2.0 - threshold) <= FP_NORM_EPSILON) {
             // This definitely won't switch.
             return;
         }
