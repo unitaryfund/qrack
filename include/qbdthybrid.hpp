@@ -436,6 +436,7 @@ public:
     {
         if (qbdt) {
             qbdt->CSwap(controls, qubit1, qubit2);
+            CheckThreshold();
         } else {
             engine->CSwap(controls, qubit1, qubit2);
         }
@@ -444,6 +445,7 @@ public:
     {
         if (qbdt) {
             qbdt->AntiCSwap(controls, qubit1, qubit2);
+            CheckThreshold();
         } else {
             engine->AntiCSwap(controls, qubit1, qubit2);
         }
@@ -544,6 +546,7 @@ public:
     {
         if (qbdt) {
             qbdt->CDEC(toSub, inOutStart, length, controls);
+            CheckThreshold();
         } else {
             engine->CDEC(toSub, inOutStart, length, controls);
         }
@@ -652,7 +655,6 @@ public:
     {
         if (qbdt) {
             qbdt->MUL(toMul, inOutStart, carryStart, length);
-            CheckThreshold();
         } else {
             engine->MUL(toMul, inOutStart, carryStart, length);
         }
@@ -661,7 +663,6 @@ public:
     {
         if (qbdt) {
             qbdt->DIV(toDiv, inOutStart, carryStart, length);
-            CheckThreshold();
         } else {
             engine->DIV(toDiv, inOutStart, carryStart, length);
         }
@@ -670,7 +671,6 @@ public:
     {
         if (qbdt) {
             qbdt->MULModNOut(toMul, modN, inStart, outStart, length);
-            CheckThreshold();
         } else {
             engine->MULModNOut(toMul, modN, inStart, outStart, length);
         }
@@ -679,7 +679,6 @@ public:
     {
         if (qbdt) {
             qbdt->IMULModNOut(toMul, modN, inStart, outStart, length);
-            CheckThreshold();
         } else {
             engine->IMULModNOut(toMul, modN, inStart, outStart, length);
         }
@@ -835,10 +834,12 @@ public:
     }
     real1_f ProbAll(bitCapInt fullRegister)
     {
-        if (qbdt) {
-            return qbdt->ProbAll(fullRegister);
+        const real1_f toRet = qbdt ? qbdt->ProbAll(fullRegister) : engine->ProbAll(fullRegister);
+        if (toRet >= (ONE_R1_F - FP_NORM_EPSILON)) {
+            SetPermutation(fullRegister);
         }
-        return engine->ProbAll(fullRegister);
+
+        return toRet;
     }
     real1_f ProbMask(bitCapInt mask, bitCapInt permutation)
     {
