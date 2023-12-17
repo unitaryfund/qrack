@@ -70,15 +70,29 @@ protected:
 
     void CheckThreshold()
     {
-        double threshold = getenv("QRACK_QBDT_HYBRID_THRESHOLD")
-            ? std::log2(qubitCount) * std::stod(getenv("QRACK_QBDT_HYBRID_THRESHOLD"))
-            : (std::log2(qubitCount) / 4);
+        if (qubitCount < 2U) {
+            // Don't switch below qubit threshold.
+            return;
+        }
+
+        const bitLenInt strideBits = log2Ocl(GetStride());
+
+        if (qubitCount <= strideBits) {
+            // Don't switch below qubit threshold.
+            return;
+        }
+
+        const double threshold = getenv("QRACK_QBDT_HYBRID_THRESHOLD")
+            ? std::stod(getenv("QRACK_QBDT_HYBRID_THRESHOLD"))
+            : std::log2(strideBits - qubitCount);
+
         if ((1.0 - threshold) <= FP_NORM_EPSILON) {
             // This definitely won't switch.
             return;
         }
+
         const size_t count = qbdt->CountBranches();
-        if ((threshold * bi_to_double(maxQPower)) < count) {
+        if (count > (threshold * bi_to_double(maxQPower))) {
             SwitchMode(false);
         }
     }
