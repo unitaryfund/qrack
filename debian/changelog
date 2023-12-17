@@ -1,6 +1,12 @@
+libqrack (9.1.15) bionic; urgency=medium
+
+  * Optimize QBdtHybrid (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 17 Dec 2023 12:56:14 -0500
+
 libqrack (9.1.14) jammy; urgency=medium
 
-  * Optimize QBdtHybrid (Jammy 2/3)
+  * Optimize QBdtHybrid (Jammy, 2/3)
 
  -- Daniel Strano <dan@unitary.fund>  Sun, 17 Dec 2023 11:54:30 -0500
 
