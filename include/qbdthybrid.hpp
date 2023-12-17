@@ -75,7 +75,7 @@ protected:
             return;
         }
 
-        const bitLenInt strideBits = log2Ocl(GetStride());
+        const bitLenInt strideBits = log2Ocl(GetConcurrencyLevel() * GetStride());
 
         if (qubitCount <= strideBits) {
             // Don't switch below qubit threshold.
