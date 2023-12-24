@@ -14,7 +14,7 @@
 
 #include "qrack_types.hpp"
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) || defined(__ARM_ARCH_7S__) || defined(__aarch64__) || defined(_M_ARM64)
 #include "immintrin.h"
 #endif
 
@@ -101,7 +101,7 @@ inline bitLenInt log2Ocl(bitCapIntOcl n)
 #else
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - _lzcnt_u64((unsigned long long)n) - 1U);
 #endif
-#elif !defined(__APPLE__)
+#elif !defined(__APPLE__) && !defined(__ARM_ARCH_7S__) && !defined(__aarch64__) && !defined(_M_ARM64)
 #if UINTPOW < 6
     return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
 #else
