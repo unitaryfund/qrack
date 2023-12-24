@@ -14,7 +14,7 @@
 
 #include "qrack_types.hpp"
 
-#if !defined(__APPLE__) || defined(__ARM_ARCH_7S__) || defined(__aarch64__) || defined(_M_ARM64)
+#if !defined(__APPLE__) && !defined(__ARM_ARCH_7S__) && !defined(__aarch64__) && !defined(_M_ARM64)
 #include "immintrin.h"
 #endif
 
