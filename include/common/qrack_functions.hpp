@@ -92,9 +92,17 @@ inline bitLenInt log2Ocl(bitCapIntOcl n)
 {
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
 #if UINTPOW < 6
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    return (bitLenInt)(bitsInByte * sizeof(unsigned int) - _lzcnt_u32((unsigned int)n) - 1U);
+#else
     return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
+#endif
+#else
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - _lzcnt_u64((unsigned long long)n) - 1U);
 #else
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
+#endif
 #endif
 }
 
