@@ -4,6 +4,7 @@
 #cmakedefine ENABLE_SSE3 (!(defined(__GNUC__) || defined(__MINGW32__)) || __SSE3__)
 #cmakedefine ENABLE_DEVRAND 1
 #cmakedefine ENABLE_ENV_VARS 1
+#cmakedefine ENABLE_INTRINSICS 1
 #cmakedefine ENABLE_OCL_MEM_GUARDS 1
 #cmakedefine ENABLE_OPENCL 1
 #cmakedefine ENABLE_PTHREAD 1
