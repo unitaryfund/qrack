@@ -14,7 +14,9 @@
 
 #include "qrack_types.hpp"
 
+#if !defined(__APPLE__)
 #include "immintrin.h"
+#endif
 
 #include <set>
 #include <vector>
@@ -93,18 +95,26 @@ namespace Qrack {
 inline bitLenInt log2Ocl(bitCapIntOcl n)
 {
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
-#if UINTPOW < 6
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#if UINTPOW < 6
     return (bitLenInt)(bitsInByte * sizeof(unsigned int) - _lzcnt_u32((unsigned int)n) - 1U);
 #else
-    return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
-#endif
-#else
-#if defined(_WIN32) && !defined(__CYGWIN__)
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - _lzcnt_u64((unsigned long long)n) - 1U);
+#endif
+#elif !defined(__APPLE__)
+#if UINTPOW < 6
+    return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
 #else
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #endif
+#else
+    bitLenInt pow = 0U;
+    bitCapIntOcl p = n >> 1U;
+    while (p) {
+        p >>= 1U;
+        ++pow;
+    }
+    return pow;
 #endif
 }
 
