@@ -21,6 +21,7 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <numeric>
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
