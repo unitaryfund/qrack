@@ -359,28 +359,30 @@ endif (NOT ENABLE_EMIT_LLVM)
 configure_file (libqrack.pc.in libqrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/libqrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 install (FILES ${CMAKE_SOURCE_DIR}/debian/copyright DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack)
-add_custom_command(
-    OUTPUT "${CMAKE_BINARY_DIR}/changelog.gz"
-    COMMAND gzip -cn9 "${CMAKE_SOURCE_DIR}/debian/changelog" > "${CMAKE_BINARY_DIR}/changelog.gz"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    DEPENDS "${CMAKE_SOURCE_DIR}/debian/changelog"
-    COMMENT "Compressing changelog"
-)
-add_custom_target(changelog ALL DEPENDS "${CMAKE_BINARY_DIR}/changelog.gz")
-install(FILES "${CMAKE_BINARY_DIR}/changelog.gz"
-    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack"
-)
-add_custom_command(
-    OUTPUT "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
-    COMMAND gzip -cn9 "${CMAKE_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1" > "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    DEPENDS "${CMAKE_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1"
-    COMMENT "Compressing qrack_cl_precompile.1"
-)
-add_custom_target(qrack_cl_precompile.1 ALL DEPENDS "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz")
-install(FILES "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1"
-)
+if (NOT MSVC)
+    add_custom_command(
+        OUTPUT "${CMAKE_BINARY_DIR}/changelog.gz"
+        COMMAND gzip -cn9 "${CMAKE_SOURCE_DIR}/debian/changelog" > "${CMAKE_BINARY_DIR}/changelog.gz"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/debian/changelog"
+        COMMENT "Compressing changelog"
+    )
+    add_custom_target(changelog ALL DEPENDS "${CMAKE_BINARY_DIR}/changelog.gz")
+    install(FILES "${CMAKE_BINARY_DIR}/changelog.gz"
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/qrack"
+    )
+    add_custom_command(
+        OUTPUT "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
+        COMMAND gzip -cn9 "${CMAKE_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1" > "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/debian/docs/qrack_cl_precompile.1"
+        COMMENT "Compressing qrack_cl_precompile.1"
+    )
+    add_custom_target(qrack_cl_precompile.1 ALL DEPENDS "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz")
+    install(FILES "${CMAKE_BINARY_DIR}/qrack_cl_precompile.1.gz"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1"
+    )
+endif (NOT MSVC)
 
 include(InstallRequiredSystemLibraries)
 set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
