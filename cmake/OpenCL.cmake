@@ -1,17 +1,29 @@
-set (OPENCL_AMDSDK /opt/AMDAPPSDK-3.0 CACHE PATH "Installation path for the installed AMD OpenCL SDK, if used")
+if (MSVC)
+    set (OPENCL_AMDSDK "C:/Program Files (x86)/Common Files/Intel/Shared Libraries" CACHE PATH "Installation path for the installed AMD or Intel OpenCL SDK, if used")
+else (MSVC)
+    set (OPENCL_AMDSDK /opt/AMDAPPSDK-3.0 CACHE PATH "Installation path for the installed AMD or Intel OpenCL SDK, if used")
+endif (MSVC)
 
 # Options used when building the project
 find_package (OpenCL)
 if (NOT OpenCL_FOUND)
     # Attempt with AMD's OpenCL SDK
-    find_library (LIB_OPENCL OpenCL PATHS ${OPENCL_AMDSDK}/lib/x86_64/)
+    if (MSVC)
+        find_library (LIB_OPENCL OpenCL PATHS ${OPENCL_AMDSDK}/lib/)
+    else (MSVC)
+        find_library (LIB_OPENCL OpenCL PATHS ${OPENCL_AMDSDK}/lib/x86_64/)
+    endif (MSVC)
     if (NOT LIB_OPENCL)
         set (ENABLE_OPENCL OFF)
-    else ()
+    elseif (NOT MSVC)
         # Found, set the required include path.
         set (OpenCL_INCLUDE_DIRS ${OPENCL_AMDSDK}/include CACHE PATH "AMD OpenCL SDK Header include path")
-        message ("OpenCL support found in the AMD SDK")
+        set (OpenCL_COMPILATION_OPTIONS
+            -Wno-ignored-attributes
+            -Wno-deprecated-declarations
+            CACHE STRING "AMD OpenCL SDK Compilation Option Requirements")
     endif()
+    message ("OpenCL support found in the AMD or Intel SDK (OPENCL_AMSDK directory variable)")
 endif ()
 
 if (PACK_DEBIAN)
