@@ -14,6 +14,8 @@
 
 #include "qrack_types.hpp"
 
+#include "immintrin.h"
+
 #include <set>
 #include <vector>
 
