@@ -62,11 +62,7 @@ endif (ENABLE_ALU)
 
 configure_file(examples/data/powers_of_2.csv examples/data/powers_of_2.csv COPYONLY)
 
-if (MSVC)
-    set(EXAMPLE_COMPILE_OPTS ${TEST_COMPILE_OPTS})
-else (MSVC)
-    set(EXAMPLE_COMPILE_OPTS ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-endif (MSVC)
+set(EXAMPLE_COMPILE_OPTS ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (quantum_associative_memory PUBLIC ${EXAMPLE_COMPILE_OPTS})
 target_compile_options (teleport PUBLIC ${EXAMPLE_COMPILE_OPTS})
 target_compile_options (qneuron_classification PUBLIC ${EXAMPLE_COMPILE_OPTS})
