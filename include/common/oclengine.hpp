@@ -29,13 +29,13 @@
 #include <string>
 #include <sys/stat.h>
 
-#if defined(__APPLE__)
+#if defined(OPENCL_V3)
+#include <CL/opencl.hpp>
+#elif defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
 #include <OpenCL/cl.hpp>
 #elif defined(_WIN32) || ENABLE_SNUCL
 #include <CL/cl.hpp>
-#elif defined(OPENCL_V3)
-#include <CL/opencl.hpp>
 #else
 #include <CL/cl2.hpp>
 #endif
