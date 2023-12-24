@@ -10,10 +10,6 @@ if (NOT OpenCL_FOUND)
     else ()
         # Found, set the required include path.
         set (OpenCL_INCLUDE_DIRS ${OPENCL_AMDSDK}/include CACHE PATH "AMD OpenCL SDK Header include path")
-        set (OpenCL_COMPILATION_OPTIONS
-            -Wno-ignored-attributes
-            -Wno-deprecated-declarations
-            CACHE STRING "AMD OpenCL SDK Compilation Option Requirements")
         message ("OpenCL support found in the AMD SDK")
     endif()
 endif ()

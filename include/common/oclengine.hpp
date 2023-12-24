@@ -134,12 +134,7 @@ public:
         , preferredConcurrency(0U)
     {
         cl_int error;
-#if defined(_WIN32)
-        cl_command_queue_properties props = CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-        queue = cl::CommandQueue(c, d, &props, &error);
-#else
         queue = cl::CommandQueue(c, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
-#endif
         if (error != CL_SUCCESS) {
             queue = cl::CommandQueue(c, d, 0, &error);
             if (error != CL_SUCCESS) {
