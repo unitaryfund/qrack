@@ -31,6 +31,7 @@ QInterface::QInterface(
     , qubitCount(n)
     , amplitudeFloor(norm_thresh)
     , maxQPower(pow2(qubitCount))
+    , rand_generator(rgp)
     , rand_distribution(ZERO_R1_F, ONE_R1_F)
     , hardware_rand_generator(NULL)
 {
@@ -44,7 +45,7 @@ QInterface::QInterface(
         }
 #endif
 #endif
-    } else if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
+    } else if (!rand_generator) {
         rand_generator = std::make_shared<qrack_rand_gen>();
 #if SEED_DEVRAND
         // The original author of this code block (Daniel Strano) is NOT a cryptography expert. However, here's the
@@ -84,8 +85,6 @@ QInterface::QInterface(
         randomSeed = (uint32_t)std::time(0);
 #endif
         SetRandomSeed(randomSeed);
-    } else {
-        rand_generator = rgp;
     }
 }
 
