@@ -34,10 +34,7 @@ QInterface::QInterface(
     , rand_distribution(ZERO_R1_F, ONE_R1_F)
     , hardware_rand_generator(NULL)
 {
-#if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
-    useHardwareRNG = false;
-#endif
-
+#if ENABLE_RDRAND || ENABLE_RNDFILE || ENABLE_DEVRAND
     if (useHardwareRNG) {
         hardware_rand_generator = std::make_shared<RdRandom>();
 #if !ENABLE_RNDFILE && !ENABLE_DEVRAND
@@ -46,9 +43,8 @@ QInterface::QInterface(
             hardware_rand_generator = NULL;
         }
 #endif
-    }
-
-    if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
+#endif
+    } else if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
         rand_generator = std::make_shared<qrack_rand_gen>();
 #if SEED_DEVRAND
         // The original author of this code block (Daniel Strano) is NOT a cryptography expert. However, here's the
