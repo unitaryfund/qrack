@@ -72,7 +72,7 @@ QInterface::QInterface(
         // between "true quantum randomness" and "perfect statistical (whether pseudo-)randomness" as ontological
         // categories, now might there?
 
-        const int max_rdrand_tries = 10;
+        constexpr int max_rdrand_tries = 10;
         int i;
         for (i = 0; i < max_rdrand_tries; ++i) {
             if (sizeof(randomSeed) == getrandom(reinterpret_cast<char*>(&randomSeed), sizeof(randomSeed), GRND_RANDOM))
