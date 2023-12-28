@@ -39,7 +39,7 @@ class StateVectorArray;
 class StateVectorSparse;
 
 // This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
-class StateVector {
+class StateVector : public ParallelFor {
 protected:
     bitCapIntOcl capacity;
 
@@ -82,8 +82,6 @@ public:
     std::unique_ptr<complex[], void (*)(complex*)> amplitudes;
 
 protected:
-    static real1_f normHelper(const complex& c) { return (real1_f)norm(c); }
-
 #if defined(__APPLE__)
     complex* _aligned_state_vec_alloc(bitCapIntOcl allocSize)
     {
@@ -145,23 +143,35 @@ public:
         amplitudes.get()[i2] = c2;
     };
 
-    void clear() { std::fill(amplitudes.get(), amplitudes.get() + (bitCapIntOcl)capacity, ZERO_CMPLX); }
+    void clear() {
+        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            amplitudes[lcv] = ZERO_CMPLX;
+        });
+    }
 
     void copy_in(complex const* copyIn)
     {
         if (copyIn) {
-            std::copy(copyIn, copyIn + (bitCapIntOcl)capacity, amplitudes.get());
+            par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                amplitudes[lcv] = copyIn[lcv];
+            });
         } else {
-            std::fill(amplitudes.get(), amplitudes.get() + (bitCapIntOcl)capacity, ZERO_CMPLX);
+            par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                amplitudes[lcv] = ZERO_CMPLX;
+            });
         }
     }
 
     void copy_in(complex const* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (copyIn) {
-            std::copy(copyIn, copyIn + length, amplitudes.get() + offset);
+            par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                amplitudes[lcv + offset] = copyIn[lcv];
+            });
         } else {
-            std::fill(amplitudes.get(), amplitudes.get() + length, ZERO_CMPLX);
+            par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                amplitudes[lcv + offset] = ZERO_CMPLX;
+            });
         }
     }
 
@@ -170,42 +180,61 @@ public:
     {
         if (copyInSv) {
             complex const* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes.get() + srcOffset;
-            std::copy(copyIn, copyIn + length, amplitudes.get() + dstOffset);
+            par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                amplitudes[lcv + dstOffset] = copyIn[lcv];
+            });
         } else {
-            std::fill(amplitudes.get() + dstOffset, amplitudes.get() + dstOffset + length, ZERO_CMPLX);
+            par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                amplitudes[lcv + dstOffset] = ZERO_CMPLX;
+            });
         }
     }
 
-    void copy_out(complex* copyOut) { std::copy(amplitudes.get(), amplitudes.get() + capacity, copyOut); }
+    void copy_out(complex* copyOut) {
+        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            copyOut[lcv] = amplitudes[lcv];
+        });
+    }
 
     void copy_out(complex* copyOut, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
-        std::copy(amplitudes.get() + offset, amplitudes.get() + offset + capacity, copyOut);
+        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            copyOut[lcv] = amplitudes[lcv + offset];
+        });
     }
 
     void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
 
     void copy(StateVectorArrayPtr toCopy)
     {
-        std::copy(toCopy->amplitudes.get(), toCopy->amplitudes.get() + capacity, amplitudes.get());
+        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            amplitudes[lcv] = toCopy->amplitudes[lcv];
+        });
     }
 
     void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorArray>(svp)); }
 
     void shuffle(StateVectorArrayPtr svp)
     {
-        std::swap_ranges(amplitudes.get() + (capacity >> 1U), amplitudes.get() + capacity, svp->amplitudes.get());
+        const bitCapIntOcl offset = capacity >> 1U;
+        par_for(0, offset, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            const complex tmp = amplitudes[lcv + offset];
+            amplitudes[lcv + offset] = svp->amplitudes[lcv];
+            svp->amplitudes[lcv] = tmp;
+        });
     }
 
     void get_probs(real1* outArray)
     {
-        std::transform(amplitudes.get(), amplitudes.get() + capacity, outArray, normHelper);
+        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            outArray[lcv] = norm(amplitudes[lcv]);
+        });
     }
 
     bool is_sparse() { return false; }
 };
 
-class StateVectorSparse : public StateVector, public ParallelFor {
+class StateVectorSparse : public StateVector {
 protected:
     SparseStateVecMap amplitudes;
     std::mutex mtx;
