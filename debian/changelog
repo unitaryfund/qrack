@@ -1,3 +1,9 @@
+libqrack (9.2.4) bionic; urgency=medium
+
+  * C++23 and minor improvements (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 28 Dec 2023 12:56:13 -0500
+
 libqrack (9.2.3) jammy; urgency=medium
 
   * C++23 and minor improvements (Jammy, 2/3)
