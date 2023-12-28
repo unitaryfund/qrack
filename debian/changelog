@@ -1,4 +1,4 @@
-libqrack (9.20.1) focal; urgency=medium
+libqrack (9.2.1) focal; urgency=medium
 
   * Fix control.in (Focal, 1/3)
 
