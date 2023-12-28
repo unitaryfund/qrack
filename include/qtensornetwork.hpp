@@ -125,22 +125,12 @@ protected:
             MakeLayerStack();
             return fn(layerStack);
         } else {
-            // #if ENABLE_CUDA
-            // TODO: Calculate result of measurement with cuTensorNetwork
-            // TensorNetworkMetaPtr network = MakeTensorNetwork();
-            // throw std::runtime_error("QTensorNetwork doesn't have cuTensorNetwork capabilities yet!");
-            // #else
             MakeLayerStack(qubits);
             QInterfacePtr ls = layerStack;
             layerStack = NULL;
             return fn(ls);
-            // #endif
         }
     }
-
-    // #if ENABLE_CUDA
-    //     TensorNetworkMetaPtr MakeTensorNetwork() { return NULL; }
-    // #endif
 
 public:
     QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,

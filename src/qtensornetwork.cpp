@@ -82,13 +82,15 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
             }
             if (!qubits.size()) {
                 QRACK_CONST complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                for (auto& l : c) {
+                    l = std::make_shared<QCircuit>(true, isNearClifford);
+                }
                 c.push_back(std::make_shared<QCircuit>(true, isNearClifford));
                 for (const auto& m : measurements[j]) {
                     if (m.second) {
                         c.back()->AppendGate(std::make_shared<QCircuitGate>(m.first, pauliX));
                     }
                 }
-                measurements.resize(j);
 
                 break;
             }
