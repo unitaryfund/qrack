@@ -70,6 +70,13 @@ typedef std::complex<__fp16> complex;
 typedef __fp16 real1;
 typedef float real1_f;
 typedef float real1_s;
+#elif (CPP_STD >= 23) and defined(__STDCPP_FLOAT16_T__)
+#include <stdfloat>
+namespace Qrack {
+typedef std::complex<float16_t> complex;
+typedef float16_t real1;
+typedef float real1_f;
+typedef float real1_s;
 #else
 #include "half.hpp"
 typedef std::complex<half_float::half> complex;
@@ -88,6 +95,13 @@ namespace Qrack {
 typedef std::complex<double> complex;
 typedef double real1;
 typedef double real1_f;
+typedef double real1_s;
+#elif (CPP_STD >= 23) and defined(__STDCPP_FLOAT128_T__)
+#include <stdfloat>
+namespace Qrack {
+typedef std::complex<float128_t> complex;
+typedef float128_t real1;
+typedef float128_t real1_f;
 typedef double real1_s;
 #else
 #include <boost/multiprecision/float128.hpp>
