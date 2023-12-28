@@ -71,7 +71,7 @@ typedef __fp16 real1;
 typedef float real1_f;
 typedef float real1_s;
 #else
-#if (CPP_STD >= 23) && __has_include("stdfloat")
+#if (CPP_STD >= 23) && __has_include(<stdfloat>)
 #include <stdfloat>
 #endif
 #if defined(__STDCPP_FLOAT16_T__)
@@ -102,7 +102,7 @@ typedef double real1;
 typedef double real1_f;
 typedef double real1_s;
 #else
-#if (CPP_STD >= 23) && __has_include("stdfloat")
+#if (CPP_STD >= 23) && __has_include(<stdfloat>)
 #include <stdfloat>
 #endif
 #if defined(__STDCPP_FLOAT128_T__)
