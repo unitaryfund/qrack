@@ -21,22 +21,22 @@
 #include <set>
 #include <vector>
 
-#define _bi_div_mod(left, right, quotient, rmndr) \
-    if (quotient) { \
-        *quotient = left / right; \
-    } \
-    if (rmndr) { \
-        *rmndr = left % right; \
+#define _bi_div_mod(left, right, quotient, rmndr)                                                                      \
+    if (quotient) {                                                                                                    \
+        *quotient = left / right;                                                                                      \
+    }                                                                                                                  \
+    if (rmndr) {                                                                                                       \
+        *rmndr = left % right;                                                                                         \
     }
 
-#define _bi_compare(left, right) \
-    if (left > right) { \
-        return 1; \
-    } \
-    if (left < right) { \
-        return -1; \
-    } \
-\
+#define _bi_compare(left, right)                                                                                       \
+    if (left > right) {                                                                                                \
+        return 1;                                                                                                      \
+    }                                                                                                                  \
+    if (left < right) {                                                                                                \
+        return -1;                                                                                                     \
+    }                                                                                                                  \
+                                                                                                                       \
     return 0;
 
 #if QBCAPPOW < 6
@@ -61,8 +61,14 @@ inline int bi_compare_1(const uint32_t& left) { _bi_compare(left, 1U); }
 inline void bi_add_ip(uint32_t* left, const uint32_t& right) { *left += right; }
 inline void bi_sub_ip(uint32_t* left, const uint32_t& right) { *left -= right; }
 
-inline void bi_div_mod(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
-inline void bi_div_mod_small(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
+inline void bi_div_mod(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr)
+{
+    _bi_div_mod(left, right, quotient, rmndr)
+}
+inline void bi_div_mod_small(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr)
+{
+    _bi_div_mod(left, right, quotient, rmndr)
+}
 #elif QBCAPPOW < 7
 inline void bi_not_ip(uint64_t* left) { *left = ~(*left); }
 inline void bi_and_ip(uint64_t* left, const uint64_t& right) { *left &= right; }
@@ -85,10 +91,15 @@ inline int bi_compare_1(const uint64_t& left) { _bi_compare(left, 1U) }
 inline void bi_add_ip(uint64_t* left, const uint64_t& right) { *left += right; }
 inline void bi_sub_ip(uint64_t* left, const uint64_t& right) { *left -= right; }
 
-inline void bi_div_mod(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
-inline void bi_div_mod_small(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr) { _bi_div_mod(left, right, quotient, rmndr) }
+inline void bi_div_mod(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr)
+{
+    _bi_div_mod(left, right, quotient, rmndr)
+}
+inline void bi_div_mod_small(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr)
+{
+    _bi_div_mod(left, right, quotient, rmndr)
+}
 #endif
-
 
 namespace Qrack {
 

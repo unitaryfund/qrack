@@ -138,9 +138,7 @@ private:
     }
 
 public:
-    bool SupportsRDRAND() {
-        return RandSupportSingleton::Instance().SupportsRDRAND();
-    }
+    bool SupportsRDRAND() { return RandSupportSingleton::Instance().SupportsRDRAND(); }
 
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
     unsigned NextRaw() { return RandFile::getInstance().NextRaw(); }

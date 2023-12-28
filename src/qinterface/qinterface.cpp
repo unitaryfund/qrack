@@ -82,7 +82,7 @@ QInterface::QInterface(
             throw std::runtime_error("Failed to seed RNG!");
         }
 #else
-        randomSeed = (uint32_t)std::time(0);
+    randomSeed = (uint32_t)std::time(0);
 #endif
         SetRandomSeed(randomSeed);
     }

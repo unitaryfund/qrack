@@ -129,6 +129,6 @@ int main()
 
     bitCapInt quantumKey = qi->MReg(0, 8U * KEY_SIZE);
     quantumResult = qi->MReg(8U * KEY_SIZE, 8U * HASH_SIZE);
-    std::cout << "Even result:      (key: " << (bitCapIntOcl)quantumKey << ", hash: " << (bitCapIntOcl)quantumResult << ")"
-              << std::endl;
+    std::cout << "Even result:      (key: " << (bitCapIntOcl)quantumKey << ", hash: " << (bitCapIntOcl)quantumResult
+              << ")" << std::endl;
 };

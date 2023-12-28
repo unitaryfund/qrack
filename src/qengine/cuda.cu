@@ -1180,8 +1180,8 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
         CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controls.size(), controlPowers.get());
     controlPowers.reset();
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> (bitLenInt)controls.size(), (bitCapIntOcl)mask, controlMask,
-        (bitCapIntOcl)controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> (bitLenInt)controls.size(), (bitCapIntOcl)mask,
+        controlMask, (bitCapIntOcl)controls.size(), 0U, 0U, 0U, 0U, 0U, 0U };
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
     const complex phaseFacs[2]{ complex(cosine, sine), complex(cosine, -sine) };
@@ -1219,8 +1219,8 @@ void QEngineCUDA::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
     bitCapIntOcl powerTest = result ? (bitCapIntOcl)qPower : 0U;
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> 1U, (bitCapIntOcl)qPower, powerTest, 0U, 0U, 0U, 0U, 0U, 0U,
-        0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> 1U, (bitCapIntOcl)qPower, powerTest, 0U, 0U, 0U, 0U, 0U,
+        0U, 0U };
 
     ApplyMx(OCL_API_APPLYM, bciArgs, nrm);
 }
@@ -1231,7 +1231,8 @@ void QEngineCUDA::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
         throw std::invalid_argument("QEngineCUDA::ApplyM mask out-of-bounds!");
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)mask, (bitCapIntOcl)result, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)mask, (bitCapIntOcl)result, 0U, 0U, 0U, 0U, 0U,
+        0U, 0U };
 
     ApplyMx(OCL_API_APPLYMREG, bciArgs, nrm);
 }
@@ -1734,8 +1735,8 @@ real1_f QEngineCUDA::ProbMask(bitCapInt mask, bitCapInt permutation)
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> length, (bitCapIntOcl)mask, (bitCapIntOcl)permutation, length, 0U,
-        0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> length, (bitCapIntOcl)mask, (bitCapIntOcl)permutation,
+        length, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1918,8 +1919,8 @@ real1_f QEngineCUDA::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitC
 
     BufferPtr bitMapBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bits.size());
     DISPATCH_WRITE(bitMapBuffer, sizeof(bitCapIntOcl) * bits.size(), bitPowers.get());
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U, 0U,
-        0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U,
+        0U, 0U, 0U, 0U };
     DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -2841,8 +2842,8 @@ void QEngineCUDA::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
         throw std::invalid_argument("QEngineCUDA::PhaseFlipIfLess range is out-of-bounds!");
     }
 
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> 1U, bitRegMaskOcl(start, length), (bitCapIntOcl)greaterPerm,
-        start, 0U, 0U, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> 1U, bitRegMaskOcl(start, length),
+        (bitCapIntOcl)greaterPerm, start, 0U, 0U, 0U, 0U, 0U, 0U };
 
     PhaseFlipX(OCL_API_PHASEFLIPIFLESS, bciArgs);
 }

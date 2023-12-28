@@ -1750,8 +1750,9 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     if (!IsProbBuffered()) {
-        par_for(0U, shots,
-            [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (bitCapIntOcl)SampleClone(qPowers); });
+        par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
+            shotsArray[shot] = (bitCapIntOcl)SampleClone(qPowers);
+        });
 
         return;
     }

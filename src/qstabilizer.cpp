@@ -371,9 +371,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     seed(g);
 
     // init stateVec as all 0 values
-    par_for(0, pow2Ocl(qubitCount), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        stateVec[lcv] = ZERO_CMPLX;
-    });
+    par_for(0, pow2Ocl(qubitCount), [&](const bitCapIntOcl& lcv, const unsigned& cpu) { stateVec[lcv] = ZERO_CMPLX; });
 
     setBasisState(nrm, stateVec);
     for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
@@ -465,9 +463,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
     seed(g);
 
     // init stateVec as all 0 values
-    par_for(0, pow2Ocl(qubitCount), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        outputProbs[lcv] = ZERO_R1;
-    });
+    par_for(0, pow2Ocl(qubitCount), [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputProbs[lcv] = ZERO_R1; });
 
     setBasisProb(nrm, outputProbs);
     for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {

@@ -64,14 +64,17 @@
 #endif
 
 #if FPPOW < 5
-namespace Qrack {
 #ifdef __arm__
+namespace Qrack {
 typedef std::complex<__fp16> complex;
 typedef __fp16 real1;
 typedef float real1_f;
 typedef float real1_s;
-#elif (CPP_STD >= 23) and defined(__STDCPP_FLOAT16_T__)
+#else
+#if (CPP_STD >= 23) && __has_include("stdfloat")
 #include <stdfloat>
+#endif
+#if defined(__STDCPP_FLOAT16_T__)
 namespace Qrack {
 typedef std::complex<float16_t> complex;
 typedef float16_t real1;
@@ -79,10 +82,12 @@ typedef float real1_f;
 typedef float real1_s;
 #else
 #include "half.hpp"
+namespace Qrack {
 typedef std::complex<half_float::half> complex;
 typedef half_float::half real1;
 typedef float real1_f;
 typedef float real1_s;
+#endif
 #endif
 #elif FPPOW < 6
 namespace Qrack {
@@ -96,8 +101,11 @@ typedef std::complex<double> complex;
 typedef double real1;
 typedef double real1_f;
 typedef double real1_s;
-#elif (CPP_STD >= 23) and defined(__STDCPP_FLOAT128_T__)
+#else
+#if (CPP_STD >= 23) && __has_include("stdfloat")
 #include <stdfloat>
+#endif
+#if defined(__STDCPP_FLOAT128_T__)
 namespace Qrack {
 typedef std::complex<float128_t> complex;
 typedef float128_t real1;
@@ -111,6 +119,7 @@ typedef std::complex<boost::multiprecision::float128> complex;
 typedef boost::multiprecision::float128 real1;
 typedef boost::multiprecision::float128 real1_f;
 typedef double real1_s;
+#endif
 #endif
 
 const bitCapInt ONE_BCI = 1U;

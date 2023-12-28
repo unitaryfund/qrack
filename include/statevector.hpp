@@ -143,35 +143,28 @@ public:
         amplitudes.get()[i2] = c2;
     };
 
-    void clear() {
-        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            amplitudes[lcv] = ZERO_CMPLX;
-        });
+    void clear()
+    {
+        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv] = ZERO_CMPLX; });
     }
 
     void copy_in(complex const* copyIn)
     {
         if (copyIn) {
-            par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                amplitudes[lcv] = copyIn[lcv];
-            });
+            par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv] = copyIn[lcv]; });
         } else {
-            par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                amplitudes[lcv] = ZERO_CMPLX;
-            });
+            par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv] = ZERO_CMPLX; });
         }
     }
 
     void copy_in(complex const* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (copyIn) {
-            par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                amplitudes[lcv + offset] = copyIn[lcv];
-            });
+            par_for(0, length,
+                [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv + offset] = copyIn[lcv]; });
         } else {
-            par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                amplitudes[lcv + offset] = ZERO_CMPLX;
-            });
+            par_for(0, length,
+                [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv + offset] = ZERO_CMPLX; });
         }
     }
 
@@ -180,36 +173,31 @@ public:
     {
         if (copyInSv) {
             complex const* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes.get() + srcOffset;
-            par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                amplitudes[lcv + dstOffset] = copyIn[lcv];
-            });
+            par_for(0, length,
+                [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv + dstOffset] = copyIn[lcv]; });
         } else {
-            par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                amplitudes[lcv + dstOffset] = ZERO_CMPLX;
-            });
+            par_for(0, length,
+                [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv + dstOffset] = ZERO_CMPLX; });
         }
     }
 
-    void copy_out(complex* copyOut) {
-        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            copyOut[lcv] = amplitudes[lcv];
-        });
+    void copy_out(complex* copyOut)
+    {
+        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { copyOut[lcv] = amplitudes[lcv]; });
     }
 
     void copy_out(complex* copyOut, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
-        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            copyOut[lcv] = amplitudes[lcv + offset];
-        });
+        par_for(0, capacity,
+            [&](const bitCapIntOcl& lcv, const unsigned& cpu) { copyOut[lcv] = amplitudes[lcv + offset]; });
     }
 
     void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
 
     void copy(StateVectorArrayPtr toCopy)
     {
-        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            amplitudes[lcv] = toCopy->amplitudes[lcv];
-        });
+        par_for(0, capacity,
+            [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv] = toCopy->amplitudes[lcv]; });
     }
 
     void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorArray>(svp)); }
@@ -226,9 +214,8 @@ public:
 
     void get_probs(real1* outArray)
     {
-        par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            outArray[lcv] = norm(amplitudes[lcv]);
-        });
+        par_for(
+            0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outArray[lcv] = norm(amplitudes[lcv]); });
     }
 
     bool is_sparse() { return false; }
