@@ -2107,33 +2107,72 @@ public:
     /** Logical shift right, filling the extra bits with |0> */
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
-#if ENABLE_ALU
+    /** Add integer (without sign) */
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+
+    /** Subtract classical integer (without sign) */
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
+    {
+        const bitCapInt invToSub = pow2(length) - toSub;
+        INC(invToSub, start, length);
+    }
+
     /** Common driver method behind INCC and DECC */
     virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Add integer (without sign, with carry) */
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        const bool hasCarry = M(carryIndex);
+        if (hasCarry) {
+            X(carryIndex);
+            bi_increment(&toAdd, 1U);
+        }
+
+        INCDECC(toAdd, start, length, carryIndex);
+    }
 
     /** Subtract classical integer (without sign, with carry) */
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        const bool hasCarry = M(carryIndex);
+        if (hasCarry) {
+            X(carryIndex);
+        } else {
+            bi_increment(&toSub, 1U);
+        }
 
-    /** Add integer (without sign) */
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+        const bitCapInt invToSub = pow2(length) - toSub;
+        INCDECC(invToSub, start, length, carryIndex);
+    }
 
     /** Add integer (without sign, with controls) */
     virtual void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
 
-    /** Add a classical integer to the register, with sign and without carry. */
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
-
-    /** Subtract classical integer (without sign) */
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
-
     /** Subtract classical integer (without sign, with controls) */
-    virtual void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
+    virtual void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+    {
+        const bitCapInt invToSub = pow2(length) - toSub;
+        CINC(invToSub, inOutStart, length, controls);
+    }
+
+    /** Add a classical integer to the register, with sign and without carry. */
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        const bitCapInt signMask = pow2(length - 1U);
+        INC(signMask, start, length);
+        INCDECC(toAdd & ~signMask, start, length, overflowIndex);
+        if (bi_compare_0(toAdd & signMask) == 0) {
+            DEC(signMask, start, length);
+        }
+    }
 
     /** Subtract a classical integer from the register, with sign and without carry. */
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        const bitCapInt invToSub = pow2(length) - toSub;
+        INCS(invToSub, start, length, overflowIndex);
+    }
 
     /** Multiplication modulo N by integer, (out of place) */
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
@@ -2154,14 +2193,36 @@ public:
      *
      * (Assumes the outputBit is in the 0 state)
      */
-    virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+    {
+        // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+
+        // Assume outputBit is in 0 state.
+        CCNOT(inputBit1, inputBit2, carryOut);
+        CNOT(inputBit1, inputBit2);
+        CCNOT(inputBit2, carryInSumOut, carryOut);
+        CNOT(inputBit2, carryInSumOut);
+        CNOT(inputBit1, inputBit2);
+    }
 
     /**
      * Inverse of FullAdd
      *
      * (Can be thought of as "subtraction," but with a register convention that the same inputs invert FullAdd.)
      */
-    virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+    {
+        // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+        // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
+        // (CNOT and CCNOT are self-inverse.)
+
+        // Assume outputBit is in 0 state.
+        CNOT(inputBit1, inputBit2);
+        CNOT(inputBit2, carryInSumOut);
+        CCNOT(inputBit2, carryInSumOut, carryOut);
+        CNOT(inputBit1, inputBit2);
+        CCNOT(inputBit1, inputBit2, carryOut);
+    }
 
     /**
      * Controlled quantum analog of classical "Full Adder" gate
@@ -2208,7 +2269,6 @@ public:
      */
     virtual void CIADC(const std::vector<bitLenInt>& controls, bitLenInt input1, bitLenInt input2, bitLenInt output,
         bitLenInt length, bitLenInt carry);
-#endif
 
     /** @} */
 

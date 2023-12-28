@@ -12,10 +12,6 @@
 
 #include "qinterface.hpp"
 
-#if !ENABLE_ALU
-#error ALU has not been enabled
-#endif
-
 namespace Qrack {
 
 // Arithmetic:
@@ -53,13 +49,6 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     }
 }
 
-/// Subtract integer (without sign)
-void QInterface::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
-{
-    const bitCapInt invToSub = pow2(length) - toSub;
-    INC(invToSub, start, length);
-}
-
 void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     if (!length) {
@@ -83,31 +72,6 @@ void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
                 std::vector<bitLenInt>(bits.begin() + i, bits.begin() + i + j + 1U), ONE_CMPLX, ONE_CMPLX, target);
         }
     }
-}
-
-void QInterface::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    const bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        bi_increment(&toAdd, 1U);
-    }
-
-    INCDECC(toAdd, start, length, carryIndex);
-}
-
-/// Subtract integer (without sign, with carry)
-void QInterface::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    const bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        bi_increment(&toSub, 1U);
-    }
-
-    const bitCapInt invToSub = pow2(length) - toSub;
-    INCDECC(invToSub, start, length, carryIndex);
 }
 
 /** Add integer (without sign, with controls) */
@@ -154,35 +118,6 @@ void QInterface::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const 
     for (const bitLenInt& control : controls) {
         X(control);
     }
-}
-
-/// Subtract integer (without sign, with controls)
-void QInterface::CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
-{
-    const bitCapInt invToSub = pow2(length) - toSub;
-    CINC(invToSub, inOutStart, length, controls);
-}
-
-/** Add a classical integer to the register, with sign and without carry. */
-void QInterface::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-{
-    const bitCapInt signMask = pow2(length - 1U);
-    INC(signMask, start, length);
-    INCDECC(toAdd & ~signMask, start, length, overflowIndex);
-    if (bi_compare_0(toAdd & signMask) == 0) {
-        DEC(signMask, start, length);
-    }
-}
-
-/**
- * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
- * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
- * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
- */
-void QInterface::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-{
-    const bitCapInt invToSub = pow2(length) - toSub;
-    INCS(invToSub, start, length, overflowIndex);
 }
 
 /**
@@ -332,34 +267,6 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
         }
         CDEC(partMul, outStart, oLength, lControls);
     }
-}
-
-/// Quantum analog of classical "Full Adder" gate
-void QInterface::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
-{
-    // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
-
-    // Assume outputBit is in 0 state.
-    CCNOT(inputBit1, inputBit2, carryOut);
-    CNOT(inputBit1, inputBit2);
-    CCNOT(inputBit2, carryInSumOut, carryOut);
-    CNOT(inputBit2, carryInSumOut);
-    CNOT(inputBit1, inputBit2);
-}
-
-/// Inverse of FullAdd
-void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
-{
-    // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
-    // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
-    // (CNOT and CCNOT are self-inverse.)
-
-    // Assume outputBit is in 0 state.
-    CNOT(inputBit1, inputBit2);
-    CNOT(inputBit2, carryInSumOut);
-    CCNOT(inputBit2, carryInSumOut, carryOut);
-    CNOT(inputBit1, inputBit2);
-    CCNOT(inputBit1, inputBit2, carryOut);
 }
 
 /// Quantum analog of classical "Full Adder" gate

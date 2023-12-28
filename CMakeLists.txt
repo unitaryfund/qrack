@@ -26,6 +26,7 @@ endif (PACK_DEBIAN)
 add_library (qrack STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
+    src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
     src/qinterface/qinterface.cpp
