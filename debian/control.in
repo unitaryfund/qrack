@@ -13,7 +13,7 @@ Section: libdevel
 Architecture: any
 Multi-Arch: same
 Built-Using: make, gcc, g++, cmake (>= 3), @CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS@
-Depends: @CPACK_PACKAGE_NAME@ (= @CMAKE_PROJECT_VERSION@), @CPACK_DEBIAN_PACKAGE_DEPENDS@, ${shlibs:Depends}, ${misc:Depends}
+Depends: @CPACK_PACKAGE_NAME@ (= @CMAKE_PROJECT_VERSION@), ${shlibs:Depends}, ${misc:Depends}, @CPACK_DEBIAN_PACKAGE_DEPENDS@
 Description: unitaryfund/qrack quantum computer simulator library
  unitaryfund/qrack (or vm6502q/qrack) quantum computer simulator library
 
@@ -21,6 +21,6 @@ Package: @CPACK_PACKAGE_NAME@
 Architecture: any
 Multi-Arch: same
 Built-Using: make, gcc, g++, cmake (>= 3), @CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS@
-Depends: @CPACK_DEBIAN_PACKAGE_DEPENDS@, ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, @CPACK_DEBIAN_PACKAGE_DEPENDS@
 Description: unitaryfund/qrack quantum computer simulator library
  unitaryfund/qrack (or vm6502q/qrack) quantum computer simulator library
