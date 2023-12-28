@@ -88,7 +88,7 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
                         c.back()->AppendGate(std::make_shared<QCircuitGate>(m.first, pauliX));
                     }
                 }
-                measurements[j].clear();
+                measurements.resize(j);
 
                 break;
             }
