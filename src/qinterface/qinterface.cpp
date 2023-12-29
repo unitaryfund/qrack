@@ -44,8 +44,8 @@ QInterface::QInterface(
             hardware_rand_generator = NULL;
         }
 #endif
-#endif
     } else if (!rand_generator) {
+#endif
         rand_generator = std::make_shared<qrack_rand_gen>();
 #if SEED_DEVRAND
         // The original author of this code block (Daniel Strano) is NOT a cryptography expert. However, here's the
@@ -85,7 +85,9 @@ QInterface::QInterface(
     randomSeed = (uint32_t)std::time(0);
 #endif
         SetRandomSeed(randomSeed);
+#if ENABLE_RDRAND || ENABLE_RNDFILE || ENABLE_DEVRAND
     }
+#endif
 }
 
 /// Set to a specific permutation of all qubits
