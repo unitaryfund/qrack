@@ -1,3 +1,9 @@
+libqrack (9.3.2) bionic; urgency=medium
+
+  * QBdtHybrid in default optimal stack (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 29 Dec 2023 17:34:21 -0500
+
 libqrack (9.3.1) jammy; urgency=medium
 
   * QBdtHybrid in default optimal stack (Jammy, 2/3)
