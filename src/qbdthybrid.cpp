@@ -66,7 +66,6 @@ QInterfacePtr QBdtHybrid::MakeSimulator(bool isBdt, bitCapInt perm, complex phas
     if (!isBdt) {
         std::dynamic_pointer_cast<QEngine>(toRet)->SetQubitCount(qubitCount);
     }
-    toRet->SetConcurrency(GetConcurrencyLevel());
 
     return toRet;
 }

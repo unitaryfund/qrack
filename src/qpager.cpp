@@ -264,7 +264,6 @@ QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapIntOcl pageId)
         CreateQuantumInterface(engines, 0U, ZERO_BCI, rand_generator, phaseFactor, false, false,
             GetPageHostPointer(pageId), GetPageDevice(pageId), useRDRAND, isSparse, (real1_f)amplitudeFloor));
     toRet->SetQubitCount(length);
-    toRet->SetConcurrency(GetConcurrencyLevel());
     toRet->SetTInjection(useTGadget);
 
     return toRet;

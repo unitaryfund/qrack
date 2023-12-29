@@ -100,7 +100,6 @@ QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
     QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
-    toRet->SetConcurrency(GetConcurrencyLevel());
     toRet->SetTInjection(useTGadget);
 
     return toRet;
