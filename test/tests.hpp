@@ -29,6 +29,7 @@
 extern enum Qrack::QInterfaceEngine testEngineType;
 extern enum Qrack::QInterfaceEngine testSubEngineType;
 extern enum Qrack::QInterfaceEngine testSubSubEngineType;
+extern enum Qrack::QInterfaceEngine testSubSubSubEngineType;
 extern qrack_rand_gen_ptr rng;
 extern bool enable_normalization;
 extern bool disable_t_injection;

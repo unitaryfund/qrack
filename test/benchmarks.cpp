@@ -77,6 +77,7 @@ std::vector<QInterfaceEngine> BuildEngineStack()
         engineStack.push_back(testEngineType);
         engineStack.push_back(testSubEngineType);
         engineStack.push_back(testSubSubEngineType);
+        engineStack.push_back(testSubSubSubEngineType);
     }
 
     return engineStack;
@@ -3965,7 +3966,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
     int maxGates;
 
-    QInterfacePtr goldStandard = CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, n, ZERO_BCI, rng,
+    QInterfacePtr goldStandard = CreateQuantumInterface({ testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, n, ZERO_BCI, rng,
         ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng);
     if (disable_t_injection) {
         goldStandard->SetTInjection(false);

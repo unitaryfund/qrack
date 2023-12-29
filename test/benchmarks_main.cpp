@@ -24,9 +24,10 @@
 
 using namespace Qrack;
 
-enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
-enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
-enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
+enum QInterfaceEngine testEngineType = QINTERFACE_OPTIMAL_BASE;
+enum QInterfaceEngine testSubEngineType = QINTERFACE_OPTIMAL_BASE;
+enum QInterfaceEngine testSubSubEngineType = QINTERFACE_OPTIMAL_BASE;
+enum QInterfaceEngine testSubSubSubEngineType = QINTERFACE_OPTIMAL_BASE;
 qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_t_injection = false;
@@ -637,6 +638,7 @@ int main(int argc, char* argv[])
         testEngineType = QINTERFACE_TENSOR_NETWORK;
         testSubEngineType = QINTERFACE_QUNIT;
         testSubSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+        testSubSubSubEngineType = QINTERFACE_BDT_HYBRID;
         session.config().stream() << "############ QTensorNetwork (QStabilizerHybrid) ############" << std::endl;
         num_failed = session.run();
     }
