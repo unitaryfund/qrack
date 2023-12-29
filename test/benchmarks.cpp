@@ -3858,6 +3858,84 @@ TEST_CASE("test_random_circuit_sampling", "[speed]")
     });
 }
 
+TEST_CASE("test_random_circuit_sampling_nn", "[speed]")
+{
+    // "nn" stands for "nearest-neighbor (coupler gates)"
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+        std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        const int rowLen = std::ceil(std::sqrt(n));
+        const int GateCount2Qb = 12;
+
+        for (bitLenInt d = 0U; d < depth; ++d) {
+            for (bitLenInt i = 0U; i < n; ++i) {
+                // This effectively covers x-z-x Euler angles, every 3 layers:
+                qReg->H(i);
+                qReg->RZ(qReg->Rand() * 2 * PI_R1, i);
+            }
+
+            int gate = gateSequence.front();
+            gateSequence.erase(gateSequence.begin());
+            gateSequence.push_back(gate);
+            for (int row = 1; row < rowLen; row += 2) {
+                for (int col = 0; col < rowLen; col++) {
+                    int tempRow = row;
+                    int tempCol = col;
+                    tempRow += (gate & 2) ? 1 : -1;
+                    tempCol += (gate & 1) ? 1 : 0;
+                    if (tempRow < 0 || tempCol < 0 || tempRow >= rowLen || tempCol >= rowLen) {
+                        continue;
+                    }
+                    int b1 = row * rowLen + col;
+                    int b2 = tempRow * rowLen + tempCol;
+                    if (b1 >= n || b2 >= n) {
+                        continue;
+                    }
+                    if ((2 * qReg->Rand()) < ONE_R1_F) {
+                        std::swap(b1, b2);
+                    }
+                    const real1_f gateId = GateCount2Qb * qReg->Rand();
+                    if (gateId < ONE_R1_F) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 2)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 3)) {
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 4)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 5)) {
+                        qReg->ISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 6)) {
+                        qReg->IISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 7)) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 8)) {
+                        qReg->CY(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 9)) {
+                        qReg->CZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 10)) {
+                        qReg->AntiCNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 11)) {
+                        qReg->AntiCY(b1, b2);
+                    } else {
+                        qReg->AntiCZ(b1, b2);
+                    }
+                }
+            }
+        }
+    });
+}
+
 TEST_CASE("test_cosmology", "[cosmos]")
 {
     // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
