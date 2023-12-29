@@ -63,9 +63,9 @@ void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std
 
 QInterfacePtr MakeEngine(bitLenInt qubitCount)
 {
-    QInterfacePtr toRet = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType },
-        qubitCount, ZERO_BCI, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng,
-        sparse, REAL1_EPSILON, devList);
+    QInterfacePtr toRet = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, qubitCount, ZERO_BCI, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     if (disable_t_injection) {
         toRet->SetTInjection(false);
@@ -320,64 +320,73 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_setconcurrency")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->Z(0);
     qftReg->X(0);
     qftReg->Z(0);
     qftReg->X(0);
     REQUIRE_FLOAT(-ONE_R1_F, (real1_f)real(qftReg->GetAmplitude(0x00)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->S(0);
     qftReg->X(0);
     qftReg->S(0);
     qftReg->X(0);
     REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x00)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->IS(0);
     qftReg->X(0);
     qftReg->IS(0);
     qftReg->X(0);
     REQUIRE_FLOAT(-ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x00)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->Y(0);
     qftReg->X(0);
     REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x00)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->X(0);
     qftReg->Y(0);
     REQUIRE_FLOAT(-ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x00)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->X(0);
     qftReg->X(1);
     qftReg->CZ(0, 1);
     REQUIRE_FLOAT(-ONE_R1_F, (real1_f)real(qftReg->GetAmplitude(0x03)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->X(0);
     qftReg->CY(0, 1);
     REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x03)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->X(0);
     qftReg->X(1);
     qftReg->CY(0, 1);
     REQUIRE_FLOAT(-ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x01)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->CZ(0, 1);
@@ -385,8 +394,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
     qftReg->ForceM(1U, true);
     REQUIRE_FLOAT(-ONE_R1_F, (real1_f)real(qftReg->GetAmplitude(0x03)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->CS(0, 1);
@@ -394,15 +404,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
     qftReg->ForceM(1U, true);
     REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x03)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->H(0);
     qftReg->CY(0, 1);
     qftReg->ForceM(0U, true);
     REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x03)));
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U, ZERO_BCI, rng,
-        CMPLX_DEFAULT_ARG, false, false);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2U,
+            ZERO_BCI, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->H(0);
     qftReg->X(1);
     qftReg->CY(0, 1);
@@ -645,9 +657,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
     qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
 
-    QInterfacePtr qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 20U,
-        ZERO_BCI, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse,
-        REAL1_DEFAULT_ARG, devList, 10);
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType },
+            20U, ZERO_BCI, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse,
+            REAL1_DEFAULT_ARG, devList, 10);
 
     control[0] = 9;
     qftReg2->SetPermutation((1U << 9U) | (1U << 10U));
@@ -1218,12 +1231,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zmask")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_approxcompare")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 3U, ZERO_BCI, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_DEFAULT_ARG,
-        devList, 10);
-    QInterfacePtr qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 3U,
-        ZERO_BCI, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse,
-        REAL1_DEFAULT_ARG, devList, 10);
+    qftReg =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 3U,
+            ZERO_BCI, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse,
+            REAL1_DEFAULT_ARG, devList, 10);
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 3U,
+            ZERO_BCI, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse,
+            REAL1_DEFAULT_ARG, devList, 10);
 
     qftReg->X(0);
     qftReg->H(0);
@@ -2903,9 +2918,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose", "[sd_xfail]")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
-    QInterfacePtr qftReg2 =
-        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x02, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x02, rng);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 
@@ -2916,7 +2932,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose", "[sd_xfail]")
     qftReg->Compose(qftReg2);
 
     // Try across device/heap allocation case:
-    qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, ZERO_BCI, rng,
+    qftReg2 = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, ZERO_BCI, rng,
         ONE_CMPLX, enable_normalization, true, true, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     qftReg->SetPermutation(0x2b);
@@ -2958,7 +2975,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose", "[sd_xfail]")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_allocate")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 8, 0x2b, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 8, 0x2b, rng);
     qftReg->Allocate(0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 12, 0x2b0));
 
@@ -2983,16 +3001,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose_perm", "[sd_xfail]")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose", "[sd_xfail]")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
-    QInterfacePtr qftReg2 =
-        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x02, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x02, rng);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 
     // Try across device/heap allocation case:
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
-    qftReg2 = CreateQuantumInterface(
-        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x02, rng, ONE_CMPLX, false, true, true);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
+    qftReg2 =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4,
+            0x02, rng, ONE_CMPLX, false, true, true);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
@@ -3028,9 +3049,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose", "[sd_xfail]")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qunit_paging", "[sd_xfail]")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 18, 1, rng, ONE_CMPLX);
-    QInterfacePtr qftReg2 =
-        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 2, rng, ONE_CMPLX);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 18, 1, rng, ONE_CMPLX);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 2, rng, ONE_CMPLX);
 
     qftReg->H(0, 3);
     qftReg->CCZ(0, 1, 2);
@@ -3111,7 +3133,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probreg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmask")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 8, ZERO_BCI, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 8, ZERO_BCI, rng);
     qftReg->SetPermutation(0x21);
     REQUIRE(qftReg->ProbMask(0xF0, 0x20) > 0.99);
     REQUIRE(qftReg->ProbMask(0xF0, 0x40) < 0.01);
@@ -3126,7 +3149,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmask")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI, rng);
     real1 probs1[2];
     qftReg->ProbMaskAll(ONE_BCI, probs1);
     REQUIRE(probs1[0] > 0.99);
@@ -3135,7 +3159,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probbitsall")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 3, 5, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 3, 5, rng);
     const std::vector<bitLenInt> bits{ 2, 1 };
     real1 probs1[4];
     qftReg->ProbBitsAll(bits, probs1);
@@ -3155,7 +3180,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probbitsall")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_expectationbitsall")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 8, ZERO_BCI, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 8, ZERO_BCI, rng);
     const std::vector<bitLenInt> bits{ 0, 1, 2, 3, 4, 5, 6, 7 };
     qftReg->H(0, 8);
     REQUIRE_FLOAT(qftReg->ExpectationBitsAll(bits), 127 + (ONE_R1_F / 2))
@@ -3293,7 +3319,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cuniformparityrz")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 8, ZERO_BCI, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 8, ZERO_BCI, rng);
 
     const std::vector<bitCapInt> qPowers{ pow2(6), pow2(2), pow2(3) };
 
@@ -3368,7 +3395,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate", "[sd_xfail]")
 {
     complex state[1U << 4U];
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
     qftReg->GetQuantumState(state);
     for (bitCapIntOcl i = 0; i < 16; i++) {
         if (i == 0x0b) {
@@ -3380,8 +3408,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate", "[sd_xfail]")
     qftReg->SetQuantumState(state);
 
     complex state2[2] = { ZERO_CMPLX, ONE_CMPLX };
-    QInterfacePtr qftReg2 =
-        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI, rng);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI, rng);
     qftReg2->SetQuantumState(state2);
     REQUIRE_THAT(qftReg2, HasProbability(1U));
 }
@@ -3389,7 +3417,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate", "[sd_xfail]")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getprobs")
 {
     real1 state[1U << 4U];
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 4, 0x0b, rng);
     qftReg->GetProbs(state);
     for (bitCapIntOcl i = 0; i < 16; i++) {
         if (i == 0x0b) {
@@ -5107,7 +5136,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_teleport")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 3, ZERO_BCI);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 3, ZERO_BCI);
 
     qftReg->SetPermutation(0);
 
@@ -5134,7 +5164,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_teleport")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_h_cnot_rand")
 {
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2, ZERO_BCI);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 2, ZERO_BCI);
     qftReg->H(0);
     qftReg->CNOT(0, 1);
 
@@ -6722,8 +6753,8 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
     }
 
     for (int trial = 0; trial < TRIALS; trial++) {
-        QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, n, ZERO_BCI);
+        QInterfacePtr testCase = CreateQuantumInterface(
+            { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, n, ZERO_BCI);
 
         // T-injection currently breaks the test.
         testCase->SetTInjection(false);
@@ -7100,8 +7131,8 @@ TEST_CASE("test_mirror_qcircuit", "[mirror]")
     }
 
     for (int trial = 0; trial < TRIALS; trial++) {
-        QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, n, ZERO_BCI);
+        QInterfacePtr testCase = CreateQuantumInterface(
+            { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, n, ZERO_BCI);
 
         // T-injection currently breaks the test.
         testCase->SetTInjection(false);
@@ -7580,8 +7611,8 @@ TEST_CASE("test_qcircuit_inverse", "[qcircuit]")
     circuit->AppendGate(std::make_shared<QCircuitGate>(0U, h));
     QCircuitPtr inverse = circuit->Inverse();
 
-    QInterfacePtr qftReg =
-        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI);
+    QInterfacePtr qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI);
 
     circuit->Run(qftReg);
     inverse->Run(qftReg);
@@ -7603,8 +7634,8 @@ TEST_CASE("test_qcircuit_inc", "[qcircuit]")
 {
     std::cout << ">>> test_qcircuit_inc:" << std::endl;
 
-    QInterfacePtr qftReg =
-        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI);
+    QInterfacePtr qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI);
 
     qftReg->SetPermutation(0);
 

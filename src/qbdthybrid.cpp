@@ -60,9 +60,9 @@ QInterfacePtr QBdtHybrid::MakeSimulator(bool isBdt, bitCapInt perm, complex phas
 {
     std::vector<QInterfaceEngine> e(engines);
     e.insert(e.begin(), isBdt ? QINTERFACE_BDT : QINTERFACE_HYBRID);
-    QInterfacePtr toRet = CreateQuantumInterface(e, 0U, perm, rand_generator, phaseFac,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
-        thresholdQubits, separabilityThreshold);
+    QInterfacePtr toRet =
+        CreateQuantumInterface(e, 0U, perm, rand_generator, phaseFac, doNormalize, randGlobalPhase, useHostRam, devID,
+            useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
     std::dynamic_pointer_cast<QInterface>(toRet)->SetQubitCount(qubitCount);
 
     return toRet;
