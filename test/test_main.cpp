@@ -39,7 +39,7 @@ std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput;
 int benchmarkSamples = 100;
-int benchmarkDepth = 20;
+int benchmarkDepth = -1;
 int benchmarkMaxMagic = -1;
 std::vector<int64_t> devList;
 

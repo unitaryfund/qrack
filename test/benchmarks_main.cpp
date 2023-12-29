@@ -45,7 +45,7 @@ std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput = false;
 int benchmarkSamples = 100;
-int benchmarkDepth = 20;
+int benchmarkDepth = -1;
 int benchmarkMaxMagic = -1;
 int benchmarkShots = 1;
 int timeout = -1;
