@@ -156,12 +156,6 @@ protected:
     std::uniform_real_distribution<real1_s> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
 
-    virtual void SetQubitCount(bitLenInt qb)
-    {
-        qubitCount = qb;
-        maxQPower = pow2(qubitCount);
-    }
-
     // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
     // you need a safe pointer to norm(), try this:
     static inline real1_f normHelper(complex c) { return (real1_f)norm(c); }
@@ -243,6 +237,12 @@ public:
         if (rand_generator != NULL) {
             rand_generator->seed(seed);
         }
+    }
+
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        qubitCount = qb;
+        maxQPower = pow2(qubitCount);
     }
 
     /** Set the number of threads in parallel for loops, per component QEngine */
