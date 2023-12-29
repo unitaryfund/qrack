@@ -1,3 +1,9 @@
+libqrack (9.3.0) focal; urgency=medium
+
+  * QBdtHybrid in default optimal stack (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 29 Dec 2023 10:41:52 -0500
+
 libqrack (9.2.4) bionic; urgency=medium
 
   * C++23 and minor improvements (Bionic, 3/3)
