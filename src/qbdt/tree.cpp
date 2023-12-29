@@ -39,20 +39,16 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 
 void QBdt::Init()
 {
-#if ENABLE_PTHREAD
-    SetConcurrency(std::thread::hardware_concurrency());
-#endif
-
     bdtStride = (GetStride() + 1U) >> 1U;
     if (!bdtStride) {
         bdtStride = 1U;
     }
 
-    bitLenInt engineLevel = 0U;
     if (!engines.size()) {
         engines.push_back(QINTERFACE_OPTIMAL_BASE);
     }
     QInterfaceEngine rootEngine = engines[0U];
+    bitLenInt engineLevel = 0U;
     while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL) &&
         (rootEngine != QINTERFACE_HYBRID)) {
         ++engineLevel;
