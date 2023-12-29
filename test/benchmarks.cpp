@@ -97,7 +97,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "Median (ms), ";
     std::cout << "3rd Quartile (ms), ";
     std::cout << "Slowest (ms), ";
-    std::cout << "Failure count" << std::endl;
+    std::cout << "Failure count, ";
+    std::cout << "Average SDRP Fidelity" << std::endl;
 
     std::vector<double> trialClocks;
 
@@ -120,6 +121,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             qftReg->SetReactiveSeparate(false);
         }
         double avgt = 0.0;
+        double avgf = 0.0;
         int sampleFailureCount = 0;
         trialClocks.clear();
 
@@ -231,6 +233,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     trialClocks.push_back(tClock.count() * clockFactor);
                 }
                 avgt += trialClocks.back();
+                avgf += qftReg->GetUnitaryFidelity();
             }
 
             try {
@@ -262,6 +265,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         avgt /= trialClocks.size();
+        avgf /= trialClocks.size();
 
         double stdet = 0.0;
         for (int sample = 0; sample < (int)trialClocks.size(); sample++) {
@@ -283,7 +287,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             std::cout << formatTime(trialClocks[0], logNormal) << ",";
             std::cout << formatTime(trialClocks[0], logNormal) << ",";
             std::cout << formatTime(trialClocks[0], logNormal) << ",";
-            std::cout << sampleFailureCount << std::endl;
+            std::cout << sampleFailureCount << ",";
+            std::cout << avgf << std::endl;
             continue;
         }
 
@@ -330,7 +335,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         // Failure count
-        std::cout << sampleFailureCount << std::endl;
+        std::cout << sampleFailureCount << ",";
+        // Average SDRP fidelity
+        std::cout << avgf << std::endl;
     }
 }
 
