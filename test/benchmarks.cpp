@@ -1044,7 +1044,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-    
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -1660,7 +1660,7 @@ TEST_CASE("test_dense", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-    
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -2375,7 +2375,7 @@ TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
     } else {
         std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
     }
-        
+
     std::cout << "(noise parameter: " << noiseParam << ")";
 
     const int DimCount1Qb = 4;
@@ -2388,7 +2388,7 @@ TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-    
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -2649,7 +2649,7 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-    
+
         int d;
         bitLenInt i;
         real1_f gateRand;
@@ -2869,7 +2869,7 @@ TEST_CASE("test_noisy_dense_cc_nn", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-    
+
         int d;
         bitLenInt i;
         real1_f gateRand;
@@ -3092,7 +3092,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-    
+
         int d;
         bitLenInt i, gate;
         real1_f gateRand;
@@ -3318,7 +3318,7 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
             const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-        
+
             int d;
             bitLenInt i;
             real1_f theta, phi, lambda;
@@ -3370,7 +3370,7 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
             const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-        
+
             int d;
             bitLenInt i;
             real1_f gateRand;
@@ -3432,7 +3432,7 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
             const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-        
+
             int d;
             bitLenInt i;
             real1_f gateRand;
@@ -3507,7 +3507,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
             const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-        
+
             int d;
             bitLenInt i;
             real1_f gateRand;
@@ -3587,7 +3587,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
             const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-        
+
             int d;
             bitLenInt i;
             real1_f gateRand;
@@ -3661,7 +3661,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-    
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -3824,7 +3824,7 @@ TEST_CASE("test_random_circuit_sampling", "[speed]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-    
+
         std::set<bitLenInt> unusedBitSet;
         for (bitLenInt i = 0; i < n; ++i) {
             unusedBitSet.insert(i);

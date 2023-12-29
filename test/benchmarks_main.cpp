@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
         Opt(benchmarkSamples, "samples")["--samples"]("number of samples to collect (default: 100)") |
         Opt(benchmarkDepth, "depth")["--benchmark-depth"](
             "depth of randomly constructed circuits, when applicable, with 1 round of single qubit and 1 round of "
-            "multi-qubit gates being 1 unit of depth (default: 20)") |
+            "multi-qubit gates being 1 unit of depth (default: 0, for square circuits)") |
         Opt(benchmarkMaxMagic, "magic")["--benchmark-max-magic"](
             "max number of t/tadj gates in semi-Clifford tests (default: [defined per test case])") |
         Opt(timeout, "timeout")["--timeout"](
