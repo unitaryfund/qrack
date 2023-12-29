@@ -142,7 +142,7 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
     }
 
     if (!stateBuffer) {
-        std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
+        par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { pagePtr[lcv] = ZERO_CMPLX; });
         return;
     }
 
@@ -1724,7 +1724,7 @@ void QEngineOCL::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray
     }
 
     if (!stateBuffer) {
-        std::fill(probsArray, probsArray + lengthPower, ZERO_R1);
+        par_for(0, lengthPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { probsArray[lcv] = ZERO_R1; });
         return;
     }
 
@@ -1825,7 +1825,7 @@ void QEngineOCL::ProbMaskAll(bitCapInt mask, real1* probsArray)
     const bitCapIntOcl maxJ = maxQPowerOcl >> length;
 
     if (!stateBuffer) {
-        std::fill(probsArray, probsArray + lengthPower, ZERO_R1);
+        par_for(0, lengthPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { probsArray[lcv] = ZERO_R1; });
         return;
     }
 
@@ -3031,7 +3031,7 @@ void QEngineOCL::GetQuantumState(complex* outputState)
     }
 
     if (!stateBuffer) {
-        std::fill(outputState, outputState + maxQPowerOcl, ZERO_CMPLX);
+        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputState[lcv] = ZERO_R1; });
         return;
     }
 
