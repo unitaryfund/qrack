@@ -75,7 +75,7 @@ void QEngineCPU::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
     if (stateVec) {
         stateVec->copy_out(pagePtr, offset, length);
     } else {
-        std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
+        par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { pagePtr[lcv] = ZERO_CMPLX; });
     }
 }
 void QEngineCPU::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
@@ -277,7 +277,7 @@ void QEngineCPU::SetQuantumState(const complex* inputState)
 void QEngineCPU::GetQuantumState(complex* outputState)
 {
     if (!stateVec) {
-        std::fill(outputState, outputState + maxQPowerOcl, ZERO_CMPLX);
+        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputState[lcv] = ZERO_CMPLX; });
         return;
     }
 
@@ -293,7 +293,7 @@ void QEngineCPU::GetQuantumState(complex* outputState)
 void QEngineCPU::GetProbs(real1* outputProbs)
 {
     if (!stateVec) {
-        std::fill(outputProbs, outputProbs + maxQPowerOcl, ZERO_R1);
+        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputProbs[lcv] = ZERO_R1; });
         return;
     }
 
