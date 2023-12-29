@@ -328,7 +328,7 @@ public:
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
-        : QStabilizerHybrid({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
+        : QStabilizerHybrid({ QINTERFACE_BDT_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
               separation_thresh)
     {
