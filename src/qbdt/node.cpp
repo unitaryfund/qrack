@@ -218,27 +218,51 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
         branches[1U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
     } else {
         // Split all clones.
-        branches[0U] = b0->ShallowClone();
-        branches[1U] = b1->ShallowClone();
+        if (true) {
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            branches[0U] = b0->ShallowClone();
+        }
+        if (true) {
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            branches[1U] = b1->ShallowClone();
+        }
     }
 
     --depth;
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), numThreads) > 0)) {
-        branches[0U]->Branch(depth, parDepth);
-        branches[1U]->Branch(depth, parDepth);
+        if (true) {
+            std::lock_guard<std::mutex> lock(branches[0U]->mtx);
+            branches[0U]->Branch(depth, parDepth);
+        }
+        if (true) {
+            std::lock_guard<std::mutex> lock(branches[1U]->mtx);
+            branches[1U]->Branch(depth, parDepth);
+        }
         return;
     }
 
     ++parDepth;
 
-    std::future<void> future0 = std::async(std::launch::async, [&] { branches[0U]->Branch(depth, parDepth); });
-    branches[1U]->Branch(depth, parDepth);
+    std::future<void> future0 = std::async(std::launch::async, [&] {
+        std::lock_guard<std::mutex> lock(branches[0U]->mtx);
+        branches[0U]->Branch(depth, parDepth);
+    });
+    if (true) {
+        std::lock_guard<std::mutex> lock(branches[1U]->mtx);
+        branches[1U]->Branch(depth, parDepth);
+    }
     future0.get();
 #else
-    branches[0U]->Branch(depth, parDepth);
-    branches[1U]->Branch(depth, parDepth);
+    if (true) {
+        std::lock_guard<std::mutex> lock(branches[0U]->mtx);
+        branches[0U]->Branch(depth, parDepth);
+    }
+    if (true) {
+        std::lock_guard<std::mutex> lock(branches[1U]->mtx);
+        branches[1U]->Branch(depth, parDepth);
+    }
 #endif
 }
 
