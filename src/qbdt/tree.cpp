@@ -373,7 +373,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
 
     if (dest) {
-        dest->root = root->RemoveSeparableAtDepth(start, length)->ShallowClone();
+        dest->root = root->RemoveSeparableAtDepth(start, length);
         std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     } else {
         root->RemoveSeparableAtDepth(start, length);
