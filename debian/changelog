@@ -1,3 +1,9 @@
+libqrack (9.3.3) focal; urgency=medium
+
+  * Fix edge cases in QBdt (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 30 Dec 2023 10:18:14 -0500
+
 libqrack (9.3.2) bionic; urgency=medium
 
   * QBdtHybrid in default optimal stack (Bionic, 3/3)
