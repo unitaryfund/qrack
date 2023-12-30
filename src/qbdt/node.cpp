@@ -231,6 +231,10 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), numThreads) > 0)) {
         branches[0U]->Branch(depth, parDepth);
         branches[1U]->Branch(depth, parDepth);
+        
+        std::lock(b0->mtx, b1->mtx);
+        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
         return;
     }
 
