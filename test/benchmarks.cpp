@@ -186,6 +186,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
             // Collect interval data
             if (isTrialSuccessful) {
+                avgf += qftReg->GetUnitaryFidelity();
                 if (!disable_terminal_measurement) {
                     if (benchmarkShots == 1) {
                         bitCapInt result;
@@ -233,7 +234,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     trialClocks.push_back(tClock.count() * clockFactor);
                 }
                 avgt += trialClocks.back();
-                avgf += qftReg->GetUnitaryFidelity();
             }
 
             try {
