@@ -213,7 +213,7 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     QBdtNodeInterfacePtr b0 = branches[0U];
     QBdtNodeInterfacePtr b1 = branches[1U];
 
-    if (!b0 || !b1) {
+    if (!b1) {
         branches[0U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
         branches[1U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
     } else {
