@@ -95,17 +95,13 @@ public:
     {
         scale = ZERO_CMPLX;
 
-        if (!branches[0U]) {
-            return;
-        }
-
-        if (true) {
+        if (branches[0U]) {
             QBdtNodeInterfacePtr b0 = branches[0U];
             std::lock_guard<std::mutex> lock(b0->mtx);
             branches[0U] = NULL;
         }
 
-        if (true) {
+        if (branches[1U]) {
             QBdtNodeInterfacePtr b1 = branches[1U];
             std::lock_guard<std::mutex> lock(b1->mtx);
             branches[1U] = NULL;
