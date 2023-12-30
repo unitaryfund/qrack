@@ -1,3 +1,9 @@
+libqrack (9.3.4) jammy; urgency=medium
+
+  * Fix edge cases in QBdt (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 30 Dec 2023 10:36:58 -0500
+
 libqrack (9.3.3) focal; urgency=medium
 
   * Fix edge cases in QBdt (Focal, 1/3)
