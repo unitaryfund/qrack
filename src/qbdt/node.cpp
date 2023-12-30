@@ -216,14 +216,14 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     if (!b0) {
         branches[0U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
         branches[1U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
-
-        b0 = branches[0U];
-        b1 = branches[1U];
     } else {
         // Split all clones.
         branches[0U] = b0->ShallowClone();
         branches[1U] = b1->ShallowClone();
     }
+
+    b0 = branches[0U];
+    b1 = branches[1U];
 
     --depth;
 
@@ -243,6 +243,10 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     branches[0U]->Branch(depth, parDepth);
     branches[1U]->Branch(depth, parDepth);
 #endif
+
+    std::lock(b0->mtx, b1->mtx);
+    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 }
 
 void QBdtNode::Normalize(bitLenInt depth)

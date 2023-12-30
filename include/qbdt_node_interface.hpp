@@ -126,24 +126,40 @@ public:
 
     virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::PopStateVector() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
     virtual void Branch(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::Branch() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
     virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::Prune() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
     virtual void Normalize(bitLenInt depth = 1U)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::Normalize() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
@@ -155,6 +171,10 @@ public:
     virtual void Apply2x2(complex const* mtrx, bitLenInt depth)
 #endif
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::Apply2x2() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
