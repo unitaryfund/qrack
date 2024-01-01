@@ -430,7 +430,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
             scale *= leaf->scale;
         }
 
-        if (!leaf || IS_NODE_0(leaf->scale)) {
+        if (!leaf || !leaf->branches[1U]) {
             return;
         }
 
@@ -490,19 +490,24 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0U; j < qubit; ++j) {
-            if (IS_NODE_0(leaf->scale)) {
-                break;
-            }
             if (true) {
                 std::lock_guard<std::mutex> lock(leaf->mtx);
                 leaf->Branch();
             }
             leaf = leaf->branches[SelectBit(i, j)];
+            if (!leaf) {
+                break;
+            }
+        }
+
+        if (!leaf) {
+            return;
         }
 
         std::lock_guard<std::mutex> lock(leaf->mtx);
 
-        if (IS_NODE_0(leaf->scale)) {
+        if (!leaf->branches[0U] || !leaf->branches[1U]) {
+            leaf->SetZero();
             return;
         }
 
@@ -616,7 +621,8 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 
             std::lock_guard<std::mutex> lock(leaf->mtx);
 
-            if (IS_NODE_0(leaf->scale)) {
+            if (!leaf->branches[0U] || !leaf->branches[1U]) {
+                leaf->SetZero();
                 return ZERO_BCI;
             }
 
@@ -699,7 +705,8 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
             std::lock_guard<std::mutex> lock(leaf->mtx);
 
-            if (IS_NODE_0(leaf->scale)) {
+            if (!leaf->branches[0U] || !leaf->branches[1U]) {
+                leaf->SetZero();
                 return ZERO_BCI;
             }
 
