@@ -65,6 +65,7 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch)
 {
     if (branch) {
+        std::lock_guard<std::mutex> lock(root->mtx);
         root->Branch(maxQubit);
     }
 
@@ -493,7 +494,10 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             if (IS_NODE_0(leaf->scale)) {
                 break;
             }
-            leaf->Branch();
+            if (true) {
+                std::lock_guard<std::mutex> lock(leaf->mtx);
+                leaf->Branch();
+            }
             leaf = leaf->branches[SelectBit(i, j)];
         }
 
@@ -555,7 +559,10 @@ bitCapInt QBdt::MAll()
         }
 
         // We might share this node with a clone:
-        leaf->Branch();
+        if (true) {
+            std::lock_guard<std::mutex> lock(leaf->mtx);
+            leaf->Branch();
+        }
 
         if (bitResult) {
             leaf->branches[0U]->SetZero();

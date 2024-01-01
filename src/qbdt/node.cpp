@@ -257,8 +257,14 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     }
     future0.get();
 #else
-    b0->Branch(depth, parDepth);
-    b1->Branch(depth, parDepth);
+    if (true) {
+        std::lock_guard<std::mutex> lock(b0->mtx);
+        b0->Branch(depth, parDepth);
+    }
+    if (true) {
+        std::lock_guard<std::mutex> lock(b1->mtx);
+        b1->Branch(depth, parDepth);
+    }
 #endif
 }
 
