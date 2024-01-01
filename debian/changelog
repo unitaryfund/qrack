@@ -1,3 +1,9 @@
+libqrack (9.3.6) focal; urgency=medium
+
+  * Fix edge case in QBdt::DecomposeDispose (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 06:47:44 -0500
+
 libqrack (9.3.5) bionic; urgency=medium
 
   * Fix edge cases in QBdt (Bionic, 3/3)
