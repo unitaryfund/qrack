@@ -80,8 +80,8 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 {
     const size_t _b = b ? 1U : 0U;
 
-    if (!branches[_b] != !r->branches[_b]) {
-        return false;
+    if (!branches[_b] || !r->branches[_b]) {
+        return !branches[_b] == !r->branches[_b]
     }
 
     if (branches[_b].get() == r->branches[_b].get()) {
@@ -148,7 +148,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
 
         return !toRet1
             ? toRet2
-            : (!toRet2 ? toRet1 : ((norm(branches[0U]->scale) > norm(branches[1U]->scale)) ? toRet1 : toRet2));
+            : (!toRet2 ? toRet1 : ((norm(branches[1U]->scale) > norm(branches[0U]->scale)) ? toRet2 : toRet1));
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
