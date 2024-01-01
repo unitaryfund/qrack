@@ -86,13 +86,14 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 
     QBdtNodeInterfacePtr& lLeaf = branches[_b];
     QBdtNodeInterfacePtr& rLeaf = r->branches[_b];
-    std::lock(lLeaf->mtx, rLeaf->mtx);
-    std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
 
     if (lLeaf.get() == rLeaf.get()) {
         return true;
     }
+
+    std::lock(lLeaf->mtx, rLeaf->mtx);
+    std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
 
     if (lLeaf != rLeaf) {
         return false;
