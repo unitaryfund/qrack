@@ -146,7 +146,9 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
         toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
 #endif
 
-        return (norm(branches[0U]->scale) > norm(branches[1U]->scale)) ? toRet1 : toRet2;
+        return !toRet1
+            ? toRet2
+            : (!toRet2 ? toRet1 : ((norm(branches[0U]->scale) > norm(branches[1U]->scale)) ? toRet1 : toRet2));
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
