@@ -49,10 +49,6 @@ bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
         return !rhs;
     }
 
-    if (!rhs) {
-        return false;
-    }
-
     return lhs->isEqual(rhs);
 }
 
@@ -60,6 +56,10 @@ bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs) { return !(l
 
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
+    if (!r) {
+        return false;
+    }
+
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
@@ -84,15 +84,15 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
         return !branches[_b] == !r->branches[_b];
     }
 
-    if (branches[_b].get() == r->branches[_b].get()) {
-        return true;
-    }
-
     QBdtNodeInterfacePtr& lLeaf = branches[_b];
     QBdtNodeInterfacePtr& rLeaf = r->branches[_b];
     std::lock(lLeaf->mtx, rLeaf->mtx);
     std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
+
+    if (lLeaf.get() == rLeaf.get()) {
+        return true;
+    }
 
     if (lLeaf != rLeaf) {
         return false;
@@ -133,13 +133,24 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         if ((depth >= pStridePow) && (pow2Ocl(parDepth) <= numThreads)) {
             ++parDepth;
-            std::future<QBdtNodeInterfacePtr> future0 = std::async(
-                std::launch::async, [&] { return branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth); });
-            toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            std::future<QBdtNodeInterfacePtr> future0 = std::async(std::launch::async, [&] {
+                std::lock_guard<std::mutex> lock(branches[0U]->mtx);
+                return branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            });
+            if (true) {
+                std::lock_guard<std::mutex> lock(branches[1U]->mtx);
+                toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            }
             toRet1 = future0.get();
         } else {
-            toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
-            toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            if (true) {
+                std::lock_guard<std::mutex> lock(branches[0U]->mtx);
+                toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            }
+            if (true) {
+                std::lock_guard<std::mutex> lock(branches[1U]->mtx);
+                toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            }
         }
 #else
         toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
