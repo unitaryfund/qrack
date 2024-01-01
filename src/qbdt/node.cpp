@@ -210,19 +210,18 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    QBdtNodeInterfacePtr b0 = branches[0U];
-    QBdtNodeInterfacePtr b1 = branches[1U];
-
-    if (!b0 || !b1) {
+    if (!branches[0U] || !branches[1U]) {
         branches[0U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
         branches[1U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
     } else {
         // Split all clones.
         if (true) {
+            QBdtNodeInterfacePtr b0 = branches[0U];
             std::lock_guard<std::mutex> lock(b0->mtx);
             branches[0U] = b0->ShallowClone();
         }
         if (true) {
+            QBdtNodeInterfacePtr b1 = branches[1U];
             std::lock_guard<std::mutex> lock(b1->mtx);
             branches[1U] = b1->ShallowClone();
         }
@@ -230,15 +229,18 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
 
     --depth;
 
+    QBdtNodeInterfacePtr& b0 = branches[0U];
+    QBdtNodeInterfacePtr& b1 = branches[1U];
+
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), numThreads) > 0)) {
         if (true) {
-            std::lock_guard<std::mutex> lock(branches[0U]->mtx);
-            branches[0U]->Branch(depth, parDepth);
+            std::lock_guard<std::mutex> lock(b0->mtx);
+            b0->Branch(depth, parDepth);
         }
         if (true) {
-            std::lock_guard<std::mutex> lock(branches[1U]->mtx);
-            branches[1U]->Branch(depth, parDepth);
+            std::lock_guard<std::mutex> lock(b1->mtx);
+            b1->Branch(depth, parDepth);
         }
         return;
     }
@@ -246,17 +248,17 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     ++parDepth;
 
     std::future<void> future0 = std::async(std::launch::async, [&] {
-        std::lock_guard<std::mutex> lock(branches[0U]->mtx);
-        branches[0U]->Branch(depth, parDepth);
+        std::lock_guard<std::mutex> lock(b0->mtx);
+        b0->Branch(depth, parDepth);
     });
     if (true) {
-        std::lock_guard<std::mutex> lock(branches[1U]->mtx);
-        branches[1U]->Branch(depth, parDepth);
+        std::lock_guard<std::mutex> lock(b1->mtx);
+        b1->Branch(depth, parDepth);
     }
     future0.get();
 #else
-    branches[0U]->Branch(depth, parDepth);
-    branches[1U]->Branch(depth, parDepth);
+    b0->Branch(depth, parDepth);
+    b1->Branch(depth, parDepth);
 #endif
 }
 
