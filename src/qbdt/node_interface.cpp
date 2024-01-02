@@ -128,6 +128,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
 {
     if (IS_NODE_0(scale)) {
+        SetZero();
         return NULL;
     }
 
