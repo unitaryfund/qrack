@@ -373,9 +373,13 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
 
     if (dest) {
-        dest->root = root->RemoveSeparableAtDepth(start, length);
         std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
+        QBdtNodeInterfacePtr _root = root;
+        std::lock_guard<std::mutex> lock(_root->mtx);
+        dest->root = root->RemoveSeparableAtDepth(start, length);
     } else {
+        QBdtNodeInterfacePtr _root = root;
+        std::lock_guard<std::mutex> lock(_root->mtx);
         root->RemoveSeparableAtDepth(start, length);
     }
 
