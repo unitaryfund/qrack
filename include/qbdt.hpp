@@ -98,10 +98,10 @@ protected:
             QBdtNodeInterfacePtr leaf = root;
             complex scale = leaf->scale;
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
-                if (norm(leaf->scale) <= _qrack_qbdt_sep_thresh) {
+                leaf = leaf->branches[SelectBit(i, j)];
+                if (!leaf) {
                     break;
                 }
-                leaf = leaf->branches[SelectBit(i, j)];
                 scale *= leaf->scale;
             }
 
@@ -119,10 +119,8 @@ protected:
         }
 
         _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
-            QBdtNodeInterfacePtr prevLeaf = root;
             QBdtNodeInterfacePtr leaf = root;
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
-                prevLeaf = leaf;
                 leaf = leaf->branches[SelectBit(i, j)];
             }
 
