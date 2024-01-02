@@ -1,3 +1,9 @@
+libqrack (9.3.14) jammy; urgency=medium
+
+  * Stable QBdt (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 02 Jan 2024 15:06:06 -0500
+
 libqrack (9.3.13) focal; urgency=medium
 
   * Stable QBdt (Focal, 1/3)
