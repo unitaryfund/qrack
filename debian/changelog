@@ -1,3 +1,9 @@
+libqrack (9.3.15) bionic; urgency=medium
+
+  * Stable QBdt (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 02 Jan 2024 15:25:47 -0500
+
 libqrack (9.3.14) jammy; urgency=medium
 
   * Stable QBdt (Jammy, 2/3)
