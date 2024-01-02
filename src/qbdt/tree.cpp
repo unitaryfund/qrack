@@ -336,7 +336,11 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         return start;
     }
 
-    root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
+    if (true) {
+        QBdtNodeInterfacePtr _root = root;
+        std::lock_guard<std::mutex> lock(_root->mtx);
+        root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
+    }
 
     // Resize the shards buffer.
     shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());

@@ -408,10 +408,13 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         }
 
         QBdtNodeInterfacePtr c = ShallowClone();
-        scale = b->scale;
 
-        branches[0U] = b->branches[0U]->ShallowClone();
-        branches[1U] = b->branches[1U]->ShallowClone();
+        if (true) {
+            std::lock_guard<std::mutex> lock(b->mtx);
+            scale = b->scale;
+            branches[0U] = b->branches[0U]->ShallowClone();
+            branches[1U] = b->branches[1U]->ShallowClone();
+        }
 
         InsertAtDepth(c, size, 0U, parDepth);
 
@@ -420,24 +423,27 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     --depth;
 
     if (b0.get() == b1.get()) {
+        std::lock_guard<std::mutex> lockb(b->mtx);
+        std::lock_guard<std::mutex> lock(b0->mtx);
+
         if (!depth && size) {
-            std::lock_guard<std::mutex> lock(b0->mtx);
             QBdtNodeInterfacePtr n0 = std::make_shared<QBdtNode>(b0->scale, b->branches);
             branches[0U] = n0;
             branches[1U] = n0;
+
             std::lock_guard<std::mutex> nLock(n0->mtx);
             n0->InsertAtDepth(b, size, 0U, parDepth);
 
             return;
         }
 
-        std::lock_guard<std::mutex> lock(b0->mtx);
         b0->InsertAtDepth(b, depth, size, parDepth);
 
         return;
     }
 
     if (!depth && size) {
+        std::lock_guard<std::mutex> lockb(b->mtx);
         std::lock(b0->mtx, b1->mtx);
         std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
