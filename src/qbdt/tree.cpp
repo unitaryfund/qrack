@@ -491,21 +491,18 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     const bitCapInt qPower = pow2(qubit);
     root->scale = GetNonunitaryPhase();
 
+    if (true) {
+        std::lock_guard<std::mutex> lock(root->mtx);
+        root->Branch(qubit + 1U);
+    }
+
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0U; j < qubit; ++j) {
-            if (true) {
-                std::lock_guard<std::mutex> lock(leaf->mtx);
-                leaf->Branch();
-            }
             leaf = leaf->branches[SelectBit(i, j)];
             if (!leaf) {
-                break;
+                return;
             }
-        }
-
-        if (!leaf) {
-            return;
         }
 
         std::lock_guard<std::mutex> lock(leaf->mtx);
@@ -514,8 +511,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             leaf->SetZero();
             return;
         }
-
-        leaf->Branch();
 
         QBdtNodeInterfacePtr& b0 = leaf->branches[0U];
         QBdtNodeInterfacePtr& b1 = leaf->branches[1U];
@@ -537,7 +532,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
     });
 
-    root->Prune(qubit);
+    root->Prune(qubit + 1U);
 
     return result;
 }
