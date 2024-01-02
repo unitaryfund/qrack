@@ -1,3 +1,9 @@
+libqrack (9.3.12) bionic; urgency=medium
+
+  * Fix edge cases in QBdt (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 19:02:59 -0500
+
 libqrack (9.3.11) jammy; urgency=medium
 
   * Fix edge cases in QBdt (Jammy, 2/3)
