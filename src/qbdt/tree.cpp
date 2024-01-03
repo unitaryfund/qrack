@@ -65,7 +65,9 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch)
 {
     if (branch) {
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(root->mtx);
+#endif
         root->Branch(maxQubit);
     }
 
@@ -134,8 +136,8 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bo
         futures[cpu].get();
     }
 #else
-    for (bitCapInt j = 0U; j < end; ++j) {
-        j |= fn(j);
+    for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
+        bi_or_ip(&j, fn(j));
     }
 #endif
 
@@ -192,7 +194,7 @@ void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
         futures[cpu].get();
     }
 #else
-    for (bitCapInt j = 0U; j < end; ++j) {
+    for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
         fn(j, 0U);
     }
 #endif
@@ -336,11 +338,15 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         return start;
     }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if (true) {
         QBdtNodeInterfacePtr _root = root;
         std::lock_guard<std::mutex> lock(_root->mtx);
         root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
     }
+#else
+    root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->qubitCount);
+#endif
 
     // Resize the shards buffer.
     shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
@@ -379,11 +385,15 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     if (dest) {
         std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
         QBdtNodeInterfacePtr _root = root;
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(_root->mtx);
+#endif
         dest->root = root->RemoveSeparableAtDepth(start, length);
     } else {
         QBdtNodeInterfacePtr _root = root;
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(_root->mtx);
+#endif
         root->RemoveSeparableAtDepth(start, length);
     }
 
@@ -495,10 +505,14 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     const bitCapInt qPower = pow2(qubit);
     root->scale = GetNonunitaryPhase();
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if (true) {
         std::lock_guard<std::mutex> lock(root->mtx);
         root->Branch(qubit + 1U);
     }
+#else
+    root->Branch(qubit + 1U);
+#endif
 
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
@@ -509,7 +523,9 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             }
         }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(leaf->mtx);
+#endif
 
         if (!leaf->branches[0U] || !leaf->branches[1U]) {
             leaf->SetZero();
@@ -565,11 +581,16 @@ bitCapInt QBdt::MAll()
             bitResult = (Rand() <= oneChance);
         }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         // We might share this node with a clone:
         if (true) {
             std::lock_guard<std::mutex> lock(leaf->mtx);
             leaf->Branch();
         }
+#else
+        // We might share this node with a clone:
+        leaf->Branch();
+#endif
 
         if (bitResult) {
             leaf->branches[0U]->SetZero();
@@ -622,7 +643,9 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
                 }
             }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
             std::lock_guard<std::mutex> lock(leaf->mtx);
+#endif
 
             if (!leaf->branches[0U] || !leaf->branches[1U]) {
                 leaf->SetZero();
@@ -706,7 +729,9 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
                 }
             }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
             std::lock_guard<std::mutex> lock(leaf->mtx);
+#endif
 
             if (!leaf->branches[0U] || !leaf->branches[1U]) {
                 leaf->SetZero();

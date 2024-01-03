@@ -54,7 +54,9 @@ public:
 
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::mutex mtx;
+#endif
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
@@ -95,6 +97,7 @@ public:
     {
         scale = ZERO_CMPLX;
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         if (branches[0U]) {
             QBdtNodeInterfacePtr b0 = branches[0U];
             std::lock_guard<std::mutex> lock(b0->mtx);
@@ -106,6 +109,10 @@ public:
             std::lock_guard<std::mutex> lock(b1->mtx);
             branches[1U] = NULL;
         }
+#else
+        branches[0U] = NULL;
+        branches[1U] = NULL;
+#endif
     }
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);

@@ -91,9 +91,11 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
         return true;
     }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::lock(lLeaf->mtx, rLeaf->mtx);
     std::lock_guard<std::mutex> lLock(lLeaf->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> rLock(rLeaf->mtx, std::adopt_lock);
+#endif
 
     if (lLeaf != rLeaf) {
         return false;
@@ -247,8 +249,8 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 #else
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
-    for (bitCapInt j = 0U; j < end; ++j) {
-        j |= fn(j);
+    for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
+        bi_or_ip(&j, fn(j));
     }
 }
 #endif

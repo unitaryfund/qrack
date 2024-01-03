@@ -113,10 +113,14 @@ protected:
         DumpBuffers();
 
         root = std::make_shared<QBdtNode>();
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         if (true) {
             std::lock_guard<std::mutex> lock(root->mtx);
             root->Branch(qubitCount);
         }
+#else
+        root->Branch(qubitCount);
+#endif
 
         _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
             QBdtNodeInterfacePtr leaf = root;
