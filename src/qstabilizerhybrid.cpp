@@ -413,7 +413,7 @@ void QStabilizerHybrid::SwitchToEngine()
 
     if ((qubitCount + ancillaCount + deadAncillaCount) > maxEngineQubitCount) {
         QInterfacePtr e = MakeEngine(ZERO_BCI);
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#if ENABLE_PTHREAD
         const unsigned numCores = GetConcurrencyLevel();
         std::vector<QStabilizerHybridPtr> clones;
         for (unsigned i = 0U; i < numCores; ++i) {
@@ -1376,7 +1376,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         const bitCapInt qPower = pow2(qubit);
         const bitCapInt maxLcv = maxQPower >> 1U;
         real1_f partProb = ZERO_R1_F;
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#if ENABLE_PTHREAD
         const unsigned numCores =
             (bi_compare(maxLcv, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxLcv : GetConcurrencyLevel();
         std::vector<QStabilizerHybridPtr> clones;
@@ -1554,7 +1554,7 @@ bitCapInt QStabilizerHybrid::MAll()
         stateMapCache = stabilizer->GetQuantumState();
     }
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#if ENABLE_PTHREAD
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
     bitCapInt d = ZERO_BCI;
@@ -1676,7 +1676,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         stateMapCache = stabilizer->GetQuantumState();
     }
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#if ENABLE_PTHREAD
     const unsigned numCores =
         (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
 
@@ -1766,7 +1766,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         stateMapCache = stabilizer->GetQuantumState();
     }
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#if ENABLE_PTHREAD
     const unsigned numCores =
         (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
 
