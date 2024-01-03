@@ -437,7 +437,7 @@ void QStabilizerHybrid::SwitchToEngine()
         }
         clones.clear();
 #else
-        for (bitCapInt i = 0U; i < maxQPower; ++i) {
+        for (bitCapInt i = 0U; bi_compare(i, maxQPower) < 0; bi_increment(&i, 1U)) {
             e->SetAmplitude(i, GetAmplitude(i));
         }
 #endif
@@ -1404,9 +1404,9 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         }
         stateMapCache.clear();
 #else
-        for (bitCapInt i = 0U; i < maxLcv; ++i) {
+        for (bitCapInt i = 0U; bi_compare(i, maxLcv) < 0; bi_increment(&i, 1U)) {
             bitCapInt j = i & (qPower - 1U);
-            j |= (i ^ j) << ONE_BCI;
+            bi_or_ip(&j, (i ^ j) << 1U);
             partProb += norm(GetAmplitude(j | qPower));
         }
         stateMapCache.clear();
@@ -1593,7 +1593,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bitCapInt d = 0U;
     bitCapInt m;
     bool foundM = false;
-    for (m = 0U; m < maxQPower; ++m) {
+    for (m = 0U; bi_compare(m, maxQPower) < 0; bi_increment(&m, 1U)) {
         CHECK_NARROW_SHOT()
     }
 #endif
@@ -1705,7 +1705,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         }
     }
 #else
-    for (bitCapInt m = 0U; m < maxQPower; ++m) {
+    for (bitCapInt m = 0U; bi_compare(m, maxQPower) < 0; bi_increment(&m, 1U)) {
         const real1 prob = norm(GetAmplitude(m));
         CHECK_SHOTS(m, shotFunc);
     }
@@ -1795,7 +1795,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         }
     }
 #else
-    for (bitCapInt m = 0U; m < maxQPower; ++m) {
+    for (bitCapInt m = 0U; bi_compare(m, maxQPower) < 0; bi_increment(&m, 1U)) {
         const real1 prob = norm(GetAmplitude(m));
         CHECK_SHOTS(m, shotFunc);
     }
