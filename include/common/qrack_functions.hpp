@@ -217,7 +217,7 @@ std::istream& operator>>(std::istream& is, bitCapInt& b);
 #if ENABLE_ENV_VARS
 const real1_f _qrack_qbdt_sep_thresh = getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")
     ? (real1_f)std::stof(std::string(getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")))
-    : FP_NORM_EPSILON;
+    : (FP_NORM_EPSILON / 2);
 #else
 const real1_f _qrack_qbdt_sep_thresh = FP_NORM_EPSILON;
 #endif
