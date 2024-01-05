@@ -213,7 +213,7 @@ constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define qCudaReal1_f float
 #define make_qCudaCmplx make_half2
 #define ZERO_R1_CUDA ((qCudaReal1)0.0f)
-#define REAL1_EPSILON_CUDA 0.00000762939f
+#define REAL1_EPSILON_CUDA 0.000000477f
 #define PI_R1_CUDA M_PI
 #elif FPPOW < 6
 #define qCudaReal1 float
