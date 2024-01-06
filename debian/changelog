@@ -1,3 +1,9 @@
+libqrack (9.3.17) bionic; urgency=medium
+
+  * Better systemic precision constants (Bionic, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 06 Jan 2024 14:03:03 -0500
+
 libqrack (9.3.16) focal; urgency=medium
 
   * Better systemic precision constants (Focal, 1/3)
