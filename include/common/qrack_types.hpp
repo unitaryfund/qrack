@@ -159,8 +159,8 @@ constexpr real1_f ZERO_R1_F = 0.0f;
 const real1 ONE_R1 = (real1)1.0f;
 constexpr real1_f ONE_R1_F = 1.0f;
 const real1 REAL1_DEFAULT_ARG = (real1)-999.0f;
-// Half of the probability of 20 maximally superposed qubits in any permutation
-const real1 REAL1_EPSILON = (real1)0.000000477f;
+// The probability in any single permutation of 20 maximally superposed qubits
+const real1 REAL1_EPSILON = (real1)0.000000954f;
 const real1 PI_R1 = (real1)M_PI;
 const real1 SQRT2_R1 = (real1)M_SQRT2;
 const real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
@@ -174,7 +174,7 @@ constexpr real1 PI_R1 = (real1)M_PI;
 constexpr real1 SQRT2_R1 = (real1)M_SQRT2;
 constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0f
-// Half of the probability of 48 maximally superposed qubits in any permutation
+// The probability in any single permutation of 48 maximally superposed qubits
 #define REAL1_EPSILON 1.7763568394002505e-15f
 #elif FPPOW < 7
 #define QRACK_CONST constexpr
@@ -186,7 +186,7 @@ constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 #define SQRT2_R1 M_SQRT2
 #define SQRT1_2_R1 M_SQRT1_2
 #define REAL1_DEFAULT_ARG -999.0
-// Half of the probability of 96 maximally superposed qubits in any permutation
+// The probability in any single permutation of 96 maximally superposed qubits
 #define REAL1_EPSILON 1.262177448353619e-29
 #else
 #define QRACK_CONST constexpr
@@ -198,7 +198,7 @@ constexpr real1_f PI_R1 = (real1_f)M_PI;
 constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
 constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define REAL1_DEFAULT_ARG -999.0
-// Half of the probability of 192 maximally superposed qubits in any permutation
+// The probability in any single permutation of 192 maximally superposed qubits
 #define REAL1_EPSILON 1.5930919111324523e-58
 #endif
 
@@ -213,7 +213,7 @@ constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
 #define qCudaReal1_f float
 #define make_qCudaCmplx make_half2
 #define ZERO_R1_CUDA ((qCudaReal1)0.0f)
-#define REAL1_EPSILON_CUDA 0.000000477f
+#define REAL1_EPSILON_CUDA 0.000000954f
 #define PI_R1_CUDA M_PI
 #elif FPPOW < 6
 #define qCudaReal1 float
