@@ -1,8 +1,14 @@
+libqrack (9.3.21) bionic; urgency=medium
+
+  * Bi-directional QBdtHybrid mode control (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 07 Jan 2024 14:46:22 -0500
+
 libqrack (9.3.20) jammy; urgency=medium
 
   * Bi-directional QBdtHybrid mode control (Jammy, 2/3)
 
- -- Daniel Strano <iamu@bastet>  Sun, 07 Jan 2024 14:02:44 -0500
+ -- Daniel Strano <dan@unitary.fund>  Sun, 07 Jan 2024 14:02:44 -0500
 
 libqrack (9.3.19) focal; urgency=medium
 
