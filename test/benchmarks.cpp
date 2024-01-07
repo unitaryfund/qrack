@@ -6999,6 +6999,138 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
     }
 }
 
+TEST_CASE("test_noisy_rcs_nn", "[speed]")
+{
+    // "nn" stands for "nearest-neighbor (coupler gates)"
+    const int n = max_qubits;
+    const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+    std::cout << "Circuit layer depth: " << n << std::endl;
+
+    // The test runs 2 bit gates according to a tiling sequence.
+    // The 1 bit indicates +/- column offset.
+    // The 2 bit indicates +/- row offset.
+    // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
+    // paper.
+    std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    const int rowLen = std::ceil(std::sqrt(n));
+    const int GateCount2Qb = 12;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    double sdrp = 1.0;
+
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
+
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
+    bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(n));
+    if (randPerm >= pow2Ocl(n)) {
+        randPerm = pow2Ocl(n) - 1U;
+    }
+
+    while (sdrp >= 0) {
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
+#else
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
+#endif
+
+        start = std::chrono::high_resolution_clock::now();
+        QInterfacePtr qReg = CreateQuantumInterface(engineStack, n, randPerm);
+
+        for (bitLenInt d = 0U; d < depth; ++d) {
+            for (bitLenInt i = 0U; i < n; ++i) {
+                // This effectively covers x-z-x Euler angles, every 3 layers:
+                qReg->H(i);
+                qReg->RZ(qReg->Rand() * 2 * PI_R1, i);
+            }
+
+            int gate = gateSequence.front();
+            gateSequence.erase(gateSequence.begin());
+            gateSequence.push_back(gate);
+            for (int row = 1; row < rowLen; row += 2) {
+                for (int col = 0; col < rowLen; col++) {
+                    int tempRow = row;
+                    int tempCol = col;
+                    tempRow += (gate & 2) ? 1 : -1;
+                    tempCol += (gate & 1) ? 1 : 0;
+                    if (tempRow < 0 || tempCol < 0 || tempRow >= rowLen || tempCol >= rowLen) {
+                        continue;
+                    }
+                    int b1 = row * rowLen + col;
+                    int b2 = tempRow * rowLen + tempCol;
+                    if (b1 >= n || b2 >= n) {
+                        continue;
+                    }
+                    if ((2 * qReg->Rand()) < ONE_R1_F) {
+                        std::swap(b1, b2);
+                    }
+                    const real1_f gateId = GateCount2Qb * qReg->Rand();
+                    if (gateId < ONE_R1_F) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 2)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 3)) {
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 4)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 5)) {
+                        qReg->ISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 6)) {
+                        qReg->IISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 7)) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 8)) {
+                        qReg->CY(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 9)) {
+                        qReg->CZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 10)) {
+                        qReg->AntiCNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 11)) {
+                        qReg->AntiCY(b1, b2);
+                    } else {
+                        qReg->AntiCZ(b1, b2);
+                    }
+                }
+            }
+        }
+
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+        std::cout << "Unitary fidelity: " << qReg->GetUnitaryFidelity() << std::endl;
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
+
+        if (sdrp == 0) {
+            return;
+        }
+
+        sdrp -= 0.025;
+        if (abs(sdrp) <= FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
+    }
+}
+
 TEST_CASE("test_noisy_sycamore", "[supreme]")
 {
     std::cout << ">>> 'test_noisy_sycamore':" << std::endl;
