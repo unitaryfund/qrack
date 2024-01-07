@@ -14,7 +14,7 @@
 
 #if defined(_WIN32)
 #include <intrin.h>
-#elif ENABLE_SSE3
+#elif defined(ENABLE_SSE3)
 #include <pmmintrin.h>
 #else
 #include <xmmintrin.h>

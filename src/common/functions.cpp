@@ -12,7 +12,7 @@
 
 #include "qrack_functions.hpp"
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
 #elif FPPOW == 6
@@ -91,7 +91,7 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
     return tmp;
 }
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
 void mul2x2(complex const* left, complex const* right, complex* out)
 {
     const complex2 left0(left[0U], left[2U]);

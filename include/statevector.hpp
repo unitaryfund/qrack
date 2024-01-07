@@ -18,14 +18,14 @@
 #include <algorithm>
 #include <mutex>
 
-#if ENABLE_PTHREAD
+#ifdef ENABLE_PTHREAD
 #include <future>
 #endif
 
 #include <unordered_map>
 #define SparseStateVecMap std::unordered_map<bitCapIntOcl, complex>
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
 #elif FPPOW == 6
@@ -57,7 +57,7 @@ public:
     }
 
     virtual complex read(const bitCapIntOcl& i) = 0;
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     virtual complex2 read2(const bitCapIntOcl& i1, const bitCapIntOcl& i2) = 0;
 #endif
     virtual void write(const bitCapIntOcl& i, const complex& c) = 0;
@@ -128,7 +128,7 @@ public:
 
     complex read(const bitCapIntOcl& i) { return amplitudes.get()[i]; };
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     complex2 read2(const bitCapIntOcl& i1, const bitCapIntOcl& i2)
     {
         return complex2(amplitudes.get()[i1], amplitudes.get()[i2]);
@@ -247,7 +247,7 @@ public:
 
     complex read(const bitCapIntOcl& i) { return isReadLocked ? readLocked(i) : readUnlocked(i); }
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     complex2 read2(const bitCapIntOcl& i1, const bitCapIntOcl& i2)
     {
         if (isReadLocked) {

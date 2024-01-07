@@ -311,7 +311,7 @@ void QEngineCPU::GetProbs(real1* outputProbs)
  * A fundamental operation used by almost all gates.
  */
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
 
 #define NORM_THRESH_KERNEL(o1, o2, fn)                                                                                 \
     [&](const bitCapIntOcl& lcv, const unsigned& cpu) {                                                                \
@@ -1386,7 +1386,7 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
             oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
         };
     } else {
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
         if (qPower == 1U) {
             fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
                 oneChanceBuff[cpu] += norm(stateVec->read2((lcv << 2U) | 1U, (lcv << 2U) | 3U));
@@ -1407,7 +1407,7 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     if (stateVec->is_sparse()) {
         par_for_set(CastStateVecSparse()->iterable(qPower, qPower, qPower), fn);
     } else {
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
         if (qPower == 1U) {
             par_for(0U, maxQPowerOcl >> 2U, fn);
         } else {

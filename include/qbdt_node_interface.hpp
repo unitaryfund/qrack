@@ -20,7 +20,7 @@
 
 #include <mutex>
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
 #elif FPPOW == 6
@@ -39,7 +39,7 @@ protected:
     static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
 
 public:
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
         bitLenInt parDepth = 1U)
@@ -167,7 +167,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, bitLenInt depth)
 #else
@@ -182,7 +182,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b1)
 #else

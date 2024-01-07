@@ -26,7 +26,7 @@ typedef unsigned long long uintq;
 typedef void (*IdCallback)(uintq);
 typedef bool (*ProbAmpCallback)(size_t, double, double);
 
-#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+#if !(FPPOW < 6 && !defined(ENABLE_COMPLEX_X2))
 struct _QrackTimeEvolveOpHeader;
 #endif
 
@@ -262,7 +262,7 @@ MICROSOFT_QUANTUM_DECL void SetSdrp(_In_ uintq sid, _In_ double sdrp);
 MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ uintq sid, _In_ bool irs);
 MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool iti);
 
-#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+#if !(FPPOW < 6 && !defined(ENABLE_COMPLEX_X2))
 MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq n,
     _In_reads_(n) _QrackTimeEvolveOpHeader* teos, uintq mn, _In_reads_(mn) double* mtrx);
 #endif

@@ -551,7 +551,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 #endif
 }
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
 void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
     const complex2& mtrxColShuff2, bitLenInt depth)
 {

@@ -13,7 +13,7 @@
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 
-#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+#if !(FPPOW < 6 && !defined(ENABLE_COMPLEX_X2))
 #include "hamiltonian.hpp"
 #endif
 
@@ -2946,7 +2946,7 @@ MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool irs)
     }
 }
 
-#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+#if !(FPPOW < 6 && !defined(ENABLE_COMPLEX_X2))
 /**
  * (External API) Simulate a Hamiltonian
  */
