@@ -103,13 +103,13 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 
     // These lLeaf and rLeaf are deemed equal.
     // Since we allow approximation in determining equality,
-    // amortize error by averaging the scale.
+    // amortize error by (L2 or L1) averaging scale.
     // (All other update operations on the branches are blocked by the mutexes.)
-    // We can weight by use_count() of each leaf, which should roughly correspond
-    // to the number of branches that point to each node.
+    // We can weight by square use_count() of each leaf, which should roughly
+    // correspond to the number of branches that point to each node.
 
-    const real1 lWeight = (real1)lLeaf.use_count();
-    const real1 rWeight = (real1)rLeaf.use_count();
+    const real1 lWeight = (real1)(lLeaf.use_count() * lLeaf.use_count());
+    const real1 rWeight = (real1)(rLeaf.use_count() * rLeaf.use_count());
     const complex nScale = (lWeight * lLeaf->scale + rWeight * rLeaf->scale) / (lWeight + rWeight);
 
     if (IS_NODE_0(nScale)) {
