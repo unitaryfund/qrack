@@ -1,3 +1,9 @@
+libqrack (9.3.19) UNRELEASED; urgency=medium
+
+  * Bi-directional QBdtHybrid mode control (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 07 Jan 2024 13:01:10 -0500
+
 libqrack (9.3.18) Jammy; urgency=medium
 
   * Better systemic precision constants (Jammy, 3/3)
