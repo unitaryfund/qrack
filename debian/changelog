@@ -1,4 +1,4 @@
-libqrack (9.3.19) UNRELEASED; urgency=medium
+libqrack (9.3.19) focal; urgency=medium
 
   * Bi-directional QBdtHybrid mode control (Focal, 1/3)
 
