@@ -7021,7 +7021,7 @@ TEST_CASE("test_noisy_rcs_nn", "[speed]")
     const int GateCount2Qb = 12;
 
     auto start = std::chrono::high_resolution_clock::now();
-    double sdrp = 1.0 - 0.025;
+    double sdrp = 1.0;
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
@@ -7112,6 +7112,8 @@ TEST_CASE("test_noisy_rcs_nn", "[speed]")
                 }
             }
         }
+
+        qReg->MAll();
 
         std::cout << "For SDRP=" << sdrp << ": " << std::endl;
         std::cout << "Unitary fidelity: " << qReg->GetUnitaryFidelity() << std::endl;
