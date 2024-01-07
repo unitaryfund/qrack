@@ -1,3 +1,9 @@
+libqrack (9.3.20) jammy; urgency=medium
+
+  * Bi-directional QBdtHybrid mode control (Jammy, 2/3)
+
+ -- Daniel Strano <iamu@bastet>  Sun, 07 Jan 2024 14:02:44 -0500
+
 libqrack (9.3.19) focal; urgency=medium
 
   * Bi-directional QBdtHybrid mode control (Focal, 1/3)
