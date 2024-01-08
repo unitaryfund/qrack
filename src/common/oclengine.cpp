@@ -180,7 +180,7 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::
                           << std::endl;
             }
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
                 { std::pair<const void*, size_t>(&buffer[0U], buffer.size()) }, &binaryStatus, &buildError);
 #else
