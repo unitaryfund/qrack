@@ -107,7 +107,7 @@ inline complex2 operator*(const float& lhs, const complex2& rhs) { return _mm_mu
 inline float norm(const complex2& c)
 {
     const __m128 n = _mm_mul_ps(c.c2, c.c2);
-#if ENABLE_SSE3
+#ifdef ENABLE_SSE3
     __m128 shuf = _mm_movehdup_ps(n);
 #else
     __m128 shuf = _mm_shuffle_ps(n, n, _MM_SHUFFLE(2, 3, 0, 1));
