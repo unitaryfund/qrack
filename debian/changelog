@@ -1,3 +1,9 @@
+libqrack (9.3.35) focal; urgency=medium
+
+  * Fix PPC binary (w/ new src package) (Focal, 1/1, no Jammy/Bionic)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 09 Jan 2024 17:03:51 -0500
+
 libqrack (9.3.34) focal; urgency=medium
 
   * PowerPC OpenCL support (Focal, 1/3)
