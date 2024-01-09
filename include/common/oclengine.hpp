@@ -31,12 +31,15 @@
 
 #if defined(OPENCL_V3)
 #include <CL/opencl.hpp>
-#elif defined(__APPLE__)
+#elif !ENABLE_OOO_OCL && defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
 #include <CL/opencl.hpp>
 #elif defined(_WIN32) || ENABLE_SNUCL
 #include <CL/cl.hpp>
 #else
+#if defined(__APPLE__)
+#define CL_SILENCE_DEPRECATION
+#endif
 #include <CL/cl2.hpp>
 #endif
 
