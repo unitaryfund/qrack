@@ -25,7 +25,7 @@
 #include <unordered_map>
 #define SparseStateVecMap std::unordered_map<bitCapIntOcl, complex>
 
-#ifdef ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
 #elif FPPOW == 6
