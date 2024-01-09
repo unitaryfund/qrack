@@ -134,6 +134,7 @@ public:
         , preferredConcurrency(0U)
     {
         cl_int error;
+#if ENABLE_OOO_OCL
         queue = cl::CommandQueue(c, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
         if (error != CL_SUCCESS) {
             queue = cl::CommandQueue(c, d, 0, &error);
@@ -141,6 +142,12 @@ public:
                 throw std::runtime_error("Failed to create OpenCL command queue!");
             }
         }
+#else
+        queue = cl::CommandQueue(c, d, 0, &error);
+        if (error != CL_SUCCESS) {
+            throw std::runtime_error("Failed to create OpenCL command queue!");
+        }
+#endif
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(*(mutexes[call]), calls[call]); }

@@ -1,3 +1,5 @@
+option(ENABLE_OOO_OCL "Enable out-of-order (v2.0) OpenCL queue execution (default is ON, might not be available if OpenCL 1.x)" ON)
+
 if (MSVC)
     set (OPENCL_AMDSDK "C:/Program Files (x86)/Common Files/Intel/Shared Libraries" CACHE PATH "Installation path for the installed AMD or Intel OpenCL SDK, if used")
 else (MSVC)
@@ -35,6 +37,10 @@ endif (PACK_DEBIAN)
 message ("OpenCL Support is: ${ENABLE_OPENCL}")
 
 if (ENABLE_OPENCL)
+    if (OpenCL_VERSION_MAJOR EQUAL 1)
+        set(ENABLE_OOO_OCL OFF)
+    endif (OpenCL_VERSION_MAJOR EQUAL 1)
+
     foreach (i IN ITEMS ${OpenCL_INCLUDE_DIRS})
         if (EXISTS ${i}/CL/opencl.hpp)
             set (OPENCL_V3 ON)

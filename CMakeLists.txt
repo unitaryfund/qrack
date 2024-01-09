@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.3.22 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.3.23 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -134,6 +134,7 @@ message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
 message ("SSE3.0 support is: ${ENABLE_SSE3}")
 message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
+message ("OpenCL (v2.0) out-of-order queue is: ${ENABLE_OOO_OCL}")
 message ("Quantum Binary decision tree (QBDT) inclusion is: ${ENABLE_QBDT}")
 message ("General ALU API inclusion is: ${ENABLE_ALU}")
 message ("BCD ALU API inclusion is: ${ENABLE_BCD}")

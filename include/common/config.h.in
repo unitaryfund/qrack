@@ -7,6 +7,7 @@
 #cmakedefine ENABLE_INTRINSICS 1
 #cmakedefine ENABLE_OCL_MEM_GUARDS 1
 #cmakedefine ENABLE_OPENCL 1
+#cmakedefine ENABLE_OOO_OCL 1
 #cmakedefine ENABLE_PTHREAD 1
 #cmakedefine ENABLE_QBDT_CPU_PARALLEL 1
 #cmakedefine ENABLE_QBDT 1

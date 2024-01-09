@@ -1,3 +1,9 @@
+libqrack (9.3.23) focal; urgency=medium
+
+  * Fix SSE3 header inclusion (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 19:29:45 -0500
+
 libqrack (9.3.22) focal; urgency=medium
 
   * Remove QBdtHybrid from default stack (Focal, 1/3)
