@@ -28,18 +28,18 @@ if (NOT OpenCL_FOUND)
     message ("OpenCL support found in the AMD or Intel SDK (OPENCL_AMSDK directory variable)")
 endif ()
 
+if (PACK_DEBIAN)
+    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
+        set(ENABLE_OPENCL OFF)
+    endif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
+endif (PACK_DEBIAN)
+
 message ("OpenCL Support is: ${ENABLE_OPENCL}")
 
 if (ENABLE_OPENCL)
     if (OpenCL_VERSION_MAJOR EQUAL 1)
         set(ENABLE_OOO_OCL OFF)
     endif (OpenCL_VERSION_MAJOR EQUAL 1)
-
-    if (PACK_DEBIAN)
-        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
-            set(ENABLE_OOO_OCL OFF)
-        endif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
-    endif (PACK_DEBIAN)
 
     foreach (i IN ITEMS ${OpenCL_INCLUDE_DIRS})
         if (EXISTS ${i}/CL/opencl.hpp)
