@@ -105,6 +105,14 @@ Similarly, benchmarks are in `test/benchmarks.cpp`:
     $ _build/benchmarks [--optimal] [--max-qubits=30] [test_qft_cosmology]
 ```
 
+## OpenCL on systems prior to OpenCL v2.0
+
+Particularly on older hardware, it is possible that you do not have OpenCL v2.0 available. In theory, Qrack should work off-the-shelf anyway. However, if the OpenCL implementation isn't even aware of the existence of v2.0, use the following option to completely manually force all v2.0 functionality off and to set the target OpenCL API level expressly to v1.1:
+
+```sh
+    $ cmake -DENALBE_OOO_OCL=OFF ..
+```
+
 ## Installing OpenCL on VMWare
 
 Most platforms offer a standardized way of installing OpenCL. However, a method for VMWare benefits from documentation, here.
@@ -122,6 +130,8 @@ Most platforms offer a standardized way of installing OpenCL. However, a method 
 While the OpenCL framework is available by default on most modern Macs, the C++ header `cl.hpp` is usually not. One option for building for OpenCL on Mac is to download this header file and include it in the Qrack project folder under include/OpenCL (as `cl.hpp`). The OpenCL C++ header can be found at the Khronos OpenCL registry:
 
 https://www.khronos.org/registry/OpenCL/
+
+Otherwise, Homebrew offers a package with the headers: [opencl-clhpp-headers](https://formulae.brew.sh/formula/opencl-clhpp-headers) is the preferred method of installing headers, if `brew` is available.
 
 ## Building and Installing Qrack on Windows
 
