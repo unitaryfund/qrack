@@ -1,3 +1,9 @@
+libqrack (9.3.26) focal; urgency=medium
+
+  * Fix CMake macro (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 21:26:55 -0500
+
 libqrack (9.3.25) focal; urgency=medium
 
   * ENABLE_COMPLEX_X2 is always defined (Focal, 1/3)
