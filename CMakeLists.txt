@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.3.30 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.3.31 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -223,6 +223,8 @@ endif (ENABLE_SSE3)
 
 if (NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "^amd"))
     set(ENABLE_INTRINSICS OFF)
+    set(ENABLE_COMPLEX_X2 OFF)
+    set(ENABLE_SSE3 OFF)
 endif (NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "^amd"))
 
 if (FPPOW LESS 5)
