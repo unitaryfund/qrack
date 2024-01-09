@@ -91,7 +91,7 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
     return tmp;
 }
 
-#ifdef ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX_X2
 void mul2x2(complex const* left, complex const* right, complex* out)
 {
     const complex2 left0(left[0U], left[2U]);
