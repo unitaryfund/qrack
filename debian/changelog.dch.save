@@ -1,14 +1,8 @@
-libqrack (9.3.33) jammy; urgency=medium
+libqrack (9.3.32) UNRELEASED; urgency=medium
 
-  * Remove QBdtHybrid from default stack (Jammy, 3/3)
+  * 
 
- -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 23:54:29 -0500
-
-libqrack (9.3.32) bionic; urgency=medium
-
-  * Remove QBdtHybrid from default stack (Bionic, 2/3)
-
- -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 23:38:25 -0500
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 23:36:33 -0500
 
 libqrack (9.3.31) focal; urgency=medium
 
@@ -69,7 +63,7 @@ libqrack (9.3.22) focal; urgency=medium
   * Remove QBdtHybrid from default stack (Focal, 1/3)
 
  -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 18:43:44 -0500
-
+s
 libqrack (9.3.21) bionic; urgency=medium
 
   * Bi-directional QBdtHybrid mode control (Bionic, 3/3)
