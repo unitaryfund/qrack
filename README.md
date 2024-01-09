@@ -107,7 +107,7 @@ Similarly, benchmarks are in `test/benchmarks.cpp`:
 
 ## OpenCL on systems prior to OpenCL v2.0
 
-Particularly on older hardware, it is possible that you do not have OpenCL v2.0 available. In theory, Qrack should work off-the-shelf anyway. However, if the OpenCL implementation isn't even aware of the existence of v2.0, use the following option to completely manually force all v2.0 functionality off and to set the target OpenCL API level expressly to v1.1:
+Particularly on older hardware, it is possible that you do not have OpenCL v2.0 available. In theory, Qrack should work off-the-shelf anyway. However, if the OpenCL implementation isn't even aware of the existence of v2.0, use the following option to completely manually force all v2.0 functionality off and to set the target OpenCL API level expressly to target v1.2 and minimum level v1.1:
 
 ```sh
     $ cmake -DENALBE_OOO_OCL=OFF ..
