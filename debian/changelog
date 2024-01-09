@@ -1,3 +1,9 @@
+libqrack (9.3.34) focal; urgency=medium
+
+  * PowerPC OpenCL support (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 09 Jan 2024 16:38:45 -0500
+
 libqrack (9.3.33) jammy; urgency=medium
 
   * Remove QBdtHybrid from default stack (Jammy, 3/3)
