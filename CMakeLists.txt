@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.3.23 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.3.24 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -143,6 +143,18 @@ message ("Register-spanning API inclusion is: ${ENABLE_REG_GATES}")
 message ("Environment variable usage is: ${ENABLE_ENV_VARS}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
+
+if (ENABLE_COMPLEX_X2)
+    set(COMPLEX_X2_MACRO "(!(defined(__GNUC__) || defined(__MINGW32__)) || ((FPPOW == 5) && defined(__SSE__)) || ((FPPOW == 6) && defined(__SSE2__)))")
+else (ENABLE_COMPLEX_X2)
+    set(COMPLEX_X2_MACRO "0")
+endif (ENABLE_COMPLEX_X2)
+
+if (ENABLE_SSE3)
+    set(SSE3_MACRO "(!(defined(__GNUC__) || defined(__MINGW32__)) || defined(__SSE3__))")
+else (ENABLE_SSE3)
+    set(SSE3_MACRO "0")
+endif (ENABLE_SSE3)
 
 if (QBCAPPOW GREATER 6)
     set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Xcompiler -fpermissive --compiler-options -fPIC -Xptxas -O3,)
