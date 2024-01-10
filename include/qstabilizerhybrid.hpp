@@ -59,6 +59,7 @@ protected:
     real1_f separabilityThreshold;
     int64_t devID;
     complex phaseFactor;
+    double logFidelity;
     QInterfacePtr engine;
     QUnitCliffordPtr stabilizer;
     std::vector<int64_t> deviceIDs;
@@ -336,6 +337,8 @@ public:
 
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
+    double GetUnitaryFidelity() { return exp(logFidelity); }
+    void ResetUnitaryFidelity() { logFidelity = 0.0; }
 
     void Finish()
     {

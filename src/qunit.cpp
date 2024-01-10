@@ -3915,6 +3915,20 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 }
 #endif
 
+double QUnit::GetUnitaryFidelity() {
+    double fidelity = exp(logFidelity);
+
+    std::vector<QInterfacePtr> units;
+    for (size_t i = 0U; i < shards.size(); ++i) {
+        QInterfacePtr toFind = shards[i].unit;
+        if (toFind && (find(units.begin(), units.end(), toFind) == units.end())) {
+            units.push_back(toFind);
+            fidelity *= toFind->GetUnitaryFidelity();
+        }
+    }
+    return fidelity;
+}
+
 bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2, real1_f param3, int64_t param4)
 {
     std::vector<QInterfacePtr> units;
