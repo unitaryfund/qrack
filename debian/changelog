@@ -1,4 +1,4 @@
-libqrack (9.4.3) bionic; urgency=medium
+libqrack (9.4.2) bionic; urgency=medium
 
   * Auto fidelity estimation for near-Clifford rounding (Bionic, 3/3)
 
