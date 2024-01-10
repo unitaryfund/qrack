@@ -1,6 +1,12 @@
+libqrack (9.4.3) bionic; urgency=medium
+
+  * Auto fidelity estimation for near-Clifford rounding (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 10 Jan 2024 12:27:57 -0500
+
 libqrack (9.4.1) jammy; urgency=medium
 
-  * Auto fidelity estimation for near-Clifford rounding (Jammy, 2/)
+  * Auto fidelity estimation for near-Clifford rounding (Jammy, 2/3)
 
  -- Daniel Strano <dan@unitary.fund>  Wed, 10 Jan 2024 12:05:18 -0500
 
