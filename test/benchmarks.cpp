@@ -131,6 +131,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         for (int sample = 0; sample < benchmarkSamples; sample++) {
+            qftReg->ResetUnitaryFidelity();
             if (!qUniverse) {
                 if (resetRandomPerm) {
                     bitCapInt perm = (bitCapIntOcl)(qftReg->Rand() * bi_to_double(qftReg->GetMaxQPower()));
