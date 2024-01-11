@@ -187,7 +187,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
             // Collect interval data
             if (isTrialSuccessful) {
-                avgf += qftReg->GetUnitaryFidelity();
+                real1 fidelity = qftReg->GetUnitaryFidelity();
                 if (!disable_terminal_measurement) {
                     if (benchmarkShots == 1) {
                         bitCapInt result;
@@ -222,6 +222,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                         }
                     }
                 }
+
+                if (fidelity > qftReg->GetUnitaryFidelity()) {
+                    fidelity = qftReg->GetUnitaryFidelity();
+                }
+                avgf += fidelity;
 
                 // Clock stops after benchmark definition plus measurement sampling.
                 auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
