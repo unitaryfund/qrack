@@ -76,7 +76,14 @@ protected:
             return;
         }
 
-        const bitLenInt strideBits = log2Ocl(GetConcurrencyLevel() * GetStride());
+#if ENABLE_ENV_VARS
+        const bitLenInt pStridePow =
+        (((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW)) +
+            7U) >> 1U;
+#else
+        const bitLenInt pStridePow = (PSTRIDEPOW + 7U) >> 1U;
+#endif
+        const bitLenInt strideBits = log2Ocl(GetConcurrencyLevel() * pow2Ocl(pStridePow));
 
         if (qubitCount <= strideBits) {
             // Don't check QBdt below qubit threshold.
