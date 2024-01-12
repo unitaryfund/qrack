@@ -3883,7 +3883,7 @@ TEST_CASE("test_random_circuit_sampling_nn", "[speed]")
             for (bitLenInt i = 0U; i < n; ++i) {
                 // This effectively covers x-z-x Euler angles, every 3 layers:
                 qReg->H(i);
-                qReg->RZ(qReg->Rand() * 2 * PI_R1, i);
+                qReg->RZ(qReg->Rand() * 4 * PI_R1, i);
             }
 
             int gate = gateSequence.front();
@@ -7062,7 +7062,7 @@ TEST_CASE("test_noisy_rcs_nn", "[speed]")
             for (bitLenInt i = 0U; i < n; ++i) {
                 // This effectively covers x-z-x Euler angles, every 3 layers:
                 qReg->H(i);
-                qReg->RZ(qReg->Rand() * 2 * PI_R1, i);
+                qReg->RZ(qReg->Rand() * 4 * PI_R1, i);
             }
 
             int gate = gateSequence.front();
