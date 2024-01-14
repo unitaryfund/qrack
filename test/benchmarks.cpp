@@ -187,7 +187,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
             // Collect interval data
             if (isTrialSuccessful) {
-                real1 fidelity = qftReg->GetUnitaryFidelity();
+                double fidelity = qftReg->GetUnitaryFidelity();
                 if (!disable_terminal_measurement) {
                     if (benchmarkShots == 1) {
                         bitCapInt result;
