@@ -3967,8 +3967,8 @@ TEST_CASE("test_random_circuit_sampling_nn_orbifold", "[speed]")
             int gate = gateSequence.front();
             gateSequence.erase(gateSequence.begin());
             gateSequence.push_back(gate);
-            for (int row = 1; row < rowLen; row += 2) {
-                for (int col = 0; col < rowLen; col++) {
+            for (int row = 1; row < (rowLen & ~1); row += 2) {
+                for (int col = 0; col < (rowLen & ~1); col++) {
                     int tempRow = row;
                     int tempCol = col;
                     tempRow += (gate & 2) ? 1 : -1;
