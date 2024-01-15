@@ -62,6 +62,10 @@ else (ENABLE_EMIT_LLVM)
         )
 endif (ENABLE_EMIT_LLVM)
 
+add_library (qrack_wasm STATIC
+    src/wasm_api.cpp
+    )
+
 set(QRACK_LIBS qrack)
 if (ENABLE_PTHREAD)
     if (ANDROID OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^riscv" OR (NOT APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm"))
@@ -77,6 +81,7 @@ if (FPPOW GREATER 6)
 endif (FPPOW GREATER 6)
 
 target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
+target_link_libraries (qrack_wasm ${QRACK_LIBS})
 if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
     # Declare the unittest executable
     add_executable (unittest
@@ -292,6 +297,12 @@ if (ENABLE_CUDA)
         "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
         -DCATCH_CONFIG_FAST_COMPILE
         )
+    target_compile_options (qrack_wasm PUBLIC
+        "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
+        "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
+        -DCATCH_CONFIG_FAST_COMPILE
+        )
 else (ENABLE_CUDA)
     if (MSVC)
         target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS})
@@ -299,6 +310,7 @@ else (ENABLE_CUDA)
         target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
     endif (MSVC)
     target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS})
+    target_compile_options (qrack_wasm PUBLIC ${QRACK_COMPILE_OPTS})
 endif (ENABLE_CUDA)
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 set_property(TARGET qrack_pinvoke PROPERTY SOVERSION ${CMAKE_PROJECT_VERSION} )
@@ -322,6 +334,10 @@ set_target_properties (qrack PROPERTIES
     )
 
 set_target_properties (qrack_pinvoke PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    )
+
+set_target_properties (qrack_wasm PROPERTIES
     VERSION ${PROJECT_VERSION}
     )
 
@@ -381,6 +397,11 @@ install (FILES
 
 # Install the archive
 install (TARGETS qrack
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/qrack
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+
+install (TARGETS qrack_wasm
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/qrack
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )

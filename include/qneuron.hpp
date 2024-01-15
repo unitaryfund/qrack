@@ -12,27 +12,12 @@
 
 #pragma once
 
+#include "common/qneuron_activation_function.hpp"
 #include "qinterface.hpp"
 
 #include <algorithm>
 
 namespace Qrack {
-
-/**
- * Enumerated list of activation functions
- */
-enum QNeuronActivationFn {
-    /// Default
-    Sigmoid = 0,
-    /// Rectified linear
-    ReLU = 1,
-    /// Gaussian linear
-    GeLU = 2,
-    /// Version of (default) "Sigmoid" with tunable sharpness
-    Generalized_Logistic = 3,
-    /// Leaky rectified linear
-    Leaky_ReLU = 4
-};
 
 class QNeuron;
 typedef std::shared_ptr<QNeuron> QNeuronPtr;
