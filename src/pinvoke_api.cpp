@@ -407,7 +407,7 @@ void MCRHelper(uintq sid, uintq b, double phi, uintq n, uintq* c, uintq q)
 inline std::size_t make_mask(std::vector<bitLenInt> const& qs)
 {
     std::size_t mask = 0U;
-    for (const std::size_t& q : qs)
+    for (const std::size_t q : qs)
         mask = mask | pow2Ocl(q);
     return mask;
 }
