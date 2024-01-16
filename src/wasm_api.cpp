@@ -1193,7 +1193,7 @@ void AdjT(quid sid, bitLenInt q)
 /**
  * (External API) 3-parameter unitary gate
  */
-void U(quid sid, bitLenInt q, double theta, double phi, double lambda)
+void U(quid sid, bitLenInt q, real1_f theta, real1_f phi, real1_f lambda)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
