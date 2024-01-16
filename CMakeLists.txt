@@ -368,6 +368,8 @@ install (FILES
     include/common/dispatchqueue.hpp
     include/common/big_integer.hpp
     include/common/half.hpp
+    include/common/qneuron_activation_function.hpp
+    include/common/pauli.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
@@ -376,6 +378,7 @@ install (FILES
     include/hamiltonian.hpp
     include/statevector.hpp
     include/pinvoke_api.hpp
+    include/wasm_api.hpp
     include/qcircuit.hpp
     include/qfactory.hpp
     include/qengine.hpp
