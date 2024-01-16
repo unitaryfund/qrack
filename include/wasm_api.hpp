@@ -63,7 +63,7 @@ int get_error(quid sid);
  *     pg - "Pager" (TURN OFF IN SERIAL BUILDS) - split large simulations into a power-of-2 of smaller simulation "pages," for multi-device distribution
  *     hy - "(State vector) Hybrid" (TURN OFF IN SERIAL BUILD) - for state vector, "hybridize" CPU/GPU/multi-GPU simulation qubit width thresholds, for speed.
  *     oc - "OpenCL" (TURN OFF IN SERIAL BUILD) - use OpenCL acceleration (in general)
- *     dm - "Direct memory" (TURN OFF IN SERIAL BUILD) - allocate OpenCL state vectors on "host" instead of "device" (useful for certain accelerators, like Intel HD)
+ *     hp - "Host pointer" (TURN OFF IN SERIAL BUILD) - allocate OpenCL state vectors on "host" instead of "device" (useful for certain accelerators, like Intel HD)
  */
 quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool hy, bool oc, bool hp);
 
