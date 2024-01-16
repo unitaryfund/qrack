@@ -43,7 +43,6 @@ add_library (qrack STATIC
     src/qstabilizerhybrid.cpp
     src/qcircuit.cpp
     src/qtensornetwork.cpp
-    src/qbdthybrid.cpp
     )
 
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
