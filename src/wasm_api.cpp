@@ -687,10 +687,12 @@ quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, 
     return sid;
 }
 
+quid init() { return init_count(0, false); }
+
 /**
  * (External API) Initialize a simulator ID with "q" qubits and implicit default layer options.
  */
-quid init_count(quid q, bool hp)
+quid init_count(bitLenInt q, bool hp)
 {
     META_LOCK_GUARD()
 

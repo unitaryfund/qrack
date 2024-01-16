@@ -65,17 +65,17 @@ int get_error(quid sid);
  *     oc - "OpenCL" (TURN OFF IN SERIAL BUILD) - use OpenCL acceleration (in general)
  *     dm - "Direct memory" (TURN OFF IN SERIAL BUILD) - allocate OpenCL state vectors on "host" instead of "device" (useful for certain accelerators, like Intel HD)
  */
-quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool hy, bool oc, bool dm);
+quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool hy, bool oc, bool hp);
 
 /**
  * "Default optimal" (BQP-complete-targeted) simulator type initialization (with "direct memory" option)
  */
-quid init_count(quid q, bool dm);
+quid init_count(bitLenInt q, bool dm);
 
 /**
  * "Quasi-default constructor" (for an empty simulator)
  */
-quid init() { return init_count(0, false); }
+quid init();
 
 /**
  * "Clone" simulator (no-clone theorem does not apply to classical simulation)
