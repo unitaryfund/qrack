@@ -130,9 +130,21 @@ real1_f PermutationExpectation(quid sid, std::vector<bitLenInt> q);
  * "Reduced density matrix" expectation value for bit-string integer equivalent of specified arbitrary group of qubits
  */
 real1_f PermutationExpectationRdm(quid sid, std::vector<bitLenInt> q, bool r);
+/**
+ * Expectation value for bit-string integer from group of qubits with per-qubit integer expectation value
+ */
 real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpectation> q);
+/**
+ * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit integer expectation value
+ */
 real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> q, bool r);
+/**
+ * Expectation value for bit-string integer from group of qubits with per-qubit real1 expectation value
+ */
 real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpecation> q);
+/**
+ * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit real1 expectation value
+ */
 real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpecation> q, bool r);
 
 /**
@@ -143,6 +155,9 @@ size_t random_choice(quid sid, std::vector<real1> p);
 void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q);
 real1_f JointEnsembleProbability(quid sid, std::vector<QubitPauliBasis> q);
 
+/**
+ * Set simulator to |0> permutation state
+ */
 void ResetAll(quid sid);
 
 // allocate and release
