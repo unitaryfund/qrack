@@ -178,14 +178,43 @@ void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q);
  */
 real1_f JointEnsembleProbability(quid sid, std::vector<QubitPauliBasis> q);
 
+//SPAM and non-unitary
+
+/**
+ * Measure single qubit (according to Born rules) and return the result
+ */
+bool M(quid sid, bitLenInt q);
+/**
+ * (PSEUDO-QUANTUM:) Force measurement result of single qubit (and return the result)
+ */
+bool ForceM(quid sid, bitLenInt q, bool r);
+/**
+ * Measure all qubits (according to Born rules) and return the result as a bit string (integer).
+ */
+bitCapInt MAll(quid sid);
+/**
+ * Each in its specified Pauli basis, collapse an ensemble of qubits jointly via measurement.
+ */
+bool Measure(quid sid, std::vector<QubitPauliBasis> q);
+/**
+ * Repeat (Z-basis) measurement of a set of qubits for a count of "shots" (without collapsing the simulator)
+ */
+std::vector<long long unsigned int> MeasureShots(quid sid, std::vector<bitLenInt> q, unsigned s);
 /**
  * Set simulator to |0> permutation state
  */
 void ResetAll(quid sid);
-
-// allocate and release
+/**
+ * Allocate new qubit with ID
+ */
 void allocateQubit(quid sid, bitLenInt qid);
+/**
+ * Release qubit ID
+ */
 bool release(quid sid, bitLenInt q);
+/**
+ * Total count of qubits in simulator instance
+ */
 bitLenInt num_qubits(quid sid);
 
 // single-qubit gates
@@ -242,13 +271,6 @@ void Exp(quid sid, real1_f phi, std::vector<QubitPauliBasis> q);
 // multi-controlled exponential of Pauli operators
 void MCExp(quid sid, real1_f phi, std::vector<bitLenInt> c, std::vector<QubitPauliBasis> q);
 
-// measurements
-bool M(quid sid, bitLenInt q);
-bool ForceM(quid sid, bitLenInt q, bool r);
-bitCapInt MAll(quid sid);
-bool Measure(quid sid, std::vector<QubitIndexState> q);
-std::vector<long long unsigned int> MeasureShots(quid sid, std::vector<bitLenInt> q, unsigned s);
-
 // swap variants
 void SWAP(quid sid, bitLenInt qi1, bitLenInt qi2);
 void ISWAP(quid sid, bitLenInt qi1, bitLenInt qi2);
@@ -302,10 +324,10 @@ void MCMULN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::v
 void MCDIVN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void MCPOWN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 
-// void LDA(quid sid, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
-// void ADC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
-// void SBC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
-// void Hash(quid sid, std::vector<bitLenInt> q, std::vector<unsigned char> t);
+void LDA(quid sid, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
+void ADC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
+void SBC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
+void Hash(quid sid, std::vector<bitLenInt> q, std::vector<unsigned char> t);
 #endif
 
 // Utility functions
