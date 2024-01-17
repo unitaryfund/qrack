@@ -48,10 +48,10 @@ struct QubitIntegerExpectation {
     }
 };
 
-struct QubitRealExpecation {
+struct QubitRealExpectation {
     bitLenInt qid;
     real1_f val;
-    QubitRealExpecation(bitLenInt q, real1_f v)
+    QubitRealExpectation(bitLenInt q, real1_f v)
         : qid(q)
         , val(v)
     {
@@ -165,11 +165,11 @@ real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> 
 /**
  * Expectation value for bit-string integer from group of qubits with per-qubit real1 expectation value
  */
-real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpecation> q);
+real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q);
 /**
  * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit real1 expectation value
  */
-real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpecation> q, bool r);
+real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q, bool r);
 
 /**
  * Select from a distribution of "p.size()" count of elements according the discrete probabilities in "p."

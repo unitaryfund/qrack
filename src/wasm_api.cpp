@@ -2303,7 +2303,7 @@ real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> 
 /**
  * (External API) Get the permutation expectation value, based upon the order of input qubits.
  */
-real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpecation> q)
+real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
@@ -2329,7 +2329,7 @@ real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpecation> q)
  * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
  * qubits as post-selected T gate gadgets.
  */
-real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpecation> q, bool r)
+real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q, bool r)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
