@@ -163,7 +163,7 @@ void ResetAll(quid sid);
 // allocate and release
 void allocateQubit(quid sid, bitLenInt qid);
 bool release(quid sid, bitLenInt q);
-bitLenInt num_qubits(bitLenInt sid);
+bitLenInt num_qubits(quid sid);
 
 // single-qubit gates
 void X(quid sid, bitLenInt q);
