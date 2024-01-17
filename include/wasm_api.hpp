@@ -84,6 +84,8 @@ struct QubitPauliBasis {
  */
 quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool hy, bool oc, bool hp);
 
+// Utility
+
 /**
  * "Default optimal" (BQP-complete-targeted) simulator type initialization (with "direct memory" option)
  */
@@ -113,6 +115,19 @@ void seed(quid sid, unsigned s);
  * Set CPU concurrency (if build isn't serial)
  */
 void set_concurrency(quid sid, unsigned p);
+
+/**
+ * Allocate new qubit with ID
+ */
+void allocateQubit(quid sid, bitLenInt qid);
+/**
+ * Release qubit ID
+ */
+bool release(quid sid, bitLenInt q);
+/**
+ * Total count of qubits in simulator instance
+ */
+bitLenInt num_qubits(quid sid);
 
 /**
  * Output stabilizer simulation tableau to file (or raise exception for "get_error()" if incompatible simulator type)
@@ -189,13 +204,13 @@ bool M(quid sid, bitLenInt q);
  */
 bool ForceM(quid sid, bitLenInt q, bool r);
 /**
- * Measure all qubits (according to Born rules) and return the result as a bit string (integer).
- */
-bitCapInt MAll(quid sid);
-/**
  * Each in its specified Pauli basis, collapse an ensemble of qubits jointly via measurement.
  */
 bool Measure(quid sid, std::vector<QubitPauliBasis> q);
+/**
+ * Measure all qubits (according to Born rules) and return the result as a bit string (integer).
+ */
+bitCapInt MAll(quid sid);
 /**
  * Repeat (Z-basis) measurement of a set of qubits for a count of "shots" (without collapsing the simulator)
  */
@@ -204,18 +219,6 @@ std::vector<long long unsigned int> MeasureShots(quid sid, std::vector<bitLenInt
  * Set simulator to |0> permutation state
  */
 void ResetAll(quid sid);
-/**
- * Allocate new qubit with ID
- */
-void allocateQubit(quid sid, bitLenInt qid);
-/**
- * Release qubit ID
- */
-bool release(quid sid, bitLenInt q);
-/**
- * Total count of qubits in simulator instance
- */
-bitLenInt num_qubits(quid sid);
 
 // single-qubit gates
 void X(quid sid, bitLenInt q);
