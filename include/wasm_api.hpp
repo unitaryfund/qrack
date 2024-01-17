@@ -71,13 +71,6 @@ struct QubitPauliBasis {
 };
 
 /**
- * This header tries to never raise exception.
- * HOWEVER, get_error() MUST be checked after EVERY operation,
- * to determine if a (safely-caught) exception has occurred.
- */
-int get_error(quid sid);
-
-/**
  * Options for simulator type in initialization (any set of options theoretically functions together):
  *     tn - "Tensor network" layer - JIT local circuit simplification, light-cone optimization
  *     md - "Multi-device" (TURN OFF IN SERIAL BUILDS) - distribute Schmidt-decomposed or factorized subsytems to different OpenCL devices.
@@ -234,7 +227,7 @@ void UCMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenIn
 
 void Multiplex1Mtrx(quid sid, std::vector<bitLenInt> c, bitLenInt q, std::vector<complex> m);
 
-// coalesced single qubit gates
+// coalesced single-qubit gates
 void MX(quid sid, std::vector<bitLenInt> q);
 void MY(quid sid, std::vector<bitLenInt> q);
 void MZ(quid sid, std::vector<bitLenInt> q);

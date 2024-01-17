@@ -45,9 +45,7 @@
 
 #define SIMULATOR_LOCK_GUARD_VOID(sid)                                                                                 \
     if (sid > simulators.size()) {                                                                                     \
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
-        metaError = 2;                                                                                                 \
-        return;                                                                                                        \
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");                                      \
     }                                                                                                                  \
     QInterfacePtr simulator = simulators[sid];                                                                         \
     SIMULATOR_LOCK_GUARD(simulator.get())                                                                              \
@@ -57,9 +55,7 @@
 
 #define SIMULATOR_LOCK_GUARD_TYPED(sid, def)                                                                           \
     if (sid > simulators.size()) {                                                                                     \
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
-        metaError = 2;                                                                                                 \
-        return def;                                                                                                    \
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");                                      \
     }                                                                                                                  \
                                                                                                                        \
     QInterfacePtr simulator = simulators[sid];                                                                         \
@@ -102,9 +98,7 @@
 
 #define NEURON_LOCK_GUARD_VOID(nid)                                                                                    \
     if (nid > neurons.size()) {                                                                                        \
-        std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
-        metaError = 2;                                                                                                 \
-        return;                                                                                                        \
+        throw std::invalid_argument("Invalid argument: neuron ID not found!");                                         \
     }                                                                                                                  \
                                                                                                                        \
     QNeuronPtr neuron = neurons[nid];                                                                                  \
@@ -115,9 +109,7 @@
 
 #define NEURON_LOCK_GUARD_TYPED(nid, def)                                                                              \
     if (nid > neurons.size()) {                                                                                        \
-        std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
-        metaError = 2;                                                                                                 \
-        return def;                                                                                                    \
+        throw std::invalid_argument("Invalid argument: neuron ID not found!");                                         \
     }                                                                                                                  \
                                                                                                                        \
     QNeuronPtr neuron = neurons[nid];                                                                                  \
@@ -154,9 +146,7 @@
 
 #define CIRCUIT_LOCK_GUARD_TYPED(cid, def)                                                                             \
     if (cid > circuits.size()) {                                                                                       \
-        std::cout << "Invalid argument: circuit ID not found!" << std::endl;                                           \
-        metaError = 2;                                                                                                 \
-        return def;                                                                                                    \
+        throw std::invalid_argument("Invalid argument: circuit ID not found!");                                        \
     }                                                                                                                  \
                                                                                                                        \
     QCircuitPtr circuit = circuits[cid];                                                                               \
@@ -167,9 +157,7 @@
 
 #define CIRCUIT_LOCK_GUARD_VOID(cid)                                                                                   \
     if (cid > circuits.size()) {                                                                                       \
-        std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
-        metaError = 2;                                                                                                 \
-        return;                                                                                                        \
+        throw std::invalid_argument("Invalid argument: neuron ID not found!");                                         \
     }                                                                                                                  \
                                                                                                                        \
     QCircuitPtr circuit = circuits[cid];                                                                               \
@@ -183,14 +171,10 @@
 #if CPP_STD > 13
 #define CIRCUIT_AND_SIMULATOR_LOCK_GUARD_VOID(cid, sid)                                                                \
     if (sid > simulators.size()) {                                                                                     \
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
-        metaError = 2;                                                                                                 \
-        return;                                                                                                        \
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");                                      \
     }                                                                                                                  \
     if (cid > circuits.size()) {                                                                                       \
-        std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
-        metaError = 2;                                                                                                 \
-        return;                                                                                                        \
+        throw std::invalid_argument("Invalid argument: neuron ID not found!");                                         \
     }                                                                                                                  \
                                                                                                                        \
     QInterfacePtr simulator = simulators[sid];                                                                         \
@@ -214,14 +198,10 @@
 #else
 #define CIRCUIT_AND_SIMULATOR_LOCK_GUARD_VOID(cid, sid)                                                                \
     if (sid > simulators.size()) {                                                                                     \
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;                                         \
-        metaError = 2;                                                                                                 \
-        return;                                                                                                        \
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");                                      \
     }                                                                                                                  \
     if (cid > circuits.size()) {                                                                                       \
-        std::cout << "Invalid argument: neuron ID not found!" << std::endl;                                            \
-        metaError = 2;                                                                                                 \
-        return;                                                                                                        \
+        throw std::invalid_argument("Invalid argument: neuron ID not found!");                                         \
     }                                                                                                                  \
                                                                                                                        \
     QInterfacePtr simulator = simulators[sid];                                                                         \
@@ -251,8 +231,6 @@ namespace Qrack {
 
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
 std::mutex metaOperationMutex;
-int metaError = 0;
-std::vector<int> simulatorErrors;
 std::vector<QInterfacePtr> simulators;
 std::vector<std::vector<QInterfaceEngine>> simulatorTypes;
 std::vector<bool> simulatorHostPointer;
@@ -555,18 +533,6 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, std::vector<bitLenI
 }
 
 /**
- * (External API) Poll after each operation to check whether error occurred.
- */
-int get_error(quid sid)
-{
-    if (metaError) {
-        metaError = 0;
-        return 2;
-    }
-    return simulatorErrors[sid];
-}
-
-/**
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
 quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool hy, bool oc, bool hp)
@@ -649,16 +615,9 @@ quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, 
 #endif
     }
 
-    bool isSuccess = true;
     QInterfacePtr simulator = NULL;
     if (q) {
-        try {
-            simulator =
-                CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
-        } catch (const std::exception& ex) {
-            std::cout << ex.what() << std::endl;
-            isSuccess = false;
-        }
+        simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
     }
 
     if (sid == simulators.size()) {
@@ -666,13 +625,11 @@ quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, 
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorType);
         simulatorHostPointer.push_back(hp);
-        simulatorErrors.push_back(isSuccess ? 0 : 1);
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
         simulatorTypes[sid] = simulatorType;
         simulatorHostPointer[sid] = hp;
-        simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
 
     if (!q) {
@@ -708,16 +665,9 @@ quid init_count(bitLenInt q, bool hp)
 
     const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_QUNIT, QINTERFACE_HYBRID };
 
-    bool isSuccess = true;
     QInterfacePtr simulator = NULL;
     if (q) {
-        try {
-            simulator =
-                CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
-        } catch (const std::exception& ex) {
-            std::cout << ex.what() << std::endl;
-            isSuccess = false;
-        }
+        simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
     }
 
     if (sid == simulators.size()) {
@@ -725,13 +675,11 @@ quid init_count(bitLenInt q, bool hp)
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorType);
         simulatorHostPointer.push_back(hp);
-        simulatorErrors.push_back(isSuccess ? 0 : 1);
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
         simulatorTypes[sid] = simulatorType;
         simulatorHostPointer[sid] = hp;
-        simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
 
     if (!q) {
@@ -754,9 +702,7 @@ quid init_clone(quid sid)
     META_LOCK_GUARD()
 
     if (sid > simulators.size()) {
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
-        metaError = 2;
-        return 0U;
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");
     }
     QInterfacePtr oSimulator = simulators[sid];
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
@@ -772,28 +718,19 @@ quid init_clone(quid sid)
         }
     }
 
-    bool isSuccess = true;
-    QInterfacePtr simulator;
-    try {
-        simulator = oSimulator->Clone();
-    } catch (const std::exception& ex) {
-        std::cout << ex.what() << std::endl;
-        isSuccess = false;
-    }
+    QInterfacePtr simulator = oSimulator->Clone();
 
     if (nsid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorTypes[sid]);
         simulatorHostPointer.push_back(simulatorHostPointer[sid]);
-        simulatorErrors.push_back(isSuccess ? 0 : 1);
         shards[simulator.get()] = {};
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
         simulatorTypes[nsid] = simulatorTypes[sid];
         simulatorHostPointer[nsid] = simulatorHostPointer[sid];
-        simulatorErrors[nsid] = isSuccess ? 0 : 1;
     }
 
     shards[simulator.get()] = {};
@@ -814,7 +751,6 @@ void destroy(quid sid)
     shards.erase(simulators[sid].get());
     simulatorMutexes.erase(simulators[sid].get());
     simulators[sid] = NULL;
-    simulatorErrors[sid] = 0;
     simulatorReservations[sid] = false;
 }
 
@@ -824,13 +760,7 @@ void destroy(quid sid)
 void seed(quid sid, unsigned s)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulators[sid]->SetRandomSeed(s);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulators[sid]->SetRandomSeed(s);
 }
 
 /**
@@ -839,13 +769,7 @@ void seed(quid sid, unsigned s)
 void set_concurrency(quid sid, unsigned p)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulators[sid]->SetConcurrency(p);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulators[sid]->SetConcurrency(p);
 }
 
 void qstabilizer_out_to_file(quid sid, std::string f)
@@ -853,21 +777,12 @@ void qstabilizer_out_to_file(quid sid, std::string f)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     if (simulatorTypes[sid][0] != QINTERFACE_STABILIZER_HYBRID) {
-        metaError = 2;
-        std::cout << "Cannot write any simulator but QStabilizerHybrid out to file!" << std::endl;
-        return;
+        throw std::invalid_argument("Cannot write any simulator but QStabilizerHybrid out to file!");
     }
 
     std::ofstream ofile;
     ofile.open(f.c_str());
-
-    try {
-        ofile << std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-
+    ofile << std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
     ofile.close();
 }
 void qstabilizer_in_from_file(quid sid, std::string f)
@@ -875,21 +790,12 @@ void qstabilizer_in_from_file(quid sid, std::string f)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     if (simulatorTypes[sid][0] != QINTERFACE_STABILIZER_HYBRID) {
-        metaError = 2;
-        std::cout << "Cannot read any simulator but QStabilizerHybrid in from file!" << std::endl;
-        return;
+        throw std::invalid_argument("Cannot read any simulator but QStabilizerHybrid in from file!");
     }
 
     std::ifstream ifile;
     ifile.open(f.c_str());
-
-    try {
-        ifile >> std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-
+    ifile >> std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
     ifile.close();
 
     shards[simulator.get()] = {};
@@ -916,12 +822,7 @@ void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q)
         bi_or_ip(&mask, pow2(shards[simulator.get()][q[i]]));
     }
 
-    try {
-        simulator->PhaseParity(lambda, mask);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->PhaseParity(lambda, mask);
 }
 
 real1_f _JointEnsembleProbabilityHelper(QInterfacePtr simulator, std::vector<QubitPauliBasis> q, bool doMeasure)
@@ -955,14 +856,9 @@ real1_f JointEnsembleProbability(quid sid, std::vector<QubitPauliBasis> q)
 
     real1_f jointProb = (real1_f)REAL1_DEFAULT_ARG;
 
-    try {
-        TransformPauliBasis(simulator, q);
-        jointProb = _JointEnsembleProbabilityHelper(simulator, q, false);
-        RevertPauliBasis(simulator, q);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    TransformPauliBasis(simulator, q);
+    jointProb = _JointEnsembleProbabilityHelper(simulator, q, false);
+    RevertPauliBasis(simulator, q);
 
     return jointProb;
 }
@@ -973,13 +869,7 @@ real1_f JointEnsembleProbability(quid sid, std::vector<QubitPauliBasis> q)
 void ResetAll(quid sid)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->SetPermutation(ZERO_BCI);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->SetPermutation(ZERO_BCI);
 }
 
 /**
@@ -990,9 +880,7 @@ void allocateQubit(quid sid, bitLenInt qid)
     META_LOCK_GUARD()
 
     if (sid > simulators.size()) {
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
-        metaError = 2;
-        return;
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");
     }
 
     QInterfacePtr nQubit = CreateQuantumInterface(
@@ -1010,16 +898,8 @@ void allocateQubit(quid sid, bitLenInt qid)
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
         new const std::lock_guard<std::mutex>(simulatorMutexes[oSimulator.get()]));
 
-    bitLenInt qubitCount = -1;
-    try {
-        oSimulator->Compose(nQubit);
-        qubitCount = simulators[sid]->GetQubitCount();
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-
-    shards[simulators[sid].get()][qid] = (qubitCount - 1U);
+    oSimulator->Compose(nQubit);
+    shards[simulators[sid].get()][qid] = (simulators[sid]->GetQubitCount() - 1U);
 }
 
 /**
@@ -1030,9 +910,7 @@ bool release(quid sid, bitLenInt q)
     META_LOCK_GUARD()
 
     if (sid > simulators.size()) {
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
-        metaError = 2;
-        return 0U;
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");
     }
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
@@ -1061,14 +939,7 @@ bool release(quid sid, bitLenInt q)
 bitLenInt num_qubits(quid sid)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
-
-    try {
-        return simulator->GetQubitCount();
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return -1;
-    }
+    return simulator->GetQubitCount();
 }
 
 /**
@@ -1077,13 +948,7 @@ bitLenInt num_qubits(quid sid)
 void X(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->X(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->X(shards[simulator.get()][q]);
 }
 
 /**
@@ -1092,12 +957,7 @@ void X(quid sid, bitLenInt q)
 void Y(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-    try {
-        simulator->Y(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->Y(shards[simulator.get()][q]);
 }
 
 /**
@@ -1106,13 +966,7 @@ void Y(quid sid, bitLenInt q)
 void Z(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->Z(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->Z(shards[simulator.get()][q]);
 }
 
 /**
@@ -1121,13 +975,7 @@ void Z(quid sid, bitLenInt q)
 void H(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->H(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->H(shards[simulator.get()][q]);
 }
 
 /**
@@ -1136,13 +984,7 @@ void H(quid sid, bitLenInt q)
 void S(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->S(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->S(shards[simulator.get()][q]);
 }
 
 /**
@@ -1151,13 +993,7 @@ void S(quid sid, bitLenInt q)
 void T(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->T(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->T(shards[simulator.get()][q]);
 }
 
 /**
@@ -1166,13 +1002,7 @@ void T(quid sid, bitLenInt q)
 void AdjS(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->IS(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->IS(shards[simulator.get()][q]);
 }
 
 /**
@@ -1181,13 +1011,7 @@ void AdjS(quid sid, bitLenInt q)
 void AdjT(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->IT(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->IT(shards[simulator.get()][q]);
 }
 
 /**
@@ -1196,13 +1020,7 @@ void AdjT(quid sid, bitLenInt q)
 void U(quid sid, bitLenInt q, real1_f theta, real1_f phi, real1_f lambda)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->U(shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->U(shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -1211,21 +1029,12 @@ void U(quid sid, bitLenInt q, real1_f theta, real1_f phi, real1_f lambda)
 void Mtrx(quid sid, std::vector<complex> m, bitLenInt q)
 {
     if (m.size() != 4) {
-        metaError = 2;
-        std::cout << "Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!" << std::endl;
-        return;
+        throw std::invalid_argument("Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
     complex mtrx[4] { m[0U], m[1U], m[2U], m[3U] };
-
-    try {
-        simulator->Mtrx(mtrx, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->Mtrx(mtrx, shards[simulator.get()][q]);
 }
 
 #define MAP_CONTROLS_AND_LOCK(sid)                                                                                     \
@@ -1240,12 +1049,7 @@ void Mtrx(quid sid, std::vector<complex> m, bitLenInt q)
 void MCX(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCInvert(c, ONE_CMPLX, ONE_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCInvert(c, ONE_CMPLX, ONE_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1254,12 +1058,7 @@ void MCX(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MCY(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCInvert(c, -I_CMPLX, I_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCInvert(c, -I_CMPLX, I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1268,12 +1067,7 @@ void MCY(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MCZ(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCPhase(c, ONE_CMPLX, -ONE_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCPhase(c, ONE_CMPLX, -ONE_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1285,12 +1079,7 @@ void MCH(quid sid, std::vector<bitLenInt> c, bitLenInt q)
         complex(-SQRT1_2_R1, ZERO_R1) };
 
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCMtrx(c, hGate, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCMtrx(c, hGate, shards[simulator.get()][q]);
 }
 
 /**
@@ -1299,12 +1088,7 @@ void MCH(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MCS(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCPhase(c, ONE_CMPLX, I_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCPhase(c, ONE_CMPLX, I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1313,12 +1097,7 @@ void MCS(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MCT(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCPhase(c, ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCPhase(c, ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), shards[simulator.get()][q]);
 }
 
 /**
@@ -1327,12 +1106,7 @@ void MCT(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MCAdjS(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCPhase(c, ONE_CMPLX, -I_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCPhase(c, ONE_CMPLX, -I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1341,12 +1115,7 @@ void MCAdjS(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MCAdjT(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCPhase(c, ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCPhase(c, ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), shards[simulator.get()][q]);
 }
 
 /**
@@ -1355,12 +1124,7 @@ void MCAdjT(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MCU(quid sid, std::vector<bitLenInt> c, bitLenInt q, real1_f theta, real1_f phi, real1_f lambda)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->CU(c, shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->CU(c, shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -1369,20 +1133,12 @@ void MCU(quid sid, std::vector<bitLenInt> c, bitLenInt q, real1_f theta, real1_f
 void MCMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q)
 {
     if (m.size() != 4) {
-        metaError = 2;
-        std::cout << "Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!" << std::endl;
-        return;
+        throw std::invalid_argument("MCMtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     complex mtrx[4] { m[0U], m[1U], m[2U], m[3U] };
-
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MCMtrx(c, mtrx, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MCMtrx(c, mtrx, shards[simulator.get()][q]);
 }
 
 /**
@@ -1391,12 +1147,7 @@ void MCMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenIn
 void MACX(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACInvert(c, ONE_CMPLX, ONE_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACInvert(c, ONE_CMPLX, ONE_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1405,12 +1156,7 @@ void MACX(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MACY(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACInvert(c, -I_CMPLX, I_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACInvert(c, -I_CMPLX, I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1419,12 +1165,7 @@ void MACY(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MACZ(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACPhase(c, ONE_CMPLX, -ONE_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACPhase(c, ONE_CMPLX, -ONE_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1436,12 +1177,7 @@ void MACH(quid sid, std::vector<bitLenInt> c, bitLenInt q)
         complex(-SQRT1_2_R1, ZERO_R1) };
 
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACMtrx(c, hGate, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACMtrx(c, hGate, shards[simulator.get()][q]);
 }
 
 /**
@@ -1450,12 +1186,7 @@ void MACH(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MACS(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACPhase(c, ONE_CMPLX, I_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACPhase(c, ONE_CMPLX, I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1464,12 +1195,7 @@ void MACS(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MACT(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACPhase(c, ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACPhase(c, ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), shards[simulator.get()][q]);
 }
 
 /**
@@ -1478,12 +1204,7 @@ void MACT(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MACAdjS(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACPhase(c, ONE_CMPLX, -I_CMPLX, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACPhase(c, ONE_CMPLX, -I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -1492,12 +1213,7 @@ void MACAdjS(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MACAdjT(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACPhase(c, ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACPhase(c, ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), shards[simulator.get()][q]);
 }
 
 /**
@@ -1506,12 +1222,7 @@ void MACAdjT(quid sid, std::vector<bitLenInt> c, bitLenInt q)
 void MACU(quid sid, std::vector<bitLenInt> c, bitLenInt q, real1_f theta, real1_f phi, real1_f lambda)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->AntiCU(c, shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->AntiCU(c, shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -1520,20 +1231,12 @@ void MACU(quid sid, std::vector<bitLenInt> c, bitLenInt q, real1_f theta, real1_
 void MACMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q)
 {
     if (m.size() != 4) {
-        metaError = 2;
-        std::cout << "Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!" << std::endl;
-        return;
+        throw std::invalid_argument("Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     complex mtrx[4] { m[0U], m[1U], m[2U], m[3U] };
-
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->MACMtrx(c, mtrx, shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->MACMtrx(c, mtrx, shards[simulator.get()][q]);
 }
 
 /**
@@ -1542,20 +1245,12 @@ void MACMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenI
 void UCMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q, bitCapIntOcl p)
 {
     if (m.size() != 4) {
-        metaError = 2;
-        std::cout << "Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!" << std::endl;
-        return;
+        throw std::invalid_argument("Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     complex mtrx[4] { m[0U], m[1U], m[2U], m[3U] };
-
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->UCMtrx(c, mtrx, shards[simulator.get()][q], p);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->UCMtrx(c, mtrx, shards[simulator.get()][q], p);
 }
 
 void Multiplex1Mtrx(quid sid, std::vector<bitLenInt> c, bitLenInt q, std::vector<complex> m)
@@ -1564,12 +1259,7 @@ void Multiplex1Mtrx(quid sid, std::vector<bitLenInt> c, bitLenInt q, std::vector
     std::copy(m.begin(), m.end(), mtrxs.get());
 
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->UniformlyControlledSingleBit(c, shards[simulator.get()][q], mtrxs.get());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->UniformlyControlledSingleBit(c, shards[simulator.get()][q], mtrxs.get());
 }
 
 #define MAP_MASK_AND_LOCK(sid)                                                                                         \
@@ -1585,12 +1275,7 @@ void Multiplex1Mtrx(quid sid, std::vector<bitLenInt> c, bitLenInt q, std::vector
 void MX(quid sid, std::vector<bitLenInt> q)
 {
     MAP_MASK_AND_LOCK(sid)
-    try {
-        simulator->XMask(mask);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->XMask(mask);
 }
 
 /**
@@ -1599,12 +1284,7 @@ void MX(quid sid, std::vector<bitLenInt> q)
 void MY(quid sid, std::vector<bitLenInt> q)
 {
     MAP_MASK_AND_LOCK(sid)
-    try {
-        simulator->YMask(mask);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->YMask(mask);
 }
 
 /**
@@ -1613,12 +1293,7 @@ void MY(quid sid, std::vector<bitLenInt> q)
 void MZ(quid sid, std::vector<bitLenInt> q)
 {
     MAP_MASK_AND_LOCK(sid)
-    try {
-        simulator->ZMask(mask);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->ZMask(mask);
 }
 
 /**
@@ -1627,13 +1302,7 @@ void MZ(quid sid, std::vector<bitLenInt> q)
 void R(quid sid, real1_f phi, QubitPauliBasis q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        RHelper(sid, phi, q);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    RHelper(sid, phi, q);
 }
 
 /**
@@ -1642,13 +1311,7 @@ void R(quid sid, real1_f phi, QubitPauliBasis q)
 void MCR(quid sid, real1_f phi, std::vector<bitLenInt> c, QubitPauliBasis q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MCRHelper(sid, phi, c, q);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    MCRHelper(sid, phi, c, q);
 }
 
 /**
@@ -1666,22 +1329,14 @@ void Exp(quid sid, real1_f phi, std::vector<QubitPauliBasis> q)
 
     removeIdentities(&q);
 
-    try {
-        if (!q.size()) {
-            RHelper(sid, -2 * phi, someQubit);
-        } else if (q.size() == 1U) {
-            RHelper(sid, -2 * phi, q.front());
-        } else {
-            TransformPauliBasis(simulator, q);
-
-            size_t mask = make_mask(q);
-            QPARITY(simulator)->UniformParityRZ(mask, -phi);
-
-            RevertPauliBasis(simulator, q);
-        }
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    if (!q.size()) {
+        RHelper(sid, -2 * phi, someQubit);
+    } else if (q.size() == 1U) {
+        RHelper(sid, -2 * phi, q.front());
+    } else {
+        TransformPauliBasis(simulator, q);
+        QPARITY(simulator)->UniformParityRZ(make_mask(q), -phi);
+        RevertPauliBasis(simulator, q);
     }
 }
 
@@ -1700,22 +1355,14 @@ void MCExp(quid sid, real1_f phi, std::vector<bitLenInt> cs, std::vector<QubitPa
 
     removeIdentities(&q);
 
-    try {
-        if (!q.size()) {
-            MCRHelper(sid, -2 * phi, cs, someQubit);
-        } else if (q.size() == 1U) {
-            MCRHelper(sid, -2 * phi, cs, q.front());
-        } else {
-            TransformPauliBasis(simulator, q);
-
-            size_t mask = make_mask(q);
-            QPARITY(simulator)->CUniformParityRZ(cs, mask, -phi);
-
-            RevertPauliBasis(simulator, q);
-        }
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    if (!q.size()) {
+        MCRHelper(sid, -2 * phi, cs, someQubit);
+    } else if (q.size() == 1U) {
+        MCRHelper(sid, -2 * phi, cs, q.front());
+    } else {
+        TransformPauliBasis(simulator, q);
+        QPARITY(simulator)->CUniformParityRZ(cs, make_mask(q), -phi);
+        RevertPauliBasis(simulator, q);
     }
 }
 
@@ -1725,14 +1372,7 @@ void MCExp(quid sid, real1_f phi, std::vector<bitLenInt> cs, std::vector<QubitPa
 bool M(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
-
-    try {
-        return simulator->M(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return false;
-    }
+    return simulator->M(shards[simulator.get()][q]);
 }
 
 /**
@@ -1741,14 +1381,7 @@ bool M(quid sid, bitLenInt q)
 bool ForceM(quid sid, bitLenInt q, bool r)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
-
-    try {
-        return simulator->ForceM(shards[simulator.get()][q], r);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return false;
-    }
+    return simulator->ForceM(shards[simulator.get()][q], r);
 }
 
 /**
@@ -1758,13 +1391,7 @@ bool ForceM(quid sid, bitLenInt q, bool r)
 bitCapInt MAll(quid sid)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
-    try {
-        return simulators[sid]->MAll();
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return -1;
-    }
+    return simulators[sid]->MAll();
 }
 
 /**
@@ -1774,19 +1401,9 @@ bool Measure(quid sid, std::vector<QubitPauliBasis> q)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
 
-    bool toRet = false;
-    try {
-        TransformPauliBasis(simulator, q);
-
-        double jointProb = _JointEnsembleProbabilityHelper(simulator, q, true);
-
-        toRet = (jointProb >= (ONE_R1 / 2));
-
-        RevertPauliBasis(simulator, q);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    TransformPauliBasis(simulator, q);
+    const bool toRet = (ONE_R1 / 2) <= _JointEnsembleProbabilityHelper(simulator, q, true);
+    RevertPauliBasis(simulator, q);
 
     return toRet;
 }
@@ -1794,9 +1411,7 @@ bool Measure(quid sid, std::vector<QubitPauliBasis> q)
 std::vector<long long unsigned int> MeasureShots(quid sid, std::vector<bitLenInt> q, unsigned s)
 {
     if (sid > simulators.size()) {
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
-        metaError = 2;
-        return std::vector<long long unsigned int>();
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");
     }
     QInterfacePtr simulator = simulators[sid];
     SIMULATOR_LOCK_GUARD(simulator.get())
@@ -1812,87 +1427,47 @@ std::vector<long long unsigned int> MeasureShots(quid sid, std::vector<bitLenInt
     
     std::unique_ptr<long long unsigned int> m(new long long unsigned int[s]);
 
-    try {
-        simulator->MultiShotMeasureMask(qPowers, s, m.get());
-        std::vector<long long unsigned int> toRet(s);
-        std::copy(m.get(), m.get() + s, toRet.begin());
-        return toRet;
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-    
-    return std::vector<long long unsigned int>();
+    simulator->MultiShotMeasureMask(qPowers, s, m.get());
+    std::vector<long long unsigned int> toRet(s);
+    std::copy(m.get(), m.get() + s, toRet.begin());
+
+    return toRet;
 }
 
 void SWAP(quid sid, bitLenInt qi1, bitLenInt qi2)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->Swap(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->Swap(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
 }
 
 void ISWAP(quid sid, bitLenInt qi1, bitLenInt qi2)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->ISwap(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->ISwap(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
 }
 
 void AdjISWAP(quid sid, bitLenInt qi1, bitLenInt qi2)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->IISwap(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->IISwap(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
 }
 
 void FSim(quid sid, real1_f theta, real1_f phi, bitLenInt qi1, bitLenInt qi2)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->FSim((real1_f)theta, (real1_f)phi, shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->FSim((real1_f)theta, (real1_f)phi, shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
 }
 
 void CSWAP(quid sid, std::vector<bitLenInt> c, bitLenInt qi1, bitLenInt qi2)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->CSwap(c, shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->CSwap(c, shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
 }
 
 void ACSWAP(quid sid, std::vector<bitLenInt> c, bitLenInt qi1, bitLenInt qi2)
 {
     MAP_CONTROLS_AND_LOCK(sid)
-    try {
-        simulator->AntiCSwap(c, shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->AntiCSwap(c, shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
 }
 
 void Compose(quid sid1, quid sid2, std::vector<bitLenInt> q)
@@ -1904,32 +1479,20 @@ void Compose(quid sid1, quid sid2, std::vector<bitLenInt> q)
     const std::lock_guard<std::mutex> simulatorLock2(simulatorMutexes[simulators[sid2].get()]);
 
     if (simulatorTypes[sid1].size() != simulatorTypes[sid2].size()) {
-        metaError = 2;
-        std::cout << "Cannot 'Compose()' simulators of different layer stack types!" << std::endl;
-        return;
+        throw std::invalid_argument("Cannot 'Compose()' simulators of different layer stack types!");
     }
 
     for (size_t i = 0U; i < simulatorTypes[sid1].size(); ++i) {
         if (simulatorTypes[sid1][i] != simulatorTypes[sid2][i]) {
-            metaError = 2;
-            std::cout << "Cannot 'Compose()' simulators of different layer stack types!" << std::endl;
-            return;
+            throw std::invalid_argument("Cannot 'Compose()' simulators of different layer stack types!");
         }
     }
 
-    QInterfacePtr simulator1 = simulators[sid1];
-    QInterfacePtr simulator2 = simulators[sid2];
-    bitLenInt oQubitCount = 0U;
-    bitLenInt pQubitCount = 0U;
-    try {
-        oQubitCount = simulator1->GetQubitCount();
-        pQubitCount = simulator2->GetQubitCount();
-        simulator1->Compose(simulator2);
-    } catch (const std::exception& ex) {
-        std::cout << ex.what() << std::endl;
-        simulatorErrors[sid1] = 1;
-        simulatorErrors[sid2] = 1;
-    }
+    const QInterfacePtr simulator1 = simulators[sid1];
+    const QInterfacePtr simulator2 = simulators[sid2];
+    const bitLenInt oQubitCount = simulator1->GetQubitCount();
+    const bitLenInt pQubitCount = simulator2->GetQubitCount();
+    simulator1->Compose(simulator2);
 
     for (bitLenInt i = 0; i < pQubitCount; ++i) {
         shards[simulator1.get()][q[i]] = oQubitCount + i;
@@ -1942,21 +1505,11 @@ quid Decompose(quid sid, std::vector<bitLenInt> q)
 
     SIMULATOR_LOCK_GUARD_INT(sid)
 
-    bitLenInt nQubitIndex = 0U;
-
-    try {
-        nQubitIndex = simulator->GetQubitCount() - q.size();
-
-        for (size_t i = 0U; i < q.size(); ++i) {
-            simulator->Swap(shards[simulator.get()][q[i]], i + nQubitIndex);
-        }
-
-        simulator->Decompose(nQubitIndex, simulators[nSid]);
-    } catch (const std::exception& ex) {
-        std::cout << ex.what() << std::endl;
-        simulatorErrors[sid] = 1;
-        simulatorErrors[nSid] = 1;
+    const bitLenInt nQubitIndex = simulator->GetQubitCount() - q.size();
+    for (size_t i = 0U; i < q.size(); ++i) {
+        simulator->Swap(shards[simulator.get()][q[i]], i + nQubitIndex);
     }
+    simulator->Decompose(nQubitIndex, simulators[nSid]);
 
     bitLenInt oIndex;
     for (size_t j = 0U; j < q.size(); ++j) {
@@ -1979,20 +1532,11 @@ void Dispose(quid sid, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    bitLenInt nQubitIndex = 0U;
-
-    try {
-        nQubitIndex = simulator->GetQubitCount() - q.size();
-
-        for (size_t i = 0U; i < q.size(); ++i) {
-            simulator->Swap(shards[simulator.get()][q[i]], i + nQubitIndex);
-        }
-
-        simulator->Dispose(nQubitIndex, q.size());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    const bitLenInt nQubitIndex = simulator->GetQubitCount() - q.size();
+    for (size_t i = 0U; i < q.size(); ++i) {
+        simulator->Swap(shards[simulator.get()][q[i]], i + nQubitIndex);
     }
+    simulator->Dispose(nQubitIndex, q.size());
 
     bitLenInt oIndex;
     for (size_t j = 0U; j < q.size(); ++j) {
@@ -2009,159 +1553,80 @@ void Dispose(quid sid, std::vector<bitLenInt> q)
 void AND(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->AND(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->AND(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 void OR(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->OR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->OR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 void XOR(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->XOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->XOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 void NAND(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->NAND(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->NAND(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 void NOR(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->NOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->NOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 void XNOR(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->XNOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->XNOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 void CLAND(quid sid, bool ci, bitLenInt qi, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->CLAND(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->CLAND(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 void CLOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->CLOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->CLOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 void CLXOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->CLXOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->CLXOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 void CLNAND(quid sid, bool ci, bitLenInt qi, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->CLNAND(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->CLNAND(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 void CLNOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->CLNOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->CLNOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 void CLXNOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->CLXNOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->CLXNOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 real1_f _Prob(quid sid, bitLenInt q, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
-
-    try {
-        return isRdm ? simulator->ProbRdm(shards[simulator.get()][q])
-                     : simulator->Prob(shards[simulator.get()][q]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (real1_f)REAL1_DEFAULT_ARG;
-    }
+    return isRdm ? simulator->ProbRdm(shards[simulator.get()][q])
+                 : simulator->Prob(shards[simulator.get()][q]);
 }
 
 /**
@@ -2189,13 +1654,7 @@ real1_f _PermutationProb(quid sid, std::vector<QubitIndexState> q, bool isRdm, b
         }
     }
 
-    try {
-        return isRdm ? simulator->ProbMaskRdm(r, mask, perm) : simulator->ProbMask(mask, perm);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (real1_f)REAL1_DEFAULT_ARG;
-    }
+    return isRdm ? simulator->ProbMaskRdm(r, mask, perm) : simulator->ProbMask(mask, perm);
 }
 
 /**
@@ -2223,13 +1682,7 @@ real1_f _PermutationExpectation(quid sid, std::vector<bitLenInt> q, bool r, bool
         q[i] = shards[simulators[sid].get()][q[i]];
     }
 
-    try {
-        return isRdm ? simulator->ExpectationBitsAllRdm(r, q) : simulator->ExpectationBitsAll(q);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (real1_f)REAL1_DEFAULT_ARG;
-    }
+    return isRdm ? simulator->ExpectationBitsAllRdm(r, q) : simulator->ExpectationBitsAll(q);
 }
 
 /**
@@ -2265,13 +1718,7 @@ real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpectation> q)
         _c.push_back(q[i].val);
     }
 
-    try {
-        return simulator->ExpectationBitsFactorized(_q, _c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (real1_f)REAL1_DEFAULT_ARG;
-    }
+    return simulator->ExpectationBitsFactorized(_q, _c);
 }
 
 /**
@@ -2291,13 +1738,7 @@ real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> 
         _c.push_back(q[i].val);
     }
 
-    try {
-        return simulator->ExpectationBitsFactorizedRdm(r, _q, _c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (real1_f)REAL1_DEFAULT_ARG;
-    }
+    return simulator->ExpectationBitsFactorizedRdm(r, _q, _c);
 }
 
 /**
@@ -2316,13 +1757,7 @@ real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q)
         _f.push_back(q[i].val);
     }
 
-    try {
-        return simulator->ExpectationFloatsFactorized(_q, _f);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (real1_f)REAL1_DEFAULT_ARG;
-    }
+    return simulator->ExpectationFloatsFactorized(_q, _f);
 }
 
 /**
@@ -2342,482 +1777,263 @@ real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q
         _f.push_back(q[i].val);
     }
 
-    try {
-        return simulator->ExpectationFloatsFactorizedRdm(r, _q, _f);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (real1_f)REAL1_DEFAULT_ARG;
-    }
+    return simulator->ExpectationFloatsFactorizedRdm(r, _q, _f);
 }
 
 void QFT(quid sid, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    try {
-#if QBCAPPOW >= 32
-        simulator->QFTR(q, n);
-#else
-        for (size_t i = 0U; i < q.size(); ++i) {
-            q[i] = shards[simulators[sid].get()][q[i]];
-        }
-        simulator->QFTR(q);
-#endif
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+#if QBCAPPOW < 32
+    for (size_t i = 0U; i < q.size(); ++i) {
+        q[i] = shards[simulators[sid].get()][q[i]];
     }
+#endif
+    simulator->QFTR(q);
 }
 void IQFT(quid sid, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    try {
-#if QBCAPPOW >= 32
-        simulator->IQFTR(q, n);
-#else
-        for (size_t i = 0U; i < q.size(); ++i) {
-            q[i] = shards[simulators[sid].get()][q[i]];
-        }
-        simulator->IQFTR(q);
-#endif
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+#if QBCAPPOW < 32
+    for (size_t i = 0U; i < q.size(); ++i) {
+        q[i] = shards[simulators[sid].get()][q[i]];
     }
+#endif
+    simulator->IQFTR(q);
 }
 
 #if ENABLE_ALU
 void ADD(quid sid, bitCapInt a, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        bitLenInt start = MapArithmetic(simulator, q);
-        simulator->INC(a, start, q.size());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->INC(a, MapArithmetic(simulator, q), q.size());
 }
 void SUB(quid sid, bitCapInt a, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        bitLenInt start = MapArithmetic(simulator, q);
-        simulator->DEC(a, start, q.size());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->DEC(a, MapArithmetic(simulator, q), q.size());
 }
 void ADDS(quid sid, bitCapInt a, bitLenInt s, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        bitLenInt start = MapArithmetic(simulator, q);
-        simulator->INCS(a, start, q.size(), shards[simulator.get()][s]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->INCS(a, MapArithmetic(simulator, q), q.size(), shards[simulator.get()][s]);
 }
 void SUBS(quid sid, bitCapInt a, bitLenInt s, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        bitLenInt start = MapArithmetic(simulator, q);
-        simulator->DECS(a, start, q.size(), shards[simulator.get()][s]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->DECS(a, MapArithmetic(simulator, q), q.size(), shards[simulator.get()][s]);
 }
 
 void MCADD(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    try {
-        bitLenInt start = MapArithmetic(simulator, q);
-        for (size_t i = 0; i < c.size(); ++i) {
-            c[i] = shards[simulator.get()][c[i]];
-        }
-        simulator->CINC(a, start, q.size(), c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    for (size_t i = 0; i < c.size(); ++i) {
+        c[i] = shards[simulator.get()][c[i]];
     }
+
+    simulator->CINC(a, MapArithmetic(simulator, q), q.size(), c);
 }
 void MCSUB(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    try {
-        bitLenInt start = MapArithmetic(simulator, q);
-        for (size_t i = 0; i < c.size(); ++i) {
-            c[i] = shards[simulator.get()][c[i]];
-        }
-        simulator->CDEC(a, start, q.size(), c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    for (size_t i = 0; i < c.size(); ++i) {
+        c[i] = shards[simulator.get()][c[i]];
     }
+
+    simulator->CDEC(a, MapArithmetic(simulator, q), q.size(), c);
 }
 
 void MUL(quid sid, bitCapInt a, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "MUL() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("MUL() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        QALU(simulator)->MUL(a, starts.start1, starts.start2, q.size());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    QALU(simulator)->MUL(a, starts.start1, starts.start2, q.size());
 }
 void DIV(quid sid, bitCapInt a, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "DIV() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("DIV() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        QALU(simulator)->DIV(a, starts.start1, starts.start2, q.size());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    QALU(simulator)->DIV(a, starts.start1, starts.start2, q.size());
 }
 void MULN(quid sid, bitCapInt a, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "MULN() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("MULN() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        simulator->MULModNOut(a, m, starts.start1, starts.start2, q.size());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    simulator->MULModNOut(a, m, starts.start1, starts.start2, q.size());
 }
 void DIVN(quid sid, bitCapInt a, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "DIVN() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("DIVN() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        simulator->IMULModNOut(a, m, starts.start1, starts.start2, q.size());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    simulator->IMULModNOut(a, m, starts.start1, starts.start2, q.size());
 }
 void POWN(quid sid, bitCapInt a, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "POWN() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("POWN() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        QALU(simulator)->POWModNOut(a, m, starts.start1, starts.start2, q.size());
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    QALU(simulator)->POWModNOut(a, m, starts.start1, starts.start2, q.size());
 }
 
 void MCMUL(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "MCMUL() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("MCMUL() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        for (size_t i = 0; i < c.size(); ++i) {
-            c[i] = shards[simulator.get()][c[i]];
-        }
-        QALU(simulator)->CMUL(a, starts.start1, starts.start2, q.size(), c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    for (size_t i = 0; i < c.size(); ++i) {
+        c[i] = shards[simulator.get()][c[i]];
     }
+    QALU(simulator)->CMUL(a, starts.start1, starts.start2, q.size(), c);
 }
 void MCDIV(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "MCDIV() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("MCDIV() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        for (size_t i = 0; i < c.size(); ++i) {
-            c[i] = shards[simulator.get()][c[i]];
-        }
-        QALU(simulator)->CDIV(a, starts.start1, starts.start2, q.size(), c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    for (size_t i = 0; i < c.size(); ++i) {
+        c[i] = shards[simulator.get()][c[i]];
     }
+    QALU(simulator)->CDIV(a, starts.start1, starts.start2, q.size(), c);
 }
 void MCMULN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "MCMULN() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("MCMULN() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        for (size_t i = 0; i < c.size(); ++i) {
-            c[i] = shards[simulator.get()][c[i]];
-        }
-        simulator->CMULModNOut(a, m, starts.start1, starts.start2, q.size(), c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    for (size_t i = 0; i < c.size(); ++i) {
+        c[i] = shards[simulator.get()][c[i]];
     }
+    simulator->CMULModNOut(a, m, starts.start1, starts.start2, q.size(), c);
 }
 void MCDIVN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "MCMULN() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("MCMULN() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        for (size_t i = 0; i < c.size(); ++i) {
-            c[i] = shards[simulator.get()][c[i]];
-        }
-        simulator->CIMULModNOut(a, m, starts.start1, starts.start2, q.size(), c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    for (size_t i = 0; i < c.size(); ++i) {
+        c[i] = shards[simulator.get()][c[i]];
     }
+    simulator->CIMULModNOut(a, m, starts.start1, starts.start2, q.size(), c);
 }
 void MCPOWN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
-        metaError = 2;
-        std::cout << "MCPOWN() 'q' and 'o' parameters must have same size!" << std::endl;
-        return;
+        throw std::invalid_argument("MCPOWN() 'q' and 'o' parameters must have same size!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
-        for (size_t i = 0; i < c.size(); ++i) {
-            c[i] = shards[simulator.get()][c[i]];
-        }
-        QALU(simulator)->CPOWModNOut(a, m, starts.start1, starts.start2, q.size(), c);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
+    const MapArithmeticResult2 starts = MapArithmetic2(simulator, q, o);
+    for (size_t i = 0; i < c.size(); ++i) {
+        c[i] = shards[simulator.get()][c[i]];
     }
+    QALU(simulator)->CPOWModNOut(a, m, starts.start1, starts.start2, q.size(), c);
 }
 
-#if 0
 void LDA(quid sid, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, qi, qv);
-        QALU(simulator)->IndexedLDA(starts.start1, qi.size(), starts.start2, qv.size(), t, true);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    const MapArithmeticResult2 starts = MapArithmetic3(simulator, qi, qv);
+    QALU(simulator)->IndexedLDA(starts.start1, qi.size(), starts.start2, qv.size(), t, true);
 }
 void ADC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, qi, qv);
-        QALU(simulator)->IndexedADC(starts.start1, qi.size(), starts.start2, qv.size(), shards[simulator.get()][s], t);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    const MapArithmeticResult2 starts = MapArithmetic3(simulator, qi, qv);
+    QALU(simulator)->IndexedADC(starts.start1, qi.size(), starts.start2, qv.size(), shards[simulator.get()][s], t);
 }
 void SBC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, qi, qv);
-        QALU(simulator)->IndexedSBC(starts.start1, qi.size(), starts.start2, qv.size(), shards[simulator.get()][s], t);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    const MapArithmeticResult2 starts = MapArithmetic3(simulator, qi, qv);
+    QALU(simulator)->IndexedSBC(starts.start1, qi.size(), starts.start2, qv.size(), shards[simulator.get()][s], t);
 }
 void Hash(quid sid, std::vector<bitLenInt> q, std::vector<unsigned char> t)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        uintq start = MapArithmetic(simulator, n, q);
-        QALU(simulator)->Hash(start, n, t);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    QALU(simulator)->Hash(MapArithmetic(simulator, n, q), n, t);
 }
-#endif
 #endif
 
 bool TrySeparate1Qb(quid sid, bitLenInt qi1)
 {
     SIMULATOR_LOCK_GUARD_BOOL(sid)
-
-    try {
-        return simulators[sid]->TrySeparate(shards[simulator.get()][qi1]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return false;
-    }
+    return simulators[sid]->TrySeparate(shards[simulator.get()][qi1]);
 }
 
 bool TrySeparate2Qb(quid sid, bitLenInt qi1, bitLenInt qi2)
 {
     SIMULATOR_LOCK_GUARD_BOOL(sid)
-
-    try {
-        return simulators[sid]->TrySeparate(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return false;
-    }
+    return simulators[sid]->TrySeparate(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
 }
 
 bool TrySeparateTol(quid sid, std::vector<bitLenInt> q, real1_f tol)
 {
     SIMULATOR_LOCK_GUARD_BOOL(sid)
-
-    for (size_t i = 0U; i < q.size(); ++i) {
-        q[i] = shards[simulator.get()][q[i]];
-    }
-
-    try {
-        return simulator->TrySeparate(q, tol);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return false;
-    }
+    return simulator->TrySeparate(q, tol);
 }
 
 double GetUnitaryFidelity(quid sid)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
-
-    try {
-        return simulator->GetUnitaryFidelity();
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return -1.0;
-    }
+    return simulator->GetUnitaryFidelity();
 }
 
 void ResetUnitaryFidelity(quid sid)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->ResetUnitaryFidelity();
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->ResetUnitaryFidelity();
 }
 
 void SetSdrp(quid sid, double sdrp)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
-    try {
-        simulator->SetSdrp(sdrp);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->SetSdrp(sdrp);
 }
 
 void SetReactiveSeparate(quid sid, bool irs)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-    try {
-        simulator->SetReactiveSeparate(irs);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->SetReactiveSeparate(irs);
 }
 
 void SetTInjection(quid sid, bool irs)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-    try {
-        simulator->SetTInjection(irs);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
+    simulator->SetTInjection(irs);
 }
 
 quid init_qneuron(quid sid, std::vector<bitLenInt> c, bitLenInt q, QNeuronActivationFn f, real1_f a, real1_f tol)
@@ -2825,17 +2041,13 @@ quid init_qneuron(quid sid, std::vector<bitLenInt> c, bitLenInt q, QNeuronActiva
     META_LOCK_GUARD()
 
     if (sid > simulators.size()) {
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
-        metaError = 2;
-        return 0U;
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");
     }
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
         new const std::lock_guard<std::mutex>(simulatorMutexes[simulator.get()]));
     if (!simulator) {
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
-        metaError = 2;
-        return -1;
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");
     }
 
     for (size_t i = 0; i < c.size(); ++i) {
@@ -2872,9 +2084,7 @@ quid clone_qneuron(quid nid)
     META_LOCK_GUARD()
 
     if (nid > neurons.size()) {
-        std::cout << "Invalid argument: neuron ID not found!" << std::endl;
-        metaError = 2;
-        return 0U;
+        throw std::invalid_argument("Invalid argument: neuron ID not found!");
     }
     QNeuronPtr neuron = neurons[nid];
     std::unique_ptr<const std::lock_guard<std::mutex>> neuronLock(
@@ -2920,9 +2130,7 @@ void set_qneuron_angles(quid nid, std::vector<real1> angles)
 {
     NEURON_LOCK_GUARD_VOID(nid)
     if (angles.size() != (size_t)neuron->GetInputPower()) {
-        std::cout << "set_qneuron_angles() 'angles' parameter must have 2^n elements for n input qubits!" << std::endl;
-        metaError = 2;
-        return;
+        throw std::invalid_argument("set_qneuron_angles() 'angles' parameter must have 2^n elements for n input qubits!");
     }
     std::unique_ptr<real1[]> _angles(new real1[angles.size()]);
     std::copy(angles.begin(), angles.end(), _angles.get());
@@ -2932,9 +2140,7 @@ void set_qneuron_angles(quid nid, std::vector<real1> angles)
 std::vector<real1> get_qneuron_angles(quid nid)
 {
     if (nid > neurons.size()) {
-        std::cout << "Invalid argument: neuron ID not found!" << std::endl;
-        metaError = 2;
-        return std::vector<real1>();
+        throw std::invalid_argument("Invalid argument: neuron ID not found!");
     }
 
     QNeuronPtr neuron = neurons[nid];
@@ -3064,9 +2270,7 @@ quid _init_qcircuit_copy(quid cid, bool isInverse, std::set<bitLenInt> q)
     META_LOCK_GUARD()
 
     if (cid > circuits.size()) {
-        std::cout << "Invalid argument: circuit ID not found!" << std::endl;
-        metaError = 2;
-        return 0U;
+        throw std::invalid_argument("Invalid argument: circuit ID not found!");
     }
     QCircuitPtr circuit = circuits[cid];
     std::unique_ptr<const std::lock_guard<std::mutex>> circuitLock(
@@ -3126,9 +2330,7 @@ void qcircuit_swap(quid cid, bitLenInt q1, bitLenInt q2)
 void qcircuit_append_1qb(quid cid, std::vector<real1_f> m, bitLenInt q)
 {
     if (m.size() != 4) {
-        metaError = 2;
-        std::cout << "qcircuit_append_1qb() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!" << std::endl;
-        return;
+        throw std::invalid_argument("qcircuit_append_1qb() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     CIRCUIT_LOCK_GUARD_VOID(cid)
@@ -3140,9 +2342,7 @@ void qcircuit_append_1qb(quid cid, std::vector<real1_f> m, bitLenInt q)
 void qcircuit_append_mc(quid cid, std::vector<real1_f> m, std::vector<bitLenInt> c, bitLenInt q, bitCapInt p)
 {
     if (m.size() != 4) {
-        metaError = 2;
-        std::cout << "qcircuit_append_1qb() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!" << std::endl;
-        return;
+        throw std::invalid_argument("qcircuit_append_1qb() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     CIRCUIT_LOCK_GUARD_VOID(cid)

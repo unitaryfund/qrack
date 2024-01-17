@@ -2497,15 +2497,11 @@ MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uint
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-#if QBCAPPOW >= 32
-        simulator->QFTR(c, n);
-#else
         std::vector<bitLenInt> q(n);
         for (uintq i = 0U; i < n; ++i) {
             q[i] = shards[simulators[sid].get()][c[i]];
         }
         simulator->QFTR(q);
-#endif
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2516,15 +2512,11 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-#if QBCAPPOW >= 32
-        simulator->IQFTR(c, n);
-#else
         std::vector<bitLenInt> q(n);
         for (uintq i = 0U; i < n; ++i) {
             q[i] = shards[simulators[sid].get()][c[i]];
         }
         simulator->IQFTR(q);
-#endif
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2538,8 +2530,8 @@ MICROSOFT_QUANTUM_DECL void ADD(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, n, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, n, q);
         simulator->INC(aTot, start, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2552,8 +2544,8 @@ MICROSOFT_QUANTUM_DECL void SUB(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, n, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, n, q);
         simulator->DEC(aTot, start, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2566,8 +2558,8 @@ MICROSOFT_QUANTUM_DECL void ADDS(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, n, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, n, q);
         simulator->INCS(aTot, start, n, shards[simulator.get()][s]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2580,8 +2572,8 @@ MICROSOFT_QUANTUM_DECL void SUBS(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, n, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, n, q);
         simulator->DECS(aTot, start, n, shards[simulator.get()][s]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2595,8 +2587,8 @@ MICROSOFT_QUANTUM_DECL void MCADD(_In_ uintq sid, _In_ uintq na, _In_reads_(na) 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, nq, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, nq, q);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2613,8 +2605,8 @@ MICROSOFT_QUANTUM_DECL void MCSUB(_In_ uintq sid, _In_ uintq na, _In_reads_(na) 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, nq, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, nq, q);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2632,8 +2624,8 @@ MICROSOFT_QUANTUM_DECL void MUL(_In_ uintq sid, _In_ uintq na, _In_reads_(na) ui
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         QALU(simulator)->MUL(aTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2646,8 +2638,8 @@ MICROSOFT_QUANTUM_DECL void DIV(_In_ uintq sid, _In_ uintq na, _In_reads_(na) ui
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         QALU(simulator)->DIV(aTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2660,8 +2652,8 @@ MICROSOFT_QUANTUM_DECL void MULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         simulator->MULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
@@ -2675,9 +2667,9 @@ MICROSOFT_QUANTUM_DECL void DIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         simulator->IMULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2690,9 +2682,9 @@ MICROSOFT_QUANTUM_DECL void POWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         QALU(simulator)->POWModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2706,8 +2698,8 @@ MICROSOFT_QUANTUM_DECL void MCMUL(_In_ uintq sid, _In_ uintq na, _In_reads_(na) 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2724,8 +2716,8 @@ MICROSOFT_QUANTUM_DECL void MCDIV(_In_ uintq sid, _In_ uintq na, _In_reads_(na) 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2742,9 +2734,9 @@ MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2761,9 +2753,9 @@ MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2780,9 +2772,9 @@ MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2800,7 +2792,7 @@ MICROSOFT_QUANTUM_DECL void LDA(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
+        const MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
         QALU(simulator)->IndexedLDA(starts.start1, ni, starts.start2, nv, t, true);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2813,7 +2805,7 @@ MICROSOFT_QUANTUM_DECL void ADC(_In_ uintq sid, uintq s, _In_ uintq ni, _In_read
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
+        const MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
         QALU(simulator)->IndexedADC(starts.start1, ni, starts.start2, nv, shards[simulator.get()][s], t);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2826,7 +2818,7 @@ MICROSOFT_QUANTUM_DECL void SBC(_In_ uintq sid, uintq s, _In_ uintq ni, _In_read
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
+        const MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
         QALU(simulator)->IndexedSBC(starts.start1, ni, starts.start2, nv, shards[simulator.get()][s], t);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2838,7 +2830,7 @@ MICROSOFT_QUANTUM_DECL void Hash(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        uintq start = MapArithmetic(simulator, n, q);
+        const uintq start = MapArithmetic(simulator, n, q);
         QALU(simulator)->Hash(start, n, t);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
