@@ -232,14 +232,14 @@ void MX(quid sid, std::vector<bitLenInt> q);
 void MY(quid sid, std::vector<bitLenInt> q);
 void MZ(quid sid, std::vector<bitLenInt> q);
 
-// rotations
+// single-qubit rotations
 void R(quid sid, real1_f phi, QubitPauliBasis q);
-
-// multi-controlled rotations
+// multi-controlled single-qubit rotations
 void MCR(quid sid, real1_f phi, std::vector<bitLenInt> c, QubitPauliBasis q);
 
-// Exponential of Pauli operators
+// exponential of Pauli operators
 void Exp(quid sid, real1_f phi, std::vector<QubitPauliBasis> q);
+// multi-controlled exponential of Pauli operators
 void MCExp(quid sid, real1_f phi, std::vector<bitLenInt> c, std::vector<QubitPauliBasis> q);
 
 // measurements
