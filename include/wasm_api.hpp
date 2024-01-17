@@ -172,11 +172,17 @@ real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q);
 real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q, bool r);
 
 /**
- * Select from a distribution of "p.size()" count of elements according the discrete probabilities in "p."
+ * Select from a distribution of "p.size()" count of elements according to the discrete probabilities in "p."
  */
 size_t random_choice(quid sid, std::vector<real1> p);
 
+/**
+ * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
+ */
 void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q);
+/**
+ * Overall probability of any odd permutation of the masked set of bits
+ */
 real1_f JointEnsembleProbability(quid sid, std::vector<QubitPauliBasis> q);
 
 /**
