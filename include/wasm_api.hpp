@@ -193,7 +193,7 @@ void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q);
  */
 real1_f JointEnsembleProbability(quid sid, std::vector<QubitPauliBasis> q);
 
-//SPAM and non-unitary
+// SPAM and non-unitary
 
 /**
  * Measure single qubit (according to Born rules) and return the result
