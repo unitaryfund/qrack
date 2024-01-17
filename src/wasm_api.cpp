@@ -1662,9 +1662,7 @@ void Exp(quid sid, real1_f phi, std::vector<QubitPauliBasis> q)
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    QubitPauliBasis someQubit;
-    someQubit.qid = q.front().qid;
-    someQubit.b = PauliI;
+    QubitPauliBasis someQubit(q.front().qid, PauliI);
 
     removeIdentities(&q);
 
@@ -1698,9 +1696,7 @@ void MCExp(quid sid, real1_f phi, std::vector<bitLenInt> cs, std::vector<QubitPa
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    QubitPauliBasis someQubit;
-    someQubit.qid = q.front().qid;
-    someQubit.b = PauliI;
+    QubitPauliBasis someQubit(q.front().qid, PauliI);
 
     removeIdentities(&q);
 

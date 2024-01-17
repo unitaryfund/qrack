@@ -29,21 +29,45 @@ typedef uint64_t quid;
 struct QubitIndexState {
     bitLenInt qid;
     bool val;
+    QubitIndexState(bitLenInt q, bool v)
+        : qid(q)
+        , val(v)
+    {
+        // Intentionally left blank
+    }
 };
 
 struct QubitIntegerExpectation {
     bitLenInt qid;
     bitCapInt val;
+    QubitIntegerExpectation(bitLenInt q, bitCapInt v)
+        : qid(q)
+        , val(v)
+    {
+        // Intentionally left blank
+    }
 };
 
 struct QubitRealExpecation {
     bitLenInt qid;
-    real1 val;
+    real1_f val;
+    QubitRealExpecation(bitLenInt q, real1_f v)
+        : qid(q)
+        , val(v)
+    {
+        // Intentionally left blank
+    }
 };
 
 struct QubitPauliBasis {
     bitLenInt qid;
     Pauli b;
+    QubitPauliBasis(bitLenInt q, Pauli basis)
+        : qid(q)
+        , b(basis)
+    {
+        // Intentionally left blank
+    }
 };
 
 /**
