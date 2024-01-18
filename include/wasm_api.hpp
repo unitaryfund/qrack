@@ -327,10 +327,12 @@ void MCMULN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::v
 void MCDIVN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void MCPOWN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 
+#if 0
 void LDA(quid sid, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
 void ADC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
 void SBC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
 void Hash(quid sid, std::vector<bitLenInt> q, std::vector<unsigned char> t);
+#endif
 #endif
 
 // Utility functions

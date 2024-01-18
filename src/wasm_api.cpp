@@ -1963,6 +1963,7 @@ void MCPOWN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::v
     QALU(simulator)->CPOWModNOut(a, m, starts.start1, starts.start2, q.size(), c);
 }
 
+#if 0
 void LDA(quid sid, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
@@ -1986,6 +1987,7 @@ void Hash(quid sid, std::vector<bitLenInt> q, std::vector<unsigned char> t)
     SIMULATOR_LOCK_GUARD_VOID(sid)
     QALU(simulator)->Hash(MapArithmetic(simulator, n, q), n, t);
 }
+#endif
 #endif
 
 bool TrySeparate1Qb(quid sid, bitLenInt qi1)
