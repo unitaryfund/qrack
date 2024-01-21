@@ -243,7 +243,7 @@ void MCAdjS(quid sid, std::vector<bitLenInt> c, bitLenInt q);
 void MCAdjT(quid sid, std::vector<bitLenInt> c, bitLenInt q);
 void MCU(quid sid, std::vector<bitLenInt> c, bitLenInt q, real1_f theta, real1_f phi, real1_f lambda);
 void MCMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q);
-
+// multi-("anti"-) controlled single-qubits gates (that activate when all controls are |0>)
 void MACX(quid sid, std::vector<bitLenInt> c, bitLenInt q);
 void MACY(quid sid, std::vector<bitLenInt> c, bitLenInt q);
 void MACZ(quid sid, std::vector<bitLenInt> c, bitLenInt q);
@@ -255,8 +255,13 @@ void MACAdjT(quid sid, std::vector<bitLenInt> c, bitLenInt q);
 void MACU(quid sid, std::vector<bitLenInt> c, bitLenInt q, real1_f theta, real1_f phi, real1_f lambda);
 void MACMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q);
 
+/**
+ * Multi-controlled gate that activates only for the specified permutation of controls, "p"
+ */
 void UCMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q, bitCapIntOcl p);
-
+/**
+ * Multi-controlled, single-target multiplexer gate
+ */
 void Multiplex1Mtrx(quid sid, std::vector<bitLenInt> c, bitLenInt q, std::vector<complex> m);
 
 // coalesced single-qubit gates
@@ -287,13 +292,15 @@ void Compose(quid sid1, quid sid2, std::vector<bitLenInt> q);
 quid Decompose(quid sid, std::vector<bitLenInt> q);
 void Dispose(quid sid, std::vector<bitLenInt> q);
 
-// Quantum boolean (Toffoli) operations
+// Quantum boolean (Toffoli) operations:
+// Two qubits input
 void AND(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo);
 void OR(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo);
 void XOR(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo);
 void NAND(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo);
 void NOR(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo);
 void XNOR(quid sid, bitLenInt qi1, bitLenInt qi2, bitLenInt qo);
+// One qubit, one classical bit input
 void CLAND(quid sid, bool ci, bitLenInt qi, bitLenInt qo);
 void CLOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo);
 void CLXOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo);
@@ -301,33 +308,43 @@ void CLNAND(quid sid, bool ci, bitLenInt qi, bitLenInt qo);
 void CLNOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo);
 void CLXNOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo);
 
-// Quantum Fourier Transform
+/**
+ * Quantum Fourier Transform
+ */
 void QFT(quid sid, std::vector<bitLenInt> q);
+/**
+ * (Inverse) Quantum Fourier Transform
+ */
 void IQFT(quid sid, std::vector<bitLenInt> q);
 
 #if ENABLE_ALU
-// Arithmetic logic unit
+// Arithmetic logic unit:
+// Two's complement
 void ADD(quid sid, bitCapInt a, std::vector<bitLenInt> q);
 void SUB(quid sid, bitCapInt a, std::vector<bitLenInt> q);
+// Overflow
 void ADDS(quid sid, bitCapInt a, bitLenInt s, std::vector<bitLenInt> q);
 void SUBS(quid sid, bitCapInt a, bitLenInt s, std::vector<bitLenInt> q);
-
+// Controlled
 void MCADD(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q);
 void MCSUB(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q);
-
+// In-place
 void MUL(quid sid, bitCapInt a, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void DIV(quid sid, bitCapInt a, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
+// Modulo, out-of-place
 void MULN(quid sid, bitCapInt a, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void DIVN(quid sid, bitCapInt a, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void POWN(quid sid, bitCapInt a, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
-
+// Controlled in-place
 void MCMUL(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void MCDIV(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
+// Controlled modulo, out-of-place
 void MCMULN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void MCDIVN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void MCPOWN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 
 #if 0
+// Amplitude amplification
 void LDA(quid sid, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
 void ADC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
 void SBC(quid sid, bitLenInt s, std::vector<bitLenInt> qi, std::vector<bitLenInt> qv, std::vector<unsigned char> t);
@@ -336,29 +353,94 @@ void Hash(quid sid, std::vector<bitLenInt> q, std::vector<unsigned char> t);
 #endif
 
 // Utility functions
+/**
+ * Try to factorize a single-qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no logical effect.)
+ */
 bool TrySeparate1Qb(quid sid, bitLenInt qi1);
+/**
+ * Try to factorize a two-qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no logical effect.)
+ */
 bool TrySeparate2Qb(quid sid, bitLenInt qi1, bitLenInt qi2);
+/**
+ * Try to factorize a qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no logical effect.)
+ */
 bool TrySeparateTol(quid sid, std::vector<bitLenInt> q, real1_f tol);
+/**
+ * Report fidelity for "Schmidt decomposition rounding parameter" (SDRP) and "near-Clifford rounding"
+ */
 double GetUnitaryFidelity(quid sid);
+/**
+ * Reset fidelity to 1 for "Schmidt decomposition rounding parameter" (SDRP) and "near-Clifford rounding"
+ */
 void ResetUnitaryFidelity(quid sid);
+/**
+ * Set "Schmidt decomposition rounding parameter" (SDRP) value (see https://arxiv.org/abs/2304.14969)
+ */
 void SetSdrp(quid sid, double sdrp);
+/**
+ * Turn off/on "reactive separation" feature (for less/more aggressive automatic state factorization)
+ */
 void SetReactiveSeparate(quid sid, bool irs);
+/**
+ * Turn off/on "T-injection" feature (for "near-Clifford" simulation with RZ gates)
+ */
 void SetTInjection(quid sid, bool iti);
 
-// (Single-target-multiplexer-based) quantum neurons
+/**
+ * Initialize a "quantum neuron" that takes a list of qubit "controls" for input and acts on a single "target" output qubit.
+ */
 quid init_qneuron(quid sid, std::vector<bitLenInt> c, bitLenInt q, QNeuronActivationFn f, real1_f a, real1_f tol);
+/**
+ * "Clone" a quantum neuron (which is a classical state)
+ */
 quid clone_qneuron(quid nid);
+/**
+ * "Destroy" or release simulator allocation
+ */
 void destroy_qneuron(quid nid);
+/**
+ * Set the (RY-rotation) angle parameters for each permutation of quantum neuron input qubits
+ */
 void set_qneuron_angles(quid nid, std::vector<real1> angles);
+/**
+ * Get the (RY-rotation) angle parameters for each permutation of quantum neuron input qubits
+ */
 std::vector<real1> get_qneuron_angles(quid nid);
+/**
+ * Set the "leakage" parameter for "leaky" quantum neuron activation functions
+ */
 void set_qneuron_alpha(quid nid, real1_f alpha);
+/**
+ * Get the "leakage" parameter for "leaky" quantum neuron activation functions
+ */
 real1_f get_qneuron_alpha(quid nid);
+/**
+ * Set the activation function for a quantum neuron
+ */
 void set_qneuron_activation_fn(quid nid, QNeuronActivationFn f);
+/**
+ * Get the activation function for a quantum neuron
+ */
 QNeuronActivationFn get_qneuron_activation_fn(quid nid);
+/**
+ * Infer quantum neuron output from inputs (after training)
+ */
 real1_f qneuron_predict(quid nid, bool e, bool r);
+/**
+ * Perform the inverse of quantum neuron inference (for "uncomputation")
+ */
 real1_f qneuron_unpredict(quid nid, bool e);
+/**
+ * Train a quantum neuron for one epoch, and also uncompute the intermediate side-effects
+ */
 real1_f qneuron_learn_cycle(quid nid, bool e);
+/**
+ * Train a quantum neuron for one epoh (without uncomputing any intermediate side-effects)
+ */
 void qneuron_learn(quid nid, real1_f eta, bool e, bool r);
+/**
+ * Train a quantum neuron for one epoch, assuming that the input state is a Z-basis eigenstate.
+ */
 void qneuron_learn_permutation(quid nid, real1_f eta, bool e, bool r);
 
 // Quantum circuit objects
