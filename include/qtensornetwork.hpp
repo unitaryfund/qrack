@@ -105,9 +105,9 @@ protected:
 #if ENABLE_ENV_VARS
         return getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")
             ? (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")))
-            : 30U;
+            : 32U;
 #else
-        return 30U;
+        return 32U;
 #endif
     }
 
