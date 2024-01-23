@@ -593,6 +593,7 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, cons
             b0->scale *= mtrxCol1.c(1U);
         }
 #else
+        branches[0U].swap(branches[1U]);
         b1->scale *= mtrxCol2.c(0U);
         b0->scale *= mtrxCol1.c(1U);
 #endif
@@ -768,6 +769,7 @@ void QBdtNode::Apply2x2(complex const* mtrx, bitLenInt depth)
             b0->scale *= mtrx[2U];
         }
 #else
+        branches[0U].swap(branches[1U]);
         b1->scale *= mtrx[1U];
         b0->scale *= mtrx[2U];
 #endif

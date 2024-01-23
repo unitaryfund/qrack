@@ -102,6 +102,11 @@ quid init();
 quid init_clone(quid sid);
 
 /**
+ * "Default optimal" (BQP-complete-targeted) simulator type initialization (with "direct memory" option)
+ */
+quid init_qbdd_count(bitLenInt q);
+
+/**
  * "Destroy" or release simulator allocation
  */
 void destroy(quid sid);

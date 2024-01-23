@@ -742,6 +742,54 @@ quid init_clone(quid sid)
 }
 
 /**
+ * (External API) Initialize a simulator ID with "q" qubits and implicit default layer options.
+ */
+quid init_qbdd_count(bitLenInt q)
+{
+    META_LOCK_GUARD()
+
+    quid sid = (quid)simulators.size();
+
+    for (size_t i = 0U; i < simulators.size(); ++i) {
+        if (simulatorReservations[i] == false) {
+            sid = i;
+            simulatorReservations[i] = true;
+            break;
+        }
+    }
+
+    const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_QUNIT, QINTERFACE_BDT };
+
+    QInterfacePtr simulator = NULL;
+    if (q) {
+        simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen);
+    }
+
+    if (sid == simulators.size()) {
+        simulatorReservations.push_back(true);
+        simulators.push_back(simulator);
+        simulatorTypes.push_back(simulatorType);
+        simulatorHostPointer.push_back(false);
+    } else {
+        simulatorReservations[sid] = true;
+        simulators[sid] = simulator;
+        simulatorTypes[sid] = simulatorType;
+        simulatorHostPointer[sid] = false;
+    }
+
+    if (!q) {
+        return sid;
+    }
+
+    shards[simulator.get()] = {};
+    for (quid i = 0U; i < q; ++i) {
+        shards[simulator.get()][i] = (bitLenInt)i;
+    }
+
+    return sid;
+}
+
+/**
  * (External API) Destroy a simulator (ID will not be reused)
  */
 void destroy(quid sid)
