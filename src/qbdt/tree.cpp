@@ -557,7 +557,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     return result;
 }
 
-bitCapInt QBdt::MAll()
+bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
 {
     bitCapInt result = ZERO_BCI;
     QBdtNodeInterfacePtr leaf = root;
@@ -581,25 +581,26 @@ bitCapInt QBdt::MAll()
             bitResult = (Rand() <= oneChance);
         }
 
+        if (isCollapsing) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        // We might share this node with a clone:
-        if (true) {
             std::lock_guard<std::mutex> lock(leaf->mtx);
+#endif
+            // We might share this node with a clone:
             leaf->Branch();
         }
-#else
-        // We might share this node with a clone:
-        leaf->Branch();
-#endif
 
         if (bitResult) {
-            leaf->branches[0U]->SetZero();
-            leaf->branches[1U]->scale = ONE_CMPLX;
+            if (isCollapsing) {
+                leaf->branches[0U]->SetZero();
+                leaf->branches[1U]->scale = ONE_CMPLX;
+            }
             leaf = leaf->branches[1U];
             bi_or_ip(&result, pow2(i));
         } else {
-            leaf->branches[0U]->scale = ONE_CMPLX;
-            leaf->branches[1U]->SetZero();
+            if (isCollapsing) {
+                leaf->branches[0U]->scale = ONE_CMPLX;
+                leaf->branches[1U]->SetZero();
+            }
             leaf = leaf->branches[0U];
         }
     }

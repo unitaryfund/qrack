@@ -180,7 +180,7 @@ protected:
         XMask(xMask);
     }
 
-    bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
+    virtual bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
     {
         QInterfacePtr clone = Clone();
 

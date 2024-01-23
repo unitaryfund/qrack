@@ -171,6 +171,21 @@ protected:
 
     void Init();
 
+    bitCapInt MAllOptionalCollapse(bool isCollapsing);
+
+    bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
+    {
+        const bitCapInt rawSample = MAllOptionalCollapse(false);
+        bitCapInt sample = ZERO_BCI;
+        for (size_t i = 0U; i < qPowers.size(); ++i) {
+            if (bi_compare_0(rawSample & qPowers[i]) != 0) {
+                bi_or_ip(&sample, pow2(i));
+            }
+        }
+
+        return sample;
+    }
+
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -266,7 +281,7 @@ public:
     real1_f ProbAll(bitCapInt fullRegister);
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
-    bitCapInt MAll();
+    bitCapInt MAll() { return MAllOptionalCollapse(true); }
 
     void Mtrx(const complex* mtrx, bitLenInt target);
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target);
