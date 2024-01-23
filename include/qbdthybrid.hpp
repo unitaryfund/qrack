@@ -91,9 +91,13 @@ protected:
             return;
         }
 
+#if ENABLE_ENV_VARS
         const double threshold = getenv("QRACK_QBDT_HYBRID_THRESHOLD")
             ? std::stod(getenv("QRACK_QBDT_HYBRID_THRESHOLD"))
             : std::log2(strideBits - qubitCount);
+#else
+        const double threshold = std::log2(strideBits - qubitCount);
+#endif
 
         if ((2.0 - threshold) <= FP_NORM_EPSILON) {
             // This definitely won't switch to state vector.
