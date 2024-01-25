@@ -83,13 +83,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         maxAncillaCount = maxEngineQubitCount;
 #endif
     }
-#elif ENABLE_ENV_VARS
-    maxEngineQubitCount = maxCpuQubitCount;
-    maxAncillaCount = maxEngineQubitCount;
-#endif
     if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         maxAncillaCount = -1;
     }
+#elif ENABLE_ENV_VARS
+    maxEngineQubitCount = -1;
+    maxAncillaCount = -1;
+#endif
 
     maxStateMapCacheQubitCount = maxCpuQubitCount - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
 
