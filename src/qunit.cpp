@@ -1435,6 +1435,8 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         return result;
     }
 
+    logFidelity = log(GetUnitaryFidelity());
+
     shard.isProbDirty = false;
     shard.isPhaseDirty = false;
     shard.amp0 = result ? ZERO_CMPLX : GetNonunitaryPhase();
