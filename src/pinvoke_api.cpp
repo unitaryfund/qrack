@@ -1314,6 +1314,36 @@ MICROSOFT_QUANTUM_DECL void S(_In_ uintq sid, _In_ uintq q)
 }
 
 /**
+ * (External API) Square root of X gate
+ */
+MICROSOFT_QUANTUM_DECL void SX(_In_ uintq sid, _In_ uintq q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->SqrtX(shards[simulator.get()][q]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
+ * (External API) Square root of Y gate
+ */
+MICROSOFT_QUANTUM_DECL void SY(_In_ uintq sid, _In_ uintq q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->SqrtY(shards[simulator.get()][q]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
  * (External API) "T" Gate
  */
 MICROSOFT_QUANTUM_DECL void T(_In_ uintq sid, _In_ uintq q)
@@ -1337,6 +1367,36 @@ MICROSOFT_QUANTUM_DECL void AdjS(_In_ uintq sid, _In_ uintq q)
 
     try {
         simulator->IS(shards[simulator.get()][q]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
+ * (External API) Inverse square root of X gate
+ */
+MICROSOFT_QUANTUM_DECL void AdjSX(_In_ uintq sid, _In_ uintq q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->ISqrtX(shards[simulator.get()][q]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
+ * (External API) Inverse square root of Y gate
+ */
+MICROSOFT_QUANTUM_DECL void AdjSY(_In_ uintq sid, _In_ uintq q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->ISqrtY(shards[simulator.get()][q]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;

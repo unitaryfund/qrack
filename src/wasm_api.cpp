@@ -1036,6 +1036,24 @@ void S(quid sid, bitLenInt q)
 }
 
 /**
+ * (External API) Square root of X gate
+ */
+void SX(quid sid, bitLenInt q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    simulator->SqrtX(shards[simulator.get()][q]);
+}
+
+/**
+ * (External API) Square root of Y gate
+ */
+void SY(quid sid, bitLenInt q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    simulator->SqrtY(shards[simulator.get()][q]);
+}
+
+/**
  * (External API) "T" Gate
  */
 void T(quid sid, bitLenInt q)
@@ -1051,6 +1069,24 @@ void AdjS(quid sid, bitLenInt q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
     simulator->IS(shards[simulator.get()][q]);
+}
+
+/**
+ * (External API) Inverse square root of X gate
+ */
+void AdjSX(quid sid, bitLenInt q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    simulator->ISqrtX(shards[simulator.get()][q]);
+}
+
+/**
+ * (External API) Inverse square root of Y gate
+ */
+void AdjSY(quid sid, bitLenInt q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    simulator->ISqrtY(shards[simulator.get()][q]);
 }
 
 /**
