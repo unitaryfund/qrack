@@ -57,6 +57,7 @@ protected:
     bitLenInt maxAncillaCount;
     bitLenInt maxStateMapCacheQubitCount;
     real1_f separabilityThreshold;
+    real1_f roundingThreshold;
     int64_t devID;
     complex phaseFactor;
     double logFidelity;
@@ -335,6 +336,7 @@ public:
     {
     }
 
+    void SetNcrp(real1_f ncrp) { roundingThreshold = ncrp; };
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
     double GetUnitaryFidelity() { return exp(logFidelity); }

@@ -387,6 +387,10 @@ void ResetUnitaryFidelity(quid sid);
  */
 void SetSdrp(quid sid, double sdrp);
 /**
+ * Set "Near-Clifford rounding parameter"
+ */
+void SetNcrp(quid sid, double sdrp);
+/**
  * Turn off/on "reactive separation" feature (for less/more aggressive automatic state factorization)
  */
 void SetReactiveSeparate(quid sid, bool irs);

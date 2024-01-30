@@ -48,6 +48,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , maxEngineQubitCount(27U)
     , maxAncillaCount(28U)
     , separabilityThreshold(sep_thresh)
+    , roundingThreshold(FP_NORM_EPSILON_F)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , logFidelity(0.0)
@@ -690,7 +691,6 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         return engine->GetAmplitude(perm);
     }
 
-    real1_f roundingThreshold = ZERO_R1_F;
 #if ENABLE_ENV_VARS
     if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         roundingThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));

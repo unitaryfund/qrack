@@ -37,6 +37,7 @@ protected:
     bool useTGadget;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
+    real1_f roundingThreshold;
     double logFidelity;
     int64_t devID;
     complex phaseFactor;
@@ -433,6 +434,16 @@ public:
     virtual double GetUnitaryFidelity();
     virtual void ResetUnitaryFidelity() { logFidelity = 0.0; }
     virtual void SetSdrp(real1_f sdrp) { separabilityThreshold = sdrp; };
+    virtual void SetNcrp(real1_f ncrp)
+    {
+        roundingThreshold = ncrp;
+        ParallelUnitApply(
+            [](QInterfacePtr unit, real1_f rp, real1_f unused, real1_f unused2, int64_t unused3) {
+                unit->SetNcrp(rp);
+                return true;
+            },
+            ncrp, ZERO_R1_F, ZERO_R1_F, 0);
+    }
 
     virtual QInterfacePtr Clone();
 

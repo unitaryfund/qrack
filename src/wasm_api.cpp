@@ -2110,6 +2110,12 @@ void SetSdrp(quid sid, double sdrp)
     simulator->SetSdrp(sdrp);
 }
 
+void SetNcrp(quid sid, double ncrp)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    simulator->SetNcrp(ncrp);
+}
+
 void SetReactiveSeparate(quid sid, bool irs)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)

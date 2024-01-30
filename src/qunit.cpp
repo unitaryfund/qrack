@@ -101,6 +101,7 @@ QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
     toRet->SetTInjection(useTGadget);
+    toRet->SetNcrp(roundingThreshold);
 
     return toRet;
 }
@@ -459,6 +460,7 @@ bitLenInt QUnit::Allocate(bitLenInt start, bitLenInt length)
         separabilityThreshold);
     nQubits->SetReactiveSeparate(isReactiveSeparate);
     nQubits->SetTInjection(useTGadget);
+    nQubits->SetNcrp(roundingThreshold);
 
     return Compose(nQubits, start);
 }
@@ -4073,6 +4075,7 @@ QInterfacePtr QUnit::Clone()
 
     copyPtr->SetReactiveSeparate(isReactiveSeparate);
     copyPtr->SetTInjection(useTGadget);
+    copyPtr->SetNcrp(roundingThreshold);
     copyPtr->logFidelity = logFidelity;
 
     return CloneBody(copyPtr);

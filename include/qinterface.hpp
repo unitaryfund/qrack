@@ -2718,6 +2718,10 @@ public:
      */
     virtual void SetSdrp(real1_f sdrp){};
     /**
+     * Set the "Near-clifford rounding parameter" value, (between 0 and 1)
+     */
+    virtual void SetNcrp(real1_f ncrp){};
+    /**
      *  Set reactive separation option (on by default if available)
      *
      *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to
