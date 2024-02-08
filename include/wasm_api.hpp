@@ -133,6 +133,10 @@ bool release(quid sid, bitLenInt q);
  * Total count of qubits in simulator instance
  */
 bitLenInt num_qubits(quid sid);
+/**
+ * Set bit string permutation eigenstate of simulator instance
+ */
+void SetPermutation(quid sid, bitCapInt p);
 
 /**
  * Output stabilizer simulation tableau to file (or raise exception for "get_error()" if incompatible simulator type)

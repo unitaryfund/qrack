@@ -990,6 +990,11 @@ bitLenInt num_qubits(quid sid)
     return simulator->GetQubitCount();
 }
 
+void SetPermutation(quid sid, bitCapInt p) {
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    simulator->SetPermutation(p);
+}
+
 /**
  * (External API) "X" Gate
  */

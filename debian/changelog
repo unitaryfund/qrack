@@ -1,3 +1,9 @@
+libqrack (9.4.3) focal; urgency=medium
+
+  * Bug fix for QBDD (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 08 Feb 2024 08:39:22 -0500
+
 libqrack (9.4.2) bionic; urgency=medium
 
   * Auto fidelity estimation for near-Clifford rounding (Bionic, 3/3)
