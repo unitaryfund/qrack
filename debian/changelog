@@ -1,3 +1,9 @@
+libqrack (9.4.4) jammy; urgency=medium
+
+  * Bug fix for QBDD (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 08 Feb 2024 09:18:57 -0500
+
 libqrack (9.4.3) focal; urgency=medium
 
   * Bug fix for QBDD (Focal, 1/3)
