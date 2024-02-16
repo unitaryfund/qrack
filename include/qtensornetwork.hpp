@@ -34,6 +34,7 @@ protected:
     bool useTGadget;
     bool isNearClifford;
     int64_t devID;
+    real1_f separabilityThreshold;
     complex globalPhase;
     QInterfacePtr layerStack;
     std::vector<int64_t> deviceIDs;

@@ -70,7 +70,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , freezeBasis2Qb(false)
     , useHostRam(useHostMem)
     , isSparse(useSparseStateVec)
-    , isReactiveSeparate(true)
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
@@ -89,6 +88,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
     }
 #endif
+    isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
 
     if (qubitCount) {
         SetPermutation(initState);

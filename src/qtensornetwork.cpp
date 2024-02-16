@@ -24,14 +24,21 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , useHostRam(useHostMem)
     , isSparse(useSparseStateVec)
-    , isReactiveSeparate(true)
     , useTGadget(true)
     , isNearClifford(true)
     , devID(deviceId)
+    , separabilityThreshold(sep_thresh)
     , globalPhase(phaseFac)
     , deviceIDs(devList)
     , engines(eng)
 {
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
+        separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
+    }
+#endif
+    isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
+
     if (!engines.size()) {
 #if ENABLE_OPENCL
         engines.push_back((OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
