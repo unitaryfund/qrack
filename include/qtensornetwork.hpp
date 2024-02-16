@@ -150,7 +150,12 @@ public:
     {
     }
 
-    virtual double GetUnitaryFidelity()
+    void SetSdrp(real1_f sdrp){
+        separabilityThreshold = sdrp;
+        isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
+    };
+
+    double GetUnitaryFidelity()
     {
         double toRet;
         RunAsAmplitudes([&](QInterfacePtr ls) { toRet = ls->GetUnitaryFidelity(); });

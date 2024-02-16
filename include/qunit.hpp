@@ -433,7 +433,10 @@ public:
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
     virtual double GetUnitaryFidelity();
     virtual void ResetUnitaryFidelity() { logFidelity = 0.0; }
-    virtual void SetSdrp(real1_f sdrp) { separabilityThreshold = sdrp; };
+    virtual void SetSdrp(real1_f sdrp) {
+        separabilityThreshold = sdrp;
+        isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
+    };
     virtual void SetNcrp(real1_f ncrp)
     {
         roundingThreshold = ncrp;
