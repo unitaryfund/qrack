@@ -1,3 +1,9 @@
+libqrack (9.4.8) bionic; urgency=medium
+
+  * "Foolproof" reactive separation mode default (Bionic, 3/)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 17 Feb 2024 08:25:47 -0500
+
 libqrack (9.4.7) jammy; urgency=medium
 
   * "Foolproof" reactive separation mode default (Jammy, 2/3)
