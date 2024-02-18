@@ -272,9 +272,10 @@ void QPager::Init()
         } else {
 #if ENABLE_OPENCL
             for (size_t i = 0U; i < devCount; ++i) {
-                // Add 2 "pages" (out of 4 segments)
-                deviceIDs.push_back(i);
-                deviceIDs.push_back(i);
+                // Add 4 "pages" (out of 8 pages for 4 segments)
+                for (size_t j = 0U; j < 4U; ++j) {
+                    deviceIDs.push_back(i);
+                }
             }
 #else
             for (size_t i = 0U; i < devCount; ++i) {
