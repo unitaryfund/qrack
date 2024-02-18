@@ -1,3 +1,9 @@
+libqrack (9.5.1) jammy; urgency=medium
+
+  * "Foolproof" homogeneous multi-accelerator (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Feb 2024 16:16:33 -0500
+
 libqrack (9.5.0) focal; urgency=medium
 
   * "Foolproof" homogeneous multi-accelerator (Focal, 1/3)
