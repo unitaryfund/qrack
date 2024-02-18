@@ -77,12 +77,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         maxEngineQubitCount = log2Ocl(devContext->GetMaxAlloc() / sizeof(complex));
         maxAncillaCount = maxEngineQubitCount;
         if (isQPager) {
+            --maxEngineQubitCount;
             const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
-            const bitLenInt perPage = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+            const bitLenInt perPage = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
 #if ENABLE_OPENCL
-            maxAncillaCount = (devCount < 2U) ? (perPage + 2U) : (perPage + log2Ocl(devCount) + 1U);
+            maxAncillaCount = (devCount < 2U) ? (perPage + 3U) : (perPage + log2Ocl(devCount) + 2U);
 #else
-            maxAncillaCount = (devCount < 2U) ? perPage : ((perPage + log2Ocl(devCount)) - 1U);
+            maxAncillaCount = perPage + log2Ocl(devCount);
 #endif
 #if ENABLE_ENV_VARS
             if (getenv("QRACK_MAX_PAGE_QB")) {

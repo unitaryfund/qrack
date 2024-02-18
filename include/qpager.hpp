@@ -157,6 +157,7 @@ public:
         qPages.resize(1U);
         qPages[0U] = eng;
         eng->SetDevice(deviceIDs[0]);
+        SeparateEngines();
     }
 
     void ZeroAmplitudes()
@@ -451,10 +452,16 @@ public:
             qPages[i]->SetDevice(dID);
         }
 
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL || ENABLE_CUDA
         if (rootEngine != QINTERFACE_CPU) {
-            maxPageQubits = log2Ocl(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-            maxPageQubits = (maxPageSetting < maxPageQubits) ? maxPageSetting : 1U;
+#if ENABLE_OPENCL
+            maxPageQubits = log2Ocl(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
+#else
+            maxPageQubits = log2Ocl(CUDAEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
+#endif
+            if (maxPageSetting < maxPageQubits) {
+                maxPageQubits = maxPageSetting;
+            }
         }
 
         if (!useGpuThreshold) {

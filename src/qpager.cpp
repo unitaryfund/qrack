@@ -104,12 +104,6 @@ void QPager::Init()
 #endif
     }
 
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_MAX_PAGE_QB")) {
-        maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
-    }
-#endif
-
     bitLenInt engineLevel = 0U;
     rootEngine = engines[0U];
     while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QRACK_GPU_ENGINE) &&
@@ -118,13 +112,18 @@ void QPager::Init()
         rootEngine = engines[engineLevel];
     }
 
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_MAX_PAGE_QB")) {
+        maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
+    }
+#endif
+
 #if ENABLE_OPENCL || ENABLE_CUDA
     if (rootEngine != QINTERFACE_CPU) {
-        maxPageQubits = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+        maxPageQubits = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
         if (maxPageSetting == -1) {
-            maxPageSetting = ENABLE_OPENCL ? ((maxPageQubits > 1U) ? (maxPageQubits - 1U) : 1U) : maxPageQubits;
-        }
-        if (maxPageSetting < maxPageQubits) {
+            maxPageSetting = maxPageQubits;
+        } else if (maxPageSetting < maxPageQubits) {
             maxPageQubits = maxPageSetting;
         }
     }
@@ -141,6 +140,10 @@ void QPager::Init()
         thresholdQubitsPerPage = maxPageQubits;
     }
 #endif
+
+    if (maxPageSetting == -1) {
+        maxPageSetting = maxPageQubits;
+    }
 
     if (!thresholdQubitsPerPage) {
         useGpuThreshold = false;

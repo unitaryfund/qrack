@@ -26,6 +26,14 @@
 
 #include "tests.hpp"
 
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
@@ -64,9 +72,9 @@ std::vector<QInterfaceEngine> BuildEngineStack()
     std::vector<QInterfaceEngine> engineStack;
     if (optimal) {
         engineStack.push_back(QINTERFACE_TENSOR_NETWORK);
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL || ENABLE_CUDA
         engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+            (QRACK_GPU_SINGLETON.GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
 #else
         engineStack.push_back(QINTERFACE_OPTIMAL);
 #endif
