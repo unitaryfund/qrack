@@ -263,6 +263,7 @@ void QPager::Init()
 #endif
 
     if (!deviceIDs.size()) {
+#if ENABLE_OPENCL || ENABLE_CUDA
         const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
         if (devCount < 2U) {
             deviceIDs.push_back(devID);
@@ -273,11 +274,12 @@ void QPager::Init()
                 deviceIDs.push_back(i);
                 deviceIDs.push_back(i);
             }
-#elif ENABLE_CUDA
+#else
             for (size_t i = 0U; i < devCount; ++i) {
                 // 1 unified virtual memory address space per device
                 deviceIDs.push_back(i);
             }
+#endif
 #else
             deviceIDs.push_back(devID);
 #endif
