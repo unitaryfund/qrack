@@ -1,6 +1,12 @@
+libqrack (9.5.0) focal; urgency=medium
+
+  * "Foolproof" homogeneous multi-accelerator (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Feb 2024 15:11:24 -0500
+
 libqrack (9.4.8) bionic; urgency=medium
 
-  * "Foolproof" reactive separation mode default (Bionic, 3/)
+  * "Foolproof" reactive separation mode default (Bionic, 3/3)
 
  -- Daniel Strano <dan@unitary.fund>  Sat, 17 Feb 2024 08:25:47 -0500
 
