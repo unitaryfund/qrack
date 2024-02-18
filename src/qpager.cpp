@@ -21,9 +21,11 @@
 #if ENABLE_OPENCL
 #define QRACK_GPU_SINGLETON (OCLEngine::Instance())
 #define QRACK_GPU_ENGINE QINTERFACE_OPENCL
-#elif ENABLE_CUDA
+#elif
 #define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
 #define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#else
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
 #endif
 
 namespace Qrack {
