@@ -260,7 +260,28 @@ void QPager::Init()
 #endif
 
     if (!deviceIDs.size()) {
-        deviceIDs.push_back(devID);
+        const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
+        if (devCount < 2U) {
+            deviceIDs.push_back(devID);
+        } else {
+#if ENABLE_OPENCL
+            for (size_t i = 0U; i < devCount; ++i) {
+                // Add 2 "pages" (out of 4 segments)
+                deviceIDs.push_back(i);
+                deviceIDs.push_back(i);
+            }
+#elif ENABLE_CUDA
+            for (size_t i = 0U; i < devCount; ++i) {
+                // 1 unified virtual memory address space per device
+                deviceIDs.push_back(i);
+            }
+#else
+            deviceIDs.push_back(devID);
+#endif
+        }
+    }
+    if (!devicesHostPointer.size()) {
+        devicesHostPointer.push_back(useHostRam);
     }
 }
 
