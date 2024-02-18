@@ -126,7 +126,7 @@ public:
         , use_host_mem(useHostMem)
         , wait_events(new EventVec())
 #if ENABLE_OCL_MEM_GUARDS
-        , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * globalSize) >> 2U))
+        , globalLimit((maxAlloc >= 0) ? maxAlloc : globalSize)
 #else
         , globalLimit((maxAlloc >= 0) ? maxAlloc : -1)
 #endif

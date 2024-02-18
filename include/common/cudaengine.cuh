@@ -53,7 +53,7 @@ public:
         , queue(0)
         , params_queue(0)
 #if ENABLE_OCL_MEM_GUARDS
-        , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * properties.totalGlobalMem) >> 2U))
+        , globalLimit((maxAlloc >= 0) ? maxAlloc : properties.totalGlobalMem)
 #else
         , globalLimit((maxAlloc >= 0) ? maxAlloc : -1)
 #endif
