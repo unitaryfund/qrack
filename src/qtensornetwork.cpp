@@ -10,6 +10,21 @@
 
 #include "qfactory.hpp"
 
+#if ENABLE_OPENCL
+#include "common/oclengine.hpp"
+#endif
+#if ENABLE_CUDA
+#include "common/cudaengine.cuh"
+#endif
+
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 // #if ENABLE_CUDA
 // #include <cuda_runtime.h>
 // #include <cutensornet.h>
@@ -62,6 +77,42 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     }
 
     SetPermutation(initState, globalPhase);
+}
+
+bitLenInt QTensorNetwork::GetThresholdQb()
+{
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")) {
+        return (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")));
+    }
+#endif
+#if ENABLE_OPENCL || ENABLE_CUDA
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        return (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    }
+#endif
+    const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
+    const bitLenInt perPage = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+#if ENABLE_OPENCL
+    if (devCount < 2U) {
+        return perPage + 2U;
+    }
+    return perPage + log2Ocl(devCount) + 1U;
+#else
+    if (devCount < 2U) {
+        return perPage;
+    }
+    return (perPage + log2Ocl(devCount)) - 1U;
+#endif
+#else
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_MAX_CPU_QB")) {
+        return (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB")));
+    }
+#endif
+    return 32U;
+#endif
 }
 
 void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)

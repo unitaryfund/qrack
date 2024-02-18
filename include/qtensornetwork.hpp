@@ -101,16 +101,7 @@ protected:
         layerStack->ForceM(bits, values);
     }
 
-    bitLenInt GetThresholdQb()
-    {
-#if ENABLE_ENV_VARS
-        return getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")
-            ? (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")))
-            : 32U;
-#else
-        return 32U;
-#endif
-    }
+    bitLenInt GetThresholdQb();
 
     void MakeLayerStack(std::set<bitLenInt> qubits = std::set<bitLenInt>());
 
