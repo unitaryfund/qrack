@@ -282,10 +282,10 @@ void QPager::Init()
                 deviceIDs.push_back(i);
             }
 #endif
-#else
-            deviceIDs.push_back(devID);
-#endif
         }
+#else
+        deviceIDs.push_back(devID);
+#endif
     }
     if (!devicesHostPointer.size()) {
         devicesHostPointer.push_back(useHostRam);
