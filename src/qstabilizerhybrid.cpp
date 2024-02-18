@@ -91,9 +91,12 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
                 if (maxPageSetting < maxEngineQubitCount) {
                     maxEngineQubitCount = maxPageSetting;
                 }
-            } else if (ENABLE_OPENCL) {
+            }
+#if ENABLE_OPENCL
+            else {
                 maxEngineQubitCount = (maxEngineQubitCount > 1U) ? (maxEngineQubitCount - 1U): 1U;
             }
+#endif
             if (getenv("QRACK_MAX_PAGING_QB")) {
                 const bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
                 if (maxPageSetting < maxAncillaCount) {
