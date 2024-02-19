@@ -4,6 +4,8 @@
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
+## About
+
 The open source vm6502q/qrack library and its associated plugins and projects under the vm6502q organization header comprise a framework for full-stack quantum computing development, via high performance and fundamentally optimized simulation. The intent of "Qrack" is to provide maximum performance for the simulation of an ideal, virtually error-free quantum computer, across the broadest possible set of hardware and operating systems.
 
 Using the C++11 standard, at base, Qrack has an external-dependency-free CPU simulator "engine," as well as a GPU simulator engine that depends only on OpenCL. The `QUnit` layer provides novel, fundamental optimizations in the simulation algorithm, based on "[Schmidt decomposition](https://arxiv.org/abs/1710.05867)," transformation of basis, 2 qubit controlled gate buffer caching, the physical nonobservability of arbitrary global phase factors on a state vector, and many other "synergistic" and incidental points of optimization between these approaches and in addition to them. `QUnit` can be placed "on top" of either CPU, GPU, or hybrid engine types, and an additional `QPager` layer can sit between these, or in place of `QUnit`. Optimizations and hardware support are highly configurable, particularly at build time.
