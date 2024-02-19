@@ -1,8 +1,6 @@
 # Qrack
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5812507.svg)](https://doi.org/10.5281/zenodo.5812507) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
-
-[![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5812507.svg)](https://doi.org/10.5281/zenodo.5812507) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing) [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
 ## About
 
