@@ -34,6 +34,34 @@ For distributed simulation, the `Qrack::QPager` layer will segment a single regi
 
 For more information, compile the `doxygen.config` in the root folder, and then check the `doc` folder.
 
+## Documentation
+
+Live version of the documentation, including API reference, can be obtained at: https://qrack.readthedocs.io/en/latest/
+
+## Community
+
+Qrack has a community home at the Advanced Computing Topics server on Discord, at: https://discordapp.com/invite/Gj3CHDy
+
+For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Installing Qrack
+
+If you're on Ubuntu 18.04, 20.04, or 22.04 LTS, you're in luck: Qrack manages a PPA that provides binary installers for _all_ available CPU architectures (except any that require administrative attention from Ubuntu or Canonical).
+
+```sh
+    $ sudo add-apt-repository ppa:wrathfulspatula/vm6502q
+    $ sudo apt update
+    $ sudo apt install libqrack-dev
+```
+
+There are also packaged [releases](https://github.com/unitaryfund/qrack/releases) in the corresponding section of the repository.
+
+(You might need to install the `add-apt-repository` tool first, through `apt` itself.)
+
+Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page. (Operating system targets include Linux, Windows, and Mac, alongside WebAssmembly. Qrack source also builds for native Android and iOS.)
+
+If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
+
 ## PyQrack Source Build
 
 The CMake settings for default build of [PyQrack](https://github.com/unitaryfund/pyqrack) are as follows, (assuming you are in a build directory created inside the top-level directory of the repo clone):
@@ -64,34 +92,6 @@ emcmake cmake -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF -DSEED_DEVRAN
 ```
 
 Windows-based systems are more specific, but there is a bit more information about them further below.
-
-## Documentation
-
-Live version of the documentation, including API reference, can be obtained at: https://qrack.readthedocs.io/en/latest/
-
-## Community
-
-Qrack has a community home at the Advanced Computing Topics server on Discord, at: https://discordapp.com/invite/Gj3CHDy
-
-For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Installing Qrack
-
-If you're on Ubuntu 18.04, 20.04, or 22.04 LTS, you're in luck: Qrack manages a PPA that provides binary installers for _all_ available CPU architectures (except any that require administrative attention from Ubuntu or Canonical).
-
-```sh
-    $ sudo add-apt-repository ppa:wrathfulspatula/vm6502q
-    $ sudo apt update
-    $ sudo apt install libqrack-dev
-```
-
-There are also packaged [releases](https://github.com/unitaryfund/qrack/releases) in the corresponding section of the repository.
-
-(You might need to install the `add-apt-repository` tool first, through `apt` itself.)
-
-Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page. (Operating system targets include Linux, Windows, and Mac, alongside WebAssmembly. Qrack source also builds for native Android and iOS.)
-
-If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
 
 ## test/tests.cpp
 
