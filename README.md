@@ -85,6 +85,8 @@ If you're on Ubuntu 18.04, 20.04, or 22.04 LTS, you're in luck: Qrack manages a 
     $ sudo apt install libqrack-dev
 ```
 
+There are also packaged [releases](https://github.com/unitaryfund/qrack/releases) in the corresponding section of the repository.
+
 (You might need to install the `add-apt-repository` tool first, through `apt` itself.)
 
 Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page.
