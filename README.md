@@ -89,7 +89,7 @@ There are also packaged [releases](https://github.com/unitaryfund/qrack/releases
 
 (You might need to install the `add-apt-repository` tool first, through `apt` itself.)
 
-Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page.
+Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page. (Operating system targets include Linux, Windows, and Mac, alongside WebAssmembly. Qrack source also builds for native Android and iOS.)
 
 If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
 
