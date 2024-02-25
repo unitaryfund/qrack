@@ -2378,7 +2378,7 @@ double _Prob(_In_ uintq sid, _In_ uintq q, bool isRdm)
 /**
  * (External API) Get the probabilities of all permutations of the requested subset of qubits.
  */
-MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* p) {
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1* p) {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     std::vector<bitLenInt> _q(n);
@@ -2387,14 +2387,7 @@ MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
     }
 
     try {
-#if FPPOW == 6
         simulator->ProbBitsAll(_q, p);
-#else
-        const bitCapIntOcl mqp = pow2Ocl(n);
-        std::unique_ptr<real1_f> _p(new real1_f[mqp]);
-        simulator->ProbBitsAll(_q, _p.get());
-        std::copy(_p.get(), _p.get() + mqp, p);
-#endif
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;

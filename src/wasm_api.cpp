@@ -1716,6 +1716,36 @@ void CLXNOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo)
     simulator->CLXNOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
+std::vector<real1> ProbAll(quid sid, std::vector<bitLenInt> q) {
+    if (sid > simulators.size()) {
+        throw std::invalid_argument("Invalid argument: simulator ID not found!");
+    }
+    QInterfacePtr simulator = simulators[sid];
+    SIMULATOR_LOCK_GUARD(simulator.get())
+    if (!simulator) {
+        return std::vector<real1>();
+    }
+
+    for (size_t i = 0; i < q.size(); ++i) {
+        q[i] = shards[simulator.get()][q[i]];
+    }
+
+    std::vector<real1> p(pow2Ocl(q.size()));
+    simulator->ProbBitsAll(q, &(p[0U]));
+
+    return p;
+}
+
+real1_f Variance(quid sid, std::vector<bitLenInt> q) {
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
+
+    for (size_t i = 0; i < q.size(); ++i) {
+        q[i] = shards[simulator.get()][q[i]];
+    }
+
+    return simulator->VarianceBitsAll(q);
+}
+
 real1_f _Prob(quid sid, bitLenInt q, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)

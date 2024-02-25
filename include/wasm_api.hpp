@@ -150,6 +150,14 @@ void qstabilizer_out_to_file(quid sid, std::string f);
 void qstabilizer_in_from_file(quid sid, std::string f);
 
 /**
+ * Get the probabilities of all permutations of the requested subset of qubits.
+ */
+std::vector<real1> ProbAll(quid sid, std::vector<bitLenInt> q);
+/**
+ * Get the overall variance of the probabilities of all permutations of the requested subset of qubits.
+ */
+real1_f Variance(quid sid, std::vector<bitLenInt> q);
+/**
  * Z-basis expectation value of qubit
  */
 real1_f Prob(quid sid, bitLenInt q);

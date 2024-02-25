@@ -50,7 +50,13 @@ MICROSOFT_QUANTUM_DECL void qstabilizer_out_to_file(_In_ uintq sid, _In_ char* f
 MICROSOFT_QUANTUM_DECL void qstabilizer_in_from_file(_In_ uintq sid, _In_ char* f);
 
 // pseudo-quantum
+#if FPPOW < 6
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* p);
+#elif FPPOW < 7
 MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* p);
+#else
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* p);
+#endif
 MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q);
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q);
 MICROSOFT_QUANTUM_DECL double ProbRdm(_In_ uintq sid, _In_ uintq q);
