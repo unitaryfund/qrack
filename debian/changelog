@@ -1,3 +1,9 @@
+libqrack (9.6.0) focal; urgency=medium
+
+  * Variance() and ProbAll() in shared library API (Focal 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 25 Feb 2024 09:43:31 -0500
+
 libqrack (9.5.2) bionic; urgency=medium
 
   * "Foolproof" homogeneous multi-accelerator (Bionic, 3/3)

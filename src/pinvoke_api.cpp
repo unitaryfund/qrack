@@ -2376,6 +2376,52 @@ double _Prob(_In_ uintq sid, _In_ uintq q, bool isRdm)
 }
 
 /**
+ * (External API) Get the probabilities of all permutations of the requested subset of qubits.
+ */
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* p) {
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    std::vector<bitLenInt> _q(n);
+    for (uintq i = 0; i < n; ++i) {
+        _q[i] = shards[simulator.get()][q[i]];
+    }
+
+    try {
+#if FPPOW == 6
+        simulator->ProbBitsAll(_q, p);
+#else
+        const bitCapIntOcl mqp = pow2Ocl(n);
+        std::unique_ptr<real1_f> _p(new real1_f[mqp]);
+        simulator->ProbBitsAll(_q, _p.get());
+        std::copy(_p.get(), _p.get() + mqp, p);
+#endif
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
+ * (External API) Get the overall variance of the probabilities of all permutations of the requested subset of qubits.
+ */
+MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q) {
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q(n);
+    for (uintq i = 0; i < n; ++i) {
+        _q[i] = shards[simulator.get()][q[i]];
+    }
+
+    try {
+        return simulator->VarianceBitsAll(_q);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+        return (double)REAL1_DEFAULT_ARG;
+    }
+}
+
+/**
  * (External API) Get the probability that a qubit is in the |1> state.
  */
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q) { return _Prob(sid, q, false); }
