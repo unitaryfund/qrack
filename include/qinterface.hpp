@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "common/pauli.hpp"
 #include "common/parallel_for.hpp"
+#include "common/pauli.hpp"
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
 
@@ -2439,6 +2439,16 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual void ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArray);
+
+    /**
+     * Direct measure of variance of listed permutation probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument, are returned in the "probsArray" parameter.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits);
 
     /**
      * Get permutation expectation value of bits

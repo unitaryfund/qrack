@@ -467,6 +467,26 @@ void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArr
     }
 }
 
+real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits)
+{
+    const real1_f mean = ExpectationBitsAll(bits);
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+    real1_f tot = ZERO_R1_F;
+    for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
+        bitCapIntOcl retIndex = 0U;
+        for (size_t p = 0U; p < bits.size(); ++p) {
+            if (bi_compare_0(lcv & bitPowers[p]) != 0) {
+                retIndex |= pow2Ocl(p);
+            }
+        }
+        const real1_f diff = ((real1_f)(retIndex.bi_to_double()) - mean);
+        tot += ProbAll(lcv) * diff * diff;
+    }
+
+    return tot;
+}
+
 real1_f QInterface::ExpectationBitsFactorized(
     const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {

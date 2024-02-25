@@ -3919,7 +3919,8 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 }
 #endif
 
-double QUnit::GetUnitaryFidelity() {
+double QUnit::GetUnitaryFidelity()
+{
     double fidelity = exp(logFidelity);
 
     std::vector<QInterfacePtr> units;

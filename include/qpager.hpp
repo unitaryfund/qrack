@@ -455,9 +455,11 @@ public:
 #if ENABLE_OPENCL || ENABLE_CUDA
         if (rootEngine != QINTERFACE_CPU) {
 #if ENABLE_OPENCL
-            maxPageQubits = log2Ocl(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
+            maxPageQubits =
+                log2Ocl(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
 #else
-            maxPageQubits = log2Ocl(CUDAEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
+            maxPageQubits =
+                log2Ocl(CUDAEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
 #endif
             if (maxPageSetting < maxPageQubits) {
                 maxPageQubits = maxPageSetting;

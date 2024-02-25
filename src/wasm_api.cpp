@@ -262,7 +262,7 @@ bitLenInt MaxShardQubits()
 
 void TransformPauliBasis(QInterfacePtr simulator, std::vector<QubitPauliBasis> qb)
 {
-    
+
     for (size_t i = 0U; i < qb.size(); ++i) {
         switch (qb[i].b) {
         case PauliX:
@@ -892,7 +892,7 @@ real1_f _JointEnsembleProbabilityHelper(QInterfacePtr simulator, std::vector<Qub
     }
 
     return (real1_f)(doMeasure ? (QPARITY(simulator)->MParity(mask) ? ONE_R1 : ZERO_R1)
-                              : QPARITY(simulator)->ProbParity(mask));
+                               : QPARITY(simulator)->ProbParity(mask));
 }
 
 /**
@@ -990,7 +990,8 @@ bitLenInt num_qubits(quid sid)
     return simulator->GetQubitCount();
 }
 
-void SetPermutation(quid sid, bitCapInt p) {
+void SetPermutation(quid sid, bitCapInt p)
+{
     SIMULATOR_LOCK_GUARD_VOID(sid)
     simulator->SetPermutation(p);
 }
@@ -1118,11 +1119,12 @@ void U(quid sid, bitLenInt q, real1_f theta, real1_f phi, real1_f lambda)
 void Mtrx(quid sid, std::vector<complex> m, bitLenInt q)
 {
     if (m.size() != 4) {
-        throw std::invalid_argument("Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
+        throw std::invalid_argument(
+            "Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     SIMULATOR_LOCK_GUARD_VOID(sid)
-    complex mtrx[4] { m[0U], m[1U], m[2U], m[3U] };
+    complex mtrx[4]{ m[0U], m[1U], m[2U], m[3U] };
     simulator->Mtrx(mtrx, shards[simulator.get()][q]);
 }
 
@@ -1222,10 +1224,11 @@ void MCU(quid sid, std::vector<bitLenInt> c, bitLenInt q, real1_f theta, real1_f
 void MCMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q)
 {
     if (m.size() != 4) {
-        throw std::invalid_argument("MCMtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
+        throw std::invalid_argument(
+            "MCMtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
-    complex mtrx[4] { m[0U], m[1U], m[2U], m[3U] };
+    complex mtrx[4]{ m[0U], m[1U], m[2U], m[3U] };
     MAP_CONTROLS_AND_LOCK(sid)
     simulator->MCMtrx(c, mtrx, shards[simulator.get()][q]);
 }
@@ -1320,10 +1323,11 @@ void MACU(quid sid, std::vector<bitLenInt> c, bitLenInt q, real1_f theta, real1_
 void MACMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q)
 {
     if (m.size() != 4) {
-        throw std::invalid_argument("Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
+        throw std::invalid_argument(
+            "Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
-    complex mtrx[4] { m[0U], m[1U], m[2U], m[3U] };
+    complex mtrx[4]{ m[0U], m[1U], m[2U], m[3U] };
     MAP_CONTROLS_AND_LOCK(sid)
     simulator->MACMtrx(c, mtrx, shards[simulator.get()][q]);
 }
@@ -1334,10 +1338,11 @@ void MACMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenI
 void UCMtrx(quid sid, std::vector<bitLenInt> c, std::vector<complex> m, bitLenInt q, bitCapIntOcl p)
 {
     if (m.size() != 4) {
-        throw std::invalid_argument("Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
+        throw std::invalid_argument(
+            "Mtrx() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
-    complex mtrx[4] { m[0U], m[1U], m[2U], m[3U] };
+    complex mtrx[4]{ m[0U], m[1U], m[2U], m[3U] };
     MAP_CONTROLS_AND_LOCK(sid)
     simulator->UCMtrx(c, mtrx, shards[simulator.get()][q], p);
 }
@@ -1513,7 +1518,7 @@ std::vector<long long unsigned int> MeasureShots(quid sid, std::vector<bitLenInt
     for (size_t i = 0U; i < q.size(); ++i) {
         qPowers.push_back(pow2(shards[simulator.get()][q[i]]));
     }
-    
+
     std::unique_ptr<long long unsigned int> m(new long long unsigned int[s]);
 
     simulator->MultiShotMeasureMask(qPowers, s, m.get());
@@ -1714,8 +1719,7 @@ void CLXNOR(quid sid, bool ci, bitLenInt qi, bitLenInt qo)
 real1_f _Prob(quid sid, bitLenInt q, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
-    return isRdm ? simulator->ProbRdm(shards[simulator.get()][q])
-                 : simulator->Prob(shards[simulator.get()][q]);
+    return isRdm ? simulator->ProbRdm(shards[simulator.get()][q]) : simulator->Prob(shards[simulator.get()][q]);
 }
 
 /**
@@ -1749,10 +1753,7 @@ real1_f _PermutationProb(quid sid, std::vector<QubitIndexState> q, bool isRdm, b
 /**
  * (External API) Get the permutation expectation value, based upon the order of input qubits.
  */
-real1_f PermutationProb(quid sid, std::vector<QubitIndexState> q)
-{
-    return _PermutationProb(sid, q, false, false);
-}
+real1_f PermutationProb(quid sid, std::vector<QubitIndexState> q) { return _PermutationProb(sid, q, false, false); }
 
 /**
  * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
@@ -2012,7 +2013,8 @@ void MCDIV(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenIn
     }
     QALU(simulator)->CDIV(a, starts.start1, starts.start2, q.size(), c);
 }
-void MCMULN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
+void MCMULN(
+    quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
         throw std::invalid_argument("MCMULN() 'q' and 'o' parameters must have same size!");
@@ -2025,7 +2027,8 @@ void MCMULN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::v
     }
     simulator->CMULModNOut(a, m, starts.start1, starts.start2, q.size(), c);
 }
-void MCDIVN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
+void MCDIVN(
+    quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
         throw std::invalid_argument("MCMULN() 'q' and 'o' parameters must have same size!");
@@ -2038,7 +2041,8 @@ void MCDIVN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::v
     }
     simulator->CIMULModNOut(a, m, starts.start1, starts.start2, q.size(), c);
 }
-void MCPOWN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
+void MCPOWN(
+    quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o)
 {
     if (q.size() != o.size()) {
         throw std::invalid_argument("MCPOWN() 'q' and 'o' parameters must have same size!");
@@ -2227,7 +2231,8 @@ void set_qneuron_angles(quid nid, std::vector<real1> angles)
 {
     NEURON_LOCK_GUARD_VOID(nid)
     if (angles.size() != (size_t)neuron->GetInputPower()) {
-        throw std::invalid_argument("set_qneuron_angles() 'angles' parameter must have 2^n elements for n input qubits!");
+        throw std::invalid_argument(
+            "set_qneuron_angles() 'angles' parameter must have 2^n elements for n input qubits!");
     }
     std::unique_ptr<real1[]> _angles(new real1[angles.size()]);
     std::copy(angles.begin(), angles.end(), _angles.get());
@@ -2400,10 +2405,7 @@ quid init_qcircuit_clone(quid cid) { return _init_qcircuit_copy(cid, false, {});
 
 quid qcircuit_inverse(quid cid) { return _init_qcircuit_copy(cid, true, {}); }
 
-quid qcircuit_past_light_cone(quid cid, std::set<bitLenInt> q)
-{
-    return _init_qcircuit_copy(cid, false, q);
-}
+quid qcircuit_past_light_cone(quid cid, std::set<bitLenInt> q) { return _init_qcircuit_copy(cid, false, q); }
 
 void destroy_qcircuit(quid cid)
 {
@@ -2427,7 +2429,8 @@ void qcircuit_swap(quid cid, bitLenInt q1, bitLenInt q2)
 void qcircuit_append_1qb(quid cid, std::vector<real1_f> m, bitLenInt q)
 {
     if (m.size() != 4) {
-        throw std::invalid_argument("qcircuit_append_1qb() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
+        throw std::invalid_argument(
+            "qcircuit_append_1qb() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     CIRCUIT_LOCK_GUARD_VOID(cid)
@@ -2439,7 +2442,8 @@ void qcircuit_append_1qb(quid cid, std::vector<real1_f> m, bitLenInt q)
 void qcircuit_append_mc(quid cid, std::vector<real1_f> m, std::vector<bitLenInt> c, bitLenInt q, bitCapInt p)
 {
     if (m.size() != 4) {
-        throw std::invalid_argument("qcircuit_append_1qb() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
+        throw std::invalid_argument(
+            "qcircuit_append_1qb() 'm' parameter must be 4 complex (row-major) components of 2x2 unitary operator!");
     }
 
     CIRCUIT_LOCK_GUARD_VOID(cid)
@@ -2482,4 +2486,4 @@ void qcircuit_in_from_file(quid cid, std::string f)
     ifile >> circuit;
     ifile.close();
 }
-}
+} // namespace Qrack

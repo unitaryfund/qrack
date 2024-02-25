@@ -79,7 +79,8 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         if (isQPager) {
             --maxEngineQubitCount;
             const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
-            const bitLenInt perPage = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
+            const bitLenInt perPage =
+                log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
 #if ENABLE_OPENCL
             maxAncillaCount = (devCount < 2U) ? (perPage + 3U) : (perPage + log2Ocl(devCount) + 2U);
 #else
@@ -94,13 +95,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
             }
 #if ENABLE_OPENCL
             else {
-                maxEngineQubitCount = (maxEngineQubitCount > 1U) ? (maxEngineQubitCount - 1U): 1U;
+                maxEngineQubitCount = (maxEngineQubitCount > 1U) ? (maxEngineQubitCount - 1U) : 1U;
             }
 #endif
             if (getenv("QRACK_MAX_PAGING_QB")) {
                 const bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
                 if (maxPageSetting < maxAncillaCount) {
-                    maxAncillaCount =  maxAncillaCount;
+                    maxAncillaCount = maxAncillaCount;
                 }
             }
         }

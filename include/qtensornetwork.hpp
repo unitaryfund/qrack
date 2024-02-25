@@ -141,7 +141,8 @@ public:
     {
     }
 
-    void SetSdrp(real1_f sdrp){
+    void SetSdrp(real1_f sdrp)
+    {
         separabilityThreshold = sdrp;
         isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
     };

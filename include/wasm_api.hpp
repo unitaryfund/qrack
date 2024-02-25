@@ -5,21 +5,21 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
-#include "common/qneuron_activation_function.hpp"
 #include "common/pauli.hpp"
+#include "common/qneuron_activation_function.hpp"
+#include "common/qrack_types.hpp"
 
-#include <string>
 #include <set>
+#include <string>
 #include <vector>
 
 /**
  * GLOSSARY:
  *     bitLenInt - "bit-length integer" - unsigned integer ID of qubit position in register
- *     bitCapInt - "bit-capacity integer" - unsigned integer single-permutation value of a qubit register (typically "big integer")
- *     real1 - "real number (1-dimensional)" - floating-point real-valued number
- *     complex - "complex number" - floating-point complex-valued number (with two real1 component dimensions)
- *     quid - "quantum (simulator) unique identifier" - unsigned integer that indexes and IDs running simulators, circuits, and neurons
+ *     bitCapInt - "bit-capacity integer" - unsigned integer single-permutation value of a qubit register (typically
+ * "big integer") real1 - "real number (1-dimensional)" - floating-point real-valued number complex - "complex number" -
+ * floating-point complex-valued number (with two real1 component dimensions) quid - "quantum (simulator) unique
+ * identifier" - unsigned integer that indexes and IDs running simulators, circuits, and neurons
  */
 
 namespace Qrack {
@@ -73,14 +73,15 @@ struct QubitPauliBasis {
 /**
  * Options for simulator type in initialization (any set of options theoretically functions together):
  *     tn - "Tensor network" layer - JIT local circuit simplification, light-cone optimization
- *     md - "Multi-device" (TURN OFF IN SERIAL BUILDS) - distribute Schmidt-decomposed or factorized subsytems to different OpenCL devices.
- *     sd - "Schmidt decomposition" - use state-factorization optimizations
- *     sh - "Stabilizer hybrid" - use ("hybrid") stabilizer and near-Clifford optimizations (does not work well with "tn," "tensor network")
- *     bdt - "Binary decision tree" - use "quantum binary decision diagram" (QBDD) optimization. This can optionally "hybridize" with state vector, for speed.
- *     pg - "Pager" (TURN OFF IN SERIAL BUILDS) - split large simulations into a power-of-2 of smaller simulation "pages," for multi-device distribution
- *     hy - "(State vector) Hybrid" (TURN OFF IN SERIAL BUILD) - for state vector, "hybridize" CPU/GPU/multi-GPU simulation qubit width thresholds, for speed.
- *     oc - "OpenCL" (TURN OFF IN SERIAL BUILD) - use OpenCL acceleration (in general)
- *     hp - "Host pointer" (TURN OFF IN SERIAL BUILD) - allocate OpenCL state vectors on "host" instead of "device" (useful for certain accelerators, like Intel HD)
+ *     md - "Multi-device" (TURN OFF IN SERIAL BUILDS) - distribute Schmidt-decomposed or factorized subsytems to
+ * different OpenCL devices. sd - "Schmidt decomposition" - use state-factorization optimizations sh - "Stabilizer
+ * hybrid" - use ("hybrid") stabilizer and near-Clifford optimizations (does not work well with "tn," "tensor network")
+ *     bdt - "Binary decision tree" - use "quantum binary decision diagram" (QBDD) optimization. This can optionally
+ * "hybridize" with state vector, for speed. pg - "Pager" (TURN OFF IN SERIAL BUILDS) - split large simulations into a
+ * power-of-2 of smaller simulation "pages," for multi-device distribution hy - "(State vector) Hybrid" (TURN OFF IN
+ * SERIAL BUILD) - for state vector, "hybridize" CPU/GPU/multi-GPU simulation qubit width thresholds, for speed. oc -
+ * "OpenCL" (TURN OFF IN SERIAL BUILD) - use OpenCL acceleration (in general) hp - "Host pointer" (TURN OFF IN SERIAL
+ * BUILD) - allocate OpenCL state vectors on "host" instead of "device" (useful for certain accelerators, like Intel HD)
  */
 quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool hy, bool oc, bool hp);
 
@@ -143,7 +144,8 @@ void SetPermutation(quid sid, bitCapInt p);
  */
 void qstabilizer_out_to_file(quid sid, std::string f);
 /**
- * Initialize stabilizer simulation from a tableau file (or raise exception for "get_error()" if incompatible simulator type)
+ * Initialize stabilizer simulation from a tableau file (or raise exception for "get_error()" if incompatible simulator
+ * type)
  */
 void qstabilizer_in_from_file(quid sid, std::string f);
 
@@ -176,7 +178,8 @@ real1_f PermutationExpectationRdm(quid sid, std::vector<bitLenInt> q, bool r);
  */
 real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpectation> q);
 /**
- * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit integer expectation value
+ * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit integer
+ * expectation value
  */
 real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> q, bool r);
 /**
@@ -184,7 +187,8 @@ real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> 
  */
 real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q);
 /**
- * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit real1 expectation value
+ * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit real1
+ * expectation value
  */
 real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q, bool r);
 
@@ -352,9 +356,12 @@ void POWN(quid sid, bitCapInt a, bitCapInt m, std::vector<bitLenInt> q, std::vec
 void MCMUL(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 void MCDIV(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 // Controlled modulo, out-of-place
-void MCMULN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
-void MCDIVN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
-void MCPOWN(quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
+void MCMULN(
+    quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
+void MCDIVN(
+    quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
+void MCPOWN(
+    quid sid, bitCapInt a, std::vector<bitLenInt> c, bitCapInt m, std::vector<bitLenInt> q, std::vector<bitLenInt> o);
 
 #if 0
 // Amplitude amplification
@@ -367,15 +374,18 @@ void Hash(quid sid, std::vector<bitLenInt> q, std::vector<unsigned char> t);
 
 // Utility functions
 /**
- * Try to factorize a single-qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no logical effect.)
+ * Try to factorize a single-qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no
+ * logical effect.)
  */
 bool TrySeparate1Qb(quid sid, bitLenInt qi1);
 /**
- * Try to factorize a two-qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no logical effect.)
+ * Try to factorize a two-qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no logical
+ * effect.)
  */
 bool TrySeparate2Qb(quid sid, bitLenInt qi1, bitLenInt qi2);
 /**
- * Try to factorize a qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no logical effect.)
+ * Try to factorize a qubit subsystem out of "bulk" simulator state. (This can improve efficiency but has no logical
+ * effect.)
  */
 bool TrySeparateTol(quid sid, std::vector<bitLenInt> q, real1_f tol);
 /**
@@ -404,7 +414,8 @@ void SetReactiveSeparate(quid sid, bool irs);
 void SetTInjection(quid sid, bool iti);
 
 /**
- * Initialize a "quantum neuron" that takes a list of qubit "controls" for input and acts on a single "target" output qubit.
+ * Initialize a "quantum neuron" that takes a list of qubit "controls" for input and acts on a single "target" output
+ * qubit.
  */
 quid init_qneuron(quid sid, std::vector<bitLenInt> c, bitLenInt q, QNeuronActivationFn f, real1_f a, real1_f tol);
 /**
@@ -473,4 +484,4 @@ void qcircuit_append_mc(quid cid, std::vector<complex> m, std::vector<bitLenInt>
 void qcircuit_run(quid cid, quid sid);
 void qcircuit_out_to_file(quid cid, std::string f);
 void qcircuit_in_from_file(quid cid, std::string f);
-}
+} // namespace Qrack

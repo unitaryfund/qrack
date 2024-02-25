@@ -78,8 +78,10 @@ protected:
 
 #if ENABLE_ENV_VARS
         const bitLenInt pStridePow =
-        (((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW)) +
-            7U) >> 1U;
+            (((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW")))
+                                                     : PSTRIDEPOW)) +
+                7U) >>
+            1U;
 #else
         const bitLenInt pStridePow = (PSTRIDEPOW + 7U) >> 1U;
 #endif

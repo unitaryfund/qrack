@@ -59,9 +59,8 @@ public:
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devIDs = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
-        : QUnit({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
-              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devIDs, qubitThreshold,
-              separation_thresh)
+        : QUnit({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem,
+              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devIDs, qubitThreshold, separation_thresh)
     {
     }
 
@@ -433,7 +432,8 @@ public:
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
     virtual double GetUnitaryFidelity();
     virtual void ResetUnitaryFidelity() { logFidelity = 0.0; }
-    virtual void SetSdrp(real1_f sdrp) {
+    virtual void SetSdrp(real1_f sdrp)
+    {
         separabilityThreshold = sdrp;
         isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
     };
