@@ -2378,7 +2378,14 @@ double _Prob(_In_ uintq sid, _In_ uintq q, bool isRdm)
 /**
  * (External API) Get the probabilities of all permutations of the requested subset of qubits.
  */
-MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1* p) {
+#if FPPOW < 6
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* p)
+#elif FPPOW < 7
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* p)
+#else
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* p)
+#endif
+{
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     std::vector<bitLenInt> _q(n);
@@ -2386,8 +2393,18 @@ MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
         _q[i] = shards[simulator.get()][q[i]];
     }
 
+#if FPPOW < 6
+    const bitCapIntOcl npow = pow2Ocl(n);
+    std::unique_ptr<real1[]> _p(new real1[npow]);
+#endif
+
     try {
+#if FPPOW < 6
+        simulator->ProbBitsAll(_q, _p.get());
+        std::copy(_p.get(), _p.get() + npow, p);
+#else
         simulator->ProbBitsAll(_q, p);
+#endif
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
