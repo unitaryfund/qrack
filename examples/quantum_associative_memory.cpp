@@ -46,8 +46,8 @@ int main()
     for (bitCapInt perm = ZERO_BCI; bi_compare(perm, InputPower) < 0; bi_increment(&perm, 1U)) {
         std::cout << "Epoch " << (perm + ONE_BCI) << " out of " << InputPower << std::endl;
         const bitCapInt comp = (~perm) + ONE_BCI;
+        qReg->SetPermutation(perm);
         for (bitLenInt i = 0; i < OutputCount; i++) {
-            qReg->SetPermutation(perm);
             outputLayer[i]->LearnPermutation((real1_f)eta, bi_compare_0(comp & pow2(i)) != 0);
         }
     }
