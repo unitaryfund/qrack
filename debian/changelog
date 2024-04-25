@@ -1,3 +1,9 @@
+libqrack (9.6.3) noble; urgency=medium
+
+  * First Noble Numbat release
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 25 Apr 2024 11:33:46 -0400
+
 libqrack (9.6.2) bionic; urgency=medium
 
   * Variance() and ProbAll() in shared library API (Bionic 3/3)
