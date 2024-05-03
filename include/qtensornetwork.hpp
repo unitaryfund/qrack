@@ -216,6 +216,10 @@ public:
         if ((phaseFac == CMPLX_DEFAULT_ARG) && randGlobalPhase) {
             real1_f angle = Rand() * 2 * (real1_f)PI_R1;
             globalPhase = complex((real1)cos(angle), (real1)sin(angle));
+        } else if (phaseFac == CMPLX_DEFAULT_ARG) {
+            globalPhase = complex(ONE_R1, ZERO_R1);
+        } else {
+            globalPhase = phaseFac;
         }
     }
 
