@@ -220,7 +220,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     shards[target] = NULL;
 
     const real1 angle = (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-    if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+    if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
         return;
     }
     const real1 angleCos = (real1)cos(angle);
@@ -258,7 +258,7 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
     shards[qubit] = NULL;
 
     const bool isZ1 = stabilizer->M(qubit);
-    const real1_f prob = (real1_f)((isZ1) ? norm(shard->gate[3U]) : norm(shard->gate[2U]));
+    const real1_f prob = (real1_f)(isZ1 ? norm(shard->gate[3U]) : norm(shard->gate[2U]));
 
     bool result;
     if (prob <= ZERO_R1) {
@@ -711,6 +711,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     clone->SwitchToEngine();
     clone->GetProbs(outputProbs);
 }
+
 complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 {
     if (engine) {
@@ -1089,7 +1090,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         if (shard) {
             const real1 angle =
                 (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-            if ((4 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
+            if ((2 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
                 const real1 angleCos = cos(angle);
                 const real1 angleSin = sin(angle);
                 shard->gate[0U] = complex(angleCos, -angleSin);
@@ -1893,7 +1894,7 @@ void QStabilizerHybrid::CombineAncillae()
                 if ((ONE_R1 - clone->Prob(j)) < (ONE_R1 / 4)) {
                     toCombine[i].push_back(j);
                 }
-            } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
+            } else if ((ONE_R1 - clone->Prob(j)) <= FP_NORM_EPSILON) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
                 clone->H(i);
                 clone->ForceM(i, true);
@@ -2001,7 +2002,7 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             // Calculate the near-Clifford gate phase angle, but don't change the state:
             const real1 angle =
                 (real1)FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]), true);
-            if ((4 * abs(angle) / PI_R1) > threshold) {
+            if ((2 * abs(angle) / PI_R1) > threshold) {
                 // The gate phase angle is too significant to flush.
                 continue;
             }

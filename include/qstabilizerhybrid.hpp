@@ -218,21 +218,21 @@ protected:
             }
         }
 
-        real1_f correctionAngle = angle - (sector * sectorAngle);
-        if (correctionAngle > PI_R1) {
-            correctionAngle -= Period;
+        angle -= (sector * sectorAngle);
+        if (angle > PI_R1) {
+            angle -= Period;
         }
-        if (correctionAngle <= -PI_R1) {
-            correctionAngle += Period;
+        if (angle <= -PI_R1) {
+            angle += Period;
         }
 
-        return correctionAngle;
+        return angle;
     }
 
     void FlushCliffordFromBuffers()
     {
         for (size_t i = 0U; i < qubitCount; ++i) {
-            // Flush all buffers as close as possible to Clifforrd.
+            // Flush all buffers as close as possible to Clifford.
             const MpsShardPtr& shard = shards[i];
             if (!shard) {
                 continue;
