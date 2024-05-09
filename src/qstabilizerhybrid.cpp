@@ -249,7 +249,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Ancilla is separable after measurement.
     // Dispose(ancillaIndex, 1U);
 
-    CombineAncillae();
+    // CombineAncillae();
 }
 
 bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
@@ -1112,7 +1112,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
                 Mtrx(shard->gate, ancillaIndex);
                 H(ancillaIndex);
 
-                CombineAncillae();
+                // CombineAncillae();
             }
         }
 
@@ -1563,7 +1563,7 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    CombineAncillae();
+    // CombineAncillae();
 
     if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));

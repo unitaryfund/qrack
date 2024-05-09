@@ -265,7 +265,7 @@ protected:
 
     QStabilizerHybridPtr RdmCloneHelper()
     {
-        CombineAncillae();
+        // CombineAncillae();
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         clone->RdmCloneFlush(ONE_R1 / 2);
 
@@ -282,7 +282,7 @@ protected:
             ;
         }
 
-        CombineAncillae();
+        // CombineAncillae();
 
         if (!roundRz) {
             return isFloat ? stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
