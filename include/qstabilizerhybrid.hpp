@@ -261,11 +261,8 @@ protected:
         RdmCloneFlush();
     }
 
-    void CombineAncillae();
-
     QStabilizerHybridPtr RdmCloneHelper()
     {
-        // CombineAncillae();
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         clone->RdmCloneFlush(ONE_R1 / 2);
 
@@ -281,8 +278,6 @@ protected:
                            : engine->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
             ;
         }
-
-        // CombineAncillae();
 
         if (!roundRz) {
             return isFloat ? stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
@@ -773,8 +768,6 @@ public:
         if (engine) {
             return engine->ExpectationBitsAllRdm(roundRz, bits, offset);
         }
-
-        CombineAncillae();
 
         if (!roundRz) {
             return stabilizer->ExpectationBitsAll(bits, offset);

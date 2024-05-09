@@ -248,8 +248,6 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // ForceM(ancillaIndex, false, true, true);
     // Ancilla is separable after measurement.
     // Dispose(ancillaIndex, 1U);
-
-    // CombineAncillae();
 }
 
 bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
@@ -1111,8 +1109,6 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
                 stabilizer->CNOT(target, ancillaIndex);
                 Mtrx(shard->gate, ancillaIndex);
                 H(ancillaIndex);
-
-                // CombineAncillae();
             }
         }
 
@@ -1563,8 +1559,6 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    // CombineAncillae();
-
     if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
         isRoundingFlushed = true;
@@ -1859,111 +1853,6 @@ bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
     SwitchToEngine();
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
-}
-
-void QStabilizerHybrid::CombineAncillae()
-{
-    if (engine || !ancillaCount) {
-        return;
-    }
-
-    FlushCliffordFromBuffers();
-
-    if (!ancillaCount) {
-        return;
-    }
-
-    // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
-    // If so, we can combine (or cancel) the phase effect on the earlier ancilla and completely separate the later.
-    // We must preserve the earlier ancilla's entanglement, besides partial collapse with the later ancilla.
-    // (It might be possible to change convention to preserve the later ancilla and separate the earlier.)
-
-    std::map<bitLenInt, std::vector<bitLenInt>> toCombine;
-    for (size_t i = qubitCount; i < shards.size(); ++i) {
-        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-        clone->H(i);
-        clone->ForceM(i, false);
-        for (size_t j = qubitCount; j < shards.size(); ++j) {
-            if (i == j) {
-                continue;
-            }
-            const real1_f p = clone->Prob(j);
-            if (p < (ONE_R1 / 4)) {
-                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->H(i);
-                clone->ForceM(i, true);
-                if ((ONE_R1 - clone->Prob(j)) < (ONE_R1 / 4)) {
-                    toCombine[i].push_back(j);
-                }
-            } else if ((ONE_R1 - p) < (ONE_R1 / 4)) {
-                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->H(i);
-                clone->ForceM(i, true);
-                if (clone->Prob(j) < (ONE_R1 / 4)) {
-                    toCombine[i].push_back(j);
-                    stabilizer->Z(j);
-                }
-            }
-        }
-    }
-
-    if (!toCombine.size()) {
-        // We fail to find any toCombine entries, and recursion exits.
-        return;
-    }
-
-    const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-
-    for (const auto& p : toCombine) {
-        MpsShardPtr& baseShard = shards[p.first];
-        if (!baseShard) {
-            continue;
-        }
-        baseShard->Compose(h);
-
-        const std::vector<bitLenInt>& dep = p.second;
-        for (const bitLenInt& combo : dep) {
-            MpsShardPtr& shard = shards[combo];
-            if (!shard) {
-                continue;
-            }
-
-            shard->Compose(h);
-            baseShard->Compose(shard->gate);
-            shard = NULL;
-
-            stabilizer->H(combo);
-            stabilizer->ForceM(combo, false);
-        }
-        const real1_f angle =
-            FractionalRzAngleWithFlush(p.first, std::arg(baseShard->gate[3U] / baseShard->gate[0U])) / 2;
-        const real1 angleCos = (real1)cos(angle);
-        const real1 angleSin = (real1)sin(angle);
-        baseShard->gate[0U] = complex(angleCos, -angleSin);
-        baseShard->gate[3U] = complex(angleCos, angleSin);
-        baseShard->Compose(h);
-    }
-
-    for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
-        if (!shards[i] || stabilizer->IsSeparable(i)) {
-            ClearAncilla(i);
-        }
-    }
-
-    // Flush any ancillae left in Clifford states.
-    for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
-        MpsShardPtr& shard = shards[i];
-        shard->Compose(h);
-        const real1_f prob = 2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-        if (abs(prob) <= FP_NORM_EPSILON) {
-            stabilizer->H(i);
-            stabilizer->ForceM(i, false);
-            ClearAncilla(i);
-        }
-    }
-
-    // We should fail to find any toCombine entries before exit.
-    CombineAncillae();
 }
 
 /// Flush non-Clifford phase gate gadgets with angle below a threshold.
