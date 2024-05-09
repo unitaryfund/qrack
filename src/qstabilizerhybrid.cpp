@@ -1887,14 +1887,15 @@ void QStabilizerHybrid::CombineAncillae()
             if (i == j) {
                 continue;
             }
-            if (clone->Prob(j) <= FP_NORM_EPSILON) {
+            const real1_f p = clone->Prob(j);
+            if (p < (ONE_R1 / 4)) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
                 clone->H(i);
                 clone->ForceM(i, true);
                 if ((ONE_R1 - clone->Prob(j)) < (ONE_R1 / 4)) {
                     toCombine[i].push_back(j);
                 }
-            } else if ((ONE_R1 - clone->Prob(j)) <= FP_NORM_EPSILON) {
+            } else if ((ONE_R1 - p) < (ONE_R1 / 4)) {
                 clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
                 clone->H(i);
                 clone->ForceM(i, true);
