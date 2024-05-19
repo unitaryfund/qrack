@@ -398,7 +398,7 @@ EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
     if (waitVec->size()) {
         wait_refs.emplace_back(waitVec);
     }
-    return wait_refs.size() ? wait_refs.back() : std::make_shared<EventVec>();
+    return wait_refs.empty() ? std::make_shared<EventVec>() : wait_refs.back();
 }
 
 void QEngineOCL::WaitCall(
@@ -425,7 +425,7 @@ void QEngineOCL::PopQueue(bool isDispatch)
             }
         }
 
-        if (!wait_queue_items.size()) {
+        if (wait_queue_items.empty()) {
             return;
         }
         SubtractAlloc(wait_queue_items.front().deallocSize);
@@ -450,7 +450,7 @@ void QEngineOCL::DispatchQueue()
     if (true) {
         std::lock_guard<std::mutex> lock(queue_mutex);
 
-        if (!wait_queue_items.size()) {
+        if (wait_queue_items.empty()) {
             return;
         }
 
@@ -465,7 +465,7 @@ void QEngineOCL::DispatchQueue()
             }
 
             wait_queue_items.pop_front();
-            if (!wait_queue_items.size()) {
+            if (wait_queue_items.empty()) {
                 return;
             }
             item = wait_queue_items.front();
@@ -1032,7 +1032,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
     CHECK_ZERO_SKIP();
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrxs + ((bitCapIntOcl)mtrxSkipValueMask << 2U), qubitIndex);
         return;
     }
@@ -1131,7 +1131,7 @@ void QEngineOCL::UniformParityRZ(bitCapInt mask, real1_f angle)
 
 void QEngineOCL::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         UniformParityRZ(mask, angle);
         return;
     }
@@ -1945,7 +1945,7 @@ real1_f QEngineOCL::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCa
         return Prob(bits[0]);
     }
 
-    if (!stateBuffer || !bits.size()) {
+    if (!stateBuffer || bits.empty()) {
         return ZERO_R1_F;
     }
 
@@ -2167,7 +2167,7 @@ void QEngineOCL::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 
 void QEngineOCL::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         INC(toAdd, inOutStart, length);
         return;
     }
@@ -2500,7 +2500,7 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 {
     CHECK_ZERO_SKIP();
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         MUL(toMul, inOutStart, carryStart, length);
         return;
     }
@@ -2520,7 +2520,7 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         DIV(toDiv, inOutStart, carryStart, length);
         return;
     }
@@ -2543,7 +2543,7 @@ void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 {
     CHECK_ZERO_SKIP();
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         MULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -2562,7 +2562,7 @@ void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 void QEngineOCL::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         IMULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -2582,7 +2582,7 @@ void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, 
 {
     CHECK_ZERO_SKIP();
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         POWModNOut(base, modN, inStart, outStart, length);
         return;
     }

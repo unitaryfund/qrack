@@ -341,7 +341,7 @@ public:
         if (true) {
             std::lock_guard<std::mutex> lock(queue_mutex);
             checkCallbackError();
-            isBase = !wait_queue_items.size();
+            isBase = wait_queue_items.empty();
             wait_queue_items.push_back(item);
         }
 
@@ -462,7 +462,7 @@ public:
     ;
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void Finish() { clFinish(); };
-    bool isFinished() { return !wait_queue_items.size(); };
+    bool isFinished() { return wait_queue_items.empty(); };
 
     QInterfacePtr Clone();
 

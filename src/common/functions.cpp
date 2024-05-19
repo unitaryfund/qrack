@@ -255,7 +255,7 @@ bool isOverflowSub(
 
 bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers)
 {
-    if (!skipPowers.size()) {
+    if (skipPowers.empty()) {
         return perm;
     }
 

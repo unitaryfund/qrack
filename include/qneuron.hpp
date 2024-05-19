@@ -150,7 +150,7 @@ public:
             qReg->RY((real1_f)(PI_R1 / 2), outputIndex);
         }
 
-        if (!inputIndices.size()) {
+        if (inputIndices.empty()) {
             // If there are no controls, this "neuron" is actually just a bias.
             switch (activationFn) {
             case ReLU:
@@ -204,7 +204,7 @@ public:
     /** "Uncompute" the Predict() method */
     real1_f Unpredict(bool expected = true)
     {
-        if (!inputIndices.size()) {
+        if (inputIndices.empty()) {
             // If there are no controls, this "neuron" is actually just a bias.
             switch (activationFn) {
             case ReLU:

@@ -107,7 +107,7 @@ protected:
 
     template <typename Fn> void RunAsAmplitudes(Fn fn, const std::set<bitLenInt>& qubits = std::set<bitLenInt>())
     {
-        if (!qubits.size()) {
+        if (qubits.empty()) {
             MakeLayerStack();
             return fn(layerStack);
         }

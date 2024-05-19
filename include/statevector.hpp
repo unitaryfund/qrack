@@ -439,14 +439,14 @@ public:
         }
 
         for (int64_t i = (int64_t)(toRet.size() - 1U); i >= 0; i--) {
-            if (!toRet[i].size()) {
+            if (toRet[i].empty()) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
                 toRet.erase(toRetIt);
             }
         }
 
-        if (!toRet.size()) {
+        if (toRet.empty()) {
             return {};
         }
 
@@ -518,14 +518,14 @@ public:
         }
 
         for (int64_t i = (int64_t)(toRet.size() - 1U); i >= 0; i--) {
-            if (!toRet[i].size()) {
+            if (toRet[i].empty()) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
                 toRet.erase(toRetIt);
             }
         }
 
-        if (!toRet.size()) {
+        if (toRet.empty()) {
             return {};
         }
 

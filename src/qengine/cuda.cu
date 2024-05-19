@@ -351,7 +351,7 @@ void QEngineCUDA::PopQueue()
         }
     }
 
-    if (!wait_queue_items.size()) {
+    if (wait_queue_items.empty()) {
         return;
     }
 
@@ -374,7 +374,7 @@ void QEngineCUDA::DispatchQueue()
     if (true) {
         std::lock_guard<std::mutex> lock(queue_mutex);
 
-        if (!wait_queue_items.size()) {
+        if (wait_queue_items.empty()) {
             return;
         }
 
@@ -1066,7 +1066,7 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
     CHECK_ZERO_SKIP();
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrxs + ((bitCapIntOcl)mtrxSkipValueMask << 2U), qubitIndex);
         return;
     }
@@ -1156,7 +1156,7 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
 
 void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         UniformParityRZ(mask, angle);
         return;
     }
@@ -1902,7 +1902,7 @@ real1_f QEngineCUDA::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitC
         return Prob(bits[0]);
     }
 
-    if (!stateBuffer || !bits.size()) {
+    if (!stateBuffer || bits.empty()) {
         return ZERO_R1_F;
     }
 
@@ -2121,7 +2121,7 @@ void QEngineCUDA::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 
 void QEngineCUDA::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         INC(toAdd, inOutStart, length);
         return;
     }
@@ -2446,7 +2446,7 @@ void QEngineCUDA::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carrySta
 {
     CHECK_ZERO_SKIP();
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         MUL(toMul, inOutStart, carryStart, length);
         return;
     }
@@ -2466,7 +2466,7 @@ void QEngineCUDA::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carrySta
 void QEngineCUDA::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         DIV(toDiv, inOutStart, carryStart, length);
         return;
     }
@@ -2488,7 +2488,7 @@ void QEngineCUDA::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
 {
     CHECK_ZERO_SKIP();
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         MULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -2507,7 +2507,7 @@ void QEngineCUDA::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
 void QEngineCUDA::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         IMULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -2527,7 +2527,7 @@ void QEngineCUDA::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart,
 {
     CHECK_ZERO_SKIP();
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         POWModNOut(base, modN, inStart, outStart, length);
         return;
     }

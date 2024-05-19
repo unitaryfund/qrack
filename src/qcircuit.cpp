@@ -196,7 +196,7 @@ void QCircuit::Run(QInterfacePtr qsim)
     for (const QCircuitGatePtr& gate : nGates) {
         const bitLenInt& t = gate->target;
 
-        if (!gate->controls.size()) {
+        if (gate->controls.empty()) {
             qsim->Mtrx(gate->payloads[ZERO_BCI].get(), t);
 
             continue;
@@ -204,7 +204,7 @@ void QCircuit::Run(QInterfacePtr qsim)
 
         std::vector<bitLenInt> controls = gate->GetControlsVector();
 
-        if (!gate->payloads.size()) {
+        if (gate->payloads.empty()) {
             qsim->Swap(controls[0U], t);
 
             continue;

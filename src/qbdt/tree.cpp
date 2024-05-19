@@ -44,7 +44,7 @@ void QBdt::Init()
         bdtStride = 1U;
     }
 
-    if (!engines.size()) {
+    if (engines.empty()) {
         engines.push_back(QINTERFACE_OPTIMAL_BASE);
     }
     QInterfaceEngine rootEngine = engines[0U];
@@ -761,7 +761,7 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 
 void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
     } else if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         MCPhase(controls, mtrx[0U], mtrx[3U], target);
@@ -777,7 +777,7 @@ void QBdt::MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, b
 void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
 {
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
     } else if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         MACPhase(controls, mtrx[0U], mtrx[3U], target);
@@ -792,7 +792,7 @@ void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
 
 void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -820,7 +820,7 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
 
 void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Invert(topRight, bottomLeft, target);
         return;
     }

@@ -825,7 +825,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
             et.erase(et.begin() + i);
         }
     }
-    if (!et.size()) {
+    if (et.empty()) {
         et.push_back(QINTERFACE_OPTIMAL_BASE);
     }
     QEnginePtr aEngine = std::dynamic_pointer_cast<QEngine>(
@@ -941,7 +941,7 @@ void QStabilizerHybrid::CSwap(const std::vector<bitLenInt>& lControls, bitLenInt
         if (TrimControls(lControls, controls, false)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             stabilizer->Swap(qubit1, qubit2);
             return;
         }
@@ -957,7 +957,7 @@ void QStabilizerHybrid::CSqrtSwap(const std::vector<bitLenInt>& lControls, bitLe
         if (TrimControls(lControls, controls, false)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             QInterface::SqrtSwap(qubit1, qubit2);
             return;
         }
@@ -973,7 +973,7 @@ void QStabilizerHybrid::AntiCSqrtSwap(const std::vector<bitLenInt>& lControls, b
         if (TrimControls(lControls, controls, true)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             QInterface::SqrtSwap(qubit1, qubit2);
             return;
         }
@@ -989,7 +989,7 @@ void QStabilizerHybrid::CISqrtSwap(const std::vector<bitLenInt>& lControls, bitL
         if (TrimControls(lControls, controls, false)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             QInterface::ISqrtSwap(qubit1, qubit2);
             return;
         }
@@ -1005,7 +1005,7 @@ void QStabilizerHybrid::AntiCISqrtSwap(const std::vector<bitLenInt>& lControls, 
         if (TrimControls(lControls, controls, true)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             QInterface::ISqrtSwap(qubit1, qubit2);
             return;
         }
@@ -1151,7 +1151,7 @@ void QStabilizerHybrid::MCMtrx(const std::vector<bitLenInt>& lControls, const co
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
         return;
     }
@@ -1177,7 +1177,7 @@ void QStabilizerHybrid::MCPhase(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -1226,7 +1226,7 @@ void QStabilizerHybrid::MCInvert(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Invert(topRight, bottomLeft, target);
         return;
     }
@@ -1278,7 +1278,7 @@ void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, const c
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
         return;
     }
@@ -1300,7 +1300,7 @@ void QStabilizerHybrid::MACPhase(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -1349,7 +1349,7 @@ void QStabilizerHybrid::MACInvert(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Invert(topRight, bottomLeft, target);
         return;
     }
@@ -1644,7 +1644,7 @@ void QStabilizerHybrid::UniformlyControlledSingleBit(
     stateMapCache.clear();
 
 #define ADD_SHOTS_PROB(m)                                                                                              \
-    if (!rng.size()) {                                                                                                 \
+    if (rng.empty()) {                                                                                                 \
         continue;                                                                                                      \
     }                                                                                                                  \
     ADD_SHOT_PROB(m)
@@ -1722,7 +1722,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
             const real1 prob = futures[j].get();
             CHECK_SHOTS_IF_ANY(j + p, shotFunc);
         }
-        if (!rng.size()) {
+        if (rng.empty()) {
             break;
         }
     }
@@ -1812,7 +1812,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
             const real1 prob = futures[j].get();
             CHECK_SHOTS_IF_ANY(j + p, shotFunc);
         }
-        if (!rng.size()) {
+        if (rng.empty()) {
             break;
         }
     }

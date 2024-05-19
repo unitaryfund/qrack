@@ -54,7 +54,7 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
 #endif
     isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
 
-    if (!engines.size()) {
+    if (engines.empty()) {
 #if ENABLE_OPENCL
         engines.push_back((OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
 #elif ENABLE_CUDA
@@ -138,7 +138,7 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
                     qubits.erase(m.first);
                 }
             }
-            if (!qubits.size()) {
+            if (qubits.empty()) {
                 QRACK_CONST complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
                 c.push_back(std::make_shared<QCircuit>(true, isNearClifford));
                 for (const auto& m : measurements[j]) {
@@ -216,7 +216,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         m.erase(qubit);
 
         // If the measurement layer is empty, telescope the layers.
-        if (!m.size()) {
+        if (m.empty()) {
             measurements.erase(measurements.begin() + layerId);
             const size_t prevLayerId = layerId + 1U;
             if (prevLayerId < circuit.size()) {

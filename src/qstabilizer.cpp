@@ -1998,7 +1998,7 @@ void QStabilizer::MCPhase(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -2065,7 +2065,7 @@ void QStabilizer::MACPhase(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -2128,7 +2128,7 @@ void QStabilizer::MACPhase(
 void QStabilizer::MCInvert(
     const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Invert(topRight, bottomLeft, target);
         return;
     }
@@ -2189,7 +2189,7 @@ void QStabilizer::MCInvert(
 void QStabilizer::MACInvert(
     const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Invert(topRight, bottomLeft, target);
         return;
     }

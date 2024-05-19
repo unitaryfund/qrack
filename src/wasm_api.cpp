@@ -597,7 +597,7 @@ quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, 
     // (...then reverse:)
     std::reverse(simulatorType.begin(), simulatorType.end());
 
-    if (!simulatorType.size()) {
+    if (simulatorType.empty()) {
 #if ENABLE_OPENCL
         if (hy && isOcl) {
             simulatorType.push_back(QINTERFACE_HYBRID);
@@ -876,13 +876,13 @@ void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q)
 real1_f _JointEnsembleProbabilityHelper(QInterfacePtr simulator, std::vector<QubitPauliBasis> q, bool doMeasure)
 {
 
-    if (!q.size()) {
+    if (q.empty()) {
         return 0.0;
     }
 
     removeIdentities(&q);
 
-    if (!q.size()) {
+    if (q.empty()) {
         return 0.0;
     }
 
@@ -1413,7 +1413,7 @@ void MCR(quid sid, real1_f phi, std::vector<bitLenInt> c, QubitPauliBasis q)
  */
 void Exp(quid sid, real1_f phi, std::vector<QubitPauliBasis> q)
 {
-    if (!q.size()) {
+    if (q.empty()) {
         return;
     }
 
@@ -1423,7 +1423,7 @@ void Exp(quid sid, real1_f phi, std::vector<QubitPauliBasis> q)
 
     removeIdentities(&q);
 
-    if (!q.size()) {
+    if (q.empty()) {
         RHelper(sid, -2 * phi, someQubit);
     } else if (q.size() == 1U) {
         RHelper(sid, -2 * phi, q.front());
@@ -1439,7 +1439,7 @@ void Exp(quid sid, real1_f phi, std::vector<QubitPauliBasis> q)
  */
 void MCExp(quid sid, real1_f phi, std::vector<bitLenInt> cs, std::vector<QubitPauliBasis> q)
 {
-    if (!q.size()) {
+    if (q.empty()) {
         return;
     }
 
@@ -1449,7 +1449,7 @@ void MCExp(quid sid, real1_f phi, std::vector<bitLenInt> cs, std::vector<QubitPa
 
     removeIdentities(&q);
 
-    if (!q.size()) {
+    if (q.empty()) {
         MCRHelper(sid, -2 * phi, cs, someQubit);
     } else if (q.size() == 1U) {
         MCRHelper(sid, -2 * phi, cs, q.front());

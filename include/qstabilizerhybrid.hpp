@@ -170,7 +170,7 @@ protected:
             fn(sample, shot);
 
             rng.erase(rng.begin() + shot);
-            if (!rng.size()) {
+            if (rng.empty()) {
                 break;
             }
         }
