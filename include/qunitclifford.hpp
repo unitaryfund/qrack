@@ -540,7 +540,7 @@ public:
     }
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Phase(topLeft, bottomRight, t);
             return;
         }
@@ -554,7 +554,7 @@ public:
     }
     void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Phase(topLeft, bottomRight, t);
             return;
         }
@@ -568,7 +568,7 @@ public:
     }
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Invert(topRight, bottomLeft, t);
             return;
         }
@@ -582,7 +582,7 @@ public:
     }
     void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Invert(topRight, bottomLeft, t);
             return;
         }
@@ -596,7 +596,7 @@ public:
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Mtrx(mtrx, t);
             return;
         }
@@ -609,7 +609,7 @@ public:
     }
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Mtrx(mtrx, t);
             return;
         }

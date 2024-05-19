@@ -69,7 +69,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     defaultDeviceID = (deviceID < 0) ? QRACK_GPU_SINGLETON.GetDefaultDeviceID() : (size_t)deviceID;
 
 #if ENABLE_ENV_VARS
-    if (!devList.size() && getenv("QRACK_QUNITMULTI_DEVICES")) {
+    if (devList.empty() && getenv("QRACK_QUNITMULTI_DEVICES")) {
         std::string devListStr = std::string(getenv("QRACK_QUNITMULTI_DEVICES"));
         devList.clear();
         if (devListStr.compare("")) {
@@ -146,17 +146,17 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     }
 #endif
 
-    const size_t devCount = devList.size() ? devList.size() : deviceContext.size();
+    const size_t devCount = devList.empty() ? deviceContext.size() : devList.size();
     for (size_t i = 0; i < devCount; ++i) {
         if (devList.size() && (devList[i] >= 0) && (devList[i] > ((int64_t)deviceContext.size()))) {
             throw std::runtime_error("QUnitMulti: Requested device doesn't exist.");
         }
         DeviceInfo deviceInfo;
         deviceInfo.id =
-            devList.size() ? ((devList[0U] < 0) ? QRACK_GPU_SINGLETON.GetDefaultDeviceID() : (size_t)devList[i]) : i;
+            devList.empty() ? i : ((devList[0U] < 0) ? QRACK_GPU_SINGLETON.GetDefaultDeviceID() : (size_t)devList[i]);
         deviceList.push_back(deviceInfo);
     }
-    if (!devList.size()) {
+    if (devList.empty()) {
         std::swap(deviceList[0U], deviceList[defaultDeviceID]);
     }
 
@@ -164,7 +164,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
         deviceList[i].maxSize = deviceContext[deviceList[i].id]->GetMaxAlloc();
     }
 
-    if (!devList.size()) {
+    if (devList.empty()) {
         std::sort(deviceList.begin() + 1U, deviceList.end(), std::greater<DeviceInfo>());
     }
 }

@@ -662,7 +662,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     // (...then reverse:)
     std::reverse(simulatorType.begin(), simulatorType.end());
 
-    if (!simulatorType.size()) {
+    if (simulatorType.empty()) {
 #if ENABLE_OPENCL
         if (hy && isOcl) {
             simulatorType.push_back(QINTERFACE_HYBRID);
@@ -1888,7 +1888,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
     removeIdentities(&bVec, &qVec);
 
     try {
-        if (!bVec.size()) {
+        if (bVec.empty()) {
             RHelper(sid, PauliI, -2. * phi, someQubit);
         } else if (bVec.size() == 1U) {
             RHelper(sid, bVec.front(), -2. * phi, qVec.front());
@@ -1926,7 +1926,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) in
     removeIdentities(&bVec, &qVec);
 
     try {
-        if (!bVec.size()) {
+        if (bVec.empty()) {
             MCRHelper(sid, PauliI, -2. * phi, nc, cs, someQubit);
         } else if (bVec.size() == 1U) {
             MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
@@ -3370,7 +3370,7 @@ uintq _init_qcircuit_copy(uintq cid, bool isInverse, std::set<bitLenInt> q)
         }
     }
 
-    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : (q.size() ? circuit->PastLightCone(q) : circuit->Clone());
+    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : (q.empty() ? circuit->Clone() : circuit->PastLightCone(q));
 
     if (ncid == circuits.size()) {
         circuitReservations.push_back(true);

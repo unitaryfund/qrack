@@ -295,7 +295,7 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
     // (...then reverse:)
     std::reverse(simulatorType.begin(), simulatorType.end());
 
-    if (!simulatorType.size()) {
+    if (simulatorType.empty()) {
 #if ENABLE_OPENCL || ENABLE_CUDA
         if (hy && isOcl) {
             simulatorType.push_back(QINTERFACE_HYBRID);

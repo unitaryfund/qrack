@@ -779,7 +779,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
     CHECK_ZERO_SKIP();
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrxs + ((bitCapIntOcl)mtrxSkipValueMask * 4U), qubitIndex);
         return;
     }
@@ -914,7 +914,7 @@ void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
 
 void QEngineCPU::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt mask, real1_f angle)
 {
-    if (!cControls.size()) {
+    if (cControls.empty()) {
         return UniformParityRZ(mask, angle);
     }
 

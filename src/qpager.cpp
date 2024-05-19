@@ -88,7 +88,7 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
 
 void QPager::Init()
 {
-    if (!engines.size()) {
+    if (engines.empty()) {
 #if ENABLE_OPENCL || ENABLE_CUDA
         engines.push_back(QRACK_GPU_SINGLETON.GetDeviceCount() ? QRACK_GPU_ENGINE : QINTERFACE_CPU);
 #else
@@ -264,7 +264,7 @@ void QPager::Init()
     }
 #endif
 
-    if (!deviceIDs.size()) {
+    if (deviceIDs.empty()) {
 #if ENABLE_OPENCL || ENABLE_CUDA
         const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
         if (devCount < 2U) {
@@ -288,7 +288,7 @@ void QPager::Init()
         deviceIDs.push_back(devID);
 #endif
     }
-    if (!devicesHostPointer.size()) {
+    if (devicesHostPointer.empty()) {
         devicesHostPointer.push_back(useHostRam);
     }
 }
@@ -991,7 +991,7 @@ void QPager::ApplySingleEither(bool isInvert, complex top, complex bottom, bitLe
 void QPager::ApplyEitherControlledSingleBit(
     bitCapInt controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
         return;
     }
@@ -1028,7 +1028,7 @@ void QPager::ApplyEitherControlledSingleBit(
         engine->UCMtrx(intraControls, mtrx, lTarget, intraCtrlPerm);
     };
 
-    if (!metaControls.size()) {
+    if (metaControls.empty()) {
         SingleBitGate(target, sg, isSqiCtrl, isAnti);
     } else if (target < qpp) {
         SemiMetaControlled(metaCtrlPerm, metaControls, target, sg);
@@ -1198,7 +1198,7 @@ void QPager::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLe
 void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         MUL(toMul, inOutStart, carryStart, length);
         return;
     }
@@ -1210,7 +1210,7 @@ void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, b
 void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         DIV(toDiv, inOutStart, carryStart, length);
         return;
     }
@@ -1222,7 +1222,7 @@ void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, b
 void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         MULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -1234,7 +1234,7 @@ void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bit
 void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         IMULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
@@ -1246,7 +1246,7 @@ void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bi
 void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         POWModNOut(base, modN, inStart, outStart, length);
         return;
     }

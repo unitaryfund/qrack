@@ -32,8 +32,8 @@
 #define IS_1_CMPLX(c) (norm(ONE_CMPLX - (c)) <= FP_NORM_EPSILON)
 #define SHARD_STATE(shard) ((2 * norm(shard.amp0)) < ONE_R1)
 #define QUEUED_PHASE(shard)                                                                                            \
-    ((shard.targetOfShards.size() != 0U) || (shard.controlsShards.size() != 0U) ||                                     \
-        (shard.antiTargetOfShards.size() != 0U) || (shard.antiControlsShards.size() != 0U))
+    (shard.targetOfShards.size() || shard.controlsShards.size() || shard.antiTargetOfShards.size() ||                  \
+        shard.antiControlsShards.size())
 #define CACHED_X(shard) ((shard.pauliBasis == PauliX) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_X_OR_Y(shard) ((shard.pauliBasis != PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_Z(shard) ((shard.pauliBasis == PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
@@ -79,7 +79,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , deviceIDs(devList)
     , engines(eng)
 {
-    if (!engines.size()) {
+    if (engines.empty()) {
         engines.push_back(QINTERFACE_STABILIZER_HYBRID);
     }
 
@@ -1080,7 +1080,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
         eIndices.push_back(qIndices[i]);
     }
 
-    if (!eIndices.size()) {
+    if (eIndices.empty()) {
         if (flipResult) {
             Phase(phaseFac, phaseFac, 0U);
         } else {
@@ -1159,7 +1159,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
         bi_or_ip(&(units[shard.unit]), pow2(shard.mapped));
     }
 
-    if (!qIndices.size()) {
+    if (qIndices.empty()) {
         return (real1_f)oddChance;
     }
 
@@ -1212,7 +1212,7 @@ bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
         eIndices.push_back(qIndices[i]);
     }
 
-    if (!eIndices.size()) {
+    if (eIndices.empty()) {
         return flipResult;
     }
 
@@ -1277,7 +1277,7 @@ void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt 
         eIndices.push_back(qIndices[i]);
     }
 
-    if (!eIndices.size()) {
+    if (eIndices.empty()) {
         real1 cosine = (real1)cos(angle);
         real1 sine = (real1)sin(angle);
         complex phaseFac;
@@ -1286,7 +1286,7 @@ void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt 
         } else {
             phaseFac = complex(cosine, -sine);
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             return Phase(phaseFac, phaseFac, 0U);
         } else {
             return MCPhase(controls, phaseFac, phaseFac, 0U);
@@ -1304,7 +1304,7 @@ void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt 
             phaseFac = complex(cosine, sine);
             phaseFacAdj = complex(cosine, -sine);
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             return Phase(phaseFacAdj, phaseFac, eIndices[0U]);
         } else {
             return MCPhase(controls, phaseFacAdj, phaseFac, eIndices[0U]);
@@ -1322,7 +1322,7 @@ void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt 
         bi_or_ip(&mappedMask, pow2(shards[eIndices[i]].mapped));
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         std::dynamic_pointer_cast<QParity>(unit)->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
     } else {
         std::vector<bitLenInt*> ebits(controls.size());
@@ -1967,7 +1967,7 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
     const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {
     // If there are no controls, this is equivalent to the single bit gate.
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrxs, qubitIndex);
         return;
     }
@@ -1993,7 +1993,7 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
     }
 
     // If all controls are in eigenstates, we can avoid entangling them.
-    if (!trimmedControls.size()) {
+    if (trimmedControls.empty()) {
         bitCapInt controlPerm = GetCachedPermutation(controls);
         complex mtrx[4U];
         std::copy(mtrxs + ((bitCapIntOcl)controlPerm << 2U), mtrxs + (((bitCapIntOcl)controlPerm + 1U) << 2U), mtrx);
@@ -2248,7 +2248,7 @@ void QUnit::ZBase(bitLenInt target)
     if (TrimControls(controls, controlVec, &_perm)) {                                                                  \
         return;                                                                                                        \
     }                                                                                                                  \
-    if (!controlVec.size()) {                                                                                          \
+    if (controlVec.empty()) {                                                                                          \
         bare;                                                                                                          \
         return;                                                                                                        \
     }                                                                                                                  \
@@ -2387,7 +2387,7 @@ void QUnit::UCPhase(const std::vector<bitLenInt>& lControls, complex topLeft, co
         return;
     }
 
-    if (!controlVec.size()) {
+    if (controlVec.empty()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -2461,7 +2461,7 @@ void QUnit::UCInvert(const std::vector<bitLenInt>& lControls, complex topRight, 
         return;
     }
 
-    if (!controlVec.size()) {
+    if (controlVec.empty()) {
         Invert(topRight, bottomLeft, target);
         return;
     }
@@ -2581,7 +2581,7 @@ void QUnit::UCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
         return;
     }
 
-    if (!controlVec.size()) {
+    if (controlVec.empty()) {
         Mtrx(mtrx, target);
         return;
     }
@@ -2628,7 +2628,7 @@ bool QUnit::TrimControls(const std::vector<bitLenInt>& controls, std::vector<bit
     // If the controls start entirely separated from the targets, it's probably worth checking to see if the have
     // total or no probability of altering the targets, such that we can still keep them separate.
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         // (If we were passed 0 controls, the target functions as a gate without controls.)
         return false;
     }
@@ -3014,7 +3014,7 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, const std::
         return;
     }
 
-    if (!controlVec.size()) {
+    if (controlVec.empty()) {
         INC(toMod, start, length);
         return;
     }
@@ -3623,7 +3623,7 @@ void QUnit::CMUL(
         return;
     }
 
-    if (!controlVec.size()) {
+    if (controlVec.empty()) {
         MUL(toMod, start, carryStart, length);
         return;
     }
@@ -3653,7 +3653,7 @@ void QUnit::CDIV(
         return;
     }
 
-    if (!controlVec.size()) {
+    if (controlVec.empty()) {
         DIV(toMod, start, carryStart, length);
         return;
     }
@@ -3664,7 +3664,7 @@ void QUnit::CDIV(
 void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         POWModNOut(toMod, modN, inStart, outStart, length);
         return;
     }

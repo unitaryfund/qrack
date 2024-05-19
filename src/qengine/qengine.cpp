@@ -28,7 +28,7 @@ void QEngine::Mtrx(complex const* mtrx, bitLenInt qubit)
 
 void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target, bool isAnti)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
         return;
     }
@@ -51,7 +51,7 @@ void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, complex const* 
 void QEngine::UCMtrx(
     const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
         return;
     }
@@ -124,7 +124,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
 
     // Single bit operations are better optimized for this special case:
     if (bits.size() == 1U) {
-        if (ForceM(bits[0U], values.size() ? values[0U] : false, false, doApply)) {
+        if (ForceM(bits[0U], values.empty() ? false : values[0U], false, doApply)) {
             return pow2(bits[0U]);
         } else {
             return ZERO_BCI;
@@ -213,7 +213,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
 
 void QEngine::CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Swap(qubit1, qubit2);
         return;
     }
@@ -242,7 +242,7 @@ void QEngine::CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bi
 
 void QEngine::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         Swap(qubit1, qubit2);
         return;
     }
@@ -268,7 +268,7 @@ void QEngine::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1
 
 void QEngine::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         SqrtSwap(qubit1, qubit2);
         return;
     }
@@ -298,7 +298,7 @@ void QEngine::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1
 
 void QEngine::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         SqrtSwap(qubit1, qubit2);
         return;
     }
@@ -325,7 +325,7 @@ void QEngine::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qu
 
 void QEngine::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         ISqrtSwap(qubit1, qubit2);
         return;
     }
@@ -355,7 +355,7 @@ void QEngine::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit
 
 void QEngine::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (!controls.size()) {
+    if (controls.empty()) {
         ISqrtSwap(qubit1, qubit2);
         return;
     }

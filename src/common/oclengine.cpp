@@ -293,7 +293,7 @@ InitOClResult OCLEngine::InitOCL(
 
     cl::Platform::get(&all_platforms);
 
-    if (!all_platforms.size()) {
+    if (all_platforms.empty()) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
         return InitOClResult();
     }
@@ -346,7 +346,7 @@ InitOClResult OCLEngine::InitOCL(
         }
         all_devices_is_cpu.insert(all_devices_is_cpu.end(), cpu_to_insert.begin(), cpu_to_insert.end());
     }
-    if (!all_devices.size()) {
+    if (all_devices.empty()) {
         std::cout << " No devices found. Check OpenCL installation!\n";
         return InitOClResult();
     }

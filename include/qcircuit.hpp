@@ -124,7 +124,7 @@ struct QCircuitGate {
             return false;
         }
 
-        if (!controls.size() && !other->controls.size()) {
+        if (controls.empty() && other->controls.empty()) {
             return true;
         }
 
@@ -137,7 +137,7 @@ struct QCircuitGate {
             }
 
             if (mc) {
-                return !controls.size() || !other->controls.size() ||
+                return controls.empty() || other->controls.empty() ||
                     (*(controls.begin()) == *(other->controls.begin()));
             }
         }
@@ -308,7 +308,7 @@ struct QCircuitGate {
             std::copy(out, out + 4U, p);
         }
 
-        if (!payloads.size()) {
+        if (payloads.empty()) {
             Clear();
             return;
         }
@@ -421,7 +421,7 @@ struct QCircuitGate {
      */
     bool IsClifford()
     {
-        if (!payloads.size()) {
+        if (payloads.empty()) {
             // Swap gate is Clifford
             return true;
         }
@@ -430,7 +430,7 @@ struct QCircuitGate {
             return false;
         }
 
-        if (!controls.size()) {
+        if (controls.empty()) {
             return __IS_CLIFFORD(payloads[ZERO_BCI].get());
         }
 
