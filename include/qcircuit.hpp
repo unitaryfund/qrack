@@ -460,49 +460,49 @@ struct QCircuitGate {
     bool CanPass(QCircuitGatePtr other)
     {
         std::set<bitLenInt>::iterator c = other->controls.find(target);
-        if (c != other->controls.end()) {
+        if (c == other->controls.end()) {
             if (controls.find(other->target) != controls.end()) {
-                return IsPhase() && other->IsPhase();
-            }
-            if (IsPhase()) {
-                return true;
-            }
-            if (!IsPhaseInvert() ||
-                !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
-                return false;
+                return other->IsPhase();
             }
 
-            std::vector<bitCapInt> opfPows;
-            opfPows.reserve(controls.size());
-            for (const bitLenInt& ctrl : controls) {
-                opfPows.emplace_back(pow2(std::distance(other->controls.begin(), other->controls.find(ctrl))));
-            }
-            const bitCapInt p = pow2(std::distance(other->controls.begin(), c));
-            std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
-            for (const auto& payload : other->payloads) {
-                bitCapInt pf = ZERO_BCI;
-                for (size_t i = 0U; i < opfPows.size(); ++i) {
-                    if (bi_compare_0(payload.first & opfPows[i]) != 0) {
-                        bi_or_ip(&pf, pow2(i));
-                    }
-                }
-                const auto& poi = payloads.find(pf);
-                if ((poi == payloads.end()) || (norm(poi->second.get()[0]) > FP_NORM_EPSILON)) {
-                    nPayloads[payload.first] = payload.second;
-                } else {
-                    nPayloads[payload.first ^ p] = payload.second;
-                }
-            }
-            other->payloads = nPayloads;
-
-            return true;
+            return (target != other->target) || (IsPhase() && other->IsPhase());
         }
 
         if (controls.find(other->target) != controls.end()) {
-            return other->IsPhase();
+            return IsPhase() && other->IsPhase();
+        }
+        if (IsPhase()) {
+            return true;
+        }
+        if (!IsPhaseInvert() ||
+            !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
+            return false;
         }
 
-        return (target != other->target) || (IsPhase() && other->IsPhase());
+        std::vector<bitCapInt> opfPows;
+        opfPows.reserve(controls.size());
+        for (const bitLenInt& ctrl : controls) {
+            opfPows.emplace_back(pow2(std::distance(other->controls.begin(), other->controls.find(ctrl))));
+        }
+        const bitCapInt p = pow2(std::distance(other->controls.begin(), c));
+        std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
+        for (const auto& payload : other->payloads) {
+            bitCapInt pf = ZERO_BCI;
+            for (size_t i = 0U; i < opfPows.size(); ++i) {
+                if (bi_compare_0(payload.first & opfPows[i]) != 0) {
+                    bi_or_ip(&pf, pow2(i));
+                }
+            }
+            const auto& poi = payloads.find(pf);
+            if ((poi == payloads.end()) || (norm(poi->second.get()[0]) > FP_NORM_EPSILON)) {
+                nPayloads[payload.first] = payload.second;
+            } else {
+                nPayloads[payload.first ^ p] = payload.second;
+            }
+        }
+        other->payloads = nPayloads;
+
+        return true;
     }
 
     /**
