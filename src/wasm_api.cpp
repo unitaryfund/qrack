@@ -1873,7 +1873,7 @@ real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> 
     std::vector<bitLenInt> _q;
     _q.reserve(q.size());
     for (size_t i = 0U; i < q.size(); ++i) {
-        _q.push_back(shards[simulators[sid].get()][q[i]]);
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
     }
 
     return simulator->ExpectationPauliAll(_q, b);

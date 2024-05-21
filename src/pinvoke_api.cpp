@@ -2600,11 +2600,13 @@ MICROSOFT_QUANTUM_DECL double PauliExpectation(
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
-    std::vector<bitLenInt> _q(n);
-    std::vector<Pauli> _b(n);
+    std::vector<bitLenInt> _q;
+    std::vector<Pauli> _b;
+    _q.reserve(n);
+    _b.reserve(n);
     for (size_t i = 0U; i < n; ++i) {
-        _q[i] = (bitLenInt)q[i];
-        _b[i] = (Pauli)b[i];
+        _q.emplace_back((bitLenInt)q[i]);
+        _b.emplace_back((Pauli)b[i]);
     }
 
     return simulator->ExpectationPauliAll(_q, _b);
