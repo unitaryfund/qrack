@@ -2471,6 +2471,16 @@ public:
     }
 
     /**
+     * Get permutation expectation value of bits
+     *
+     * The permutation expectation value of all included bits is returned, with bits valued from low to high as the
+     * order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis);
+
+    /**
      * Get expectation value of bits, given an array of qubit weights
      *
      * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
