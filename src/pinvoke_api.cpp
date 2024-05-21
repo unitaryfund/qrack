@@ -2593,6 +2593,22 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
 }
 
 /**
+ * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double PauliExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<Pauli> _b(n);
+    std::transform(b, b + n, _b.begin(), [](uintq basis) { return (Pauli)basis; });
+    std::vector<bitLenInt> _q(n);
+    std::transform(q, q + n, _q.begin(), [](uintq qubit) { return (bitLenInt)qubit; });
+
+    return simulator->ExpectationPauliAll(_b, _q);
+}
+
+/**
  * (External API) Get the permutation expectation value, based upon the order of input qubits.
  */
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c)

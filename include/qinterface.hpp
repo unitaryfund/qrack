@@ -2479,6 +2479,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationPauliAll(std::vector<Pauli> paulis, std::vector<bitLenInt> bits);
+
     /**
      * Get expectation value of bits, given an array of qubit weights
      *

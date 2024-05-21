@@ -191,6 +191,10 @@ real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpectation> q);
  */
 real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> q, bool r);
 /**
+ * Pauli operator expectation value for the array of qubits and bases.
+ */
+real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
+/**
  * Expectation value for bit-string integer from group of qubits with per-qubit real1 expectation value
  */
 real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q);

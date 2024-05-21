@@ -1864,6 +1864,22 @@ real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> 
 }
 
 /**
+ * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
+ */
+real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
+{
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
+
+    std::vector<bitLenInt> _q;
+    _q.reserve(q.size());
+    for (size_t i = 0U; i < q.size(); ++i) {
+        _q.push_back(shards[simulators[sid].get()][q[i]]);
+    }
+
+    return simulator->ExpectationPauliAll(b, _q);
+}
+
+/**
  * (External API) Get the permutation expectation value, based upon the order of input qubits.
  */
 real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q)

@@ -72,6 +72,8 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double PauliExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b);
 #if FPPOW < 6
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
