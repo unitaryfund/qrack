@@ -2471,14 +2471,36 @@ public:
     }
 
     /**
-     * Get permutation expectation value of bits
+     * Get Pauli tensor product observable
      *
-     * The permutation expectation value of all included bits is returned, with bits valued from low to high as the
-     * order of the "bits" array parameter argument.
+     * The Pauli tensor basis expectation value of all included bits is returned, with bits valued from low to high as
+     * the order of the "bits" array parameter argument.
      *
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis);
+
+    /**
+     * Get single-qubit tensor product (arbitrary real) observable
+     *
+     * The single-qubit tensor basis (arbitrary real) expectation value of all included bits is returned, with bits
+     * valued from low to high as the order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {});
+
+    /**
+     * Get single-qubit (3-parameter) tensor product (arbitrary real) observable
+     *
+     * The single-qubit (3-parameter) tensor basis (arbitrary real) expectation value of all included bits is returned,
+     * with bits valued from low to high as the order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
+        const std::vector<std::vector<real1>>& basisOps, std::vector<real1> eigenVals = {});
 
     /**
      * Get expectation value of bits, given an array of qubit weights

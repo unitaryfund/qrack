@@ -543,6 +543,68 @@ real1_f QInterface::ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector
     return toRet;
 }
 
+real1_f QInterface::ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
+    const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals)
+{
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
+    if (eigenVals.empty()) {
+        eigenVals.reserve(bits.size() << 1U);
+        for (size_t i = 0U; i < bits.size(); ++i) {
+            eigenVals.push_back(ONE_R1);
+            eigenVals.push_back(-ONE_R1);
+        }
+    }
+
+    std::unique_ptr<complex[]> inv(new complex[4U]);
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const std::shared_ptr<complex>& mtrx = basisOps[i];
+        inv2x2(mtrx.get(), inv.get());
+        Mtrx(inv.get(), bits[i]);
+    }
+
+    const real1_f toRet = ExpectationFloatsFactorized(bits, eigenVals);
+
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const std::shared_ptr<complex>& mtrx = basisOps[i];
+        Mtrx(mtrx.get(), bits[i]);
+    }
+
+    return toRet;
+}
+
+real1_f QInterface::ExpectationUnitaryAll(
+    const std::vector<bitLenInt>& bits, const std::vector<std::vector<real1>>& basisOps, std::vector<real1> eigenVals)
+{
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
+    if (eigenVals.empty()) {
+        eigenVals.reserve(bits.size() << 1U);
+        for (size_t i = 0U; i < bits.size(); ++i) {
+            eigenVals.push_back(ONE_R1);
+            eigenVals.push_back(-ONE_R1);
+        }
+    }
+
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const std::vector<real1>& u = basisOps[i];
+        U(bits[i], -u[0U], -u[1U], -u[2U]);
+    }
+
+    const real1_f toRet = ExpectationFloatsFactorized(bits, eigenVals);
+
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const std::vector<real1>& u = basisOps[i];
+        U(bits[i], u[0U], u[1U], u[2U]);
+    }
+
+    return toRet;
+}
+
 real1_f QInterface::ExpectationBitsFactorized(
     const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {
