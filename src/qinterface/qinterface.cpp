@@ -487,6 +487,58 @@ real1_f QInterface::VarianceBitsAll(const std::vector<bitLenInt>& bits)
     return tot;
 }
 
+real1_f QInterface::ExpectationPauliAll(std::vector<Pauli> paulis, std::vector<bitLenInt> bits)
+{
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const size_t j = bits.size() - (i + 1U);
+        if (bits[j] == PauliI) {
+            bits.erase(bits.begin() + j);
+            paulis.erase(paulis.begin() + j);
+        }
+    }
+
+    std::vector<real1> eigenVals;
+    eigenVals.reserve(bits.size() << 1U);
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        eigenVals.push_back(ONE_R1);
+        eigenVals.push_back(-ONE_R1);
+
+        switch (paulis[i]) {
+        case PauliX:
+            H(bits[i]);
+            break;
+        case PauliY:
+            IS(bits[i]);
+            H(bits[i]);
+            break;
+        case PauliZ:
+        case PauliI:
+        default:
+            break;
+        }
+    }
+
+    const real1_f toRet = ExpectationFloatsFactorized(bits, eigenVals);
+
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        switch (paulis[i]) {
+        case PauliX:
+            H(bits[i]);
+            break;
+        case PauliY:
+            H(bits[i]);
+            S(bits[i]);
+            break;
+        case PauliZ:
+        case PauliI:
+        default:
+            break;
+        }
+    }
+
+    return toRet;
+}
+
 real1_f QInterface::ExpectationBitsFactorized(
     const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
 {
