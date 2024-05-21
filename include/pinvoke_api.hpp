@@ -72,22 +72,34 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r);
-MICROSOFT_QUANTUM_DECL double PauliExpectation(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b);
 #if FPPOW < 6
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) float* b);
+MICROSOFT_QUANTUM_DECL double MatrixExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) float* b);
 #elif FPPOW < 7
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) double* b);
+MICROSOFT_QUANTUM_DECL double MatrixExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) double* b);
 #else
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) boost::multiprecision::float128* b);
+MICROSOFT_QUANTUM_DECL double MatrixExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) boost::multiprecision::float128* b);
 #endif
+MICROSOFT_QUANTUM_DECL double PauliExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b);
 
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback);

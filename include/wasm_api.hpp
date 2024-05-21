@@ -191,10 +191,6 @@ real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpectation> q);
  */
 real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> q, bool r);
 /**
- * Pauli operator expectation value for the array of qubits and bases.
- */
-real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
-/**
  * Expectation value for bit-string integer from group of qubits with per-qubit real1 expectation value
  */
 real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q);
@@ -203,6 +199,18 @@ real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q);
  * expectation value
  */
 real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q, bool r);
+/**
+ * Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ */
+real1_f UnitaryExpectation(quid sid, std::vector<bitLenInt> q, std::vector<real1> b);
+/**
+ * Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ */
+real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
+    /**
+     * Pauli operator expectation value for the array of qubits and bases.
+     */
+    real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
 
 /**
  * Select from a distribution of "p.size()" count of elements according to the discrete probabilities in "p."

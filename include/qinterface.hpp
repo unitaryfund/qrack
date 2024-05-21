@@ -2499,8 +2499,8 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
-        const std::vector<std::vector<real1>>& basisOps, std::vector<real1> eigenVals = {});
+    virtual real1_f ExpectationUnitaryAll(
+        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {});
 
     /**
      * Get expectation value of bits, given an array of qubit weights

@@ -576,7 +576,7 @@ real1_f QInterface::ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
 }
 
 real1_f QInterface::ExpectationUnitaryAll(
-    const std::vector<bitLenInt>& bits, const std::vector<std::vector<real1>>& basisOps, std::vector<real1> eigenVals)
+    const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals)
 {
     if (bits.empty()) {
         return ONE_R1;
@@ -591,15 +591,15 @@ real1_f QInterface::ExpectationUnitaryAll(
     }
 
     for (size_t i = 0U; i < bits.size(); ++i) {
-        const std::vector<real1>& u = basisOps[i];
-        U(bits[i], -u[0U], -u[1U], -u[2U]);
+        const size_t i3 = 3U * i;
+        U(bits[i], -basisOps[i3], -basisOps[i3 + 1U], -basisOps[i3 + 2U]);
     }
 
     const real1_f toRet = ExpectationFloatsFactorized(bits, eigenVals);
 
     for (size_t i = 0U; i < bits.size(); ++i) {
-        const std::vector<real1>& u = basisOps[i];
-        U(bits[i], u[0U], u[1U], u[2U]);
+        const size_t i3 = 3U * i;
+        U(bits[i], basisOps[i3], basisOps[i3 + 1U], basisOps[i3 + 2U]);
     }
 
     return toRet;
