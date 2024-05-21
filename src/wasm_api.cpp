@@ -1907,14 +1907,16 @@ real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q
  */
 real1_f UnitaryExpectation(quid sid, std::vector<bitLenInt> q, std::vector<real1> b)
 {
-    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
     std::vector<bitLenInt> _q;
     std::vector<real1> _b;
+    const size_t n = q.size();
     _q.reserve(n);
     _b.reserve(3U * n);
     for (size_t i = 0U; i < n; ++i) {
         _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i3 = 3U * i;
         for (size_t j = 0U; j < 3U; ++j) {
             _b.emplace_back(b[i3 + j]);
         }
@@ -1928,19 +1930,19 @@ real1_f UnitaryExpectation(quid sid, std::vector<bitLenInt> q, std::vector<real1
  */
 real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
 {
-    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
     std::vector<bitLenInt> _q;
     std::vector<std::shared_ptr<complex>> _b;
+    const size_t n = q.size();
     _q.reserve(n);
     _b.reserve(n);
     for (size_t i = 0U; i < n; ++i) {
         _q.emplace_back(shards[simulators[sid].get()][q[i]]);
-        const size_t i8 = i << 3U;
+        const size_t i4 = i << 2U;
         _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
         for (size_t j = 0U; j < 4U; ++j) {
-            const size_t j2 = j << 1U;
-            _b[i].get()[j] = complex(b[i8 + j2], b[i8 + j2 + 1U]);
+            _b[i].get()[j] = b[i4 + j];
         }
     }
 
@@ -1952,14 +1954,16 @@ real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<comple
  */
 real1_f UnitaryExpectationExpVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e)
 {
-    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
     std::vector<bitLenInt> _q;
     std::vector<real1> _b;
+    const size_t n = q.size();
     _q.reserve(n);
     _b.reserve(3U * n);
     for (size_t i = 0U; i < n; ++i) {
         _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i3 = 3U * i;
         for (size_t j = 0U; j < 3U; ++j) {
             _b.emplace_back(b[i3 + j]);
         }
@@ -1973,19 +1977,19 @@ real1_f UnitaryExpectationExpVal(quid sid, std::vector<bitLenInt> q, std::vector
  */
 real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e)
 {
-    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
     std::vector<bitLenInt> _q;
     std::vector<std::shared_ptr<complex>> _b;
+    const size_t n = q.size();
     _q.reserve(n);
     _b.reserve(n);
     for (size_t i = 0U; i < n; ++i) {
         _q.emplace_back(shards[simulators[sid].get()][q[i]]);
-        const size_t i8 = i << 3U;
+        const size_t i4 = i << 2U;
         _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
         for (size_t j = 0U; j < 4U; ++j) {
-            const size_t j2 = j << 1U;
-            _b[i].get()[j] = complex(b[i8 + j2], b[i8 + j2 + 1U]);
+            _b[i].get()[j] = b[i4 + j];
         }
     }
 
