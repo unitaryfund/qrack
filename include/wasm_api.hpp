@@ -206,11 +206,19 @@ real1_f UnitaryExpectation(quid sid, std::vector<bitLenInt> q, std::vector<real1
 /**
  * Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
  */
-real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
-    /**
-     * Pauli operator expectation value for the array of qubits and bases.
-     */
-    real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
+real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b);
+/**
+ * Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ */
+real1_f UnitaryExpectationExpVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e);
+/**
+ * Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ */
+real1_f MatrixExpectationExpVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e);
+/**
+ * Pauli operator expectation value for the array of qubits and bases.
+ */
+real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
 
 /**
  * Select from a distribution of "p.size()" count of elements according to the discrete probabilities in "p."

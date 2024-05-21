@@ -2644,7 +2644,64 @@ MICROSOFT_QUANTUM_DECL double MatrixExpectation(
     std::vector<bitLenInt> _q;
     std::vector<std::shared_ptr<complex>> _b;
     _q.reserve(n);
-    _b.reserve(n >> 3U);
+    _b.reserve(n << 3U);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i8 = i << 3U;
+        _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
+        for (size_t j = 0U; j < 4U; ++j) {
+            const size_t j2 = j << 1U;
+            _b[i].get()[j] = complex(b[i8 + j2], b[i8 + j2 + 1U]);
+        }
+    }
+
+    return simulator->ExpectationUnitaryAll(_q, _b);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double UnitaryExpectationExpVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<real1> _b;
+    std::vector<real1> _e;
+    _q.reserve(n);
+    _b.reserve(3U * n);
+    _e.reserve(n << 1U);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+
+        const size_t i2 = i << 1U;
+        _b.emplace_back(b[i2]);
+        _b.emplace_back(b[i2 + 1U]);
+
+        const size_t i3 = 3U * i;
+        for (size_t j = 0U; j < 3U; ++j) {
+            _b.emplace_back(b[i3 + j]);
+        }
+    }
+
+    return simulator->ExpectationUnitaryAll(_q, _b);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double MatrixExpectationExpVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<std::shared_ptr<complex>> _b;
+    std::vector<real1> _e;
+    _q.reserve(n);
+    _b.reserve(n << 3U);
+    _e.reserve(n << 1U);
     for (size_t i = 0U; i < n; ++i) {
         _q.emplace_back(shards[simulators[sid].get()][q[i]]);
         const size_t i8 = i << 3U;

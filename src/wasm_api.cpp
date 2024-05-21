@@ -1948,6 +1948,51 @@ real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<comple
 }
 
 /**
+ * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ */
+real1_f UnitaryExpectationExpVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<real1> _b;
+    _q.reserve(n);
+    _b.reserve(3U * n);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        for (size_t j = 0U; j < 3U; ++j) {
+            _b.emplace_back(b[i3 + j]);
+        }
+    }
+
+    return simulator->ExpectationUnitaryAll(_q, b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ */
+real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<std::shared_ptr<complex>> _b;
+    _q.reserve(n);
+    _b.reserve(n);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i8 = i << 3U;
+        _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
+        for (size_t j = 0U; j < 4U; ++j) {
+            const size_t j2 = j << 1U;
+            _b[i].get()[j] = complex(b[i8 + j2], b[i8 + j2 + 1U]);
+        }
+    }
+
+    return simulator->ExpectationUnitaryAll(_q, _b, e);
+}
+
+/**
  * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
  */
 real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
