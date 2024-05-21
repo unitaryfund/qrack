@@ -487,14 +487,18 @@ real1_f QInterface::VarianceBitsAll(const std::vector<bitLenInt>& bits)
     return tot;
 }
 
-real1_f QInterface::ExpectationPauliAll(std::vector<Pauli> paulis, std::vector<bitLenInt> bits)
+real1_f QInterface::ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis)
 {
     for (size_t i = 0U; i < bits.size(); ++i) {
         const size_t j = bits.size() - (i + 1U);
-        if (bits[j] == PauliI) {
+        if (paulis[j] == PauliI) {
             bits.erase(bits.begin() + j);
             paulis.erase(paulis.begin() + j);
         }
+    }
+
+    if (bits.empty()) {
+        return ONE_R1;
     }
 
     std::vector<real1> eigenVals;
@@ -551,6 +555,10 @@ real1_f QInterface::ExpectationBitsFactorized(
         "QInterface::ExpectationBitsFactorized() parameter qubits vector values must be within allocated qubit "
         "bounds!");
 
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
     if (bits.size() == 1U) {
         const real1_f prob = Prob(bits[0]);
         return (
@@ -582,6 +590,10 @@ real1_f QInterface::ExpectationFloatsFactorized(const std::vector<bitLenInt>& bi
     ThrowIfQbIdArrayIsBad(bits, qubitCount,
         "QInterface::ExpectationFloatsFactorized() parameter qubits vector values must be within allocated qubit "
         "bounds!");
+
+    if (bits.empty()) {
+        return ONE_R1;
+    }
 
     if (bits.size() == 1U) {
         const real1_f prob = Prob(bits[0]);

@@ -1876,7 +1876,7 @@ real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> 
         _q.push_back(shards[simulators[sid].get()][q[i]]);
     }
 
-    return simulator->ExpectationPauliAll(b, _q);
+    return simulator->ExpectationPauliAll(_q, b);
 }
 
 /**
