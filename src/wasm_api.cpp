@@ -1737,17 +1737,6 @@ std::vector<real1> ProbAll(quid sid, std::vector<bitLenInt> q)
     return p;
 }
 
-real1_f Variance(quid sid, std::vector<bitLenInt> q)
-{
-    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
-
-    for (size_t i = 0; i < q.size(); ++i) {
-        q[i] = shards[simulator.get()][q[i]];
-    }
-
-    return simulator->VarianceBitsAll(q);
-}
-
 real1_f _Prob(quid sid, bitLenInt q, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
@@ -1796,7 +1785,7 @@ real1_f PermutationProbRdm(quid sid, std::vector<QubitIndexState> q, bool r)
     return _PermutationProb(sid, q, true, r);
 }
 
-real1_f _PermutationExpectation(quid sid, std::vector<bitLenInt> q, bool r, bool isRdm)
+real1_f _PermutationExpVar(quid sid, std::vector<bitLenInt> q, bool r, bool isRdm, bool isExp)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
@@ -1804,7 +1793,9 @@ real1_f _PermutationExpectation(quid sid, std::vector<bitLenInt> q, bool r, bool
         q[i] = shards[simulators[sid].get()][q[i]];
     }
 
-    return isRdm ? simulator->ExpectationBitsAllRdm(r, q) : simulator->ExpectationBitsAll(q);
+    return isExp ? isRdm ? simulator->ExpectationBitsAllRdm(r, q) : simulator->ExpectationBitsAll(q)
+        : isRdm ? simulator->VarianceBitsAllRdm(r, q)
+                 : simulator->VarianceBitsAll(q);
 }
 
 /**
@@ -1812,7 +1803,7 @@ real1_f _PermutationExpectation(quid sid, std::vector<bitLenInt> q, bool r, bool
  */
 real1_f PermutationExpectation(quid sid, std::vector<bitLenInt> q)
 {
-    return _PermutationExpectation(sid, q, false, false);
+    return _PermutationExpVar(sid, q, false, false, true);
 }
 
 /**
@@ -1821,13 +1812,24 @@ real1_f PermutationExpectation(quid sid, std::vector<bitLenInt> q)
  */
 real1_f PermutationExpectationRdm(quid sid, std::vector<bitLenInt> q, bool r)
 {
-    return _PermutationExpectation(sid, q, r, true);
+    return _PermutationExpVar(sid, q, r, true, true);
 }
 
 /**
- * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ * (External API) Get the permutation variance, based upon the order of input qubits.
  */
-real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpectation> q)
+real1_f Variance(quid sid, std::vector<bitLenInt> q) { return _PermutationExpVar(sid, q, false, false, false); }
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+real1_f VarianceRdm(quid sid, std::vector<bitLenInt> q, bool r)
+{
+    return _PermutationExpVar(sid, q, r, true, false);
+}
+
+real1_f FactorizedExpVar(bool isExp, bool isRdm, quid sid, std::vector<QubitIntegerExpVar> q, bool r)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
@@ -1840,33 +1842,248 @@ real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpectation> q)
         _c.push_back(q[i].val);
     }
 
-    return simulator->ExpectationBitsFactorized(_q, _c);
+    return isExp
+        ? isRdm ? simulator->ExpectationBitsFactorizedRdm(r, _q, _c) : simulator->ExpectationBitsFactorized(_q, _c)
+        : isRdm ? simulator->VarianceBitsFactorizedRdm(r, _q, _c)
+                : simulator->VarianceBitsFactorized(_q, _c);
+}
+
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ */
+real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpVar> q)
+{
+    return FactorizedExpVar(true, false, sid, q, false);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits.
+ */
+real1_f FactorizedVariance(quid sid, std::vector<QubitIntegerExpVar> q)
+{
+    return FactorizedExpVar(false, false, sid, q, false);
 }
 
 /**
  * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
  * qubits as post-selected T gate gadgets.
  */
-real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> q, bool r)
+real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpVar> q, bool r)
+{
+    return FactorizedExpVar(true, true, sid, q, r);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+real1_f FactorizedVarianceRdm(quid sid, std::vector<QubitIntegerExpVar> q, bool r)
+{
+    return FactorizedExpVar(false, true, sid, q, r);
+}
+
+real1_f FactorizedExpVarFp(bool isExp, bool isRdm, quid sid, std::vector<QubitRealExpVar> q, bool r)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
     std::vector<bitLenInt> _q;
-    std::vector<bitCapInt> _c;
+    std::vector<real1_f> _f;
     _q.reserve(q.size());
-    _c.reserve(q.size());
+    _f.reserve(q.size());
     for (size_t i = 0U; i < q.size(); ++i) {
         _q.push_back(shards[simulators[sid].get()][q[i].qid]);
-        _c.push_back(q[i].val);
+        _f.push_back(q[i].val);
     }
 
-    return simulator->ExpectationBitsFactorizedRdm(r, _q, _c);
+    return isExp
+        ? isRdm ? simulator->ExpectationFloatsFactorizedRdm(r, _q, _f) : simulator->ExpectationFloatsFactorized(_q, _f)
+        : isRdm ? simulator->VarianceFloatsFactorizedRdm(r, _q, _f)
+                : simulator->VarianceFloatsFactorized(_q, _f);
 }
 
 /**
- * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
+ * (External API) Get the permutation expectation value, based upon the order of input qubits.
  */
-real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
+real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpVar> q)
+{
+    return FactorizedExpVarFp(true, false, sid, q, false);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits.
+ */
+real1_f FactorizedVarianceFp(quid sid, std::vector<QubitRealExpVar> q)
+{
+    return FactorizedExpVarFp(false, false, sid, q, false);
+}
+
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpVar> q, bool r)
+{
+    return FactorizedExpVarFp(true, true, sid, q, r);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+real1_f FactorizedVarianceFpRdm(quid sid, std::vector<QubitRealExpVar> q, bool r)
+{
+    return FactorizedExpVarFp(false, true, sid, q, r);
+}
+
+real1_f UnitaryExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<real1> b)
+{
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<real1> _b;
+    const size_t n = q.size();
+    _q.reserve(n);
+    _b.reserve(3U * n);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i3 = 3U * i;
+        for (size_t j = 0U; j < 3U; ++j) {
+            _b.emplace_back(b[i3 + j]);
+        }
+    }
+
+    return isExp ? simulator->ExpectationUnitaryAll(_q, b) : simulator->VarianceUnitaryAll(_q, b);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ */
+real1_f UnitaryExpectation(quid sid, std::vector<bitLenInt> q, std::vector<real1> b)
+{
+    return UnitaryExpVar(true, sid, q, b);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
+ */
+real1_f UnitaryVariance(quid sid, std::vector<bitLenInt> q, std::vector<real1> b)
+{
+    return UnitaryExpVar(false, sid, q, b);
+}
+
+real1_f MatrixExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
+{
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<std::shared_ptr<complex>> _b;
+    const size_t n = q.size();
+    _q.reserve(n);
+    _b.reserve(n);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i4 = i << 2U;
+        _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
+        for (size_t j = 0U; j < 4U; ++j) {
+            _b[i].get()[j] = b[i4 + j];
+        }
+    }
+
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ */
+real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
+{
+    return MatrixExpVar(true, sid, q, b);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator variance for the array of qubits and bases.
+ */
+real1_f MatrixVariance(quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
+{
+    return MatrixExpVar(false, sid, q, b);
+}
+
+real1_f UnitaryExpVarEigenVal(
+    bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e)
+{
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<real1> _b;
+    const size_t n = q.size();
+    _q.reserve(n);
+    _b.reserve(3U * n);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i3 = 3U * i;
+        for (size_t j = 0U; j < 3U; ++j) {
+            _b.emplace_back(b[i3 + j]);
+        }
+    }
+
+    return isExp ? simulator->ExpectationUnitaryAll(_q, b, e) : simulator->VarianceUnitaryAll(_q, b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ */
+real1_f UnitaryExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e)
+{
+    return UnitaryExpVarEigenVal(true, sid, q, b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
+ */
+real1_f UnitaryVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e)
+{
+    return UnitaryExpVarEigenVal(false, sid, q, b, e);
+}
+
+real1_f MatrixExpVarEigenVal(
+    bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e)
+{
+    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<std::shared_ptr<complex>> _b;
+    const size_t n = q.size();
+    _q.reserve(n);
+    _b.reserve(n);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i4 = i << 2U;
+        _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
+        for (size_t j = 0U; j < 4U; ++j) {
+            _b[i].get()[j] = b[i4 + j];
+        }
+    }
+
+    return simulator->ExpectationUnitaryAll(_q, _b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ */
+real1_f MatrixExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e)
+{
+    return MatrixExpVarEigenVal(true, sid, q, b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator variance for the array of qubits and bases.
+ */
+real1_f MatrixVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e)
+{
+    return MatrixExpVarEigenVal(false, sid, q, b, e);
+}
+
+real1_f PauliExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
@@ -1876,46 +2093,23 @@ real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> 
         _q.emplace_back(shards[simulators[sid].get()][q[i]]);
     }
 
-    return simulator->ExpectationPauliAll(_q, b);
+    return isExp ? simulator->ExpectationPauliAll(_q, b) : simulator->VariancePauliAll(_q, b);
 }
 
 /**
- * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
  */
-real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q)
+real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
 {
-    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
-
-    std::vector<bitLenInt> _q;
-    std::vector<real1_f> _f;
-    _q.reserve(q.size());
-    _f.reserve(q.size());
-    for (size_t i = 0U; i < q.size(); ++i) {
-        _q.push_back(shards[simulators[sid].get()][q[i].qid]);
-        _f.push_back(q[i].val);
-    }
-
-    return simulator->ExpectationFloatsFactorized(_q, _f);
+    return PauliExpVar(true, sid, q, b);
 }
 
 /**
- * (External API) Get the permutation expectation value, based upon the order of input qubits, treating all ancillary
- * qubits as post-selected T gate gadgets.
+ * (External API) Get the Pauli operator variance for the array of qubits and bases.
  */
-real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q, bool r)
+real1_f PauliVariance(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
 {
-    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
-
-    std::vector<bitLenInt> _q;
-    std::vector<real1_f> _f;
-    _q.reserve(q.size());
-    _f.reserve(q.size());
-    for (size_t i = 0U; i < q.size(); ++i) {
-        _q.push_back(shards[simulators[sid].get()][q[i].qid]);
-        _f.push_back(q[i].val);
-    }
-
-    return simulator->ExpectationFloatsFactorizedRdm(r, _q, _f);
+    return PauliExpVar(false, sid, q, b);
 }
 
 void QFT(quid sid, std::vector<bitLenInt> q)

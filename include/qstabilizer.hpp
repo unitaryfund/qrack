@@ -211,11 +211,19 @@ protected:
 
     /// Returns the (partial) expectation value from a state vector amplitude.
     real1_f getExpectation(const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
-        const std::vector<bitCapInt>& perms, bitCapInt offset);
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset);
 
     /// Returns the (partial) expectation value from a state vector amplitude.
     real1_f getExpectation(
         const real1_f& nrm, const std::vector<bitCapInt>& bitPowers, const std::vector<real1_f>& weights);
+
+    /// Returns the (partial) variance from a state vector amplitude.
+    real1_f getVariance(const real1_f& mean, const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset);
+
+    /// Returns the (partial) variance a state vector amplitude.
+    real1_f getVariance(const real1_f& mean, const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
+        const std::vector<real1_f>& weights);
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
@@ -301,12 +309,14 @@ public:
     /// Get any single basis state amplitude where qubit "t" has value "m"
     AmplitudeEntry GetQubitAmplitude(bitLenInt t, bool m);
 
-    /// Get expectation qubits, interpreting each permutation as an unsigned integer.
+    /// Get expectation of qubits, interpreting each permutation as an unsigned integer.
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI);
-
-    /// Get expectation qubits, interpreting each permutation as a floating-point value.
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI);
     real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+    /// Get variance of qubits, interpreting each permutation as an unsigned integer.
+    real1_f VarianceBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI);
+    real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
 
     /// Under assumption of a QStabilizerHybrid ancillary buffer, trace out the permutation probability
     /// of the reduced density matrx without ancillae.

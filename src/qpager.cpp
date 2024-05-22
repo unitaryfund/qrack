@@ -1521,15 +1521,15 @@ real1_f QPager::ProbMask(bitCapInt mask, bitCapInt permutation)
     return clampProb((real1_f)maskChance);
 }
 
-real1_f QPager::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
+real1_f QPager::ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset)
 {
     if (bits.size() != qubitCount) {
-        return QInterface::ExpectationBitsAll(bits, offset);
+        return QInterface::ExpVarBitsAll(isExp, bits, offset);
     }
 
     for (bitCapIntOcl i = 0U; i < bits.size(); ++i) {
         if (bits[i] != i) {
-            return QInterface::ExpectationBitsAll(bits, offset);
+            return QInterface::ExpVarBitsAll(isExp, bits, offset);
         }
     }
 
@@ -1548,11 +1548,13 @@ real1_f QPager::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt
         if (i != iF) {
             expectation += futures[iF].get();
         }
-        futures[iF] = std::async(std::launch::async, [engine, bits, pagePerm, offset]() {
-            return engine->ExpectationBitsAll(bits, pagePerm + (bitCapIntOcl)offset);
+        futures[iF] = std::async(std::launch::async, [engine, isExp, bits, pagePerm, offset]() {
+            return isExp ? engine->ExpectationBitsAll(bits, pagePerm + (bitCapIntOcl)offset)
+                         : engine->VarianceBitsAll(bits, pagePerm + (bitCapIntOcl)offset);
         });
 #else
-        expectation += engine->ExpectationBitsAll(bits, pagePerm + offset);
+        expectation += isExp ? engine->ExpectationBitsAll(bits, pagePerm + offset)
+                             : engine->VarianceBitsAll(bits, pagePerm + offset);
 #endif
         pagePerm += pagePower;
     }

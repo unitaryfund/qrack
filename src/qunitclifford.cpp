@@ -43,8 +43,8 @@ QInterfacePtr QUnitClifford::CloneBody(QUnitCliffordPtr copyPtr)
     return copyPtr;
 }
 
-real1_f QUnitClifford::ExpectationBitsFactorized(
-    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
+real1_f QUnitClifford::ExpVarBitsFactorized(
+    bool isExp, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset)
 {
     if (perms.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
@@ -63,16 +63,22 @@ real1_f QUnitClifford::ExpectationBitsFactorized(
         permMap[shard.unit].push_back(perms[(i << 1U) | 1U]);
     }
 
-    real1 expectation = ZERO_R1;
-    for (const auto& p : qubitMap) {
-        expectation += (real1)p.first->ExpectationBitsFactorized(p.second, permMap[p.first], offset);
+    real1_f expectation = ZERO_R1;
+    if (isExp) {
+        for (const auto& p : qubitMap) {
+            expectation += p.first->ExpectationBitsFactorized(p.second, permMap[p.first], offset);
+        }
+    } else {
+        for (const auto& p : qubitMap) {
+            expectation += p.first->VarianceBitsFactorized(p.second, permMap[p.first], offset);
+        }
     }
 
-    return (real1_f)expectation;
+    return expectation;
 }
 
-real1_f QUnitClifford::ExpectationFloatsFactorized(
-    const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+real1_f QUnitClifford::ExpVarFloatsFactorized(
+    bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
 {
     if (weights.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
@@ -93,8 +99,14 @@ real1_f QUnitClifford::ExpectationFloatsFactorized(
     }
 
     real1_f expectation = ZERO_R1;
-    for (const auto& p : qubitMap) {
-        expectation += p.first->ExpectationFloatsFactorized(p.second, weightMap[p.first]);
+    if (isExp) {
+        for (const auto& p : qubitMap) {
+            expectation += p.first->ExpectationFloatsFactorized(p.second, weightMap[p.first]);
+        }
+    } else {
+        for (const auto& p : qubitMap) {
+            expectation += p.first->VarianceFloatsFactorized(p.second, weightMap[p.first]);
+        }
     }
 
     return expectation;

@@ -270,22 +270,28 @@ protected:
     }
     void RdmCloneFlush(real1_f threshold = FP_NORM_EPSILON);
 
-    real1_f ExpectationFactorized(bool isFloat, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms,
-        const std::vector<real1_f>& weights, bitCapInt offset, bool roundRz)
+    real1_f ExpVarFactorized(bool isExp, bool isFloat, const std::vector<bitLenInt>& bits,
+        const std::vector<bitCapInt>& perms, const std::vector<real1_f>& weights, bitCapInt offset, bool roundRz)
     {
         if (engine) {
-            return isFloat ? engine->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
-                           : engine->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
-            ;
+            return isExp  ? isFloat ? engine->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                                    : engine->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+                 : isFloat ? engine->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
+                          : engine->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset);
         }
 
         if (!roundRz) {
-            return isFloat ? stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
-                           : stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
+            return isExp  ? isFloat ? stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                                    : stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+                 : isFloat ? stabilizer->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
+                          : stabilizer->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset);
         }
 
-        return isFloat ? RdmCloneHelper()->stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
-                       : RdmCloneHelper()->stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset);
+        return isExp  ? isFloat
+                 ? RdmCloneHelper()->stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                 : RdmCloneHelper()->stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+             : isFloat ? RdmCloneHelper()->stabilizer->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
+                      : RdmCloneHelper()->stabilizer->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset);
     }
 
     void ClearAncilla(bitLenInt i)
@@ -755,7 +761,7 @@ public:
 
     real1_f ProbAllRdm(bool roundRz, bitCapInt fullRegister);
     real1_f ProbMaskRdm(bool roundRz, bitCapInt mask, bitCapInt permutation);
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         if (stabilizer) {
             return QInterface::ExpectationBitsAll(bits, offset);
@@ -763,7 +769,7 @@ public:
 
         return engine->ExpectationBitsAll(bits, offset);
     }
-    real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
+    real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         if (engine) {
             return engine->ExpectationBitsAllRdm(roundRz, bits, offset);
@@ -776,7 +782,7 @@ public:
         return RdmCloneHelper()->stabilizer->ExpectationBitsAll(bits, offset);
     }
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         if (stabilizer) {
             return QInterface::ExpectationBitsFactorized(bits, perms, offset);
@@ -785,9 +791,9 @@ public:
         return engine->ExpectationBitsFactorized(bits, perms, offset);
     }
     real1_f ExpectationBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
-        const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
-        return ExpectationFactorized(false, bits, perms, std::vector<real1_f>(), offset, roundRz);
+        return ExpVarFactorized(true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }
     real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
     {
@@ -800,7 +806,54 @@ public:
     real1_f ExpectationFloatsFactorizedRdm(
         bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
     {
-        return ExpectationFactorized(true, bits, std::vector<bitCapInt>(), weights, ZERO_BCI, roundRz);
+        return ExpVarFactorized(true, true, bits, std::vector<bitCapInt>(), weights, ZERO_BCI, roundRz);
+    }
+    real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        if (stabilizer) {
+            return QInterface::VarianceBitsAll(bits, offset);
+        }
+
+        return engine->VarianceBitsAll(bits, offset);
+    }
+    real1_f VarianceBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        if (engine) {
+            return engine->VarianceBitsAllRdm(roundRz, bits, offset);
+        }
+
+        if (!roundRz) {
+            return stabilizer->VarianceBitsAll(bits, offset);
+        }
+
+        return RdmCloneHelper()->stabilizer->VarianceBitsAll(bits, offset);
+    }
+    real1_f VarianceBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
+    {
+        if (stabilizer) {
+            return QInterface::VarianceBitsFactorized(bits, perms, offset);
+        }
+
+        return engine->VarianceBitsFactorized(bits, perms, offset);
+    }
+    real1_f VarianceBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
+    {
+        return ExpVarFactorized(true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
+    }
+    real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        if (stabilizer) {
+            return QInterface::VarianceFloatsFactorized(bits, weights);
+        }
+
+        return engine->VarianceFloatsFactorized(bits, weights);
+    }
+    real1_f VarianceFloatsFactorizedRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return ExpVarFactorized(true, true, bits, std::vector<bitCapInt>(), weights, ZERO_BCI, roundRz);
     }
 
     bool TrySeparate(bitLenInt qubit);

@@ -96,6 +96,8 @@ protected:
 
     void GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
+    real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
+
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -410,7 +412,6 @@ public:
         CombineEngines();
         return qPages[0U]->ForceMParity(mask, result, doForce);
     }
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI);
 
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void NormalizeState(

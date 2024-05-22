@@ -58,7 +58,6 @@ MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
 MICROSOFT_QUANTUM_DECL void ProbAll(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* p);
 #endif
-MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q);
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q);
 MICROSOFT_QUANTUM_DECL double ProbRdm(_In_ uintq sid, _In_ uintq q);
 MICROSOFT_QUANTUM_DECL double PermutationProb(
@@ -72,22 +71,88 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r);
-MICROSOFT_QUANTUM_DECL double PauliExpectation(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b);
+MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q);
+MICROSOFT_QUANTUM_DECL double VarianceRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double FactorizedVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c);
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r);
 #if FPPOW < 6
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) float* b);
+MICROSOFT_QUANTUM_DECL double MatrixExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) float* b);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectationEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) float* b, _In_reads_(2 * n) float* e);
+MICROSOFT_QUANTUM_DECL double MatrixExpectationEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) float* b, _In_reads_(2 * n) float* e);
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c);
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFpRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) float* b);
+MICROSOFT_QUANTUM_DECL double MatrixVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) float* b);
+MICROSOFT_QUANTUM_DECL double UnitaryVarianceEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) float* b, _In_reads_(2 * n) float* e);
+MICROSOFT_QUANTUM_DECL double MatrixVarianceEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) float* b, _In_reads_(2 * n) float* e);
 #elif FPPOW < 7
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) double* b);
+MICROSOFT_QUANTUM_DECL double MatrixExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) double* b);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectationEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) double* b, _In_reads_(2 * n) double* e);
+MICROSOFT_QUANTUM_DECL double MatrixExpectationEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) double* b, _In_reads_(2 * n) double* e);
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* c);
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFpRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) double* b);
+MICROSOFT_QUANTUM_DECL double MatrixVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) double* b);
+MICROSOFT_QUANTUM_DECL double UnitaryVarianceEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) double* b, _In_reads_(2 * n) double* e);
+MICROSOFT_QUANTUM_DECL double MatrixVarianceEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) double* b, _In_reads_(2 * n) double* e);
 #else
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) boost::multiprecision::float128* b);
+MICROSOFT_QUANTUM_DECL double MatrixExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) boost::multiprecision::float128* b);
+MICROSOFT_QUANTUM_DECL double UnitaryExpectationEigenVal(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q,
+    _In_reads_(3 * n) boost::multiprecision::float128* b, _In_reads_(2 * n) boost::multiprecision::float128* e);
+MICROSOFT_QUANTUM_DECL double MatrixExpectationEigenVal(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q,
+    _In_reads_(8 * n) boost::multiprecision::float128* b, _In_reads_(2 * n) boost::multiprecision::float128* e);
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFp(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* c);
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFpRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* c, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double UnitaryVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) boost::multiprecision::float128* b);
+MICROSOFT_QUANTUM_DECL double MatrixVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) boost::multiprecision::float128* b);
+MICROSOFT_QUANTUM_DECL double UnitaryVarianceEigenVal(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q,
+    _In_reads_(3 * n) boost::multiprecision::float128* b, _In_reads_(2 * n) boost::multiprecision::float128* e);
+MICROSOFT_QUANTUM_DECL double MatrixVarianceEigenVal(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q,
+    _In_reads_(8 * n) boost::multiprecision::float128* b, _In_reads_(2 * n) boost::multiprecision::float128* e);
 #endif
+MICROSOFT_QUANTUM_DECL double PauliExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b);
+MICROSOFT_QUANTUM_DECL double PauliVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b);
 
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback);

@@ -195,6 +195,22 @@ protected:
         return sample;
     }
 
+    virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {});
+    virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps,
+        std::vector<real1> eigenVals = {});
+    virtual real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        std::vector<bitCapInt> perms;
+        perms.reserve(bits.size() << 1U);
+        for (size_t i = 0U; i < bits.size(); ++i) {
+            perms.push_back(ZERO_BCI);
+            perms.push_back(pow2(i));
+        }
+
+        return isExp ? ExpectationBitsFactorized(bits, perms, offset) : VarianceBitsFactorized(bits, perms, offset);
+    }
+
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
         bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON);
@@ -2444,30 +2460,116 @@ public:
      * Direct measure of variance of listed permutation probability
      *
      * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
-     * the "bits" array parameter argument, are returned in the "probsArray" parameter.
+     * the "bits" array parameter argument, is returned.
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits);
+    virtual real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        return ExpVarBitsAll(false, bits, offset);
+    }
 
     /**
-     * Get permutation expectation value of bits
+     * Direct measure of (reduced density matrix) variance of listed permutation probability
      *
-     * The permutation expectation value of all included bits is returned, with bits valued from low to high as the
-     * order of the "bits" array parameter argument.
+     * The (bit string, reduced density matrix) variance of all included permutations of bits, with bits valued from low
+     * to high as the order of the "bits" array parameter argument, is returned.
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
+    virtual real1_f VarianceBitsAllRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
-        std::vector<bitCapInt> perms;
-        perms.reserve(bits.size() << 1U);
-        for (size_t i = 0U; i < bits.size(); ++i) {
-            perms.push_back(ZERO_BCI);
-            perms.push_back(pow2(i));
-        }
+        return VarianceBitsAll(bits, offset);
+    }
 
-        return ExpectationBitsFactorized(bits, perms, offset);
+    /**
+     * Direct measure of variance of listed Pauli tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VariancePauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis);
+
+    /**
+     * Direct measure of variance of listed (3-parameter) single-qubit tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceUnitaryAll(
+        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(false, bits, basisOps, eigenVals);
+    }
+
+    /**
+     * Direct measure of variance of listed (2x2 operator) single-qubit tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceUnitaryAll(const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(false, bits, basisOps, eigenVals);
+    }
+
+    /**
+     * Direct measure of variance of listed bit string probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument, is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+
+    /**
+     * Direct measure of (reduced density matrix) variance of bits, given an array of qubit weights
+     *
+     * The weight-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry. If there are stabilizer ancillae, they are traced out of the reduced density matrix, giving an approximate
+     * result.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceFloatsFactorizedRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return VarianceFloatsFactorized(bits, weights);
+    }
+
+    /**
+     * Get expectation value of bits, given an array of qubit weights
+     *
+     * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI);
+
+    /**
+     * Get (reduced density matrix) expectation value of bits, given an array of qubit weights
+     *
+     * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry. If there are stabilizer ancillae, they are traced out of the reduced density matrix, giving an approximate
+     * result.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
+    {
+        return VarianceBitsFactorized(bits, perms, offset);
     }
 
     /**
@@ -2478,7 +2580,48 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
+    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        return ExpVarBitsAll(true, bits, offset);
+    }
+
+    /**
+     * Get Pauli tensor product observable
+     *
+     * The Pauli tensor basis expectation value of all included bits is returned, with bits valued from low to high as
+     * the order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
     virtual real1_f ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis);
+
+    /**
+     * Get single-qubit tensor product (arbitrary real) observable
+     *
+     * The single-qubit tensor basis (arbitrary real) expectation value of all included bits is returned, with bits
+     * valued from low to high as the order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(true, bits, basisOps, eigenVals);
+    }
+
+    /**
+     * Get single-qubit (3-parameter) tensor product (arbitrary real) observable
+     *
+     * The single-qubit (3-parameter) tensor basis (arbitrary real) expectation value of all included bits is returned,
+     * with bits valued from low to high as the order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationUnitaryAll(
+        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(true, bits, basisOps, eigenVals);
+    }
 
     /**
      * Get expectation value of bits, given an array of qubit weights
@@ -2489,7 +2632,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI);
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI);
 
     /**
      * Get (reduced density matrix) expectation value of bits, given an array of qubit weights
@@ -2501,7 +2644,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
-        const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpectationBitsFactorized(bits, perms, offset);
     }
@@ -2566,7 +2709,8 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
+    virtual real1_f ExpectationBitsAllRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpectationBitsAll(bits, offset);
     }

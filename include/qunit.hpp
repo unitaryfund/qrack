@@ -405,14 +405,24 @@ public:
     }
     virtual real1_f SumSqrDiff(QUnitPtr toCompare);
     virtual real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
-        return ExpectationFactorized(false, false, bits, perms, std::vector<real1_f>(), offset, false);
+        return ExpVarFactorized(true, false, false, bits, perms, std::vector<real1_f>(), offset, false);
     }
     virtual real1_f ExpectationBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
-        const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
-        return ExpectationFactorized(true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
+        return ExpVarFactorized(true, true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
+    }
+    virtual real1_f VarianceBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
+    {
+        return ExpVarFactorized(false, false, false, bits, perms, std::vector<real1_f>(), offset, false);
+    }
+    virtual real1_f VarianceBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
+    {
+        return ExpVarFactorized(false, true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(
@@ -496,7 +506,7 @@ protected:
     bitCapInt GetIndexedEigenstate(bitLenInt start, bitLenInt length, const unsigned char* values);
 #endif
 
-    real1_f ExpectationFactorized(bool isRdm, bool isFloat, const std::vector<bitLenInt>& bits,
+    real1_f ExpVarFactorized(bool isExp, bool isRdm, bool isFloat, const std::vector<bitLenInt>& bits,
         const std::vector<bitCapInt>& perms, const std::vector<real1_f>& weights, bitCapInt offset, bool roundRz)
     {
         if ((isFloat && (weights.size() < bits.size())) || (!isFloat && (perms.size() < bits.size()))) {
@@ -508,20 +518,29 @@ protected:
 
         if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
             OrderContiguous(shards[0U].unit);
-            return isFloat ? (isRdm ? shards[0U].unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
-                                    : shards[0U].unit->ExpectationFloatsFactorized(bits, weights))
-                           : (isRdm ? shards[0U].unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
-                                    : shards[0U].unit->ExpectationBitsFactorized(bits, perms, offset));
+            return isExp  ? isFloat
+                     ? (isRdm ? shards[0U].unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                              : shards[0U].unit->ExpectationFloatsFactorized(bits, weights))
+                     : (isRdm ? shards[0U].unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+                              : shards[0U].unit->ExpectationBitsFactorized(bits, perms, offset))
+                 : isFloat ? (isRdm ? shards[0U].unit->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
+                                    : shards[0U].unit->VarianceFloatsFactorized(bits, weights))
+                          : (isRdm ? shards[0U].unit->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset)
+                                   : shards[0U].unit->VarianceBitsFactorized(bits, perms, offset));
         }
 
         QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
         QInterfacePtr unit = clone->EntangleAll(true);
         clone->OrderContiguous(unit);
 
-        return isFloat ? (isRdm ? unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
-                                : unit->ExpectationFloatsFactorized(bits, weights))
-                       : (isRdm ? unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
-                                : unit->ExpectationBitsFactorized(bits, perms, offset));
+        return isExp  ? isFloat ? (isRdm ? unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                                         : unit->ExpectationFloatsFactorized(bits, weights))
+                                : (isRdm ? unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+                                         : unit->ExpectationBitsFactorized(bits, perms, offset))
+             : isFloat ? (isRdm ? unit->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
+                                : unit->VarianceFloatsFactorized(bits, weights))
+                      : (isRdm ? unit->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset)
+                               : unit->VarianceBitsFactorized(bits, perms, offset));
     }
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt> bits);
