@@ -1737,17 +1737,6 @@ std::vector<real1> ProbAll(quid sid, std::vector<bitLenInt> q)
     return p;
 }
 
-real1_f Variance(quid sid, std::vector<bitLenInt> q)
-{
-    SIMULATOR_LOCK_GUARD_REAL1_F(sid)
-
-    for (size_t i = 0; i < q.size(); ++i) {
-        q[i] = shards[simulator.get()][q[i]];
-    }
-
-    return simulator->VarianceBitsAll(q);
-}
-
 real1_f _Prob(quid sid, bitLenInt q, bool isRdm)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
@@ -1829,16 +1818,13 @@ real1_f PermutationExpectationRdm(quid sid, std::vector<bitLenInt> q, bool r)
 /**
  * (External API) Get the permutation variance, based upon the order of input qubits.
  */
-real1_f PermutationVariance(quid sid, std::vector<bitLenInt> q)
-{
-    return _PermutationExpVar(sid, q, false, false, false);
-}
+real1_f Variance(quid sid, std::vector<bitLenInt> q) { return _PermutationExpVar(sid, q, false, false, false); }
 
 /**
  * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
  * qubits as post-selected T gate gadgets.
  */
-real1_f PermutationVarianceRdm(quid sid, std::vector<bitLenInt> q, bool r)
+real1_f VarianceRdm(quid sid, std::vector<bitLenInt> q, bool r)
 {
     return _PermutationExpVar(sid, q, r, true, false);
 }

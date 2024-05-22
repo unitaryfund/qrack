@@ -154,10 +154,6 @@ void qstabilizer_in_from_file(quid sid, std::string f);
  */
 std::vector<real1> ProbAll(quid sid, std::vector<bitLenInt> q);
 /**
- * Get the overall variance of the probabilities of all permutations of the requested subset of qubits.
- */
-real1_f Variance(quid sid, std::vector<bitLenInt> q);
-/**
  * Z-basis expectation value of qubit
  */
 real1_f Prob(quid sid, bitLenInt q);
@@ -222,11 +218,11 @@ real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> 
 /**
  * Variance for bit-string integer equivalent of specified arbitrary group of qubits
  */
-real1_f PermutationVariance(quid sid, std::vector<bitLenInt> q);
+real1_f Variance(quid sid, std::vector<bitLenInt> q);
 /**
  * "Reduced density matrix" variance for bit-string integer equivalent of specified arbitrary group of qubits
  */
-real1_f PermutationVarianceRdm(quid sid, std::vector<bitLenInt> q, bool r);
+real1_f VarianceRdm(quid sid, std::vector<bitLenInt> q, bool r);
 /**
  * Variance for bit-string integer from group of qubits with per-qubit integer variance
  */

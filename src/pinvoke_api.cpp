@@ -2413,27 +2413,6 @@ MICROSOFT_QUANTUM_DECL void ProbAll(
 }
 
 /**
- * (External API) Get the overall variance of the probabilities of all permutations of the requested subset of qubits.
- */
-MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q)
-{
-    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
-
-    std::vector<bitLenInt> _q(n);
-    for (uintq i = 0; i < n; ++i) {
-        _q[i] = shards[simulator.get()][q[i]];
-    }
-
-    try {
-        return simulator->VarianceBitsAll(_q);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-        return (double)REAL1_DEFAULT_ARG;
-    }
-}
-
-/**
  * (External API) Get the probability that a qubit is in the |1> state.
  */
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q) { return _Prob(sid, q, false); }
@@ -2528,7 +2507,7 @@ MICROSOFT_QUANTUM_DECL double PermutationExpectationRdm(_In_ uintq sid, _In_ uin
 /**
  * (External API) Get the permutation variance, based upon the order of input qubits.
  */
-MICROSOFT_QUANTUM_DECL double PermutationVariance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q)
+MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q)
 {
     return _PermutationExpVar(sid, n, q, false, false, false);
 }
@@ -2537,7 +2516,7 @@ MICROSOFT_QUANTUM_DECL double PermutationVariance(_In_ uintq sid, _In_ uintq n, 
  * (External API) Get the permutation variance based upon the order of input qubits, treating all ancillary
  * qubits as post-selected T gate gadgets.
  */
-MICROSOFT_QUANTUM_DECL double PermutationVarianceRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, bool r)
+MICROSOFT_QUANTUM_DECL double VarianceRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, bool r)
 {
     return _PermutationExpVar(sid, n, q, r, true, false);
 }

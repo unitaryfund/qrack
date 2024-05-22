@@ -58,7 +58,6 @@ MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
 MICROSOFT_QUANTUM_DECL void ProbAll(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* p);
 #endif
-MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q);
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q);
 MICROSOFT_QUANTUM_DECL double ProbRdm(_In_ uintq sid, _In_ uintq q);
 MICROSOFT_QUANTUM_DECL double PermutationProb(
@@ -72,8 +71,8 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c);
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r);
-MICROSOFT_QUANTUM_DECL double PermutationVariance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q);
-MICROSOFT_QUANTUM_DECL double PermutationVarianceRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ bool r);
+MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q);
+MICROSOFT_QUANTUM_DECL double VarianceRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ bool r);
 MICROSOFT_QUANTUM_DECL double FactorizedVariance(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c);
 MICROSOFT_QUANTUM_DECL double FactorizedVarianceRdm(
