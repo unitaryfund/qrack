@@ -2470,6 +2470,20 @@ public:
     }
 
     /**
+     * Direct measure of (reduced density matrix) variance of listed permutation probability
+     *
+     * The (bit string, reduced density matrix) variance of all included permutations of bits, with bits valued from low
+     * to high as the order of the "bits" array parameter argument, is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceBitsAllRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        return VarianceBitsAll(bits, offset);
+    }
+
+    /**
      * Direct measure of variance of listed Pauli tensor product probability
      *
      * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of

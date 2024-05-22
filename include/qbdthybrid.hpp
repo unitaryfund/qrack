@@ -914,6 +914,13 @@ public:
         }
         return engine->ExpectationBitsAll(bits, offset);
     }
+    real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
+    {
+        if (qbdt) {
+            return qbdt->VarianceBitsAll(bits, offset);
+        }
+        return engine->VarianceBitsAll(bits, offset);
+    }
 
     void Finish()
     {
