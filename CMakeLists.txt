@@ -44,7 +44,7 @@ add_library (qrack STATIC
     src/qcircuit.cpp
     src/qtensornetwork.cpp
     )
-
+set_property(TARGET qrack PROPERTY POSITION_INDEPENDENT_CODE ON)
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
     target_sources (qrack PRIVATE
         src/common/dispatchqueue.cpp
@@ -60,11 +60,13 @@ else (ENABLE_EMIT_LLVM)
         src/pinvoke_api.cpp
         )
 endif (ENABLE_EMIT_LLVM)
+set_property(TARGET qrack_pinvoke PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if (EMSCRIPTEN)
     add_library (qrack_wasm STATIC
         src/wasm_api.cpp
         )
+    set_property(TARGET qrack_wasm PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif (EMSCRIPTEN)
 
 set(QRACK_LIBS qrack)
@@ -173,9 +175,9 @@ else (ENABLE_SSE3)
 endif (ENABLE_SSE3)
 
 if (QBCAPPOW GREATER 6)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Xcompiler -fpermissive --compiler-options -fPIC -Xptxas -O3,)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Xcompiler -fpermissive --compiler-options -Xptxas -O3,)
 else (QBCAPPOW GREATER 6)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Werror all-warnings --compiler-options -fPIC -Xptxas -O3,)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Werror all-warnings --compiler-options -Xptxas -O3,)
 endif (QBCAPPOW GREATER 6)
 
 if (MSVC)
@@ -211,17 +213,17 @@ else (MSVC)
     if (EMSCRIPTEN)
         message ("Compiling for WebAssembly.")
         if (ENABLE_PTHREAD)
-            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -pthread -Wall -Werror -fPIC)
+            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -pthread -Wall -Werror)
         else (ENABLE_PTHREAD)
-            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror -fPIC)
+            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
         endif (ENABLE_PTHREAD)
         set(TEST_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
     else (EMSCRIPTEN)
         if (APPLE AND ENABLE_OPENCL)
-            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -fPIC)
+            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall)
             set(TEST_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall)
         else (APPLE AND ENABLE_OPENCL)
-            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror -fPIC)
+            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
             set(TEST_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
         endif (APPLE AND ENABLE_OPENCL)
     endif (EMSCRIPTEN)
