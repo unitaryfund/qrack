@@ -195,6 +195,11 @@ protected:
         return sample;
     }
 
+    virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {});
+    virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps,
+        std::vector<real1> eigenVals = {});
+
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
         bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON);
@@ -2444,11 +2449,59 @@ public:
      * Direct measure of variance of listed permutation probability
      *
      * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
-     * the "bits" array parameter argument, are returned in the "probsArray" parameter.
+     * the "bits" array parameter argument, is returned.
      *
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits);
+
+    /**
+     * Direct measure of variance of listed Pauli tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VariancePauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis);
+
+    /**
+     * Direct measure of variance of listed (3-parameter) single-qubit tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceUnitaryAll(
+        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(false, bits, basisOps, eigenVals);
+    }
+
+    /**
+     * Direct measure of variance of listed (2x2 operator) single-qubit tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceUnitaryAll(const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(false, bits, basisOps, eigenVals);
+    }
+
+    /**
+     * Direct measure of variance of listed bit string probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument, is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
 
     /**
      * Get permutation expectation value of bits
@@ -2489,7 +2542,10 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
-        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {});
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(true, bits, basisOps, eigenVals);
+    }
 
     /**
      * Get single-qubit (3-parameter) tensor product (arbitrary real) observable
@@ -2500,7 +2556,10 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationUnitaryAll(
-        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {});
+        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(true, bits, basisOps, eigenVals);
+    }
 
     /**
      * Get expectation value of bits, given an array of qubit weights

@@ -467,6 +467,108 @@ void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArr
     }
 }
 
+real1_f QInterface::ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits,
+    const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals)
+{
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
+    if (eigenVals.empty()) {
+        eigenVals.reserve(bits.size() << 1U);
+        for (size_t i = 0U; i < bits.size(); ++i) {
+            eigenVals.push_back(ONE_R1);
+            eigenVals.push_back(-ONE_R1);
+        }
+    }
+
+    std::unique_ptr<complex[]> inv(new complex[4U]);
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const std::shared_ptr<complex>& mtrx = basisOps[i];
+        inv2x2(mtrx.get(), inv.get());
+        Mtrx(inv.get(), bits[i]);
+    }
+
+    const real1_f toRet =
+        isExp ? ExpectationFloatsFactorized(bits, eigenVals) : VarianceFloatsFactorized(bits, eigenVals);
+
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const std::shared_ptr<complex>& mtrx = basisOps[i];
+        Mtrx(mtrx.get(), bits[i]);
+    }
+
+    return toRet;
+}
+
+real1_f QInterface::ExpVarUnitaryAll(
+    bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals)
+{
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
+    if (eigenVals.empty()) {
+        eigenVals.reserve(bits.size() << 1U);
+        for (size_t i = 0U; i < bits.size(); ++i) {
+            eigenVals.push_back(ONE_R1);
+            eigenVals.push_back(-ONE_R1);
+        }
+    }
+
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const size_t i3 = 3U * i;
+        U(bits[i], -basisOps[i3], -basisOps[i3 + 1U], -basisOps[i3 + 2U]);
+    }
+
+    const real1_f toRet =
+        isExp ? ExpectationFloatsFactorized(bits, eigenVals) : VarianceFloatsFactorized(bits, eigenVals);
+
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const size_t i3 = 3U * i;
+        U(bits[i], basisOps[i3], basisOps[i3 + 1U], basisOps[i3 + 2U]);
+    }
+
+    return toRet;
+}
+
+real1_f QInterface::VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+{
+    if (weights.size() < (bits.size() << 1U)) {
+        throw std::invalid_argument(
+            "QInterface::VarianceFloatsFactorized() must supply at least twice as many weights as bits!");
+    }
+
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QInterface::VarianceFloatsFactorized() parameter qubits vector values must be within allocated qubit "
+        "bounds!");
+
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
+    const real1_f mean = ExpectationFloatsFactorized(bits, weights);
+    if (bits.size() == 1U) {
+        const real1_f prob = Prob(bits[0]);
+        const real1_f var0 = weights[0U] - mean;
+        const real1_f var1 = weights[1U] - mean;
+        return var0 * var0 * (ONE_R1_F - prob) + var1 * var1 * prob;
+    }
+
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+
+    real1_f expectation = ZERO_R1_F;
+    for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
+        real1_f weight = ONE_R1_F;
+        for (size_t p = 0U; p < bits.size(); ++p) {
+            weight *= (bi_compare_0(lcv & bitPowers[p]) == 0) ? weights[p << 1U] : weights[(p << 1U) | 1U];
+        }
+        expectation += weight * ProbAll(lcv);
+    }
+
+    return expectation;
+}
+
 real1_f QInterface::VarianceBitsAll(const std::vector<bitLenInt>& bits)
 {
     const real1_f mean = ExpectationBitsAll(bits);
@@ -485,6 +587,62 @@ real1_f QInterface::VarianceBitsAll(const std::vector<bitLenInt>& bits)
     }
 
     return tot;
+}
+
+real1_f QInterface::VariancePauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis)
+{
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        const size_t j = bits.size() - (i + 1U);
+        if (paulis[j] == PauliI) {
+            bits.erase(bits.begin() + j);
+            paulis.erase(paulis.begin() + j);
+        }
+    }
+
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
+    std::vector<real1> eigenVals;
+    eigenVals.reserve(bits.size() << 1U);
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        eigenVals.push_back(ONE_R1);
+        eigenVals.push_back(-ONE_R1);
+
+        switch (paulis[i]) {
+        case PauliX:
+            H(bits[i]);
+            break;
+        case PauliY:
+            IS(bits[i]);
+            H(bits[i]);
+            break;
+        case PauliZ:
+        case PauliI:
+        default:
+            break;
+        }
+    }
+
+    const real1_f toRet = VarianceFloatsFactorized(bits, eigenVals);
+
+    for (size_t i = 0U; i < bits.size(); ++i) {
+        switch (paulis[i]) {
+        case PauliX:
+            H(bits[i]);
+            break;
+        case PauliY:
+            H(bits[i]);
+            S(bits[i]);
+            break;
+        case PauliZ:
+        case PauliI:
+        default:
+            break;
+        }
+    }
+
+    return toRet;
 }
 
 real1_f QInterface::ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis)
@@ -538,68 +696,6 @@ real1_f QInterface::ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector
         default:
             break;
         }
-    }
-
-    return toRet;
-}
-
-real1_f QInterface::ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
-    const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals)
-{
-    if (bits.empty()) {
-        return ONE_R1;
-    }
-
-    if (eigenVals.empty()) {
-        eigenVals.reserve(bits.size() << 1U);
-        for (size_t i = 0U; i < bits.size(); ++i) {
-            eigenVals.push_back(ONE_R1);
-            eigenVals.push_back(-ONE_R1);
-        }
-    }
-
-    std::unique_ptr<complex[]> inv(new complex[4U]);
-    for (size_t i = 0U; i < bits.size(); ++i) {
-        const std::shared_ptr<complex>& mtrx = basisOps[i];
-        inv2x2(mtrx.get(), inv.get());
-        Mtrx(inv.get(), bits[i]);
-    }
-
-    const real1_f toRet = ExpectationFloatsFactorized(bits, eigenVals);
-
-    for (size_t i = 0U; i < bits.size(); ++i) {
-        const std::shared_ptr<complex>& mtrx = basisOps[i];
-        Mtrx(mtrx.get(), bits[i]);
-    }
-
-    return toRet;
-}
-
-real1_f QInterface::ExpectationUnitaryAll(
-    const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals)
-{
-    if (bits.empty()) {
-        return ONE_R1;
-    }
-
-    if (eigenVals.empty()) {
-        eigenVals.reserve(bits.size() << 1U);
-        for (size_t i = 0U; i < bits.size(); ++i) {
-            eigenVals.push_back(ONE_R1);
-            eigenVals.push_back(-ONE_R1);
-        }
-    }
-
-    for (size_t i = 0U; i < bits.size(); ++i) {
-        const size_t i3 = 3U * i;
-        U(bits[i], -basisOps[i3], -basisOps[i3 + 1U], -basisOps[i3 + 2U]);
-    }
-
-    const real1_f toRet = ExpectationFloatsFactorized(bits, eigenVals);
-
-    for (size_t i = 0U; i < bits.size(); ++i) {
-        const size_t i3 = 3U * i;
-        U(bits[i], basisOps[i3], basisOps[i3 + 1U], basisOps[i3 + 2U]);
     }
 
     return toRet;
