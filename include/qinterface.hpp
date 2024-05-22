@@ -2518,6 +2518,20 @@ public:
     virtual real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
 
     /**
+     * Direct measure of (reduced density matrix) variance of bits, given an array of qubit weights
+     *
+     * The weight-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry. If there are stabilizer ancillae, they are traced out of the reduced density matrix, giving an approximate
+     * result.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceFloatsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return VarianceFloatsFactorized(bits, weights);
+    }
+
+    /**
      * Get expectation value of bits, given an array of qubit weights
      *
      * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
