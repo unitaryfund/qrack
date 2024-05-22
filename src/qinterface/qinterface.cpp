@@ -531,6 +531,83 @@ real1_f QInterface::ExpVarUnitaryAll(
     return toRet;
 }
 
+real1_f QInterface::ExpectationBitsFactorized(
+    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset)
+{
+    if (perms.size() < (bits.size() << 1U)) {
+        throw std::invalid_argument(
+            "QInterface::ExpectationBitsFactorized() must supply at least twice as many 'perms' as bits!");
+    }
+
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QInterface::ExpectationBitsFactorized() parameter qubits vector values must be within allocated qubit "
+        "bounds!");
+
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
+    if (bits.size() == 1U) {
+        const real1_f prob = Prob(bits[0]);
+        return (
+            real1_f)(bi_to_double(perms[0U] + offset) * (ONE_R1_F - prob) + bi_to_double(perms[1U] + offset) * prob);
+    }
+
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+
+    real1_f expectation = ZERO_R1;
+    for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
+        bitCapInt retIndex = offset;
+        for (size_t p = 0U; p < bits.size(); ++p) {
+            bi_add_ip(&retIndex, (bi_compare_0(lcv & bitPowers[p]) != 0) ? perms[(p << 1U) | 1U] : perms[p << 1U]);
+        }
+        expectation += (real1_f)(bi_to_double(retIndex) * ProbAll(lcv));
+    }
+
+    return expectation;
+}
+
+real1_f QInterface::VarianceBitsFactorized(
+    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset)
+{
+    if (perms.size() < (bits.size() << 1U)) {
+        throw std::invalid_argument(
+            "QInterface::VarianceBitsFactorized() must supply at least twice as many 'perms' as bits!");
+    }
+
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QInterface::VarianceBitsFactorized() parameter qubits vector values must be within allocated qubit "
+        "bounds!");
+
+    if (bits.empty()) {
+        return ONE_R1;
+    }
+
+    const real1_f mean = ExpectationBitsFactorized(bits, perms, offset);
+    if (bits.size() == 1U) {
+        const real1_f prob = Prob(bits[0]);
+        const real1_f diff0 = bi_to_double(perms[0U] + offset) - mean;
+        const real1_f diff1 = bi_to_double(perms[1U] + offset) - mean;
+        return diff0 * diff0 * (ONE_R1_F - prob) + diff1 * diff1 * prob;
+    }
+
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+
+    real1_f expectation = ZERO_R1;
+    for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
+        bitCapInt retIndex = offset;
+        for (size_t p = 0U; p < bits.size(); ++p) {
+            bi_add_ip(&retIndex, (bi_compare_0(lcv & bitPowers[p]) != 0) ? perms[(p << 1U) | 1U] : perms[p << 1U]);
+        }
+        const real1_f diff = (real1_f)bi_to_double(retIndex) - mean;
+        expectation += diff * diff * ProbAll(lcv);
+    }
+
+    return expectation;
+}
+
 real1_f QInterface::VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
 {
     if (weights.size() < (bits.size() << 1U)) {
@@ -567,26 +644,6 @@ real1_f QInterface::VarianceFloatsFactorized(const std::vector<bitLenInt>& bits,
     }
 
     return expectation;
-}
-
-real1_f QInterface::VarianceBitsAll(const std::vector<bitLenInt>& bits)
-{
-    const real1_f mean = ExpectationBitsAll(bits);
-    std::vector<bitCapInt> bitPowers(bits.size());
-    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
-    real1_f tot = ZERO_R1_F;
-    for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
-        bitCapInt retIndex = ZERO_BCI;
-        for (size_t p = 0U; p < bits.size(); ++p) {
-            if (bi_compare_0(lcv & bitPowers[p]) != 0) {
-                bi_or_ip(&retIndex, pow2(p));
-            }
-        }
-        const real1_f diff = ((real1_f)(bi_to_double(retIndex)) - mean);
-        tot += ProbAll(lcv) * diff * diff;
-    }
-
-    return tot;
 }
 
 real1_f QInterface::VariancePauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis)
@@ -699,43 +756,6 @@ real1_f QInterface::ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector
     }
 
     return toRet;
-}
-
-real1_f QInterface::ExpectationBitsFactorized(
-    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
-{
-    if (perms.size() < (bits.size() << 1U)) {
-        throw std::invalid_argument(
-            "QInterface::ExpectationBitsFactorized() must supply at least twice as many 'perms' as bits!");
-    }
-
-    ThrowIfQbIdArrayIsBad(bits, qubitCount,
-        "QInterface::ExpectationBitsFactorized() parameter qubits vector values must be within allocated qubit "
-        "bounds!");
-
-    if (bits.empty()) {
-        return ONE_R1;
-    }
-
-    if (bits.size() == 1U) {
-        const real1_f prob = Prob(bits[0]);
-        return (
-            real1_f)(bi_to_double(perms[0U] + offset) * (ONE_R1_F - prob) + bi_to_double(perms[1U] + offset) * prob);
-    }
-
-    std::vector<bitCapInt> bitPowers(bits.size());
-    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
-
-    real1_f expectation = ZERO_R1;
-    for (bitCapInt lcv = ZERO_BCI; bi_compare(lcv, maxQPower) < 0; bi_increment(&lcv, 1U)) {
-        bitCapInt retIndex = offset;
-        for (size_t p = 0U; p < bits.size(); ++p) {
-            bi_add_ip(&retIndex, (bi_compare_0(lcv & bitPowers[p]) != 0) ? perms[(p << 1U) | 1U] : perms[p << 1U]);
-        }
-        expectation += (real1_f)(bi_to_double(retIndex) * ProbAll(lcv));
-    }
-
-    return expectation;
 }
 
 real1_f QInterface::ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
