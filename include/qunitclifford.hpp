@@ -129,6 +129,11 @@ protected:
         return controls[0U];
     }
 
+    real1_f ExpVarBitsFactorized(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms,
+        bitCapInt offset = ZERO_BCI);
+
+    real1_f ExpVarFloatsFactorized(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+
 public:
     QUnitClifford(bitLenInt n, bitCapInt perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phasFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
@@ -193,9 +198,26 @@ public:
     }
 
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI);
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+    {
+        return ExpVarBitsFactorized(true, bits, perms, offset);
+    }
 
-    real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+    real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return ExpVarFloatsFactorized(true, bits, weights);
+    }
+
+    real1_f VarianceBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+    {
+        return ExpVarBitsFactorized(false, bits, perms, offset);
+    }
+
+    real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return ExpVarFloatsFactorized(false, bits, weights);
+    }
 
     real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
 

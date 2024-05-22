@@ -352,6 +352,31 @@ real1_f QStabilizer::getExpectation(
     return weight * norm(entry.amplitude);
 }
 
+real1_f QStabilizer::getVariance(const real1_f& mean, const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
+    const std::vector<bitCapInt>& perms, bitCapInt offset)
+{
+    const AmplitudeEntry entry = getBasisAmp(nrm);
+    bitCapInt retIndex = ZERO_BCI;
+    for (size_t b = 0U; b < bitPowers.size(); ++b) {
+        bi_add_ip(
+            &retIndex, (bi_compare_0(entry.permutation & bitPowers[b]) != 0) ? perms[(b << 1U) | 1U] : perms[b << 1U]);
+    }
+    const real1_f diff = ((real1_f)bi_to_double(offset + retIndex)) - mean;
+    return diff * diff * norm(entry.amplitude);
+}
+
+real1_f QStabilizer::getVariance(const real1_f& mean, const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
+    const std::vector<real1_f>& weights)
+{
+    const AmplitudeEntry entry = getBasisAmp(nrm);
+    real1_f weight = ZERO_R1_F;
+    for (size_t b = 0U; b < bitPowers.size(); ++b) {
+        weight += (bi_compare_0(entry.permutation & bitPowers[b]) != 0) ? weights[(b << 1U) | 1U] : weights[b << 1U];
+    }
+    const real1_f diff = weight - mean;
+    return diff * diff * norm(entry.amplitude);
+}
+
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
 
@@ -686,6 +711,88 @@ real1_f QStabilizer::ExpectationFloatsFactorized(
             }
         }
         expectation += getExpectation(nrm, bitPowers, weights);
+    }
+
+    return expectation;
+}
+
+real1_f QStabilizer::VarianceBitsFactorized(
+    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
+{
+    if (perms.size() < (bits.size() << 1U)) {
+        throw std::invalid_argument(
+            "QStabilizer::ExpectationBitsFactorized must supply at least twice as many weights as bits!");
+    }
+
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QStabilizer::ExpectationBitsAllRdm parameter qubits vector values must be within allocated qubit bounds!");
+
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapInt permCount = pow2(g);
+    bitCapInt permCountMin1 = permCount;
+    bi_decrement(&permCountMin1, 1U);
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
+
+    seed(g);
+
+    const real1_f mean = ExpectationBitsFactorized(bits, perms, offset);
+    real1 expectation = (real1)getVariance(mean, nrm, bitPowers, perms, offset);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = t ^ (t + ONE_BCI);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if (bi_and_1(t2 >> i)) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        expectation += (real1)getVariance(mean, nrm, bitPowers, perms, offset);
+    }
+
+    return (real1_f)expectation;
+}
+
+real1_f QStabilizer::VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+{
+    if (weights.size() < (bits.size() << 1U)) {
+        throw std::invalid_argument(
+            "QStabilizer::ExpectationFloatsFactorized() must supply at least twice as many weights as bits!");
+    }
+
+    ThrowIfQbIdArrayIsBad(bits, qubitCount,
+        "QStabilizer::ExpectationFloatsFactorized() parameter qubits vector values must be within allocated qubit "
+        "bounds!");
+
+    std::vector<bitCapInt> bitPowers(bits.size());
+    std::transform(bits.begin(), bits.end(), bitPowers.begin(), pow2);
+
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapInt permCount = pow2(g);
+    bitCapInt permCountMin1 = permCount;
+    bi_decrement(&permCountMin1, 1U);
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1_F / (real1_f)bi_to_double(permCount));
+
+    seed(g);
+
+    const real1_f mean = ExpectationFloatsFactorized(bits, weights);
+    real1_f expectation = getVariance(mean, nrm, bitPowers, weights);
+    for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMin1) < 0; bi_increment(&t, 1U)) {
+        const bitCapInt t2 = t ^ (t + ONE_BCI);
+        for (bitLenInt i = 0U; i < g; ++i) {
+            if (bi_and_1(t2 >> i)) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        expectation += getVariance(mean, nrm, bitPowers, weights);
     }
 
     return expectation;

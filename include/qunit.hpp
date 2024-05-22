@@ -518,28 +518,29 @@ protected:
 
         if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
             OrderContiguous(shards[0U].unit);
-            return isExp ? isFloat ? (isRdm ? shards[0U].unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
-                                            : shards[0U].unit->ExpectationFloatsFactorized(bits, weights))
-                                   : (isRdm ? shards[0U].unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
-                                            : shards[0U].unit->ExpectationBitsFactorized(bits, perms, offset))
-                         : isFloat ? (isRdm ? shards[0U].unit->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
-                                            : shards[0U].unit->VarianceFloatsFactorized(bits, weights))
-                                   : (isRdm ? shards[0U].unit->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset)
-                                            : shards[0U].unit->VarianceBitsFactorized(bits, perms, offset));
+            return isExp  ? isFloat
+                     ? (isRdm ? shards[0U].unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                              : shards[0U].unit->ExpectationFloatsFactorized(bits, weights))
+                     : (isRdm ? shards[0U].unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+                              : shards[0U].unit->ExpectationBitsFactorized(bits, perms, offset))
+                 : isFloat ? (isRdm ? shards[0U].unit->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
+                                    : shards[0U].unit->VarianceFloatsFactorized(bits, weights))
+                          : (isRdm ? shards[0U].unit->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset)
+                                   : shards[0U].unit->VarianceBitsFactorized(bits, perms, offset));
         }
 
         QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
         QInterfacePtr unit = clone->EntangleAll(true);
         clone->OrderContiguous(unit);
 
-        return isExp ? isFloat ? (isRdm ? unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
-                                        : unit->ExpectationFloatsFactorized(bits, weights))
-                               : (isRdm ? unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
-                                        : unit->ExpectationBitsFactorized(bits, perms, offset))
-                     : isFloat ? (isRdm ? unit->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
-                                        : unit->VarianceFloatsFactorized(bits, weights))
-                               : (isRdm ? unit->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset)
-                                        : unit->VarianceBitsFactorized(bits, perms, offset));
+        return isExp  ? isFloat ? (isRdm ? unit->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                                         : unit->ExpectationFloatsFactorized(bits, weights))
+                                : (isRdm ? unit->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+                                         : unit->ExpectationBitsFactorized(bits, perms, offset))
+             : isFloat ? (isRdm ? unit->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
+                                : unit->VarianceFloatsFactorized(bits, weights))
+                      : (isRdm ? unit->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset)
+                               : unit->VarianceBitsFactorized(bits, perms, offset));
     }
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt> bits);

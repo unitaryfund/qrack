@@ -2526,7 +2526,8 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f VarianceFloatsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    virtual real1_f VarianceFloatsFactorizedRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
     {
         return VarianceFloatsFactorized(bits, weights);
     }
@@ -2694,7 +2695,8 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    virtual real1_f ExpectationBitsAllRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpectationBitsAll(bits, offset);
     }
