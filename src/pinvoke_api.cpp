@@ -2486,7 +2486,7 @@ MICROSOFT_QUANTUM_DECL double PermutationProbRdm(
     return _PermutationProb(sid, n, q, c, true, r);
 }
 
-double _PermutationExpectation(uintq sid, uintq n, uintq* q, bool r, bool isRdm)
+double _PermutationExpVar(uintq sid, uintq n, uintq* q, bool r, bool isRdm, bool isExp)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2497,7 +2497,10 @@ double _PermutationExpectation(uintq sid, uintq n, uintq* q, bool r, bool isRdm)
     }
 
     try {
-        return isRdm ? (double)simulator->ExpectationBitsAllRdm(r, _q) : (double)simulator->ExpectationBitsAll(_q);
+        return isExp
+            ? isRdm ? (double)simulator->ExpectationBitsAllRdm(r, _q) : (double)simulator->ExpectationBitsAll(_q)
+            : isRdm ? (double)simulator->VarianceBitsAllRdm(r, _q)
+                    : (double)simulator->VarianceBitsAll(_q);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2510,7 +2513,7 @@ double _PermutationExpectation(uintq sid, uintq n, uintq* q, bool r, bool isRdm)
  */
 MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q)
 {
-    return _PermutationExpectation(sid, n, q, false, false);
+    return _PermutationExpVar(sid, n, q, false, false, true);
 }
 
 /**
@@ -2519,10 +2522,27 @@ MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq 
  */
 MICROSOFT_QUANTUM_DECL double PermutationExpectationRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, bool r)
 {
-    return _PermutationExpectation(sid, n, q, r, true);
+    return _PermutationExpVar(sid, n, q, r, true, true);
 }
 
-double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, real1_f* f, bool r, bool isRdm)
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double PermutationVariance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q)
+{
+    return _PermutationExpVar(sid, n, q, false, false, false);
+}
+
+/**
+ * (External API) Get the permutation variance based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double PermutationVarianceRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, bool r)
+{
+    return _PermutationExpVar(sid, n, q, r, true, false);
+}
+
+double _FactorizedExpVar(uintq sid, uintq n, uintq* q, uintq m, uintq* c, real1_f* f, bool r, bool isRdm, bool isExp)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2562,10 +2582,14 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
     }
 
     try {
-        return c    ? isRdm ? (double)simulator->ExpectationBitsFactorizedRdm(r, _q, _c)
-                            : (double)simulator->ExpectationBitsFactorized(_q, _c)
-               : isRdm ? (double)simulator->ExpectationFloatsFactorizedRdm(r, _q, _f)
-                    : (double)simulator->ExpectationFloatsFactorized(_q, _f);
+        return isExp ? c ? isRdm ? (double)simulator->ExpectationBitsFactorizedRdm(r, _q, _c)
+                                 : (double)simulator->ExpectationBitsFactorized(_q, _c)
+                : isRdm ? (double)simulator->ExpectationFloatsFactorizedRdm(r, _q, _f)
+                         : (double)simulator->ExpectationFloatsFactorized(_q, _f)
+            : c ? isRdm ? (double)simulator->VarianceBitsFactorizedRdm(r, _q, _c)
+                        : (double)simulator->VarianceBitsFactorized(_q, _c)
+            : isRdm ? (double)simulator->VarianceFloatsFactorizedRdm(r, _q, _f)
+                     : (double)simulator->VarianceFloatsFactorized(_q, _f);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2579,7 +2603,7 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
 MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c)
 {
-    return _FactorizedExpectation(sid, n, q, m, c, NULL, false, false);
+    return _FactorizedExpVar(sid, n, q, m, c, NULL, false, false, true);
 }
 
 /**
@@ -2589,7 +2613,26 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r)
 {
-    return _FactorizedExpectation(sid, n, q, m, c, NULL, r, true);
+    return _FactorizedExpVar(sid, n, q, m, c, NULL, r, true, true);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c)
+{
+    return _FactorizedExpVar(sid, n, q, m, c, NULL, false, false, false);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r)
+{
+    return _FactorizedExpVar(sid, n, q, m, c, NULL, r, true, false);
 }
 
 /**
@@ -2597,7 +2640,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
  */
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c)
 {
-    return _FactorizedExpectation(sid, n, q, 0U, NULL, c, false, false);
+    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, false, false, true);
 }
 
 /**
@@ -2607,14 +2650,28 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c, _In_ bool r)
 {
-    return _FactorizedExpectation(sid, n, q, 0U, NULL, c, r, true);
+    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, r, true, true);
 }
 
 /**
- * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ * (External API) Get the permutation variance, based upon the order of input qubits.
  */
-MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b)
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c)
+{
+    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, false, false, false);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFpRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c, _In_ bool r)
+{
+    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, r, true, false);
+}
+
+double UnitaryExpVar(bool isExp, uintq sid, uintq n, uintq* q, real1* b)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2630,14 +2687,28 @@ MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
         }
     }
 
-    return simulator->ExpectationUnitaryAll(_q, _b);
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
 }
 
 /**
- * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
  */
-MICROSOFT_QUANTUM_DECL double MatrixExpectation(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b)
+MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b)
+{
+    return UnitaryExpVar(true, sid, n, q, b);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double UnitaryVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b)
+{
+    return UnitaryExpVar(false, sid, n, q, b);
+}
+
+double MatrixExpVar(bool isExp, uintq sid, uintq n, uintq* q, real1* b)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2655,14 +2726,28 @@ MICROSOFT_QUANTUM_DECL double MatrixExpectation(
         }
     }
 
-    return simulator->ExpectationUnitaryAll(_q, _b);
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
 }
 
 /**
- * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
  */
-MICROSOFT_QUANTUM_DECL double UnitaryExpectationExpVal(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b, _In_reads_(2 * n) real1* e)
+MICROSOFT_QUANTUM_DECL double MatrixExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b)
+{
+    return MatrixExpVar(true, sid, n, q, b);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double MatrixVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b)
+{
+    return MatrixExpVar(false, sid, n, q, b);
+}
+
+double UnitaryExpVarEigenVal(bool isExp, uintq sid, uintq n, uintq* q, real1* b, real1* e)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2685,14 +2770,28 @@ MICROSOFT_QUANTUM_DECL double UnitaryExpectationExpVal(
         }
     }
 
-    return simulator->ExpectationUnitaryAll(_q, _b);
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
 }
 
 /**
- * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
  */
-MICROSOFT_QUANTUM_DECL double MatrixExpectationExpVal(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b, _In_reads_(2 * n) real1* e)
+MICROSOFT_QUANTUM_DECL double UnitaryExpectationEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    return UnitaryExpVarEigenVal(true, sid, n, q, b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double UnitaryVarianceEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    return UnitaryExpVarEigenVal(false, sid, n, q, b, e);
+}
+
+double MatrixExpVarEigenVal(bool isExp, uintq sid, uintq n, uintq* q, real1* b, real1* e)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2712,14 +2811,28 @@ MICROSOFT_QUANTUM_DECL double MatrixExpectationExpVal(
         }
     }
 
-    return simulator->ExpectationUnitaryAll(_q, _b);
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
 }
 
 /**
- * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
+ * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
  */
-MICROSOFT_QUANTUM_DECL double PauliExpectation(
-    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b)
+MICROSOFT_QUANTUM_DECL double MatrixExpectationEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    return MatrixExpVarEigenVal(true, sid, n, q, b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double MatrixVarianceEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    return MatrixExpVarEigenVal(false, sid, n, q, b, e);
+}
+
+double PauliExpVar(bool isExp, uintq sid, uintq n, uintq* q, uintq* b)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2732,7 +2845,25 @@ MICROSOFT_QUANTUM_DECL double PauliExpectation(
         _b.emplace_back((Pauli)b[i]);
     }
 
-    return simulator->ExpectationPauliAll(_q, _b);
+    return isExp ? simulator->ExpectationPauliAll(_q, _b) : simulator->VariancePauliAll(_q, _b);
+}
+
+/**
+ * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double PauliExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b)
+{
+    return PauliExpVar(true, sid, n, q, b);
+}
+
+/**
+ * (External API) Get the Pauli operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double PauliVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b)
+{
+    return PauliExpVar(false, sid, n, q, b);
 }
 
 MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
