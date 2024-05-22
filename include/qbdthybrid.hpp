@@ -907,14 +907,14 @@ public:
         }
     }
 
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         if (qbdt) {
             return qbdt->ExpectationBitsAll(bits, offset);
         }
         return engine->ExpectationBitsAll(bits, offset);
     }
-    real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
+    real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         if (qbdt) {
             return qbdt->VarianceBitsAll(bits, offset);

@@ -37,10 +37,10 @@ struct QubitIndexState {
     }
 };
 
-struct QubitIntegerExpectation {
+struct QubitIntegerExpVar {
     bitLenInt qid;
     bitCapInt val;
-    QubitIntegerExpectation(bitLenInt q, bitCapInt v)
+    QubitIntegerExpVar(bitLenInt q, bitCapInt v)
         : qid(q)
         , val(v)
     {
@@ -48,10 +48,10 @@ struct QubitIntegerExpectation {
     }
 };
 
-struct QubitRealExpectation {
+struct QubitRealExpVar {
     bitLenInt qid;
     real1_f val;
-    QubitRealExpectation(bitLenInt q, real1_f v)
+    QubitRealExpVar(bitLenInt q, real1_f v)
         : qid(q)
         , val(v)
     {
@@ -184,21 +184,21 @@ real1_f PermutationExpectationRdm(quid sid, std::vector<bitLenInt> q, bool r);
 /**
  * Expectation value for bit-string integer from group of qubits with per-qubit integer expectation value
  */
-real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpectation> q);
+real1_f FactorizedExpectation(quid sid, std::vector<QubitIntegerExpVar> q);
 /**
  * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit integer
  * expectation value
  */
-real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpectation> q, bool r);
+real1_f FactorizedExpectationRdm(quid sid, std::vector<QubitIntegerExpVar> q, bool r);
 /**
  * Expectation value for bit-string integer from group of qubits with per-qubit real1 expectation value
  */
-real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpectation> q);
+real1_f FactorizedExpectationFp(quid sid, std::vector<QubitRealExpVar> q);
 /**
  * "Reduced density matrix" Expectation value for bit-string integer from group of qubits with per-qubit real1
  * expectation value
  */
-real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpectation> q, bool r);
+real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpVar> q, bool r);
 /**
  * Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
  */
@@ -210,15 +210,61 @@ real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<comple
 /**
  * Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
  */
-real1_f UnitaryExpectationExpVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e);
+real1_f UnitaryExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e);
 /**
  * Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
  */
-real1_f MatrixExpectationExpVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e);
+real1_f MatrixExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e);
 /**
  * Pauli operator expectation value for the array of qubits and bases.
  */
 real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
+/**
+ * Variance for bit-string integer equivalent of specified arbitrary group of qubits
+ */
+real1_f PermutationVariance(quid sid, std::vector<bitLenInt> q);
+/**
+ * "Reduced density matrix" variance for bit-string integer equivalent of specified arbitrary group of qubits
+ */
+real1_f PermutationVarianceRdm(quid sid, std::vector<bitLenInt> q, bool r);
+/**
+ * Variance for bit-string integer from group of qubits with per-qubit integer variance
+ */
+real1_f FactorizedVariance(quid sid, std::vector<QubitIntegerExpVar> q);
+/**
+ * "Reduced density matrix" variance for bit-string integer from group of qubits with per-qubit integer
+ * variance
+ */
+real1_f FactorizedVarianceRdm(quid sid, std::vector<QubitIntegerExpVar> q, bool r);
+/**
+ * Variance for bit-string integer from group of qubits with per-qubit real1 variance
+ */
+real1_f FactorizedVarianceFp(quid sid, std::vector<QubitRealExpVar> q);
+/**
+ * "Reduced density matrix" variance for bit-string integer from group of qubits with per-qubit real1
+ * variance
+ */
+real1_f FactorizedVarianceFpRdm(quid sid, std::vector<QubitRealExpVar> q, bool r);
+/**
+ * Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
+ */
+real1_f UnitaryVariance(quid sid, std::vector<bitLenInt> q, std::vector<real1> b);
+/**
+ * Get the single-qubit (2x2) operator variance for the array of qubits and bases.
+ */
+real1_f MatrixVariance(quid sid, std::vector<bitLenInt> q, std::vector<complex> b);
+/**
+ * Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
+ */
+real1_f UnitaryVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e);
+/**
+ * Get the single-qubit (2x2) operator variance for the array of qubits and bases.
+ */
+real1_f MatrixVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e);
+/**
+ * Pauli operator variance for the array of qubits and bases.
+ */
+real1_f PauliVariance(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
 
 /**
  * Select from a distribution of "p.size()" count of elements according to the discrete probabilities in "p."

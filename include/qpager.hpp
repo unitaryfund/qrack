@@ -96,7 +96,7 @@ protected:
 
     void GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
-    real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI);
+    real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
 
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,

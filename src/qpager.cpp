@@ -1521,7 +1521,7 @@ real1_f QPager::ProbMask(bitCapInt mask, bitCapInt permutation)
     return clampProb((real1_f)maskChance);
 }
 
-real1_f QPager::ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, bitCapInt offset)
+real1_f QPager::ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset)
 {
     if (bits.size() != qubitCount) {
         return QInterface::ExpVarBitsAll(isExp, bits, offset);

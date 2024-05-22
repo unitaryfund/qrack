@@ -130,7 +130,7 @@ protected:
     }
 
     real1_f ExpVarBitsFactorized(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms,
-        bitCapInt offset = ZERO_BCI);
+        const bitCapInt& offset = ZERO_BCI);
 
     real1_f ExpVarFloatsFactorized(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
 
@@ -198,7 +198,7 @@ public:
     }
 
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpVarBitsFactorized(true, bits, perms, offset);
     }
@@ -209,7 +209,7 @@ public:
     }
 
     real1_f VarianceBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpVarBitsFactorized(false, bits, perms, offset);
     }

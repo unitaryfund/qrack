@@ -329,8 +329,8 @@ void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
     outputProbs[(bitCapIntOcl)entry.permutation] = norm(entry.amplitude);
 }
 
-real1_f QStabilizer::getExpectation(
-    const real1_f& nrm, const std::vector<bitCapInt>& bitPowers, const std::vector<bitCapInt>& perms, bitCapInt offset)
+real1_f QStabilizer::getExpectation(const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
+    const std::vector<bitCapInt>& perms, const bitCapInt& offset)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
     bitCapInt retIndex = ZERO_BCI;
@@ -353,7 +353,7 @@ real1_f QStabilizer::getExpectation(
 }
 
 real1_f QStabilizer::getVariance(const real1_f& mean, const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
-    const std::vector<bitCapInt>& perms, bitCapInt offset)
+    const std::vector<bitCapInt>& perms, const bitCapInt& offset)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
     bitCapInt retIndex = ZERO_BCI;
@@ -636,7 +636,7 @@ AmplitudeEntry QStabilizer::GetQubitAmplitude(bitLenInt t, bool m)
 }
 
 real1_f QStabilizer::ExpectationBitsFactorized(
-    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
+    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset)
 {
     if (perms.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
@@ -717,7 +717,7 @@ real1_f QStabilizer::ExpectationFloatsFactorized(
 }
 
 real1_f QStabilizer::VarianceBitsFactorized(
-    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
+    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset)
 {
     if (perms.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(

@@ -405,22 +405,22 @@ public:
     }
     virtual real1_f SumSqrDiff(QUnitPtr toCompare);
     virtual real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpVarFactorized(true, false, false, bits, perms, std::vector<real1_f>(), offset, false);
     }
     virtual real1_f ExpectationBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
-        const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpVarFactorized(true, true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }
     virtual real1_f VarianceBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpVarFactorized(false, false, false, bits, perms, std::vector<real1_f>(), offset, false);
     }
     virtual real1_f VarianceBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
-        const std::vector<bitCapInt>& perms, bitCapInt offset = ZERO_BCI)
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpVarFactorized(false, true, false, bits, perms, std::vector<real1_f>(), offset, roundRz);
     }

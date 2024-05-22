@@ -44,7 +44,7 @@ QInterfacePtr QUnitClifford::CloneBody(QUnitCliffordPtr copyPtr)
 }
 
 real1_f QUnitClifford::ExpVarBitsFactorized(
-    bool isExp, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
+    bool isExp, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset)
 {
     if (perms.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
