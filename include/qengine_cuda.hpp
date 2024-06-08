@@ -422,7 +422,7 @@ public:
     void ProbMaskAll(bitCapInt mask, real1* probsArray);
     real1_f ProbParity(bitCapInt mask);
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI);
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
 
     void SetDevice(int64_t dID);
     int64_t GetDevice() { return deviceID; }

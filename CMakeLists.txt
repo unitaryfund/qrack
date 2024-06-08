@@ -175,9 +175,9 @@ else (ENABLE_SSE3)
 endif (ENABLE_SSE3)
 
 if (QBCAPPOW GREATER 6)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Xcompiler -fpermissive --compiler-options -Xptxas -O3,)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Xcompiler -fpermissive --ptxas-options -O3,)
 else (QBCAPPOW GREATER 6)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Werror all-warnings --compiler-options -Xptxas -O3,)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Werror all-warnings --ptxas-options -O3,)
 endif (QBCAPPOW GREATER 6)
 
 if (MSVC)
