@@ -52,15 +52,14 @@ public:
         : device_id(dev_id)
         , queue(0)
         , params_queue(0)
-#if ENABLE_OCL_MEM_GUARDS
-        , globalLimit((maxAlloc >= 0) ? maxAlloc : properties.totalGlobalMem)
-#else
         , globalLimit((maxAlloc >= 0) ? maxAlloc : -1)
-#endif
         , preferredSizeMultiple(0U)
         , preferredConcurrency(0U)
     {
         cudaGetDeviceProperties(&properties, device_id);
+#if ENABLE_OCL_MEM_GUARDS
+        globalLimit = (maxAlloc >= 0) ? maxAlloc : properties.totalGlobalMem;
+#endif
 
         cudaError_t error = cudaStreamCreate(&queue);
         if (error != cudaSuccess) {
