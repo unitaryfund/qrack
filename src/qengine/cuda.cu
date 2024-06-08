@@ -1041,7 +1041,7 @@ void QEngineCUDA::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, mask, otherMask, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
 
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3U, bciArgs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -1144,7 +1144,7 @@ void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) << 1U, bciArgs);
-    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 3, &phaseFacs);
+    DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex) * 3U, &phaseFacs);
 
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -1204,7 +1204,7 @@ void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex 
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3U, bciArgs);
     BufferPtr locCmplxBuffer = MakeBuffer(CL_MEM_READ_ONLY, sizeof(complex));
     DISPATCH_TEMP_WRITE(poolItem->cmplxBuffer, sizeof(complex), &nrm);
 
@@ -1921,7 +1921,7 @@ real1_f QEngineCUDA::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitC
     DISPATCH_WRITE(bitMapBuffer, sizeof(bitCapIntOcl) * bits.size(), bitPowers.get());
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)bits.size(), (bitCapIntOcl)offset, 0U, 0U, 0U,
         0U, 0U, 0U, 0U };
-    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3, bciArgs);
+    DISPATCH_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 3U, bciArgs);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
