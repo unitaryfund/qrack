@@ -150,6 +150,16 @@ void QInterface::ZMask(bitCapInt mask)
     }
 }
 
+void QInterface::PhaseRootNMask(bitLenInt n, bitCapInt mask)
+{
+    bitCapInt v = mask;
+    while (bi_compare_0(mask) != 0) {
+        v = v & (v - ONE_BCI);
+        PhaseRootN(n, log2(mask ^ v));
+        mask = v;
+    }
+}
+
 void QInterface::Swap(bitLenInt q1, bitLenInt q2)
 {
     if (q1 == q2) {
