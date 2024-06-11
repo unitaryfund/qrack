@@ -1231,25 +1231,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zmask")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaserootnmask")
 {
-    constexpr BIG_INTEGER_WORD ket = 87;
-    constexpr BIG_INTEGER_WORD mask = 3;
-    constexpr uint16_t n = 4;
-
-    constexpr real1_f phaseCount = 3; // popcount(87 & 7)
-    const complex expectedPhase = std::polar(ONE_R1, PI_R1 * phaseCount / pow2Ocl(n - 1U));
-    std::cout << "Expected phase factor:" << expectedPhase << std::endl;
+    constexpr BIG_INTEGER_WORD ket = 14062;
+    constexpr BIG_INTEGER_WORD masks[5] = { 3097, 22225, 16051, 62894, 49134 };
+    constexpr uint16_t n = 3;
+    const uint16_t modulus = pow2Ocl(n);
+    // phaseCounts[ii] = popcount(ket & masks[ii])
+    constexpr uint16_t phaseCounts[5] = { 2, 5, 7, 8, 10 };
 
     qftReg->SetPermutation(ket);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, ket));
-    const complex amp_before = qftReg->GetAmplitude(ket);
-    std::cout << "Amplitude before mask:" << amp_before << std::endl;
-    qftReg->PhaseRootNMask(n, mask);
-    const complex amp_after = qftReg->GetAmplitude(ket);
-    std::cout << "Amplitude after mask:" << amp_after << std::endl;
-    std::cout << "Actual phase factor:" << amp_after / amp_before << std::endl;
-    REQUIRE_CMPLX(amp_after / amp_before, expectedPhase);
-}
 
+    for (int ii = 0; ii < 5; ii++) {
+        const real1_f angle = -PI_R1 * (phaseCounts[ii] % modulus) / pow2Ocl(n - 1U);
+        const complex expectedPhaseFactor = std::polar(ONE_R1, angle);
+        const complex amp_before = qftReg->GetAmplitude(ket);
+
+        qftReg->PhaseRootNMask(n, masks[ii]);
+        const complex amp_after = qftReg->GetAmplitude(ket);
+
+        REQUIRE_CMPLX(amp_after / amp_before, expectedPhaseFactor);
+    }
+}
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_approxcompare")
 {

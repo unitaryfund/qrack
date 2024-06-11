@@ -796,7 +796,7 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, bitCapInt mask)
         return;
     }
 
-    const real1_f radians = PI_R1 / pow2Ocl(n - 1U);
+    const real1_f radians = -PI_R1 / pow2Ocl(n - 1U);
 
     if (isPowerOfTwo(mask)) {
         const complex phaseFac = std::polar(ONE_R1, radians);
@@ -810,7 +810,6 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, bitCapInt mask)
     }
 
     Dispatch(maxQPowerOcl, [this, n, mask, radians] {
-        //const bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
         const bitCapIntOcl maskOcl = (bitCapIntOcl)mask;
         const bitCapIntOcl nPhases = pow2Ocl(n);
         ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
