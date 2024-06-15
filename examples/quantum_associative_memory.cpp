@@ -29,7 +29,7 @@ int main()
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, InputCount + OutputCount, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, InputCount + OutputCount, ZERO_BCI);
 
     std::vector<bitLenInt> inputIndices(InputCount);
     for (bitLenInt i = 0; i < InputCount; i++) {
@@ -43,17 +43,17 @@ int main()
 
     // Train the network to associate powers of 2 with their log2()
     std::cout << "Learning (Two's complement)..." << std::endl;
-    for (bitCapInt perm = 0; perm < InputPower; perm++) {
-        std::cout << "Epoch " << (perm + 1U) << " out of " << InputPower << std::endl;
-        const bitCapInt comp = (~perm) + 1U;
+    for (bitCapInt perm = ZERO_BCI; bi_compare(perm, InputPower) < 0; bi_increment(&perm, 1U)) {
+        std::cout << "Epoch " << (perm + ONE_BCI) << " out of " << InputPower << std::endl;
+        const bitCapInt comp = (~perm) + ONE_BCI;
+        qReg->SetPermutation(perm);
         for (bitLenInt i = 0; i < OutputCount; i++) {
-            qReg->SetPermutation(perm);
-            outputLayer[i]->LearnPermutation((real1_f)eta, (comp & pow2(i)) != 0);
+            outputLayer[i]->LearnPermutation((real1_f)eta, bi_compare_0(comp & pow2(i)) != 0);
         }
     }
 
     std::cout << "Should associate each input with its two's complement as output..." << std::endl;
-    for (bitCapInt perm = 0; perm < InputPower; perm++) {
+    for (bitCapInt perm = ZERO_BCI; bi_compare(perm, InputPower) < 0; bi_increment(&perm, 1U)) {
         qReg->SetPermutation(perm);
         for (bitLenInt i = 0; i < OutputCount; i++) {
             outputLayer[i]->Predict();

@@ -49,10 +49,6 @@ bool operator==(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs)
         return !rhs;
     }
 
-    if (!rhs) {
-        return false;
-    }
-
     return lhs->isEqual(rhs);
 }
 
@@ -60,6 +56,10 @@ bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs) { return !(l
 
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
+    if (!r) {
+        return false;
+    }
+
     if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
@@ -84,19 +84,22 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 {
     const size_t _b = b ? 1U : 0U;
 
-    if (!branches[_b] != !r->branches[_b]) {
-        return false;
-    }
-
-    if (branches[_b].get() == r->branches[_b].get()) {
-        return true;
+    if (!branches[_b] || !r->branches[_b]) {
+        return !branches[_b] == !r->branches[_b];
     }
 
     QBdtNodeInterfacePtr& lLeaf = branches[_b];
     QBdtNodeInterfacePtr& rLeaf = r->branches[_b];
+
+    if (lLeaf.get() == rLeaf.get()) {
+        return true;
+    }
+
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::lock(*(lLeaf->mtx.get()), *(rLeaf->mtx.get()));
     std::lock_guard<std::mutex> lLock(*(lLeaf->mtx.get()), std::adopt_lock);
     std::lock_guard<std::mutex> rLock(*(rLeaf->mtx.get()), std::adopt_lock);
+#endif
 
     if (lLeaf != rLeaf) {
         return false;
@@ -104,16 +107,22 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 
     // These lLeaf and rLeaf are deemed equal.
     // Since we allow approximation in determining equality,
-    // amortize error by averaging the scale.
+    // amortize error by (L2 or L1) averaging scale.
     // (All other update operations on the branches are blocked by the mutexes.)
-    // We can weight by use_count() of each leaf, which should roughly correspond
-    // to the number of branches that point to each node.
+    // We can weight by square use_count() of each leaf, which should roughly
+    // correspond to the number of branches that point to each node.
 
-    const real1 lWeight = (real1)lLeaf.use_count();
-    const real1 rWeight = (real1)rLeaf.use_count();
+    const real1 lWeight = (real1)(lLeaf.use_count() * lLeaf.use_count());
+    const real1 rWeight = (real1)(rLeaf.use_count() * rLeaf.use_count());
     const complex nScale = (lWeight * lLeaf->scale + rWeight * rLeaf->scale) / (lWeight + rWeight);
-    lLeaf->scale = nScale;
-    rLeaf->scale = nScale;
+
+    if (IS_NODE_0(nScale)) {
+        lLeaf->SetZero();
+        rLeaf->SetZero();
+    } else {
+        lLeaf->scale = nScale;
+        rLeaf->scale = nScale;
+    }
 
     // Set the branches equal.
     rLeaf = lLeaf;
@@ -125,6 +134,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
 {
     if (IS_NODE_0(scale)) {
+        SetZero();
         return NULL;
     }
 
@@ -135,22 +145,35 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
 
         QBdtNodeInterfacePtr toRet1, toRet2;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((depth >= pStridePow) && (pow2(parDepth) <= numThreads)) {
+        if ((depth >= pStridePow) && (pow2Ocl(parDepth) <= numThreads)) {
             ++parDepth;
-            std::future<QBdtNodeInterfacePtr> future0 = std::async(
-                std::launch::async, [&] { return branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth); });
-            toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            std::future<QBdtNodeInterfacePtr> future0 = std::async(std::launch::async, [&] {
+                std::lock_guard<std::mutex> lock(*(branches[0U]->mtx.get()));
+                return branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            });
+            if (true) {
+                std::lock_guard<std::mutex> lock(*(branches[1U]->mtx.get()));
+                toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            }
             toRet1 = future0.get();
         } else {
-            toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
-            toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            if (true) {
+                std::lock_guard<std::mutex> lock(*(branches[0U]->mtx.get()));
+                toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            }
+            if (true) {
+                std::lock_guard<std::mutex> lock(*(branches[1U]->mtx.get()));
+                toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+            }
         }
 #else
         toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
         toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
 #endif
 
-        return (norm(branches[0U]->scale) > norm(branches[1U]->scale)) ? toRet1 : toRet2;
+        return !toRet1
+            ? toRet2
+            : (!toRet2 ? toRet1 : ((norm(branches[1U]->scale) > norm(branches[0U]->scale)) ? toRet2 : toRet1));
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
@@ -174,20 +197,22 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     const bitCapInt Stride = pStride;
-    unsigned threads = (unsigned)(end / pStride);
+    bitCapInt _t;
+    bi_div_mod(end, pStride, &_t, NULL);
+    unsigned threads = (bitCapIntOcl)_t;
     if (threads > numThreads) {
         threads = numThreads;
     }
 
     if (threads <= 1U) {
-        for (bitCapInt j = 0U; j < end; ++j) {
-            j |= fn(j);
+        for (bitCapInt j = ZERO_BCI; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
+            bi_or_ip(&j, fn(j));
         }
         return;
     }
 
     std::mutex myMutex;
-    bitCapInt idx = 0U;
+    bitCapInt idx = ZERO_BCI;
     std::vector<std::future<void>> futures;
     futures.reserve(threads);
     for (unsigned cpu = 0U; cpu != threads; ++cpu) {
@@ -196,21 +221,24 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
                 bitCapInt i;
                 if (true) {
                     std::lock_guard<std::mutex> lock(myMutex);
-                    i = idx++;
+                    i = idx;
+                    bi_increment(&idx, 1U);
                 }
                 const bitCapInt l = i * Stride;
-                if (l >= end) {
+                if (bi_compare(l, end) >= 0) {
                     break;
                 }
                 const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
                 bitCapInt j;
-                for (j = 0U; j < maxJ; ++j) {
+                for (j = ZERO_BCI; bi_compare(j, maxJ) < 0; bi_increment(&j, 1U)) {
                     bitCapInt k = j + l;
-                    k |= fn(k);
+                    bi_or_ip(&k, fn(k));
                     j = k - l;
-                    if (j >= maxJ) {
+                    if (bi_compare(j, maxJ) >= 0) {
                         std::lock_guard<std::mutex> lock(myMutex);
-                        idx |= j / Stride;
+                        bitCapInt _j;
+                        bi_div_mod(j, Stride, &_j, NULL);
+                        bi_or_ip(&idx, _j);
                         break;
                     }
                 }
@@ -225,8 +253,8 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 #else
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
-    for (bitCapInt j = 0U; j < end; ++j) {
-        j |= fn(j);
+    for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
+        bi_or_ip(&j, fn(j));
     }
 }
 #endif

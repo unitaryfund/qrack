@@ -6,5 +6,6 @@ if (ENABLE_QBDT)
         src/qbdt/node.cpp
         src/qbdt/qstabilizer_node.cpp
         src/qbdt/tree.cpp
+        src/qbdthybrid.cpp
         )
 endif (ENABLE_QBDT)

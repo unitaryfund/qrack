@@ -26,6 +26,14 @@
 
 #include "tests.hpp"
 
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
@@ -64,9 +72,9 @@ std::vector<QInterfaceEngine> BuildEngineStack()
     std::vector<QInterfaceEngine> engineStack;
     if (optimal) {
         engineStack.push_back(QINTERFACE_TENSOR_NETWORK);
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL || ENABLE_CUDA
         engineStack.push_back(
-            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+            (QRACK_GPU_SINGLETON.GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
 #else
         engineStack.push_back(QINTERFACE_OPTIMAL);
 #endif
@@ -77,6 +85,7 @@ std::vector<QInterfaceEngine> BuildEngineStack()
         engineStack.push_back(testEngineType);
         engineStack.push_back(testSubEngineType);
         engineStack.push_back(testSubSubEngineType);
+        engineStack.push_back(testSubSubSubEngineType);
     }
 
     return engineStack;
@@ -96,7 +105,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "Median (ms), ";
     std::cout << "3rd Quartile (ms), ";
     std::cout << "Slowest (ms), ";
-    std::cout << "Failure count" << std::endl;
+    std::cout << "Failure count, ";
+    std::cout << "Average SDRP Fidelity" << std::endl;
 
     std::vector<double> trialClocks;
 
@@ -110,7 +120,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
     for (bitLenInt numBits = mnQbts; numBits <= mxQbts; numBits++) {
-        QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
+        QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG,
             enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
         if (disable_t_injection) {
             qftReg->SetTInjection(false);
@@ -119,6 +129,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             qftReg->SetReactiveSeparate(false);
         }
         double avgt = 0.0;
+        double avgf = 0.0;
         int sampleFailureCount = 0;
         trialClocks.clear();
 
@@ -128,15 +139,16 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         for (int sample = 0; sample < benchmarkSamples; sample++) {
+            qftReg->ResetUnitaryFidelity();
             if (!qUniverse) {
                 if (resetRandomPerm) {
-                    bitCapInt perm = (bitCapInt)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower());
-                    if (perm >= qftReg->GetMaxQPower()) {
+                    bitCapInt perm = (bitCapIntOcl)(qftReg->Rand() * bi_to_double(qftReg->GetMaxQPower()));
+                    if (bi_compare(perm, qftReg->GetMaxQPower()) >= 0) {
                         perm = qftReg->GetMaxQPower() - ONE_BCI;
                     }
                     qftReg->SetPermutation(perm);
                 } else {
-                    qftReg->SetPermutation(0);
+                    qftReg->SetPermutation(ZERO_BCI);
                 }
                 if (hadamardRandomBits) {
                     for (bitLenInt j = 0; j < numBits; j++) {
@@ -146,7 +158,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     }
                 }
             } else {
-                qftReg->SetPermutation(0);
+                qftReg->SetPermutation(ZERO_BCI);
                 for (bitLenInt i = 0; i < numBits; i++) {
                     RandomInitQubit(qftReg, i);
                 }
@@ -168,8 +180,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 qftReg = NULL;
 
                 // Re-alloc:
-                qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
-                    true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+                qftReg =
+                    CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG, enable_normalization,
+                        true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
                 if (disable_t_injection) {
                     qftReg->SetTInjection(false);
                 }
@@ -182,6 +195,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
             // Collect interval data
             if (isTrialSuccessful) {
+                double fidelity = qftReg->GetUnitaryFidelity();
                 if (!disable_terminal_measurement) {
                     if (benchmarkShots == 1) {
                         bitCapInt result;
@@ -192,7 +206,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                             qftReg = NULL;
 
                             // Re-alloc:
-                            qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
+                            qftReg = CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG,
                                 enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
                                 REAL1_EPSILON, devList);
                             if (disable_t_injection) {
@@ -217,6 +231,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     }
                 }
 
+                if (fidelity > qftReg->GetUnitaryFidelity()) {
+                    fidelity = qftReg->GetUnitaryFidelity();
+                }
+                avgf += fidelity;
+
                 // Clock stops after benchmark definition plus measurement sampling.
                 auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::high_resolution_clock::now() - iterClock);
@@ -240,8 +259,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 qftReg = NULL;
 
                 // Re-alloc:
-                qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
-                    true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+                qftReg =
+                    CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG, enable_normalization,
+                        true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
                 if (disable_t_injection) {
                     qftReg->SetTInjection(false);
                 }
@@ -250,7 +270,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 }
 
                 sampleFailureCount++;
-                isTrialSuccessful = false;
             }
         }
 
@@ -260,6 +279,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         avgt /= trialClocks.size();
+        avgf /= trialClocks.size();
 
         double stdet = 0.0;
         for (int sample = 0; sample < (int)trialClocks.size(); sample++) {
@@ -275,6 +295,16 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
         // Fastest (ms)
         std::cout << formatTime(trialClocks[0], logNormal) << ",";
+
+        if (trialClocks.size() == 1) {
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+            std::cout << sampleFailureCount << ",";
+            std::cout << avgf << std::endl;
+            continue;
+        }
 
         // 1st Quartile (ms)
         if (trialClocks.size() < 8) {
@@ -319,7 +349,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         // Failure count
-        std::cout << sampleFailureCount << std::endl;
+        std::cout << sampleFailureCount << ",";
+        // Average SDRP fidelity
+        std::cout << avgf << std::endl;
     }
 }
 
@@ -443,30 +475,30 @@ TEST_CASE("test_rol", "[gates]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ROL(1, 0, n); });
 }
 
-#if ENABLE_ALU
 TEST_CASE("test_inc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INC(1, 0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INC(ONE_BCI, 0, n); });
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_incs", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCS(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCS(ONE_BCI, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_incc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCC(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCC(ONE_BCI, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_incsc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCSC(1, 0, n - 2, n - 2, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCSC(ONE_BCI, 0, n - 2, n - 2, n - 1); });
 }
 
 TEST_CASE("test_c_phase_flip_if_less", "[phaseflip]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->CPhaseFlipIfLess(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->CPhaseFlipIfLess(ONE_BCI, 0, n - 1, n - 1); });
 }
 #endif
 
@@ -484,15 +516,15 @@ TEST_CASE("test_phase_flip", "[phaseflip]")
 void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> fn)
 {
     const bitCapIntOcl wordLength = (max_qubits / 16U + 1U);
-    const bitCapIntOcl indexLength = ((bitCapIntOcl)ONE_BCI << (max_qubits / 2U));
-    unsigned char* testPage = new unsigned char[wordLength * indexLength];
+    const bitCapIntOcl indexLength = pow2Ocl(max_qubits / 2U);
+    std::unique_ptr<unsigned char[]> testPage(new unsigned char[wordLength * indexLength]);
     for (bitCapIntOcl j = 0; j < indexLength; j++) {
         for (bitCapIntOcl i = 0; i < wordLength; i++) {
-            testPage[j * wordLength + i] = (j & (0xff << (8U * i))) >> (8U * i);
+            testPage.get()[j * wordLength + i] = (j & (0xff << (8U * i))) >> (8U * i);
         }
     }
-    benchmarkLoop([fn, testPage](QInterfacePtr qftReg, bitLenInt n) { fn(qftReg, n, testPage); });
-    delete[] testPage;
+    unsigned char* tp = testPage.get();
+    benchmarkLoop([fn, tp](QInterfacePtr qftReg, bitLenInt n) { fn(qftReg, n, tp); });
 }
 
 TEST_CASE("test_superposition_reg", "[indexed]")
@@ -529,7 +561,17 @@ TEST_CASE("test_proball", "[aux]")
 
 TEST_CASE("test_set_reg", "[aux]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->SetReg(0, n, 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->SetReg(0, n, ONE_BCI); });
+}
+
+TEST_CASE("test_ghz", "[gates]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) {
+        qftReg->H(0U);
+        for (bitLenInt i = 1U; i < n; ++i) {
+            qftReg->CNOT(i - 1U, i);
+        }
+    });
 }
 
 #if ENABLE_ALU
@@ -542,10 +584,10 @@ TEST_CASE("test_grover", "[grover]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) {
         // Twelve iterations maximizes the probablity for 256 searched elements, for example.
         // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
-        const int optIter = M_PI / (4.0 * asin(1.0 / sqrt((real1_s)pow2(n))));
+        const int optIter = M_PI / (4.0 * asin(1.0 / sqrt((real1_s)pow2Ocl(n))));
 
         // Our input to the subroutine "oracle" is 8 bits.
-        qftReg->SetPermutation(0);
+        qftReg->SetPermutation(ZERO_BCI);
         qftReg->H(0, n);
 
         for (int i = 0; i < optIter; i++) {
@@ -620,25 +662,30 @@ bitLenInt pickRandomBit(real1_f rand, std::set<bitLenInt>* unusedBitsPtr)
 
 TEST_CASE("test_quantum_triviality", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 5;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
-            for (int d = 0; d < benchmarkDepth; d++) {
+            const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+            for (int d = 0; d < depth; d++) {
 
-                bitCapInt xMask = 0U;
-                bitCapInt yMask = 0U;
+                bitCapInt xMask = ZERO_BCI;
+                bitCapInt yMask = ZERO_BCI;
                 for (bitLenInt i = 0; i < n; i++) {
                     const real1_f gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         // qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        xMask |= pow2(i);
+                        bi_or_ip(&xMask, pow2(i));
                     } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
-                        yMask |= pow2(i);
+                        bi_or_ip(&yMask, pow2(i));
                     } else {
                         qReg->T(i);
                     }
@@ -679,24 +726,28 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
 
 TEST_CASE("test_stabilizer", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
-
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 2;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
-            for (int d = 0; d < benchmarkDepth; d++) {
-                bitCapInt xMask = 0U;
-                bitCapInt yMask = 0U;
+            const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+            for (int d = 0; d < depth; d++) {
+                bitCapInt xMask = ZERO_BCI;
+                bitCapInt yMask = ZERO_BCI;
                 for (bitLenInt i = 0; i < n; i++) {
                     const real1_f gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        xMask |= pow2(i);
+                        bi_or_ip(&xMask, pow2(i));
                     } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
-                        yMask |= pow2(i);
+                        bi_or_ip(&yMask, pow2(i));
                     } else {
                         qReg->S(i);
                     }
@@ -728,14 +779,19 @@ TEST_CASE("test_stabilizer", "[supreme]")
 
 TEST_CASE("test_stabilizer_t", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
-        for (int d = 0; d < benchmarkDepth; d++) {
-            bitCapInt zMask = 0U;
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+        for (int d = 0; d < depth; d++) {
+            bitCapInt zMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -776,14 +832,14 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                     qReg->S(i);
                 } else if (gateRand < (3 * ONE_R1)) {
                     // Z^(3/4)
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                     qReg->IT(i);
                 } else if (gateRand < (4 * ONE_R1)) {
                     // Z
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 } else if (gateRand < (5 * ONE_R1)) {
                     // Z^(-3/4)
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                     qReg->T(i);
                 } else if (gateRand < (6 * ONE_R1)) {
                     // Z^(-1/2)
@@ -847,14 +903,19 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
 TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int DimCount1Qb = 4;
     const int DimCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
-        for (int d = 0; d < benchmarkDepth; d++) {
-            bitCapInt zMask = 0U;
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+        for (int d = 0; d < depth; d++) {
+            bitCapInt zMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -895,14 +956,14 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                     qReg->S(i);
                 } else if (gateRand < (3 * ONE_R1)) {
                     // Z^(3/4)
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                     qReg->IT(i);
                 } else if (gateRand < (4 * ONE_R1)) {
                     // Z
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 } else if (gateRand < (5 * ONE_R1)) {
                     // Z^(-3/4)
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                     qReg->T(i);
                 } else if (gateRand < (6 * ONE_R1)) {
                     // Z^(-1/2)
@@ -993,12 +1054,18 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
 TEST_CASE("test_stabilizer_t_nn", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -1014,7 +1081,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
 
         const auto iterClock = std::chrono::high_resolution_clock::now();
 
-        for (int d = 0; d < benchmarkDepth; d++) {
+        for (int d = 0; d < depth; d++) {
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -1173,7 +1240,11 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
     // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
     // for clamping of single bit states to Pauli basis axes.
 
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
     if (benchmarkMaxMagic >= 0) {
         std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
     } else {
@@ -1184,6 +1255,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
     const int GateCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
         const int tMax = (benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2);
         int tCount = 0;
 
@@ -1202,8 +1274,8 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
 
         const auto iterClock = std::chrono::high_resolution_clock::now();
 
-        for (int d = 0; d < benchmarkDepth; d++) {
-            bitCapInt zMask = 0U;
+        for (int d = 0; d < depth; d++) {
+            bitCapInt zMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -1235,7 +1307,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                 // Discrete Z root gates option:
                 gateRand = 2 * qReg->Rand();
                 if (gateRand < ONE_R1) {
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 }
 
                 gateRand = 2 * qReg->Rand();
@@ -1248,7 +1320,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                 }
 
                 if (tCount < tMax) {
-                    gateRand = n * benchmarkDepth * qReg->Rand() / (n + 2);
+                    gateRand = n * depth * qReg->Rand() / (n + 2);
                     if (gateRand < ONE_R1) {
                         if ((2 * qReg->Rand()) < ONE_R1) {
                             qReg->T(i);
@@ -1352,7 +1424,11 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
 
 TEST_CASE("test_stabilizer_rz", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
     if (benchmarkMaxMagic >= 0) {
         std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
     } else {
@@ -1360,6 +1436,7 @@ TEST_CASE("test_stabilizer_rz", "[supreme]")
     }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
         const int tMax = (benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2);
         int tCount = 0U;
 
@@ -1368,7 +1445,7 @@ TEST_CASE("test_stabilizer_rz", "[supreme]")
             qubitSet.insert(i);
         }
 
-        for (int d = 0; d < benchmarkDepth; ++d) {
+        for (int d = 0; d < depth; ++d) {
             for (bitLenInt i = 0; i < n; ++i) {
                 for (int j = 0; j < 3; ++j) {
                     // We're trying to cover 3 Pauli axes
@@ -1384,7 +1461,7 @@ TEST_CASE("test_stabilizer_rz", "[supreme]")
                         qReg->Z(i);
                     }
 
-                    if ((tCount < tMax) && (((3 * n * benchmarkDepth * qReg->Rand()) / benchmarkMaxMagic) < ONE_R1)) {
+                    if ((tCount < tMax) && (((3 * n * depth * qReg->Rand()) / benchmarkMaxMagic) < ONE_R1)) {
                         real1_f angle = ZERO_R1_F;
                         do {
                             angle = qReg->Rand();
@@ -1410,7 +1487,11 @@ TEST_CASE("test_stabilizer_rz", "[supreme]")
 
 TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
     if (benchmarkMaxMagic >= 0) {
         std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
     } else {
@@ -1421,6 +1502,7 @@ TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
     const int GateCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
         const int tMax = (benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2);
         int tCount = 0;
 
@@ -1439,8 +1521,8 @@ TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
 
         const auto iterClock = std::chrono::high_resolution_clock::now();
 
-        for (int d = 0; d < benchmarkDepth; d++) {
-            bitCapInt zMask = 0U;
+        for (int d = 0; d < depth; d++) {
+            bitCapInt zMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -1472,7 +1554,7 @@ TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
                 // Discrete Z root gates option:
                 gateRand = 2 * qReg->Rand();
                 if (gateRand < ONE_R1) {
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 }
 
                 gateRand = 2 * qReg->Rand();
@@ -1485,7 +1567,7 @@ TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
                 }
 
                 if (tCount < tMax) {
-                    gateRand = n * benchmarkDepth * qReg->Rand() / (n + 2);
+                    gateRand = n * depth * qReg->Rand() / (n + 2);
                     if (gateRand < ONE_R1) {
                         qReg->RZ(4 * PI_R1 * qReg->Rand(), i);
                         tCount++;
@@ -1589,11 +1671,17 @@ TEST_CASE("test_dense", "[supreme]")
     // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
     // for clamping of single bit states to Pauli basis axes.
 
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int GateCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -1607,7 +1695,7 @@ TEST_CASE("test_dense", "[supreme]")
         }
         const int rowLen = n / colLen;
 
-        for (int d = 0; d < benchmarkDepth; d++) {
+        for (int d = 0; d < depth; d++) {
             for (bitLenInt i = 0; i < n; i++) {
                 const real1_f theta = 4 * (real1_f)PI_R1 * qReg->Rand();
                 const real1_f phi = 4 * (real1_f)PI_R1 * qReg->Rand();
@@ -1690,12 +1778,18 @@ TEST_CASE("test_dense", "[supreme]")
 
 TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -1713,7 +1807,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
         // qReg->SetReactiveSeparate(n > maxShardQubits);
         qReg->SetReactiveSeparate(true);
 
-        for (int d = 0; d < benchmarkDepth; d++) {
+        for (int d = 0; d < depth; d++) {
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -2049,24 +2143,24 @@ TEST_CASE("test_circuit_t_nn", "[supreme]")
                     if ((2 * qReg->Rand()) < ONE_R1) {
                         if (gateRand < ONE_R1) {
                             // qReg->AntiCNOT(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, ZERO_BCI));
                         } else if (gateRand < (2 * ONE_R1)) {
                             // qReg->AntiCY(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, ZERO_BCI));
                         } else {
                             // qReg->AntiCZ(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, ZERO_BCI));
                         }
                     } else {
                         if (gateRand < ONE_R1) {
                             // qReg->CNOT(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, ONE_BCI));
                         } else if (gateRand < (2 * ONE_R1)) {
                             // qReg->CY(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, ONE_BCI));
                         } else {
                             // qReg->CZ(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, ONE_BCI));
                         }
                     }
                 }
@@ -2215,24 +2309,24 @@ TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
                     if ((2 * qReg->Rand()) < ONE_R1) {
                         if (gateRand < ONE_R1) {
                             // qReg->AntiCNOT(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, ZERO_BCI));
                         } else if (gateRand < (2 * ONE_R1)) {
                             // qReg->AntiCY(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, ZERO_BCI));
                         } else {
                             // qReg->AntiCZ(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 0U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, ZERO_BCI));
                         }
                     } else {
                         if (gateRand < ONE_R1) {
                             // qReg->CNOT(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, controls, ONE_BCI));
                         } else if (gateRand < (2 * ONE_R1)) {
                             // qReg->CY(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, controls, ONE_BCI));
                         } else {
                             // qReg->CZ(b1, b2);
-                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, 1U));
+                            circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, controls, ONE_BCI));
                         }
                     }
                 }
@@ -2297,7 +2391,12 @@ TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
     }
 #endif
 
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+
     std::cout << "(noise parameter: " << noiseParam << ")";
 
     const int DimCount1Qb = 4;
@@ -2309,6 +2408,8 @@ TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
     // }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -2326,7 +2427,7 @@ TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
         // qReg->SetReactiveSeparate(n > maxShardQubits);
         qReg->SetReactiveSeparate(true);
 
-        for (int d = 0; d < benchmarkDepth; d++) {
+        for (int d = 0; d < depth; d++) {
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
                 real1_f gateRand = DimCount1Qb * qReg->Rand();
@@ -2554,7 +2655,11 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
     // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
     // for clamping of single bit states to Pauli basis axes.
 
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int GateCountMultiQb = 3;
 
@@ -2564,6 +2669,8 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
     // }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         int d;
         bitLenInt i;
         real1_f gateRand;
@@ -2590,7 +2697,7 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
         // qReg->SetReactiveSeparate(n > maxShardQubits);
         qReg->SetReactiveSeparate(true);
 
-        for (d = 0; d < benchmarkDepth; d++) {
+        for (d = 0; d < depth; d++) {
             for (i = 0; i < n; i++) {
                 // Random general 3-parameter unitary gate via Euler angles
                 gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
@@ -2766,7 +2873,12 @@ TEST_CASE("test_noisy_dense_cc_nn", "[supreme]")
     }
 #endif
 
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+
     std::cout << "(noise parameter: " << noiseParam << ")";
 
     const int GateCountMultiQb = 3;
@@ -2777,6 +2889,8 @@ TEST_CASE("test_noisy_dense_cc_nn", "[supreme]")
     // }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         int d;
         bitLenInt i;
         real1_f gateRand;
@@ -2803,7 +2917,7 @@ TEST_CASE("test_noisy_dense_cc_nn", "[supreme]")
         // qReg->SetReactiveSeparate(n > maxShardQubits);
         qReg->SetReactiveSeparate(true);
 
-        for (d = 0; d < benchmarkDepth; d++) {
+        for (d = 0; d < depth; d++) {
             for (i = 0; i < n; i++) {
                 // Random general 3-parameter unitary gate via Euler angles
                 gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
@@ -2983,7 +3097,11 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
     // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
     // for clamping of single bit states to Pauli basis axes.
 
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int DimCount1Qb = 4;
     const int DimCountMultiQb = 4;
@@ -2994,6 +3112,8 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
     // }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         int d;
         bitLenInt i, gate;
         real1_f gateRand;
@@ -3020,7 +3140,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
         // qReg->SetReactiveSeparate(n > maxShardQubits);
         qReg->SetReactiveSeparate(true);
 
-        for (d = 0; d < benchmarkDepth; d++) {
+        for (d = 0; d < depth; d++) {
             for (i = 0; i < n; i++) {
                 // "Phase" transforms:
                 gateRand = DimCount1Qb * qReg->Rand();
@@ -3208,18 +3328,24 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
 
 TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int GateCountMultiQb = 2;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
+            const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
             int d;
             bitLenInt i;
             real1_f theta, phi, lambda;
             bitLenInt b1, b2;
 
-            for (d = 0; d < benchmarkDepth; d++) {
+            for (d = 0; d < depth; d++) {
 
                 for (i = 0; i < n; i++) {
                     theta = (real1_f)(2 * PI_R1 * qReg->Rand());
@@ -3253,20 +3379,26 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 
 TEST_CASE("test_universal_circuit_discrete", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int GateCount1Qb = 2;
     const int GateCountMultiQb = 2;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
+            const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
             int d;
             bitLenInt i;
             real1_f gateRand;
             bitLenInt b1, b2, b3;
             int maxGates;
 
-            for (d = 0; d < benchmarkDepth; d++) {
+            for (d = 0; d < depth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
@@ -3309,31 +3441,37 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
 
 TEST_CASE("test_universal_circuit_digital", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
+            const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
             int d;
             bitLenInt i;
             real1_f gateRand;
             bitLenInt b1, b2, b3;
             int maxGates;
 
-            for (d = 0; d < benchmarkDepth; d++) {
+            for (d = 0; d < depth; d++) {
 
-                bitCapInt xMask = 0U;
-                bitCapInt yMask = 0U;
+                bitCapInt xMask = ZERO_BCI;
+                bitCapInt yMask = ZERO_BCI;
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        xMask |= pow2(i);
+                        bi_or_ip(&xMask, pow2(i));
                     } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
-                        yMask |= pow2(i);
+                        bi_or_ip(&yMask, pow2(i));
                     } else {
                         qReg->T(i);
                     }
@@ -3378,13 +3516,19 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
 
 TEST_CASE("test_universal_circuit_analog", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int GateCount1Qb = 3;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
+            const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
             int d;
             bitLenInt i;
             real1_f gateRand;
@@ -3394,7 +3538,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
             bool canDo3;
             int gateThreshold, gateMax;
 
-            for (d = 0; d < benchmarkDepth; d++) {
+            for (d = 0; d < depth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
@@ -3452,31 +3596,37 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
 
 TEST_CASE("test_ccz_ccx_h", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
+            const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
             int d;
             bitLenInt i;
             real1_f gateRand;
             bitLenInt b1, b2, b3;
             int maxGates;
 
-            for (d = 0; d < benchmarkDepth; d++) {
+            for (d = 0; d < depth; d++) {
 
-                bitCapInt zMask = 0U;
-                bitCapInt xMask = 0U;
+                bitCapInt zMask = ZERO_BCI;
+                bitCapInt xMask = ZERO_BCI;
                 for (i = 0; i < n; i++) {
                     gateRand = GateCount1Qb * qReg->Rand();
                     if (gateRand < 1) {
                         qReg->H(i);
                     } else if (gateRand < 2) {
-                        zMask |= pow2(i);
+                        bi_or_ip(&zMask, pow2(i));
                     } else if (gateRand < 3) {
-                        xMask |= pow2(i);
+                        bi_or_ip(&xMask, pow2(i));
                     } else {
                         // Identity;
                     }
@@ -3520,13 +3670,19 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
     std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit.";
 
     // This is an attempt to simulate the circuit argued to establish quantum supremacy.
     // See https://doi.org/10.1038/s41586-019-1666-5
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
@@ -3563,7 +3719,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // We repeat the entire prepartion for "depth" iterations.
         // We can avoid maximal representational entanglement of the state as a single Schr{\"o}dinger method unit.
         // See https://arxiv.org/abs/1710.05867
-        for (d = 0; d < benchmarkDepth; d++) {
+        for (d = 0; d < depth; d++) {
             for (i = 0; i < n; i++) {
                 if ((n == 54U) && (i == deadQubit)) {
                     if (d == 0) {
@@ -3660,7 +3816,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
                     // std::endl;
 
-                    if (d == (benchmarkDepth - 1)) {
+                    if (d == (depth - 1)) {
                         // For the last layer of couplers, the immediately next operation is measurement, and the phase
                         // effects make no observable difference.
                         qReg->Swap(b1, b2);
@@ -3681,14 +3837,21 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 TEST_CASE("test_random_circuit_sampling", "[speed]")
 {
     // This is a "quantum volume" circuit, but we're measuring execution time, not "heavy-output probability."
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
         std::set<bitLenInt> unusedBitSet;
         for (bitLenInt i = 0; i < n; ++i) {
             unusedBitSet.insert(i);
         }
 
-        for (bitLenInt d = 0U; d < n; ++d) {
+        for (bitLenInt d = 0U; d < depth; ++d) {
             // Single-qubit gate layer
             for (bitLenInt i = 0U; i < n; ++i) {
                 real1_f theta = 2 * M_PI * qReg->Rand();
@@ -3704,6 +3867,174 @@ TEST_CASE("test_random_circuit_sampling", "[speed]")
                 const bitLenInt b1 = pickRandomBit(qReg->Rand(), &unusedBits);
                 const bitLenInt b2 = pickRandomBit(qReg->Rand(), &unusedBits);
                 qReg->CNOT(b1, b2);
+            }
+        }
+    });
+}
+
+TEST_CASE("test_random_circuit_sampling_nn", "[speed]")
+{
+    // "nn" stands for "nearest-neighbor (coupler gates)"
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+        std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        const int rowLen = std::ceil(std::sqrt(n));
+        const int GateCount2Qb = 12;
+
+        for (bitLenInt d = 0U; d < depth; ++d) {
+            for (bitLenInt i = 0U; i < n; ++i) {
+                // This effectively covers x-z-x Euler angles, every 3 layers:
+                qReg->H(i);
+                qReg->RZ(qReg->Rand() * 2 * PI_R1, i);
+            }
+
+            int gate = gateSequence.front();
+            gateSequence.erase(gateSequence.begin());
+            gateSequence.push_back(gate);
+            for (int row = 1; row < rowLen; row += 2) {
+                for (int col = 0; col < rowLen; col++) {
+                    int tempRow = row;
+                    int tempCol = col;
+                    tempRow += (gate & 2) ? 1 : -1;
+                    tempCol += (gate & 1) ? 1 : 0;
+                    if (tempRow < 0 || tempCol < 0 || tempRow >= rowLen || tempCol >= rowLen) {
+                        continue;
+                    }
+                    int b1 = row * rowLen + col;
+                    int b2 = tempRow * rowLen + tempCol;
+                    if (b1 >= n || b2 >= n) {
+                        continue;
+                    }
+                    if ((2 * qReg->Rand()) < ONE_R1_F) {
+                        std::swap(b1, b2);
+                    }
+                    const real1_f gateId = GateCount2Qb * qReg->Rand();
+                    if (gateId < ONE_R1_F) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 2)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 3)) {
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 4)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 5)) {
+                        qReg->ISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 6)) {
+                        qReg->IISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 7)) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 8)) {
+                        qReg->CY(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 9)) {
+                        qReg->CZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 10)) {
+                        qReg->AntiCNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 11)) {
+                        qReg->AntiCY(b1, b2);
+                    } else {
+                        qReg->AntiCZ(b1, b2);
+                    }
+                }
+            }
+        }
+    });
+}
+
+TEST_CASE("test_random_circuit_sampling_nn_orbifold", "[speed]")
+{
+    // "nn" stands for "nearest-neighbor (coupler gates)"
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+        std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        const int rowLen = std::ceil(std::sqrt(n));
+        const int GateCount2Qb = 12;
+
+        for (bitLenInt d = 0U; d < depth; ++d) {
+            for (bitLenInt i = 0U; i < n; ++i) {
+                // This effectively covers x-z-x Euler angles, every 3 layers:
+                qReg->H(i);
+                qReg->RZ(qReg->Rand() * 2 * PI_R1, i);
+            }
+
+            int gate = gateSequence.front();
+            gateSequence.erase(gateSequence.begin());
+            gateSequence.push_back(gate);
+            for (int row = 1; row < (rowLen & ~1); row += 2) {
+                for (int col = 0; col < (rowLen & ~1); col++) {
+                    int tempRow = row;
+                    int tempCol = col;
+                    tempRow += (gate & 2) ? 1 : -1;
+                    tempCol += (gate & 1) ? 1 : 0;
+
+                    // Periodic ("orbifold") boundary conditions
+                    if (tempRow < 0) {
+                        tempRow += rowLen;
+                    }
+                    if (tempCol < 0) {
+                        tempCol += rowLen;
+                    }
+                    if (tempRow >= rowLen) {
+                        tempRow -= rowLen;
+                    }
+                    if (tempCol >= rowLen) {
+                        tempCol -= rowLen;
+                    }
+
+                    int b1 = row * rowLen + col;
+                    int b2 = tempRow * rowLen + tempCol;
+                    if (b1 >= n || b2 >= n) {
+                        continue;
+                    }
+                    if ((2 * qReg->Rand()) < ONE_R1_F) {
+                        std::swap(b1, b2);
+                    }
+                    const real1_f gateId = GateCount2Qb * qReg->Rand();
+                    if (gateId < ONE_R1_F) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 2)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 3)) {
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 4)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 5)) {
+                        qReg->ISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 6)) {
+                        qReg->IISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 7)) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 8)) {
+                        qReg->CY(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 9)) {
+                        qReg->CZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 10)) {
+                        qReg->AntiCNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 11)) {
+                        qReg->AntiCY(b1, b2);
+                    } else {
+                        qReg->AntiCZ(b1, b2);
+                    }
+                }
             }
         }
     });
@@ -3859,16 +4190,16 @@ TEST_CASE("test_bq_comparison", "[metriq]")
             allBits.insert(allBits.end(), i);
         }
         for (bitLenInt d = 0; d < n; ++d) {
-            bitCapInt zMask = 0U;
-            bitCapInt xMask = 0U;
+            bitCapInt zMask = ZERO_BCI;
+            bitCapInt xMask = ZERO_BCI;
             for (bitLenInt i = 0; i < n; ++i) {
                 const real1_f gateRand = GateCount1Qb * qReg->Rand();
                 if (gateRand < 1) {
                     qReg->H(i);
                 } else if (gateRand < 2) {
-                    zMask |= pow2(i);
+                    bi_or_ip(&zMask, pow2(i));
                 } else if (gateRand < 3) {
-                    xMask |= pow2(i);
+                    bi_or_ip(&xMask, pow2(i));
                 } else if (gateRand < 4) {
                     qReg->Y(i);
                 } else if (gateRand < 5) {
@@ -3945,8 +4276,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
     int maxGates;
 
-    QInterfacePtr goldStandard = CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, n, 0, rng,
-        ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng);
+    QInterfacePtr goldStandard =
+        CreateQuantumInterface({ testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, n, ZERO_BCI, rng,
+            ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng);
     if (disable_t_injection) {
         goldStandard->SetTInjection(false);
     }
@@ -3991,16 +4323,16 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
-        bitCapInt xMask = 0U;
-        bitCapInt yMask = 0U;
+        bitCapInt xMask = ZERO_BCI;
+        bitCapInt yMask = ZERO_BCI;
         for (i = 0; i < layer1QbRands.size(); i++) {
             int gate1Qb = layer1QbRands[i];
             if (gate1Qb == 0) {
                 goldStandard->H(i);
             } else if (gate1Qb == 1) {
-                xMask |= pow2(i);
+                bi_or_ip(&xMask, pow2(i));
             } else if (gate1Qb == 2) {
-                yMask |= pow2(i);
+                bi_or_ip(&yMask, pow2(i));
             } else {
                 goldStandard->T(i);
             }
@@ -4032,10 +4364,10 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     std::map<bitCapInt, int>::iterator measurementBin;
 
-    real1_f uniformRandomCount = ITERATIONS / (real1_f)permCount;
+    real1_f uniformRandomCount = (real1_f)(ITERATIONS / bi_to_double(permCount));
     int goldBinResult;
     real1_f crossEntropy = ZERO_R1_F;
-    for (perm = 0; perm < permCount; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, permCount) < 0; bi_increment(&perm, 1U)) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
             goldBinResult = 0;
@@ -4054,7 +4386,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     int testBinResult;
     crossEntropy = ZERO_R1_F;
-    for (perm = 0; perm < permCount; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, permCount) < 0; bi_increment(&perm, 1U)) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
             goldBinResult = 0;
@@ -4076,7 +4408,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     crossEntropy = ONE_R1_F - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. gold standard cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
-    QInterfacePtr testCase = CreateQuantumInterface({ testEngineType, testSubEngineType }, n, 0, rng, ONE_CMPLX,
+    QInterfacePtr testCase = CreateQuantumInterface({ testEngineType, testSubEngineType }, n, ZERO_BCI, rng, ONE_CMPLX,
         enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse);
     if (disable_t_injection) {
         testCase->SetTInjection(false);
@@ -4088,19 +4420,19 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::map<bitCapInt, int> testCaseResult;
 
     for (int iter = 0; iter < ITERATIONS; iter++) {
-        testCase->SetPermutation(0);
+        testCase->SetPermutation(ZERO_BCI);
         for (d = 0; d < Depth; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
-            bitCapInt xMask = 0U;
-            bitCapInt yMask = 0U;
+            bitCapInt xMask = ZERO_BCI;
+            bitCapInt yMask = ZERO_BCI;
             for (i = 0; i < layer1QbRands.size(); i++) {
                 int gate1Qb = layer1QbRands[i];
                 if (gate1Qb == 0) {
                     testCase->H(i);
                 } else if (gate1Qb == 1) {
-                    xMask |= pow2(i);
+                    bi_or_ip(&xMask, pow2(i));
                 } else if (gate1Qb == 2) {
-                    yMask |= pow2(i);
+                    bi_or_ip(&yMask, pow2(i));
                 } else {
                     testCase->T(i);
                 }
@@ -4135,7 +4467,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     // testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
 
     crossEntropy = ZERO_R1_F;
-    for (perm = 0; perm < permCount; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, permCount) < 0; bi_increment(&perm, 1U)) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
             goldBinResult = 0;
@@ -4159,20 +4491,20 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     std::map<bitCapInt, int> testCaseResult2;
 
-    testCase->SetPermutation(0);
+    testCase->SetPermutation(ZERO_BCI);
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
-        bitCapInt xMask = 0U;
-        bitCapInt yMask = 0U;
+        bitCapInt xMask = ZERO_BCI;
+        bitCapInt yMask = ZERO_BCI;
         for (i = 0; i < layer1QbRands.size(); i++) {
             int gate1Qb = layer1QbRands[i];
             if (gate1Qb == 0) {
                 testCase->H(i);
             } else if (gate1Qb == 1) {
-                xMask |= pow2(i);
+                bi_or_ip(&xMask, pow2(i));
             } else if (gate1Qb == 2) {
-                yMask |= pow2(i);
+                bi_or_ip(&yMask, pow2(i));
             } else {
                 testCase->T(i);
             }
@@ -4197,7 +4529,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     testCaseResult2 = testCase->MultiShotMeasureMask(qPowers, ITERATIONS);
 
     crossEntropy = ZERO_R1_F;
-    for (perm = 0; perm < permCount; perm++) {
+    for (perm = ZERO_BCI; bi_compare(perm, permCount) < 0; bi_increment(&perm, 1U)) {
         measurementBin = testCaseResult.find(perm);
         if (measurementBin == testCaseResult.end()) {
             goldBinResult = 0;
@@ -4233,7 +4565,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
     const int GateCountMultiQb = 14;
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
 
@@ -4245,7 +4577,7 @@ TEST_CASE("test_noisy_fidelity", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -4533,7 +4865,7 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
     const int GateCountMultiQb = 14;
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
@@ -4545,7 +4877,7 @@ TEST_CASE("test_noisy_fidelity_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -4713,7 +5045,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
     const int GateCountMultiQb = 14;
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "WARNING: These outputs are meant to be piped to a file." << std::endl;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
@@ -4726,7 +5058,7 @@ TEST_CASE("test_noisy_fidelity_validation", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -4952,7 +5284,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     const int GateCountMultiQb = 14;
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
 
@@ -4983,7 +5315,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5085,25 +5417,25 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
                 } else if (gate == 9) {
@@ -5111,11 +5443,11 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
                 } else if (gate == 10) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
                 } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, ZERO_BCI));
                 }
             }
         }
@@ -5201,7 +5533,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
     const int GateCountMultiQb = 14;
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
@@ -5232,7 +5564,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5334,26 +5666,26 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
                 } else if (gate == 9) {
@@ -5361,11 +5693,11 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
                 } else if (gate == 10) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
                 } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, ZERO_BCI));
                 }
             }
         }
@@ -5428,7 +5760,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
     const int GateCountMultiQb = 14;
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
@@ -5459,7 +5791,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5561,26 +5893,26 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
                 } else if (gate == 9) {
@@ -5588,11 +5920,11 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
                 } else if (gate == 10) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
                 } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, ZERO_BCI));
                 }
             }
         }
@@ -5629,7 +5961,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
     const int GateCountMultiQb = 14;
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "WARNING: These outputs are meant to be piped to a file." << std::endl;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
@@ -5661,7 +5993,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5763,26 +6095,26 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                 const std::set<bitLenInt> controls{ (bitLenInt)b1, (bitLenInt)b2 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else if (gate == 7) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 } else if (gate == 8) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 3U));
                 } else if (gate == 9) {
@@ -5790,11 +6122,11 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
                 } else if (gate == 10) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 3U));
                 } else if (gate == 11) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, x, controls, ZERO_BCI));
                 } else if (gate == 12) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, y, controls, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b3, z, controls, ZERO_BCI));
                 }
             }
         }
@@ -5875,7 +6207,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
 
@@ -5906,7 +6238,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -5964,26 +6296,26 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -6068,7 +6400,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
 
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
@@ -6099,7 +6431,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -6157,26 +6489,26 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -6238,7 +6570,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
 
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "WARNING: These outputs are meant to be piped to a file." << std::endl;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
@@ -6270,7 +6602,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -6328,26 +6660,26 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -6428,7 +6760,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
 
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "WARNING: These outputs are meant to be piped to a file." << std::endl;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
@@ -6452,7 +6784,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     std::vector<std::vector<SingleQubitGate>> gate1QbRands(w);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(w);
@@ -6771,13 +7103,279 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
     }
 }
 
+TEST_CASE("test_noisy_rcs_nn", "[speed]")
+{
+    // "nn" stands for "nearest-neighbor (coupler gates)"
+    const int n = max_qubits;
+    const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+    std::cout << "Circuit layer depth: " << n << std::endl;
+
+    // The test runs 2 bit gates according to a tiling sequence.
+    // The 1 bit indicates +/- column offset.
+    // The 2 bit indicates +/- row offset.
+    // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
+    // paper.
+    std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    const int rowLen = std::ceil(std::sqrt(n));
+    const int GateCount2Qb = 12;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    double sdrp = 1.0 - 0.025;
+
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
+
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
+    bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(n));
+    if (randPerm >= pow2Ocl(n)) {
+        randPerm = pow2Ocl(n) - 1U;
+    }
+
+    while (sdrp >= 0) {
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
+#else
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
+#endif
+
+        start = std::chrono::high_resolution_clock::now();
+        QInterfacePtr qReg = CreateQuantumInterface(engineStack, n, randPerm);
+
+        for (bitLenInt d = 0U; d < depth; ++d) {
+            for (bitLenInt i = 0U; i < n; ++i) {
+                // This effectively covers x-z-x Euler angles, every 3 layers:
+                qReg->H(i);
+                qReg->RZ(qReg->Rand() * 2 * PI_R1, i);
+            }
+
+            int gate = gateSequence.front();
+            gateSequence.erase(gateSequence.begin());
+            gateSequence.push_back(gate);
+            for (int row = 1; row < rowLen; row += 2) {
+                for (int col = 0; col < rowLen; col++) {
+                    int tempRow = row;
+                    int tempCol = col;
+                    tempRow += (gate & 2) ? 1 : -1;
+                    tempCol += (gate & 1) ? 1 : 0;
+                    if (tempRow < 0 || tempCol < 0 || tempRow >= rowLen || tempCol >= rowLen) {
+                        continue;
+                    }
+                    int b1 = row * rowLen + col;
+                    int b2 = tempRow * rowLen + tempCol;
+                    if (b1 >= n || b2 >= n) {
+                        continue;
+                    }
+                    if ((2 * qReg->Rand()) < ONE_R1_F) {
+                        std::swap(b1, b2);
+                    }
+                    const real1_f gateId = GateCount2Qb * qReg->Rand();
+                    if (gateId < ONE_R1_F) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 2)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 3)) {
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 4)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 5)) {
+                        qReg->ISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 6)) {
+                        qReg->IISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 7)) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 8)) {
+                        qReg->CY(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 9)) {
+                        qReg->CZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 10)) {
+                        qReg->AntiCNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 11)) {
+                        qReg->AntiCY(b1, b2);
+                    } else {
+                        qReg->AntiCZ(b1, b2);
+                    }
+                }
+            }
+        }
+
+        qReg->MAll();
+
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+        std::cout << "Unitary fidelity: " << qReg->GetUnitaryFidelity() << std::endl;
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
+
+        if (sdrp == 0) {
+            return;
+        }
+
+        sdrp -= 0.025;
+        if (abs(sdrp) <= FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
+    }
+}
+
+TEST_CASE("test_noisy_rcs_u3_nn", "[speed]")
+{
+    // "nn" stands for "nearest-neighbor (coupler gates)"
+    const int n = max_qubits;
+    const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+    std::cout << "Circuit layer depth: " << n << std::endl;
+
+    // The test runs 2 bit gates according to a tiling sequence.
+    // The 1 bit indicates +/- column offset.
+    // The 2 bit indicates +/- row offset.
+    // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
+    // paper.
+    std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    const int rowLen = std::ceil(std::sqrt(n));
+    const int GateCount2Qb = 12;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    double sdrp = 1.0 - 0.025;
+
+    const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
+
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
+    bitCapIntOcl randPerm = (bitCapIntOcl)(rng->Rand() * pow2Ocl(n));
+    if (randPerm >= pow2Ocl(n)) {
+        randPerm = pow2Ocl(n) - 1U;
+    }
+
+    while (sdrp >= 0) {
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        if (sdrp <= FP_NORM_EPSILON) {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=";
+            _putenv(envVar.c_str());
+        } else {
+            std::string envVar = "QRACK_QUNIT_SEPARABILITY_THRESHOLD=" + std::to_string(sdrp);
+            _putenv(envVar.c_str());
+        }
+#else
+        if (sdrp <= FP_NORM_EPSILON) {
+            unsetenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD");
+        } else {
+            setenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD", std::to_string(sdrp).c_str(), 1);
+        }
+#endif
+
+        start = std::chrono::high_resolution_clock::now();
+        QInterfacePtr qReg = CreateQuantumInterface(engineStack, n, randPerm);
+
+        for (bitLenInt d = 0U; d < depth; ++d) {
+            for (bitLenInt i = 0U; i < n; ++i) {
+                qReg->U(i, 4 * M_PI * qReg->Rand(), 4 * M_PI * qReg->Rand(), 4 * M_PI * qReg->Rand());
+            }
+
+            int gate = gateSequence.front();
+            gateSequence.erase(gateSequence.begin());
+            gateSequence.push_back(gate);
+            for (int row = 1; row < rowLen; row += 2) {
+                for (int col = 0; col < rowLen; col++) {
+                    int tempRow = row;
+                    int tempCol = col;
+                    tempRow += (gate & 2) ? 1 : -1;
+                    tempCol += (gate & 1) ? 1 : 0;
+                    if (tempRow < 0 || tempCol < 0 || tempRow >= rowLen || tempCol >= rowLen) {
+                        continue;
+                    }
+                    int b1 = row * rowLen + col;
+                    int b2 = tempRow * rowLen + tempCol;
+                    if (b1 >= n || b2 >= n) {
+                        continue;
+                    }
+                    if ((2 * qReg->Rand()) < ONE_R1_F) {
+                        std::swap(b1, b2);
+                    }
+                    const real1_f gateId = GateCount2Qb * qReg->Rand();
+                    if (gateId < ONE_R1_F) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 2)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 3)) {
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 4)) {
+                        qReg->AntiCZ(b1, b2);
+                        qReg->Swap(b1, b2);
+                        qReg->AntiCZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 5)) {
+                        qReg->ISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 6)) {
+                        qReg->IISwap(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 7)) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 8)) {
+                        qReg->CY(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 9)) {
+                        qReg->CZ(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 10)) {
+                        qReg->AntiCNOT(b1, b2);
+                    } else if (gateId < (ONE_R1_F * 11)) {
+                        qReg->AntiCY(b1, b2);
+                    } else {
+                        qReg->AntiCZ(b1, b2);
+                    }
+                }
+            }
+        }
+
+        qReg->MAll();
+
+        std::cout << "For SDRP=" << sdrp << ": " << std::endl;
+        std::cout << "Unitary fidelity: " << qReg->GetUnitaryFidelity() << std::endl;
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start)
+                         .count()
+                  << "s" << std::endl;
+
+        if (sdrp == 0) {
+            return;
+        }
+
+        sdrp -= 0.025;
+        if (abs(sdrp) <= FP_NORM_EPSILON) {
+            sdrp = 0;
+        }
+    }
+}
+
 TEST_CASE("test_noisy_sycamore", "[supreme]")
 {
     std::cout << ">>> 'test_noisy_sycamore':" << std::endl;
     std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit." << std::endl;
 
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth: " << n << std::endl;
 
@@ -6813,7 +7411,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         std::vector<int> layer1QbRands;
@@ -7055,7 +7653,7 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
     std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit." << std::endl;
 
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
@@ -7094,7 +7692,7 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         std::vector<int> layer1QbRands;
@@ -7264,7 +7862,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
     std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit." << std::endl;
 
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
@@ -7304,7 +7902,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         std::vector<int> layer1QbRands;
@@ -7497,7 +8095,7 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
 
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
@@ -7517,7 +8115,7 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>(false);
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (int d = 0; d < n; d++) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -7561,26 +8159,26 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
             const std::set<bitLenInt> control{ (bitLenInt)b1 };
             if (gate == 0) {
                 circuit->Swap(b1, b2);
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                 circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
             } else if (gate == 1) {
                 circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                 circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 circuit->Swap(b1, b2);
             } else if (gate == 2) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
             } else if (gate == 3) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
             } else if (gate == 4) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
             } else if (gate == 5) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
             } else if (gate == 6) {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
             } else {
-                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
             }
         }
     }
@@ -7610,7 +8208,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
 
@@ -7642,7 +8240,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>(false);
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -7717,26 +8315,26 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
 
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -7772,7 +8370,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
 
     const int GateCount2Qb = 8;
     const int w = max_qubits;
-    const int n = benchmarkDepth;
+    const int n = (benchmarkDepth <= 0) ? w : benchmarkDepth;
     std::cout << "Circuit width: " << w << std::endl;
     std::cout << "Circuit layer depth (excluding factor of x2 for mirror validation): " << n << std::endl;
     std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit." << std::endl;
@@ -7813,7 +8411,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
 
     QCircuitPtr circuit = std::make_shared<QCircuit>(false);
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
         for (i = 0; i < w; i++) {
@@ -7915,26 +8513,26 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
                 const std::set<bitLenInt> control{ (bitLenInt)b1 };
                 if (gate == 0) {
                     circuit->Swap(b1, b2);
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, s));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, s));
                 } else if (gate == 1) {
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b2, is));
                     circuit->AppendGate(std::make_shared<QCircuitGate>(b1, is));
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                     circuit->Swap(b1, b2);
                 } else if (gate == 2) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ONE_BCI));
                 } else if (gate == 3) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ONE_BCI));
                 } else if (gate == 4) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 1U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ONE_BCI));
                 } else if (gate == 5) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, x, control, ZERO_BCI));
                 } else if (gate == 6) {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, y, control, ZERO_BCI));
                 } else {
-                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, 0U));
+                    circuit->AppendGate(std::make_shared<QCircuitGate>(b2, z, control, ZERO_BCI));
                 }
             }
         }
@@ -7973,7 +8571,7 @@ TEST_CASE("test_noisy_qft_cosmology_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     auto start = std::chrono::high_resolution_clock::now();
     double sdrp = 1.0;
@@ -7997,7 +8595,7 @@ TEST_CASE("test_noisy_qft_cosmology_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0U);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, ZERO_BCI);
         for (bitLenInt i = 0; i < w; i++) {
             RandomInitQubit(testCase, i);
         }
@@ -8037,7 +8635,7 @@ TEST_CASE("test_noisy_qft_ghz_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, 0);
+    QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     auto start = std::chrono::high_resolution_clock::now();
     double sdrp = 1.0;
@@ -8061,7 +8659,7 @@ TEST_CASE("test_noisy_qft_ghz_estimate", "[supreme_estimate]")
         }
 #endif
 
-        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, 0U);
+        QInterfacePtr testCase = CreateQuantumInterface(engineStack, w, ZERO_BCI);
         testCase->H(0U);
         const bitLenInt end = w - 1U;
         for (bitLenInt i = 0; i < end; i++) {

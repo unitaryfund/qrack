@@ -25,7 +25,7 @@ void StatePrep(QInterfacePtr qReg)
 
 void AddBit(QInterfacePtr qReg)
 {
-    QInterfacePtr nBit = CreateQuantumInterface(QINTERFACE_OPTIMAL, 1, 0);
+    QInterfacePtr nBit = CreateQuantumInterface(QINTERFACE_OPTIMAL, 1, ZERO_BCI);
     StatePrep(nBit);
     qReg->Compose(nBit);
 }
@@ -35,7 +35,7 @@ int main()
     const bitLenInt maxLength = 28U;
     std::vector<bitLenInt> bits;
 
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, 1, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, 1, ZERO_BCI);
     StatePrep(qReg);
     bits.push_back(0);
 

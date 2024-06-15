@@ -1,0 +1,24 @@
+-include ./Makefile
+
+clean-cmake:
+	rm -f -r CMakeFiles
+	rm -f CMakeCache.txt
+	rm -f *.cmake
+
+clean:
+	rm -f -r CMakeFiles
+	rm -f CMakeCache.txt
+	rm -f *.cmake
+	rm -f Makefile
+	rm -f makefile
+	rm -f debian/control
+	rm -f debian/*.dirs
+	rm -f debian/*.install
+	rm -f debian/*.docs
+	rm -f include/common/config.h
+	rm -f *.pc
+	cp -r * ../
+	rm -r -f *
+	cmake -DCMAKE_PROJECT_VERSION=@CMAKE_PROJECT_VERSION@ -DCMAKE_INSTALL_PREFIX=@CMAKE_INSTALL_PREFIX@ -DCMAKE_INSTALL_LIBDIR=@CMAKE_INSTALL_LIBDIR@ -DENABLE_MAKE_CLEAN_OVERRIDE=OFF -DPACK_DEBIAN=ON -DCPP_STD=@CPP_STD@ -DENABLE_RDRAND=@ENABLE_RDRAND@ -DENABLE_DEVRAND=@ENABLE_DEVRAND@ -SEED_DEVRAND=@SEED_DEVRAND@ -DENABLE_RNDFILE=@ENABLE_RNDFILE@ -DENABLE_OPENCL=@ENABLE_OPENCL@ -DENABLE_CUDA=@ENABLE_CUDA@ -DQBCAPPOW=@QBCAPPOW@ -DUINTPOW=@UINTPOW@ -DFPPOW=@FPPOW@ ..
+	make clean
+	cmake -DENABLE_MAKE_CLEAN_OVERRIDE=ON ..

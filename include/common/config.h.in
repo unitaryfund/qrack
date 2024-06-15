@@ -1,11 +1,13 @@
 #cmakedefine ENABLE_ALU 1
 #cmakedefine ENABLE_BCD 1
-#cmakedefine ENABLE_COMPLEX_X2 1
-#cmakedefine ENABLE_SSE3 1
+#cmakedefine ENABLE_COMPLEX_X2 @COMPLEX_X2_MACRO@
+#cmakedefine ENABLE_SSE3 @SSE3_MACRO@
 #cmakedefine ENABLE_DEVRAND 1
 #cmakedefine ENABLE_ENV_VARS 1
+#cmakedefine ENABLE_INTRINSICS 1
 #cmakedefine ENABLE_OCL_MEM_GUARDS 1
 #cmakedefine ENABLE_OPENCL 1
+#cmakedefine ENABLE_OOO_OCL 1
 #cmakedefine ENABLE_PTHREAD 1
 #cmakedefine ENABLE_QBDT_CPU_PARALLEL 1
 #cmakedefine ENABLE_QBDT 1

@@ -86,7 +86,7 @@ protected:
 public:
     std::shared_ptr<std::mutex> mtx;
 
-    QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QStabilizer(bitLenInt n, bitCapInt perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
         int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
         std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
@@ -139,7 +139,7 @@ public:
         r.clear();
         phaseOffset = ZERO_R1;
         qubitCount = 0U;
-        maxQPower = 1U;
+        maxQPower = ONE_BCI;
     }
 
 protected:
@@ -215,11 +215,19 @@ protected:
 
     /// Returns the (partial) expectation value from a state vector amplitude.
     real1_f getExpectation(const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
-        const std::vector<bitCapInt>& perms, bitCapInt offset);
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset);
 
     /// Returns the (partial) expectation value from a state vector amplitude.
     real1_f getExpectation(
         const real1_f& nrm, const std::vector<bitCapInt>& bitPowers, const std::vector<real1_f>& weights);
+
+    /// Returns the (partial) variance from a state vector amplitude.
+    real1_f getVariance(const real1_f& mean, const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset);
+
+    /// Returns the (partial) variance a state vector amplitude.
+    real1_f getVariance(const real1_f& mean, const real1_f& nrm, const std::vector<bitCapInt>& bitPowers,
+        const std::vector<real1_f>& weights);
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
@@ -305,12 +313,14 @@ public:
     /// Get any single basis state amplitude where qubit "t" has value "m"
     AmplitudeEntry GetQubitAmplitude(bitLenInt t, bool m);
 
-    /// Get expectation qubits, interpreting each permutation as an unsigned integer.
+    /// Get expectation of qubits, interpreting each permutation as an unsigned integer.
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
-
-    /// Get expectation qubits, interpreting each permutation as a floating-point value.
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI);
     real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+    /// Get variance of qubits, interpreting each permutation as an unsigned integer.
+    real1_f VarianceBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI);
+    real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
 
     /// Under assumption of a QStabilizerHybrid ancillary buffer, trace out the permutation probability
     /// of the reduced density matrx without ancillae.
@@ -372,12 +382,12 @@ public:
 
         if (!qubitCount) {
             SetQubitCount(length);
-            SetPermutation(0U);
+            SetPermutation(ZERO_BCI);
             return 0U;
         }
 
-        QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+        QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
+            false, randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         return Compose(nQubits, start);
     }
 
@@ -412,9 +422,9 @@ public:
     bool GlobalPhaseCompare(QStabilizerPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         const AmplitudeEntry thisAmpEntry = GetAnyAmplitude();
-        real1 argDiff =
-            abs((std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
-                (2 * PI_R1));
+        real1 argDiff = (real1)abs(
+            (std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
+            (2 * PI_R1));
         argDiff -= (real1)(size_t)argDiff;
         if (argDiff > (ONE_R1 / 2)) {
             argDiff -= ONE_R1;

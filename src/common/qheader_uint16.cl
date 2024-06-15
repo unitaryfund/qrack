@@ -10,7 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#define ONE_BCI ((ushort)2U)
+#define ONE_BCI ((ushort)1U)
 #define bitCapIntOcl ushort
 #define bitCapIntOcl2 ushort2
 #define bitCapIntOcl4 ushort4

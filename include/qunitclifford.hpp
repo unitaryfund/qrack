@@ -129,10 +129,15 @@ protected:
         return controls[0U];
     }
 
+    real1_f ExpVarBitsFactorized(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms,
+        const bitCapInt& offset = ZERO_BCI);
+
+    real1_f ExpVarFloatsFactorized(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+
 public:
     std::shared_ptr<std::mutex> mtx;
 
-    QUnitClifford(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr,
+    QUnitClifford(bitLenInt n, bitCapInt perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phasFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
         int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
         std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
@@ -142,14 +147,14 @@ public:
     QInterfacePtr Clone()
     {
         QUnitCliffordPtr copyPtr = std::make_shared<QUnitClifford>(
-            qubitCount, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+            qubitCount, ZERO_BCI, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
 
         return CloneBody(copyPtr);
     }
     QUnitCliffordPtr CloneEmpty()
     {
         return std::make_shared<QUnitClifford>(
-            0U, 0U, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+            0U, ZERO_BCI, rand_generator, phaseOffset, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
     }
 
     bool isClifford() { return true; };
@@ -174,11 +179,12 @@ public:
     bitCapInt PermCount()
     {
         std::map<QStabilizerPtr, QStabilizerPtr> engines;
-        bitCapInt permCount = 1U;
+        bitCapInt permCount = ONE_BCI;
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             QStabilizerPtr unit = shards[i].unit;
             if (engines.find(unit) == engines.end()) {
-                permCount *= pow2(unit->gaussian());
+                const bitCapInt pg = pow2(unit->gaussian());
+                permCount = permCount * pg;
             }
         }
 
@@ -190,13 +196,30 @@ public:
         shards = std::vector<CliffordShard>();
         phaseOffset = ONE_CMPLX;
         qubitCount = 0U;
-        maxQPower = 1U;
+        maxQPower = ONE_BCI;
     }
 
     real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
+    {
+        return ExpVarBitsFactorized(true, bits, perms, offset);
+    }
 
-    real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+    real1_f ExpectationFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return ExpVarFloatsFactorized(true, bits, weights);
+    }
+
+    real1_f VarianceBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
+    {
+        return ExpVarBitsFactorized(false, bits, perms, offset);
+    }
+
+    real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return ExpVarFloatsFactorized(false, bits, weights);
+    }
 
     real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
 
@@ -204,7 +227,8 @@ public:
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-    QStabilizerPtr MakeStabilizer(bitLenInt length = 1U, bitCapInt perm = 0U, complex phaseFac = CMPLX_DEFAULT_ARG)
+    QStabilizerPtr MakeStabilizer(
+        bitLenInt length = 1U, bitCapInt perm = ZERO_BCI, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
         QStabilizerPtr toRet = std::make_shared<QStabilizer>(
             length, perm, rand_generator, phaseFac, false, randGlobalPhase, false, -1, useRDRAND);
@@ -445,7 +469,7 @@ public:
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
     {
         QUnitCliffordPtr dest = std::make_shared<QUnitClifford>(
-            length, 0U, rand_generator, CMPLX_DEFAULT_ARG, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
+            length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, doNormalize, randGlobalPhase, false, 0U, useRDRAND);
 
         Decompose(start, dest);
 
@@ -466,12 +490,12 @@ public:
 
         if (!qubitCount) {
             SetQubitCount(length);
-            SetPermutation(0U);
+            SetPermutation(ZERO_BCI);
             return 0U;
         }
 
-        QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+        QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
+            false, randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         return Compose(nQubits, start);
     }
 
@@ -540,7 +564,7 @@ public:
     }
     void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Phase(topLeft, bottomRight, t);
             return;
         }
@@ -554,7 +578,7 @@ public:
     }
     void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Phase(topLeft, bottomRight, t);
             return;
         }
@@ -568,7 +592,7 @@ public:
     }
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Invert(topRight, bottomLeft, t);
             return;
         }
@@ -582,7 +606,7 @@ public:
     }
     void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Invert(topRight, bottomLeft, t);
             return;
         }
@@ -596,7 +620,7 @@ public:
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Mtrx(mtrx, t);
             return;
         }
@@ -609,7 +633,7 @@ public:
     }
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
-        if (!controls.size()) {
+        if (controls.empty()) {
             Mtrx(mtrx, t);
             return;
         }

@@ -20,7 +20,7 @@
 
 #include <mutex>
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
 #elif FPPOW == 6
@@ -35,11 +35,11 @@ typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 
 class QBdtNodeInterface : public std::enable_shared_from_this<QBdtNodeInterface> {
 protected:
-    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
+    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)(bi_and_1(perm >> bit)); }
     static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
 
 public:
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
         bitLenInt parDepth = 1U)
@@ -54,7 +54,9 @@ public:
 
     complex scale;
     QBdtNodeInterfacePtr branches[2U];
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::shared_ptr<std::mutex> mtx;
+#endif
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
@@ -100,21 +102,22 @@ public:
     {
         scale = ZERO_CMPLX;
 
-        if (!branches[0U]) {
-            return;
-        }
-
-        if (true) {
-            const QBdtNodeInterfacePtr b0 = branches[0U];
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+        if (branches[0U]) {
+            QBdtNodeInterfacePtr b0 = branches[0U];
             std::lock_guard<std::mutex> lock(*(b0->mtx.get()));
             branches[0U] = NULL;
         }
 
-        if (true) {
-            const QBdtNodeInterfacePtr b1 = branches[1U];
+        if (branches[1U]) {
+            QBdtNodeInterfacePtr b1 = branches[1U];
             std::lock_guard<std::mutex> lock(*(b1->mtx.get()));
             branches[1U] = NULL;
         }
+#else
+        branches[0U] = NULL;
+        branches[1U] = NULL;
+#endif
     }
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);
@@ -131,12 +134,20 @@ public:
 
     virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::PopStateVector() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
     virtual void Branch(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::Branch() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
@@ -144,26 +155,55 @@ public:
     virtual QBdtNodeInterfacePtr Prune(
         bitLenInt depth = 1U, bitLenInt parDepth = 1U, const bool& isCliffordBlocked = false)
     {
+        if (!depth) {
+            return nullptr;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::Prune() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
     virtual void Normalize(bitLenInt depth = 1U)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtNodeInterface::Normalize() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
+#ifdef ENABLE_COMPLEX_X2
     virtual QBdtNodeInterfacePtr Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2,
         const complex2& mtrxColShuff1, const complex2& mtrxColShuff2, bitLenInt depth)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }
+#else
     virtual QBdtNodeInterfacePtr Apply2x2(complex const* mtrx, bitLenInt depth)
+#endif
     {
+        if (!depth) {
+            return nullptr;
+        }
+
         throw std::out_of_range("QBdtQStabilizerNode::Apply2x2() not implemented!");
     }
 
+#ifdef ENABLE_COMPLEX_X2
+    virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b1)
+#else
+    virtual void PushSpecial(complex const* mtrx, QBdtNodeInterfacePtr& b1)
+#endif
+    {
+        throw std::out_of_range("QBdtNodeInterface::PushSpecial() not implemented! (You probably called "
+                                "PushStateVector() past terminal depth.)");
+    }
     virtual QBdtNodeInterfacePtr PopSpecial(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
     {
         throw std::out_of_range(

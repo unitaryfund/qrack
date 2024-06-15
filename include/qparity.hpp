@@ -35,7 +35,9 @@ public:
         CUniformParityRZ(std::vector<bitLenInt>(), mask, angle);
     }
 
-    /** Overall probability of any odd permutation of the masked set of bits */
+    /**
+     * Overall probability of any odd permutation of the masked set of bits
+     */
     virtual real1_f ProbParity(bitCapInt mask) = 0;
 
     /**

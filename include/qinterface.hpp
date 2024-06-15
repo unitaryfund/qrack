@@ -13,6 +13,7 @@
 #pragma once
 
 #include "common/parallel_for.hpp"
+#include "common/pauli.hpp"
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
 
@@ -27,20 +28,6 @@ namespace Qrack {
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
-
-/**
- * Enumerated list of Pauli bases
- */
-enum Pauli {
-    /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
-    PauliI = 0,
-    /// Pauli X operator. Corresponds to Q# constant "PauliX."
-    PauliX = 1,
-    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
-    PauliY = 3,
-    /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
-    PauliZ = 2
-};
 
 /**
  * Enumerated list of supported engines.
@@ -73,6 +60,11 @@ enum QInterfaceEngine {
      * Create a QBinaryDecisionTree, (CPU-based).
      */
     QINTERFACE_BDT,
+
+    /**
+     * Create a QBinaryDecisionTree, (CPU-based).
+     */
+    QINTERFACE_BDT_HYBRID,
 
     /**
      * Create a QStabilizer, limited to Clifford/Pauli operations, but efficient.
@@ -117,12 +109,7 @@ enum QInterfaceEngine {
 #if ENABLE_OPENCL
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_QPAGER,
 
-#if FPPOW > 4
     QINTERFACE_OPTIMAL_BASE = QINTERFACE_HYBRID,
-#else
-    QINTERFACE_OPTIMAL_BASE = QINTERFACE_OPENCL,
-#endif
-
 #else
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_CPU,
 
@@ -156,12 +143,6 @@ protected:
     std::uniform_real_distribution<real1_s> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
 
-    virtual void SetQubitCount(bitLenInt qb)
-    {
-        qubitCount = qb;
-        maxQPower = pow2(qubitCount);
-    }
-
     // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
     // you need a safe pointer to norm(), try this:
     static inline real1_f normHelper(complex c) { return (real1_f)norm(c); }
@@ -189,9 +170,9 @@ protected:
 
     template <typename Fn> void MACWrapper(const std::vector<bitLenInt>& controls, Fn fn)
     {
-        bitCapInt xMask = 0U;
+        bitCapInt xMask = ZERO_BCI;
         for (size_t i = 0U; i < controls.size(); ++i) {
-            xMask |= pow2(controls[i]);
+            bi_or_ip(&xMask, pow2(controls[i]));
         }
 
         XMask(xMask);
@@ -199,19 +180,35 @@ protected:
         XMask(xMask);
     }
 
-    bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
+    virtual bitCapInt SampleClone(const std::vector<bitCapInt>& qPowers)
     {
         QInterfacePtr clone = Clone();
 
         const bitCapInt rawSample = clone->MAll();
-        bitCapInt sample = 0U;
+        bitCapInt sample = ZERO_BCI;
         for (size_t i = 0U; i < qPowers.size(); ++i) {
-            if (rawSample & qPowers[i]) {
-                sample |= pow2(i);
+            if (bi_compare_0(rawSample & qPowers[i]) != 0) {
+                bi_or_ip(&sample, pow2(i));
             }
         }
 
         return sample;
+    }
+
+    virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {});
+    virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps,
+        std::vector<real1> eigenVals = {});
+    virtual real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        std::vector<bitCapInt> perms;
+        perms.reserve(bits.size() << 1U);
+        for (size_t i = 0U; i < bits.size(); ++i) {
+            perms.push_back(ZERO_BCI);
+            perms.push_back(pow2(i));
+        }
+
+        return isExp ? ExpectationBitsFactorized(bits, perms, offset) : VarianceBitsFactorized(bits, perms, offset);
     }
 
 public:
@@ -226,7 +223,7 @@ public:
         , qubitCount(0U)
         , randomSeed(0)
         , amplitudeFloor(REAL1_EPSILON)
-        , maxQPower(1U)
+        , maxQPower(ONE_BCI)
         , rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
     {
@@ -243,6 +240,12 @@ public:
         if (rand_generator != NULL) {
             rand_generator->seed(seed);
         }
+    }
+
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        qubitCount = qb;
+        maxQPower = pow2(qubitCount);
     }
 
     /** Set the number of threads in parallel for loops, per component QEngine */
@@ -336,8 +339,18 @@ public:
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(toCopy, qubitCount); }
+    /**
+     * This is a variant of `Compose()` for a `toCopy` argument that will definitely not be reused once "Composed,"
+     * hence more aggressive optimization can be done.
+     */
     virtual bitLenInt ComposeNoClone(QInterfacePtr toCopy) { return Compose(toCopy); }
+    /**
+     * `Compose()` a vector of peer `QInterface` targets, in sequence.
+     */
     virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
+    /**
+     * `Compose()` a `QInterface` peer, inserting its qubit into index order at `start` index.
+     */
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start);
 
     /**
@@ -590,7 +603,7 @@ public:
     virtual void UniformlyControlledSingleBit(
         const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const complex* mtrxs)
     {
-        UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), 0);
+        UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), ZERO_BCI);
     }
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
         const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
@@ -875,9 +888,9 @@ public:
      */
     virtual void H(bitLenInt qubit)
     {
-        constexpr complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        constexpr complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
-        constexpr complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
         Mtrx(mtrx, qubit);
     }
 
@@ -888,13 +901,13 @@ public:
      */
     virtual void SqrtH(bitLenInt qubit)
     {
-        constexpr complex m00 =
+        QRACK_CONST complex m00 =
             complex((real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)));
-        constexpr complex m01 = complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2));
-        constexpr complex m10 = m01;
-        constexpr complex m11 =
+        QRACK_CONST complex m01 = complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2));
+        QRACK_CONST complex m10 = m01;
+        QRACK_CONST complex m11 =
             complex((real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)));
-        constexpr complex mtrx[4]{ m00, m01, m10, m11 };
+        QRACK_CONST complex mtrx[4]{ m00, m01, m10, m11 };
         Mtrx(mtrx, qubit);
     }
 
@@ -905,10 +918,10 @@ public:
      */
     virtual void SH(bitLenInt qubit)
     {
-        constexpr complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        constexpr complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
-        constexpr complex C_I_SQRT1_2_NEG = complex(ZERO_R1, -SQRT1_2_R1);
-        constexpr complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, C_I_SQRT1_2_NEG };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
+        QRACK_CONST complex C_I_SQRT1_2_NEG = complex(ZERO_R1, -SQRT1_2_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, C_I_SQRT1_2_NEG };
         Mtrx(mtrx, qubit);
     }
 
@@ -919,10 +932,10 @@ public:
      */
     virtual void HIS(bitLenInt qubit)
     {
-        constexpr complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        constexpr complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
-        constexpr complex C_I_SQRT1_2_NEG = complex(ZERO_R1, -SQRT1_2_R1);
-        constexpr complex mtrx[4]{ C_SQRT1_2, C_I_SQRT1_2_NEG, C_SQRT1_2, C_I_SQRT1_2 };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_I_SQRT1_2 = complex(ZERO_R1, SQRT1_2_R1);
+        QRACK_CONST complex C_I_SQRT1_2_NEG = complex(ZERO_R1, -SQRT1_2_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_I_SQRT1_2_NEG, C_SQRT1_2, C_I_SQRT1_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1021,7 +1034,7 @@ public:
             return;
         }
 
-        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), qubit);
+        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / pow2Ocl(n - 1U))), qubit);
     }
 
     /**
@@ -1035,7 +1048,7 @@ public:
             return;
         }
 
-        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), qubit);
+        Phase(ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / pow2Ocl(n - 1U))), qubit);
     }
 
     /**
@@ -1102,9 +1115,9 @@ public:
      */
     virtual void SqrtX(bitLenInt qubit)
     {
-        constexpr complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        constexpr complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        constexpr complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
+        QRACK_CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1116,9 +1129,9 @@ public:
      */
     virtual void ISqrtX(bitLenInt qubit)
     {
-        constexpr complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        constexpr complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        constexpr complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2 };
+        QRACK_CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1131,9 +1144,9 @@ public:
      */
     virtual void SqrtY(bitLenInt qubit)
     {
-        constexpr complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        constexpr complex ONE_PLUS_I_DIV_2_NEG = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        constexpr complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2_NEG, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
+        QRACK_CONST complex ONE_PLUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex ONE_PLUS_I_DIV_2_NEG = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2_NEG, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1146,9 +1159,9 @@ public:
      */
     virtual void ISqrtY(bitLenInt qubit)
     {
-        constexpr complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        constexpr complex ONE_MINUS_I_DIV_2_NEG = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        constexpr complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2_NEG, ONE_MINUS_I_DIV_2 };
+        QRACK_CONST complex ONE_MINUS_I_DIV_2 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex ONE_MINUS_I_DIV_2_NEG = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2_NEG, ONE_MINUS_I_DIV_2 };
         Mtrx(mtrx, qubit);
     }
 
@@ -1159,10 +1172,10 @@ public:
      */
     virtual void SqrtW(bitLenInt qubit)
     {
-        constexpr complex diag = complex(SQRT1_2_R1, ZERO_R1);
-        constexpr complex m01 = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        constexpr complex m10 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        constexpr complex mtrx[4]{ diag, m01, m10, diag };
+        QRACK_CONST complex diag = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex m01 = complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex m10 = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ diag, m01, m10, diag };
         Mtrx(mtrx, qubit);
     }
 
@@ -1173,10 +1186,10 @@ public:
      */
     virtual void ISqrtW(bitLenInt qubit)
     {
-        constexpr complex diag = complex(SQRT1_2_R1, ZERO_R1);
-        constexpr complex m01 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        constexpr complex m10 = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        constexpr complex mtrx[4]{ diag, m01, m10, diag };
+        QRACK_CONST complex diag = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex m01 = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex m10 = complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2));
+        QRACK_CONST complex mtrx[4]{ diag, m01, m10, diag };
         Mtrx(mtrx, qubit);
     }
 
@@ -1189,9 +1202,9 @@ public:
     virtual void CH(bitLenInt control, bitLenInt target)
     {
         const std::vector<bitLenInt> controls{ control };
-        constexpr complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        constexpr complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
-        constexpr complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
         MCMtrx(controls, mtrx, target);
     }
 
@@ -1204,9 +1217,9 @@ public:
     virtual void AntiCH(bitLenInt control, bitLenInt target)
     {
         const std::vector<bitLenInt> controls{ control };
-        constexpr complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
-        constexpr complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
-        constexpr complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
+        QRACK_CONST complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
+        QRACK_CONST complex mtrx[4]{ C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2_NEG };
         MACMtrx(controls, mtrx, target);
     }
 
@@ -1295,7 +1308,7 @@ public:
         }
 
         const std::vector<bitLenInt> controls{ control };
-        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / pow2Ocl(n - 1U))), target);
     }
 
     /**
@@ -1311,7 +1324,7 @@ public:
         }
 
         const std::vector<bitLenInt> controls{ control };
-        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(ONE_R1 / pow2Ocl(n - 1U))), target);
     }
 
     /**
@@ -1327,7 +1340,7 @@ public:
         }
 
         const std::vector<bitLenInt> controls{ control };
-        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+        MCPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / pow2Ocl(n - 1U))), target);
     }
 
     /**
@@ -1343,7 +1356,7 @@ public:
         }
 
         const std::vector<bitLenInt> controls{ control };
-        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U)))), target);
+        MACPhase(controls, ONE_CMPLX, pow(-ONE_CMPLX, (real1)(-ONE_R1 / pow2Ocl(n - 1U))), target);
     }
 
     /** @} */
@@ -2097,33 +2110,72 @@ public:
     /** Logical shift right, filling the extra bits with |0> */
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
-#if ENABLE_ALU
+    /** Add integer (without sign) */
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+
+    /** Subtract classical integer (without sign) */
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
+    {
+        const bitCapInt invToSub = pow2(length) - toSub;
+        INC(invToSub, start, length);
+    }
+
     /** Common driver method behind INCC and DECC */
     virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Add integer (without sign, with carry) */
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        const bool hasCarry = M(carryIndex);
+        if (hasCarry) {
+            X(carryIndex);
+            bi_increment(&toAdd, 1U);
+        }
+
+        INCDECC(toAdd, start, length, carryIndex);
+    }
 
     /** Subtract classical integer (without sign, with carry) */
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        const bool hasCarry = M(carryIndex);
+        if (hasCarry) {
+            X(carryIndex);
+        } else {
+            bi_increment(&toSub, 1U);
+        }
 
-    /** Add integer (without sign) */
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+        const bitCapInt invToSub = pow2(length) - toSub;
+        INCDECC(invToSub, start, length, carryIndex);
+    }
 
     /** Add integer (without sign, with controls) */
     virtual void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
 
-    /** Add a classical integer to the register, with sign and without carry. */
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
-
-    /** Subtract classical integer (without sign) */
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
-
     /** Subtract classical integer (without sign, with controls) */
-    virtual void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
+    virtual void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+    {
+        const bitCapInt invToSub = pow2(length) - toSub;
+        CINC(invToSub, inOutStart, length, controls);
+    }
+
+    /** Add a classical integer to the register, with sign and without carry. */
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        const bitCapInt signMask = pow2(length - 1U);
+        INC(signMask, start, length);
+        INCDECC(toAdd & ~signMask, start, length, overflowIndex);
+        if (bi_compare_0(toAdd & signMask) == 0) {
+            DEC(signMask, start, length);
+        }
+    }
 
     /** Subtract a classical integer from the register, with sign and without carry. */
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        const bitCapInt invToSub = pow2(length) - toSub;
+        INCS(invToSub, start, length, overflowIndex);
+    }
 
     /** Multiplication modulo N by integer, (out of place) */
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
@@ -2144,14 +2196,36 @@ public:
      *
      * (Assumes the outputBit is in the 0 state)
      */
-    virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+    {
+        // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+
+        // Assume outputBit is in 0 state.
+        CCNOT(inputBit1, inputBit2, carryOut);
+        CNOT(inputBit1, inputBit2);
+        CCNOT(inputBit2, carryInSumOut, carryOut);
+        CNOT(inputBit2, carryInSumOut);
+        CNOT(inputBit1, inputBit2);
+    }
 
     /**
      * Inverse of FullAdd
      *
      * (Can be thought of as "subtraction," but with a register convention that the same inputs invert FullAdd.)
      */
-    virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+    {
+        // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+        // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
+        // (CNOT and CCNOT are self-inverse.)
+
+        // Assume outputBit is in 0 state.
+        CNOT(inputBit1, inputBit2);
+        CNOT(inputBit2, carryInSumOut);
+        CCNOT(inputBit2, carryInSumOut, carryOut);
+        CNOT(inputBit1, inputBit2);
+        CCNOT(inputBit1, inputBit2, carryOut);
+    }
 
     /**
      * Controlled quantum analog of classical "Full Adder" gate
@@ -2198,7 +2272,6 @@ public:
      */
     virtual void CIADC(const std::vector<bitLenInt>& controls, bitLenInt input1, bitLenInt input2, bitLenInt output,
         bitLenInt length, bitLenInt carry);
-#endif
 
     /** @} */
 
@@ -2250,7 +2323,7 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, 0, false); }
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, ZERO_BCI, false); }
 
     /** Measure permutation state of all coherent bits */
     virtual bitCapInt MAll() { return MReg(0, qubitCount); }
@@ -2384,6 +2457,122 @@ public:
     virtual void ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArray);
 
     /**
+     * Direct measure of variance of listed permutation probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument, is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        return ExpVarBitsAll(false, bits, offset);
+    }
+
+    /**
+     * Direct measure of (reduced density matrix) variance of listed permutation probability
+     *
+     * The (bit string, reduced density matrix) variance of all included permutations of bits, with bits valued from low
+     * to high as the order of the "bits" array parameter argument, is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceBitsAllRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
+    {
+        return VarianceBitsAll(bits, offset);
+    }
+
+    /**
+     * Direct measure of variance of listed Pauli tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VariancePauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis);
+
+    /**
+     * Direct measure of variance of listed (3-parameter) single-qubit tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceUnitaryAll(
+        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(false, bits, basisOps, eigenVals);
+    }
+
+    /**
+     * Direct measure of variance of listed (2x2 operator) single-qubit tensor product probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument,  is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceUnitaryAll(const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(false, bits, basisOps, eigenVals);
+    }
+
+    /**
+     * Direct measure of variance of listed bit string probability
+     *
+     * The (bit string) variance of all included permutations of bits, with bits valued from low to high as the order of
+     * the "bits" array parameter argument, is returned.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceFloatsFactorized(const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
+
+    /**
+     * Direct measure of (reduced density matrix) variance of bits, given an array of qubit weights
+     *
+     * The weight-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry. If there are stabilizer ancillae, they are traced out of the reduced density matrix, giving an approximate
+     * result.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceFloatsFactorizedRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+    {
+        return VarianceFloatsFactorized(bits, weights);
+    }
+
+    /**
+     * Get expectation value of bits, given an array of qubit weights
+     *
+     * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceBitsFactorized(
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI);
+
+    /**
+     * Get (reduced density matrix) expectation value of bits, given an array of qubit weights
+     *
+     * The weighter-per-qubit expectation value of is returned, with each "bits" entry corresponding to a "perms" weight
+     * entry. If there are stabilizer ancillae, they are traced out of the reduced density matrix, giving an approximate
+     * result.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f VarianceBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
+    {
+        return VarianceBitsFactorized(bits, perms, offset);
+    }
+
+    /**
      * Get permutation expectation value of bits
      *
      * The permutation expectation value of all included bits is returned, with bits valued from low to high as the
@@ -2391,16 +2580,47 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    virtual real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
-        std::vector<bitCapInt> perms;
-        perms.reserve(bits.size() << 1U);
-        for (size_t i = 0U; i < bits.size(); ++i) {
-            perms.push_back(0U);
-            perms.push_back(pow2(i));
-        }
+        return ExpVarBitsAll(true, bits, offset);
+    }
 
-        return ExpectationBitsFactorized(bits, perms, offset);
+    /**
+     * Get Pauli tensor product observable
+     *
+     * The Pauli tensor basis expectation value of all included bits is returned, with bits valued from low to high as
+     * the order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector<Pauli> paulis);
+
+    /**
+     * Get single-qubit tensor product (arbitrary real) observable
+     *
+     * The single-qubit tensor basis (arbitrary real) expectation value of all included bits is returned, with bits
+     * valued from low to high as the order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(true, bits, basisOps, eigenVals);
+    }
+
+    /**
+     * Get single-qubit (3-parameter) tensor product (arbitrary real) observable
+     *
+     * The single-qubit (3-parameter) tensor basis (arbitrary real) expectation value of all included bits is returned,
+     * with bits valued from low to high as the order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationUnitaryAll(
+        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {})
+    {
+        return ExpVarUnitaryAll(true, bits, basisOps, eigenVals);
     }
 
     /**
@@ -2412,7 +2632,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationBitsFactorized(
-        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0U);
+        const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI);
 
     /**
      * Get (reduced density matrix) expectation value of bits, given an array of qubit weights
@@ -2423,8 +2643,8 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsFactorizedRdm(
-        bool roundRz, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset = 0)
+    virtual real1_f ExpectationBitsFactorizedRdm(bool roundRz, const std::vector<bitLenInt>& bits,
+        const std::vector<bitCapInt>& perms, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpectationBitsFactorized(bits, perms, offset);
     }
@@ -2489,7 +2709,8 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAllRdm(bool roundRz, const std::vector<bitLenInt>& bits, bitCapInt offset = 0U)
+    virtual real1_f ExpectationBitsAllRdm(
+        bool roundRz, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         return ExpectationBitsAll(bits, offset);
     }
@@ -2537,8 +2758,8 @@ public:
     }
 
     /**
-     * Compare state vectors approximately, component by component, to determine whether this state vector is the same
-     * as the target.
+     * Compare state vectors approximately, to determine whether this state vector is the same as the target.
+     * (If (1 - <\psi_e|\psi_c>) <= `error_tol` between states |\psi_c> and |\psi_e>, they are "the same.")
      *
      * \warning PSEUDO-QUANTUM
      */
@@ -2552,8 +2773,18 @@ public:
         return ApproxCompare(toCompare, error_tol);
     }
 
+    /**
+     * Calculates (1 - <\psi_e|\psi_c>) between states |\psi_c> and |\psi_e>.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare) = 0;
 
+    /**
+     * Attempt to `Decompose()` a bit range. If the result can `Compose()` again to the original state vector with
+     * (1 - <\psi_e|\psi_c>) <= `error_tol`, return "true" and complete `Decompose()`; otherwise, restore the original
+     * state and return "false."
+     */
     virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
     /**
@@ -2656,6 +2887,10 @@ public:
      */
     virtual void SetSdrp(real1_f sdrp){};
     /**
+     * Set the "Near-clifford rounding parameter" value, (between 0 and 1)
+     */
+    virtual void SetNcrp(real1_f ncrp){};
+    /**
      *  Set reactive separation option (on by default if available)
      *
      *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to
@@ -2714,10 +2949,10 @@ public:
     virtual real1_f FirstNonzeroPhase()
     {
         complex amp;
-        bitCapInt perm = 0U;
+        bitCapInt perm = ZERO_BCI;
         do {
             amp = GetAmplitude(perm);
-            ++perm;
+            bi_increment(&perm, 1U);
         } while ((abs(amp) <= REAL1_EPSILON) && (perm < maxQPower));
 
         return (real1_f)std::arg(amp);

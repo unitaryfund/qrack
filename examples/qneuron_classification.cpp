@@ -2,7 +2,7 @@
 //
 // (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
-// This example demonstrates an example of a "quantum associative memory" network with the Qrack::QNeuron
+// This example demonstrates an example of a "quantum neural classification" network with the Qrack::QNeuron
 // class. QNeuron is a type of "neuron" that can learn and predict in superposition, for general machine learning
 // purposes.
 //
@@ -312,7 +312,7 @@ int main()
     std::cout << "Column count: " << rawYX[0].size() << std::endl;
     bitLenInt predictorCount = rawYX[0].size() - 1U;
 
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, predictorCount + 1U, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, predictorCount + 1U, ZERO_BCI);
 
     std::vector<QNeuronPtr> outputLayer;
     std::vector<real1> etas;

@@ -20,7 +20,7 @@
 #include <string>
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
-#define QRACK_TEST_EPSILON 0.9
+#define QRACK_TEST_EPSILON 0.5
 
 /*
  * Default engine type to run the tests with. Global because catch doesn't
@@ -29,6 +29,7 @@
 extern enum Qrack::QInterfaceEngine testEngineType;
 extern enum Qrack::QInterfaceEngine testSubEngineType;
 extern enum Qrack::QInterfaceEngine testSubSubEngineType;
+extern enum Qrack::QInterfaceEngine testSubSubSubEngineType;
 extern qrack_rand_gen_ptr rng;
 extern bool enable_normalization;
 extern bool disable_t_injection;
@@ -86,32 +87,23 @@ inline std::ostream& outputPerBitProbs(std::ostream& os, Qrack::QInterfacePtr qf
 
 inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr qftReg)
 {
-    bitCapInt i;
-
-    float maxProb = 0;
-    bitCapInt maxProbIdx = 0;
+    double maxProb = 0.0;
+    bitCapInt maxProbIdx = ZERO_BCI;
 
     // Iterate through all possible values of the bit array
-    for (i = 0; i < qftReg->GetMaxQPower(); i++) {
-        float prob = (float)qftReg->ProbAll(i);
+    for (bitCapInt i = ZERO_BCI; bi_compare(i, qftReg->GetMaxQPower()) < 0; bi_increment(&i, 1U)) {
+        double prob = (double)qftReg->ProbAll(i);
         if (prob > maxProb) {
             maxProb = prob;
             maxProbIdx = i;
         }
-        // if (prob != ZERO_R1) {
-        //     std::cout<<"(Perm "<<(int)i<<" "<<prob<<std::endl;
-        // }
     }
 
     os << qftReg->GetQubitCount() << "/";
 
     // Print the resulting maximum probability bit pattern.
-    for (i = qftReg->GetMaxQPower() >> 1UL; i > 0; i >>= 1UL) {
-        if (i & maxProbIdx) {
-            os << "1";
-        } else {
-            os << "0";
-        }
+    for (bitCapInt i = (qftReg->GetMaxQPower() >> 1U); bi_compare_0(i) != 0; bi_rshift_ip(&i, 1U)) {
+        os << ((bi_compare_0(i & maxProbIdx) == 0) ? "0" : "1");
     }
 
     // And print the probability, for interest.
@@ -173,8 +165,8 @@ public:
 
         for (bitLenInt j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
-            bool bit = (qftReg->Prob(j + start) > QRACK_TEST_EPSILON);
-            if (bit == !(mask & (1ULL << j))) {
+            const bool bit = qftReg->Prob(j + start) > QRACK_TEST_EPSILON;
+            if (bit == (bi_and_1(mask >> j) == 0)) {
                 return false;
             }
         }
@@ -186,7 +178,7 @@ public:
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
         for (int j = (length - 1); j >= 0; j--) {
-            ss << !!((int)(mask & (1ULL << j)));
+            ss << bi_and_1(mask >> j);
         }
         return ss.str();
     }

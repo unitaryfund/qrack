@@ -107,7 +107,7 @@ void DispatchQueue::dispatch_thread_handler(void)
 
         lock.lock();
 
-        if (!q_.size()) {
+        if (q_.empty()) {
             isFinished_ = true;
             cvFinished_.notify_all();
         }

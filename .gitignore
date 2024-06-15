@@ -12,10 +12,12 @@ tags
 CMakeCache.txt
 CMakeFiles/
 Makefile
-cmake_install.cmake
-qrack.pc
+*.cmake
+include/OpenCL/
 _build/
 _cuda_build/
 _wasm_build/
 _ios_build/
-include/OpenCL/
+libqrack.pc
+libqrack-*/
+libqrack_*.orig.tar.xz

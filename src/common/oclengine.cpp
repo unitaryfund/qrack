@@ -180,7 +180,7 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::
                           << std::endl;
             }
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
                 { std::pair<const void*, size_t>(&buffer[0U], buffer.size()) }, &binaryStatus, &buildError);
 #else
@@ -263,7 +263,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     }
 
     FILE* clBinFile = fopen((path + fileName).c_str(), "w");
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
     std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
     char* clBinary = clBinaries[clBinIndex];
     fwrite(clBinary, clBinSize, sizeof(char), clBinFile);
@@ -293,7 +293,7 @@ InitOClResult OCLEngine::InitOCL(
 
     cl::Platform::get(&all_platforms);
 
-    if (!all_platforms.size()) {
+    if (all_platforms.empty()) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
         return InitOClResult();
     }
@@ -301,6 +301,8 @@ InitOClResult OCLEngine::InitOCL(
     // get all devices
     std::vector<cl::Platform> devPlatVec;
     std::vector<std::vector<cl::Device>> all_platforms_devices;
+    std::vector<bool> all_devices_is_gpu;
+    std::vector<bool> all_devices_is_cpu;
     for (size_t i = 0U; i < all_platforms.size(); ++i) {
         all_platforms_devices.push_back(std::vector<cl::Device>());
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &(all_platforms_devices[i]));
@@ -314,8 +316,37 @@ InitOClResult OCLEngine::InitOCL(
             device_platform_id.push_back(i);
         }
         all_devices.insert(all_devices.end(), all_platforms_devices[i].begin(), all_platforms_devices[i].end());
+
+        // Linux implements `cl::Device` relation operators, including equality, but Mac considers OpenCL "deprecated,"
+        // and other compilers might not see a strict need in OpenCL implementation standard for a `cl::Device` equality
+        // operator, which would allow the use of `std::find()`.
+        std::vector<cl::Device> gpu_devices;
+        all_platforms[i].getDevices(CL_DEVICE_TYPE_GPU, &gpu_devices);
+        std::vector<bool> gpu_to_insert(all_platforms_devices[i].size(), false);
+        for (size_t j = 0U; j < gpu_devices.size(); ++j) {
+            for (size_t k = 0U; k < all_platforms_devices[i].size(); ++k) {
+                if (gpu_devices[j].getInfo<CL_DEVICE_NAME>() == all_platforms_devices[i][j].getInfo<CL_DEVICE_NAME>()) {
+                    // Assuming all devices with the same name are identical vendor, line, and model, this works.
+                    gpu_to_insert[k] = true;
+                }
+            }
+        }
+        all_devices_is_gpu.insert(all_devices_is_gpu.end(), gpu_to_insert.begin(), gpu_to_insert.end());
+
+        std::vector<cl::Device> cpu_devices;
+        all_platforms[i].getDevices(CL_DEVICE_TYPE_CPU, &cpu_devices);
+        std::vector<bool> cpu_to_insert(all_platforms_devices[i].size(), false);
+        for (size_t j = 0U; j < cpu_devices.size(); ++j) {
+            for (size_t k = 0U; k < all_platforms_devices[i].size(); ++k) {
+                if (cpu_devices[j].getInfo<CL_DEVICE_NAME>() == all_platforms_devices[i][j].getInfo<CL_DEVICE_NAME>()) {
+                    // Assuming all devices with the same name are identical vendor, line, and model, this works.
+                    cpu_to_insert[k] = true;
+                }
+            }
+        }
+        all_devices_is_cpu.insert(all_devices_is_cpu.end(), cpu_to_insert.begin(), cpu_to_insert.end());
     }
-    if (!all_devices.size()) {
+    if (all_devices.empty()) {
         std::cout << " No devices found. Check OpenCL installation!\n";
         return InitOClResult();
     }
@@ -344,8 +375,12 @@ InitOClResult OCLEngine::InitOCL(
             plat_id = device_platform_id[i];
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
-        DeviceContextPtr devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i],
-            all_contexts[all_contexts.size() - 1U], i, plat_id, maxAllocVec[i % maxAllocVec.size()]);
+        const std::string devName(all_devices[i].getInfo<CL_DEVICE_NAME>());
+        const bool useHostRam = all_devices_is_cpu[i] || (devName.find("Intel(R) UHD") != std::string::npos) ||
+            (devName.find("Iris") != std::string::npos);
+        DeviceContextPtr devCntxt =
+            std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1U], i,
+                plat_id, maxAllocVec[i % maxAllocVec.size()], all_devices_is_gpu[i], all_devices_is_cpu[i], useHostRam);
 
         std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;
         std::replace(fileName.begin(), fileName.end(), ' ', '_');

@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: libqrack
+Source: https://github.com/unitaryfund/qrack
+
+
+Files: *
+Copyright: Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
+License: LGPL-3
+ /usr/share/common-licenses/LGPL-3

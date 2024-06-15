@@ -108,6 +108,15 @@ public:
         return (real1_f)runningNorm;
     }
 
+    /** Switch to/from host/device state vector bufffer */
+    virtual void SwitchHostPtr(bool useHostMem){};
+    /** Reset host/device state vector bufffer usage to default */
+    virtual void ResetHostPtr() { SwitchHostPtr(useHostRam); }
+    /** Set GPU device ID */
+    virtual void SetDevice(int64_t dID) {}
+    /** Get GPU device ID */
+    virtual int64_t GetDevice() { return -1; }
+
     /** Set all amplitudes to 0, and optionally temporarily deallocate state vector RAM */
     virtual void ZeroAmplitudes() = 0;
     /** Exactly copy the state vector of a different QEngine instance */
@@ -144,7 +153,7 @@ public:
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm)
     {
-        bitCapInt powerTest = result ? qPower : 0U;
+        const bitCapInt powerTest = result ? qPower : ZERO_BCI;
         ApplyM(qPower, powerTest, nrm);
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;

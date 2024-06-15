@@ -29,6 +29,53 @@
 
 namespace Qrack {
 
+class RandSupportSingleton {
+private:
+    bool isSupported;
+
+    RandSupportSingleton()
+        : isSupported(CheckHardwareRDRANDSupport())
+    {
+        // Intentionally left blank
+    }
+
+    static bool CheckHardwareRDRANDSupport()
+    {
+#if ENABLE_RDRAND
+        const unsigned flag_RDRAND = (1 << 30);
+
+#if _MSC_VER
+        int ex[4];
+        __cpuid(ex, 1);
+
+        return ((ex[2] & flag_RDRAND) == flag_RDRAND);
+#else
+        unsigned eax, ebx, ecx, edx;
+        ecx = 0;
+        __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+
+        return ((ecx & flag_RDRAND) == flag_RDRAND);
+#endif
+
+#else
+        return false;
+#endif
+    }
+
+public:
+    // See https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
+    /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
+    static RandSupportSingleton& Instance()
+    {
+        static RandSupportSingleton instance;
+        return instance;
+    }
+    RandSupportSingleton(RandSupportSingleton const&) = delete;
+    void operator=(RandSupportSingleton const&) = delete;
+
+    bool SupportsRDRAND() { return isSupported; }
+};
+
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
 // See https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
 class RandFile {
@@ -91,28 +138,7 @@ private:
     }
 
 public:
-    bool SupportsRDRAND()
-    {
-#if ENABLE_RDRAND
-        const unsigned flag_RDRAND = (1 << 30);
-
-#if _MSC_VER
-        int ex[4];
-        __cpuid(ex, 1);
-
-        return ((ex[2] & flag_RDRAND) == flag_RDRAND);
-#else
-        unsigned eax, ebx, ecx, edx;
-        ecx = 0;
-        __get_cpuid(1, &eax, &ebx, &ecx, &edx);
-
-        return ((ecx & flag_RDRAND) == flag_RDRAND);
-#endif
-
-#else
-        return false;
-#endif
-    }
+    bool SupportsRDRAND() { return RandSupportSingleton::Instance().SupportsRDRAND(); }
 
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
     unsigned NextRaw() { return RandFile::getInstance().NextRaw(); }

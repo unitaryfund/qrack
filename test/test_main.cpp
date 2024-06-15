@@ -21,9 +21,10 @@
 
 using namespace Qrack;
 
-enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
-enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
-enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
+enum QInterfaceEngine testEngineType = QINTERFACE_OPTIMAL_BASE;
+enum QInterfaceEngine testSubEngineType = QINTERFACE_OPTIMAL_BASE;
+enum QInterfaceEngine testSubSubEngineType = QINTERFACE_OPTIMAL_BASE;
+enum QInterfaceEngine testSubSubSubEngineType = QINTERFACE_OPTIMAL_BASE;
 qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_t_injection = false;
@@ -38,7 +39,7 @@ std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput;
 int benchmarkSamples = 100;
-int benchmarkDepth = 20;
+int benchmarkDepth = -1;
 int benchmarkMaxMagic = -1;
 std::vector<int64_t> devList;
 
@@ -53,7 +54,7 @@ std::vector<int64_t> devList;
 #endif
 #define SHOW_OCL_BANNER()                                                                                              \
     if (QRACK_GPU_SINGLETON.GetDeviceCount()) {                                                                        \
-        CreateQuantumInterface(QRACK_GPU_ENUM, 1, 0).reset();                                                          \
+        CreateQuantumInterface(QRACK_GPU_ENUM, 1, ZERO_BCI).reset();                                                   \
     }
 
 int main(int argc, char* argv[])
@@ -74,9 +75,11 @@ int main(int argc, char* argv[])
     bool opencl = false;
     bool hybrid = false;
     bool bdt = false;
+    bool bdt_hybrid = false;
     bool stabilizer = false;
     bool stabilizer_qpager = false;
     bool stabilizer_bdt = false;
+    bool stabilizer_bdt_hybrid = false;
     bool cuda = false;
 
     std::string devListStr;
@@ -95,12 +98,14 @@ int main(int argc, char* argv[])
         Opt(qtensornetwork)["--layer-qtensornetwork"]("Enable QTensorNetwork implementation tests") |
         Opt(stabilizer_qpager)["--proc-stabilizer-qpager"](
             "Enable QStabilizerHybrid over QPager implementation tests") |
-        Opt(stabilizer_bdt)["--proc-stabilizer-bdt"](
-            "Enable QStabilizerHybrid over QBinaryDecisionTree implementation tests") |
+        Opt(stabilizer_bdt)["--proc-stabilizer-bdt"]("Enable QStabilizerHybrid over QBdt implementation tests") |
+        Opt(stabilizer_bdt_hybrid)["--proc-stabilizer-bdt-hybrid"](
+            "Enable QStabilizerHybrid over QBdtHybrid implementation tests") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl)["--proc-opencl"]("Single (parallel) processor OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
         Opt(bdt)["--proc-bdt"]("Enable binary decision tree implementation tests") |
+        Opt(bdt_hybrid)["--proc-bdt-hybrid"]("Enable \"hybrid\" binary decision tree implementation tests") |
         Opt(stabilizer)["--proc-stabilizer"]("Enable (hybrid) stabilizer implementation tests") |
         Opt(cuda)["--proc-cuda"]("Enable QEngineCUDA tests") |
         Opt(async_time)["--async-time"]("Time based on asynchronous return") |
@@ -126,7 +131,7 @@ int main(int argc, char* argv[])
         Opt(benchmarkSamples, "samples")["--samples"]("number of samples to collect (default: 100)") |
         Opt(benchmarkDepth, "depth")["--benchmark-depth"](
             "depth of randomly constructed circuits, when applicable, with 1 round of single qubit and 1 round of "
-            "multi-qubit gates being 1 unit of depth (default: 20)") |
+            "multi-qubit gates being 1 unit of depth (default: 0, for square circuits)") |
         Opt(benchmarkMaxMagic, "magic")["--benchmark-max-magic"](
             "max number of t/tadj gates in semi-Clifford tests (default: [defined per test case])") |
         Opt(devListStr, "devices")["--devices"](
@@ -164,7 +169,8 @@ int main(int argc, char* argv[])
         // qtensornetwork = true;
     }
 
-    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt && !cuda) {
+    if (!cpu && !opencl && !hybrid && !bdt && !bdt_hybrid && !stabilizer && !stabilizer_qpager && !stabilizer_bdt &&
+        !stabilizer_bdt_hybrid && !cuda) {
         cpu = true;
         opencl = true;
         cuda = true;
@@ -222,6 +228,13 @@ int main(int argc, char* argv[])
             testEngineType = QINTERFACE_BDT;
             testSubEngineType = QINTERFACE_OPTIMAL_BASE;
             session.config().stream() << "############ QBinaryDecisionTree ############" << std::endl;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && bdt_hybrid) {
+            testEngineType = QINTERFACE_BDT_HYBRID;
+            testSubEngineType = QINTERFACE_OPTIMAL_BASE;
+            session.config().stream() << "############ QBdtHybrid ############" << std::endl;
             num_failed = session.run();
         }
 
@@ -304,6 +317,13 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
+        if (num_failed == 0 && bdt_hybrid) {
+            session.config().stream() << "############ QUnit -> QBdtHybrid ############" << std::endl;
+            testSubEngineType = QINTERFACE_BDT_HYBRID;
+            testSubSubEngineType = QINTERFACE_OPTIMAL_BASE;
+            num_failed = session.run();
+        }
+
 #if ENABLE_OPENCL
         if (num_failed == 0 && opencl) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
@@ -339,6 +359,14 @@ int main(int argc, char* argv[])
                                       << std::endl;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_BDT;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_bdt_hybrid) {
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QBdtHybrid ############"
+                                      << std::endl;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT_HYBRID;
             num_failed = session.run();
         }
 
@@ -396,6 +424,15 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_BDT;
             num_failed = session.run();
         }
+
+        if (num_failed == 0 && stabilizer_bdt_hybrid) {
+            session.config().stream()
+                << "############ QUnitMulti -> QStabilizerHybrid -> QBinaryDecisionTree ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT_HYBRID;
+            num_failed = session.run();
+        }
 #else
         if (num_failed == 0 && stabilizer) {
             session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QEngineCPU ############"
@@ -412,6 +449,14 @@ int main(int argc, char* argv[])
             testEngineType = QINTERFACE_QUNIT;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_BDT;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_bdt_hybrid) {
+            session.config().stream() << "############ QUnit -> QBdtHybrid ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT_HYBRID;
             num_failed = session.run();
         }
 #endif
@@ -464,13 +509,14 @@ int main(int argc, char* argv[])
     if (num_failed == 0 && qtensornetwork && bdt) {
         testEngineType = QINTERFACE_TENSOR_NETWORK;
         testSubEngineType = QINTERFACE_QUNIT;
-        testSubSubEngineType = QINTERFACE_BDT;
+        testSubSubEngineType = QINTERFACE_BDT_HYBRID;
         session.config().stream() << "############ QTensorNetwork (QBdt) ############" << std::endl;
         num_failed = session.run();
     } else if (num_failed == 0 && qtensornetwork) {
         testEngineType = QINTERFACE_TENSOR_NETWORK;
         testSubEngineType = QINTERFACE_QUNIT;
         testSubSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+        testSubSubSubEngineType = QINTERFACE_BDT_HYBRID;
         session.config().stream() << "############ QTensorNetwork (QStabilizerHybrid) ############" << std::endl;
         num_failed = session.run();
     }
@@ -491,8 +537,9 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 20, 0, rng, ONE_CMPLX,
-        enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 20, ZERO_BCI, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     if (disable_t_injection) {
         qftReg->SetTInjection(false);

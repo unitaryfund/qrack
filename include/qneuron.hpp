@@ -12,27 +12,12 @@
 
 #pragma once
 
+#include "common/qneuron_activation_function.hpp"
 #include "qinterface.hpp"
 
 #include <algorithm>
 
 namespace Qrack {
-
-/**
- * Enumerated list of activation functions
- */
-enum QNeuronActivationFn {
-    /// Default
-    Sigmoid = 0,
-    /// Rectified linear
-    ReLU = 1,
-    /// Gaussian linear
-    GeLU = 2,
-    /// Version of (default) "Sigmoid" with tunable sharpness
-    Generalized_Logistic = 3,
-    /// Leaky rectified linear
-    Leaky_ReLU = 4
-};
 
 class QNeuron;
 typedef std::shared_ptr<QNeuron> QNeuronPtr;
@@ -150,7 +135,7 @@ public:
 
     bitLenInt GetInputCount() { return inputIndices.size(); }
 
-    bitCapInt GetInputPower() { return inputPower; }
+    bitCapIntOcl GetInputPower() { return inputPower; }
 
     /** Predict a binary classification.
      *
@@ -165,7 +150,7 @@ public:
             qReg->RY((real1_f)(PI_R1 / 2), outputIndex);
         }
 
-        if (!inputIndices.size()) {
+        if (inputIndices.empty()) {
             // If there are no controls, this "neuron" is actually just a bias.
             switch (activationFn) {
             case ReLU:
@@ -219,7 +204,7 @@ public:
     /** "Uncompute" the Predict() method */
     real1_f Unpredict(bool expected = true)
     {
-        if (!inputIndices.size()) {
+        if (inputIndices.empty()) {
             // If there are no controls, this "neuron" is actually just a bias.
             switch (activationFn) {
             case ReLU:
@@ -295,7 +280,7 @@ public:
             return;
         }
 
-        for (bitCapInt perm = 0U; perm < inputPower; ++perm) {
+        for (bitCapIntOcl perm = 0U; perm < inputPower; ++perm) {
             startProb = LearnInternal(expected, eta, perm, startProb);
             if (0 > startProb) {
                 break;
@@ -320,18 +305,19 @@ public:
             return;
         }
 
-        bitCapInt perm = 0U;
+        bitCapIntOcl perm = 0U;
         for (size_t i = 0U; i < inputIndices.size(); ++i) {
-            perm |= qReg->M(inputIndices[i]) ? pow2(i) : 0U;
+            if (qReg->M(inputIndices[i])) {
+                perm |= pow2Ocl(i);
+            }
         }
 
         LearnInternal(expected, eta, perm, startProb);
     }
 
 protected:
-    real1_f LearnInternal(bool expected, real1_f eta, bitCapInt perm, real1_f startProb)
+    real1_f LearnInternal(bool expected, real1_f eta, bitCapIntOcl permOcl, real1_f startProb)
     {
-        bitCapIntOcl permOcl = (bitCapIntOcl)perm;
         const real1 origAngle = angles.get()[permOcl];
         real1& angle = angles.get()[permOcl];
 

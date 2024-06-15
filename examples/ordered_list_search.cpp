@@ -39,9 +39,9 @@ int main()
 
     // Both CPU and GPU types share the QInterface API.
 #if ENABLE_OPENCL
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, ZERO_BCI);
 #else
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, ZERO_BCI);
 #endif
     QAluPtr qAlu = std::dynamic_pointer_cast<QAlu>(qReg);
 
@@ -74,7 +74,7 @@ int main()
     // general ordered list. Changing the composition of the list, just above, allows you test different cases.
 
     // This is the theoretical starting point of the algorithm.
-    qReg->SetPermutation(0);
+    qReg->SetPermutation(ZERO_BCI);
     partLength = indexLength;
 
     for (i = 0; i < (indexLength / 2); i++) {
@@ -89,7 +89,7 @@ int main()
         bitLenInt unfixedLength = indexLength - fixedLength;
         bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
         bitCapIntOcl unfixedMask = (1 << unfixedLength) - 1;
-        bitCapIntOcl key = ((bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl key = (bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength) & fixedLengthMask;
 
         // (We could either manipulate the quantum bits directly to check the bounds, or rely on auxiliary classical
         // computing components, as need and efficiency dictate).
@@ -214,7 +214,7 @@ int main()
         bitLenInt unfixedLength = indexLength - fixedLength;
         bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
         bitCapIntOcl checkIncrement = 1 << (unfixedLength - 2);
-        bitCapIntOcl key = ((bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl key = (bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength) & fixedLengthMask;
         for (i = 0; i < 4; i++) {
             // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
             // computing components, as need and efficiency dictate).
@@ -239,7 +239,7 @@ int main()
     std::cout << "Full index/value pair:";
     bitCapInt endState = qReg->MReg(0, 20);
     for (j = 19; j >= 0; j--) {
-        if (endState & (1U << j)) {
+        if (bi_compare_0(endState & pow2(j)) != 0) {
             std::cout << "1";
         } else {
             std::cout << "0";

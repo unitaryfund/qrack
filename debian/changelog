@@ -1,0 +1,797 @@
+libqrack (9.7.0) noble; urgency=medium
+
+  * Expanded obserables API (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 23 May 2024 12:38:16 -0400
+
+libqrack (9.6.7) bionic; urgency=medium
+
+  * Bug fix: don't combine ancillae in hybrid stabilizer (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 12 May 2024 15:31:34 -0400
+
+libqrack (9.6.6) focal; urgency=medium
+
+  * Bug fix: don't combine ancillae in hybrid stabilizer (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 12 May 2024 15:08:46 -0400
+
+libqrack (9.6.5) jammy; urgency=medium
+
+  * Bug fix: don't combine ancillae in hybrid stabilizer (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 12 May 2024 13:02:55 -0400
+
+libqrack (9.6.4) noble; urgency=medium
+
+  * Bug fix: don't combine ancillae in hybrid stabilizer (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 12 May 2024 12:08:57 -0400
+
+libqrack (9.6.3) noble; urgency=medium
+
+  * First Noble Numbat release
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 25 Apr 2024 11:33:46 -0400
+
+libqrack (9.6.2) bionic; urgency=medium
+
+  * Variance() and ProbAll() in shared library API (Bionic 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 04 Apr 2024 16:35:22 -0400
+
+libqrack (9.6.1) jammy; urgency=medium
+
+  * Variance() and ProbAll() in shared library API (Jammy 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 04 Apr 2024 16:26:18 -0400
+
+libqrack (9.6.0) focal; urgency=medium
+
+  * Variance() and ProbAll() in shared library API (Focal 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 25 Feb 2024 09:43:31 -0500
+
+libqrack (9.5.2) bionic; urgency=medium
+
+  * "Foolproof" homogeneous multi-accelerator (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Feb 2024 16:56:51 -0500
+
+libqrack (9.5.1) jammy; urgency=medium
+
+  * "Foolproof" homogeneous multi-accelerator (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Feb 2024 16:16:33 -0500
+
+libqrack (9.5.0) focal; urgency=medium
+
+  * "Foolproof" homogeneous multi-accelerator (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Feb 2024 15:11:24 -0500
+
+libqrack (9.4.8) bionic; urgency=medium
+
+  * "Foolproof" reactive separation mode default (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 17 Feb 2024 08:25:47 -0500
+
+libqrack (9.4.7) jammy; urgency=medium
+
+  * "Foolproof" reactive separation mode default (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 17 Feb 2024 07:14:23 -0500
+
+libqrack (9.4.6) focal; urgency=medium
+
+  * "Foolproof" reactive separation mode default (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 16 Feb 2024 15:01:56 -0500
+
+libqrack (9.4.5) bionic; urgency=medium
+
+  * Bug fix for QBDD (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 08 Feb 2024 09:55:52 -0500
+
+libqrack (9.4.4) jammy; urgency=medium
+
+  * Bug fix for QBDD (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 08 Feb 2024 09:18:57 -0500
+
+libqrack (9.4.3) focal; urgency=medium
+
+  * Bug fix for QBDD (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 08 Feb 2024 08:39:22 -0500
+
+libqrack (9.4.2) bionic; urgency=medium
+
+  * Auto fidelity estimation for near-Clifford rounding (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 10 Jan 2024 12:27:57 -0500
+
+libqrack (9.4.1) jammy; urgency=medium
+
+  * Auto fidelity estimation for near-Clifford rounding (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 10 Jan 2024 12:05:18 -0500
+
+libqrack (9.4.0) focal; urgency=medium
+
+  * Auto fidelity estimation for near-Clifford rounding (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 10 Jan 2024 11:40:35 -0500
+
+libqrack (9.3.35) focal; urgency=medium
+
+  * Fix PPC binary (w/ new src package) (Focal, 1/1, no Jammy/Bionic)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 09 Jan 2024 17:03:51 -0500
+
+libqrack (9.3.34) focal; urgency=medium
+
+  * PowerPC OpenCL support (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 09 Jan 2024 16:38:45 -0500
+
+libqrack (9.3.33) jammy; urgency=medium
+
+  * Remove QBdtHybrid from default stack (Jammy, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 23:54:29 -0500
+
+libqrack (9.3.32) bionic; urgency=medium
+
+  * Remove QBdtHybrid from default stack (Bionic, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 23:38:25 -0500
+
+libqrack (9.3.31) focal; urgency=medium
+
+  * Fix ENABLE_COMPLEX_X2 (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 22:54:27 -0500
+
+libqrack (9.3.30) focal; urgency=medium
+
+  * Fix ENABLE_COMPLEX_X2 (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 22:38:39 -0500
+
+libqrack (9.3.29) focal; urgency=medium
+
+  * Fix ENABLE_COMPLEX_X2 (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 22:11:36 -0500
+
+libqrack (9.3.28) focal; urgency=medium
+
+  * Fix ENABLE_COMPLEX_X2 (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 21:57:28 -0500
+
+libqrack (9.3.27) focal; urgency=medium
+
+  * Fix CMake macro (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 21:43:01 -0500
+
+libqrack (9.3.26) focal; urgency=medium
+
+  * Fix CMake macro (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 21:26:55 -0500
+
+libqrack (9.3.25) focal; urgency=medium
+
+  * ENABLE_COMPLEX_X2 is always defined (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 21:15:04 -0500
+
+libqrack (9.3.24) focal; urgency=medium
+
+  * Fix cmakedefine usage (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 20:23:01 -0500
+
+libqrack (9.3.23) focal; urgency=medium
+
+  * Fix SSE3 header inclusion (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 19:29:45 -0500
+
+libqrack (9.3.22) focal; urgency=medium
+
+  * Remove QBdtHybrid from default stack (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 08 Jan 2024 18:43:44 -0500
+
+libqrack (9.3.21) bionic; urgency=medium
+
+  * Bi-directional QBdtHybrid mode control (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 07 Jan 2024 14:46:22 -0500
+
+libqrack (9.3.20) jammy; urgency=medium
+
+  * Bi-directional QBdtHybrid mode control (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 07 Jan 2024 14:02:44 -0500
+
+libqrack (9.3.19) focal; urgency=medium
+
+  * Bi-directional QBdtHybrid mode control (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 07 Jan 2024 13:01:10 -0500
+
+libqrack (9.3.18) Jammy; urgency=medium
+
+  * Better systemic precision constants (Jammy, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 06 Jan 2024 14:20:45 -0500
+
+libqrack (9.3.17) bionic; urgency=medium
+
+  * Better systemic precision constants (Bionic, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 06 Jan 2024 14:03:03 -0500
+
+libqrack (9.3.16) focal; urgency=medium
+
+  * Better systemic precision constants (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 06 Jan 2024 13:34:14 -0500
+
+libqrack (9.3.15) bionic; urgency=medium
+
+  * Stable QBdt (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 02 Jan 2024 15:25:47 -0500
+
+libqrack (9.3.14) jammy; urgency=medium
+
+  * Stable QBdt (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 02 Jan 2024 15:06:06 -0500
+
+libqrack (9.3.13) focal; urgency=medium
+
+  * Stable QBdt (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 02 Jan 2024 14:38:14 -0500
+
+libqrack (9.3.12) bionic; urgency=medium
+
+  * Fix edge cases in QBdt (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 19:02:59 -0500
+
+libqrack (9.3.11) jammy; urgency=medium
+
+  * Fix edge cases in QBdt (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 18:01:16 -0500
+
+libqrack (9.3.10) focal; urgency=medium
+
+  * Fix edge cases in QBt (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 17:53:21 -0500
+
+libqrack (9.3.9) bionic; urgency=medium
+
+  * Fix edge cases in QBdt (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 09:11:50 -0500
+
+libqrack (9.3.8) jammy; urgency=medium
+
+  * Fix edge cases in QBdt (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 09:01:46 -0500
+
+libqrack (9.3.7) focal; urgency=medium
+
+  * Fix edge cases in QBdt (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 08:08:37 -0500
+
+libqrack (9.3.6) focal; urgency=medium
+
+  * Fix edge case in QBdt::DecomposeDispose (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 01 Jan 2024 06:47:44 -0500
+
+libqrack (9.3.5) bionic; urgency=medium
+
+  * Fix edge cases in QBdt (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 30 Dec 2023 11:08:37 -0500
+
+libqrack (9.3.4) jammy; urgency=medium
+
+  * Fix edge cases in QBdt (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 30 Dec 2023 10:36:58 -0500
+
+libqrack (9.3.3) focal; urgency=medium
+
+  * Fix edge cases in QBdt (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 30 Dec 2023 10:18:14 -0500
+
+libqrack (9.3.2) bionic; urgency=medium
+
+  * QBdtHybrid in default optimal stack (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 29 Dec 2023 17:34:21 -0500
+
+libqrack (9.3.1) jammy; urgency=medium
+
+  * QBdtHybrid in default optimal stack (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 29 Dec 2023 16:47:23 -0500
+
+libqrack (9.3.0) focal; urgency=medium
+
+  * QBdtHybrid in default optimal stack (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 29 Dec 2023 10:41:52 -0500
+
+libqrack (9.2.4) bionic; urgency=medium
+
+  * C++23 and minor improvements (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 28 Dec 2023 12:56:13 -0500
+
+libqrack (9.2.3) jammy; urgency=medium
+
+  * C++23 and minor improvements (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 28 Dec 2023 12:08:57 -0500
+
+libqrack (9.2.2) focal; urgency=medium
+
+  * Fix ENABLE_INTRINSICS (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 28 Dec 2023 11:54:50 -0500
+
+libqrack (9.2.1) focal; urgency=medium
+
+  * Fix control.in (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 28 Dec 2023 11:36:12 -0500
+
+libqrack (9.2.0) focal; urgency=medium
+
+  * C++23 and minor improvements (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 28 Dec 2023 11:06:18 -0500
+
+libqrack (9.1.15) bionic; urgency=medium
+
+  * Optimize QBdtHybrid (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 17 Dec 2023 12:56:14 -0500
+
+libqrack (9.1.14) jammy; urgency=medium
+
+  * Optimize QBdtHybrid (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 17 Dec 2023 11:54:30 -0500
+
+libqrack (9.1.13) focal; urgency=medium
+
+  * Optimize QBdtHybrid (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 17 Dec 2023 10:38:19 -0500
+
+libqrack (9.1.12) bionic; urgency=medium
+
+  * Fix SEGFAULT in big_integer.cpp multiplication (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 13 Dec 2023 21:16:59 -0500
+
+libqrack (9.1.11) jammy; urgency=medium
+
+  * Fix SEGFAULT in big_integer.cpp multiplication (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 13 Dec 2023 19:56:51 -0500
+
+libqrack (9.1.10) focal; urgency=medium
+
+  * Fix SEGFAULT in big_integer.cpp multiplication (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 13 Dec 2023 19:04:37 -0500
+
+libqrack (9.1.9) bionic; urgency=medium
+
+  * Fix QBCAPPOW/UINTPOW in source (Bionic, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Dec 2023 11:27:30 -0500
+
+libqrack (9.1.8) jammy; urgency=medium
+
+  * Fix QBCAPPOW/UINTPOW in source (Jammy, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Dec 2023 10:47:59 -0500
+
+libqrack (9.1.7) focal; urgency=medium
+
+  * Fix QBCAPPOW/UINTPOW in source (Focal, 1/3) (CUDA)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Dec 2023 09:40:38 -0500
+
+libqrack (9.1.6) focal; urgency=medium
+
+  * Fix QBCAPPOW/UINTPOW in source (Focal, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Dec 2023 09:07:11 -0500
+
+libqrack (9.1.5) bionic; urgency=medium
+
+  * Bionic bump for source (3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 10 Dec 2023 19:23:43 -0500
+
+libqrack (9.1.4) jammy; urgency=medium
+
+  * Jammy bump for source (2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 10 Dec 2023 19:03:01 -0500
+
+libqrack (9.1.3) focal; urgency=medium
+
+  * Fix 32-bit arbitrary precision and CUDA
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 10 Dec 2023 18:30:46 -0500
+
+libqrack (9.1.2) focal; urgency=medium
+
+  * Fix node.cpp bitCapInt comparisons
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 10 Dec 2023 16:52:20 -0500
+
+libqrack (9.1.1) focal; urgency=medium
+
+  * Remove dependence on Boost for arbitrary precision
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 10 Dec 2023 16:23:31 -0500
+
+libqrack (9.1.0) focal; urgency=medium
+
+  * Remove dependence on Boost for arbitrary precision
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 10 Dec 2023 12:07:36 -0500
+
+libqrack (9.0.57) jammy; urgency=medium
+
+  * Exclude qrack_cl_precompile (Jammy, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 20:37:05 -0500
+
+libqrack (9.0.56) focal; urgency=medium
+
+  * Exclude qrack_cl_precompile (Focal, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 19:53:17 -0500
+
+libqrack (9.0.55) bionic; urgency=medium
+
+  * Exclude qrack_cl_precompile (Bionic, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 19:26:31 -0500
+
+libqrack (9.0.54) jammy; urgency=medium
+
+  * Build qrack_cl_precompile with nvidia-cuda-toolkit (Jammy, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 09:15:14 -0500
+
+libqrack (9.0.53) focal; urgency=medium
+
+  * Build qrack_cl_precompile with nvidia-cuda-toolkit (Focal, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 08:26:52 -0500
+
+libqrack (9.0.52) bionic; urgency=medium
+
+  * Declare architecture-specific deps. in advance
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 08:09:01 -0500
+
+libqrack (9.0.51) bionic; urgency=medium
+
+  * nvidia-cuda-toolkit only available for limited architectures
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 07:44:21 -0500
+
+libqrack (9.0.50) bionic; urgency=medium
+
+  * Build qrack_cl_precompile with nvidia-cuda-toolkit (Bionic, 1/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 01 Dec 2023 07:13:57 -0500
+
+libqrack (9.0.49) jammy; urgency=medium
+
+  * Fix "layer stack" construction in qfactory.hpp (Jammy, 3/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 30 Nov 2023 18:58:07 -0500
+
+libqrack (9.0.48) focal; urgency=medium
+
+  * Fix "layer stack" construction in qfactory.hpp (Focal, 2/3)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 30 Nov 2023 18:11:09 -0500
+
+libqrack (9.0.47) bionic; urgency=medium
+
+  * Fix "layer stack" construction in qfactory.hpp
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 30 Nov 2023 17:41:10 -0500
+
+libqrack (9.0.46) jammy; urgency=medium
+
+  * Bump to fix SONAME of libqrack_pinvoke.so on Jammy
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 29 Nov 2023 15:33:39 -0500
+
+libqrack (9.0.45) bionic; urgency=medium
+
+  * Hard-code CMake version on Bionic
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 18:07:56 -0500
+
+libqrack (9.0.44) bionic; urgency=medium
+
+  * 3/3 bump for Bionic (after Focal and Jammy)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 17:54:14 -0500
+
+libqrack (9.0.43) focal; urgency=medium
+
+  * 2/3 bump for Focal (then Bionic) after 1st native Jammy build
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 17:14:50 -0500
+
+libqrack (9.0.42) jammy; urgency=medium
+
+  * Always build qrack_cl_precompile (to fix PowerPC)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 15:33:45 -0500
+
+libqrack (9.0.41) focal; urgency=medium
+
+  * Always build qrack_cl_precompile (to fix PowerPC)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 15:15:16 -0500
+
+libqrack (9.0.40) focal; urgency=medium
+
+  * Copy antecedent of symlink libqrack_pinvoke.so
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 14:38:24 -0500
+
+libqrack (9.0.39) jammy; urgency=medium
+
+  * Fix *.install files for Jammy
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 14:06:46 -0500
+
+libqrack (9.0.38) bionic; urgency=medium
+
+  * Bump for Bionic stabilizer/QBDD interop
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 11:27:25 -0500
+
+libqrack (9.0.37) focal; urgency=medium
+
+  * Fix 'make clean' recipe
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 11:17:34 -0500
+
+libqrack (9.0.36) focal; urgency=medium
+
+  * Fix 'make clean' recipe
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 11:11:35 -0500
+
+libqrack (9.0.35) focal; urgency=medium
+
+  * Disable rules override
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 10:35:13 -0500
+
+libqrack (9.0.34) focal; urgency=medium
+
+  * Set OPENCL_V3=OFF on Focal and Bionic
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 10:15:04 -0500
+
+libqrack (9.0.33) focal; urgency=medium
+
+  * Only set OPENCL_V3 automatically on target
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 09:51:29 -0500
+
+libqrack (9.0.32) focal; urgency=medium
+
+  * Allow stabilizer and QBDD at same time
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 09:28:26 -0500
+
+libqrack (9.0.31) jammy; urgency=medium
+
+  * Typo: 'dh_auto_configure' -> 'dh_auto_install'
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 08:20:20 -0500
+
+libqrack (9.0.30) jammy; urgency=medium
+
+  * Override dh_auto_install for correct DESTDIR on Jammy
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 28 Nov 2023 08:05:52 -0500
+
+libqrack (9.0.29) jammy; urgency=low
+
+  * Change CMAKE_INSTALL_LIBDIR to /usr/lib, for Jammy
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 20:17:40 -0500
+
+libqrack (9.0.28) jammy; urgency=medium
+
+  * Bump for native Jammy builds (tested on Focal and Bionic)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 12:00:51 -0500
+
+libqrack (9.0.27) bionic; urgency=medium
+
+  * Bump for native Bionic builds (tested on Focal)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 11:01:30 -0500
+
+libqrack (9.0.26) focal; urgency=medium
+
+  * Fix make clean (for idempotent builds on different series)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 10:05:43 -0500
+
+libqrack (9.0.25) focal; urgency=medium
+
+  * Support PowerPC (without OpenCL)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 09:41:37 -0500
+
+libqrack (9.0.24) jammy; urgency=low
+
+  * Sign on Jammy to publish on Jammy (9.0.23 was Focal)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 27 Nov 2023 07:59:37 -0500
+
+libqrack (9.0.23) jammy; urgency=low
+
+  * Jammy uses OpenCL v3 header (see 9.0.22 build log failure)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 19:05:24 -0500
+
+libqrack (9.0.22) jammy; urgency=low
+
+  * Native Jammy bump (tested on Bionic)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 18:28:13 -0500
+
+libqrack (9.0.21) bionic; urgency=medium
+
+  * Back-port CMake version for Bionic compatibility
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 16:59:00 -0500
+
+libqrack (9.0.20) bionic; urgency=medium
+
+  * Deploy distroseries-agnostic Debian package archive
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 15:58:07 -0500
+
+libqrack (9.0.19) focal; urgency=medium
+
+  * Tune env var defaults and decrease time to build from source
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 12:06:44 -0500
+
+libqrack (9.0.18) focal; urgency=medium
+
+  * Change default "QPager" threshold of "QHybrid"
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 26 Nov 2023 09:05:39 -0500
+
+libqrack (9.0.17) focal; urgency=medium
+
+  * Fixing riscv64 builds (supporting focal/jammy)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 17:26:49 -0500
+
+libqrack (9.0.16) bionic; urgency=medium
+
+  * Fixing riscv64 builds and supporting bionic/focal/jammy
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 17:13:36 -0500
+
+libqrack (9.0.15) focal; urgency=medium
+
+  * Only link libqrack.a with OpenCL
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 14:13:52 -0500
+
+libqrack (9.0.14) focal; urgency=medium
+
+  * Add XXD dependency
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 13:49:01 -0500
+
+libqrack (9.0.13) focal; urgency=medium
+
+  * Fix OpenCL build dependency
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 13:34:14 -0500
+
+libqrack (9.0.11) focal; urgency=medium
+
+  * Idempotent CMake build
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 25 Nov 2023 12:23:12 -0500
+
+libqrack (9.0.10) focal; urgency=medium
+
+  * Use extend-diff-ignore to exclude CMake
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 21:20:46 -0500
+
+libqrack (9.0.9) focal; urgency=medium
+
+  * Copy all build files but CMake to orig; sign twice
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 20:47:11 -0500
+
+libqrack (9.0.8) focal; urgency=medium
+
+  * Cleaning CMake build chain
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 19:53:18 -0500
+
+libqrack (9.0.6) focal; urgency=medium
+
+  * Removing garbage from .orig.tar.xz
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 17:30:14 -0500
+
+libqrack (9.0.5) focal; urgency=medium
+
+  * Fixing build system, for Launchpad
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 16:55:24 -0500
+
+libqrack (9.0.4) focal; urgency=medium
+
+  * Fixing build system, for Launchpad
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 16:24:13 -0500
+
+libqrack (9.0.3) focal; urgency=medium
+
+  * Fixing build system, for Launchpad
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 15:39:24 -0500
+
+libqrack (9.0.2) focal; urgency=medium
+
+  * Fixing build system, for Launchpad
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 24 Nov 2023 13:50:46 -0500
+
+libqrack (8.21.1) focal; urgency=medium
+
+  * First official Debian package release!
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 23 Nov 2023 19:54:39 -0500

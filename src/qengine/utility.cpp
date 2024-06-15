@@ -21,8 +21,8 @@ QInterfacePtr QEngineCPU::Clone()
     }
 
     QEngineCPUPtr clone =
-        std::make_shared<QEngineCPU>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
-            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+        std::make_shared<QEngineCPU>(qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+            false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
 
     Finish();
     clone->Finish();
@@ -34,8 +34,9 @@ QInterfacePtr QEngineCPU::Clone()
 
 QEnginePtr QEngineCPU::CloneEmpty()
 {
-    QEngineCPUPtr clone = std::make_shared<QEngineCPU>(0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+    QEngineCPUPtr clone =
+        std::make_shared<QEngineCPU>(0U, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
 
     clone->SetQubitCount(qubitCount);
 
@@ -53,8 +54,8 @@ bitLenInt QEngineCPU::Allocate(bitLenInt start, bitLenInt length)
     }
 
     QEngineCPUPtr nQubits =
-        std::make_shared<QEngineCPU>(length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
-            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+        std::make_shared<QEngineCPU>(length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+            -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
     return Compose(nQubits, start);
 }
 
@@ -63,7 +64,7 @@ real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
     const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     real1 average = ZERO_R1;
     real1 totProb = ZERO_R1;
-    for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
+    for (bitCapIntOcl i = 0U; i < maxQPowerOcl; ++i) {
         bitCapIntOcl outputInt = (i & outputMask) >> valueStart;
         real1 prob = norm(stateVec->read(i));
         totProb += prob;

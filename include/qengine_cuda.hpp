@@ -279,6 +279,32 @@ public:
         return QInterface::FirstNonzeroPhase();
     }
 
+    void SwitchHostPtr(bool useHostMem)
+    {
+        if (useHostMem == usingHostRam) {
+            return;
+        }
+
+        std::shared_ptr<complex> copyVec = AllocStateVec(maxQPowerOcl, true);
+        GetQuantumState(copyVec.get());
+
+        if (useHostMem) {
+            stateVec = copyVec;
+            stateBuffer = MakeStateVecBuffer(stateVec);
+        } else {
+            stateVec = NULL;
+            stateBuffer = MakeStateVecBuffer(stateVec);
+            clFinish();
+            tryCuda("Failed to write buffer", [&] {
+                return cudaMemcpy(
+                    stateBuffer.get(), (void*)(copyVec.get()), sizeof(complex) * maxQPowerOcl, cudaMemcpyHostToDevice);
+            });
+            copyVec.reset();
+        }
+
+        usingHostRam = useHostMem;
+    }
+
     void FreeAll();
     void ZeroAmplitudes();
     void CopyStateVec(QEnginePtr src);
@@ -305,6 +331,9 @@ public:
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U, size_t deallocSize = 0U)
     {
+        if (localBuffSize > device_context->GetLocalSize()) {
+            throw bad_alloc("Local memory limits exceeded in QEngineCUDA::QueueCall()");
+        }
         cudaStreamSynchronize(device_context->params_queue);
         AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
     }
@@ -393,7 +422,7 @@ public:
     void ProbMaskAll(bitCapInt mask, real1* probsArray);
     real1_f ProbParity(bitCapInt mask);
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = 0);
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
 
     void SetDevice(int64_t dID);
     int64_t GetDevice() { return deviceID; }
@@ -416,7 +445,7 @@ public:
     ;
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void Finish() { clFinish(); };
-    bool isFinished() { return !wait_queue_items.size(); };
+    bool isFinished() { return wait_queue_items.empty(); };
 
     QInterfacePtr Clone();
 
@@ -498,7 +527,7 @@ protected:
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
-    std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    std::shared_ptr<complex> AllocStateVec(bitCapIntOcl elemCount, bool doForceAlloc = false);
     void FreeStateVec() { stateVec = NULL; }
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
@@ -555,7 +584,7 @@ protected:
         }
 
         // Otherwise, clamp to a power of two
-        return (size_t)pow2(log2(wic));
+        return pow2Ocl(log2Ocl(wic));
     }
 
     size_t FixGroupSize(size_t wic, size_t gs)

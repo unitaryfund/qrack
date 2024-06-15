@@ -29,13 +29,13 @@
 #include <string>
 #include <sys/stat.h>
 
-#if defined(__APPLE__)
+#if defined(OPENCL_V3)
+#include <CL/opencl.hpp>
+#elif defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
-#include <OpenCL/cl.hpp>
+#include <CL/opencl.hpp>
 #elif defined(_WIN32) || ENABLE_SNUCL
 #include <CL/cl.hpp>
-#elif defined(OPENCL_V3)
-#include <CL/opencl.hpp>
 #else
 #include <CL/cl2.hpp>
 #endif
@@ -91,6 +91,9 @@ public:
     const cl::Context context;
     const int64_t context_id;
     const int64_t device_id;
+    const bool is_gpu;
+    const bool is_cpu;
+    const bool use_host_mem;
     cl::CommandQueue queue;
     EventVecPtr wait_events;
 
@@ -105,21 +108,25 @@ private:
     const size_t maxWorkGroupSize = device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
     const size_t maxAlloc = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     const size_t globalSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+    const size_t localSize = device.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
     size_t globalLimit;
     size_t preferredSizeMultiple;
     size_t preferredConcurrency;
 
 public:
-    OCLDeviceContext(
-        cl::Platform& p, cl::Device& d, cl::Context& c, int64_t dev_id, int64_t cntxt_id, int64_t maxAlloc = -1)
+    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int64_t dev_id, int64_t cntxt_id, int64_t maxAlloc,
+        bool isGpu, bool isCpu, bool useHostMem)
         : platform(p)
         , device(d)
         , context(c)
         , context_id(cntxt_id)
         , device_id(dev_id)
+        , is_gpu(isGpu)
+        , is_cpu(isCpu)
+        , use_host_mem(useHostMem)
         , wait_events(new EventVec())
 #if ENABLE_OCL_MEM_GUARDS
-        , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * globalSize) >> 2U))
+        , globalLimit((maxAlloc >= 0) ? maxAlloc : globalSize)
 #else
         , globalLimit((maxAlloc >= 0) ? maxAlloc : -1)
 #endif
@@ -127,18 +134,20 @@ public:
         , preferredConcurrency(0U)
     {
         cl_int error;
-#if defined(_WIN32)
-        cl_command_queue_properties props = CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-        queue = cl::CommandQueue(c, d, &props, &error);
-#else
+#if ENABLE_OOO_OCL
         queue = cl::CommandQueue(c, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
-#endif
         if (error != CL_SUCCESS) {
             queue = cl::CommandQueue(c, d, 0, &error);
             if (error != CL_SUCCESS) {
                 throw std::runtime_error("Failed to create OpenCL command queue!");
             }
         }
+#else
+        queue = cl::CommandQueue(c, d, 0, &error);
+        if (error != CL_SUCCESS) {
+            throw std::runtime_error("Failed to create OpenCL command queue!");
+        }
+#endif
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(*(mutexes[call]), calls[call]); }
@@ -208,6 +217,7 @@ public:
     size_t GetMaxWorkGroupSize() { return maxWorkGroupSize; }
     size_t GetMaxAlloc() { return maxAlloc; }
     size_t GetGlobalSize() { return globalSize; }
+    size_t GetLocalSize() { return localSize; }
     size_t GetGlobalAllocLimit() { return globalLimit; }
 
     friend class OCLEngine;

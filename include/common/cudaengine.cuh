@@ -52,15 +52,14 @@ public:
         : device_id(dev_id)
         , queue(0)
         , params_queue(0)
-#if ENABLE_OCL_MEM_GUARDS
-        , globalLimit((maxAlloc >= 0) ? maxAlloc : ((3U * properties.totalGlobalMem) >> 2U))
-#else
         , globalLimit((maxAlloc >= 0) ? maxAlloc : -1)
-#endif
         , preferredSizeMultiple(0U)
         , preferredConcurrency(0U)
     {
         cudaGetDeviceProperties(&properties, device_id);
+#if ENABLE_OCL_MEM_GUARDS
+        globalLimit = (maxAlloc >= 0) ? maxAlloc : properties.totalGlobalMem;
+#endif
 
         cudaError_t error = cudaStreamCreate(&queue);
         if (error != cudaSuccess) {
@@ -113,10 +112,11 @@ public:
     }
 
     size_t GetProcElementCount() { return properties.multiProcessorCount; }
-    size_t GetMaxWorkItems() { return properties.maxBlocksPerMultiProcessor; }
+    size_t GetMaxWorkItems() { return properties.maxThreadsPerMultiProcessor; }
     size_t GetMaxWorkGroupSize() { return properties.warpSize; }
     size_t GetMaxAlloc() { return properties.totalGlobalMem; }
     size_t GetGlobalSize() { return properties.totalGlobalMem; }
+    size_t GetLocalSize() { return properties.sharedMemPerBlock; }
     size_t GetGlobalAllocLimit() { return globalLimit; }
 
     friend class CUDAEngine;

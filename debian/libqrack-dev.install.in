@@ -1,0 +1,7 @@
+usr/include/*
+usr/share/pkgconfig/*
+usr/lib/qrack/libqrack_pinvoke.so
+usr/lib/qrack/libqrack_pinvoke.so.@CMAKE_PROJECT_VERSION@
+usr/share/doc/qrack/changelog.gz
+usr/share/doc/qrack/copyright
+usr/share/man/man1/qrack_cl_precompile.1.gz

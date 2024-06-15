@@ -44,8 +44,8 @@ QInterfacePtr QUnitClifford::CloneBody(QUnitCliffordPtr copyPtr)
     return copyPtr;
 }
 
-real1_f QUnitClifford::ExpectationBitsFactorized(
-    const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, bitCapInt offset)
+real1_f QUnitClifford::ExpVarBitsFactorized(
+    bool isExp, const std::vector<bitLenInt>& bits, const std::vector<bitCapInt>& perms, const bitCapInt& offset)
 {
     if (perms.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
@@ -64,16 +64,22 @@ real1_f QUnitClifford::ExpectationBitsFactorized(
         permMap[shard.unit].push_back(perms[(i << 1U) | 1U]);
     }
 
-    real1 expectation = ZERO_R1;
-    for (const auto& p : qubitMap) {
-        expectation += (real1)p.first->ExpectationBitsFactorized(p.second, permMap[p.first], offset);
+    real1_f expectation = ZERO_R1;
+    if (isExp) {
+        for (const auto& p : qubitMap) {
+            expectation += p.first->ExpectationBitsFactorized(p.second, permMap[p.first], offset);
+        }
+    } else {
+        for (const auto& p : qubitMap) {
+            expectation += p.first->VarianceBitsFactorized(p.second, permMap[p.first], offset);
+        }
     }
 
-    return (real1_f)expectation;
+    return expectation;
 }
 
-real1_f QUnitClifford::ExpectationFloatsFactorized(
-    const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
+real1_f QUnitClifford::ExpVarFloatsFactorized(
+    bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights)
 {
     if (weights.size() < (bits.size() << 1U)) {
         throw std::invalid_argument(
@@ -94,8 +100,14 @@ real1_f QUnitClifford::ExpectationFloatsFactorized(
     }
 
     real1_f expectation = ZERO_R1;
-    for (const auto& p : qubitMap) {
-        expectation += p.first->ExpectationFloatsFactorized(p.second, weightMap[p.first]);
+    if (isExp) {
+        for (const auto& p : qubitMap) {
+            expectation += p.first->ExpectationFloatsFactorized(p.second, weightMap[p.first]);
+        }
+    } else {
+        for (const auto& p : qubitMap) {
+            expectation += p.first->VarianceFloatsFactorized(p.second, weightMap[p.first]);
+        }
     }
 
     return expectation;
@@ -118,11 +130,11 @@ real1_f QUnitClifford::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
 
     std::map<QStabilizerPtr, bitCapInt> permMap;
     for (size_t i = 0U; i < ancillaeStart; ++i) {
-        if (!(perm & pow2(i))) {
+        if (bi_compare_0(perm & pow2(i)) == 0) {
             continue;
         }
         const CliffordShard& shard = shards[i];
-        permMap[shard.unit] |= pow2(shard.mapped);
+        bi_or_ip(&(permMap[shard.unit]), pow2(shard.mapped));
     }
     for (size_t i = ancillaeStart; i < qubitCount; ++i) {
         const CliffordShard& shard = shards[i];
@@ -143,9 +155,9 @@ real1_f QUnitClifford::ProbMask(bitCapInt mask, bitCapInt perm)
 {
     bitCapInt v = mask; // count the number of bits set in v
     std::vector<bitLenInt> bits;
-    while (v) {
+    while (bi_compare_0(v) != 0) {
         bitCapInt oldV = v;
-        v &= v - ONE_BCI; // clear the least significant bit set
+        bi_and_ip(&v, v - ONE_BCI); // clear the least significant bit set
         bits.push_back(log2((v ^ oldV) & oldV));
     }
 
@@ -153,9 +165,9 @@ real1_f QUnitClifford::ProbMask(bitCapInt mask, bitCapInt perm)
     std::map<QStabilizerPtr, bitCapInt> permMap;
     for (size_t i = 0U; i < bits.size(); ++i) {
         const CliffordShard& shard = shards[bits[i]];
-        maskMap[shard.unit] |= pow2(shard.mapped);
-        if (pow2(bits[i]) & perm) {
-            permMap[shard.unit] |= pow2(shard.mapped);
+        bi_or_ip(&(maskMap[shard.unit]), pow2(shard.mapped));
+        if (bi_compare_0(pow2(bits[i]) & perm) != 0) {
+            bi_or_ip(&(permMap[shard.unit]), pow2(shard.mapped));
         }
     }
 
@@ -182,7 +194,7 @@ void QUnitClifford::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        shards.emplace_back(0U, MakeStabilizer(1U, (perm >> i) & 1U, ONE_CMPLX));
+        shards.emplace_back(0U, MakeStabilizer(1U, bi_and_1(perm >> i), ONE_CMPLX));
     }
 }
 
@@ -222,7 +234,7 @@ void QUnitClifford::Detach(bitLenInt start, bitLenInt length, QUnitCliffordPtr d
             bitLenInt origLen = unit->GetQubitCount();
             if (subLen != origLen) {
                 if (dest) {
-                    QStabilizerPtr nUnit = MakeStabilizer(subLen, 0U);
+                    QStabilizerPtr nUnit = MakeStabilizer(subLen, ZERO_BCI);
                     shard.unit->Decompose(shard.mapped, nUnit);
                     shard.unit = nUnit;
                 } else {
@@ -423,7 +435,7 @@ void QUnitClifford::GetProbs(real1* outputProbs)
 /// Convert the state to ket notation (warning: could be huge!)
 complex QUnitClifford::GetAmplitude(bitCapInt perm)
 {
-    if (perm >= maxQPower) {
+    if (bi_compare(perm, maxQPower) >= 0) {
         throw std::invalid_argument("QUnitClifford::GetAmplitudeOrProb argument out-of-bounds!");
     }
 
@@ -431,10 +443,10 @@ complex QUnitClifford::GetAmplitude(bitCapInt perm)
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         CliffordShard& shard = shards[i];
         if (perms.find(shard.unit) == perms.end()) {
-            perms[shard.unit] = 0U;
+            perms[shard.unit] = ZERO_BCI;
         }
-        if ((perm >> i) & 1U) {
-            perms[shard.unit] |= pow2(shard.mapped);
+        if (bi_and_1(perm >> i)) {
+            bi_or_ip(&(perms[shard.unit]), pow2(shard.mapped));
         }
     }
 
@@ -458,10 +470,10 @@ std::vector<complex> QUnitClifford::GetAmplitudes(std::vector<bitCapInt> perms)
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             CliffordShard& shard = shards[i];
             if (permMap.find(shard.unit) == permMap.end()) {
-                permMap[shard.unit] = 0U;
+                permMap[shard.unit] = ZERO_BCI;
             }
-            if ((perm >> i) & 1U) {
-                permMap[shard.unit] |= pow2(shard.mapped);
+            if (bi_and_1(perm >> i)) {
+                bi_or_ip(&(permMap[shard.unit]), pow2(shard.mapped));
             }
         }
         for (const auto& p : permMap) {
@@ -480,10 +492,10 @@ std::vector<complex> QUnitClifford::GetAmplitudes(std::vector<bitCapInt> perms)
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             CliffordShard& shard = shards[i];
             if (permMap.find(shard.unit) == permMap.end()) {
-                permMap[shard.unit] = 0U;
+                permMap[shard.unit] = ZERO_BCI;
             }
-            if ((perm >> i) & 1U) {
-                permMap[shard.unit] |= pow2(shard.mapped);
+            if (bi_and_1(perm >> i)) {
+                bi_or_ip(&(permMap[shard.unit]), pow2(shard.mapped));
             }
         }
         complex amp = phaseOffset;
@@ -518,7 +530,7 @@ bool QUnitClifford::SeparateBit(bool value, bitLenInt qubit)
         return false;
     }
 
-    shard.unit = MakeStabilizer(1U, (bitCapInt)value);
+    shard.unit = MakeStabilizer(1U, value);
     shard.mapped = 0U;
 
     unit->Dispose(mapped, 1U);
@@ -591,17 +603,17 @@ std::map<bitCapInt, int> QUnitClifford::MultiShotMeasureMask(const std::vector<b
     }
 
     std::map<bitCapInt, int> combinedResults;
-    combinedResults[0U] = (int)shots;
+    combinedResults[ZERO_BCI] = (int)shots;
 
     for (const auto& subQPower : subQPowers) {
         QStabilizerPtr unit = subQPower.first;
         std::map<bitCapInt, int> unitResults = unit->MultiShotMeasureMask(subQPower.second, shots);
         std::map<bitCapInt, int> topLevelResults;
         for (const auto& unitResult : unitResults) {
-            bitCapInt mask = 0U;
+            bitCapInt mask = ZERO_BCI;
             for (size_t i = 0U; i < subQPower.second.size(); ++i) {
-                if ((unitResult.first >> i) & 1U) {
-                    mask |= subIQPowers[unit][i];
+                if (bi_and_1(unitResult.first >> i)) {
+                    bi_or_ip(&mask, subIQPowers[unit][i]);
                 }
             }
             topLevelResults[mask] = unitResult.second;
@@ -610,10 +622,10 @@ std::map<bitCapInt, int> QUnitClifford::MultiShotMeasureMask(const std::vector<b
         unitResults = std::map<bitCapInt, int>();
 
         // If either map is fully |0>, nothing changes (after the swap).
-        if (!topLevelResults.begin()->first && (topLevelResults[0U] == (int)shots)) {
+        if ((bi_compare_0(topLevelResults.begin()->first) == 0) && (topLevelResults[ZERO_BCI] == (int)shots)) {
             continue;
         }
-        if (!combinedResults.begin()->first && (combinedResults[0U] == (int)shots)) {
+        if ((bi_compare_0(combinedResults.begin()->first) == 0) && (combinedResults[ZERO_BCI] == (int)shots)) {
             std::swap(topLevelResults, combinedResults);
             continue;
         }
@@ -680,7 +692,7 @@ void QUnitClifford::MultiShotMeasureMask(
         if (unit) {
             std::vector<bitCapInt> mappedIndices(qPowers.size());
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
-                if (qPowers[0U] == pow2(j)) {
+                if (bi_compare(qPowers[0U], pow2(j)) == 0) {
                     mappedIndices[0U] = pow2(shards[j].mapped);
                     break;
                 }
@@ -697,7 +709,7 @@ void QUnitClifford::MultiShotMeasureMask(
                     break;
                 }
                 for (bitLenInt j = 0U; j < qubitCount; ++j) {
-                    if (qPowers[i] == pow2(j)) {
+                    if (bi_compare(qPowers[i], pow2(j)) == 0) {
                         mappedIndices[i] = pow2(shards[j].mapped);
                         break;
                     }
@@ -717,7 +729,7 @@ void QUnitClifford::MultiShotMeasureMask(
     std::map<bitCapInt, int>::iterator it = results.begin();
     while (it != results.end() && (j < shots)) {
         for (int i = 0; i < it->second; ++i) {
-            shotsArray[j] = (unsigned)it->first;
+            shotsArray[j] = (bitCapIntOcl)it->first;
             ++j;
         }
 
@@ -731,7 +743,7 @@ void QUnitClifford::SetQuantumState(const complex* inputState)
         throw std::domain_error("QUnitClifford::SetQuantumState() not generally implemented!");
     }
 
-    SetPermutation(0U);
+    SetPermutation(ZERO_BCI);
 
     const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
     const real1 sqrtProb = sqrt(prob);
@@ -833,7 +845,7 @@ std::istream& operator>>(std::istream& is, const QUnitCliffordPtr s)
     size_t n;
     is >> n;
     s->SetQubitCount(n);
-    s->SetPermutation(0);
+    s->SetPermutation(ZERO_BCI);
 
     size_t sCount;
     is >> sCount;
@@ -848,7 +860,7 @@ std::istream& operator>>(std::istream& is, const QUnitCliffordPtr s)
             indices[(bitLenInt)t] = (bitLenInt)m;
         }
         QStabilizerPtr sp = std::make_shared<QStabilizer>(
-            0U, 0U, s->rand_generator, CMPLX_DEFAULT_ARG, false, s->randGlobalPhase, false, -1, s->useRDRAND);
+            0U, ZERO_BCI, s->rand_generator, CMPLX_DEFAULT_ARG, false, s->randGlobalPhase, false, -1, s->useRDRAND);
         is >> sp;
 
         for (const auto& index : indices) {

@@ -1,0 +1,1 @@
+extend-diff-ignore = "/^(CMakeFiles.*|CMakeCache.txt|.*.cmake|Makefile|qrack_cl_precompile)$/"

@@ -13,6 +13,14 @@
 #include <iomanip>
 #include <thread>
 
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 #define IS_REAL_1(r) (abs(ONE_R1 - r) <= FP_NORM_EPSILON)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
     ((IS_REAL_1(std::real(top)) || IS_REAL_1(std::imag(bottom))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
@@ -48,8 +56,10 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , maxEngineQubitCount(27U)
     , maxAncillaCount(28U)
     , separabilityThreshold(sep_thresh)
+    , roundingThreshold(FP_NORM_EPSILON_F)
     , devID(deviceId)
     , phaseFactor(phaseFac)
+    , logFidelity(0.0)
     , engine(NULL)
     , deviceIDs(devList)
     , engineTypes(eng)
@@ -58,23 +68,41 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 {
     const bitLenInt maxCpuQubitCount =
         getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 28U;
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL || ENABLE_CUDA
     const bool isQPager = (engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_OPENCL);
     if (isQPager ||
         ((engineTypes[0U] == QINTERFACE_QPAGER) &&
             ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
-        DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        maxEngineQubitCount = log2(devContext->GetMaxAlloc() / sizeof(complex));
-        maxAncillaCount = isQPager ? (maxEngineQubitCount + 2U) : maxEngineQubitCount;
-#if ENABLE_ENV_VARS
+        DeviceContextPtr devContext = QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID);
+        maxEngineQubitCount = log2Ocl(devContext->GetMaxAlloc() / sizeof(complex));
+        maxAncillaCount = maxEngineQubitCount;
         if (isQPager) {
+            --maxEngineQubitCount;
+            const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
+            const bitLenInt perPage =
+                log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
+#if ENABLE_OPENCL
+            maxAncillaCount = (devCount < 2U) ? (perPage + 3U) : (perPage + log2Ocl(devCount) + 2U);
+#else
+            maxAncillaCount = perPage + log2Ocl(devCount);
+#endif
+#if ENABLE_ENV_VARS
             if (getenv("QRACK_MAX_PAGE_QB")) {
-                bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
-                maxEngineQubitCount = (maxPageSetting < maxEngineQubitCount) ? maxPageSetting : maxEngineQubitCount;
+                const bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
+                if (maxPageSetting < maxEngineQubitCount) {
+                    maxEngineQubitCount = maxPageSetting;
+                }
             }
+#if ENABLE_OPENCL
+            else {
+                maxEngineQubitCount = (maxEngineQubitCount > 1U) ? (maxEngineQubitCount - 1U) : 1U;
+            }
+#endif
             if (getenv("QRACK_MAX_PAGING_QB")) {
-                bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-                maxAncillaCount = (maxPageSetting < maxAncillaCount) ? maxPageSetting : maxAncillaCount;
+                const bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+                if (maxPageSetting < maxAncillaCount) {
+                    maxAncillaCount = maxAncillaCount;
+                }
             }
         }
     } else {
@@ -82,13 +110,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         maxAncillaCount = maxEngineQubitCount;
 #endif
     }
-#elif ENABLE_ENV_VARS
-    maxEngineQubitCount = maxCpuQubitCount;
-    maxAncillaCount = maxEngineQubitCount;
-#endif
     if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         maxAncillaCount = -1;
     }
+#elif ENABLE_ENV_VARS
+    maxEngineQubitCount = -1;
+    maxAncillaCount = -1;
+#endif
 
     maxStateMapCacheQubitCount = maxCpuQubitCount - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
 
@@ -192,7 +220,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     shards[target] = NULL;
 
     const real1 angle = (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-    if ((4 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+    if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
         return;
     }
     const real1 angleCos = (real1)cos(angle);
@@ -204,7 +232,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     bitLenInt ancillaIndex = deadAncillaCount
         ? (qubitCount + ancillaCount)
         : stabilizer->Compose(std::make_shared<QUnitClifford>(
-              1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
+              1U, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
     ++ancillaCount;
     shards.push_back(NULL);
     if (deadAncillaCount) {
@@ -220,8 +248,6 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // ForceM(ancillaIndex, false, true, true);
     // Ancilla is separable after measurement.
     // Dispose(ancillaIndex, 1U);
-
-    CombineAncillae();
 }
 
 bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
@@ -230,7 +256,7 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
     shards[qubit] = NULL;
 
     const bool isZ1 = stabilizer->M(qubit);
-    const real1_f prob = (real1_f)((isZ1) ? norm(shard->gate[3U]) : norm(shard->gate[2U]));
+    const real1_f prob = (real1_f)(isZ1 ? norm(shard->gate[3U]) : norm(shard->gate[2U]));
 
     bool result;
     if (prob <= ZERO_R1) {
@@ -349,7 +375,7 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
 
 QInterfacePtr QStabilizerHybrid::Clone()
 {
-    QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, qubitCount, 0, rand_generator,
+    QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, qubitCount, ZERO_BCI, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
@@ -390,7 +416,7 @@ real1_f QStabilizerHybrid::ProbAllRdm(bool roundRz, bitCapInt fullRegister)
 
 real1_f QStabilizerHybrid::ProbMaskRdm(bool roundRz, bitCapInt mask, bitCapInt permutation)
 {
-    if ((maxQPower - 1U) == mask) {
+    if (bi_compare(maxQPower - ONE_BCI, mask) == 0) {
         return ProbAllRdm(roundRz, permutation);
     }
 
@@ -412,22 +438,22 @@ void QStabilizerHybrid::SwitchToEngine()
     }
 
     if ((qubitCount + ancillaCount + deadAncillaCount) > maxEngineQubitCount) {
-        QInterfacePtr e = MakeEngine(0);
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        QInterfacePtr e = MakeEngine(ZERO_BCI);
+#if ENABLE_PTHREAD
         const unsigned numCores = GetConcurrencyLevel();
         std::vector<QStabilizerHybridPtr> clones;
         for (unsigned i = 0U; i < numCores; ++i) {
             clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
         }
-        bitCapInt i = 0U;
+        bitCapInt i = ZERO_BCI;
         while (i < maxQPower) {
             const bitCapInt p = i;
             std::vector<std::future<complex>> futures;
             for (unsigned j = 0U; j < numCores; ++j) {
                 futures.push_back(
                     std::async(std::launch::async, [j, p, &clones]() { return clones[j]->GetAmplitude(j + p); }));
-                ++i;
-                if (i >= maxQPower) {
+                bi_increment(&i, 1U);
+                if (bi_compare(i, maxQPower) >= 0) {
                     break;
                 }
             }
@@ -437,7 +463,7 @@ void QStabilizerHybrid::SwitchToEngine()
         }
         clones.clear();
 #else
-        for (bitCapInt i = 0U; i < maxQPower; ++i) {
+        for (bitCapInt i = 0U; bi_compare(i, maxQPower) < 0; bi_increment(&i, 1U)) {
             e->SetAmplitude(i, GetAmplitude(i));
         }
 #endif
@@ -458,7 +484,7 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
-    engine = MakeEngine(0, stabilizer->GetQubitCount());
+    engine = MakeEngine(ZERO_BCI, stabilizer->GetQubitCount());
     stabilizer->GetQuantumState(engine);
     stabilizer = NULL;
     FlushBuffers();
@@ -469,7 +495,7 @@ void QStabilizerHybrid::SwitchToEngine()
 
     // When we measure, we act postselection on reverse T-gadgets.
     if (ancillaCount) {
-        engine->ForceMReg(qubitCount, ancillaCount, 0, true, true);
+        engine->ForceMReg(qubitCount, ancillaCount, ZERO_BCI, true, true);
     }
     // Ancillae are separable after measurement.
     engine->Dispose(qubitCount, ancillaCount + deadAncillaCount);
@@ -573,8 +599,8 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
 
 QInterfacePtr QStabilizerHybrid::Decompose(bitLenInt start, bitLenInt length)
 {
-    QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, length, 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+    QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, length, ZERO_BCI, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
     Decompose(start, dest);
@@ -601,7 +627,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 
     if (dest->engine) {
         dest->engine.reset();
-        dest->stabilizer = dest->MakeStabilizer(0U);
+        dest->stabilizer = dest->MakeStabilizer(ZERO_BCI);
     }
 
     stabilizer->Decompose(start, dest->stabilizer);
@@ -644,9 +670,9 @@ bitLenInt QStabilizerHybrid::Allocate(bitLenInt start, bitLenInt length)
         return start;
     }
 
-    QStabilizerHybridPtr nQubits = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, length, 0, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
+    QStabilizerHybridPtr nQubits = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, length, ZERO_BCI,
+        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+        (real1_f)amplitudeFloor, std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
     return Compose(nQubits, start);
 }
 
@@ -683,13 +709,13 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     clone->SwitchToEngine();
     clone->GetProbs(outputProbs);
 }
+
 complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 {
     if (engine) {
         return engine->GetAmplitude(perm);
     }
 
-    real1_f roundingThreshold = ZERO_R1_F;
 #if ENABLE_ENV_VARS
     if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         roundingThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
@@ -752,7 +778,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         for (size_t i = 1U; i < amps.size(); ++i) {
             const bitLenInt j = indices[i - 1U];
             const complex* mtrx = shards[j]->gate;
-            if ((perm >> j) & 1U) {
+            if (bi_and_1(perm >> j)) {
                 amp = mtrx[2U] * amps[i] + mtrx[3U] * amp;
             } else {
                 amp = mtrx[0U] * amp + mtrx[1U] * amps[i];
@@ -793,9 +819,18 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         amps = stabilizer->GetAmplitudes(perms);
     }
 
+    std::vector<QInterfaceEngine> et = engineTypes;
+    for (int i = et.size() - 1U; i >= 0; --i) {
+        if ((et[i] == QINTERFACE_BDT_HYBRID) || (et[i] == QINTERFACE_BDT)) {
+            et.erase(et.begin() + i);
+        }
+    }
+    if (et.empty()) {
+        et.push_back(QINTERFACE_OPTIMAL_BASE);
+    }
     QEnginePtr aEngine = std::dynamic_pointer_cast<QEngine>(
-        CreateQuantumInterface(engineTypes, ancillaCount, 0U, rand_generator, ONE_CMPLX, false, false, useHostRam,
-            devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
+        CreateQuantumInterface(et, ancillaCount, ZERO_BCI, rand_generator, ONE_CMPLX, false, false, useHostRam, devID,
+            useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
 
     for (bitCapIntOcl a = 0U; a < ancillaPow; ++a) {
         const bitCapIntOcl offset = a * aStride;
@@ -803,7 +838,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         for (bitLenInt i = 1U; i < aStride; ++i) {
             const bitLenInt j = indices[i - 1U];
             const complex* mtrx = shards[j]->gate;
-            if ((perm >> j) & 1U) {
+            if (bi_and_1(perm >> j)) {
                 amp = mtrx[2U] * amps[i + offset] + mtrx[3U] * amp;
             } else {
                 amp = mtrx[0U] * amp + mtrx[1U] * amps[i + offset];
@@ -826,7 +861,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         shards = origShards;
     }
 
-    return (real1)pow(SQRT2_R1, (real1)ancillaCount) * aEngine->GetAmplitude(0U);
+    return (real1)pow(SQRT2_R1, (real1)ancillaCount) * aEngine->GetAmplitude(ZERO_BCI);
 }
 
 void QStabilizerHybrid::SetQuantumState(const complex* inputState)
@@ -850,11 +885,11 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     engine = NULL;
 
     if (stabilizer && !ancillaCount && !deadAncillaCount) {
-        stabilizer->SetPermutation(0U);
+        stabilizer->SetPermutation(ZERO_BCI);
     } else {
         ancillaCount = 0U;
         deadAncillaCount = 0U;
-        stabilizer = MakeStabilizer(0U);
+        stabilizer = MakeStabilizer(ZERO_BCI);
         shards.clear();
         shards.resize(qubitCount);
     }
@@ -906,7 +941,7 @@ void QStabilizerHybrid::CSwap(const std::vector<bitLenInt>& lControls, bitLenInt
         if (TrimControls(lControls, controls, false)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             stabilizer->Swap(qubit1, qubit2);
             return;
         }
@@ -922,7 +957,7 @@ void QStabilizerHybrid::CSqrtSwap(const std::vector<bitLenInt>& lControls, bitLe
         if (TrimControls(lControls, controls, false)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             QInterface::SqrtSwap(qubit1, qubit2);
             return;
         }
@@ -938,7 +973,7 @@ void QStabilizerHybrid::AntiCSqrtSwap(const std::vector<bitLenInt>& lControls, b
         if (TrimControls(lControls, controls, true)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             QInterface::SqrtSwap(qubit1, qubit2);
             return;
         }
@@ -954,7 +989,7 @@ void QStabilizerHybrid::CISqrtSwap(const std::vector<bitLenInt>& lControls, bitL
         if (TrimControls(lControls, controls, false)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             QInterface::ISqrtSwap(qubit1, qubit2);
             return;
         }
@@ -970,7 +1005,7 @@ void QStabilizerHybrid::AntiCISqrtSwap(const std::vector<bitLenInt>& lControls, 
         if (TrimControls(lControls, controls, true)) {
             return;
         }
-        if (!controls.size()) {
+        if (controls.empty()) {
             QInterface::ISqrtSwap(qubit1, qubit2);
             return;
         }
@@ -988,7 +1023,7 @@ void QStabilizerHybrid::XMask(bitCapInt mask)
     }
 
     bitCapInt v = mask;
-    while (mask) {
+    while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
         X(log2(mask ^ v));
         mask = v;
@@ -1002,7 +1037,7 @@ void QStabilizerHybrid::YMask(bitCapInt mask)
     }
 
     bitCapInt v = mask;
-    while (mask) {
+    while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
         Y(log2(mask ^ v));
         mask = v;
@@ -1016,7 +1051,7 @@ void QStabilizerHybrid::ZMask(bitCapInt mask)
     }
 
     bitCapInt v = mask;
-    while (mask) {
+    while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
         Z(log2(mask ^ v));
         mask = v;
@@ -1053,7 +1088,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         if (shard) {
             const real1 angle =
                 (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-            if ((4 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
+            if ((2 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
                 const real1 angleCos = cos(angle);
                 const real1 angleSin = sin(angle);
                 shard->gate[0U] = complex(angleCos, -angleSin);
@@ -1062,8 +1097,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
                 // Form potentially entangled representation, with this.
                 bitLenInt ancillaIndex = deadAncillaCount
                     ? (qubitCount + ancillaCount)
-                    : stabilizer->Compose(std::make_shared<QUnitClifford>(
-                          1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
+                    : stabilizer->Compose(std::make_shared<QUnitClifford>(1U, ZERO_BCI, rand_generator,
+                          CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
                 ++ancillaCount;
                 shards.push_back(NULL);
                 if (deadAncillaCount) {
@@ -1074,8 +1109,6 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
                 stabilizer->CNOT(target, ancillaIndex);
                 Mtrx(shard->gate, ancillaIndex);
                 H(ancillaIndex);
-
-                CombineAncillae();
             }
         }
 
@@ -1118,7 +1151,7 @@ void QStabilizerHybrid::MCMtrx(const std::vector<bitLenInt>& lControls, const co
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
         return;
     }
@@ -1144,7 +1177,7 @@ void QStabilizerHybrid::MCPhase(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -1193,7 +1226,7 @@ void QStabilizerHybrid::MCInvert(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Invert(topRight, bottomLeft, target);
         return;
     }
@@ -1245,7 +1278,7 @@ void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, const c
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
         return;
     }
@@ -1267,7 +1300,7 @@ void QStabilizerHybrid::MACPhase(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -1316,7 +1349,7 @@ void QStabilizerHybrid::MACInvert(
         return;
     }
 
-    if (!controls.size()) {
+    if (controls.empty()) {
         Invert(topRight, bottomLeft, target);
         return;
     }
@@ -1365,26 +1398,27 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         }
 
         const bitCapInt qPower = pow2(qubit);
-        const size_t maxLcv = (size_t)(maxQPower >> 1U);
+        const bitCapInt maxLcv = maxQPower >> 1U;
         real1_f partProb = ZERO_R1_F;
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        const unsigned numCores = (maxLcv < GetConcurrencyLevel()) ? (unsigned)maxLcv : GetConcurrencyLevel();
+#if ENABLE_PTHREAD
+        const unsigned numCores =
+            (bi_compare(maxLcv, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxLcv : GetConcurrencyLevel();
         std::vector<QStabilizerHybridPtr> clones;
         for (unsigned i = 0U; i < numCores; ++i) {
             clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
         }
-        bitCapInt i = 0U;
-        while (i < maxLcv) {
+        bitCapInt i = ZERO_BCI;
+        while (bi_compare(i, maxLcv) < 0) {
             const bitCapInt p = i;
             std::vector<std::future<real1>> futures;
             for (unsigned j = 0U; j < numCores; ++j) {
                 futures.push_back(std::async(std::launch::async, [j, p, qPower, &clones]() {
                     bitCapInt k = (j + p) & (qPower - 1U);
-                    k |= ((j + p) ^ k) << ONE_BCI;
+                    bi_or_ip(&k, ((j + p) ^ k) << 1U);
                     return norm(clones[j]->GetAmplitude(k | qPower));
                 }));
-                ++i;
-                if (i >= maxLcv) {
+                bi_increment(&i, 1U);
+                if (bi_compare(i, maxLcv) >= 0) {
                     break;
                 }
             }
@@ -1394,9 +1428,9 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         }
         stateMapCache.clear();
 #else
-        for (bitCapInt i = 0U; i < maxLcv; ++i) {
+        for (bitCapInt i = 0U; bi_compare(i, maxLcv) < 0; bi_increment(&i, 1U)) {
             bitCapInt j = i & (qPower - 1U);
-            j |= (i ^ j) << ONE_BCI;
+            bi_or_ip(&j, (i ^ j) << 1U);
             partProb += norm(GetAmplitude(j | qPower));
         }
         stateMapCache.clear();
@@ -1525,8 +1559,6 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    CombineAncillae();
-
     if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
         isRoundingFlushed = true;
@@ -1544,28 +1576,29 @@ bitCapInt QStabilizerHybrid::MAll()
         stateMapCache = stabilizer->GetQuantumState();
     }
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#if ENABLE_PTHREAD
     real1_f partProb = ZERO_R1;
     real1_f resProb = Rand();
-    bitCapInt d = 0U;
+    bitCapInt d = ZERO_BCI;
     bitCapInt m;
     bool foundM = false;
 
-    const unsigned numCores = (maxQPower < GetConcurrencyLevel()) ? (unsigned)maxQPower : GetConcurrencyLevel();
+    const unsigned numCores =
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
     }
-    bitCapInt i = 0U;
+    bitCapInt i = ZERO_BCI;
     while (i < maxQPower) {
         const bitCapInt p = i;
         std::vector<std::future<real1>> futures;
         for (unsigned j = 0U; j < numCores; ++j) {
             futures.push_back(
                 std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); }));
-            ++i;
-            if (i >= maxQPower) {
+            bi_increment(&i, 1U);
+            if (bi_compare(i, maxQPower) >= 0) {
                 break;
             }
         }
@@ -1582,7 +1615,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bitCapInt d = 0U;
     bitCapInt m;
     bool foundM = false;
-    for (m = 0U; m < maxQPower; ++m) {
+    for (m = 0U; bi_compare(m, maxQPower) < 0; bi_increment(&m, 1U)) {
         CHECK_NARROW_SHOT()
     }
 #endif
@@ -1611,7 +1644,7 @@ void QStabilizerHybrid::UniformlyControlledSingleBit(
     stateMapCache.clear();
 
 #define ADD_SHOTS_PROB(m)                                                                                              \
-    if (!rng.size()) {                                                                                                 \
+    if (rng.empty()) {                                                                                                 \
         continue;                                                                                                      \
     }                                                                                                                  \
     ADD_SHOT_PROB(m)
@@ -1659,28 +1692,29 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     std::vector<real1_f> rng = GenerateShotProbs(shots);
     const auto shotFunc = [&](bitCapInt sample, unsigned unused) { ++(results[sample]); };
     real1 partProb = ZERO_R1;
-    bitCapInt d = 0U;
+    bitCapInt d = ZERO_BCI;
 
     if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    const unsigned numCores = (maxQPower < GetConcurrencyLevel()) ? (unsigned)maxQPower : GetConcurrencyLevel();
+#if ENABLE_PTHREAD
+    const unsigned numCores =
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
     }
-    bitCapInt i = 0U;
+    bitCapInt i = ZERO_BCI;
     while (i < maxQPower) {
         const bitCapInt p = i;
         std::vector<std::future<real1>> futures;
         for (unsigned j = 0U; j < numCores; ++j) {
             futures.push_back(
                 std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); }));
-            ++i;
-            if (i >= maxQPower) {
+            bi_increment(&i, 1U);
+            if (bi_compare(i, maxQPower) >= 0) {
                 break;
             }
         }
@@ -1688,12 +1722,12 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
             const real1 prob = futures[j].get();
             CHECK_SHOTS_IF_ANY(j + p, shotFunc);
         }
-        if (!rng.size()) {
+        if (rng.empty()) {
             break;
         }
     }
 #else
-    for (bitCapInt m = 0U; m < maxQPower; ++m) {
+    for (bitCapInt m = 0U; bi_compare(m, maxQPower) < 0; bi_increment(&m, 1U)) {
         const real1 prob = norm(GetAmplitude(m));
         CHECK_SHOTS(m, shotFunc);
     }
@@ -1707,7 +1741,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
     if (rng.size()) {                                                                                                  \
         for (unsigned shot = 0U; shot < rng.size(); ++shot) {                                                          \
-            shotsArray[shot + (shots - rng.size())] = (unsigned)d;                                                     \
+            shotsArray[shot + (shots - rng.size())] = (bitCapIntOcl)d;                                                 \
         }                                                                                                              \
     }                                                                                                                  \
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();                                       \
@@ -1738,37 +1772,39 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     if (!IsProbBuffered()) {
-        par_for(0U, shots,
-            [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)SampleClone(qPowers); });
+        par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
+            shotsArray[shot] = (bitCapIntOcl)SampleClone(qPowers);
+        });
 
         return;
     }
 
     std::vector<real1_f> rng = GenerateShotProbs(shots);
-    const auto shotFunc = [&](bitCapInt sample, unsigned shot) { shotsArray[shot] = (unsigned)sample; };
+    const auto shotFunc = [&](bitCapInt sample, unsigned shot) { shotsArray[shot] = (bitCapIntOcl)sample; };
     real1 partProb = ZERO_R1;
-    bitCapInt d = 0U;
+    bitCapInt d = ZERO_BCI;
 
     if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
         stateMapCache = stabilizer->GetQuantumState();
     }
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    const unsigned numCores = (maxQPower < GetConcurrencyLevel()) ? (unsigned)maxQPower : GetConcurrencyLevel();
+#if ENABLE_PTHREAD
+    const unsigned numCores =
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
         clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
     }
-    bitCapInt i = 0U;
-    while (i < maxQPower) {
+    bitCapInt i = ZERO_BCI;
+    while (bi_compare(i, maxQPower) < 0) {
         const bitCapInt p = i;
         std::vector<std::future<real1>> futures;
         for (unsigned j = 0U; j < numCores; ++j) {
             futures.push_back(
                 std::async(std::launch::async, [j, p, &clones]() { return norm(clones[j]->GetAmplitude(j + p)); }));
-            ++i;
-            if (i >= maxQPower) {
+            bi_increment(&i, 1U);
+            if (bi_compare(i, maxQPower) >= 0) {
                 break;
             }
         }
@@ -1776,12 +1812,12 @@ void QStabilizerHybrid::MultiShotMeasureMask(
             const real1 prob = futures[j].get();
             CHECK_SHOTS_IF_ANY(j + p, shotFunc);
         }
-        if (!rng.size()) {
+        if (rng.empty()) {
             break;
         }
     }
 #else
-    for (bitCapInt m = 0U; m < maxQPower; ++m) {
+    for (bitCapInt m = 0U; bi_compare(m, maxQPower) < 0; bi_increment(&m, 1U)) {
         const real1 prob = norm(GetAmplitude(m));
         CHECK_SHOTS(m, shotFunc);
     }
@@ -1792,11 +1828,11 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
 real1_f QStabilizerHybrid::ProbParity(bitCapInt mask)
 {
-    if (!mask) {
+    if (bi_compare_0(mask) == 0) {
         return ZERO_R1_F;
     }
 
-    if (!(mask & (mask - ONE_BCI))) {
+    if (isPowerOfTwo(mask)) {
         return Prob(log2(mask));
     }
 
@@ -1806,121 +1842,17 @@ real1_f QStabilizerHybrid::ProbParity(bitCapInt mask)
 bool QStabilizerHybrid::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     // If no bits in mask:
-    if (!mask) {
+    if (bi_compare_0(mask) == 0) {
         return false;
     }
 
     // If only one bit in mask:
-    if (!(mask & (mask - ONE_BCI))) {
+    if (isPowerOfTwo(mask)) {
         return ForceM(log2(mask), result, doForce);
     }
 
     SwitchToEngine();
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
-}
-
-void QStabilizerHybrid::CombineAncillae()
-{
-    if (engine || !ancillaCount) {
-        return;
-    }
-
-    FlushCliffordFromBuffers();
-
-    if (!ancillaCount) {
-        return;
-    }
-
-    // The ancillae sometimes end up in a configuration where measuring an earlier ancilla collapses a later ancilla.
-    // If so, we can combine (or cancel) the phase effect on the earlier ancilla and completely separate the later.
-    // We must preserve the earlier ancilla's entanglement, besides partial collapse with the later ancilla.
-    // (It might be possible to change convention to preserve the later ancilla and separate the earlier.)
-
-    std::map<bitLenInt, std::vector<bitLenInt>> toCombine;
-    for (size_t i = qubitCount; i < shards.size(); ++i) {
-        QUnitCliffordPtr clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-        clone->H(i);
-        clone->ForceM(i, false);
-        for (size_t j = qubitCount; j < shards.size(); ++j) {
-            if (i == j) {
-                continue;
-            }
-            if (clone->Prob(j) <= FP_NORM_EPSILON) {
-                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->H(i);
-                clone->ForceM(i, true);
-                if ((ONE_R1 - clone->Prob(j)) < (ONE_R1 / 4)) {
-                    toCombine[i].push_back(j);
-                }
-            } else if ((ONE_R1 / 2 - clone->Prob(j)) <= FP_NORM_EPSILON) {
-                clone = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
-                clone->H(i);
-                clone->ForceM(i, true);
-                if (clone->Prob(j) < (ONE_R1 / 4)) {
-                    toCombine[i].push_back(j);
-                    stabilizer->Z(j);
-                }
-            }
-        }
-    }
-
-    if (!toCombine.size()) {
-        // We fail to find any toCombine entries, and recursion exits.
-        return;
-    }
-
-    const complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-
-    for (const auto& p : toCombine) {
-        MpsShardPtr& baseShard = shards[p.first];
-        if (!baseShard) {
-            continue;
-        }
-        baseShard->Compose(h);
-
-        const std::vector<bitLenInt>& dep = p.second;
-        for (const bitLenInt& combo : dep) {
-            MpsShardPtr& shard = shards[combo];
-            if (!shard) {
-                continue;
-            }
-
-            shard->Compose(h);
-            baseShard->Compose(shard->gate);
-            shard = NULL;
-
-            stabilizer->H(combo);
-            stabilizer->ForceM(combo, false);
-        }
-        const real1_f angle =
-            FractionalRzAngleWithFlush(p.first, std::arg(baseShard->gate[3U] / baseShard->gate[0U])) / 2;
-        const real1 angleCos = (real1)cos(angle);
-        const real1 angleSin = (real1)sin(angle);
-        baseShard->gate[0U] = complex(angleCos, -angleSin);
-        baseShard->gate[3U] = complex(angleCos, angleSin);
-        baseShard->Compose(h);
-    }
-
-    for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
-        if (!shards[i] || stabilizer->IsSeparable(i)) {
-            ClearAncilla(i);
-        }
-    }
-
-    // Flush any ancillae left in Clifford states.
-    for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
-        MpsShardPtr& shard = shards[i];
-        shard->Compose(h);
-        const real1_f prob = 2 * FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / PI_R1;
-        if (abs(prob) <= FP_NORM_EPSILON) {
-            stabilizer->H(i);
-            stabilizer->ForceM(i, false);
-            ClearAncilla(i);
-        }
-    }
-
-    // We should fail to find any toCombine entries before exit.
-    CombineAncillae();
 }
 
 /// Flush non-Clifford phase gate gadgets with angle below a threshold.
@@ -1960,13 +1892,16 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             // Calculate the near-Clifford gate phase angle, but don't change the state:
             const real1 angle =
                 (real1)FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]), true);
-            if ((4 * abs(angle) / PI_R1) > threshold) {
+            if ((2 * abs(angle) / PI_R1) > threshold) {
                 // The gate phase angle is too significant to flush.
                 continue;
             }
 
+            const complex phaseFac = nShard->gate[3U] / nShard->gate[0U];
+            logFidelity += log(0.25 * norm(ONE_CMPLX + phaseFac));
+
             // We're round the gates to 0, and we eliminate the ancillae.
-            FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]));
+            FractionalRzAngleWithFlush(i, std::arg(phaseFac));
             if (isCorrected) {
                 stabilizer->Z(i);
             }
@@ -2051,7 +1986,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     }
 
     if (engine && toCompare->stabilizer) {
-        SetPermutation(0U);
+        SetPermutation(ZERO_BCI);
         stabilizer = std::dynamic_pointer_cast<QUnitClifford>(toCompare->stabilizer->Clone());
         shards.resize(toCompare->shards.size());
         ancillaCount = toCompare->ancillaCount;
@@ -2060,7 +1995,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
             shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
         }
     } else if (stabilizer && !toCompare->stabilizer) {
-        toCompare->SetPermutation(0U);
+        toCompare->SetPermutation(ZERO_BCI);
         toCompare->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
         toCompare->shards.resize(shards.size());
         toCompare->ancillaCount = ancillaCount;
@@ -2200,7 +2135,7 @@ std::ostream& operator<<(std::ostream& os, const QStabilizerHybridPtr s)
 
 std::istream& operator>>(std::istream& is, const QStabilizerHybridPtr s)
 {
-    s->SetPermutation(0);
+    s->SetPermutation(ZERO_BCI);
 
     size_t qbCount;
     is >> qbCount;

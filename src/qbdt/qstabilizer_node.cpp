@@ -310,8 +310,9 @@ QBdtNodeInterfacePtr QBdtQStabilizerNode::PopSpecial(bitLenInt depth, bitLenInt 
 
         // This process might need to be repeated, recursively.
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        unsigned underThreads = (unsigned)(pow2(depth) / pStride);
-        if (underThreads == 1U) {
+        bitCapInt underThreads;
+        bi_div_mod(pow2(depth), pStride, &underThreads, nullptr);
+        if (bi_compare_1(underThreads) == 0) {
             underThreads = 0U;
         }
         if ((depth >= pStridePow) && ((pow2(parDepth) * (underThreads + 1U)) <= numThreads)) {

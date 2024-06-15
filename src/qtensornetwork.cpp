@@ -10,6 +10,21 @@
 
 #include "qfactory.hpp"
 
+#if ENABLE_OPENCL
+#include "common/oclengine.hpp"
+#endif
+#if ENABLE_CUDA
+#include "common/cudaengine.cuh"
+#endif
+
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 // #if ENABLE_CUDA
 // #include <cuda_runtime.h>
 // #include <cutensornet.h>
@@ -24,15 +39,22 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , useHostRam(useHostMem)
     , isSparse(useSparseStateVec)
-    , isReactiveSeparate(true)
     , useTGadget(true)
     , isNearClifford(true)
     , devID(deviceId)
+    , separabilityThreshold(sep_thresh)
     , globalPhase(phaseFac)
     , deviceIDs(devList)
     , engines(eng)
 {
-    if (!engines.size()) {
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
+        separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
+    }
+#endif
+    isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
+
+    if (engines.empty()) {
 #if ENABLE_OPENCL
         engines.push_back((OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
 #elif ENABLE_CUDA
@@ -57,6 +79,42 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     SetPermutation(initState, globalPhase);
 }
 
+bitLenInt QTensorNetwork::GetThresholdQb()
+{
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")) {
+        return (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")));
+    }
+#endif
+#if ENABLE_OPENCL || ENABLE_CUDA
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        return (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    }
+#endif
+    const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
+    const bitLenInt perPage = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+#if ENABLE_OPENCL
+    if (devCount < 2U) {
+        return perPage + 2U;
+    }
+    return perPage + log2Ocl(devCount) + 1U;
+#else
+    if (devCount < 2U) {
+        return perPage;
+    }
+    return (perPage + log2Ocl(devCount)) - 1U;
+#endif
+#else
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_MAX_CPU_QB")) {
+        return (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB")));
+    }
+#endif
+    return 32U;
+#endif
+}
+
 void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
 {
     if (layerStack) {
@@ -66,7 +124,7 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
 
     // We need to prepare the layer stack (and cache it).
     layerStack =
-        CreateQuantumInterface(engines, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+        CreateQuantumInterface(engines, qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
             useHostRam, devID, hardware_rand_generator != NULL, isSparse, (real1_f)amplitudeFloor, deviceIDs);
     layerStack->SetReactiveSeparate(isReactiveSeparate);
     layerStack->SetTInjection(useTGadget);
@@ -80,8 +138,8 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
                     qubits.erase(m.first);
                 }
             }
-            if (!qubits.size()) {
-                constexpr complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            if (qubits.empty()) {
+                QRACK_CONST complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
                 c.push_back(std::make_shared<QCircuit>(true, isNearClifford));
                 for (const auto& m : measurements[j]) {
                     if (m.second) {
@@ -101,18 +159,15 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
     const size_t offset = circuit.size() - c.size();
     for (size_t i = 0U; i < c.size(); ++i) {
         c[i]->Run(layerStack);
-
-        if (measurements.size() <= (offset + i)) {
-            continue;
+        if (measurements.size() > (offset + i)) {
+            RunMeasurmentLayer(offset + i);
         }
-
-        RunMeasurmentLayer(offset + i);
     }
 }
 
 QInterfacePtr QTensorNetwork::Clone()
 {
-    QTensorNetworkPtr clone = std::make_shared<QTensorNetwork>(engines, qubitCount, 0U, rand_generator, ONE_CMPLX,
+    QTensorNetworkPtr clone = std::make_shared<QTensorNetwork>(engines, qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX,
         doNormalize, randGlobalPhase, useHostRam, devID, hardware_rand_generator != NULL, isSparse,
         (real1_f)amplitudeFloor, deviceIDs);
 
@@ -161,7 +216,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         m.erase(qubit);
 
         // If the measurement layer is empty, telescope the layers.
-        if (!m.size()) {
+        if (m.empty()) {
             measurements.erase(measurements.begin() + layerId);
             const size_t prevLayerId = layerId + 1U;
             if (prevLayerId < circuit.size()) {
@@ -205,7 +260,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
         }
 
         // If we did not return, this circuit layer is fully collapsed.
-        constexpr complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        QRACK_CONST complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
 
         if (!layerId) {
             circuit[0U] = std::make_shared<QCircuit>();

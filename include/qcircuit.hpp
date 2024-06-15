@@ -83,8 +83,8 @@ struct QCircuitGate {
     QCircuitGate(bitLenInt trgt, const complex matrix[])
         : target(trgt)
     {
-        payloads[0] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
-        std::copy(matrix, matrix + 4, payloads[0].get());
+        payloads[ZERO_BCI] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
+        std::copy(matrix, matrix + 4, payloads[ZERO_BCI].get());
     }
 
     /**
@@ -124,7 +124,7 @@ struct QCircuitGate {
             return false;
         }
 
-        if (!controls.size() && !other->controls.size()) {
+        if (controls.empty() && other->controls.empty()) {
             return true;
         }
 
@@ -137,7 +137,7 @@ struct QCircuitGate {
             }
 
             if (mc) {
-                return !controls.size() || !other->controls.size() ||
+                return controls.empty() || other->controls.empty() ||
                     (*(controls.begin()) == *(other->controls.begin()));
             }
         }
@@ -158,8 +158,8 @@ struct QCircuitGate {
         controls.clear();
         payloads.clear();
 
-        payloads[0] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
-        complex* p = payloads[0].get();
+        payloads[ZERO_BCI] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
+        complex* p = payloads[ZERO_BCI].get();
         p[0] = ONE_CMPLX;
         p[1] = ZERO_CMPLX;
         p[2] = ZERO_CMPLX;
@@ -179,18 +179,20 @@ struct QCircuitGate {
 
         const size_t cpos = std::distance(controls.begin(), controls.find(c));
         const bitCapInt midPow = pow2(cpos);
-        const bitCapInt lowMask = midPow - 1U;
+        bitCapInt lowMask = midPow;
+        bi_decrement(&lowMask, 1U);
         const bitCapInt highMask = ~lowMask;
 
         std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
         for (const auto& payload : payloads) {
-            const bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) << 1U);
+            bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) << 1U);
 
             nPayloads.emplace(nKey, payload.second);
 
             std::shared_ptr<complex> np = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
             std::copy(payload.second.get(), payload.second.get() + 4U, np.get());
-            nPayloads.emplace(nKey | midPow, np);
+            bi_or_ip(&nKey, midPow);
+            nPayloads.emplace(nKey, np);
         }
 
         payloads = nPayloads;
@@ -205,9 +207,9 @@ struct QCircuitGate {
         const bitCapInt midPow = pow2(cpos);
 
         for (const auto& payload : payloads) {
-            const bitCapInt nKey = payload.first & ~midPow;
+            bitCapInt nKey = ~midPow & payload.first;
 
-            if (nKey == payload.first) {
+            if (bi_compare(nKey, payload.first) == 0) {
                 if (payloads.find(nKey | midPow) == payloads.end()) {
                     return false;
                 }
@@ -218,7 +220,8 @@ struct QCircuitGate {
             }
 
             const complex* l = payloads[nKey].get();
-            const complex* h = payloads[nKey | midPow].get();
+            bi_or_ip(&nKey, midPow);
+            const complex* h = payloads[nKey].get();
             if (amp_leq_0(l[0] - h[0]) && amp_leq_0(l[1] - h[1]) && amp_leq_0(l[2] - h[2]) && amp_leq_0(l[3] - h[3])) {
                 continue;
             }
@@ -236,13 +239,13 @@ struct QCircuitGate {
     {
         const size_t cpos = std::distance(controls.begin(), controls.find(c));
         const bitCapInt midPow = pow2(cpos);
-        const bitCapInt lowMask = midPow - 1U;
+        bitCapInt lowMask = midPow;
+        bi_decrement(&lowMask, 1U);
         const bitCapInt highMask = ~(lowMask | midPow);
 
         std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
         for (const auto& payload : payloads) {
-            const bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) >> 1U);
-            nPayloads.emplace(nKey, payload.second);
+            nPayloads.emplace((payload.first & lowMask) | ((payload.first & highMask) >> 1U), payload.second);
         }
 
         payloads = nPayloads;
@@ -305,7 +308,7 @@ struct QCircuitGate {
             std::copy(out, out + 4U, p);
         }
 
-        if (!payloads.size()) {
+        if (payloads.empty()) {
             Clear();
             return;
         }
@@ -401,10 +404,10 @@ struct QCircuitGate {
      */
     bool IsCnot()
     {
-        if ((controls.size() != 1U) || (payloads.size() != 1U) || (payloads.find(1U) == payloads.end())) {
+        if ((controls.size() != 1U) || (payloads.size() != 1U) || (payloads.find(ONE_BCI) == payloads.end())) {
             return false;
         }
-        complex* p = payloads[1U].get();
+        complex* p = payloads[ONE_BCI].get();
         if ((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON) ||
             (norm(ONE_CMPLX - p[1]) > FP_NORM_EPSILON) || (norm(ONE_CMPLX - p[2]) > FP_NORM_EPSILON)) {
             return false;
@@ -418,7 +421,7 @@ struct QCircuitGate {
      */
     bool IsClifford()
     {
-        if (!payloads.size()) {
+        if (payloads.empty()) {
             // Swap gate is Clifford
             return true;
         }
@@ -427,8 +430,8 @@ struct QCircuitGate {
             return false;
         }
 
-        if (!controls.size()) {
-            return __IS_CLIFFORD(payloads[0U].get());
+        if (controls.empty()) {
+            return __IS_CLIFFORD(payloads[ZERO_BCI].get());
         }
 
         for (const auto& kvPair : payloads) {
@@ -456,50 +459,50 @@ struct QCircuitGate {
      */
     bool CanPass(QCircuitGatePtr other)
     {
-        std::set<bitLenInt>::iterator c = other->controls.find(target);
-        if (c != other->controls.end()) {
+        const std::set<bitLenInt>::iterator c = other->controls.find(target);
+        if (c == other->controls.end()) {
             if (controls.find(other->target) != controls.end()) {
-                return IsPhase() && other->IsPhase();
-            }
-            if (IsPhase()) {
-                return true;
-            }
-            if (!IsPhaseInvert() ||
-                !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
-                return false;
+                return other->IsPhase();
             }
 
-            std::vector<bitCapInt> opfPows;
-            opfPows.reserve(controls.size());
-            for (const bitLenInt& ctrl : controls) {
-                opfPows.emplace_back(pow2(std::distance(other->controls.begin(), other->controls.find(ctrl))));
-            }
-            const bitCapInt p = pow2(std::distance(other->controls.begin(), c));
-            std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
-            for (const auto& payload : other->payloads) {
-                bitCapInt pf = 0U;
-                for (size_t i = 0U; i < opfPows.size(); ++i) {
-                    if (payload.first & opfPows[i]) {
-                        pf |= pow2(i);
-                    }
-                }
-                const auto& poi = payloads.find(pf);
-                if ((poi == payloads.end()) || (norm(poi->second.get()[0]) > FP_NORM_EPSILON)) {
-                    nPayloads[payload.first] = payload.second;
-                } else {
-                    nPayloads[payload.first ^ p] = payload.second;
-                }
-            }
-            other->payloads = nPayloads;
-
-            return true;
+            return (target != other->target) || (IsPhase() && other->IsPhase());
         }
 
         if (controls.find(other->target) != controls.end()) {
-            return other->IsPhase();
+            return IsPhase() && other->IsPhase();
+        }
+        if (IsPhase()) {
+            return true;
+        }
+        if (!IsPhaseInvert() ||
+            !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
+            return false;
         }
 
-        return (target != other->target) || (IsPhase() && other->IsPhase());
+        std::vector<bitCapInt> opfPows;
+        opfPows.reserve(controls.size());
+        for (const bitLenInt& ctrl : controls) {
+            opfPows.emplace_back(pow2(std::distance(other->controls.begin(), other->controls.find(ctrl))));
+        }
+        const bitCapInt p = pow2(std::distance(other->controls.begin(), c));
+        std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
+        for (const auto& payload : other->payloads) {
+            bitCapInt pf = ZERO_BCI;
+            for (size_t i = 0U; i < opfPows.size(); ++i) {
+                if (bi_compare_0(payload.first & opfPows[i]) != 0) {
+                    bi_or_ip(&pf, pow2(i));
+                }
+            }
+            const auto& poi = payloads.find(pf);
+            if ((poi == payloads.end()) || (norm(poi->second.get()[0]) > FP_NORM_EPSILON)) {
+                nPayloads[payload.first] = payload.second;
+            } else {
+                nPayloads[payload.first ^ p] = payload.second;
+            }
+        }
+        other->payloads = nPayloads;
+
+        return true;
     }
 
     /**
@@ -509,7 +512,7 @@ struct QCircuitGate {
     {
         const bitCapIntOcl maxQPower = pow2Ocl(controls.size());
         std::unique_ptr<complex[]> toRet(new complex[maxQPower << 2U]);
-        constexpr complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
+        QRACK_CONST complex identity[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
             complex* mtrx = toRet.get() + (i << 2U);
             const auto& p = payloads.find(i);
@@ -542,18 +545,18 @@ struct QCircuitGate {
 
         const size_t cpos = std::distance(controls.begin(), controlIt);
         const bitCapInt midPow = pow2(cpos);
-        const bitCapInt lowMask = midPow - 1U;
+        bitCapInt lowMask = midPow;
+        bi_decrement(&lowMask, 1U);
         const bitCapInt highMask = ~(lowMask | midPow);
         const bitCapInt qubitPow = pow2(cpos);
-        const bitCapInt eigenPow = eigen ? qubitPow : 0U;
+        const bitCapInt eigenPow = eigen ? qubitPow : ZERO_BCI;
 
         std::map<bitCapInt, std::shared_ptr<complex>> nPayloads;
         for (const auto& payload : payloads) {
-            if ((payload.first & qubitPow) != eigenPow) {
+            if (bi_compare(payload.first & qubitPow, eigenPow) != 0) {
                 continue;
             }
-            const bitCapInt nKey = (payload.first & lowMask) | ((payload.first & highMask) >> 1U);
-            nPayloads.emplace(nKey, payload.second);
+            nPayloads.emplace((payload.first & lowMask) | ((payload.first & highMask) >> 1U), payload.second);
         }
 
         payloads = nPayloads;
@@ -655,12 +658,12 @@ public:
             std::swap(q1, q2);
         }
 
-        constexpr complex m[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        QRACK_CONST complex m[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         const std::set<bitLenInt> s1 = { q1 };
         const std::set<bitLenInt> s2 = { q2 };
-        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
-        AppendGate(std::make_shared<QCircuitGate>(q2, m, s1, 1U));
-        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, 1U));
+        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, ONE_BCI));
+        AppendGate(std::make_shared<QCircuitGate>(q2, m, s1, ONE_BCI));
+        AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, ONE_BCI));
     }
 
     /**

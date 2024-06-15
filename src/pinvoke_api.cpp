@@ -13,7 +13,7 @@
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 
-#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+#if !(FPPOW < 6 && !defined(ENABLE_COMPLEX_X2))
 #include "hamiltonian.hpp"
 #endif
 
@@ -21,6 +21,7 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <numeric>
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
@@ -406,7 +407,7 @@ void MCRHelper(uintq sid, uintq b, double phi, uintq n, uintq* c, uintq q)
 inline std::size_t make_mask(std::vector<bitLenInt> const& qs)
 {
     std::size_t mask = 0U;
-    for (std::size_t q : qs)
+    for (const std::size_t q : qs)
         mask = mask | pow2Ocl(q);
     return mask;
 }
@@ -564,14 +565,16 @@ void _darray_to_creal1_array(double* params, bitCapIntOcl componentCount, comple
 bitCapInt _combineA(uintq na, const uintq* a)
 {
     if (na > (bitsInCap / (8U * sizeof(uintq)))) {
-        throw std::invalid_argument("Big integer is too large for bitCapInt!");
+        metaError = 2;
+        std::cout << "Big integer is too large for bitCapInt!" << std::endl;
+        return ZERO_BCI;
     }
 
 #if QBCAPPOW > 6
-    bitCapInt aTot = 0U;
+    bitCapInt aTot = ZERO_BCI;
     for (uintq i = 0U; i < na; ++i) {
-        aTot <<= bitsInCap;
-        aTot |= a[na - (i + 1U)];
+        bi_lshift_ip(&aTot, bitsInCap);
+        bi_or_ip(&aTot, a[na - (i + 1U)]);
     }
     return aTot;
 #else
@@ -638,12 +641,14 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
-    if (sh && (!sd || simulatorType.size())) {
-        simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
+    if (bdt) {
+        // To recover the original QBdt stack behavior,
+        // set env. var. QRACK_QBDT_HYBRID_THRESHOLD=1
+        simulatorType.push_back(QINTERFACE_BDT_HYBRID);
     }
 
-    if (bdt) {
-        simulatorType.push_back(QINTERFACE_BDT);
+    if (sh && (!sd || simulatorType.size())) {
+        simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
     }
 
     if (sd) {
@@ -657,7 +662,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     // (...then reverse:)
     std::reverse(simulatorType.begin(), simulatorType.end());
 
-    if (!simulatorType.size()) {
+    if (simulatorType.empty()) {
 #if ENABLE_OPENCL
         if (hy && isOcl) {
             simulatorType.push_back(QINTERFACE_HYBRID);
@@ -679,7 +684,8 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     QInterfacePtr simulator = NULL;
     if (q) {
         try {
-            simulator = CreateQuantumInterface(simulatorType, q, 0U, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
+            simulator =
+                CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
         } catch (const std::exception& ex) {
             std::cout << ex.what() << std::endl;
             isSuccess = false;
@@ -735,7 +741,8 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
     QInterfacePtr simulator = NULL;
     if (q) {
         try {
-            simulator = CreateQuantumInterface(simulatorType, q, 0U, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
+            simulator =
+                CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
         } catch (const std::exception& ex) {
             std::cout << ex.what() << std::endl;
             isSuccess = false;
@@ -808,8 +815,8 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
     QInterfacePtr simulator = NULL;
     if (q) {
         try {
-            simulator = CreateQuantumInterface(simulatorType, q, 0U, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp, -1,
-                true, false, REAL1_EPSILON, deviceList, 0, FP_NORM_EPSILON_F);
+            simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true,
+                hp, -1, true, false, REAL1_EPSILON, deviceList, 0, FP_NORM_EPSILON_F);
         } catch (const std::exception& ex) {
             std::cout << ex.what() << std::endl;
             isSuccess = false;
@@ -955,7 +962,6 @@ MICROSOFT_QUANTUM_DECL void qstabilizer_out_to_file(_In_ uintq sid, _In_ char* f
     }
 
     std::ofstream ofile;
-    std::string filename(f);
     ofile.open(f);
 
     try {
@@ -978,7 +984,6 @@ MICROSOFT_QUANTUM_DECL void qstabilizer_in_from_file(_In_ uintq sid, _In_ char* 
     }
 
     std::ifstream ifile;
-    std::string filename(f);
     ifile.open(f);
 
     try {
@@ -1067,9 +1072,9 @@ MICROSOFT_QUANTUM_DECL void PhaseParity(_In_ uintq sid, _In_ double lambda, _In_
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    bitCapInt mask = 0U;
+    bitCapInt mask = ZERO_BCI;
     for (uintq i = 0U; i < n; ++i) {
-        mask |= pow2(shards[simulator.get()][q[i]]);
+        bi_or_ip(&mask, pow2(shards[simulator.get()][q[i]]));
     }
 
     try {
@@ -1097,10 +1102,9 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, uintq n, int* b,
         return 0.0;
     }
 
-    bitCapInt mask = 0U;
+    bitCapInt mask = ZERO_BCI;
     for (bitLenInt i = 0U; i < (bitLenInt)n; ++i) {
-        bitCapInt bit = pow2(shards[simulator.get()][qVec[i]]);
-        mask |= bit;
+        bi_or_ip(&mask, pow2(shards[simulator.get()][qVec[i]]));
     }
 
     return (double)(doMeasure ? (QPARITY(simulator)->MParity(mask) ? ONE_R1 : ZERO_R1)
@@ -1139,7 +1143,7 @@ MICROSOFT_QUANTUM_DECL void ResetAll(_In_ uintq sid)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        simulator->SetPermutation(0U);
+        simulator->SetPermutation(ZERO_BCI);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -1160,7 +1164,7 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ uintq sid, _In_ uintq qid)
     }
 
     QInterfacePtr nQubit = CreateQuantumInterface(
-        simulatorTypes[sid], 1U, 0U, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
+        simulatorTypes[sid], 1U, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
 
     if (simulators[sid] == NULL) {
         simulators[sid] = nQubit;
@@ -1310,6 +1314,36 @@ MICROSOFT_QUANTUM_DECL void S(_In_ uintq sid, _In_ uintq q)
 }
 
 /**
+ * (External API) Square root of X gate
+ */
+MICROSOFT_QUANTUM_DECL void SX(_In_ uintq sid, _In_ uintq q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->SqrtX(shards[simulator.get()][q]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
+ * (External API) Square root of Y gate
+ */
+MICROSOFT_QUANTUM_DECL void SY(_In_ uintq sid, _In_ uintq q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->SqrtY(shards[simulator.get()][q]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
  * (External API) "T" Gate
  */
 MICROSOFT_QUANTUM_DECL void T(_In_ uintq sid, _In_ uintq q)
@@ -1333,6 +1367,36 @@ MICROSOFT_QUANTUM_DECL void AdjS(_In_ uintq sid, _In_ uintq q)
 
     try {
         simulator->IS(shards[simulator.get()][q]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
+ * (External API) Inverse square root of X gate
+ */
+MICROSOFT_QUANTUM_DECL void AdjSX(_In_ uintq sid, _In_ uintq q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->ISqrtX(shards[simulator.get()][q]);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
+ * (External API) Inverse square root of Y gate
+ */
+MICROSOFT_QUANTUM_DECL void AdjSY(_In_ uintq sid, _In_ uintq q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->ISqrtY(shards[simulator.get()][q]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -1726,9 +1790,9 @@ MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
 
 #define MAP_MASK_AND_LOCK(sid, numQ)                                                                                   \
     SIMULATOR_LOCK_GUARD_VOID(sid)                                                                                     \
-    bitCapInt mask = 0U;                                                                                               \
+    bitCapInt mask = ZERO_BCI;                                                                                         \
     for (uintq i = 0U; i < numQ; ++i) {                                                                                \
-        mask |= pow2(shards[simulator.get()][q[i]]);                                                                   \
+        bi_or_ip(&mask, pow2(shards[simulator.get()][q[i]]));                                                          \
     }
 
 /**
@@ -1824,7 +1888,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
     removeIdentities(&bVec, &qVec);
 
     try {
-        if (!bVec.size()) {
+        if (bVec.empty()) {
             RHelper(sid, PauliI, -2. * phi, someQubit);
         } else if (bVec.size() == 1U) {
             RHelper(sid, bVec.front(), -2. * phi, qVec.front());
@@ -1832,7 +1896,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
             TransformPauliBasis(simulator, n, b, q);
 
             std::size_t mask = make_mask(qVec);
-            QPARITY(simulator)->UniformParityRZ((bitCapInt)mask, (real1_f)(-phi));
+            QPARITY(simulator)->UniformParityRZ(mask, (real1_f)(-phi));
 
             RevertPauliBasis(simulator, n, b, q);
         }
@@ -1862,7 +1926,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) in
     removeIdentities(&bVec, &qVec);
 
     try {
-        if (!bVec.size()) {
+        if (bVec.empty()) {
             MCRHelper(sid, PauliI, -2. * phi, nc, cs, someQubit);
         } else if (bVec.size() == 1U) {
             MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
@@ -1872,7 +1936,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) in
             TransformPauliBasis(simulator, n, b, q);
 
             std::size_t mask = make_mask(qVec);
-            QPARITY(simulator)->CUniformParityRZ(csVec, (bitCapInt)mask, (real1_f)(-phi));
+            QPARITY(simulator)->CUniformParityRZ(csVec, mask, (real1_f)(-phi));
 
             RevertPauliBasis(simulator, n, b, q);
         }
@@ -1922,7 +1986,7 @@ MICROSOFT_QUANTUM_DECL uintq MAll(_In_ uintq sid)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
     try {
-        return (uintq)simulators[sid]->MAll();
+        return (bitCapIntOcl)simulators[sid]->MAll();
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2051,12 +2115,16 @@ MICROSOFT_QUANTUM_DECL void Compose(_In_ uintq sid1, _In_ uintq sid2, uintq* q)
     const std::lock_guard<std::mutex> simulatorLock2(simulatorMutexes[simulators[sid2].get()]);
 
     if (simulatorTypes[sid1].size() != simulatorTypes[sid2].size()) {
-        throw std::runtime_error("Cannot 'Compose()' simulators of different layer stack types.");
+        metaError = 2;
+        std::cout << "Cannot 'Compose()' simulators of different layer stack types!" << std::endl;
+        return;
     }
 
     for (size_t i = 0U; i < simulatorTypes[sid1].size(); ++i) {
         if (simulatorTypes[sid1][i] != simulatorTypes[sid2][i]) {
-            throw std::runtime_error("Cannot 'Compose()' simulators of different layer stack types.");
+            metaError = 2;
+            std::cout << "Cannot 'Compose()' simulators of different layer stack types!" << std::endl;
+            return;
         }
     }
 
@@ -2308,6 +2376,43 @@ double _Prob(_In_ uintq sid, _In_ uintq q, bool isRdm)
 }
 
 /**
+ * (External API) Get the probabilities of all permutations of the requested subset of qubits.
+ */
+#if FPPOW < 6
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, float* p)
+#elif FPPOW < 7
+MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, double* p)
+#else
+MICROSOFT_QUANTUM_DECL void ProbAll(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, boost::multiprecision::float128* p)
+#endif
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    std::vector<bitLenInt> _q(n);
+    for (uintq i = 0; i < n; ++i) {
+        _q[i] = shards[simulator.get()][q[i]];
+    }
+
+#if FPPOW < 6
+    const bitCapIntOcl npow = pow2Ocl(n);
+    std::unique_ptr<real1[]> _p(new real1[npow]);
+#endif
+
+    try {
+#if FPPOW < 6
+        simulator->ProbBitsAll(_q, _p.get());
+        std::copy(_p.get(), _p.get() + npow, p);
+#else
+        simulator->ProbBitsAll(_q, p);
+#endif
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+/**
  * (External API) Get the probability that a qubit is in the |1> state.
  */
 MICROSOFT_QUANTUM_DECL double Prob(_In_ uintq sid, _In_ uintq q) { return _Prob(sid, q, false); }
@@ -2322,13 +2427,13 @@ double _PermutationProb(uintq sid, uintq n, uintq* q, bool* c, bool isRdm, bool 
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
-    bitCapInt mask = 0U;
-    bitCapInt perm = 0U;
+    bitCapInt mask = ZERO_BCI;
+    bitCapInt perm = ZERO_BCI;
     for (uintq i = 0U; i < n; ++i) {
         const bitCapInt p = pow2(shards[simulators[sid].get()][q[i]]);
-        mask |= p;
+        bi_or_ip(&mask, p);
         if (c[i]) {
-            perm |= p;
+            bi_or_ip(&perm, p);
         }
     }
 
@@ -2360,7 +2465,7 @@ MICROSOFT_QUANTUM_DECL double PermutationProbRdm(
     return _PermutationProb(sid, n, q, c, true, r);
 }
 
-double _PermutationExpectation(uintq sid, uintq n, uintq* q, bool r, bool isRdm)
+double _PermutationExpVar(uintq sid, uintq n, uintq* q, bool r, bool isRdm, bool isExp)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2371,7 +2476,10 @@ double _PermutationExpectation(uintq sid, uintq n, uintq* q, bool r, bool isRdm)
     }
 
     try {
-        return isRdm ? (double)simulator->ExpectationBitsAllRdm(r, _q) : (double)simulator->ExpectationBitsAll(_q);
+        return isExp
+            ? isRdm ? (double)simulator->ExpectationBitsAllRdm(r, _q) : (double)simulator->ExpectationBitsAll(_q)
+            : isRdm ? (double)simulator->VarianceBitsAllRdm(r, _q)
+                    : (double)simulator->VarianceBitsAll(_q);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2384,7 +2492,7 @@ double _PermutationExpectation(uintq sid, uintq n, uintq* q, bool r, bool isRdm)
  */
 MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q)
 {
-    return _PermutationExpectation(sid, n, q, false, false);
+    return _PermutationExpVar(sid, n, q, false, false, true);
 }
 
 /**
@@ -2393,10 +2501,27 @@ MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ uintq sid, _In_ uintq 
  */
 MICROSOFT_QUANTUM_DECL double PermutationExpectationRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, bool r)
 {
-    return _PermutationExpectation(sid, n, q, r, true);
+    return _PermutationExpVar(sid, n, q, r, true, true);
 }
 
-double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, real1_f* f, bool r, bool isRdm)
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double Variance(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q)
+{
+    return _PermutationExpVar(sid, n, q, false, false, false);
+}
+
+/**
+ * (External API) Get the permutation variance based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double VarianceRdm(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, bool r)
+{
+    return _PermutationExpVar(sid, n, q, r, true, false);
+}
+
+double _FactorizedExpVar(uintq sid, uintq n, uintq* q, uintq m, uintq* c, real1_f* f, bool r, bool isRdm, bool isExp)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
@@ -2417,10 +2542,10 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
         }
 #else
         for (uintq i = 0U; i < n2; ++i) {
-            bitCapInt perm = 0U;
+            bitCapInt perm = ZERO_BCI;
             for (uintq j = 0U; j < m; ++j) {
-                perm <<= 64U;
-                perm |= c[i * m + j];
+                bi_lshift_ip(&perm, 64U);
+                bi_or_ip(&perm, c[i * m + j]);
             }
             _c.push_back(perm);
         }
@@ -2436,10 +2561,14 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
     }
 
     try {
-        return c    ? isRdm ? (double)simulator->ExpectationBitsFactorizedRdm(r, _q, _c)
-                            : (double)simulator->ExpectationBitsFactorized(_q, _c)
-               : isRdm ? (double)simulator->ExpectationFloatsFactorizedRdm(r, _q, _f)
-                    : (double)simulator->ExpectationFloatsFactorized(_q, _f);
+        return isExp ? c ? isRdm ? (double)simulator->ExpectationBitsFactorizedRdm(r, _q, _c)
+                                 : (double)simulator->ExpectationBitsFactorized(_q, _c)
+                : isRdm ? (double)simulator->ExpectationFloatsFactorizedRdm(r, _q, _f)
+                         : (double)simulator->ExpectationFloatsFactorized(_q, _f)
+            : c ? isRdm ? (double)simulator->VarianceBitsFactorizedRdm(r, _q, _c)
+                        : (double)simulator->VarianceBitsFactorized(_q, _c)
+            : isRdm ? (double)simulator->VarianceFloatsFactorizedRdm(r, _q, _f)
+                     : (double)simulator->VarianceFloatsFactorized(_q, _f);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2453,7 +2582,7 @@ double _FactorizedExpectation(uintq sid, uintq n, uintq* q, uintq m, uintq* c, r
 MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c)
 {
-    return _FactorizedExpectation(sid, n, q, m, c, NULL, false, false);
+    return _FactorizedExpVar(sid, n, q, m, c, NULL, false, false, true);
 }
 
 /**
@@ -2463,7 +2592,26 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r)
 {
-    return _FactorizedExpectation(sid, n, q, m, c, NULL, r, true);
+    return _FactorizedExpVar(sid, n, q, m, c, NULL, r, true, true);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c)
+{
+    return _FactorizedExpVar(sid, n, q, m, c, NULL, false, false, false);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r)
+{
+    return _FactorizedExpVar(sid, n, q, m, c, NULL, r, true, false);
 }
 
 /**
@@ -2471,7 +2619,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
  */
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c)
 {
-    return _FactorizedExpectation(sid, n, q, 0U, NULL, c, false, false);
+    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, false, false, true);
 }
 
 /**
@@ -2481,7 +2629,220 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c, _In_ bool r)
 {
-    return _FactorizedExpectation(sid, n, q, 0U, NULL, c, r, true);
+    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, r, true, true);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c)
+{
+    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, false, false, false);
+}
+
+/**
+ * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
+ * qubits as post-selected T gate gadgets.
+ */
+MICROSOFT_QUANTUM_DECL double FactorizedVarianceFpRdm(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_f* c, _In_ bool r)
+{
+    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, r, true, false);
+}
+
+double UnitaryExpVar(bool isExp, uintq sid, uintq n, uintq* q, real1* b)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<real1> _b;
+    _q.reserve(n);
+    _b.reserve(3U * n);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i3 = 3U * i;
+        for (size_t j = 0U; j < 3U; ++j) {
+            _b.emplace_back(b[i3 + j]);
+        }
+    }
+
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double UnitaryExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b)
+{
+    return UnitaryExpVar(true, sid, n, q, b);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double UnitaryVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b)
+{
+    return UnitaryExpVar(false, sid, n, q, b);
+}
+
+double MatrixExpVar(bool isExp, uintq sid, uintq n, uintq* q, real1* b)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<std::shared_ptr<complex>> _b;
+    _q.reserve(n);
+    _b.reserve(n << 3U);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i8 = i << 3U;
+        _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
+        for (size_t j = 0U; j < 4U; ++j) {
+            const size_t j2 = j << 1U;
+            _b[i].get()[j] = complex(b[i8 + j2], b[i8 + j2 + 1U]);
+        }
+    }
+
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double MatrixExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b)
+{
+    return MatrixExpVar(true, sid, n, q, b);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double MatrixVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b)
+{
+    return MatrixExpVar(false, sid, n, q, b);
+}
+
+double UnitaryExpVarEigenVal(bool isExp, uintq sid, uintq n, uintq* q, real1* b, real1* e)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<real1> _b;
+    std::vector<real1> _e;
+    _q.reserve(n);
+    _b.reserve(3U * n);
+    _e.reserve(n << 1U);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+
+        const size_t i2 = i << 1U;
+        _b.emplace_back(b[i2]);
+        _b.emplace_back(b[i2 + 1U]);
+
+        const size_t i3 = 3U * i;
+        for (size_t j = 0U; j < 3U; ++j) {
+            _b.emplace_back(b[i3 + j]);
+        }
+    }
+
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double UnitaryExpectationEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    return UnitaryExpVarEigenVal(true, sid, n, q, b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double UnitaryVarianceEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(3 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    return UnitaryExpVarEigenVal(false, sid, n, q, b, e);
+}
+
+double MatrixExpVarEigenVal(bool isExp, uintq sid, uintq n, uintq* q, real1* b, real1* e)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<std::shared_ptr<complex>> _b;
+    std::vector<real1> _e;
+    _q.reserve(n);
+    _b.reserve(n << 3U);
+    _e.reserve(n << 1U);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const size_t i8 = i << 3U;
+        _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
+        for (size_t j = 0U; j < 4U; ++j) {
+            const size_t j2 = j << 1U;
+            _b[i].get()[j] = complex(b[i8 + j2], b[i8 + j2 + 1U]);
+        }
+    }
+
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double MatrixExpectationEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    return MatrixExpVarEigenVal(true, sid, n, q, b, e);
+}
+
+/**
+ * (External API) Get the single-qubit (2x2) operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double MatrixVarianceEigenVal(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(8 * n) real1* b, _In_reads_(2 * n) real1* e)
+{
+    return MatrixExpVarEigenVal(false, sid, n, q, b, e);
+}
+
+double PauliExpVar(bool isExp, uintq sid, uintq n, uintq* q, uintq* b)
+{
+    SIMULATOR_LOCK_GUARD_DOUBLE(sid)
+
+    std::vector<bitLenInt> _q;
+    std::vector<Pauli> _b;
+    _q.reserve(n);
+    _b.reserve(n);
+    for (size_t i = 0U; i < n; ++i) {
+        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        _b.emplace_back((Pauli)b[i]);
+    }
+
+    return isExp ? simulator->ExpectationPauliAll(_q, _b) : simulator->VariancePauliAll(_q, _b);
+}
+
+/**
+ * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double PauliExpectation(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b)
+{
+    return PauliExpVar(true, sid, n, q, b);
+}
+
+/**
+ * (External API) Get the Pauli operator variance for the array of qubits and bases.
+ */
+MICROSOFT_QUANTUM_DECL double PauliVariance(
+    _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* b)
+{
+    return PauliExpVar(false, sid, n, q, b);
 }
 
 MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c)
@@ -2489,15 +2850,11 @@ MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uint
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-#if QBCAPPOW >= 32
-        simulator->QFTR(c, n);
-#else
         std::vector<bitLenInt> q(n);
         for (uintq i = 0U; i < n; ++i) {
             q[i] = shards[simulators[sid].get()][c[i]];
         }
         simulator->QFTR(q);
-#endif
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2508,15 +2865,11 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-#if QBCAPPOW >= 32
-        simulator->IQFTR(c, n);
-#else
         std::vector<bitLenInt> q(n);
         for (uintq i = 0U; i < n; ++i) {
             q[i] = shards[simulators[sid].get()][c[i]];
         }
         simulator->IQFTR(q);
-#endif
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -2530,8 +2883,8 @@ MICROSOFT_QUANTUM_DECL void ADD(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, n, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, n, q);
         simulator->INC(aTot, start, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2544,8 +2897,8 @@ MICROSOFT_QUANTUM_DECL void SUB(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, n, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, n, q);
         simulator->DEC(aTot, start, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2558,8 +2911,8 @@ MICROSOFT_QUANTUM_DECL void ADDS(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, n, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, n, q);
         simulator->INCS(aTot, start, n, shards[simulator.get()][s]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2572,8 +2925,8 @@ MICROSOFT_QUANTUM_DECL void SUBS(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, n, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, n, q);
         simulator->DECS(aTot, start, n, shards[simulator.get()][s]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2587,8 +2940,8 @@ MICROSOFT_QUANTUM_DECL void MCADD(_In_ uintq sid, _In_ uintq na, _In_reads_(na) 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, nq, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, nq, q);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2605,8 +2958,8 @@ MICROSOFT_QUANTUM_DECL void MCSUB(_In_ uintq sid, _In_ uintq na, _In_reads_(na) 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        uintq start = MapArithmetic(simulator, nq, q);
+        const bitCapInt aTot = _combineA(na, a);
+        const uintq start = MapArithmetic(simulator, nq, q);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2624,8 +2977,8 @@ MICROSOFT_QUANTUM_DECL void MUL(_In_ uintq sid, _In_ uintq na, _In_reads_(na) ui
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         QALU(simulator)->MUL(aTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2638,8 +2991,8 @@ MICROSOFT_QUANTUM_DECL void DIV(_In_ uintq sid, _In_ uintq na, _In_reads_(na) ui
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         QALU(simulator)->DIV(aTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2652,8 +3005,8 @@ MICROSOFT_QUANTUM_DECL void MULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         simulator->MULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
@@ -2667,9 +3020,9 @@ MICROSOFT_QUANTUM_DECL void DIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         simulator->IMULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2682,9 +3035,9 @@ MICROSOFT_QUANTUM_DECL void POWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) u
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         QALU(simulator)->POWModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2698,8 +3051,8 @@ MICROSOFT_QUANTUM_DECL void MCMUL(_In_ uintq sid, _In_ uintq na, _In_reads_(na) 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2716,8 +3069,8 @@ MICROSOFT_QUANTUM_DECL void MCDIV(_In_ uintq sid, _In_ uintq na, _In_reads_(na) 
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2734,9 +3087,9 @@ MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2753,9 +3106,9 @@ MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2772,9 +3125,9 @@ MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        bitCapInt aTot = _combineA(na, a);
-        bitCapInt mTot = _combineA(na, m);
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        const bitCapInt aTot = _combineA(na, a);
+        const bitCapInt mTot = _combineA(na, m);
+        const MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         std::vector<bitLenInt> ctrlsArray(nc);
         for (uintq i = 0; i < nc; ++i) {
             ctrlsArray[i] = shards[simulator.get()][c[i]];
@@ -2792,7 +3145,7 @@ MICROSOFT_QUANTUM_DECL void LDA(
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
+        const MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
         QALU(simulator)->IndexedLDA(starts.start1, ni, starts.start2, nv, t, true);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2805,7 +3158,7 @@ MICROSOFT_QUANTUM_DECL void ADC(_In_ uintq sid, uintq s, _In_ uintq ni, _In_read
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
+        const MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
         QALU(simulator)->IndexedADC(starts.start1, ni, starts.start2, nv, shards[simulator.get()][s], t);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2818,7 +3171,7 @@ MICROSOFT_QUANTUM_DECL void SBC(_In_ uintq sid, uintq s, _In_ uintq ni, _In_read
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
+        const MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
         QALU(simulator)->IndexedSBC(starts.start1, ni, starts.start2, nv, shards[simulator.get()][s], t);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2830,7 +3183,7 @@ MICROSOFT_QUANTUM_DECL void Hash(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
     try {
-        uintq start = MapArithmetic(simulator, n, q);
+        const uintq start = MapArithmetic(simulator, n, q);
         QALU(simulator)->Hash(start, n, t);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
@@ -2920,6 +3273,18 @@ MICROSOFT_QUANTUM_DECL void SetSdrp(_In_ uintq sid, _In_ double sdrp)
     }
 }
 
+MICROSOFT_QUANTUM_DECL void SetNcrp(_In_ uintq sid, _In_ double ncrp)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    try {
+        simulator->SetNcrp(ncrp);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
 MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ uintq sid, _In_ bool irs)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
@@ -2942,7 +3307,7 @@ MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool irs)
     }
 }
 
-#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+#if !(FPPOW < 6 && !defined(ENABLE_COMPLEX_X2))
 /**
  * (External API) Simulate a Hamiltonian
  */
@@ -3129,7 +3494,7 @@ MICROSOFT_QUANTUM_DECL void set_qneuron_activation_fn(_In_ uintq nid, _In_ uintq
 
 MICROSOFT_QUANTUM_DECL uintq get_qneuron_activation_fn(_In_ uintq nid)
 {
-    NEURON_LOCK_GUARD_DOUBLE(nid)
+    NEURON_LOCK_GUARD_INT(nid)
     return (uintq)neuron->GetActivationFn();
 }
 
@@ -3240,7 +3605,7 @@ uintq _init_qcircuit_copy(uintq cid, bool isInverse, std::set<bitLenInt> q)
         }
     }
 
-    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : (q.size() ? circuit->PastLightCone(q) : circuit->Clone());
+    QCircuitPtr nCircuit = isInverse ? circuit->Inverse() : (q.empty() ? circuit->Clone() : circuit->PastLightCone(q));
 
     if (ncid == circuits.size()) {
         circuitReservations.push_back(true);
@@ -3302,10 +3667,10 @@ MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
     std::iota(indices.begin(), indices.end(), 0);
     std::sort(indices.begin(), indices.end(), [&](bitLenInt a, bitLenInt b) -> bool { return c[a] < c[b]; });
 
-    bitCapInt _p = 0U;
+    bitCapInt _p = ZERO_BCI;
     std::set<bitLenInt> ctrls;
     for (uintq i = 0U; i < n; ++i) {
-        _p |= ((p >> i) & 1U) << indices[i];
+        bi_or_ip(&_p, ((p >> i) & 1U) << indices[i]);
         ctrls.insert(c[i]);
     }
 
@@ -3324,7 +3689,6 @@ MICROSOFT_QUANTUM_DECL void qcircuit_out_to_file(_In_ uintq cid, _In_ char* f)
 {
     CIRCUIT_LOCK_GUARD_VOID(cid)
     std::ofstream ofile;
-    std::string filename(f);
     ofile.open(f);
     ofile << circuit;
     ofile.close();
@@ -3333,7 +3697,6 @@ MICROSOFT_QUANTUM_DECL void qcircuit_in_from_file(_In_ uintq cid, _In_ char* f)
 {
     CIRCUIT_LOCK_GUARD_VOID(cid)
     std::ifstream ifile;
-    std::string filename(f);
     ifile.open(f);
     ifile >> circuit;
     ifile.close();

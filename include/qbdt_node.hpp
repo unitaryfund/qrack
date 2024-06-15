@@ -25,7 +25,7 @@ typedef std::shared_ptr<QBdtNode> QBdtNodePtr;
 
 class QBdtNode : public QBdtNodeInterface {
 protected:
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
         bitLenInt parDepth = 1U);
@@ -71,7 +71,7 @@ public:
 
     virtual void Normalize(bitLenInt depth = 1U);
 
-#if ENABLE_COMPLEX_X2
+#ifdef ENABLE_COMPLEX_X2
     virtual QBdtNodeInterfacePtr Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2,
         const complex2& mtrxColShuff1, const complex2& mtrxColShuff2, bitLenInt depth);
 #else

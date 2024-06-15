@@ -1,8 +1,8 @@
 # Qrack
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5812507.svg)](https://doi.org/10.5281/zenodo.5812507) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5812507.svg)](https://doi.org/10.5281/zenodo.5812507) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing) [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
-[![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
+## About
 
 The open source vm6502q/qrack library and its associated plugins and projects under the vm6502q organization header comprise a framework for full-stack quantum computing development, via high performance and fundamentally optimized simulation. The intent of "Qrack" is to provide maximum performance for the simulation of an ideal, virtually error-free quantum computer, across the broadest possible set of hardware and operating systems.
 
@@ -34,37 +34,6 @@ For distributed simulation, the `Qrack::QPager` layer will segment a single regi
 
 For more information, compile the `doxygen.config` in the root folder, and then check the `doc` folder.
 
-## PyQrack Source Build
-
-The CMake settings for default build of [PyQrack](https://github.com/unitaryfund/pyqrack) are as follows, (assuming you are in a build directory created inside the top-level directory of the repo clone):
-
-x86-64 Linux (OpenCL):
-```
-cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
-```
-
-x86-64 Linux (CUDA):
-```
-cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_OPENCL=OFF -DENABLE_CUDA=ON ..
-```
-
-x86-64 Mac (might need `-Werror`, "warning to error," disabled in CMake files):
-```
-cmake -DQBCAPPOW=12 -DCPP_STD=14 ..
-```
-
-RISC (ARM) Linux:
-```
-cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF -DENABLE_SSE3=OFF -DQBCAPPOW=12 -DCPP_STD=14 ..
-```
-
-[Emscripten (WASM)](https://qrack.net/):
-```
-emcmake cmake -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DQBCAPPOW=12 -DCPP_STD=14 ..
-```
-
-Windows-based systems are more specific, but there is a bit more information about them further below.
-
 ## Documentation
 
 Live version of the documentation, including API reference, can be obtained at: https://qrack.readthedocs.io/en/latest/
@@ -75,12 +44,73 @@ Qrack has a community home at the Advanced Computing Topics server on Discord, a
 
 For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Installing Qrack
+
+If you're on Ubuntu 18.04, 20.04, or 22.04 LTS, you're in luck: Qrack manages a PPA that provides binary installers for _all_ available CPU architectures (except any that require administrative attention from Ubuntu or Canonical).
+
+```sh
+    $ sudo add-apt-repository ppa:wrathfulspatula/vm6502q
+    $ sudo apt update
+    $ sudo apt install libqrack-dev
+```
+
+(You might need to install the `add-apt-repository` tool first, through `apt` itself.)
+
+Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page. (Operating system targets include Linux, Windows, and Mac, alongside WebAssmembly. Qrack source also builds for native Android and iOS.)
+
+If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
+
+## PyQrack Source Build
+
+The CMake settings for default build of [PyQrack](https://github.com/unitaryfund/pyqrack) are as follows, (assuming you are in a build directory created inside the top-level directory of the repo clone):
+
+x86-64 Linux (OpenCL):
+```
+cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 -DUINTPOW=5 ..
+```
+
+x86-64 Linux (CUDA):
+```
+cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_OPENCL=OFF -DENABLE_CUDA=ON -DUINTPOW=5 ..
+```
+
+x86-64 Mac (might need `-Werror`, "warning to error," disabled in CMake files):
+```
+cmake -DQBCAPPOW=12 -DUINTPOW=5 -DCPP_STD=14 ..
+```
+
+RISC (ARM) Linux:
+```
+cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF -DQBCAPPOW=12 -DUINTPOW=5 -DCPP_STD=14 ..
+```
+
+[Emscripten (WASM)](https://qrack.net/):
+```
+emcmake cmake -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DQBCAPPOW=12 -DUINTPOW=5 -DCPP_STD=14 ..
+```
+
+Windows-based systems are more specific, but there is a bit more information about them further below.
+
 ## test/tests.cpp
 
 The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
 
 ```sh
     $ _build/unittest
+```
+
+Similarly, benchmarks are in `test/benchmarks.cpp`:
+
+```sh
+    $ _build/benchmarks [--optimal] [--max-qubits=30] [test_qft_cosmology]
+```
+
+## OpenCL on systems prior to OpenCL v2.0
+
+Particularly on older hardware, it is possible that you do not have OpenCL v2.0 available. In theory, Qrack should work off-the-shelf anyway. However, if the OpenCL implementation isn't even aware of the existence of v2.0, use the following option to completely manually force all v2.0 functionality off and to set the target OpenCL API level expressly to target v1.2 and minimum level v1.1:
+
+```sh
+    $ cmake -DENALBE_OOO_OCL=OFF ..
 ```
 
 ## Installing OpenCL on VMWare
@@ -100,6 +130,8 @@ Most platforms offer a standardized way of installing OpenCL. However, a method 
 While the OpenCL framework is available by default on most modern Macs, the C++ header `cl.hpp` is usually not. One option for building for OpenCL on Mac is to download this header file and include it in the Qrack project folder under include/OpenCL (as `cl.hpp`). The OpenCL C++ header can be found at the Khronos OpenCL registry:
 
 https://www.khronos.org/registry/OpenCL/
+
+Otherwise, Homebrew offers a package with the headers: [opencl-clhpp-headers](https://formulae.brew.sh/formula/opencl-clhpp-headers) is the preferred method of installing headers, if `brew` is available.
 
 ## Building and Installing Qrack on Windows
 
@@ -198,13 +230,13 @@ There are two special device IDs that can be specified in these lists: `-1` is g
 `QRACK_QPAGER_DEVICES_HOST_POINTER` corresponds to each device ID in `QRACK_QPAGER_DEVICES`, per sequential item in that other variable, (with the same syntax and list wrapping behavior). If the value of this is `0` for a page, that page attempts OpenCL _device_ RAM allocation; if the value is `1` for a page, that page attempts OpenCL _host_ RAM allocation. `0` value, device RAM, is suggested for GPUs; `1` value, host RAM, is suggested for CPUs and APUs (which use general host RAM, anyway). By default, all devices attempt on-device RAM allocation, if this environment variable is not specified.
 
 ## QUnitMulti device list
-Specify a device list for `QUnitMulti` the same way you would for `QPager`, with environment variable `QRACK_QUNITMULTI_DEVICES`.
-
-## QBdt options
-`QBdt` automatically prefers the same number of "global qubits" as `QPager`, which is typically at least 2 qubits, to accommodate 4 maximum allocation segments on a single device. Depending on your application, `QBdt` might be most effective with more global qubits than this." To add more qubits relative to max single page width, set the environment variable `QRACK_SEGMENT_QBDT_QB` to the number of additional global qubits. Its default value is 5, which adds 5 global qubits to the 2 required for single device paging. If the default is too high to engage the GPU with `QHybrid`, it will be automatically lessened to the point of automatically engaging the GPU. If the requested number of global qubits exceeds the maximum number of qubits in a single page, all qubits will be global.
+Specify a device list for `QUnitMulti` the same way you would for `QPager`, with environment variable `QRACK_QUNITMULTI_DEVICES`. Corresponding to each entry in `QRACK_QUNITMULTI_DEVICES`, use `QRACK_QUNITMULTI_DEVICES_MAX_QB` to (optionally) specify a per-entry ceiling on device usage. For smaller-width devices like CPUs, it might make sense to set the qubit ceiling to about the CPU `PSTRIDEPOW` plus logarithm base 2 of your hyperthread count.
 
 ## QTensorNetwork options
-`QTensorNetwork` has a threshold up to which it is able to reuse more work in measurement and probability calculations, `QRACK_QTENSORNETWORK_THRESHOLD_QB`. Its default value is 27 qubits. Above (and not including) this threshold, `QTensorNetwork` will use techniques like restricting to "past light cones" for measurement and probablity calculation, in an attempt to reduce overall memory footprint at the cost of additional execution time.
+`QTensorNetwork` has a threshold up to which it is able to reuse more work in measurement and probability calculations, `QRACK_QTENSORNETWORK_THRESHOLD_QB`. Its default value is 30 qubits. Above (and not including) this threshold, `QTensorNetwork` will use techniques like restricting to "past light cones" for measurement and probablity calculation, in an attempt to reduce overall memory footprint at the cost of additional execution time.
+
+## QBdt and QBdtHybrid options
+`QBdtHybrid` sets a threshold for "hybridization" between "quantum binary decision diagrams" (see Acknowledgements at bottom of document) and state vector simulation, based on how efficiently the "diagram" or "tree" can be "compressed." The environment variable `QRACK_QBDT_HYBRID_THRESHOLD` (typically taking values between 0 and 1) sets a multiplicative fraction for maximally-compressed size of the tree, as fraction of node count vs. equivalent state vector amplitude count, before switching over to state vector simulation. Note that maximum `QBdt` node count is _twice_ the count of amplitudes in the equivalent state vector simulation, so set the variable to 2 or higher to completely suppress switching and recover `QBdt`-only simulation in all cases.
 
 ## Build and environment options for CPU engines
 `QEngineCPU` and `QHybrid` batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used. (The default is meant to work well across different typical consumer systems, but it might benefit from system-tailored tuning via the environment variable.)
@@ -320,7 +352,7 @@ Prior to the Qrack v7 API, a larger set of convenience methods were included in 
 
 Copyright (c) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 
-Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of `QUnit` and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Special thanks go to Aryan Blaauw for his extensive systematic benchmark program, leading to much debugging and design feedback, while he spreads general good will about our community discussion space. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. For unit tests and benchmarks, Qrack uses Catch v2.13.7 under the Boost Software License, Version 1.0. The `QStabilizer` partial simulator "engine" is adapted from CHP by Scott Aaronson, for non-commercial use. Half precision floating point headers are provided by [http://half.sourceforge.net/](http://half.sourceforge.net/), with our thanks. GitHub user [paniash](https://github.com/paniash) has kindly contributed `README.md` styling and standardization. Some commits might be written with the assistance of OpenAI's ChatGPT, though the commit messages should note all such specific cases, and 0 commits used direct ChatGPT assistance or any direct AI assistance for authorship before April 15, 2023. Thank you to all our PR contributors, tracked in GitHub, and thank you to the OSS community in general for supporting code, including [Adam Kelly](https://github.com/libtangle/qcgpu) and the [qulacs team](https://github.com/qulacs/qulacs), for Qiskit and Cirq interfaces. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).)
+Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of `QUnit` and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Special thanks go to Aryan Blaauw for his extensive systematic benchmark program, leading to much debugging and design feedback, while he spreads general good will about our community discussion space. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. For unit tests and benchmarks, Qrack uses Catch v2.13.7 under the Boost Software License, Version 1.0. The `QStabilizer` partial simulator "engine" is adapted from CHP by Scott Aaronson, for non-commercial use. `QBdt` is Qrack's "hand-rolled" take on "quantum binary decision diagrams" ("QBDD," or "quantum binary decision trees") inspired largely by a talk Dan attended from Jülich Supercomputing Center at IEEE Quantum Week, in 2021, and later followed up with reading into work of authors including Robert Wille. Half precision floating point headers are provided by [http://half.sourceforge.net/](http://half.sourceforge.net/), with our thanks. GitHub user [paniash](https://github.com/paniash) has kindly contributed `README.md` styling and standardization. Some commits might be written with the assistance of OpenAI's ChatGPT, though the commit messages should note all such specific cases, and 0 commits used direct ChatGPT assistance or any direct AI assistance for authorship before April 15, 2023. Thank you to all our PR contributors, tracked in GitHub, and thank you to the OSS community in general for supporting code, including [Adam Kelly](https://github.com/libtangle/qcgpu) and the [qulacs team](https://github.com/qulacs/qulacs), for Qiskit and Cirq interfaces. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).)
 
 We thank the Unitary Fund for its generous support, in a project to help standardize benchmarks across quantum computer simulator software!  Thank you to any and all contributors!
 
