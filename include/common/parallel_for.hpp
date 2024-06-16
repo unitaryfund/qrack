@@ -32,7 +32,7 @@ public:
         }
         numCores = num;
         const bitLenInt pStridePow = log2Ocl(pStride);
-        const bitLenInt minStridePow = (numCores >= 1U) ? (bitLenInt)pow2Ocl(log2Ocl(numCores - 1U)) : 1U;
+        const bitLenInt minStridePow = (numCores > 0U) ? (bitLenInt)pow2Ocl(log2Ocl(numCores - 1U)) : 1U;
         dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
     }
     unsigned GetConcurrencyLevel() { return numCores; }
