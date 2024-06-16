@@ -834,9 +834,9 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 
 #if ENABLE_COMPLEX_X2
     std::vector<complex2> top;
-    std::vector<complex2> bottom :
-        // For variable scoping, only:
-        if (true)
+    std::vector<complex2> bottom;
+    // For variable scoping, only:
+    if (true)
     {
         const bitCapIntOcl offset = a * aStride;
         complex amp = amps[offset];
