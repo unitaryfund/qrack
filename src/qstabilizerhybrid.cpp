@@ -838,11 +838,22 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         for (bitLenInt i = 1U; i < aStride; ++i) {
             const bitLenInt j = indices[i - 1U];
             const complex* mtrx = shards[j]->gate;
+#if ENABLE_COMPLEX_X2
+            complex2 amps(amp, amps[i + offset]);
             if (bi_and_1(perm >> j)) {
-                amp = mtrx[2U] * amps[i + offset] + mtrx[3U] * amp;
+                amps = amps * complex2(mtrx[3U], mtrx[2U]);
             } else {
-                amp = mtrx[0U] * amp + mtrx[1U] * amps[i + offset];
+                amps = amps * complex2(mtrx[0U], mtrx[1U]);
             }
+            amp = amps.c(0U) + amps.c(1U);
+#else
+            const complex oAmp = amps[i + offset];
+            if (bi_and_1(perm >> j)) {
+                amp = mtrx[3U] * amp + mtrx[2U] * oAmp;
+            } else {
+                amp = mtrx[0U] * amp + mtrx[1U] * oAmp;
+            }
+#endif
         }
         aEngine->SetAmplitude(a, amp);
     }
