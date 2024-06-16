@@ -1824,10 +1824,7 @@ real1_f Variance(quid sid, std::vector<bitLenInt> q) { return _PermutationExpVar
  * (External API) Get the permutation variance, based upon the order of input qubits, treating all ancillary
  * qubits as post-selected T gate gadgets.
  */
-real1_f VarianceRdm(quid sid, std::vector<bitLenInt> q, bool r)
-{
-    return _PermutationExpVar(sid, q, r, true, false);
-}
+real1_f VarianceRdm(quid sid, std::vector<bitLenInt> q, bool r) { return _PermutationExpVar(sid, q, r, true, false); }
 
 real1_f FactorizedExpVar(bool isExp, bool isRdm, quid sid, std::vector<QubitIntegerExpVar> q, bool r)
 {

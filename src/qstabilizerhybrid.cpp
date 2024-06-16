@@ -832,31 +832,62 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         CreateQuantumInterface(et, ancillaCount, ZERO_BCI, rand_generator, ONE_CMPLX, false, false, useHostRam, devID,
             useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
 
+#if ENABLE_COMPLEX_X2
+    std::vector<complex2> top;
+    std::vector<complex2> bottom :
+        // For variable scoping, only:
+        if (true)
+    {
+        const bitCapIntOcl offset = a * aStride;
+        complex amp = amps[offset];
+        for (bitLenInt i = 1U; i < aStride; ++i) {
+            const bitLenInt j = indices[i - 1U];
+            const complex* mtrx = shards[j]->gate;
+            top.emplace_back(mtrx[0U], mtrx[1U]);
+            bottom.emplace_back(mtrx[3U], mtrx[2U]);
+            complex2 amps(amp, amps[i + offset]);
+            if (bi_and_1(perm >> j)) {
+                amps = amps * bottom.back();
+            } else {
+                amps = amps * top.back();
+            }
+            amp = amps.c(0U) + amps.c(1U);
+        }
+        aEngine->SetAmplitude(0U, amp);
+    }
+    for (bitCapIntOcl a = 1U; a < ancillaPow; ++a) {
+        const bitCapIntOcl offset = a * aStride;
+        complex amp = amps[offset];
+        for (bitLenInt i = 1U; i < aStride; ++i) {
+            const bitLenInt j = indices[i - 1U];
+            if (bi_and_1(perm >> j)) {
+                amps = amps * bottom[j];
+            } else {
+                amps = amps * top[j];
+            }
+            amp = amps.c(0U) + amps.c(1U);
+        }
+        aEngine->SetAmplitude(a, amp);
+    }
+    top.clear();
+    bottom.clear();
+#else
     for (bitCapIntOcl a = 0U; a < ancillaPow; ++a) {
         const bitCapIntOcl offset = a * aStride;
         complex amp = amps[offset];
         for (bitLenInt i = 1U; i < aStride; ++i) {
             const bitLenInt j = indices[i - 1U];
             const complex* mtrx = shards[j]->gate;
-#if ENABLE_COMPLEX_X2
-            complex2 amps(amp, amps[i + offset]);
-            if (bi_and_1(perm >> j)) {
-                amps = amps * complex2(mtrx[3U], mtrx[2U]);
-            } else {
-                amps = amps * complex2(mtrx[0U], mtrx[1U]);
-            }
-            amp = amps.c(0U) + amps.c(1U);
-#else
             const complex oAmp = amps[i + offset];
             if (bi_and_1(perm >> j)) {
                 amp = mtrx[3U] * amp + mtrx[2U] * oAmp;
             } else {
                 amp = mtrx[0U] * amp + mtrx[1U] * oAmp;
             }
-#endif
         }
         aEngine->SetAmplitude(a, amp);
     }
+#endif
 
     for (bitLenInt i = 0U; i < ancillaCount; ++i) {
         const MpsShardPtr& shard = shards[i + qubitCount];
