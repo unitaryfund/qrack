@@ -43,7 +43,6 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     , rawRandBools(0U)
     , rawRandBoolsRemaining(0U)
     , phaseOffset(ZERO_R1)
-    , isUnitarityBroken(false)
     , r((n << 1U) + 1U)
     , x((n << 1U) + 1U, BoolVector(n))
     , z((n << 1U) + 1U, BoolVector(n))
@@ -90,8 +89,6 @@ QInterfacePtr QStabilizer::Clone()
 void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();
-
-    isUnitarityBroken = false;
 
     if (phaseFac != CMPLX_DEFAULT_ARG) {
         phaseOffset = std::arg(phaseFac);
@@ -1458,8 +1455,6 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         if (!doApply) {
             return result;
         }
-
-        isUnitarityBroken = true;
 
         const QStabilizerPtr clone = randGlobalPhase ? NULL : std::dynamic_pointer_cast<QStabilizer>(Clone());
 
