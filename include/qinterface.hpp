@@ -1038,6 +1038,13 @@ public:
     }
 
     /**
+     * Masked PhaseRootN gate
+     *
+     * Applies a 1/(2^N) phase rotation to all qubits in the mask.
+     */
+    virtual void PhaseRootNMask(bitLenInt n, bitCapInt mask);
+
+    /**
      * Inverse "PhaseRootN" gate
      *
      * Applies an inverse 1/(2^N) phase rotation to the qubit at "qubitIndex."

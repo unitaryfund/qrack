@@ -773,6 +773,66 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
     });
 }
 
+void QEngineCPU::PhaseRootNMask(bitLenInt n, bitCapInt mask)
+{
+    if (bi_compare(mask, maxQPower) >= 0) {
+        throw std::invalid_argument("QEngineCPU::PhaseRootNMask mask out-of-bounds!");
+    }
+    if (n > sizeof(bitCapIntOcl)) {
+        throw std::invalid_argument("QEngineCPU::PhaseRootNMask: power of 2 out-of-bounds");
+    }
+
+    CHECK_ZERO_SKIP();
+
+    if (bi_compare_0(mask) == 0) {
+        return;
+    }
+
+    if (n == 0) {
+        return;
+    }
+    if (n == 1) {
+        ZMask(mask);
+        return;
+    }
+
+    const real1_f radians = -PI_R1 / pow2Ocl(n - 1U);
+
+    if (isPowerOfTwo(mask)) {
+        const complex phaseFac = std::polar(ONE_R1, radians);
+        Phase(ONE_CMPLX, phaseFac, log2(mask));
+        return;
+    }
+
+    if (stateVec->is_sparse()) {
+        QInterface::PhaseRootNMask(n, mask);
+        return;
+    }
+
+    Dispatch(maxQPowerOcl, [this, n, mask, radians] {
+        const bitCapIntOcl maskOcl = (bitCapIntOcl)mask;
+        const bitCapIntOcl nPhases = pow2Ocl(n);
+        ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            bitCapIntOcl popCount = 0;
+            {
+                bitCapIntOcl v = lcv & maskOcl;
+                while (v) {
+                    popCount += v & 1;
+                    v >>= 1;
+                }
+            }
+
+            const bitCapIntOcl nPhaseSteps = popCount % nPhases;
+            if (nPhaseSteps != 0) {
+                const complex phaseFac = std::polar(ONE_R1, radians * nPhaseSteps);
+                stateVec->write(lcv, phaseFac * stateVec->read(lcv));
+            }
+        };
+
+        par_for(0U, maxQPowerOcl, fn);
+    });
+}
+
 void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
     const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
 {

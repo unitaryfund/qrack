@@ -759,6 +759,50 @@ void QEngineOCL::PhaseParity(real1_f radians, bitCapInt mask)
     BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
 }
 
+void QEngineOCL::PhaseRootNMask(bitLenInt n, bitCapInt mask)
+{
+    if (bi_compare_0(mask) == 0) {
+        return;
+    }
+
+    const bitCapIntOcl oclMask = (bitCapIntOcl)mask;
+    if (oclMask >= maxQPowerOcl) {
+        throw std::invalid_argument("QEngineOCL::BitMask mask out-of-bounds!");
+    }
+
+    CHECK_ZERO_SKIP();
+
+    const bitCapIntOcl nPhases = pow2Ocl(n);
+    const real1_f radians[1] = { -PI_R1 / pow2Ocl(n - 1U) };
+
+    if (isPowerOfTwo(mask)) {
+        const complex phaseFac = std::polar(ONE_R1, radians[0]);
+        Phase(ONE_CMPLX, phaseFac, log2(mask));
+        return;
+    }
+
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, oclMask, nPhases, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    {
+        EventVecPtr waitVec = ResetWaitEvents();
+
+        cl::Event writeIntArgsEvent;
+        DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs, writeIntArgsEvent);
+
+        cl::Event writeRealArgsEvent;
+        DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1), radians, writeRealArgsEvent);
+
+        writeIntArgsEvent.wait();
+        writeRealArgsEvent.wait();
+        wait_refs.clear();
+    }
+
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    QueueCall(OCL_API_PHASE_MASK, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->realBuffer });
+}
+
 void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
     const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
 {

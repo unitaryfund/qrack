@@ -86,6 +86,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_Z_SINGLE, "zsingle"),
     OCLKernelHandle(OCL_API_Z_SINGLE_WIDE, "zsinglewide"),
     OCLKernelHandle(OCL_API_PHASE_PARITY, "phaseparity"),
+    OCLKernelHandle(OCL_API_PHASE_MASK, "phasemask"),
     OCLKernelHandle(OCL_API_COMPOSE, "compose"),
     OCLKernelHandle(OCL_API_COMPOSE_WIDE, "compose"),
     OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"),

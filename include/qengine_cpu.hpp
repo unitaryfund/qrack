@@ -143,6 +143,7 @@ public:
 
     void XMask(bitCapInt mask);
     void PhaseParity(real1_f radians, bitCapInt mask);
+    void PhaseRootNMask(bitLenInt n, bitCapInt mask);
 
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
