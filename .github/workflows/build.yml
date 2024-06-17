@@ -47,7 +47,6 @@ jobs:
       - name: Build Qrack Linux x86-64
         if: matrix.platform == 'manylinux_2_39_x86_64' || matrix.platform == 'manylinux_2_35_x86_64' || matrix.platform == 'manylinux2014_x86_64'
         run: |
-          cd qrack
           mkdir build
           cd build
           cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
@@ -57,7 +56,6 @@ jobs:
       - name: Build Qrack Linux ARM64
         if: matrix.platform == 'linux_aarch64' || matrix.platform == 'linux_armv7l'
         run: |
-          cd qrack
           mkdir build
           cd build
           cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF -DQBCAPPOW=12  -DCPP_STD=14 ..
@@ -67,7 +65,6 @@ jobs:
       - name: Build Qrack MacOS
         if: matrix.platform == 'macosx_10_4_universal2'
         run: |
-          cd qrack
           mkdir build
           cd build
           cmake -DQBCAPPOW=12 -DCPP_STD=14 ..
