@@ -1,0 +1,81 @@
+name: Build Qrack installers
+
+on:
+  push:
+    branches:
+      - main  # Trigger on pushes to the main branch (adjust if needed)
+
+  workflow_dispatch: # Allow manual triggering of the workflow
+
+
+jobs:
+  build_wheels:
+    runs-on: ubuntu-latest  # Use a Linux runner
+    strategy:
+      matrix:
+        platform:
+          - manylinux_2_39_x86_64
+          - manylinux_2_35_x86_64
+          - linux_aarch64
+          - linux_armv7l
+          - manylinux2014_x86_64
+          - macosx_10_4_universal2
+    steps:
+      - name: Checkout Qrack
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prepare Build Environment (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ocl-icd-opencl-dev opencl-headers
+
+      - name: Install Homebrew (MacOS)
+        if: runner.os == 'macOS'
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Prepare Build Environment (MacOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake opencl-clhpp-headers
+
+      - name: Build Qrack Linux x86-64
+        if: matrix.platform == 'manylinux_2_39_x86_64' || matrix.platform == 'manylinux_2_35_x86_64' || matrix.platform == 'manylinux2014_x86_64'
+        run: |
+          cd qrack
+          mkdir build
+          cd build
+          cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
+          make all
+          cpack
+
+      - name: Build Qrack Linux ARM64
+        if: matrix.platform == 'linux_aarch64' || matrix.platform == 'linux_armv7l'
+        run: |
+          cd qrack
+          mkdir build
+          cd build
+          cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF -DQBCAPPOW=12  -DCPP_STD=14 ..
+          make all
+          cpack
+
+      - name: Build Qrack MacOS
+        if: matrix.platform == 'macosx_10_4_universal2'
+        run: |
+          cd qrack
+          mkdir build
+          cd build
+          cmake -DQBCAPPOW=12 -DCPP_STD=14 ..
+          make all
+          cpack
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libqrack-*.sh
+          path: build/
