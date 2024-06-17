@@ -784,11 +784,7 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, bitCapInt mask)
 
     CHECK_ZERO_SKIP();
 
-    if (bi_compare_0(mask) == 0) {
-        return;
-    }
-
-    if (n == 0) {
+    if (!n || (bi_compare_0(mask) == 0)) {
         return;
     }
     if (n == 1) {
@@ -799,8 +795,7 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, bitCapInt mask)
     const real1_f radians = -PI_R1 / pow2Ocl(n - 1U);
 
     if (isPowerOfTwo(mask)) {
-        const complex phaseFac = std::polar(ONE_R1, radians);
-        Phase(ONE_CMPLX, phaseFac, log2(mask));
+        Phase(ONE_CMPLX, std::polar(ONE_R1, radians), log2(mask));
         return;
     }
 

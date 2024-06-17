@@ -36,7 +36,7 @@ inline cmplx conj(const cmplx cmp)
     return (cmplx)(cmp.x, -cmp.y);
 }
 
-inline cmplx polar_unit(real1 theta) {
+inline cmplx polar_unit(const real1 theta) {
     return (cmplx)(cos(theta), sin(theta));
 }
 
@@ -314,26 +314,26 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     }
 }
 
-void kernel phasemask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* angle)
+void kernel phasemask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl mask = bitCapIntOclPtr[1];
-    const bitCapIntOcl nPhases = bitCapIntOclPtr[2];
-    const real1 phaseAngle = angle[0];
+    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    // const bitCapIntOcl maxI = args.x;
+    // const bitCapIntOcl mask = args.y;
+    // const bitCapIntOcl nPhases = args.z;
+    const real1 phaseAngle = -PI_R1 / args.w;
 
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
+    for (bitCapIntOcl lcv = ID; lcv < args.x; lcv += Nthreads) {
         bitCapIntOcl popCount = 0;
-        bitCapIntOcl v = lcv & mask;
+        bitCapIntOcl v = lcv & args.y;
         while (v) {
             popCount += v & 1;
             v >>= 1;
         }
 
-        const bitCapIntOcl nPhaseSteps = popCount % nPhases;
-        if (nPhaseSteps != 0) {
-            const cmplx phaseFactor = polar_unit(nPhaseSteps * phaseAngle);
-            stateVec[lcv] = zmul(phaseFactor, stateVec[lcv]);
+        const bitCapIntOcl nPhaseSteps = popCount % args.z;
+        if (nPhaseSteps) {
+            stateVec[lcv] = zmul(polar_unit(nPhaseSteps * phaseAngle), stateVec[lcv]);
         }
     }
 }

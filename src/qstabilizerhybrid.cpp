@@ -836,8 +836,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     std::vector<complex2> top;
     std::vector<complex2> bottom;
     // For variable scoping, only:
-    if (true)
-    {
+    if (true) {
         complex amp = amps[0U];
         for (bitLenInt i = 1U; i < aStride; ++i) {
             const bitLenInt j = indices[i - 1U];
@@ -2209,4 +2208,4 @@ std::istream& operator>>(std::istream& is, const QStabilizerHybridPtr s)
 
     return is;
 }
-} // namespace Qrackcomplex2 amp2(amp, amps[i]);
+} // namespace Qrack
