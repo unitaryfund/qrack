@@ -171,7 +171,7 @@ MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ boost::multiprecision::f
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ uintq sid, _In_ size_t n, _In_reads_(n) double* p);
 
 MICROSOFT_QUANTUM_DECL void PhaseParity(_In_ uintq sid, _In_ double lambda, _In_ uintq n, _In_reads_(n) uintq* q);
-MICROSOFT_QUANTUM_DECL void PhaseRootNMask(_In_ uintq sid, _In_ uintq p, _In_ uintq n, _In_reads_(n) uintq* q);
+MICROSOFT_QUANTUM_DECL void PhaseRootN(_In_ uintq sid, _In_ uintq p, _In_ uintq n, _In_reads_(n) uintq* q);
 MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) int* b, _In_reads_(n) uintq* q);
 

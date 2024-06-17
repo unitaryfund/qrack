@@ -879,7 +879,7 @@ void _PhaseMask(quid sid, real1_f lambda, bitLenInt p, std::vector<bitLenInt> q,
 
 void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q) { _PhaseMask(sid, lambda, 0U, q, true); }
 
-void PhaseRootNMask(quid sid, bitLenInt p, std::vector<bitLenInt> q) { _PhaseMask(sid, 0.0, p, q, false); }
+void PhaseRootN(quid sid, bitLenInt p, std::vector<bitLenInt> q) { _PhaseMask(sid, 0.0, p, q, false); }
 
 real1_f _JointEnsembleProbabilityHelper(QInterfacePtr simulator, std::vector<QubitPauliBasis> q, bool doMeasure)
 {

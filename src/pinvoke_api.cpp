@@ -1094,7 +1094,7 @@ MICROSOFT_QUANTUM_DECL void PhaseParity(_In_ uintq sid, _In_ double lambda, _In_
     _PhaseMask(sid, lambda, 0U, n, q, true);
 }
 
-MICROSOFT_QUANTUM_DECL void PhaseRootNMask(_In_ uintq sid, _In_ uintq p, _In_ uintq n, _In_reads_(n) uintq* q)
+MICROSOFT_QUANTUM_DECL void PhaseRootN(_In_ uintq sid, _In_ uintq p, _In_ uintq n, _In_reads_(n) uintq* q)
 {
     _PhaseMask(sid, 0.0, p, n, q, false);
 }
