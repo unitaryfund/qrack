@@ -51,7 +51,7 @@ jobs:
           cd build
           cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
           make all
-          cpack
+          sudo cpack
 
       - name: Build Qrack Linux ARM64
         if: matrix.platform == 'linux_aarch64' || matrix.platform == 'linux_armv7l'
@@ -60,7 +60,7 @@ jobs:
           cd build
           cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF -DQBCAPPOW=12  -DCPP_STD=14 ..
           make all
-          cpack
+          sudo cpack
 
       - name: Build Qrack MacOS
         if: matrix.platform == 'macosx_10_4_universal2'
@@ -69,10 +69,12 @@ jobs:
           cd build
           cmake -DQBCAPPOW=12 -DCPP_STD=14 ..
           make all
-          cpack
+          sudo cpack
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: libqrack-*.sh
-          path: build/
+          name: libqrack_installer.sh
+          path: |
+            build/libqrack-*.sh
+            build/benchmarks
