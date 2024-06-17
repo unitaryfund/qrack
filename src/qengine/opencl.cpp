@@ -1139,7 +1139,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
 void QEngineOCL::UniformParityRZ(bitCapInt mask, real1_f angle)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::UniformParityRZ mask out-of-bounds!");
     }
 
@@ -1178,7 +1178,7 @@ void QEngineOCL::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCap
         return;
     }
 
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::CUniformParityRZ mask out-of-bounds!");
     }
 
@@ -1259,7 +1259,7 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 
 void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::ApplyM mask out-of-bounds!");
     }
 
@@ -1796,7 +1796,7 @@ void QEngineOCL::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray
 // Returns probability of permutation of the register
 real1_f QEngineOCL::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::ProbMask mask out-of-bounds!");
     }
 
@@ -1846,7 +1846,7 @@ real1_f QEngineOCL::ProbMask(bitCapInt mask, bitCapInt permutation)
 
 void QEngineOCL::ProbMaskAll(bitCapInt mask, real1* probsArray)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::ProbMaskAll mask out-of-bounds!");
     }
 
@@ -1931,7 +1931,7 @@ void QEngineOCL::ProbMaskAll(bitCapInt mask, real1* probsArray)
 
 real1_f QEngineOCL::ProbParity(bitCapInt mask)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::ProbParity mask out-of-bounds!");
     }
 
@@ -1952,7 +1952,7 @@ real1_f QEngineOCL::ProbParity(bitCapInt mask)
 
 bool QEngineOCL::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::ForceMParity mask out-of-bounds!");
     }
 
@@ -3019,7 +3019,7 @@ bitCapInt QEngineOCL::MAll()
 
 complex QEngineOCL::GetAmplitude(bitCapInt perm)
 {
-    if (bi_compare(perm, maxQPower) >= 0) {
+    if (perm >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::GetAmplitude argument out-of-bounds!");
     }
 
@@ -3037,7 +3037,7 @@ complex QEngineOCL::GetAmplitude(bitCapInt perm)
 
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 {
-    if (bi_compare(perm, maxQPower) >= 0) {
+    if (perm >= maxQPower) {
         throw std::invalid_argument("QEngineOCL::SetAmplitude argument out-of-bounds!");
     }
 
