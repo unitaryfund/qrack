@@ -37,7 +37,7 @@ inline cmplx conj(const cmplx cmp)
 }
 
 inline cmplx polar_unit(const real1 theta) {
-    return (cmplx)(cos(theta), sin(theta));
+    return sin((cmplx)(theta + (PI_R1 / 2), theta));
 }
 
 #define OFFSET2_ARG bitCapIntOclPtr[0]
