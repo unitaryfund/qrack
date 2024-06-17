@@ -468,6 +468,7 @@ inline double bi_to_double(const BigInteger& in)
     return toRet;
 }
 
+inline bool operator==(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) == 0; }
 inline bool operator<(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) < 0; }
 inline bool operator<=(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) <= 0; }
 inline bool operator>(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) > 0; }

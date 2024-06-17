@@ -341,7 +341,7 @@ public:
     void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
 
     void XMask(bitCapInt mask);
-    void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
+    void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
     void PhaseParity(real1_f radians, bitCapInt mask);
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);

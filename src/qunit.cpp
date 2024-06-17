@@ -224,7 +224,7 @@ complex QUnit::GetAmplitude(bitCapInt perm) { return GetAmplitudeOrProb(perm, fa
 
 complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 {
-    if (bi_compare(perm, maxQPower) >= 0) {
+    if (perm >= maxQPower) {
         throw std::invalid_argument("QUnit::GetAmplitudeOrProb argument out-of-bounds!");
     }
 
@@ -1039,7 +1039,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
 
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QUnit::PhaseParity mask out-of-bounds!");
     }
 
@@ -1116,7 +1116,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 
 real1_f QUnit::ProbParity(bitCapInt mask)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QUnit::ProbParity mask out-of-bounds!");
     }
 
@@ -1174,7 +1174,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
 
 bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QUnit::ForceMParity mask out-of-bounds!");
     }
 
@@ -1239,7 +1239,7 @@ bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 void QUnit::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt mask, real1_f angle)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QUnit::CUniformParityRZ mask out-of-bounds!");
     }
 
@@ -1741,7 +1741,7 @@ void QUnit::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned
         if (unit) {
             std::vector<bitCapInt> mappedIndices(qPowers.size());
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
-                if (bi_compare(qPowers[0U], pow2(j)) == 0) {
+                if (qPowers[0U] >= pow2(j)) {
                     mappedIndices[0U] = pow2(shards[j].mapped);
                     break;
                 }
@@ -1758,7 +1758,7 @@ void QUnit::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned
                     break;
                 }
                 for (bitLenInt j = 0U; j < qubitCount; ++j) {
-                    if (bi_compare(qPowers[i], pow2(j)) == 0) {
+                    if (qPowers[i] >= pow2(j)) {
                         mappedIndices[i] = pow2(shards[j].mapped);
                         break;
                     }
@@ -3110,7 +3110,7 @@ bool QUnit::INTSCOptimize(
         outInt = (inOutInt + lengthPower) - toMod;
     }
 
-    const bool carryOut = bi_compare(outInt, lengthPower) >= 0;
+    const bool carryOut = (outInt >= lengthPower);
     if (carryOut) {
         bi_and_ip(&outInt, lengthPower - ONE_BCI);
     }
@@ -4029,8 +4029,8 @@ real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
     }
 
     if (CheckBitsPermutation(0U, qubitCount) && toCompare->CheckBitsPermutation(0U, qubitCount)) {
-        if (bi_compare(GetCachedPermutation((bitLenInt)0U, qubitCount),
-                toCompare->GetCachedPermutation((bitLenInt)0U, qubitCount)) == 0) {
+        if (GetCachedPermutation((bitLenInt)0U, qubitCount) ==
+            toCompare->GetCachedPermutation((bitLenInt)0U, qubitCount)) {
             return ZERO_R1_F;
         }
 
