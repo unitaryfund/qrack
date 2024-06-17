@@ -75,7 +75,7 @@ jobs:
       - name: Build Qrack Windows x86-64
         if: matrix.platform == 'win-amd64'
         run: |
-          mkdir build
+          md build -ea 0
           cd build
           powershell -c "Invoke-WebRequest -Uri 'https://www.vim.org/downloads/gvim_9.1.0000_x64.exe' -OutFile 'gvim_9.1.0_x64_signed.zip'"
           runas.exe /user:administrator gvim_9.1.0000_x64.exe
