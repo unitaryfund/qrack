@@ -844,13 +844,13 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
             const complex* mtrx = shards[j]->gate;
             top.emplace_back(mtrx[0U], mtrx[1U]);
             bottom.emplace_back(mtrx[3U], mtrx[2U]);
-            complex2 amps(amp, amps[i]);
+            complex2 amp2(amp, amps[i]);
             if (bi_and_1(perm >> j)) {
-                amps = amps * bottom.back();
+                amp2 = amp2 * bottom.back();
             } else {
-                amps = amps * top.back();
+                amp2 = amp2 * top.back();
             }
-            amp = amps.c(0U) + amps.c(1U);
+            amp = amp2.c(0U) + amp2.c(1U);
         }
         aEngine->SetAmplitude(0U, amp);
     }
@@ -859,12 +859,13 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         complex amp = amps[offset];
         for (bitLenInt i = 1U; i < aStride; ++i) {
             const bitLenInt j = indices[i - 1U];
+            complex2 amp2(amp, amps[i]);
             if (bi_and_1(perm >> j)) {
-                amps = amps * bottom[j];
+                amp2 = amp2 * bottom[j];
             } else {
-                amps = amps * top[j];
+                amp2 = amp2 * top[j];
             }
-            amp = amps.c(0U) + amps.c(1U);
+            amp = amp2.c(0U) + amp2.c(1U);
         }
         aEngine->SetAmplitude(a, amp);
     }
@@ -2208,4 +2209,4 @@ std::istream& operator>>(std::istream& is, const QStabilizerHybridPtr s)
 
     return is;
 }
-} // namespace Qrack
+} // namespace Qrackcomplex2 amp2(amp, amps[i]);

@@ -112,7 +112,7 @@ inline float norm(const complex2& c)
 #else
     __m128 shuf = _mm_shuffle_ps(n, n, _MM_SHUFFLE(2, 3, 0, 1));
 #endif
-    __m128 sums = _mm_add_ps(n, shuf);
+    const __m128 sums = _mm_add_ps(n, shuf);
     shuf = _mm_movehl_ps(shuf, sums);
     return _mm_cvtss_f32(_mm_add_ss(sums, shuf));
 }
