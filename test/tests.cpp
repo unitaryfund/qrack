@@ -1232,16 +1232,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zmask")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaserootnmask")
 {
     constexpr BIG_INTEGER_WORD ket = 14062;
-    constexpr BIG_INTEGER_WORD masks[5] = { 3097, 22225, 16051, 62894, 49134 };
+    constexpr BIG_INTEGER_WORD masks[6] = { 8, 3097, 22225, 16051, 62894, 49134 };
     constexpr uint16_t n = 3;
     const uint16_t modulus = pow2Ocl(n);
     // phaseCounts[ii] = popcount(ket & masks[ii])
-    constexpr uint16_t phaseCounts[5] = { 2, 5, 7, 8, 10 };
+    constexpr uint16_t phaseCounts[6] = { 1, 2, 5, 7, 8, 10 };
 
     qftReg->SetPermutation(ket);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, ket));
 
-    for (int ii = 0; ii < 5; ii++) {
+    for (int ii = 0; ii < 6; ii++) {
         const real1_f angle = -PI_R1 * (phaseCounts[ii] % modulus) / pow2Ocl(n - 1U);
         const complex expectedPhaseFactor = std::polar(ONE_R1, angle);
         const complex amp_before = qftReg->GetAmplitude(ket);

@@ -36,6 +36,10 @@ inline cmplx conj(const cmplx cmp)
     return (cmplx)(cmp.x, -cmp.y);
 }
 
+inline cmplx polar_unit(real1 theta) {
+    return (cmplx)(cos(theta), sin(theta));
+}
+
 #define OFFSET2_ARG bitCapIntOclPtr[0]
 #define OFFSET1_ARG bitCapIntOclPtr[1]
 #define MAXI_ARG bitCapIntOclPtr[2]
@@ -307,6 +311,30 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
         setInt |= lcv & otherMask;
 
         stateVec[setInt] = zmul(v ? phaseFac : iPhaseFac, stateVec[setInt]);
+    }
+}
+
+void kernel phasemask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* angle)
+{
+    const bitCapIntOcl Nthreads = get_global_size(0);
+    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    const bitCapIntOcl mask = bitCapIntOclPtr[1];
+    const bitCapIntOcl nPhases = bitCapIntOclPtr[2];
+    const real1 phaseAngle = angle[0];
+
+    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
+        bitCapIntOcl popCount = 0;
+        bitCapIntOcl v = lcv & mask;
+        while (v) {
+            popCount += v & 1;
+            v >>= 1;
+        }
+
+        const bitCapIntOcl nPhaseSteps = popCount % nPhases;
+        if (nPhaseSteps != 0) {
+            const cmplx phaseFactor = polar_unit(nPhaseSteps * phaseAngle);
+            stateVec[lcv] = zmul(phaseFactor, stateVec[lcv]);
+        }
     }
 }
 
