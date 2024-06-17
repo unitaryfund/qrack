@@ -838,14 +838,13 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     // For variable scoping, only:
     if (true)
     {
-        const bitCapIntOcl offset = a * aStride;
-        complex amp = amps[offset];
+        complex amp = amps[0U];
         for (bitLenInt i = 1U; i < aStride; ++i) {
             const bitLenInt j = indices[i - 1U];
             const complex* mtrx = shards[j]->gate;
             top.emplace_back(mtrx[0U], mtrx[1U]);
             bottom.emplace_back(mtrx[3U], mtrx[2U]);
-            complex2 amps(amp, amps[i + offset]);
+            complex2 amps(amp, amps[i]);
             if (bi_and_1(perm >> j)) {
                 amps = amps * bottom.back();
             } else {
