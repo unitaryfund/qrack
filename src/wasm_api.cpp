@@ -861,7 +861,7 @@ size_t random_choice(quid sid, std::vector<real1> p)
     return dist(*randNumGen.get());
 }
 
-void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q)
+void _PhaseMask(quid sid, real1_f lambda, bitLenInt p, std::vector<bitLenInt> q, bool isParity)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
@@ -870,8 +870,16 @@ void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q)
         bi_or_ip(&mask, pow2(shards[simulator.get()][q[i]]));
     }
 
-    simulator->PhaseParity(lambda, mask);
+    if (isParity) {
+        simulator->PhaseParity(lambda, mask);
+    } else {
+        simulator->PhaseRootNMask(p, mask);
+    }
 }
+
+void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q) { _PhaseMask(sid, lambda, 0U, q, true); }
+
+void PhaseRootNMask(quid sid, bitLenInt p, std::vector<bitLenInt> q) { _PhaseMask(sid, 0.0, p, q, false); }
 
 real1_f _JointEnsembleProbabilityHelper(QInterfacePtr simulator, std::vector<QubitPauliBasis> q, bool doMeasure)
 {

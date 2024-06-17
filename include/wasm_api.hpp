@@ -271,6 +271,12 @@ size_t random_choice(quid sid, std::vector<real1> p);
  * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
  */
 void PhaseParity(quid sid, real1_f lambda, std::vector<bitLenInt> q);
+
+/**
+ * Applies a 1/(2^N) phase rotation to all qubits in the mask.
+ */
+void PhaseRootNMask(quid sid, bitLenInt p, std::vector<bitLenInt> q);
+
 /**
  * Overall probability of any odd permutation of the masked set of bits
  */

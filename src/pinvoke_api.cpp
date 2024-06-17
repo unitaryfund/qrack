@@ -1068,7 +1068,7 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ uintq sid, _In_ std::size_
     return dist(*randNumGen.get());
 }
 
-MICROSOFT_QUANTUM_DECL void PhaseParity(_In_ uintq sid, _In_ double lambda, _In_ uintq n, _In_reads_(n) uintq* q)
+void _PhaseMask(uintq sid, double lambda, uintq p, uintq n, uintq* q, bool isParity)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
@@ -1078,11 +1078,25 @@ MICROSOFT_QUANTUM_DECL void PhaseParity(_In_ uintq sid, _In_ double lambda, _In_
     }
 
     try {
-        simulator->PhaseParity((real1_f)lambda, mask);
+        if (isParity) {
+            simulator->PhaseParity((real1_f)lambda, mask);
+        } else {
+            simulator->PhaseRootNMask((bitLenInt)p, mask);
+        }
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
+}
+
+MICROSOFT_QUANTUM_DECL void PhaseParity(_In_ uintq sid, _In_ double lambda, _In_ uintq n, _In_reads_(n) uintq* q)
+{
+    _PhaseMask(sid, lambda, 0U, n, q, true);
+}
+
+MICROSOFT_QUANTUM_DECL void PhaseRootNMask(_In_ uintq sid, _In_ uintq p, _In_ uintq n, _In_reads_(n) uintq* q)
+{
+    _PhaseMask(sid, 0.0, p, n, q, false);
 }
 
 double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, uintq n, int* b, uintq* q, bool doMeasure)
