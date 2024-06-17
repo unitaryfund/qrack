@@ -57,6 +57,8 @@ __device__ inline qCudaReal1 qCudaDot(qCudaReal4 a, qCudaReal4 b)
 #endif
 }
 
+__device__ inline qCudaCmplx polar_unit(const qCudaReal1 theta) { return make_qCudaCmplx(cos(theta), sin(theta)); }
+
 __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.x, -a.y); }
 
 #define OFFSET2_ARG bitCapIntOclPtr[0]
@@ -384,6 +386,29 @@ __global__ void phaseparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
         setInt |= lcv & otherMask;
 
         stateVec[setInt] = zmul(v ? phaseFac : iPhaseFac, stateVec[setInt]);
+    }
+}
+
+__global__ void phasemask(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
+{
+    const bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
+    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    const bitCapIntOcl mask = bitCapIntOclPtr[1];
+    const bitCapIntOcl nPhases = bitCapIntOclPtr[2];
+    const real1 phaseAngle = -PI_R1 / bitCapIntOclPtr[3];
+
+    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
+        bitCapIntOcl popCount = 0;
+        bitCapIntOcl v = lcv & mask;
+        while (v) {
+            popCount += v & 1;
+            v >>= 1;
+        }
+
+        const bitCapIntOcl nPhaseSteps = popCount % nPhases;
+        if (nPhaseSteps) {
+            stateVec[lcv] = zmul(polar_unit(nPhaseSteps * phaseAngle), stateVec[lcv]);
+        }
     }
 }
 

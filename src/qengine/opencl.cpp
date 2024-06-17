@@ -762,7 +762,7 @@ void QEngineOCL::PhaseParity(real1_f radians, bitCapInt mask)
 void QEngineOCL::PhaseRootNMask(bitLenInt n, bitCapInt mask)
 {
     if (mask >= maxQPower) {
-        throw std::invalid_argument("QEngineOCL::BitMask mask out-of-bounds!");
+        throw std::invalid_argument("QEngineOCL::PhaseRootNMask mask out-of-bounds!");
     }
 
     CHECK_ZERO_SKIP();

@@ -359,6 +359,7 @@ public:
 
     void XMask(bitCapInt mask);
     void PhaseParity(real1_f radians, bitCapInt mask);
+    void PhaseRootNMask(bitLenInt n, bitCapInt mask);
 
     using QEngine::Compose;
     bitLenInt Compose(QEngineCUDAPtr toCopy);

@@ -501,6 +501,9 @@ void QEngineCUDA::DispatchQueue()
     case OCL_API_Z_SINGLE_WIDE:
         CUDA_KERNEL_2(zsinglewide, qCudaCmplx, bitCapIntOcl);
         break;
+    case OCL_API_PHASE_MASK:
+        CUDA_KERNEL_2(phasemask, qCudaCmplx, bitCapIntOcl);
+        break;
     case OCL_API_PHASE_PARITY:
         CUDA_KERNEL_3(phaseparity, qCudaCmplx, bitCapIntOcl, qCudaCmplx);
         break;
@@ -823,6 +826,41 @@ void QEngineCUDA::PhaseParity(real1_f radians, bitCapInt mask)
     BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
 }
 
+void QEngineCUDA::PhaseRootNMask(bitLenInt n, bitCapInt mask)
+{
+    if (mask >= maxQPower) {
+        throw std::invalid_argument("QEngineCUDA::PhaseRootNMask mask out-of-bounds!");
+    }
+
+    CHECK_ZERO_SKIP();
+
+    if (!n || (bi_compare_0(mask) == 0)) {
+        return;
+    }
+
+    if (n == 1) {
+        ZMask(mask);
+        return;
+    }
+
+    const bitCapIntOcl nPhases = pow2Ocl(n);
+    const real1_f radians = -PI_R1 / pow2Ocl(n - 1U);
+
+    if (isPowerOfTwo(mask)) {
+        Phase(ONE_CMPLX, std::polar(ONE_R1, radians), log2(mask));
+        return;
+    }
+
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)mask, nPhases, pow2Ocl(n - 1U), 0U, 0U, 0U, 0U,
+        0U, 0U };
+    PoolItemPtr poolItem = GetFreePoolItem();
+    DISPATCH_TEMP_WRITE(poolItem->ulongBuffer, sizeof(bitCapIntOcl) * 4U, bciArgs);
+
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    QueueCall(OCL_API_PHASE_MASK, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
+}
+
 void QEngineCUDA::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
     const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
 {
@@ -1129,7 +1167,7 @@ void QEngineCUDA::UniformlyControlledSingleBit(const std::vector<bitLenInt>& con
 
 void QEngineCUDA::UniformParityRZ(bitCapInt mask, real1_f angle)
 {
-    if (bi_compare(mask, maxQPower) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::UniformParityRZ mask out-of-bounds!");
     }
 
@@ -1161,7 +1199,7 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCa
         return;
     }
 
-    if (bi_compare(mask, maxQPowerOcl) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::CUniformParityRZ mask out-of-bounds!");
     }
 
@@ -1227,7 +1265,7 @@ void QEngineCUDA::ApplyM(bitCapInt qPower, bool result, complex nrm)
 
 void QEngineCUDA::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 {
-    if (bi_compare(mask, maxQPowerOcl) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::ApplyM mask out-of-bounds!");
     }
 
@@ -1714,7 +1752,7 @@ void QEngineCUDA::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArra
 // Returns probability of permutation of the register
 real1_f QEngineCUDA::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
-    if (bi_compare(mask, maxQPowerOcl) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::ProbMask mask out-of-bounds!");
     }
 
@@ -1763,7 +1801,7 @@ real1_f QEngineCUDA::ProbMask(bitCapInt mask, bitCapInt permutation)
 
 void QEngineCUDA::ProbMaskAll(bitCapInt mask, real1* probsArray)
 {
-    if (bi_compare(mask, maxQPowerOcl) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::ProbMaskAll mask out-of-bounds!");
     }
 
@@ -1846,7 +1884,7 @@ void QEngineCUDA::ProbMaskAll(bitCapInt mask, real1* probsArray)
 
 real1_f QEngineCUDA::ProbParity(bitCapInt mask)
 {
-    if (bi_compare(mask, maxQPowerOcl) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::ProbParity mask out-of-bounds!");
     }
 
@@ -1867,7 +1905,7 @@ real1_f QEngineCUDA::ProbParity(bitCapInt mask)
 
 bool QEngineCUDA::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
-    if (bi_compare(mask, maxQPowerOcl) >= 0) {
+    if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::ForceMParity mask out-of-bounds!");
     }
 
@@ -2911,7 +2949,7 @@ bitCapInt QEngineCUDA::MAll()
 
 complex QEngineCUDA::GetAmplitude(bitCapInt perm)
 {
-    if (bi_compare(perm, maxQPower) >= 0) {
+    if (perm >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::GetAmplitude argument out-of-bounds!");
     }
 
@@ -2928,7 +2966,7 @@ complex QEngineCUDA::GetAmplitude(bitCapInt perm)
 
 void QEngineCUDA::SetAmplitude(bitCapInt perm, complex amp)
 {
-    if (bi_compare(perm, maxQPower) >= 0) {
+    if (perm >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::SetAmplitude argument out-of-bounds!");
     }
 

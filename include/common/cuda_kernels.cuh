@@ -33,6 +33,7 @@ __global__ void xsingle(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void xsinglewide(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void xmask(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void phaseparity(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr, qCudaCmplx* cmplxPtr);
+__global__ void phasemask(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void zsingle(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void zsinglewide(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr);
 __global__ void phasesingle(qCudaCmplx* stateVec, qCudaCmplx* cmplxPtr, bitCapIntOcl* bitCapIntOclPtr);
