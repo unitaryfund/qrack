@@ -1091,9 +1091,9 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 
     if (eIndices.size() == 1U) {
         if (flipResult) {
-            Phase(phaseFac, ONE_CMPLX / phaseFac, eIndices[i]);
+            Phase(phaseFac, ONE_CMPLX / phaseFac, eIndices[0U]);
         } else {
-            Phase(ONE_CMPLX / phaseFac, phaseFac, eIndices[i]);
+            Phase(ONE_CMPLX / phaseFac, phaseFac, eIndices[0U]);
         }
         return;
     }
@@ -1107,8 +1107,8 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
     }
 
     bitCapInt mappedMask = ZERO_BCI;
-    for (size_t i = 0U; i < eIndices.size(); ++i) {
-        bi_or_ip(&mappedMask, pow2(shards[eIndices[i]].mapped));
+    for (const auto eIndex : eIndices) {
+        bi_or_ip(&mappedMask, pow2(shards[eIndex].mapped));
     }
 
     unit->PhaseParity((real1_f)(flipResult ? -radians : radians), mappedMask);
@@ -1156,7 +1156,7 @@ void QUnit::PhaseRootNMask(real1 radians, bitCapInt mask)
     }
 
     if (eIndices.size() == 1U) {
-        Phase(ONE_CMPLX, phaseFac, eIndices[i]);
+        Phase(ONE_CMPLX, phaseFac, eIndices[0U]);
         return;
     }
 
@@ -1169,8 +1169,8 @@ void QUnit::PhaseRootNMask(real1 radians, bitCapInt mask)
     }
 
     bitCapInt mappedMask = ZERO_BCI;
-    for (size_t i = 0U; i < eIndices.size(); ++i) {
-        bi_or_ip(&mappedMask, pow2(shards[eIndices[i]].mapped));
+    for (const auto eIndex : eIndices) {
+        bi_or_ip(&mappedMask, pow2(shards[eIndex].mapped));
     }
 
     unit->PhaseRootNMask(radians, mappedMask);
