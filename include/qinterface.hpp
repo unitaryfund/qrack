@@ -1040,7 +1040,7 @@ public:
     /**
      * Masked PhaseRootN gate
      *
-     * Applies a 1/(2^N) phase rotation to all qubits in the mask.
+     * Applies a -2 * PI_R1 / (2^N) phase rotation to all qubits in the mask.
      */
     virtual void PhaseRootNMask(bitLenInt n, bitCapInt mask);
 
