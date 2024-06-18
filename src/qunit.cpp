@@ -1114,69 +1114,6 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
     unit->PhaseParity((real1_f)(flipResult ? -radians : radians), mappedMask);
 }
 
-void QUnit::PhaseRootNMask(bitLenInt n, bitCapInt mask)
-{
-    if (mask >= maxQPower) {
-        throw std::invalid_argument("QUnit::PhaseRootN mask out-of-bounds!");
-    }
-
-    // If no bits in mask:
-    if (bi_compare_0(mask) == 0) {
-        return;
-    }
-
-    real1 radians = PI_R1 / pow2Ocl(n - 1U);
-    complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
-
-    if (isPowerOfTwo(mask)) {
-        Phase(ONE_CMPLX, phaseFac, log2(mask));
-        return;
-    }
-
-    bitCapInt nV = mask;
-    std::vector<bitLenInt> qIndices;
-    for (bitCapInt v = mask; bi_compare_0(v) != 0; v = nV) {
-        bi_and_ip(&nV, v - ONE_BCI); // clear the least significant bit set
-        qIndices.push_back(log2((v ^ nV) & v));
-        ToPermBasisProb(qIndices.back());
-    }
-
-    std::vector<bitLenInt> eIndices;
-    for (size_t i = 0U; i < qIndices.size(); ++i) {
-        QEngineShard& shard = shards[qIndices[i]];
-
-        if (UNSAFE_CACHED_ZERO(shard)) {
-            continue;
-        }
-
-        eIndices.push_back(qIndices[i]);
-    }
-
-    if (eIndices.empty()) {
-        return;
-    }
-
-    if (eIndices.size() == 1U) {
-        Phase(ONE_CMPLX, phaseFac, eIndices[0U]);
-        return;
-    }
-
-    QInterfacePtr unit = Entangle(eIndices);
-
-    for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        if (shards[i].unit == unit) {
-            shards[i].MakeDirty();
-        }
-    }
-
-    bitCapInt mappedMask = ZERO_BCI;
-    for (const auto eIndex : eIndices) {
-        bi_or_ip(&mappedMask, pow2(shards[eIndex].mapped));
-    }
-
-    unit->PhaseRootNMask(n, mappedMask);
-}
-
 real1_f QUnit::ProbParity(bitCapInt mask)
 {
     if (mask >= maxQPower) {
