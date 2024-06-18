@@ -17,6 +17,7 @@ if (NOT OpenCL_FOUND)
     endif (MSVC)
     if (NOT LIB_OPENCL)
         set (ENABLE_OPENCL OFF)
+        message ("Could not find OpenCL support from the AMD or Intel SDK (OPENCL_AMSDK directory not found)")
     elseif (NOT MSVC)
         # Found, set the required include path.
         set (OpenCL_INCLUDE_DIRS ${OPENCL_AMDSDK}/include CACHE PATH "AMD OpenCL SDK Header include path")
@@ -24,8 +25,8 @@ if (NOT OpenCL_FOUND)
             -Wno-ignored-attributes
             -Wno-deprecated-declarations
             CACHE STRING "AMD OpenCL SDK Compilation Option Requirements")
+        message ("OpenCL support found in the AMD or Intel SDK (OPENCL_AMSDK directory variable)")
     endif()
-    message ("OpenCL support found in the AMD or Intel SDK (OPENCL_AMSDK directory variable)")
 endif ()
 
 if (PACK_DEBIAN)
