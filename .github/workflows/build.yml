@@ -10,17 +10,43 @@ on:
 
 
 jobs:
-  build_linux:
-    runs-on: ubuntu-latest  # Use a Linux runner
+  build_noble:
+    runs-on: ubuntu-24.04  # Use a Noble Numbat runner
     strategy:
       matrix:
         platform:
           - manylinux_2_39_x86_64
+    steps:
+      - name: Checkout Qrack
+        uses: actions/checkout@v4
+
+      - name: Prepare Build Environment (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ocl-icd-opencl-dev opencl-headers
+
+      - name: Build Qrack Linux x86-64
+        run: |
+          mkdir build
+          cd build
+          cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
+          make all
+          sudo cpack
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libqrack-${{ matrix.platform }}
+          path: |
+            build/libqrack-*.sh
+            build/benchmarks
+
+  build_jammy:
+    runs-on: ubuntu-22.04  # Use a Jammy Jellyfish runner
+    strategy:
+      matrix:
+        platform:
           - manylinux_2_35_x86_64
-          - linux_aarch64
-          - linux_armv7l
-          - manylinux2014_x86_64
-          - macosx_10_4_universal2
     steps:
       - name: Checkout Qrack
         uses: actions/checkout@v4
@@ -31,17 +57,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential cmake ocl-icd-opencl-dev opencl-headers
 
-      - name: Install Homebrew (MacOS)
-        if: runner.os == 'macOS'
-        uses: Homebrew/actions/setup-homebrew@master
-
-      - name: Prepare Build Environment (MacOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install cmake opencl-clhpp-headers
-
       - name: Build Qrack Linux x86-64
-        if: matrix.platform == 'manylinux_2_39_x86_64' || matrix.platform == 'manylinux_2_35_x86_64' || matrix.platform == 'manylinux2014_x86_64'
         run: |
           mkdir build
           cd build
@@ -49,17 +65,64 @@ jobs:
           make all
           sudo cpack
 
-      - name: Build Qrack Linux ARM64
-        if: matrix.platform == 'linux_aarch64' || matrix.platform == 'linux_armv7l'
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libqrack-${{ matrix.platform }}
+          path: |
+            build/libqrack-*.sh
+            build/benchmarks
+
+  build_focal:
+    runs-on: ubuntu-20.04  # Use a Focal Fossa runner
+    strategy:
+      matrix:
+        platform:
+          - manylinux2014_x86_64
+    steps:
+      - name: Checkout Qrack
+        uses: actions/checkout@v4
+
+      - name: Prepare Build Environment (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ocl-icd-opencl-dev opencl-headers
+
+      - name: Build Qrack Linux x86-64
         run: |
           mkdir build
           cd build
-          cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF -DQBCAPPOW=12  -DCPP_STD=14 ..
+          cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
           make all
           sudo cpack
 
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libqrack-${{ matrix.platform }}
+          path: |
+            build/libqrack-*.sh
+            build/benchmarks
+
+  build_mac:
+    runs-on: macos-latest  # Use a Mac OS runner
+    strategy:
+      matrix:
+        platform:
+          - macosx_10_4_universal2
+    steps:
+      - name: Checkout Qrack
+        uses: actions/checkout@v4
+
+      - name: Install Homebrew (MacOS)
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Prepare Build Environment (MacOS)
+        run: |
+          brew install cmake opencl-clhpp-headers
+
       - name: Build Qrack MacOS
-        if: matrix.platform == 'macosx_10_4_universal2'
         run: |
           mkdir build
           cd build
@@ -76,7 +139,7 @@ jobs:
             build/benchmarks
 
   build_windows:
-    runs-on: windows-latest  # Use a Linux runner
+    runs-on: windows-latest  # Use a Windows runner
     strategy:
       matrix:
         platform:
@@ -97,7 +160,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Qrack Windows x86-64
-        if: matrix.platform == 'win-amd64'
         run: |
           mkdir build
           cd build
