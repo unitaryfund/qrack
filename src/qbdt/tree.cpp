@@ -621,7 +621,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 
     const bitCapInt qPower = pow2(target);
 
-#ifdef ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX_X2
     const complex2 mtrxCol1(mtrx[0U], mtrx[2U]);
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 
@@ -630,7 +630,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 #endif
 
     par_for_qbdt(qPower, target,
-#ifdef ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX_X2
         [this, target, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff](const bitCapInt& i) {
 #else
         [this, target, mtrx](const bitCapInt& i) {
@@ -653,7 +653,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
                 return ZERO_BCI;
             }
 
-#ifdef ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
 #else
             leaf->Apply2x2(mtrx, qubitCount - target);
@@ -701,7 +701,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
     }
     const bitCapInt controlPerm = isAnti ? ZERO_BCI : controlMask;
 
-#ifdef ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX_X2
     const complex2 mtrxCol1(mtrx[0U], mtrx[2U]);
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 
@@ -710,7 +710,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 #endif
 
     par_for_qbdt(qPower, target,
-#ifdef ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX_X2
         [this, controlMask, controlPerm, target, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff](
             const bitCapInt& i) {
 #else
@@ -739,7 +739,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
                 return ZERO_BCI;
             }
 
-#ifdef ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
 #else
             leaf->Apply2x2(mtrx, qubitCount - target);
