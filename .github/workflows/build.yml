@@ -93,7 +93,8 @@ jobs:
           mkdir build
           cd build
           cmake .. -DQBCAPPOW=12 -DCPP_STD=14
-          echo "cmake --build . --config Release --target PACKAGE benchmarks && exit /b 0" > build.bat
+          echo "cmake --build . --config Release --target PACKAGE benchmarks & exit /b 0" > build.bat
+          echo "exit 0" >> build.bat
           cmd /c build.bat
 
       - name: Build Qrack Windows ARM
@@ -102,7 +103,8 @@ jobs:
           mkdir build
           cd build
           cmake .. -DENABLE_COMPLEX_X2=OFF -DQBCAPPOW=12 -DCPP_STD=14
-          echo "cmake --build . --config Release --target PACKAGE benchmarks && exit /b 0" > build.bat
+          echo "cmake --build . --config Release --target PACKAGE benchmarks & exit /b 0" > build.bat
+          echo "exit 0" >> build.bat
           cmd /c build.bat
 
       - name: Upload Artifacts
