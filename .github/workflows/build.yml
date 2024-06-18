@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Trigger on pushes to the main branch (adjust if needed)
+      - development
 
   workflow_dispatch: # Allow manual triggering of the workflow
 
@@ -73,3 +74,42 @@ jobs:
           path: |
             build/libqrack-*.sh
             build/benchmarks
+
+  build_windows:
+    runs-on: windows-latest  # Use a Linux runner
+    strategy:
+      matrix:
+        platform:
+          - win-amd64
+        dependencies: [vcpkg]
+    steps:
+      - name: Mount vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: "~/.cache/vcpkg/archives"
+          key: vcpkg-${{ matrix.os }}
+
+      - name: Install vcpkg dependencies
+        run: |
+          vcpkg install opencl
+
+      - name: Checkout Qrack
+        uses: actions/checkout@v4
+
+      - name: Build Qrack Windows x86-64
+        if: matrix.platform == 'win-amd64'
+        run: |
+          mkdir build
+          cd build
+          powershell -c "Invoke-WebRequest -Uri 'https://github.com/ckormanyos/xxd/releases/download/v1.1/xxd-win64-msvc.zip' -OutFile 'xxd-win64-msvc.zip'"
+          powershell -c "Expand-Archive -Path xxd-win64-msvc.zip -DestinationPath ."
+          cmake .. -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DXXD_BIN="xxd.exe" -DQBCAPPOW=12 -DCPP_STD=14
+          cmake --build . --config Release --target PACKAGE benchmarks
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libqrack-${{ matrix.platform }}
+          path: |
+            build/libqrack-*.exe
+            build/Release/benchmarks.exe
