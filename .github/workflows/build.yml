@@ -96,6 +96,7 @@ jobs:
           echo "cmake --build . --config Release --target PACKAGE benchmarks & exit /b 0" > build.bat
           echo "exit 0" >> build.bat
           cmd /c build.bat
+          dir
 
       - name: Build Qrack Windows ARM
         if: matrix.platform == 'win-arm32' || matrix.platform == 'win-arm64'
@@ -106,6 +107,7 @@ jobs:
           echo "cmake --build . --config Release --target PACKAGE benchmarks & exit /b 0" > build.bat
           echo "exit 0" >> build.bat
           cmd /c build.bat
+          dir
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
