@@ -89,11 +89,15 @@ jobs:
 
       - name: Build Qrack Windows x86-64
         if: matrix.platform == 'win-amd64'
-        run: cmake --build . --config Release -- -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14
+        run: |
+          cmake . -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14
+          cmake --build . --config Release
 
       - name: Build Qrack Windows ARM
         if: matrix.platform == 'win-arm32' || matrix.platform == 'win-arm64'
-        run: cmake --build . --config Release -- -DENABLE_COMPLEX_X2=OFF -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14
+        run: |
+          cmake . -DENABLE_COMPLEX_X2=OFF -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14
+          cmake --build . --config Release
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
