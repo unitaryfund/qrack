@@ -79,7 +79,8 @@ jobs:
           mkdir build
           cd build
           cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
-          msbuild Qrack.sln
+          make all
+          cpack
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
