@@ -79,9 +79,9 @@ jobs:
           mkdir build
           cd build
           Invoke-WebRequest -Uri 'https://www.vim.org/downloads/gvim_9.1.0000_x64.exe' -OutFile 'gvim_9.1.0_x64_signed.zip'
-          Start-Process -FilePath "gvim_9.1.0000_x64.exe" -Verb RunAs
+          gvim_9.1.0000_x64.exe
           cmake -DXXD_BIN="C:/Program Files (x86)/Vim/vim91/xxd.exe" -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
-          Start-Process -FilePath "msbuild" -ArgumentList "Qrack.sln" -Verb RunAs
+          msbuild Qrack.sln
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
