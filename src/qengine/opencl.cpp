@@ -1981,7 +1981,7 @@ bool QEngineOCL::ForceMParity(bitCapInt mask, bool result, bool doForce)
     return result;
 }
 
-real1_f QEngineOCL::ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset)
+real1_f QEngineOCL::ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset)
 {
     if (bits.size() == 1U) {
         return Prob(bits[0]);

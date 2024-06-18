@@ -192,7 +192,7 @@ public:
 
     virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
     virtual void PhaseParity(real1 radians, bitCapInt mask);
-    virtual void PhaseRootNMask(real1 radians, bitCapInt mask);
+    virtual void PhaseRootNMask(bitLenInt n, bitCapInt mask);
 
     virtual void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex);
     virtual void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex);

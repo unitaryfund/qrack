@@ -490,7 +490,7 @@ public:
         engine->NormalizeState(nrm, norm_thresh, phaseArg);
     }
 
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI)
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         return engine->ExpectationBitsAll(bits, offset);
     }

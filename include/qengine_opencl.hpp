@@ -443,7 +443,7 @@ public:
     void ProbMaskAll(bitCapInt mask, real1* probsArray);
     real1_f ProbParity(bitCapInt mask);
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
-    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, bitCapInt offset = ZERO_BCI);
+    real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
 
     void SetDevice(int64_t dID);
     int64_t GetDevice() { return deviceID; }
@@ -460,7 +460,6 @@ public:
 
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
-    ;
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void Finish() { clFinish(); };
     bool isFinished() { return wait_queue_items.empty(); };

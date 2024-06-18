@@ -443,7 +443,6 @@ public:
 
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
-    ;
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void Finish() { clFinish(); };
     bool isFinished() { return wait_queue_items.empty(); };

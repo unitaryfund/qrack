@@ -1114,7 +1114,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
     unit->PhaseParity((real1_f)(flipResult ? -radians : radians), mappedMask);
 }
 
-void QUnit::PhaseRootNMask(real1 radians, bitCapInt mask)
+void QUnit::PhaseRootNMask(bitLenInt n, bitCapInt mask)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QUnit::PhaseRootN mask out-of-bounds!");
@@ -1125,6 +1125,7 @@ void QUnit::PhaseRootNMask(real1 radians, bitCapInt mask)
         return;
     }
 
+    real1 radians = PI_R1 / pow2Ocl(n - 1U);
     complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
 
     if (isPowerOfTwo(mask)) {
@@ -1173,7 +1174,7 @@ void QUnit::PhaseRootNMask(real1 radians, bitCapInt mask)
         bi_or_ip(&mappedMask, pow2(shards[eIndex].mapped));
     }
 
-    unit->PhaseRootNMask(radians, mappedMask);
+    unit->PhaseRootNMask(n, mappedMask);
 }
 
 real1_f QUnit::ProbParity(bitCapInt mask)
