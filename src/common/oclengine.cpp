@@ -181,7 +181,7 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::
                           << std::endl;
             }
 
-#if (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
+#if ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
                 { std::pair<const void*, size_t>(&buffer[0U], buffer.size()) }, &binaryStatus, &buildError);
 #else
@@ -264,7 +264,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     }
 
     FILE* clBinFile = fopen((path + fileName).c_str(), "w");
-#if (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
+#if ENABLE_SNUCL
     std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
     char* clBinary = clBinaries[clBinIndex];
     fwrite(clBinary, clBinSize, sizeof(char), clBinFile);

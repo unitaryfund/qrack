@@ -8118,13 +8118,8 @@ TEST_CASE("test_stabilizer_rz_mirror", "[supreme]")
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (int d = 0; d < n; d++) {
-#if defined(_WIN32) && !defined(__CYGWIN__)
-        const bitLenInt layerMagicQubit = max((real1_s)(w - 1), (real1_s)(w * rng->Rand()));
-        const bitLenInt layerMagicAxis = max((real1_s)2, (real1_s)(3 * rng->Rand()));
-#else
         const bitLenInt layerMagicQubit = std::max((real1_s)(w - 1), (real1_s)(w * rng->Rand()));
         const bitLenInt layerMagicAxis = std::max((real1_s)2, (real1_s)(3 * rng->Rand()));
-#endif
         for (int i = 0; i < w; i++) {
             // Random general 3-parameter unitary gate via "x-z-x" Euler angles:
             for (int p = 0; p < 3; ++p) {
@@ -8243,13 +8238,8 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
     QInterfacePtr rng = CreateQuantumInterface(engineStack, 1, ZERO_BCI);
 
     for (d = 0; d < n; d++) {
-#if defined(_WIN32) && !defined(__CYGWIN__)
-        const bitLenInt layerMagicQubit = max((real1_s)(w - 1), (real1_s)(w * rng->Rand()));
-        const bitLenInt layerMagicAxis = max((real1_s)2, (real1_s)(3 * rng->Rand()));
-#else
         const bitLenInt layerMagicQubit = std::max((real1_s)(w - 1), (real1_s)(w * rng->Rand()));
         const bitLenInt layerMagicAxis = std::max((real1_s)2, (real1_s)(3 * rng->Rand()));
-#endif
         for (i = 0; i < w; i++) {
             // Random general 3-parameter unitary gate via "x-z-x" Euler angles:
             for (int p = 0; p < 3; ++p) {
@@ -8447,11 +8437,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
                 // For all subsequent iterations after the first, we eliminate the choice of the same gate applied
                 // on the immediately previous iteration.
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-                int gateChoice = max(1, (int)(2 * rng->Rand()));
-#else
                 int gateChoice = std::max(1, (int)(2 * rng->Rand()));
-#endif
                 if (gateChoice >= lastSingleBitGates[i]) {
                     ++gateChoice;
                 }
