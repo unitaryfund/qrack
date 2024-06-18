@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Trigger on pushes to the main branch (adjust if needed)
+      - development
 
   workflow_dispatch: # Allow manual triggering of the workflow
 
@@ -23,11 +24,6 @@ jobs:
     steps:
       - name: Checkout Qrack
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
 
       - name: Prepare Build Environment (Linux)
         if: runner.os == 'Linux'
@@ -91,26 +87,13 @@ jobs:
       - name: Checkout Qrack
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
       - name: Build Qrack Windows x86-64
         if: matrix.platform == 'win-amd64'
-        run: |
-          mkdir build
-          cd build
-          cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
-          runas.exe /user:administrator cmake --build . --config Release
+        run: cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 .. --build build --config Release
 
       - name: Build Qrack Windows ARM
         if: matrix.platform == 'win-arm32' || matrix.platform == 'win-arm64'
-        run: |
-          mkdir build
-          cd build
-          cmake -DENABLE_COMPLEX_X2=OFF -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
-          runas.exe /user:administrator cmake --build . --config Release
+        run: cmake -DENABLE_COMPLEX_X2=OFF -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 .. --build build --config Release
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
