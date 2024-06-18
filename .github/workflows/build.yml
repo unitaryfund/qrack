@@ -24,11 +24,6 @@ jobs:
       - name: Checkout Qrack
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
       - name: Prepare Build Environment (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -78,44 +73,3 @@ jobs:
           path: |
             build/libqrack-*.sh
             build/benchmarks
-
-  build_windows:
-    runs-on: windows-latest  # Use a Linux runner
-    strategy:
-      matrix:
-        platform:
-          - win-amd64
-          - win-arm32
-          - win-amd64
-    steps:
-      - name: Checkout Qrack
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Build Qrack Windows x86-64
-        if: matrix.platform == 'win-amd64'
-        run: |
-          mkdir build
-          cd build
-          cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
-          runas.exe /user:administrator cmake --build . --config Release
-
-      - name: Build Qrack Windows ARM
-        if: matrix.platform == 'win-arm32' || matrix.platform == 'win-arm64'
-        run: |
-          mkdir build
-          cd build
-          cmake -DENABLE_COMPLEX_X2=OFF -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
-          runas.exe /user:administrator cmake --build . --config Release
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: libqrack-${{ matrix.platform }}
-          path: |
-            build/libqrack-*.exe
-            build/benchmarks.exe
