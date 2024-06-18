@@ -20,6 +20,7 @@ jobs:
           - linux_armv7l
           - manylinux2014_x86_64
           - macosx_10_4_universal2
+          - windows-latest
     steps:
       - name: Checkout Qrack
         uses: actions/checkout@v4
@@ -71,10 +72,21 @@ jobs:
           make all
           sudo cpack
 
+      - name: Build Qrack Windows x86-64
+        if: matrix.platform == 'windows-latest'
+        run: |
+          powershell -c "md build -ea 0"
+          cd build
+          powershell -c "Invoke-WebRequest -Uri 'https://www.vim.org/downloads/gvim_9.1.0000_x64.exe' -OutFile 'gvim_9.1.0_x64_signed.zip'"
+          runas.exe /user:administrator gvim_9.1.0000_x64.exe
+          cmake -DXXD_BIN="C:/Program Files (x86)/Vim/vim91/xxd.exe" -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
+          runas.exe /user:administrator msbuild Qrack.sln
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: libqrack-${{ matrix.platform }}
           path: |
             build/libqrack-*.sh
+            build/libqrack-*.exe
             build/benchmarks
