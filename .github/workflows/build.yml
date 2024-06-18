@@ -126,7 +126,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DQBCAPPOW=12 -DCPP_STD=14 ..
+          cmake -DENABLE_COMPLEX_X2=OFF -DQBCAPPOW=12 -DCPP_STD=14 ..
           make all
           sudo cpack
 
