@@ -145,7 +145,9 @@ public:
     {
         separabilityThreshold = sdrp;
         isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
-    };
+    }
+
+    void SetReactiveSeparate(bool isAggSep) { isReactiveSeparate = isAggSep; }
 
     double GetUnitaryFidelity()
     {
