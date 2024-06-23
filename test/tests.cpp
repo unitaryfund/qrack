@@ -1231,15 +1231,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zmask")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaserootnmask")
 {
-    constexpr BIG_INTEGER_WORD ket = 14062;
-    constexpr BIG_INTEGER_WORD masks[6] = { 8, 3097, 22225, 16051, 62894, 49134 };
-    constexpr uint16_t n = 3;
-    const uint16_t modulus = pow2Ocl(n);
+    const bitCapInt ket = 14062U;
+    const bitCapInt masks[6U] = { 8U, 3097U, 22225U, 16051U, 62894U, 49134U };
+    const bitLenInt n = 3U;
+    const bitCapIntOcl modulus = pow2Ocl(n);
     // phaseCounts[ii] = popcount(ket & masks[ii])
-    constexpr uint16_t phaseCounts[6] = { 1, 2, 5, 7, 8, 10 };
+    constexpr bitCapIntOcl phaseCounts[6U] = { 1U, 2U, 5U, 7U, 8U, 10U };
 
     qftReg->SetPermutation(ket);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, ket));
+    REQUIRE_THAT(qftReg, HasProbability(0U, 20U, ket));
 
     for (int ii = 0; ii < 6; ii++) {
         const real1_f angle = -PI_R1 * (phaseCounts[ii] % modulus) / pow2Ocl(n - 1U);
