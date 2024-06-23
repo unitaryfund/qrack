@@ -1231,12 +1231,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zmask")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaserootnmask")
 {
-    constexpr bitCapInt ket = 14062;
-    constexpr bitCapInt masks[6] = { 8, 3097, 22225, 16051, 62894, 49134 };
-    constexpr bitCapInt n = 3;
-    const bitCapInt modulus = pow2Ocl(n);
+    const bitCapInt ket = 14062;
+    const bitCapInt masks[6] = { 8, 3097, 22225, 16051, 62894, 49134 };
+    constexpr bitLenInt n = 3;
+    const bitLenInt modulus = pow2Ocl(n);
     // phaseCounts[ii] = popcount(ket & masks[ii])
-    constexpr bitCapInt phaseCounts[6] = { 1, 2, 5, 7, 8, 10 };
+    constexpr bitLenInt phaseCounts[6] = { 1, 2, 5, 7, 8, 10 };
 
     qftReg->SetPermutation(ket);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, ket));
