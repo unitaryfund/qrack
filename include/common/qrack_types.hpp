@@ -63,10 +63,24 @@
 #define bitCapInt BigInteger
 #endif
 
+#if ENABLE_FIXED_POINT
+#include "fixed.hpp"
+namespace Qrack {
+typedef numeric::Fixed<4U, (1U << FPPOW) - 4U> real1;
+#if FPPOW < 6
+typedef float real1_f;
+typedef float real1_s;
+#elif FPPOW < 7
+typedef double real1_f;
+typedef double real1_s;
+#else
+typedef boost::multiprecision::float128 real1_f;
+typedef double real1_s;
+#endif
+#else
 #if FPPOW < 5
 #ifdef __arm__
 namespace Qrack {
-typedef std::complex<__fp16> complex;
 typedef __fp16 real1;
 typedef float real1_f;
 typedef float real1_s;
@@ -76,14 +90,12 @@ typedef float real1_s;
 #endif
 #if defined(__STDCPP_FLOAT16_T__)
 namespace Qrack {
-typedef std::complex<float16_t> complex;
 typedef float16_t real1;
 typedef float real1_f;
 typedef float real1_s;
 #else
 #include "half.hpp"
 namespace Qrack {
-typedef std::complex<half_float::half> complex;
 typedef half_float::half real1;
 typedef float real1_f;
 typedef float real1_s;
@@ -91,13 +103,11 @@ typedef float real1_s;
 #endif
 #elif FPPOW < 6
 namespace Qrack {
-typedef std::complex<float> complex;
 typedef float real1;
 typedef float real1_f;
 typedef float real1_s;
 #elif FPPOW < 7
 namespace Qrack {
-typedef std::complex<double> complex;
 typedef double real1;
 typedef double real1_f;
 typedef double real1_s;
@@ -107,7 +117,6 @@ typedef double real1_s;
 #endif
 #if defined(__STDCPP_FLOAT128_T__)
 namespace Qrack {
-typedef std::complex<float128_t> complex;
 typedef float128_t real1;
 typedef float128_t real1_f;
 typedef double real1_s;
@@ -115,13 +124,14 @@ typedef double real1_s;
 #include <boost/multiprecision/float128.hpp>
 #include <quadmath.h>
 namespace Qrack {
-typedef std::complex<boost::multiprecision::float128> complex;
 typedef boost::multiprecision::float128 real1;
 typedef boost::multiprecision::float128 real1_f;
 typedef double real1_s;
 #endif
 #endif
+#endif
 
+typedef std::complex<real1> complex;
 const bitCapInt ONE_BCI = 1U;
 const bitCapInt ZERO_BCI = 0U;
 constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);
