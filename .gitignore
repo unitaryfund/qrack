@@ -12,7 +12,6 @@ tags
 CMakeCache.txt
 CMakeFiles/
 Makefile
-*.cmake
 include/OpenCL/
 _build/
 _cuda_build/
