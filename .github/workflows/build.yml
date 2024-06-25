@@ -120,13 +120,13 @@ jobs:
 
       - name: Prepare Build Environment (MacOS)
         run: |
-          brew install cmake opencl-clhpp-headers
+          brew install cmake
 
       - name: Build Qrack MacOS
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_CXX_FLAGS=-I\ /opt/homebrew/opt/opencl-clhpp-headers/include -DENABLE_COMPLEX_X2=OFF -DENABLE_SSE3=OFF -DENABLE_RDRAND=OFF -DQBCAPPOW=12 -DCPP_STD=14 ..
+          cmake -DCMAKE_CXX_FLAGS=-I\ /opt/homebrew/opt/opencl-clhpp-headers/include -DENABLE_COMPLEX_X2=OFF -DENABLE_SSE3=OFF -DENABLE_RDRAND=OFF -DENABLE_OPENCL=OFF -DENABLE_FIXED_POINT=ON -DQBCAPPOW=12 -DCPP_STD=14 ..
           make all
           sudo cpack
 
