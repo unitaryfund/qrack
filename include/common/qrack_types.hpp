@@ -66,7 +66,7 @@
 #if ENABLE_FIXED_POINT
 #include "fixed.hpp"
 namespace Qrack {
-typedef numeric::Fixed<4U, (1U << FPPOW) - 4U> real1;
+typedef numeric::Fixed<5U, (1U << FPPOW) - 5U> real1;
 #if FPPOW < 6
 typedef float real1_f;
 typedef float real1_s;
