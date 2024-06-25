@@ -66,7 +66,11 @@
 #if ENABLE_FIXED_POINT
 #include "fixed.hpp"
 namespace Qrack {
-typedef numeric::Fixed<5U, (1U << FPPOW) - 5U> real1;
+// We want to be able to represent at least 2 * PI_R1.
+// (This is <7.) 1 bit is sign.
+// 3 bits represent 1, 2, and 4, for a maximum value of 7
+// on the left side of the decimal point.
+typedef numeric::Fixed<4U, (1U << FPPOW) - 4U> real1;
 #if FPPOW < 6
 typedef float real1_f;
 typedef float real1_s;
