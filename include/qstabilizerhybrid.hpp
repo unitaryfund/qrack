@@ -193,26 +193,26 @@ protected:
     {
         const real1_f sectorAngle = PI_R1 / 2;
         const real1_f Period = 2 * PI_R1;
-        while (angle >= Period) {
+        while (angle > PI_R1) {
             angle -= Period;
         }
-        while (angle < 0) {
+        while (angle <= -PI_R1) {
             angle += Period;
         }
 
         int sector = std::round((real1_s)(angle / sectorAngle));
         if (!isGateSuppressed) {
             switch (sector) {
-            case 1U:
+            case 1:
                 stabilizer->S(i);
                 break;
-            case 2U:
+            case 2:
                 stabilizer->Z(i);
                 break;
-            case 3U:
+            case -1:
                 stabilizer->IS(i);
                 break;
-            case 0U:
+            case 0:
             default:
                 break;
             }
