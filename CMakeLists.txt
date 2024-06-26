@@ -26,6 +26,7 @@ endif (PACK_DEBIAN)
 add_library (qrack STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
+    src/common/fixed.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -361,6 +362,7 @@ install (FILES
     include/common/dispatchqueue.hpp
     include/common/big_integer.hpp
     include/common/half.hpp
+    include/common/fixed.hpp
     include/common/qneuron_activation_function.hpp
     include/common/pauli.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common

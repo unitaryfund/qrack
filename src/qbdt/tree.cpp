@@ -292,7 +292,7 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     if (randGlobalPhase) {
         real1_f lPhaseArg = FirstNonzeroPhase();
         real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
-        root->scale *= std::polar(ONE_R1, (real1)(rPhaseArg - lPhaseArg));
+        root->scale *= (complex_x)std::polar(ONE_R1, (real1)(rPhaseArg - lPhaseArg));
     }
 
     _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
@@ -833,14 +833,14 @@ void QBdt::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 
     const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
 
-    const real1_x sinThetaDiffNeg = ONE_R1 + sinTheta;
+    const real1_x sinThetaDiffNeg = ONE_R1_X + sinTheta;
     if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
         ISwap(qubit1, qubit2);
         MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         return;
     }
 
-    const real1_x sinThetaDiffPos = ONE_R1 - sinTheta;
+    const real1_x sinThetaDiffPos = ONE_R1_X - sinTheta;
     if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
         IISwap(qubit1, qubit2);
         MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);

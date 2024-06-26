@@ -311,7 +311,7 @@ void QBdtNode::Normalize(bitLenInt depth)
         std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
 
-        const real1_x nrm = (real1_x)sqrt((2 * norm(b0->scale)).to_double());
+        const real1_x nrm = (real1_x)sqrt(2 * (norm(b0->scale).to_double()));
 
         b0->Normalize(depth);
         b0->scale *= ONE_R1_X / nrm;
@@ -358,7 +358,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 #endif
         b0->PopStateVector(depth);
 
-        const real1_x nrm = (real1_x)(2 * norm(b0->scale));
+        const real1_x nrm = (real1_x)(2 * (norm(b0->scale).to_double()));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
             scale = ZERO_CMPLX;
