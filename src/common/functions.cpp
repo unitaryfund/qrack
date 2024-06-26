@@ -92,7 +92,11 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
 }
 complex complexFixedToFloating(complex_x f)
 {
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+    return f;
+#else
     return complex((real1)(real(f).to_double()), (real1)(imag(f).to_double()));
+#endif
 }
 
 #if ENABLE_COMPLEX_X2
