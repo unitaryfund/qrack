@@ -255,19 +255,7 @@ QRACK_CONST complex ONE_CMPLX = complex(ONE_R1, ZERO_R1);
 QRACK_CONST complex ZERO_CMPLX = complex(ZERO_R1, ZERO_R1);
 QRACK_CONST complex I_CMPLX = complex(ZERO_R1, ONE_R1);
 QRACK_CONST complex CMPLX_DEFAULT_ARG = complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG);
-#if ENABLE_FIXED_POINT
-#if FPPOW < 5
-QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<float16_t>::epsilon() / 2);
-#elif FPPOW < 6
-QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<float>::epsilon() / 2);
-#elif FPPOW < 7
-QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<double>::epsilon() / 2);
-#else
-QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<boost::multiprecision::float128>::epsilon() / 2);
-#endif
-#else
 QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<real1>::epsilon() / 2);
-#endif
 QRACK_CONST real1_f TRYDECOMPOSE_EPSILON = (real1_f)(16 * FP_NORM_EPSILON);
 constexpr real1_f FP_NORM_EPSILON_F = std::numeric_limits<real1_f>::epsilon() / 2;
 } // namespace Qrack

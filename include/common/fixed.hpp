@@ -458,22 +458,22 @@ public:
 
 // if we have the same fractional portion, but differing integer portions, we trivially upgrade the smaller type
 template <size_t I1, size_t I2, size_t F>
-CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type inline operator+(
+CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type operator+(
     fixed<I1, F> lhs, fixed<I2, F> rhs);
 
 template <size_t I1, size_t I2, size_t F>
-CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type inline operator-(
+CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type operator-(
     fixed<I1, F> lhs, fixed<I2, F> rhs);
 
 template <size_t I1, size_t I2, size_t F>
-CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type inline operator*(
+CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type operator*(
     fixed<I1, F> lhs, fixed<I2, F> rhs);
 
 template <size_t I1, size_t I2, size_t F>
-CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type inline operator/(
+CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type operator/(
     fixed<I1, F> lhs, fixed<I2, F> rhs);
 
-template <size_t I, size_t F> inline std::ostream& operator<<(std::ostream& os, fixed<I, F> f);
+template <size_t I, size_t F> std::ostream& operator<<(std::ostream& os, fixed<I, F> f);
 
 // basic math operators
 template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> inline operator+(fixed<I, F> lhs, fixed<I, F> rhs)
@@ -500,61 +500,51 @@ template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> inline operator/(fixed<I, 
     return lhs;
 }
 
-template <size_t I, size_t F, class Number, class>
-CONSTEXPR14 fixed<I, F> inline operator+(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator+(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class>
-CONSTEXPR14 fixed<I, F> inline operator-(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator-(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class>
-CONSTEXPR14 fixed<I, F> inline operator*(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator*(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class>
-CONSTEXPR14 fixed<I, F> inline operator/(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator/(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class>
-CONSTEXPR14 fixed<I, F> inline operator+(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator+(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class>
-CONSTEXPR14 fixed<I, F> inline operator-(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator-(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class>
-CONSTEXPR14 fixed<I, F> inline operator*(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator*(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class>
-CONSTEXPR14 fixed<I, F> inline operator/(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator/(Number lhs, fixed<I, F> rhs);
 
 // shift operators
-template <size_t I, size_t F, class Integer, class>
-CONSTEXPR14 fixed<I, F> inline operator<<(fixed<I, F> lhs, Integer rhs);
+template <size_t I, size_t F, class Integer, class> CONSTEXPR14 fixed<I, F> operator<<(fixed<I, F> lhs, Integer rhs);
 
-template <size_t I, size_t F, class Integer, class>
-CONSTEXPR14 fixed<I, F> inline operator>>(fixed<I, F> lhs, Integer rhs);
+template <size_t I, size_t F, class Integer, class> CONSTEXPR14 fixed<I, F> operator>>(fixed<I, F> lhs, Integer rhs);
 
 // comparison operators
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator>(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator>(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator<(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator<(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator>=(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator>=(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator<=(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator<=(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator==(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator==(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator!=(fixed<I, F> lhs, Number rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator!=(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator>(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator>(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator<(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator<(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator>=(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator>=(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator<=(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator<=(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator==(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator==(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class> constexpr bool inline operator!=(Number lhs, fixed<I, F> rhs);
+template <size_t I, size_t F, class Number, class> constexpr bool operator!=(Number lhs, fixed<I, F> rhs);
 
 } // namespace numeric
 
