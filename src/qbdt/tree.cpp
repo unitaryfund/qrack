@@ -316,16 +316,16 @@ complex QBdt::GetAmplitude(bitCapInt perm)
     FlushBuffers();
 
     QBdtNodeInterfacePtr leaf = root;
-    complex_x scale = leaf->scale;
+    complex scale = complexFixedToFloating(leaf->scale);
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         leaf = leaf->branches[SelectBit(perm, j)];
         if (!leaf) {
             break;
         }
-        scale *= leaf->scale;
+        scale *= complexFixedToFloating(leaf->scale);
     }
 
-    return complexFixedToFloating(scale);
+    return scale;
 }
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
@@ -434,33 +434,33 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
     const bitCapInt qPower = pow2(qubit);
     const unsigned numCores = GetConcurrencyLevel();
-    std::map<QEnginePtr, real1_x> qiProbs;
-    std::unique_ptr<real1_x[]> oneChanceBuff(new real1_x[numCores]());
+    std::map<QEnginePtr, real1> qiProbs;
+    std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
-        complex_x scale = leaf->scale;
+        complex scale = complexFixedToFloating(leaf->scale);
         for (bitLenInt j = 0U; j < qubit; ++j) {
             leaf = leaf->branches[SelectBit(i, j)];
             if (!leaf) {
                 break;
             }
-            scale *= leaf->scale;
+            scale *= complexFixedToFloating(leaf->scale);
         }
 
         if (!leaf || !leaf->branches[1U]) {
             return;
         }
 
-        oneChanceBuff[cpu] += norm(scale * leaf->branches[1U]->scale);
+        oneChanceBuff[cpu] += norm(scale * complexFixedToFloating(leaf->branches[1U]->scale));
     });
 
-    real1_x oneChance = ZERO_R1;
+    real1 oneChance = ZERO_R1;
     for (unsigned i = 0U; i < numCores; ++i) {
         oneChance += oneChanceBuff[i];
     }
 
-    return clampProb((real1_f)(oneChance.to_double()));
+    return clampProb((real1_f)oneChance);
 }
 
 real1_f QBdt::ProbAll(bitCapInt perm)
@@ -468,17 +468,17 @@ real1_f QBdt::ProbAll(bitCapInt perm)
     FlushBuffers();
 
     QBdtNodeInterfacePtr leaf = root;
-    complex_x scale = leaf->scale;
+    complex scale = complexFixedToFloating(leaf->scale);
 
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         leaf = leaf->branches[SelectBit(perm, j)];
         if (!leaf) {
             break;
         }
-        scale *= leaf->scale;
+        scale *= complexFixedToFloating(leaf->scale);
     }
 
-    return clampProb((real1_f)(norm(scale).to_double()));
+    return clampProb((real1_f)norm(scale));
 }
 
 bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
