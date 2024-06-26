@@ -63,25 +63,8 @@
 #define bitCapInt BigInteger
 #endif
 
-#if ENABLE_FIXED_POINT
 #include "fixed.hpp"
-namespace Qrack {
-// We want to be able to represent at least 2 * PI_R1.
-// (This is <7.) 1 bit is sign.
-// 3 bits represent 1, 2, and 4, for a maximum value of 7
-// on the left side of the decimal point.
-typedef numeric::Fixed<4U, (1U << FPPOW) - 4U> real1;
-#if FPPOW < 6
-typedef float real1_f;
-typedef float real1_s;
-#elif FPPOW < 7
-typedef double real1_f;
-typedef double real1_s;
-#else
-typedef boost::multiprecision::float128 real1_f;
-typedef double real1_s;
-#endif
-#else
+
 #if FPPOW < 5
 #ifdef __arm__
 namespace Qrack {
@@ -133,12 +116,24 @@ typedef boost::multiprecision::float128 real1_f;
 typedef double real1_s;
 #endif
 #endif
-#endif
 
 typedef std::complex<real1> complex;
 const bitCapInt ONE_BCI = 1U;
 const bitCapInt ZERO_BCI = 0U;
 constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);
+
+// We want to be able to represent at least 1
+// (and no less, for maximum capacity).
+// 1 bit is +/- sign.
+// 1 bit is 0/1 on the left side of the decimal point.
+typedef numeric::fixed<3U, (1U << FPPOW) - 3U> real1_x;
+typedef std::complex<real1_x> complex_x;
+constexpr real1_x ONE_R1_X = 1.0f;
+constexpr real1_x ZERO_R1_X = 0.0f;
+constexpr complex_x ONE_CMPLX_X = complex_x(ONE_R1_X, ZERO_R1_X);
+constexpr complex_x ZERO_CMPLX_X = complex_x(ZERO_R1_X, ZERO_R1_X);
+constexpr complex_x I_CMPLX_X = complex_x(ZERO_R1_X, ONE_R1_X);
+const real1_x SQRT1_2_R1_X = (real1_x)M_SQRT1_2;
 
 typedef std::shared_ptr<complex> BitOp;
 
@@ -172,7 +167,7 @@ const real1 ZERO_R1 = (real1)0.0f;
 constexpr real1_f ZERO_R1_F = 0.0f;
 const real1 ONE_R1 = (real1)1.0f;
 constexpr real1_f ONE_R1_F = 1.0f;
-const real1 REAL1_DEFAULT_ARG = (real1)-999.0f;
+const real1 REAL1_DEFAULT_ARG = (real1)-7.77f;
 // Half the probability in any single permutation of 20 maximally superposed qubits
 const real1 REAL1_EPSILON = (real1)0.000000477f;
 const real1 PI_R1 = (real1)M_PI;
@@ -187,7 +182,7 @@ const real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 constexpr real1 PI_R1 = (real1)M_PI;
 constexpr real1 SQRT2_R1 = (real1)M_SQRT2;
 constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
-#define REAL1_DEFAULT_ARG -999.0f
+#define REAL1_DEFAULT_ARG -7.77f
 // Half the probability in any single permutation of 48 maximally superposed qubits
 #define REAL1_EPSILON 1.7763568394002505e-15f
 #elif FPPOW < 7
@@ -199,7 +194,7 @@ constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 #define PI_R1 M_PI
 #define SQRT2_R1 M_SQRT2
 #define SQRT1_2_R1 M_SQRT1_2
-#define REAL1_DEFAULT_ARG -999.0
+#define REAL1_DEFAULT_ARG -7.77
 // Half the probability in any single permutation of 96 maximally superposed qubits
 #define REAL1_EPSILON 6.310887241768095e-30
 #else
@@ -211,7 +206,7 @@ constexpr real1 ONE_R1 = (real1)1.0;
 constexpr real1_f PI_R1 = (real1_f)M_PI;
 constexpr real1_f SQRT2_R1 = (real1_f)M_SQRT2;
 constexpr real1_f SQRT1_2_R1 = (real1_f)M_SQRT1_2;
-#define REAL1_DEFAULT_ARG -999.0
+#define REAL1_DEFAULT_ARG -7.77
 // Half the probability in any single permutation of 192 maximally superposed qubits
 #define REAL1_EPSILON 7.965459555662261e-59
 #endif

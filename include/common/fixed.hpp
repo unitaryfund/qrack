@@ -459,230 +459,92 @@ public:
 // if we have the same fractional portion, but differing integer portions, we trivially upgrade the smaller type
 template <size_t I1, size_t I2, size_t F>
 CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type operator+(
-    fixed<I1, F> lhs, fixed<I2, F> rhs)
-{
-
-    using T = typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type;
-
-    const T l = T::from_base(lhs.to_raw());
-    const T r = T::from_base(rhs.to_raw());
-    return l + r;
-}
+    fixed<I1, F> lhs, fixed<I2, F> rhs);
 
 template <size_t I1, size_t I2, size_t F>
 CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type operator-(
-    fixed<I1, F> lhs, fixed<I2, F> rhs)
-{
-
-    using T = typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type;
-
-    const T l = T::from_base(lhs.to_raw());
-    const T r = T::from_base(rhs.to_raw());
-    return l - r;
-}
+    fixed<I1, F> lhs, fixed<I2, F> rhs);
 
 template <size_t I1, size_t I2, size_t F>
 CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type operator*(
-    fixed<I1, F> lhs, fixed<I2, F> rhs)
-{
-
-    using T = typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type;
-
-    const T l = T::from_base(lhs.to_raw());
-    const T r = T::from_base(rhs.to_raw());
-    return l * r;
-}
+    fixed<I1, F> lhs, fixed<I2, F> rhs);
 
 template <size_t I1, size_t I2, size_t F>
 CONSTEXPR14 typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type operator/(
-    fixed<I1, F> lhs, fixed<I2, F> rhs)
-{
+    fixed<I1, F> lhs, fixed<I2, F> rhs);
 
-    using T = typename std::conditional<I1 >= I2, fixed<I1, F>, fixed<I2, F>>::type;
-
-    const T l = T::from_base(lhs.to_raw());
-    const T r = T::from_base(rhs.to_raw());
-    return l / r;
-}
-
-template <size_t I, size_t F> std::ostream& operator<<(std::ostream& os, fixed<I, F> f)
-{
-    os << f.to_double();
-    return os;
-}
+template <size_t I, size_t F> std::ostream& operator<<(std::ostream& os, fixed<I, F> f);
 
 // basic math operators
-template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> operator+(fixed<I, F> lhs, fixed<I, F> rhs)
+template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> inline operator+(fixed<I, F> lhs, fixed<I, F> rhs)
 {
     lhs += rhs;
     return lhs;
 }
 
-template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> operator-(fixed<I, F> lhs, fixed<I, F> rhs)
+template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> inline operator-(fixed<I, F> lhs, fixed<I, F> rhs)
 {
     lhs -= rhs;
     return lhs;
 }
 
-template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> operator*(fixed<I, F> lhs, fixed<I, F> rhs)
+template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> inline operator*(fixed<I, F> lhs, fixed<I, F> rhs)
 {
     lhs *= rhs;
     return lhs;
 }
 
-template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> operator/(fixed<I, F> lhs, fixed<I, F> rhs)
+template <size_t I, size_t F> CONSTEXPR14 fixed<I, F> inline operator/(fixed<I, F> lhs, fixed<I, F> rhs)
 {
     lhs /= rhs;
     return lhs;
 }
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 fixed<I, F> operator+(fixed<I, F> lhs, Number rhs)
-{
-    lhs += fixed<I, F>(rhs);
-    return lhs;
-}
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator+(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 fixed<I, F> operator-(fixed<I, F> lhs, Number rhs)
-{
-    lhs -= fixed<I, F>(rhs);
-    return lhs;
-}
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator-(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 fixed<I, F> operator*(fixed<I, F> lhs, Number rhs)
-{
-    lhs *= fixed<I, F>(rhs);
-    return lhs;
-}
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator*(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 fixed<I, F> operator/(fixed<I, F> lhs, Number rhs)
-{
-    lhs /= fixed<I, F>(rhs);
-    return lhs;
-}
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator/(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 fixed<I, F> operator+(Number lhs, fixed<I, F> rhs)
-{
-    fixed<I, F> tmp(lhs);
-    tmp += rhs;
-    return tmp;
-}
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator+(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 fixed<I, F> operator-(Number lhs, fixed<I, F> rhs)
-{
-    fixed<I, F> tmp(lhs);
-    tmp -= rhs;
-    return tmp;
-}
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator-(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 fixed<I, F> operator*(Number lhs, fixed<I, F> rhs)
-{
-    fixed<I, F> tmp(lhs);
-    tmp *= rhs;
-    return tmp;
-}
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator*(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-CONSTEXPR14 fixed<I, F> operator/(Number lhs, fixed<I, F> rhs)
-{
-    fixed<I, F> tmp(lhs);
-    tmp /= rhs;
-    return tmp;
-}
+template <size_t I, size_t F, class Number, class> CONSTEXPR14 fixed<I, F> operator/(Number lhs, fixed<I, F> rhs);
 
 // shift operators
-template <size_t I, size_t F, class Integer, class = typename std::enable_if<std::is_integral<Integer>::value>::type>
-CONSTEXPR14 fixed<I, F> operator<<(fixed<I, F> lhs, Integer rhs)
-{
-    lhs <<= rhs;
-    return lhs;
-}
+template <size_t I, size_t F, class Integer, class> CONSTEXPR14 fixed<I, F> operator<<(fixed<I, F> lhs, Integer rhs);
 
-template <size_t I, size_t F, class Integer, class = typename std::enable_if<std::is_integral<Integer>::value>::type>
-CONSTEXPR14 fixed<I, F> operator>>(fixed<I, F> lhs, Integer rhs)
-{
-    lhs >>= rhs;
-    return lhs;
-}
+template <size_t I, size_t F, class Integer, class> CONSTEXPR14 fixed<I, F> operator>>(fixed<I, F> lhs, Integer rhs);
 
 // comparison operators
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator>(fixed<I, F> lhs, Number rhs)
-{
-    return lhs > fixed<I, F>(rhs);
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator>(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator<(fixed<I, F> lhs, Number rhs)
-{
-    return lhs < fixed<I, F>(rhs);
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator<(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator>=(fixed<I, F> lhs, Number rhs)
-{
-    return lhs >= fixed<I, F>(rhs);
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator>=(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator<=(fixed<I, F> lhs, Number rhs)
-{
-    return lhs <= fixed<I, F>(rhs);
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator<=(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator==(fixed<I, F> lhs, Number rhs)
-{
-    return lhs == fixed<I, F>(rhs);
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator==(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator!=(fixed<I, F> lhs, Number rhs)
-{
-    return lhs != fixed<I, F>(rhs);
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator!=(fixed<I, F> lhs, Number rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator>(Number lhs, fixed<I, F> rhs)
-{
-    return fixed<I, F>(lhs) > rhs;
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator>(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator<(Number lhs, fixed<I, F> rhs)
-{
-    return fixed<I, F>(lhs) < rhs;
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator<(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator>=(Number lhs, fixed<I, F> rhs)
-{
-    return fixed<I, F>(lhs) >= rhs;
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator>=(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator<=(Number lhs, fixed<I, F> rhs)
-{
-    return fixed<I, F>(lhs) <= rhs;
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator<=(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator==(Number lhs, fixed<I, F> rhs)
-{
-    return fixed<I, F>(lhs) == rhs;
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator==(Number lhs, fixed<I, F> rhs);
 
-template <size_t I, size_t F, class Number, class = typename std::enable_if<std::is_arithmetic<Number>::value>::type>
-constexpr bool operator!=(Number lhs, fixed<I, F> rhs)
-{
-    return fixed<I, F>(lhs) != rhs;
-}
+template <size_t I, size_t F, class Number, class> constexpr bool operator!=(Number lhs, fixed<I, F> rhs);
 
 } // namespace numeric
 

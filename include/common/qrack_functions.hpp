@@ -208,6 +208,7 @@ bool isOverflowSub(
 bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
+complex complexFixedToFloating(complex_x f);
 
 #if QBCAPPOW > 6
 std::ostream& operator<<(std::ostream& os, bitCapInt b);

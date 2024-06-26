@@ -110,7 +110,10 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 
     const real1 lWeight = (real1)(lLeaf.use_count() * lLeaf.use_count());
     const real1 rWeight = (real1)(rLeaf.use_count() * rLeaf.use_count());
-    const complex nScale = (lWeight * lLeaf->scale + rWeight * rLeaf->scale) / (lWeight + rWeight);
+    const complex _nScale =
+        (lWeight * complexFixedToFloating(lLeaf->scale) + rWeight * complexFixedToFloating(rLeaf->scale)) /
+        (lWeight + rWeight);
+    const complex_x nScale = complex_x(real(_nScale), imag(_nScale));
 
     if (IS_NODE_0(nScale)) {
         lLeaf->SetZero();
@@ -173,7 +176,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
-    toRet->scale /= abs(toRet->scale);
+    toRet->scale /= (complex_x)sqrt((real1)(norm(toRet->scale).to_double()));
 
     if (!size) {
         branches[0U] = NULL;

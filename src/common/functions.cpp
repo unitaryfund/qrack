@@ -90,6 +90,10 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
 
     return tmp;
 }
+complex complexFixedToFloating(complex_x f)
+{
+    return complex((real1)(real(f).to_double()), (real1)(imag(f).to_double()));
+}
 
 #if ENABLE_COMPLEX_X2
 void mul2x2(complex const* left, complex const* right, complex* out)
