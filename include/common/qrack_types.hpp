@@ -126,7 +126,7 @@ constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);
 // (and no less, for maximum capacity).
 // 1 bit is +/- sign.
 // 1 bit is 0/1 on the left side of the decimal point.
-typedef numeric::fixed<2U, (1U << FPPOW) - 2U> real1_x;
+typedef numeric::fixed<3U, (1U << FPPOW) - 3U> real1_x;
 typedef std::complex<real1_x> complex_x;
 constexpr real1_x ONE_R1_X = 1.0f;
 constexpr real1_x ZERO_R1_X = 0.0f;
