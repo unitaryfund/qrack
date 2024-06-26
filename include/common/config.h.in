@@ -4,6 +4,7 @@
 #define ENABLE_SSE3 @SSE3_MACRO@
 #cmakedefine ENABLE_DEVRAND 1
 #cmakedefine ENABLE_ENV_VARS 1
+#cmakedefine ENABLE_FIXED_POINT 1
 #cmakedefine ENABLE_INTRINSICS 1
 #cmakedefine ENABLE_OCL_MEM_GUARDS 1
 #cmakedefine ENABLE_OPENCL 1

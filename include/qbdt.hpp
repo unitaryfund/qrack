@@ -96,7 +96,7 @@ protected:
 
         _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
             QBdtNodeInterfacePtr leaf = root;
-            complex scale = leaf->scale;
+            complex_x scale = leaf->scale;
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
                 leaf = leaf->branches[SelectBit(i, j)];
                 if (!leaf) {
@@ -105,7 +105,7 @@ protected:
                 scale *= leaf->scale;
             }
 
-            getLambda((bitCapIntOcl)i, scale);
+            getLambda((bitCapIntOcl)i, complex((real1)(real(scale).to_double()), (real1)(imag(scale).to_double())));
         });
     }
     template <typename Fn> void SetTraversal(Fn setLambda)

@@ -1,5 +1,4 @@
 set(FPPOW "5" CACHE STRING "Log2 of float bits, for use in pairs as complex amplitudes (must be at least 2, equivalent to half precision)")
-option(ENABLE_FIXED_POINT "Use fixed-point math instead of floating-point" OFF)
 
 if (FPPOW LESS 4)
     message(FATAL_ERROR "FPPOW must be at least 4, equivalent to \"half\" precision!")
