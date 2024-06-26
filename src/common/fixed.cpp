@@ -32,12 +32,6 @@
 #define CONSTEXPR14
 #endif
 
-#include <cstddef> // for size_t
-#include <cstdint>
-#include <exception>
-#include <ostream>
-#include <type_traits>
-
 namespace numeric {
 
 // if we have the same fractional portion, but differing integer portions, we trivially upgrade the smaller type
