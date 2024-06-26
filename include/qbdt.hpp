@@ -105,7 +105,11 @@ protected:
                 scale *= leaf->scale;
             }
 
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+            getLambda((bitCapIntOcl)i, scale);
+#else
             getLambda((bitCapIntOcl)i, complex((real1)(real(scale).to_double()), (real1)(imag(scale).to_double())));
+#endif
         });
     }
     template <typename Fn> void SetTraversal(Fn setLambda)

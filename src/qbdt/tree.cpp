@@ -541,13 +541,21 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                 return;
             }
             b0->SetZero();
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+            b1->scale /= abs(b1->scale);
+#else
             b1->scale /= (complex_x)sqrt(norm(b1->scale).to_double());
+#endif
         } else {
             if (IS_NODE_0(b0->scale)) {
                 b0->SetZero();
                 return;
             }
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+            b0->scale /= abs(b0->scale);
+#else
             b0->scale /= (complex_x)sqrt(norm(b0->scale).to_double());
+#endif
             b1->SetZero();
         }
     });
@@ -571,7 +579,11 @@ bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
     }
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+        real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1U]->scale));
+#else
         real1_f oneChance = clampProb((real1_f)(norm(leaf->branches[1U]->scale).to_double()));
+#endif
         bool bitResult;
         if (oneChance >= ONE_R1) {
             bitResult = true;
