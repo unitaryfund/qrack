@@ -136,7 +136,7 @@ protected:
     bool randGlobalPhase;
     bool useRDRAND;
     bitLenInt qubitCount;
-    uint64_t randomSeed;
+    uint32_t randomSeed;
     real1 amplitudeFloor;
     bitCapInt maxQPower;
     qrack_rand_gen_ptr rand_generator;
