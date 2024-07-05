@@ -82,8 +82,9 @@ QInterfacePtr CreateQuantumInterface(
         return std::make_shared<QUnitMulti>(engines, args...);
 #endif
     case QINTERFACE_CPU:
-    default:
         return std::make_shared<QEngineCPU>(args...);
+    default:
+        throw std::invalid_argument("CreateQuantumInterface received a request to create a nonexistent type instance!");
     }
 }
 
@@ -127,8 +128,9 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
         return std::make_shared<QUnitMulti>(engines, args...);
 #endif
     case QINTERFACE_CPU:
-    default:
         return std::make_shared<QEngineCPU>(args...);
+    default:
+        throw std::invalid_argument("CreateQuantumInterface received a request to create a nonexistent type instance!");
     }
 }
 
@@ -168,8 +170,9 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QUnitMulti>(args...);
 #endif
     case QINTERFACE_CPU:
-    default:
         return std::make_shared<QEngineCPU>(args...);
+    default:
+        throw std::invalid_argument("CreateQuantumInterface received a request to create a nonexistent type instance!");
     }
 }
 
@@ -233,8 +236,9 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
         return std::make_shared<QUnitMulti>(args...);
 #endif
     case QINTERFACE_CPU:
-    default:
         return std::make_shared<QEngineCPU>(args...);
+    default:
+        throw std::invalid_argument("CreateQuantumInterface received a request to create a nonexistent type instance!");
     }
 }
 
