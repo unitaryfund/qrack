@@ -49,8 +49,6 @@ QInterfacePtr CreateQuantumInterface(
     std::vector<QInterfaceEngine> engines{ engine2, engine3 };
 
     switch (engine) {
-    case QINTERFACE_CPU:
-        return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_STABILIZER:
         return std::make_shared<QStabilizer>(args...);
     case QINTERFACE_QUNIT_CLIFFORD:
@@ -83,8 +81,9 @@ QInterfacePtr CreateQuantumInterface(
     case QINTERFACE_QUNIT_MULTI:
         return std::make_shared<QUnitMulti>(engines, args...);
 #endif
+    case QINTERFACE_CPU:
     default:
-        return NULL;
+        return std::make_shared<QEngineCPU>(args...);
     }
 }
 
@@ -95,8 +94,6 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
     std::vector<QInterfaceEngine> engines{ engine2 };
 
     switch (engine) {
-    case QINTERFACE_CPU:
-        return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_STABILIZER:
         return std::make_shared<QStabilizer>(args...);
     case QINTERFACE_QUNIT_CLIFFORD:
@@ -129,16 +126,15 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
     case QINTERFACE_QUNIT_MULTI:
         return std::make_shared<QUnitMulti>(engines, args...);
 #endif
+    case QINTERFACE_CPU:
     default:
-        return NULL;
+        return std::make_shared<QEngineCPU>(args...);
     }
 }
 
 template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, Ts... args)
 {
     switch (engine) {
-    case QINTERFACE_CPU:
-        return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_STABILIZER:
         return std::make_shared<QStabilizer>(args...);
     case QINTERFACE_QUNIT_CLIFFORD:
@@ -171,8 +167,9 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
     case QINTERFACE_QUNIT_MULTI:
         return std::make_shared<QUnitMulti>(args...);
 #endif
+    case QINTERFACE_CPU:
     default:
-        return NULL;
+        return std::make_shared<QEngineCPU>(args...);
     }
 }
 
@@ -182,8 +179,6 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
     engines.erase(engines.begin());
 
     switch (engine) {
-    case QINTERFACE_CPU:
-        return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_STABILIZER:
         return std::make_shared<QStabilizer>(args...);
     case QINTERFACE_QUNIT_CLIFFORD:
@@ -237,8 +232,9 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
         }
         return std::make_shared<QUnitMulti>(args...);
 #endif
+    case QINTERFACE_CPU:
     default:
-        return NULL;
+        return std::make_shared<QEngineCPU>(args...);
     }
 }
 
