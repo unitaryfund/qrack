@@ -637,7 +637,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     }
 #endif
 
-    if (pg && !sh && simulatorType.size()) {
+    if (pg && simulatorType.size()) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 

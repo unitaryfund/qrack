@@ -572,7 +572,7 @@ quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, 
     }
 #endif
 
-    if (pg && !sh && simulatorType.size()) {
+    if (pg && simulatorType.size()) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
