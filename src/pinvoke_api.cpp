@@ -663,17 +663,15 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     std::reverse(simulatorType.begin(), simulatorType.end());
 
     if (simulatorType.empty()) {
+#if ENABLE_OPENCL || ENABLE_CUDA
+        if (hy && isOcl) {
+            simulatorType.push_back(QINTERFACE_HYBRID);
+        } else {
 #if ENABLE_OPENCL
-        if (hy && isOcl) {
-            simulatorType.push_back(QINTERFACE_HYBRID);
-        } else {
             simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
-        }
-#elif ENABLE_CUDA
-        if (hy && isOcl) {
-            simulatorType.push_back(QINTERFACE_HYBRID);
-        } else {
+#else
             simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
+#endif
         }
 #else
         simulatorType.push_back(QINTERFACE_CPU);

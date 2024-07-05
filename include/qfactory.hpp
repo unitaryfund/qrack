@@ -261,21 +261,23 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
     std::vector<QInterfaceEngine> simulatorType;
 
 #if ENABLE_OPENCL
-    if (!hy) {
+    if (!hy || !isOcl) {
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
 #elif ENABLE_CUDA
-    if (!hy) {
+    if (!hy || !isOcl) {
         simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
     }
 #endif
 
-    if (pg && simulatorType.size()) {
+    if (pg && !sh && simulatorType.size()) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
 #if ENABLE_QBDT
     if (bdt) {
+        // To recover the original QBdt stack behavior,
+        // set env. var. QRACK_QBDT_HYBRID_THRESHOLD=1
         simulatorType.push_back(QINTERFACE_BDT_HYBRID);
     }
 #endif
