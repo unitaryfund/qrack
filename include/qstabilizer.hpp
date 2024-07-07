@@ -123,7 +123,7 @@ public:
 
             return (bool)((rawRandBools >> rawRandBoolsRemaining) & 1U);
         } else {
-            return (bool)rand_distribution(*rand_generator);
+            return (rand_distribution(*rand_generator) >= (ONE_R1_F / 2));
         }
     }
 
