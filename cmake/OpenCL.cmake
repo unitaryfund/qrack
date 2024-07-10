@@ -116,7 +116,7 @@ if (ENABLE_OPENCL)
             GIT_TAG v2024.05.08
         )
         FetchContent_MakeAvailable(OpenCL-Headers OpenCL-CLHPP)
-        target_include_directories (qrack PUBLIC ${CMAKE_BIN_DIR}/_deps/opencl-clhpp-src/include/)
+        target_include_directories (qrack PUBLIC ${CMAKE_BIN_DIR}/_deps/opencl-clhpp-src/include/ ${CMAKE_BIN_DIR}/_deps/OpenCL-CLHPP-src/include/)
     endif (APPLE OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
 
 endif (ENABLE_OPENCL)
