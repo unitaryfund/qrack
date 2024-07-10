@@ -119,6 +119,6 @@ if (ENABLE_OPENCL)
         )
         FetchContent_MakeAvailable(OpenCL-CLHPP)
         target_include_directories (qrack PUBLIC ${CMAKE_BIN_DIR}/_deps/opencl-clhpp-src/include/)
-    endif (APPLE)
+    endif (APPLE OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^powerpc")
 
 endif (ENABLE_OPENCL)
