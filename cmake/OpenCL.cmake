@@ -111,12 +111,16 @@ if (ENABLE_OPENCL)
             GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-Headers
             GIT_TAG v2024.05.08
         )
+        FetchContent_Declare (OpenCL-ICD-Loader
+            GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-ICD-Loader
+            GIT_TAG v2024.05.08
+        )
         FetchContent_Declare (OpenCL-CLHPP
             GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-CLHPP
             GIT_TAG v2024.05.08
         )
-        FetchContent_MakeAvailable(OpenCL-Headers OpenCL-CLHPP)
-        target_include_directories (qrack PUBLIC ${CMAKE_BIN_DIR}/_deps/opencl-clhpp-src/include/ ${CMAKE_BIN_DIR}/_deps/OpenCL-CLHPP-src/include/)
+        FetchContent_MakeAvailable(OpenCL-Headers OpenCL-ICD-Loader OpenCL-CLHPP)
+        target_include_directories (qrack PUBLIC ${CMAKE_BIN_DIR}/_deps/opencl-headers-src/ ${CMAKE_BIN_DIR}/_deps/opencl-clhpp-src/include/)
     endif (APPLE OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
 
 endif (ENABLE_OPENCL)
