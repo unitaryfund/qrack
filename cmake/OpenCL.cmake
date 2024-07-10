@@ -111,4 +111,14 @@ if (ENABLE_OPENCL)
         src/qunitmulti.cpp
         )
 
+    if (APPLE OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^powerpc")
+        include(FetchContent)
+        FetchContent_Declare (OpenCL-CLHPP
+            GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-CLHPP
+            GIT_TAG v2024.05.08
+        )
+        FetchContent_MakeAvailable(OpenCL-CLHPP)
+        target_include_directories (qrack PUBLIC ${CMAKE_BIN_DIR}/_deps/opencl-clhpp-src/include/)
+    endif (APPLE)
+
 endif (ENABLE_OPENCL)

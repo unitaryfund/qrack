@@ -33,7 +33,7 @@
 #include <CL/opencl.hpp>
 #elif defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
-#include <OpenCL/opencl.hpp>
+#include <CL/opencl.hpp>
 #elif defined(_WIN32) || ENABLE_SNUCL
 #include <CL/cl.hpp>
 #else
