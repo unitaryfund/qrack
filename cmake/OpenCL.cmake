@@ -29,12 +29,6 @@ if (NOT OpenCL_FOUND)
     endif()
 endif ()
 
-if (PACK_DEBIAN)
-    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
-        set(ENABLE_OPENCL OFF)
-    endif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
-endif (PACK_DEBIAN)
-
 message ("OpenCL Support is: ${ENABLE_OPENCL}")
 
 if (ENABLE_OPENCL)
@@ -111,14 +105,18 @@ if (ENABLE_OPENCL)
         src/qunitmulti.cpp
         )
 
-    if (APPLE OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^powerpc")
+    if (APPLE OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
         include(FetchContent)
+        FetchContent_Declare (OpenCL-Headers
+            GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-Headers
+            GIT_TAG v2024.05.08
+        )
         FetchContent_Declare (OpenCL-CLHPP
             GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-CLHPP
             GIT_TAG v2024.05.08
         )
-        FetchContent_MakeAvailable(OpenCL-CLHPP)
+        FetchContent_MakeAvailable(OpenCL-Headers OpenCL-CLHPP)
         target_include_directories (qrack PUBLIC ${CMAKE_BIN_DIR}/_deps/opencl-clhpp-src/include/)
-    endif (APPLE OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^powerpc")
+    endif (APPLE OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ppc")
 
 endif (ENABLE_OPENCL)
