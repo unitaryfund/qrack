@@ -502,9 +502,6 @@ void QInterface::DepolarizingChannelWeak1Qb(bitLenInt qubit, real1_f lambda)
 
     // Uncompute
     H(qubit);
-
-    // Original qubit might be below separability threshold
-    TrySeparate(qubit);
 }
 
 bitLenInt QInterface::DepolarizingChannelStrong1Qb(bitLenInt qubit, real1_f lambda)

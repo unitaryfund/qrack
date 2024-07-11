@@ -440,5 +440,26 @@ public:
     }
 
     void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
+
+    void DepolarizingChannelWeak1Qb(bitLenInt qubit, real1_f lambda)
+    {
+        if (lambda <= ZERO_R1) {
+            return;
+        }
+
+        // "lambda" is the overall depolarization strength.
+        // We think of this as the Euclidean norm of 3 equal,
+        // probabilistic Pauli channels for Z, X, and Y.
+        lambda = sqrt((lambda * lambda) / 3);
+        if (Rand() < lambda) {
+            Z(qubit);
+        }
+        if (Rand() < lambda) {
+            X(qubit);
+        }
+        if (Rand() < lambda) {
+            Y(qubit);
+        }
+    }
 };
 } // namespace Qrack

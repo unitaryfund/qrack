@@ -82,9 +82,9 @@ QInterface::QInterface(
             throw std::runtime_error("Failed to seed RNG!");
         }
 #else
-        std::random_device rd;
-        std::uniform_int_distribution<uint32_t> dist(0U, pow2Ocl(32U) - 1U);
-        randomSeed = dist(rd);
+    std::random_device rd;
+    std::uniform_int_distribution<uint32_t> dist(0U, pow2Ocl(32U) - 1U);
+    randomSeed = dist(rd);
 #endif
         SetRandomSeed(randomSeed);
 #if ENABLE_RDRAND || ENABLE_RNDFILE || ENABLE_DEVRAND
