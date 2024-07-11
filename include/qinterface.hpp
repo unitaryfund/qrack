@@ -102,9 +102,14 @@ enum QInterfaceEngine {
     QINTERFACE_QUNIT_CLIFFORD,
 
     /**
-     * Circuit-simplification layer, with (optional) recourse to cuTensorNetwork
+     * Circuit-simplification layer
      */
     QINTERFACE_TENSOR_NETWORK,
+
+    /**
+     * Noisy wrapper layer
+     */
+    QINTERFACE_NOISY,
 
 #if ENABLE_OPENCL || ENABLE_CUDA
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_QPAGER,

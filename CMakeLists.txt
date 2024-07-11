@@ -44,6 +44,7 @@ add_library (qrack STATIC
     src/qstabilizerhybrid.cpp
     src/qcircuit.cpp
     src/qtensornetwork.cpp
+    src/qinterface_noisy.cpp
     )
 set_property(TARGET qrack PROPERTY POSITION_INDEPENDENT_CODE ON)
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
@@ -389,6 +390,7 @@ install (FILES
     include/qengine_cuda.hpp
     include/qtensornetwork.hpp
     include/qinterface.hpp
+    include/qinterface_noisy.hpp
     include/qalu.hpp
     include/qparity.hpp
     include/qneuron.hpp

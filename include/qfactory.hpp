@@ -38,6 +38,8 @@
 #include "qbdthybrid.hpp"
 #endif
 
+#include "qinterface_noisy.hpp"
+
 namespace Qrack {
 
 /** Factory method to create specific engine implementations. */
@@ -83,6 +85,8 @@ QInterfacePtr CreateQuantumInterface(
 #endif
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_NOISY:
+        return std::make_shared<QInterfaceNoisy>(engines, args...);
     default:
         throw std::invalid_argument("CreateQuantumInterface received a request to create a nonexistent type instance!");
     }
@@ -129,6 +133,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
 #endif
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_NOISY:
+        return std::make_shared<QInterfaceNoisy>(engines, args...);
     default:
         throw std::invalid_argument("CreateQuantumInterface received a request to create a nonexistent type instance!");
     }
@@ -171,6 +177,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
 #endif
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_NOISY:
+        return std::make_shared<QInterfaceNoisy>(engines, args...);
     default:
         throw std::invalid_argument("CreateQuantumInterface received a request to create a nonexistent type instance!");
     }
@@ -237,6 +245,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
 #endif
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_NOISY:
+        return std::make_shared<QInterfaceNoisy>(engines, args...);
     default:
         throw std::invalid_argument("CreateQuantumInterface received a request to create a nonexistent type instance!");
     }
@@ -248,7 +258,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
 #define DEVICE_COUNT (CUDAEngine::Instance().GetDeviceCount())
 #endif
 template <typename... Ts>
-QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg, bool tn, bool hy, bool oc, Ts... args)
+QInterfacePtr CreateArrangedLayersFull(
+    bool nw, bool md, bool sd, bool sh, bool bdt, bool pg, bool tn, bool hy, bool oc, Ts... args)
 {
 #if ENABLE_OPENCL || ENABLE_CUDA
     bool isOcl = oc && (DEVICE_COUNT > 0);
@@ -294,6 +305,10 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
         simulatorType.push_back(QINTERFACE_TENSOR_NETWORK);
     }
 
+    if (nw) {
+        simulatorType.push_back(QINTERFACE_NOISY);
+    }
+
     // (...then reverse:)
     std::reverse(simulatorType.begin(), simulatorType.end());
 
@@ -314,6 +329,11 @@ QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg,
     }
 
     return CreateQuantumInterface(simulatorType, args...);
+}
+template <typename... Ts>
+QInterfacePtr CreateArrangedLayers(bool md, bool sd, bool sh, bool bdt, bool pg, bool tn, bool hy, bool oc, Ts... args)
+{
+    return CreateArrangedLayersFull(false, md, sd, sh, bdt, pg, tn, hy, oc, args...);
 }
 
 } // namespace Qrack
