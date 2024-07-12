@@ -535,7 +535,8 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, std::vector<bitLenI
 /**
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
-quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool nw, bool hy, bool oc, bool hp)
+quid init_count_type(
+    bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool nw, bool hy, bool oc, bool hp)
 {
     META_LOCK_GUARD()
 
