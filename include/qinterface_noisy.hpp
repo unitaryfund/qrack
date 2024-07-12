@@ -38,6 +38,9 @@ protected:
             n = (real1_f)std::stof(std::string(getenv("QRACK_GATE_DEPOLARIZATION")));
         }
 #endif
+        if (n <= ZERO_R1_F) {
+            return;
+        }
         engine->DepolarizingChannelWeak1Qb(qb, n);
         if ((n + FP_NORM_EPSILON) >= ONE_R1_F) {
             logFidelity = -1 * std::numeric_limits<float>::infinity();
