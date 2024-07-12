@@ -489,6 +489,10 @@ void SetReactiveSeparate(quid sid, bool irs);
  * Turn off/on "T-injection" feature (for "near-Clifford" simulation with RZ gates)
  */
 void SetTInjection(quid sid, bool iti);
+/**
+ * Set noise parameter (for QInterfaceNoisy)
+ */
+void SetNoiseParameter(quid sid, double np);
 
 /**
  * Initialize a "quantum neuron" that takes a list of qubit "controls" for input and acts on a single "target" output

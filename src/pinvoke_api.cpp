@@ -3323,6 +3323,17 @@ MICROSOFT_QUANTUM_DECL void SetTInjection(_In_ uintq sid, _In_ bool irs)
     }
 }
 
+MICROSOFT_QUANTUM_DECL void SetNoiseParameter(_In_ uintq sid, _In_ double np)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    try {
+        simulator->SetNoiseParameter((real1_f)np);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
 #if !(FPPOW < 6 && !defined(ENABLE_COMPLEX_X2))
 /**
  * (External API) Simulate a Hamiltonian

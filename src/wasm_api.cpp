@@ -2387,6 +2387,12 @@ void SetTInjection(quid sid, bool irs)
     simulator->SetTInjection(irs);
 }
 
+void SetNoiseParameter(quid sid, double np)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    simulator->SetNoiseParameter((real1_f)np);
+}
+
 quid init_qneuron(quid sid, std::vector<bitLenInt> c, bitLenInt q, QNeuronActivationFn f, real1_f a, real1_f tol)
 {
     META_LOCK_GUARD()

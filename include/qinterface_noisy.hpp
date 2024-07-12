@@ -73,7 +73,8 @@ public:
         engine = o->engine->Clone();
     }
 
-    void SetNoiseLevel(real1_f lambda) { noiseParam = lambda; }
+    void SetNoiseParameter(real1_f lambda) { noiseParam = lambda; }
+    real1_f GetNoiseParameter() { return noiseParam; }
 
     double GetUnitaryFidelity() { return (double)exp(logFidelity); }
     void ResetUnitaryFidelity() { logFidelity = 0.0; }
