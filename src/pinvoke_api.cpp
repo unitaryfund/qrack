@@ -600,7 +600,7 @@ MICROSOFT_QUANTUM_DECL int get_error(_In_ uintq sid)
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
 MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bool md, _In_ bool sd, _In_ bool sh,
-    _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc, _In_ bool hp)
+    _In_ bool bdt, _In_ bool pg, _In_ bool nw, _In_ bool hy, _In_ bool oc, _In_ bool hp)
 {
     META_LOCK_GUARD()
 
@@ -657,6 +657,10 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
 
     if (tn) {
         simulatorType.push_back(QINTERFACE_TENSOR_NETWORK);
+    }
+
+    if (nw) {
+        simulatorType.push_back(QINTERFACE_NOISY);
     }
 
     // (...then reverse:)

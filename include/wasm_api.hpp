@@ -83,7 +83,7 @@ struct QubitPauliBasis {
  * "OpenCL" (TURN OFF IN SERIAL BUILD) - use OpenCL acceleration (in general) hp - "Host pointer" (TURN OFF IN SERIAL
  * BUILD) - allocate OpenCL state vectors on "host" instead of "device" (useful for certain accelerators, like Intel HD)
  */
-quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool hy, bool oc, bool hp);
+quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool nw, bool hy, bool oc, bool hp);
 
 // Utility
 
