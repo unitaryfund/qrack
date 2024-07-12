@@ -29,6 +29,17 @@ protected:
     QInterfacePtr engine;
     std::vector<QInterfaceEngine> engines;
 
+    void Apply1QbNoise(bitLenInt qb)
+    {
+        real1_f n = noiseParam;
+#if ENABLE_ENV_VARS
+        if (getenv("QRACK_GATE_DEPOLARIZATION")) {
+            n = (real1_f)std::stof(std::string(getenv("QRACK_GATE_DEPOLARIZATION")));
+        }
+#endif
+        engine->DepolarizingChannelWeak1Qb(qb, n);
+    }
+
 public:
     QInterfaceNoisy(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
