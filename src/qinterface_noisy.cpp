@@ -18,7 +18,7 @@ QInterfaceNoisy::QInterfaceNoisy(std::vector<QInterfaceEngine> eng, bitLenInt qB
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , logFidelity(0.0)
-    , noiseParam(ONE_R1_F / 10)
+    , noiseParam(ONE_R1_F / 100)
     , engines(eng)
 {
     engine = std::dynamic_pointer_cast<QEngine>(
