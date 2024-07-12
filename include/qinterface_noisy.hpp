@@ -170,22 +170,30 @@ public:
         engine->SetPermutation(perm, phaseFac);
     }
 
-    void Mtrx(const complex* mtrx, bitLenInt qubitIndex) { engine->Mtrx(mtrx, qubitIndex); }
+    void Mtrx(const complex* mtrx, bitLenInt qubitIndex)
+    {
+        engine->Mtrx(mtrx, qubitIndex);
+        Apply1QbNoise(qubitIndex);
+    }
     void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
     {
         engine->Phase(topLeft, bottomRight, qubitIndex);
+        Apply1QbNoise(qubitIndex);
     }
     void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex)
     {
         engine->Invert(topRight, bottomLeft, qubitIndex);
+        Apply1QbNoise(qubitIndex);
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         engine->MCMtrx(controls, mtrx, target);
+        Apply1QbNoise(target);
     }
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         engine->MACMtrx(controls, mtrx, target);
+        Apply1QbNoise(target);
     }
 
     using QInterface::UniformlyControlledSingleBit;
@@ -193,10 +201,32 @@ public:
         const complex* mtrxs, const std::vector<bitCapInt> mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
     {
         engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
+        Apply1QbNoise(qubitIndex);
+        for (const bitLenInt& control : controls) {
+            Apply1QbNoise(control);
+        }
     }
 
-    void XMask(bitCapInt mask) { engine->XMask(mask); }
-    void PhaseParity(real1_f radians, bitCapInt mask) { engine->PhaseParity(radians, mask); }
+    void XMask(bitCapInt mask)
+    {
+        engine->XMask(mask);
+        bitCapInt v = mask;
+        while (bi_compare_0(mask) != 0) {
+            v = v & (v - ONE_BCI);
+            Apply1QbNoise(log2(mask ^ v));
+            mask = v;
+        }
+    }
+    void PhaseParity(real1_f radians, bitCapInt mask)
+    {
+        engine->PhaseParity(radians, mask);
+        bitCapInt v = mask;
+        while (bi_compare_0(mask) != 0) {
+            v = v & (v - ONE_BCI);
+            Apply1QbNoise(log2(mask ^ v));
+            mask = v;
+        }
+    }
 
     real1_f CProb(bitLenInt control, bitLenInt target) { return engine->CProb(control, target); }
     real1_f ACProb(bitLenInt control, bitLenInt target) { return engine->ACProb(control, target); }
@@ -204,26 +234,56 @@ public:
     void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
         engine->CSwap(controls, qubit1, qubit2);
+        Apply1QbNoise(qubit1);
+        Apply1QbNoise(qubit2);
+        for (const bitLenInt& control : controls) {
+            Apply1QbNoise(control);
+        }
     }
     void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
         engine->AntiCSwap(controls, qubit1, qubit2);
+        Apply1QbNoise(qubit1);
+        Apply1QbNoise(qubit2);
+        for (const bitLenInt& control : controls) {
+            Apply1QbNoise(control);
+        }
     }
     void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
         engine->CSqrtSwap(controls, qubit1, qubit2);
+        Apply1QbNoise(qubit1);
+        Apply1QbNoise(qubit2);
+        for (const bitLenInt& control : controls) {
+            Apply1QbNoise(control);
+        }
     }
     void AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
         engine->AntiCSqrtSwap(controls, qubit1, qubit2);
+        Apply1QbNoise(qubit1);
+        Apply1QbNoise(qubit2);
+        for (const bitLenInt& control : controls) {
+            Apply1QbNoise(control);
+        }
     }
     void CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
         engine->CISqrtSwap(controls, qubit1, qubit2);
+        Apply1QbNoise(qubit1);
+        Apply1QbNoise(qubit2);
+        for (const bitLenInt& control : controls) {
+            Apply1QbNoise(control);
+        }
     }
     void AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
     {
         engine->AntiCISqrtSwap(controls, qubit1, qubit2);
+        Apply1QbNoise(qubit1);
+        Apply1QbNoise(qubit2);
+        for (const bitLenInt& control : controls) {
+            Apply1QbNoise(control);
+        }
     }
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
@@ -231,14 +291,41 @@ public:
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
-    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->Swap(qubitIndex1, qubitIndex2); }
-    void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->ISwap(qubitIndex1, qubitIndex2); }
-    void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->IISwap(qubitIndex1, qubitIndex2); }
-    void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->SqrtSwap(qubitIndex1, qubitIndex2); }
-    void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->ISqrtSwap(qubitIndex1, qubitIndex2); }
+    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        engine->Swap(qubitIndex1, qubitIndex2);
+        Apply1QbNoise(qubitIndex1);
+        Apply1QbNoise(qubitIndex2);
+    }
+    void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        engine->ISwap(qubitIndex1, qubitIndex2);
+        Apply1QbNoise(qubitIndex1);
+        Apply1QbNoise(qubitIndex2);
+    }
+    void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        engine->IISwap(qubitIndex1, qubitIndex2);
+        Apply1QbNoise(qubitIndex1);
+        Apply1QbNoise(qubitIndex2);
+    }
+    void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        engine->SqrtSwap(qubitIndex1, qubitIndex2);
+        Apply1QbNoise(qubitIndex1);
+        Apply1QbNoise(qubitIndex2);
+    }
+    void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        engine->ISqrtSwap(qubitIndex1, qubitIndex2);
+        Apply1QbNoise(qubitIndex1);
+        Apply1QbNoise(qubitIndex2);
+    }
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         engine->FSim(theta, phi, qubitIndex1, qubitIndex2);
+        Apply1QbNoise(qubitIndex1);
+        Apply1QbNoise(qubitIndex2);
     }
 
     real1_f Prob(bitLenInt qubitIndex) { return engine->Prob(qubitIndex); }
@@ -269,10 +356,7 @@ public:
 
     void Dump() { engine->Dump(); }
 
-    QInterfacePtr Clone()
-    {
-        return std::make_shared<QInterfaceNoisy>(this);
-    }
+    QInterfacePtr Clone() { return std::make_shared<QInterfaceNoisy>(this); }
 
     void SetDevice(int64_t dID) { engine->SetDevice(dID); }
 

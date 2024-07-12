@@ -448,9 +448,10 @@ public:
         }
 
         // "lambda" is the overall depolarization strength.
-        // We think of this as the Euclidean norm of 3 equal,
-        // probabilistic Pauli channels for Z, X, and Y.
-        lambda = sqrt((lambda * lambda) / 3);
+        // ChatGPT (custom GPT "Elara") reasons that
+        // \epsilon(p) = (1 - p) * \rho + (p / 3) * (X \rho X + Y \rho Y + Z \rho Z),
+        // so we use lambda / 3 for 3 checks.
+        lambda = lambda / 3;
         if (Rand() < lambda) {
             Z(qubit);
         }
