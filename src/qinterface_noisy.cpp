@@ -21,7 +21,7 @@ QInterfaceNoisy::QInterfaceNoisy(std::vector<QInterfaceEngine> eng, bitLenInt qB
     , engines(eng)
 {
     engine = std::dynamic_pointer_cast<QEngine>(
-        CreateQuantumInterface(engines, qBitCount, initState, rgp, phaseFac, doNorm, randGlobalPhase, useHostRam,
+        CreateQuantumInterface(engines, qBitCount, initState, rgp, phaseFac, doNorm, randGlobalPhase, useHostMem,
             deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, sep_thresh));
 }
 } // namespace Qrack

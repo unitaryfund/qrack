@@ -11,20 +11,8 @@
 // for details.
 #pragma once
 
-#include "qparity.hpp"
-
 #if ENABLE_ALU
 #include "qalu.hpp"
-#endif
-
-#if !ENABLE_OPENCL && !ENABLE_CUDA
-#error OpenCL or CUDA has not been enabled
-#endif
-
-#if ENABLE_OPENCL
-#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
-#else
-#define QRACK_GPU_ENGINE QINTERFACE_CUDA
 #endif
 
 namespace Qrack {
@@ -35,11 +23,7 @@ typedef std::shared_ptr<QInterfaceNoisy> QInterfaceNoisyPtr;
 /**
  * A "Qrack::QInterfaceNoisy" that wraps any other QInterface with a simple noise model
  */
-#if ENABLE_ALU
-class QInterfaceNoisy : public QAlu, public QParity, public QInterface {
-#else
-class QInterfaceNoisy : public QParity, public QInterface {
-#endif
+class QInterfaceNoisy : public QInterface {
 protected:
     real1_f noiseParam;
     QInterfacePtr engine;
@@ -93,6 +77,11 @@ public:
         return engine->ProbReg(start, length, permutation);
     }
 
+    bitLenInt Allocate(bitLenInt start, bitLenInt length)
+    {
+        SetQubitCount(qubitCount + length);
+        return engine->Allocate(start, length);
+    }
     using QInterface::Compose;
     bitLenInt Compose(QInterfaceNoisyPtr toCopy)
     {
@@ -122,6 +111,13 @@ public:
     void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         Decompose(start, std::dynamic_pointer_cast<QInterfaceNoisy>(dest));
+    }
+    QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
+    {
+        QInterfaceNoisyPtr dest = std::make_shared<QInterfaceNoisy>(this);
+        engine->Decompose(start, dest->engine);
+
+        return dest;
     }
     bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
@@ -224,124 +220,6 @@ public:
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
-#if ENABLE_ALU
-    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INC(toAdd, start, length); }
-    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
-    {
-        engine->CINC(toAdd, inOutStart, length, controls);
-    }
-    void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        engine->INCC(toAdd, start, length, carryIndex);
-    }
-    void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-    {
-        engine->INCS(toAdd, start, length, overflowIndex);
-    }
-    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
-    {
-        engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
-    }
-    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        engine->INCSC(toAdd, start, length, carryIndex);
-    }
-    void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        engine->DECC(toSub, start, length, carryIndex);
-    }
-    void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
-    {
-        engine->DECSC(toSub, start, length, overflowIndex, carryIndex);
-    }
-    void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        engine->DECSC(toSub, start, length, carryIndex);
-    }
-#if ENABLE_BCD
-    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INCBCD(toAdd, start, length); }
-    void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        engine->INCBCDC(toAdd, start, length, carryIndex);
-    }
-    void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        engine->DECBCDC(toSub, start, length, carryIndex);
-    }
-#endif
-    void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
-    {
-        engine->MUL(toMul, inOutStart, carryStart, length);
-    }
-    void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
-    {
-        engine->DIV(toDiv, inOutStart, carryStart, length);
-    }
-    void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
-    {
-        engine->MULModNOut(toMul, modN, inStart, outStart, length);
-    }
-    void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
-    {
-        engine->IMULModNOut(toMul, modN, inStart, outStart, length);
-    }
-    void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
-    {
-        engine->POWModNOut(base, modN, inStart, outStart, length);
-    }
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
-    {
-        engine->CMUL(toMul, inOutStart, carryStart, length, controls);
-    }
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
-    {
-        engine->CDIV(toDiv, inOutStart, carryStart, length, controls);
-    }
-    void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
-    {
-        engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
-    }
-    void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
-    {
-        engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
-    }
-    void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
-    {
-        engine->CPOWModNOut(base, modN, inStart, outStart, length, controls);
-    }
-
-    bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
-        const unsigned char* values, bool resetValue = true)
-    {
-        return engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
-    }
-    bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
-        bitLenInt carryIndex, const unsigned char* values)
-    {
-        return engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-    }
-    bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
-        bitLenInt carryIndex, const unsigned char* values)
-    {
-        return engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-    }
-    void Hash(bitLenInt start, bitLenInt length, const unsigned char* values) { engine->Hash(start, length, values); }
-
-    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-    {
-        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-    }
-    void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-    {
-        engine->PhaseFlipIfLess(greaterPerm, start, length);
-    }
-#endif
-
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->Swap(qubitIndex1, qubitIndex2); }
     void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->ISwap(qubitIndex1, qubitIndex2); }
     void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->IISwap(qubitIndex1, qubitIndex2); }
@@ -387,11 +265,7 @@ public:
         return c;
     }
 
-    void SetDevice(int64_t dID)
-    {
-        devID = dID;
-        engine->SetDevice(dID);
-    }
+    void SetDevice(int64_t dID) { engine->SetDevice(dID); }
 
     int64_t GetDevice() { return engine->GetDevice(); }
 
