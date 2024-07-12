@@ -25,6 +25,7 @@ typedef std::shared_ptr<QInterfaceNoisy> QInterfaceNoisyPtr;
  */
 class QInterfaceNoisy : public QInterface {
 protected:
+    double logFidelity;
     real1_f noiseParam;
     QInterfacePtr engine;
     std::vector<QInterfaceEngine> engines;
@@ -38,6 +39,11 @@ protected:
         }
 #endif
         engine->DepolarizingChannelWeak1Qb(qb, n);
+        if ((n + FP_NORM_EPSILON) >= ONE_R1_F) {
+            logFidelity = -1 * std::numeric_limits<float>::infinity();
+        } else {
+            logFidelity += (double)log(ONE_R1_F - n);
+        }
     }
 
 public:
@@ -68,6 +74,9 @@ public:
     }
 
     void SetNoiseLevel(real1_f lambda) { noiseParam = lambda; }
+
+    double GetUnitaryFidelity() { return (double)exp(logFidelity); }
+    void ResetUnitaryFidelity() { logFidelity = 0.0; }
 
     void SetQubitCount(bitLenInt qb)
     {
