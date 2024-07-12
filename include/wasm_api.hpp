@@ -83,7 +83,8 @@ struct QubitPauliBasis {
  * "OpenCL" (TURN OFF IN SERIAL BUILD) - use OpenCL acceleration (in general) hp - "Host pointer" (TURN OFF IN SERIAL
  * BUILD) - allocate OpenCL state vectors on "host" instead of "device" (useful for certain accelerators, like Intel HD)
  */
-quid init_count_type(bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool hy, bool oc, bool hp);
+quid init_count_type(
+    bitLenInt q, bool tn, bool md, bool sd, bool sh, bool bdt, bool pg, bool nw, bool hy, bool oc, bool hp);
 
 // Utility
 
@@ -488,6 +489,10 @@ void SetReactiveSeparate(quid sid, bool irs);
  * Turn off/on "T-injection" feature (for "near-Clifford" simulation with RZ gates)
  */
 void SetTInjection(quid sid, bool iti);
+/**
+ * Set noise parameter (for QInterfaceNoisy)
+ */
+void SetNoiseParameter(quid sid, double np);
 
 /**
  * Initialize a "quantum neuron" that takes a list of qubit "controls" for input and acts on a single "target" output

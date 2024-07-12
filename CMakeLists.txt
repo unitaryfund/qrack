@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.8.3 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.9.0 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -44,6 +44,7 @@ add_library (qrack STATIC
     src/qstabilizerhybrid.cpp
     src/qcircuit.cpp
     src/qtensornetwork.cpp
+    src/qinterface_noisy.cpp
     )
 set_property(TARGET qrack PROPERTY POSITION_INDEPENDENT_CODE ON)
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
@@ -389,6 +390,7 @@ install (FILES
     include/qengine_cuda.hpp
     include/qtensornetwork.hpp
     include/qinterface.hpp
+    include/qinterface_noisy.hpp
     include/qalu.hpp
     include/qparity.hpp
     include/qneuron.hpp

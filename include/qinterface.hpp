@@ -102,9 +102,14 @@ enum QInterfaceEngine {
     QINTERFACE_QUNIT_CLIFFORD,
 
     /**
-     * Circuit-simplification layer, with (optional) recourse to cuTensorNetwork
+     * Circuit-simplification layer
      */
     QINTERFACE_TENSOR_NETWORK,
+
+    /**
+     * Noisy wrapper layer
+     */
+    QINTERFACE_NOISY,
 
 #if ENABLE_OPENCL || ENABLE_CUDA
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_QPAGER,
@@ -2910,6 +2915,18 @@ public:
      * helps.
      */
     virtual bool GetTInjection() { return false; }
+    /**
+     *  Set the noise level option (only for a noisy interface)
+     *
+     *  If this is a QInterfaceNoisy, adjust the noise level per gate.
+     */
+    virtual void SetNoiseParameter(real1_f lambda) {}
+    /**
+     *  Get the noise level option (only for a noisy interface)
+     *
+     *  If this is a QInterfaceNoisy, return the noise level per gate.
+     */
+    virtual real1_f GetNoiseParameter() { return ZERO_R1_F; }
 
     /**
      *  Clone this QInterface
