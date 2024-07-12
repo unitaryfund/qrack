@@ -64,7 +64,7 @@ public:
         , engine(o->engine)
         , engines(o->engines)
     {
-        // Intentionally left blank
+        engine = o->engine->Clone();
     }
 
     void SetNoiseLevel(real1_f lambda) { noiseParam = lambda; }
@@ -271,9 +271,7 @@ public:
 
     QInterfacePtr Clone()
     {
-        QInterfaceNoisyPtr c = std::make_shared<QInterfaceNoisy>(this);
-        c->engine = engine->Clone();
-        return c;
+        return std::make_shared<QInterfaceNoisy>(this);
     }
 
     void SetDevice(int64_t dID) { engine->SetDevice(dID); }
