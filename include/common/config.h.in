@@ -1,7 +1,5 @@
 #cmakedefine ENABLE_ALU 1
 #cmakedefine ENABLE_BCD 1
-#define ENABLE_COMPLEX_X2 @COMPLEX_X2_MACRO@
-#define ENABLE_SSE3 @SSE3_MACRO@
 #cmakedefine ENABLE_DEVRAND 1
 #cmakedefine ENABLE_ENV_VARS 1
 #cmakedefine ENABLE_INTRINSICS 1
@@ -22,3 +20,11 @@
 #cmakedefine UINTPOW @UINTPOW@
 #cmakedefine OPENCL_V3 @OPENCL_V3@
 #cmakedefine CPP_STD @CPP_STD@
+
+#if @COMPLEX_X2_MACRO@
+#define ENABLE_COMPLEX_X2 1
+#endif
+
+#if @SSE3_MACRO@
+#define ENABLE_SSE3 1
+#endif
