@@ -127,7 +127,7 @@ jobs:
           mkdir build
           cd build
           cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX_X2=OFF -DENABLE_SSE3=OFF -DENABLE_RDRAND=OFF -DQBCAPPOW=12 -DCPP_STD=14 ..
-          make all
+          make qrack_pinvoke benchmarks
           sudo cpack
 
       - name: Upload Artifacts
@@ -161,7 +161,7 @@ jobs:
           mkdir build
           cd build
           cmake -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_RDRAND=OFF -DCMAKE_CXX_FLAGS=-isystem\ /usr/local/opt/opencl-clhpp-headers/include ..
-          make all
+          make qrack_pinvoke benchmarks
           sudo cpack
 
       - name: Upload Artifacts
@@ -195,7 +195,7 @@ jobs:
           mkdir build
           cd build
           cmake -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_RDRAND=OFF -DCMAKE_CXX_FLAGS=-isystem\ /usr/local/opt/opencl-clhpp-headers/include ..
-          make all
+          make qrack_pinvoke benchmarks
           sudo cpack
 
       - name: Upload Artifacts
