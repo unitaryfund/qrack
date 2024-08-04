@@ -126,7 +126,7 @@ constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);
 // (and no less, for maximum capacity).
 // 1 bit is +/- sign.
 // 1 bit is 0/1 on the left side of the decimal point.
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if (defined(__APPLE__) && !defined(__x86_64__) && !defined(__i386__)) || (defined(_WIN32) && !defined(__CYGWIN__))
 typedef real1 real1_x;
 #else
 typedef numeric::fixed<3U, (1U << FPPOW) - 3U> real1_x;
