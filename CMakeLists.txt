@@ -26,7 +26,6 @@ endif (PACK_DEBIAN)
 add_library (qrack STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
-    src/common/fixed.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -47,6 +46,11 @@ add_library (qrack STATIC
     src/qinterface_noisy.cpp
     )
 set_property(TARGET qrack PROPERTY POSITION_INDEPENDENT_CODE ON)
+if (NOT APPLE)
+    target_sources (qrack PRIVATE
+        src/common/fixed.cpp
+        )
+endif (NOT APPLE)
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
     target_sources (qrack PRIVATE
         src/common/dispatchqueue.cpp
