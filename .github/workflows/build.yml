@@ -105,12 +105,12 @@ jobs:
             build/libqrack-*.sh
             build/benchmarks
 
-  build_mac:
+  build_mac_14:
     runs-on: macos-latest  # Use a Mac OS runner
     strategy:
       matrix:
         platform:
-          - macosx_10_4_universal2
+          - macosx_14_0_arm64
     steps:
       - name: Checkout Qrack
         uses: actions/checkout@v4
@@ -127,6 +127,76 @@ jobs:
           mkdir build
           cd build
           cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX_X2=OFF -DENABLE_SSE3=OFF -DENABLE_RDRAND=OFF -DQBCAPPOW=12 -DCPP_STD=14 ..
+          make all
+          sudo cpack
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libqrack-${{ matrix.platform }}
+          path: |
+            build/libqrack-*.sh
+            build/benchmarks
+
+  build_mac_13:
+    runs-on: macos-13  # Use a Mac OS runner
+    strategy:
+      matrix:
+        platform:
+          - macosx_13_0_x86_64
+    steps:
+      - name: Checkout Qrack
+        uses: actions/checkout@v4
+
+      - name: Install Homebrew (MacOS)
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Prepare Build Environment (MacOS)
+        run: |
+          brew upgrade
+          brew install cmake opencl-clhpp-headers
+
+      - name: Build Qrack MacOS
+        run: |
+          cd qrack
+          mkdir build
+          cd build
+          cmake -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_RDRAND=OFF -DCMAKE_CXX_FLAGS=-isystem\ /usr/local/opt/opencl-clhpp-headers/include ..
+          make all
+          sudo cpack
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libqrack-${{ matrix.platform }}
+          path: |
+            build/libqrack-*.sh
+            build/benchmarks
+
+  build_mac_12:
+    runs-on: macos-12  # Use a Mac OS runner
+    strategy:
+      matrix:
+        platform:
+          - macosx_12_0_x86_64
+    steps:
+      - name: Checkout Qrack
+        uses: actions/checkout@v4
+
+      - name: Install Homebrew (MacOS)
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Prepare Build Environment (MacOS)
+        run: |
+          brew upgrade rustup
+          brew install cmake opencl-clhpp-headers
+
+      - name: Build Qrack MacOS
+        run: |
+          cd qrack
+          mkdir build
+          cd build
+          cmake -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_RDRAND=OFF -DCMAKE_CXX_FLAGS=-isystem\ /usr/local/opt/opencl-clhpp-headers/include ..
           make all
           sudo cpack
 
