@@ -158,7 +158,6 @@ jobs:
 
       - name: Build Qrack MacOS
         run: |
-          cd qrack
           mkdir build
           cd build
           cmake -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_RDRAND=OFF -DCMAKE_CXX_FLAGS=-isystem\ /usr/local/opt/opencl-clhpp-headers/include ..
@@ -193,7 +192,6 @@ jobs:
 
       - name: Build Qrack MacOS
         run: |
-          cd qrack
           mkdir build
           cd build
           cmake -DQBCAPPOW=12 -DCPP_STD=14 -DENABLE_RDRAND=OFF -DCMAKE_CXX_FLAGS=-isystem\ /usr/local/opt/opencl-clhpp-headers/include ..
