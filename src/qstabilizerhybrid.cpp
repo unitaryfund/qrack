@@ -101,7 +101,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
             if (getenv("QRACK_MAX_PAGING_QB")) {
                 const bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
                 if (maxPageSetting < maxAncillaCount) {
-                    maxEngineQubitCount = maxAncillaCount;
+                    maxAncillaCount = maxPageSetting;
                 }
             }
         }
