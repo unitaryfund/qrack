@@ -1,3 +1,9 @@
+libqrack (9.9.4) focal; urgency=medium
+
+  * Depolarizing noise layer and Clifford+RZ env. var. debugging (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Aug 2024 07:46:12 -0400
+
 libqrack (9.9.3) jammy; urgency=medium
 
   * Depolarizing noise layer and Clifford+RZ env. var. debugging (Jammy 2/4)
