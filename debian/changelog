@@ -1,3 +1,27 @@
+libqrack (9.9.5) bionic; urgency=medium
+
+  * Depolarizing noise layer and Clifford+RZ env. var. debugging (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Aug 2024 07:50:09 -0400
+
+libqrack (9.9.4) focal; urgency=medium
+
+  * Depolarizing noise layer and Clifford+RZ env. var. debugging (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Aug 2024 07:46:12 -0400
+
+libqrack (9.9.3) jammy; urgency=medium
+
+  * Depolarizing noise layer and Clifford+RZ env. var. debugging (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Aug 2024 07:41:14 -0400
+
+libqrack (9.9.2) noble; urgency=medium
+
+  * Depolarizing noise layer and Clifford+RZ env. var. debugging (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 18 Aug 2024 06:38:05 -0400
+
 libqrack (9.8.3) noble; urgency=medium
 
   * PhaseRootN (Noble 4/4)
