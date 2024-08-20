@@ -2806,58 +2806,6 @@ void QUnit::ApplyEitherControlled(
     }
 }
 
-void QUnit::Flush0Eigenstate(bitLenInt i)
-{
-    shards[i].DumpControlOf();
-    if (randGlobalPhase) {
-        shards[i].DumpSamePhaseAntiControlOf();
-    }
-    RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_ANTI);
-}
-void QUnit::Flush1Eigenstate(bitLenInt i)
-{
-    shards[i].DumpAntiControlOf();
-    if (randGlobalPhase) {
-        shards[i].DumpSamePhaseControlOf();
-    }
-    RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_CTRL);
-}
-void QUnit::ToPermBasis(bitLenInt i)
-{
-    RevertBasis1Qb(i);
-    RevertBasis2Qb(i);
-}
-void QUnit::ToPermBasis(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt i = 0U; i < length; ++i) {
-        RevertBasis1Qb(start + i);
-    }
-    for (bitLenInt i = 0U; i < length; ++i) {
-        RevertBasis2Qb(start + i);
-    }
-}
-void QUnit::ToPermBasisProb(bitLenInt qubit)
-{
-    RevertBasis1Qb(qubit);
-    RevertBasis2Qb(qubit, ONLY_INVERT, ONLY_TARGETS);
-}
-void QUnit::ToPermBasisProb(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt i = 0U; i < length; ++i) {
-        RevertBasis1Qb(start + i);
-    }
-    for (bitLenInt i = 0U; i < length; ++i) {
-        RevertBasis2Qb(start + i, ONLY_INVERT, ONLY_TARGETS);
-    }
-}
-void QUnit::ToPermBasisMeasure(bitLenInt qubit)
-{
-    RevertBasis1Qb(qubit);
-    RevertBasis2Qb(qubit, ONLY_INVERT);
-    RevertBasis2Qb(qubit, ONLY_PHASE, ONLY_CONTROLS);
-
-    shards[qubit].DumpMultiBit();
-}
 void QUnit::ToPermBasisMeasure(bitLenInt start, bitLenInt length)
 {
     if (!start && (length == qubitCount)) {
