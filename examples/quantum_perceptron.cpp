@@ -54,9 +54,9 @@ int main()
     }
 
     // Now, we prepare a superposition of all available powers of 2, to predict.
-    unsigned char* powersOf2 = new unsigned char[ControlCount];
+    std::unique_ptr<unsigned char[]> powersOf2(new unsigned char[ControlCount]);
     for (bitLenInt i = 0; i < ControlCount; i++) {
-        powersOf2[i] = 1U << i;
+        powersOf2.get()[i] = 1U << i;
     }
 
     QInterfacePtr qReg2 = CreateQuantumInterface(QINTERFACE_OPTIMAL, ControlLog, ZERO_BCI);
@@ -64,7 +64,7 @@ int main()
     qReg->Compose(qReg2);
     qReg->SetPermutation(Qrack::pow2(ControlCount + 1));
     qReg->H(ControlCount + 1, ControlLog);
-    std::dynamic_pointer_cast<QAlu>(qReg)->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
+    std::dynamic_pointer_cast<QAlu>(qReg)->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2.get());
     qReg->H(ControlCount + 1, ControlLog);
     qReg->Dispose(ControlCount + 1, ControlLog);
 

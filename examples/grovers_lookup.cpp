@@ -66,15 +66,15 @@ int main()
 
     // This array should actually be allocated aligned for best performance, but this will work. We'll talk about
     // alignment for OpenCL in other examples and tutorials.
-    unsigned char* toLoad = new unsigned char[1 << indexLength];
+    std::unique_ptr<unsigned char[]> toLoad(new unsigned char[1 << indexLength]);
     for (i = 0; i < (1 << indexLength); i++) {
-        toLoad[i] = 1;
+        toLoad.get()[i] = 1;
     }
-    toLoad[TARGET_KEY] = TARGET_VALUE;
+    toLoad.get()[TARGET_KEY] = TARGET_VALUE;
 
     // Our input to the subroutine "oracle" is 8 bits.
     qReg->H(0, indexLength);
-    qAlu->IndexedLDA(0, indexLength, indexLength, valueLength, toLoad);
+    qAlu->IndexedLDA(0, indexLength, indexLength, valueLength, toLoad.get());
 
     // Twelve iterations maximizes the probablity for 256 searched elements, for example.
     // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
@@ -86,13 +86,13 @@ int main()
         TagValue(TARGET_VALUE, qReg, indexLength, valueLength);
 
         qReg->X(carryIndex);
-        qAlu->IndexedSBC(0, indexLength, indexLength, valueLength, carryIndex, toLoad);
+        qAlu->IndexedSBC(0, indexLength, indexLength, valueLength, carryIndex, toLoad.get());
         qReg->X(carryIndex);
         qReg->H(0, indexLength);
         qReg->ZeroPhaseFlip(0, indexLength);
         qReg->H(0, indexLength);
         // qReg->PhaseFlip();
-        qAlu->IndexedADC(0, indexLength, indexLength, valueLength, carryIndex, toLoad);
+        qAlu->IndexedADC(0, indexLength, indexLength, valueLength, carryIndex, toLoad.get());
         std::cout << "\t" << std::setw(2) << i
                   << "> chance of match:" << qReg->ProbAll(TARGET_KEY | (TARGET_VALUE << indexLength)) << std::endl;
     }
@@ -101,6 +101,4 @@ int main()
 
     std::cout << "After measurement (of value, key, or both):" << std::endl;
     std::cout << "Chance of match:" << qReg->ProbAll(TARGET_KEY | (TARGET_VALUE << indexLength)) << std::endl;
-
-    delete[] toLoad;
 }
