@@ -345,13 +345,13 @@ void QEngineShard::CommuteH()
         if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
             if (buffer->isInvert) {
                 buffer->isInvert = false;
-                buffer->cmplxSame *= -ONE_CMPLX;
+                buffer->cmplxSame = -buffer->cmplxSame;
             }
         } else {
             if (buffer->isInvert) {
                 std::swap(buffer->cmplxDiff, buffer->cmplxSame);
             } else {
-                buffer->cmplxSame *= -ONE_CMPLX;
+                buffer->cmplxSame = -buffer->cmplxSame;
                 buffer->isInvert = true;
             }
         }
@@ -364,13 +364,13 @@ void QEngineShard::CommuteH()
         if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
             if (buffer->isInvert) {
                 buffer->isInvert = false;
-                buffer->cmplxDiff *= -ONE_CMPLX;
+                buffer->cmplxDiff = -buffer->cmplxDiff;
             }
         } else {
             if (buffer->isInvert) {
                 std::swap(buffer->cmplxDiff, buffer->cmplxSame);
             } else {
-                buffer->cmplxDiff *= -ONE_CMPLX;
+                buffer->cmplxDiff = -buffer->cmplxDiff;
                 buffer->isInvert = true;
             }
         }
