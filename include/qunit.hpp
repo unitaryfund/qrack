@@ -466,9 +466,52 @@ public:
 protected:
     virtual complex GetAmplitudeOrProb(bitCapInt perm, bool isProb);
 
-    virtual void XBase(bitLenInt target);
-    virtual void YBase(bitLenInt target);
-    virtual void ZBase(bitLenInt target);
+    virtual void XBase(bitLenInt target)
+    {
+        if (target >= qubitCount) {
+            throw std::invalid_argument("QUnit::XBase qubit index parameter must be within allocated qubit bounds!");
+        }
+
+        QEngineShard& shard = shards[target];
+
+        if (shard.unit) {
+            shard.unit->X(shard.mapped);
+        }
+
+        std::swap(shard.amp0, shard.amp1);
+    }
+
+    virtual void YBase(bitLenInt target)
+    {
+        if (target >= qubitCount) {
+            throw std::invalid_argument("QUnit::YBase qubit index parameter must be within allocated qubit bounds!");
+        }
+
+        QEngineShard& shard = shards[target];
+
+        if (shard.unit) {
+            shard.unit->Y(shard.mapped);
+        }
+
+        const complex_x Y0 = shard.amp0;
+        shard.amp0 = -I_CMPLX_X * shard.amp1;
+        shard.amp1 = I_CMPLX_X * Y0;
+    }
+
+    virtual void ZBase(bitLenInt target)
+    {
+        if (target >= qubitCount) {
+            throw std::invalid_argument("QUnit::ZBase qubit index parameter must be within allocated qubit bounds!");
+        }
+
+        QEngineShard& shard = shards[target];
+
+        if (shard.unit) {
+            shard.unit->Z(shard.mapped);
+        }
+
+        shard.amp1 = -shard.amp1;
+    }
     virtual real1_f ProbBase(bitLenInt qubit);
 
     virtual bool TrySeparateClifford(bitLenInt qubit);
