@@ -670,12 +670,8 @@ protected:
 
         shard.pauliBasis = PauliX;
 
-        QRACK_CONST complex diag = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        QRACK_CONST complex cross = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
-        QRACK_CONST complex mtrx[4U]{ diag, cross, cross, diag };
-
         if (shard.unit) {
-            shard.unit->Mtrx(mtrx, shard.mapped);
+            shard.unit->SqrtX(shard.mapped);
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
@@ -683,9 +679,13 @@ protected:
             return;
         }
 
+        QRACK_CONST complex_x diag = complex_x((real1_x)(ONE_R1 / 2), (real1_x)(ONE_R1 / 2));
+        QRACK_CONST complex_x cross = complex_x((real1_x)(ONE_R1 / 2), (real1_x)(-ONE_R1 / 2));
+        QRACK_CONST complex_x mtrx[4U]{ diag, cross, cross, diag };
+
         const complex_x Y0 = shard.amp0;
-        shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
-        shard.amp1 = (((complex_x)mtrx[2U]) * Y0) + (((complex_x)mtrx[3U]) * shard.amp1);
+        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
+        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
         ClampShard(i);
     }
 

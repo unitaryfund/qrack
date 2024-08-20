@@ -2833,18 +2833,18 @@ void QUnit::ConvertXToY(bitLenInt i)
 
     shard.pauliBasis = PauliY;
 
-    const complex mtrx[4U]{ ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
-        ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
-        ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX) };
-
     if (shard.unit) {
-        shard.unit->Mtrx(mtrx, shard.mapped);
+        shard.unit->ISqrtX(shard.mapped);
     }
 
     if (shard.isPhaseDirty || shard.isProbDirty) {
         shard.isProbDirty = true;
         return;
     }
+
+    QRACK_CONST complex_x diag = complex_x(ONE_R1 / 2, -ONE_R1 / 2);
+    QRACK_CONST complex_x cross = complex_x(ONE_R1 / 2, ONE_R1 / 2);
+    QRACK_CONST complex_x mtrx[4U]{ diag, cross, cross, diag };
 
     const complex_x Y0 = shard.amp0;
     shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
