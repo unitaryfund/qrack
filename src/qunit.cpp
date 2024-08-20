@@ -2870,8 +2870,8 @@ void QUnit::ConvertYToZ(bitLenInt i)
     QRACK_CONST complex_x mtrx[4U]{ row1, row1, complex_x(ZERO_R1, SQRT1_2_R1), complex_x(ZERO_R1, -SQRT1_2_R1) };
 
     const complex_x Y0 = shard.amp0;
-    shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
-    shard.amp1 = (((complex_x)mtrx[2U]) * Y0) + (((complex_x)mtrx[3U]) * shard.amp1);
+    shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
+    shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
     ClampShard(i);
 }
 void QUnit::ConvertZToY(bitLenInt i)
@@ -2893,8 +2893,8 @@ void QUnit::ConvertZToY(bitLenInt i)
     QRACK_CONST complex_x mtrx[4U]{ col1, complex_x(ZERO_R1, -SQRT1_2_R1), col1, complex_x(ZERO_R1, SQRT1_2_R1) };
 
     const complex_x Y0 = shard.amp0;
-    shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
-    shard.amp1 = (((complex_x)mtrx[2U]) * Y0) + (((complex_x)mtrx[3U]) * shard.amp1);
+    shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
+    shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
     ClampShard(i);
 }
 void QUnit::ShardAI(bitLenInt qubit, real1_f azimuth, real1_f inclination)
