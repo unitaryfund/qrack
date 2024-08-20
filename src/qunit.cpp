@@ -2857,17 +2857,17 @@ void QUnit::ConvertYToZ(bitLenInt i)
 
     shard.pauliBasis = PauliZ;
 
-    const complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1),
-        complex(ZERO_R1, -SQRT1_2_R1) };
-
     if (shard.unit) {
-        shard.unit->Mtrx(mtrx, shard.mapped);
+        shard.unit->SH(shard.mapped);
     }
 
     if (shard.isPhaseDirty || shard.isProbDirty) {
         shard.isProbDirty = true;
         return;
     }
+
+    QRACK_CONST complex_x row1 = complex_x(SQRT1_2_R1, ZERO_R1);
+    QRACK_CONST complex_x mtrx[4U]{ row1, row1, complex_x(ZERO_R1, SQRT1_2_R1), complex_x(ZERO_R1, -SQRT1_2_R1) };
 
     const complex_x Y0 = shard.amp0;
     shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
@@ -2880,17 +2880,17 @@ void QUnit::ConvertZToY(bitLenInt i)
 
     shard.pauliBasis = PauliY;
 
-    const complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1), complex(SQRT1_2_R1, ZERO_R1),
-        complex(ZERO_R1, SQRT1_2_R1) };
-
     if (shard.unit) {
-        shard.unit->Mtrx(mtrx, shard.mapped);
+        shard.unit->HIS(shard.mapped);
     }
 
     if (shard.isPhaseDirty || shard.isProbDirty) {
         shard.isProbDirty = true;
         return;
     }
+
+    QRACK_CONST complex_x col1 = complex_x(SQRT1_2_R1, ZERO_R1);
+    QRACK_CONST complex_x mtrx[4U]{ col1, complex_x(ZERO_R1, -SQRT1_2_R1), col1, complex_x(ZERO_R1, SQRT1_2_R1) };
 
     const complex_x Y0 = shard.amp0;
     shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
