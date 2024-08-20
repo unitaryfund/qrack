@@ -2843,7 +2843,7 @@ void QUnit::ConvertXToY(bitLenInt i)
         return;
     }
 
-    complex Y0 = shard.amp0;
+    const complex Y0 = shard.amp0;
     shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
     shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
     ClampShard(i);
@@ -2866,7 +2866,7 @@ void QUnit::ConvertYToZ(bitLenInt i)
         return;
     }
 
-    complex Y0 = shard.amp0;
+    const complex Y0 = shard.amp0;
     shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
     shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
     ClampShard(i);
@@ -2889,7 +2889,7 @@ void QUnit::ConvertZToY(bitLenInt i)
         return;
     }
 
-    complex Y0 = shard.amp0;
+    const complex Y0 = shard.amp0;
     shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
     shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
     ClampShard(i);
