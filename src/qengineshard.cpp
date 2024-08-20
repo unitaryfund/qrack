@@ -31,14 +31,14 @@ bool QEngineShard::ClampAmps()
 
     if (norm(amp0) <= FP_NORM_EPSILON) {
         amp0 = ZERO_R1;
-        amp1 /= abs(amp1);
+        amp1 /= abs(complexFixedToFloating(amp1));
         isPhaseDirty = false;
         return true;
     }
 
     if (norm(amp1) <= FP_NORM_EPSILON) {
         amp1 = ZERO_R1;
-        amp0 /= abs(amp0);
+        amp0 /= abs(complexFixedToFloating(amp0));
         isPhaseDirty = false;
         return true;
     }
@@ -116,17 +116,17 @@ void QEngineShard::AddBuffer(QEngineShardPtr p, ShardToPhaseMap& localMap, GetBu
     }
 }
 
-void QEngineShard::AddAngles(QEngineShardPtr control, complex cmplxDiff, complex cmplxSame, AddRemoveFn localFn,
+void QEngineShard::AddAngles(QEngineShardPtr control, complex_x cmplxDiff, complex_x cmplxSame, AddRemoveFn localFn,
     ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
 {
     ((*this).*localFn)(control);
 
     PhaseShardPtr targetOfShard = localMap[control];
 
-    complex ncmplxDiff = targetOfShard->cmplxDiff * cmplxDiff;
-    ncmplxDiff /= abs(ncmplxDiff);
-    complex ncmplxSame = targetOfShard->cmplxSame * cmplxSame;
-    ncmplxSame /= abs(ncmplxSame);
+    complex_x ncmplxDiff = targetOfShard->cmplxDiff * cmplxDiff;
+    ncmplxDiff /= abs(complexFixedToFloating(ncmplxDiff));
+    complex_x ncmplxSame = targetOfShard->cmplxSame * cmplxSame;
+    ncmplxSame /= abs(complexFixedToFloating(ncmplxSame));
 
     if (!targetOfShard->isInvert && IS_ARG_0(ncmplxDiff) && IS_ARG_0(ncmplxSame)) {
         /* The buffer is equal to the identity operator, and it can be removed. */
@@ -155,9 +155,9 @@ void QEngineShard::OptimizeBuffer(
         localMap.erase(partner);
 
         if (makeThisControl) {
-            ((*partner).*phaseFn)(this, ONE_CMPLX, buffer->cmplxSame);
+            ((*partner).*phaseFn)(this, ONE_CMPLX_X, buffer->cmplxSame);
         } else {
-            ((*this).*phaseFn)(partner, ONE_CMPLX, buffer->cmplxSame);
+            ((*this).*phaseFn)(partner, ONE_CMPLX_X, buffer->cmplxSame);
         }
     }
 }
@@ -176,11 +176,11 @@ void QEngineShard::OptimizeBothTargets()
         if (IS_ARG_0(buffer->cmplxDiff)) {
             phaseShard.first->GetControlsShards().erase(this);
             targetOfShards.erase(partner);
-            partner->AddPhaseAngles(this, ONE_CMPLX, buffer->cmplxSame);
+            partner->AddPhaseAngles(this, ONE_CMPLX_X, buffer->cmplxSame);
         } else if (IS_ARG_0(buffer->cmplxSame)) {
             phaseShard.first->GetControlsShards().erase(this);
             targetOfShards.erase(partner);
-            partner->AddAntiPhaseAngles(this, buffer->cmplxDiff, ONE_CMPLX);
+            partner->AddAntiPhaseAngles(this, buffer->cmplxDiff, ONE_CMPLX_X);
         }
     }
 
@@ -196,11 +196,11 @@ void QEngineShard::OptimizeBothTargets()
         if (IS_ARG_0(buffer->cmplxDiff)) {
             phaseShard.first->GetAntiControlsShards().erase(this);
             antiTargetOfShards.erase(partner);
-            partner->AddAntiPhaseAngles(this, ONE_CMPLX, buffer->cmplxSame);
+            partner->AddAntiPhaseAngles(this, ONE_CMPLX_X, buffer->cmplxSame);
         } else if (IS_ARG_0(buffer->cmplxSame)) {
             phaseShard.first->GetAntiControlsShards().erase(this);
             antiTargetOfShards.erase(partner);
-            partner->AddPhaseAngles(this, buffer->cmplxDiff, ONE_CMPLX);
+            partner->AddPhaseAngles(this, buffer->cmplxDiff, ONE_CMPLX_X);
         }
     }
 }
@@ -224,11 +224,11 @@ void QEngineShard::CombineBuffers(GetBufferFn targetMapGet, GetBufferFn controlM
         if (!buffer1->isInvert && IS_ARG_0(buffer1->cmplxDiff)) {
             ((*partner).*targetMapGet)().erase(this);
             ((*this).*controlMapGet)().erase(partner);
-            ((*this).*angleFn)(partner, ONE_CMPLX, buffer1->cmplxSame);
+            ((*this).*angleFn)(partner, ONE_CMPLX_X, buffer1->cmplxSame);
         } else if (!buffer2->isInvert && IS_ARG_0(buffer2->cmplxDiff)) {
             ((*partner).*controlMapGet)().erase(this);
             ((*this).*targetMapGet)().erase(partner);
-            ((*partner).*angleFn)(this, ONE_CMPLX, buffer2->cmplxSame);
+            ((*partner).*angleFn)(this, ONE_CMPLX_X, buffer2->cmplxSame);
         }
     }
 }
@@ -275,7 +275,7 @@ void QEngineShard::FlipPhaseAnti()
     }
 }
 
-void QEngineShard::CommutePhase(complex topLeft, complex bottomRight)
+void QEngineShard::CommutePhase(complex_x topLeft, complex_x bottomRight)
 {
     for (const auto& phaseShard : targetOfShards) {
         const PhaseShardPtr& buffer = phaseShard.second;
@@ -342,7 +342,7 @@ void QEngineShard::CommuteH()
     // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
     for (const auto& phaseShard : targetOfShards) {
         const PhaseShardPtr& buffer = phaseShard.second;
-        if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
+        if (abs(complexFixedToFloating(buffer->cmplxDiff - buffer->cmplxSame)) < 1) {
             if (buffer->isInvert) {
                 buffer->isInvert = false;
                 buffer->cmplxSame = -buffer->cmplxSame;
@@ -361,7 +361,7 @@ void QEngineShard::CommuteH()
 
     for (const auto& phaseShard : antiTargetOfShards) {
         const PhaseShardPtr& buffer = phaseShard.second;
-        if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
+        if (abs(complexFixedToFloating(buffer->cmplxDiff - buffer->cmplxSame)) < 1) {
             if (buffer->isInvert) {
                 buffer->isInvert = false;
                 buffer->cmplxDiff = -buffer->cmplxDiff;
@@ -417,8 +417,8 @@ void QEngineShard::ClearMapInvertPhase(ShardToPhaseMap& shards)
 {
     for (const auto& phaseShard : shards) {
         if (phaseShard.second->isInvert) {
-            phaseShard.second->cmplxDiff = ONE_CMPLX;
-            phaseShard.second->cmplxSame = ONE_CMPLX;
+            phaseShard.second->cmplxDiff = ONE_CMPLX_X;
+            phaseShard.second->cmplxSame = ONE_CMPLX_X;
         }
     }
 }

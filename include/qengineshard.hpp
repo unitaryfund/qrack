@@ -21,21 +21,21 @@
 
 #include "qinterface.hpp"
 
-#define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
-#define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
+#define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX_X)
+#define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX_X)
 
 namespace Qrack {
 
 /** Caches controlled gate phase between shards, (as a case of "gate fusion" optimization particularly useful to QUnit)
  */
 struct PhaseShard {
-    complex cmplxDiff;
-    complex cmplxSame;
+    complex_x cmplxDiff;
+    complex_x cmplxSame;
     bool isInvert;
 
     PhaseShard()
-        : cmplxDiff(ONE_CMPLX)
-        , cmplxSame(ONE_CMPLX)
+        : cmplxDiff(ONE_CMPLX_X)
+        , cmplxSame(ONE_CMPLX_X)
         , isInvert(false)
     {
     }
@@ -52,15 +52,15 @@ protected:
     typedef ShardToPhaseMap& (QEngineShard::*GetBufferFn)();
     typedef void (QEngineShard::*OptimizeFn)();
     typedef void (QEngineShard::*AddRemoveFn)(QEngineShardPtr);
-    typedef void (QEngineShard::*AddAnglesFn)(QEngineShardPtr control, complex cmplxDiff, complex cmplxSame);
+    typedef void (QEngineShard::*AddAnglesFn)(QEngineShardPtr control, complex_x cmplxDiff, complex_x cmplxSame);
 
 public:
     QInterfacePtr unit;
     bitLenInt mapped;
     bool isProbDirty;
     bool isPhaseDirty;
-    complex amp0;
-    complex amp1;
+    complex_x amp0;
+    complex_x amp1;
     Pauli pauliBasis;
     // Shards which this shard controls
     ShardToPhaseMap controlsShards;
@@ -86,8 +86,8 @@ public:
         , mapped(0)
         , isProbDirty(false)
         , isPhaseDirty(false)
-        , amp0(ONE_CMPLX)
-        , amp1(ZERO_CMPLX)
+        , amp0(ONE_CMPLX_X)
+        , amp1(ZERO_CMPLX_X)
         , pauliBasis(PauliZ)
         , controlsShards()
         , antiControlsShards()
@@ -97,7 +97,7 @@ public:
     {
     }
 
-    QEngineShard(const bool& set, const complex rand_phase = ONE_CMPLX)
+    QEngineShard(const bool& set, const complex_x rand_phase = ONE_CMPLX_X)
         : unit(NULL)
         , mapped(0)
         , isProbDirty(false)
@@ -109,8 +109,8 @@ public:
         , antiTargetOfShards()
         , found(false)
     {
-        amp0 = set ? ZERO_CMPLX : rand_phase;
-        amp1 = set ? rand_phase : ZERO_CMPLX;
+        amp0 = set ? ZERO_CMPLX_X : rand_phase;
+        amp1 = set ? rand_phase : ZERO_CMPLX_X;
     }
 
     // Dirty state constructor:
@@ -119,8 +119,8 @@ public:
         , mapped(mapping)
         , isProbDirty(true)
         , isPhaseDirty(true)
-        , amp0(ONE_CMPLX)
-        , amp1(ZERO_CMPLX)
+        , amp0(ONE_CMPLX_X)
+        , amp1(ZERO_CMPLX_X)
         , pauliBasis(PauliZ)
         , controlsShards()
         , antiControlsShards()
@@ -189,28 +189,28 @@ public:
     }
 
 protected:
-    void AddAngles(QEngineShardPtr control, complex cmplxDiff, complex cmplxSame, AddRemoveFn localFn,
+    void AddAngles(QEngineShardPtr control, complex_x cmplxDiff, complex_x cmplxSame, AddRemoveFn localFn,
         ShardToPhaseMap& localMap, AddRemoveFn remoteFn);
 
 public:
-    void AddPhaseAngles(QEngineShardPtr control, complex topLeft, complex bottomRight)
+    void AddPhaseAngles(QEngineShardPtr control, complex_x topLeft, complex_x bottomRight)
     {
         AddAngles(control, topLeft, bottomRight, &QEngineShard::MakePhaseControlledBy, targetOfShards,
             &QEngineShard::RemoveControl);
     }
-    void AddAntiPhaseAngles(QEngineShardPtr control, complex bottomRight, complex topLeft)
+    void AddAntiPhaseAngles(QEngineShardPtr control, complex_x bottomRight, complex_x topLeft)
     {
         AddAngles(control, bottomRight, topLeft, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
             &QEngineShard::RemoveAntiControl);
     }
-    void AddInversionAngles(QEngineShardPtr control, complex topRight, complex bottomLeft)
+    void AddInversionAngles(QEngineShardPtr control, complex_x topRight, complex_x bottomLeft)
     {
         MakePhaseControlledBy(control);
         targetOfShards[control]->isInvert = !targetOfShards[control]->isInvert;
         std::swap(targetOfShards[control]->cmplxDiff, targetOfShards[control]->cmplxSame);
         AddPhaseAngles(control, topRight, bottomLeft);
     }
-    void AddAntiInversionAngles(QEngineShardPtr control, complex bottomLeft, complex topRight)
+    void AddAntiInversionAngles(QEngineShardPtr control, complex_x bottomLeft, complex_x topRight)
     {
         MakePhaseAntiControlledBy(control);
         antiTargetOfShards[control]->isInvert = !antiTargetOfShards[control]->isInvert;
@@ -258,7 +258,7 @@ public:
 
     void SwapTargetAnti(QEngineShardPtr control);
     void FlipPhaseAnti();
-    void CommutePhase(complex topLeft, complex bottomRight);
+    void CommutePhase(complex_x topLeft, complex_x bottomRight);
 
 protected:
     void RemoveIdentityBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet);
@@ -296,7 +296,7 @@ public:
     real1_f Prob()
     {
         if (!isProbDirty || !unit) {
-            return (real1_f)norm(amp1);
+            return (real1_f)norm(complexFixedToFloating(amp1));
         }
 
         return unit->Prob(mapped);
@@ -307,8 +307,8 @@ public:
             (!unit &&
                 ((norm(amp0) <= FP_NORM_EPSILON) || (norm(amp1) <= FP_NORM_EPSILON) ||
                     (norm(amp0 - amp1) <= FP_NORM_EPSILON) || (norm(amp0 + amp1) <= FP_NORM_EPSILON) ||
-                    (norm(amp0 - I_CMPLX * amp1) <= FP_NORM_EPSILON) ||
-                    (norm(amp0 + I_CMPLX * amp1) <= FP_NORM_EPSILON)));
+                    (norm(amp0 - I_CMPLX_X * amp1) <= FP_NORM_EPSILON) ||
+                    (norm(amp0 + I_CMPLX_X * amp1) <= FP_NORM_EPSILON)));
     };
 };
 

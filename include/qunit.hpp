@@ -598,10 +598,10 @@ protected:
         }
 
         if (IS_NORM_0(shard.amp1)) {
-            logFidelity += (double)log(clampProb(ONE_R1_F - norm(shard.amp1)));
+            logFidelity += (double)log(clampProb(ONE_R1_F - norm(complexFixedToFloating(shard.amp1))));
             SeparateBit(false, qubit);
         } else if (IS_NORM_0(shard.amp0)) {
-            logFidelity += (double)log(clampProb(ONE_R1_F - norm(shard.amp0)));
+            logFidelity += (double)log(clampProb(ONE_R1_F - norm(complexFixedToFloating(shard.amp0))));
             SeparateBit(true, qubit);
         }
     }
@@ -683,9 +683,9 @@ protected:
             return;
         }
 
-        const complex Y0 = shard.amp0;
-        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
-        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
+        const complex_x Y0 = shard.amp0;
+        shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
+        shard.amp1 = (((complex_x)mtrx[2U]) * Y0) + (((complex_x)mtrx[3U]) * shard.amp1);
         ClampShard(i);
     }
 
@@ -783,7 +783,7 @@ protected:
         } else if (norm(shard.amp0) <= FP_NORM_EPSILON) {
             shard.unit = MakeEngine(1U, ONE_BCI);
         } else {
-            complex bitState[2U]{ shard.amp0, shard.amp1 };
+            complex bitState[2U]{ complexFixedToFloating(shard.amp0), complexFixedToFloating(shard.amp1) };
             shard.unit = MakeEngine(1U, ZERO_BCI);
             shard.unit->SetQuantumState(bitState);
         }

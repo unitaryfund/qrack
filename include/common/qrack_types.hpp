@@ -129,7 +129,7 @@ constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);
 #if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
 typedef real1 real1_x;
 #else
-typedef numeric::fixed<3U, (1U << FPPOW) - 3U> real1_x;
+typedef numeric::fixed<4U, (1U << FPPOW) - 4U> real1_x;
 #endif
 typedef std::complex<real1_x> complex_x;
 constexpr real1_x ONE_R1_X = 1.0f;
