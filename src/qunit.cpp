@@ -2847,8 +2847,8 @@ void QUnit::ConvertXToY(bitLenInt i)
     QRACK_CONST complex_x mtrx[4U]{ diag, cross, cross, diag };
 
     const complex_x Y0 = shard.amp0;
-    shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
-    shard.amp1 = (((complex_x)mtrx[2U]) * Y0) + (((complex_x)mtrx[3U]) * shard.amp1);
+    shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
+    shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
     ClampShard(i);
 }
 void QUnit::ConvertYToZ(bitLenInt i)
@@ -2899,19 +2899,19 @@ void QUnit::ConvertZToY(bitLenInt i)
 }
 void QUnit::ShardAI(bitLenInt qubit, real1_f azimuth, real1_f inclination)
 {
-    real1 cosineA = (real1)cos(azimuth);
-    real1 sineA = (real1)sin(azimuth);
-    real1 cosineI = (real1)cos(inclination / 2);
-    real1 sineI = (real1)sin(inclination / 2);
-    complex expA = complex(cosineA, sineA);
-    complex expNegA = complex(cosineA, -sineA);
-    complex mtrx[4U]{ cosineI, -expNegA * sineI, expA * sineI, cosineI };
+    real1_x cosineA = (real1)cos(azimuth);
+    real1_x sineA = (real1)sin(azimuth);
+    real1_x cosineI = (real1)cos(inclination / 2);
+    real1_x sineI = (real1)sin(inclination / 2);
+    complex_x expA = complex_x(cosineA, sineA);
+    complex_x expNegA = complex_x(cosineA, -sineA);
+    complex_x mtrx[4U]{ cosineI, -expNegA * sineI, expA * sineI, cosineI };
 
     QEngineShard& shard = shards[qubit];
 
     const complex_x Y0 = shard.amp0;
-    shard.amp0 = (((complex_x)mtrx[0U]) * Y0) + (((complex_x)mtrx[1U]) * shard.amp1);
-    shard.amp1 = (((complex_x)mtrx[2U]) * Y0) + (((complex_x)mtrx[3U]) * shard.amp1);
+    shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
+    shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
     ClampShard(qubit);
 }
 
