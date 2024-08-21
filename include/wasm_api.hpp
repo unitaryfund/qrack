@@ -215,7 +215,7 @@ real1_f MatrixExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vecto
 /**
  * Pauli operator expectation value for the array of qubits and bases.
  */
-real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
+real1_f PauliExpectation(quid sid, std::vector<QubitPauliBasis> q);
 /**
  * Variance for bit-string integer equivalent of specified arbitrary group of qubits
  */
@@ -261,7 +261,7 @@ real1_f MatrixVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<c
 /**
  * Pauli operator variance for the array of qubits and bases.
  */
-real1_f PauliVariance(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b);
+real1_f PauliVariance(quid sid, std::vector<QubitPauliBasis> q);
 
 /**
  * Select from a distribution of "p.size()" count of elements according to the discrete probabilities in "p."

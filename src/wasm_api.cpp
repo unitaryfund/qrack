@@ -2091,34 +2091,31 @@ real1_f MatrixVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<c
     return MatrixExpVarEigenVal(false, sid, q, b, e);
 }
 
-real1_f PauliExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
+real1_f PauliExpVar(bool isExp, quid sid, std::vector<QubitPauliBasis> q)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
     std::vector<bitLenInt> _q;
+    std::vector<Pauli> _b;
     _q.reserve(q.size());
-    for (size_t i = 0U; i < q.size(); ++i) {
-        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+    _b.reserve(q.size());
+    for (const QubitPauliBasis& qpb : q) {
+        _q.emplace_back(shards[simulators[sid].get()][qpb.qid]);
+        _b.emplace_back((Pauli)qpb.b);
     }
 
-    return isExp ? simulator->ExpectationPauliAll(_q, b) : simulator->VariancePauliAll(_q, b);
+    return isExp ? simulator->ExpectationPauliAll(_q, _b) : simulator->VariancePauliAll(_q, _b);
 }
 
 /**
  * (External API) Get the Pauli operator expectation value for the array of qubits and bases.
  */
-real1_f PauliExpectation(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
-{
-    return PauliExpVar(true, sid, q, b);
-}
+real1_f PauliExpectation(quid sid, std::vector<QubitPauliBasis> q) { return PauliExpVar(true, sid, q); }
 
 /**
  * (External API) Get the Pauli operator variance for the array of qubits and bases.
  */
-real1_f PauliVariance(quid sid, std::vector<bitLenInt> q, std::vector<Pauli> b)
-{
-    return PauliExpVar(false, sid, q, b);
-}
+real1_f PauliVariance(quid sid, std::vector<QubitPauliBasis> q) { return PauliExpVar(false, sid, q); }
 
 void QFT(quid sid, std::vector<bitLenInt> q)
 {

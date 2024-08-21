@@ -127,14 +127,16 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__wasm32__) || defined(__wasm64__)
         b1->scale /= abs(b1->scale);
 #else
         b1->scale /= (complex_x)sqrt(norm(b1->scale).to_double());
 #endif
     } else if (IS_NODE_0(b1->scale)) {
         b1->SetZero();
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__wasm32__) || defined(__wasm64__)
         b0->scale /= abs(b0->scale);
 #else
         b0->scale /= (complex_x)sqrt(norm(b0->scale).to_double());
@@ -318,7 +320,8 @@ void QBdtNode::Normalize(bitLenInt depth)
         std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__wasm32__) || defined(__wasm64__)
         const real1_x nrm = (real1_x)sqrt(2 * norm(b0->scale));
 #else
         const real1_x nrm = (real1_x)sqrt(2 * (norm(b0->scale).to_double()));
@@ -333,7 +336,8 @@ void QBdtNode::Normalize(bitLenInt depth)
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 #endif
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__wasm32__) || defined(__wasm64__)
         const real1_x nrm = (real1_x)sqrt(norm(b0->scale) + norm(b1->scale));
 #else
         const real1_x nrm = (real1_x)sqrt((norm(b0->scale) + norm(b1->scale)).to_double());
@@ -373,7 +377,8 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 #endif
         b0->PopStateVector(depth);
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__wasm32__) || defined(__wasm64__)
         const real1_x nrm = (real1_x)sqrt(2 * norm(b0->scale));
 #else
         const real1_x nrm = (real1_x)sqrt(2 * (norm(b0->scale).to_double()));
@@ -387,7 +392,8 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
             return;
         }
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__wasm32__) || defined(__wasm64__)
         scale = std::polar(sqrt(nrm), std::arg(b0->scale));
 #else
         scale = (complex_x)std::polar((real1)sqrt(nrm.to_double()), std::arg(complexFixedToFloating(b0->scale)));
@@ -433,7 +439,8 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__wasm32__) || defined(__wasm64__)
     scale = std::polar(sqrt(nrm0 + nrm1), std::arg(b0->scale));
 #else
     scale = (complex_x)std::polar((real1)sqrt((nrm0 + nrm1).to_double()), std::arg(complexFixedToFloating(b0->scale)));
