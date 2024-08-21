@@ -176,8 +176,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
-    defined(__wasm32__) || defined(__wasm64__)
+#if !defined(__GNUC__) || defined(__clang__)
     toRet->scale /= abs(toRet->scale);
 #else
     toRet->scale /= (complex_x)sqrt((real1)(norm(toRet->scale).to_double()));

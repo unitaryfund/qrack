@@ -541,8 +541,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                 return;
             }
             b0->SetZero();
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
-    defined(__wasm32__) || defined(__wasm64__)
+#if !defined(__GNUC__) || defined(__clang__)
             b1->scale /= abs(b1->scale);
 #else
             b1->scale /= (complex_x)sqrt(norm(b1->scale).to_double());
@@ -552,8 +551,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                 b0->SetZero();
                 return;
             }
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
-    defined(__wasm32__) || defined(__wasm64__)
+#if !defined(__GNUC__) || defined(__clang__)
             b0->scale /= abs(b0->scale);
 #else
             b0->scale /= (complex_x)sqrt(norm(b0->scale).to_double());
@@ -581,8 +579,7 @@ bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
     }
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__EMSCRIPTEN__) || defined(__wasm__) || \
-    defined(__wasm32__) || defined(__wasm64__)
+#if !defined(__GNUC__) || defined(__clang__)
         real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1U]->scale));
 #else
         real1_f oneChance = clampProb((real1_f)(norm(leaf->branches[1U]->scale).to_double()));
