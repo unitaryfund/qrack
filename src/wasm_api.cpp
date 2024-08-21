@@ -1943,7 +1943,7 @@ real1_f FactorizedVarianceFpRdm(quid sid, std::vector<QubitRealExpVar> q, bool r
     return FactorizedExpVarFp(false, true, sid, q, r);
 }
 
-real1_f UnitaryExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<real1> b)
+real1_f UnitaryExpVar(bool isExp, quid sid, std::vector<QubitU3Basis> q)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
@@ -1953,33 +1953,28 @@ real1_f UnitaryExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vecto
     _q.reserve(n);
     _b.reserve(3U * n);
     for (size_t i = 0U; i < n; ++i) {
-        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const QubitU3Basis& qub = q[i];
+        _q.emplace_back(shards[simulators[sid].get()][qub.qid]);
         const size_t i3 = 3U * i;
         for (size_t j = 0U; j < 3U; ++j) {
-            _b.emplace_back(b[i3 + j]);
+            _b.emplace_back(qub.b[i3 + j]);
         }
     }
 
-    return isExp ? simulator->ExpectationUnitaryAll(_q, b) : simulator->VarianceUnitaryAll(_q, b);
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b) : simulator->VarianceUnitaryAll(_q, _b);
 }
 
 /**
  * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
  */
-real1_f UnitaryExpectation(quid sid, std::vector<bitLenInt> q, std::vector<real1> b)
-{
-    return UnitaryExpVar(true, sid, q, b);
-}
+real1_f UnitaryExpectation(quid sid, std::vector<QubitU3Basis> q) { return UnitaryExpVar(true, sid, q); }
 
 /**
  * (External API) Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
  */
-real1_f UnitaryVariance(quid sid, std::vector<bitLenInt> q, std::vector<real1> b)
-{
-    return UnitaryExpVar(false, sid, q, b);
-}
+real1_f UnitaryVariance(quid sid, std::vector<QubitU3Basis> q) { return UnitaryExpVar(false, sid, q); }
 
-real1_f MatrixExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
+real1_f MatrixExpVar(bool isExp, quid sid, std::vector<QubitMatrixBasis> q)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
@@ -1989,11 +1984,12 @@ real1_f MatrixExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vector
     _q.reserve(n);
     _b.reserve(n);
     for (size_t i = 0U; i < n; ++i) {
-        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const QubitMatrixBasis& qmb = q[i];
+        _q.emplace_back(shards[simulators[sid].get()][qmb.qid]);
         const size_t i4 = i << 2U;
         _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
         for (size_t j = 0U; j < 4U; ++j) {
-            _b[i].get()[j] = b[i4 + j];
+            _b[i].get()[j] = qmb.b[i4 + j];
         }
     }
 
@@ -2003,92 +1999,94 @@ real1_f MatrixExpVar(bool isExp, quid sid, std::vector<bitLenInt> q, std::vector
 /**
  * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
  */
-real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
-{
-    return MatrixExpVar(true, sid, q, b);
-}
+real1_f MatrixExpectation(quid sid, std::vector<QubitMatrixBasis> q) { return MatrixExpVar(true, sid, q); }
 
 /**
  * (External API) Get the single-qubit (2x2) operator variance for the array of qubits and bases.
  */
-real1_f MatrixVariance(quid sid, std::vector<bitLenInt> q, std::vector<complex> b)
-{
-    return MatrixExpVar(false, sid, q, b);
-}
+real1_f MatrixVariance(quid sid, std::vector<QubitMatrixBasis> q) { return MatrixExpVar(false, sid, q); }
 
-real1_f UnitaryExpVarEigenVal(
-    bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e)
+real1_f UnitaryExpVarEigenVal(bool isExp, quid sid, std::vector<QubitU3BasisEigenVal> q)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
     std::vector<bitLenInt> _q;
     std::vector<real1> _b;
+    std::vector<real1> _e;
     const size_t n = q.size();
     _q.reserve(n);
     _b.reserve(3U * n);
+    _e.reserve(n << 1U);
     for (size_t i = 0U; i < n; ++i) {
-        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const QubitU3BasisEigenVal& qubev = q[i];
+        _q.emplace_back(shards[simulators[sid].get()][qubev.qid]);
         const size_t i3 = 3U * i;
         for (size_t j = 0U; j < 3U; ++j) {
-            _b.emplace_back(b[i3 + j]);
+            _b.emplace_back(qubev.b[i3 + j]);
         }
+        _e.emplace_back(qubev.e[0U]);
+        _e.emplace_back(qubev.e[1U]);
     }
 
-    return isExp ? simulator->ExpectationUnitaryAll(_q, b, e) : simulator->VarianceUnitaryAll(_q, b, e);
+    return isExp ? simulator->ExpectationUnitaryAll(_q, _b, _e) : simulator->VarianceUnitaryAll(_q, _b, _e);
 }
 
 /**
  * (External API) Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
  */
-real1_f UnitaryExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e)
+real1_f UnitaryExpectationEigenVal(quid sid, std::vector<QubitU3BasisEigenVal> q)
 {
-    return UnitaryExpVarEigenVal(true, sid, q, b, e);
+    return UnitaryExpVarEigenVal(true, sid, q);
 }
 
 /**
  * (External API) Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
  */
-real1_f UnitaryVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e)
+real1_f UnitaryVarianceEigenVal(quid sid, std::vector<QubitU3BasisEigenVal> q)
 {
-    return UnitaryExpVarEigenVal(false, sid, q, b, e);
+    return UnitaryExpVarEigenVal(false, sid, q);
 }
 
-real1_f MatrixExpVarEigenVal(
-    bool isExp, quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e)
+real1_f MatrixExpVarEigenVal(bool isExp, quid sid, std::vector<QubitMatrixBasisEigenVal> q)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
 
     std::vector<bitLenInt> _q;
     std::vector<std::shared_ptr<complex>> _b;
+    std::vector<real1> _e;
     const size_t n = q.size();
     _q.reserve(n);
     _b.reserve(n);
+    _e.reserve(n << 1U);
     for (size_t i = 0U; i < n; ++i) {
-        _q.emplace_back(shards[simulators[sid].get()][q[i]]);
+        const QubitMatrixBasisEigenVal& qmbev = q[i];
+        _q.emplace_back(shards[simulators[sid].get()][qmbev.qid]);
         const size_t i4 = i << 2U;
         _b.emplace_back(new complex[4U], std::default_delete<complex[]>());
         for (size_t j = 0U; j < 4U; ++j) {
-            _b[i].get()[j] = b[i4 + j];
+            _b[i].get()[j] = qmbev.b[i4 + j];
         }
+        _e.emplace_back(qmbev.e[0U]);
+        _e.emplace_back(qmbev.e[1U]);
     }
 
-    return simulator->ExpectationUnitaryAll(_q, _b, e);
+    return simulator->ExpectationUnitaryAll(_q, _b, _e);
 }
 
 /**
  * (External API) Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
  */
-real1_f MatrixExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e)
+real1_f MatrixExpectationEigenVal(quid sid, std::vector<QubitMatrixBasisEigenVal> q)
 {
-    return MatrixExpVarEigenVal(true, sid, q, b, e);
+    return MatrixExpVarEigenVal(true, sid, q);
 }
 
 /**
  * (External API) Get the single-qubit (2x2) operator variance for the array of qubits and bases.
  */
-real1_f MatrixVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e)
+real1_f MatrixVarianceEigenVal(quid sid, std::vector<QubitMatrixBasisEigenVal> q)
 {
-    return MatrixExpVarEigenVal(false, sid, q, b, e);
+    return MatrixExpVarEigenVal(false, sid, q);
 }
 
 real1_f PauliExpVar(bool isExp, quid sid, std::vector<QubitPauliBasis> q)

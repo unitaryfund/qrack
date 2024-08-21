@@ -70,6 +70,78 @@ struct QubitPauliBasis {
     }
 };
 
+struct QubitU3Basis {
+    bitLenInt qid;
+    real1_f b[3U];
+    QubitU3Basis(bitLenInt q, std::vector<real1_f> basis)
+        : qid(q)
+    {
+        if (basis.size() != 3U) {
+            throw std::invalid_argument("QubitU3Basis must have 3 basis angles!");
+        }
+        for (int i = 0; i < 3; ++i) {
+            b[i] = basis[i];
+        }
+    }
+};
+
+struct QubitMatrixBasis {
+    bitLenInt qid;
+    complex b[4U];
+    QubitMatrixBasis(bitLenInt q, std::vector<complex> basis)
+        : qid(q)
+    {
+        if (basis.size() != 4U) {
+            throw std::invalid_argument("QubitMatrixBasis must have 4 matrix components for basis!");
+        }
+        for (int i = 0; i < 4; ++i) {
+            b[i] = basis[i];
+        }
+    }
+};
+
+struct QubitU3BasisEigenVal {
+    bitLenInt qid;
+    real1_f b[3U];
+    real1_f e[2U];
+    QubitU3BasisEigenVal(bitLenInt q, std::vector<real1_f> basis, std::vector<real1_f> ex)
+        : qid(q)
+    {
+        if (basis.size() != 3U) {
+            throw std::invalid_argument("QubitU3BasisEigenVal must have 3 basis angles!");
+        }
+        if (ex.size() != 2U) {
+            throw std::invalid_argument("QubitU3BasisEigenVal must have 2 eigenvalues!");
+        }
+        for (int i = 0; i < 3; ++i) {
+            b[i] = basis[i];
+        }
+        e[0U] = ex[0U];
+        e[1U] = ex[1U];
+    }
+};
+
+struct QubitMatrixBasisEigenVal {
+    bitLenInt qid;
+    complex b[4U];
+    real1_f e[2U];
+    QubitMatrixBasisEigenVal(bitLenInt q, std::vector<complex> basis, std::vector<real1_f> ex)
+        : qid(q)
+    {
+        if (basis.size() != 4U) {
+            throw std::invalid_argument("QubitMatrixBasisEigenVal must have 4 matrix components for basis!");
+        }
+        if (ex.size() != 2U) {
+            throw std::invalid_argument("QubitMatrixBasisEigenVal must have 2 eigenvalues!");
+        }
+        for (int i = 0; i < 4; ++i) {
+            b[i] = basis[i];
+        }
+        e[0U] = ex[0U];
+        e[1U] = ex[1U];
+    }
+};
+
 /**
  * Options for simulator type in initialization (any set of options theoretically functions together):
  *     tn - "Tensor network" layer - JIT local circuit simplification, light-cone optimization
@@ -199,19 +271,19 @@ real1_f FactorizedExpectationFpRdm(quid sid, std::vector<QubitRealExpVar> q, boo
 /**
  * Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
  */
-real1_f UnitaryExpectation(quid sid, std::vector<bitLenInt> q, std::vector<real1> b);
+real1_f UnitaryExpectation(quid sid, std::vector<QubitU3Basis> q);
 /**
  * Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
  */
-real1_f MatrixExpectation(quid sid, std::vector<bitLenInt> q, std::vector<complex> b);
+real1_f MatrixExpectation(quid sid, std::vector<QubitMatrixBasis> q);
 /**
  * Get the single-qubit (3-parameter) operator expectation value for the array of qubits and bases.
  */
-real1_f UnitaryExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e);
+real1_f UnitaryExpectationEigenVal(quid sid, std::vector<QubitU3BasisEigenVal> q);
 /**
  * Get the single-qubit (2x2) operator expectation value for the array of qubits and bases.
  */
-real1_f MatrixExpectationEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e);
+real1_f MatrixExpectationEigenVal(quid sid, std::vector<QubitMatrixBasisEigenVal> q);
 /**
  * Pauli operator expectation value for the array of qubits and bases.
  */
@@ -245,19 +317,19 @@ real1_f FactorizedVarianceFpRdm(quid sid, std::vector<QubitRealExpVar> q, bool r
 /**
  * Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
  */
-real1_f UnitaryVariance(quid sid, std::vector<bitLenInt> q, std::vector<real1> b);
+real1_f UnitaryVariance(quid sid, std::vector<QubitU3Basis> q);
 /**
  * Get the single-qubit (2x2) operator variance for the array of qubits and bases.
  */
-real1_f MatrixVariance(quid sid, std::vector<bitLenInt> q, std::vector<complex> b);
+real1_f MatrixVariance(quid sid, std::vector<QubitMatrixBasis> q);
 /**
  * Get the single-qubit (3-parameter) operator variance for the array of qubits and bases.
  */
-real1_f UnitaryVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<real1> b, std::vector<real1> e);
+real1_f UnitaryVarianceEigenVal(quid sid, std::vector<QubitU3BasisEigenVal> q);
 /**
  * Get the single-qubit (2x2) operator variance for the array of qubits and bases.
  */
-real1_f MatrixVarianceEigenVal(quid sid, std::vector<bitLenInt> q, std::vector<complex> b, std::vector<real1> e);
+real1_f MatrixVarianceEigenVal(quid sid, std::vector<QubitMatrixBasisEigenVal> q);
 /**
  * Pauli operator variance for the array of qubits and bases.
  */
