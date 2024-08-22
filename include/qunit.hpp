@@ -640,10 +640,10 @@ protected:
             return;
         }
 
-        if (IS_NORM_0(shard.amp1)) {
+        if (IS_NORM_0_X(shard.amp1)) {
             logFidelity += (double)log(clampProb(ONE_R1_F - norm(complexFixedToFloating(shard.amp1))));
             SeparateBit(false, qubit);
-        } else if (IS_NORM_0(shard.amp0)) {
+        } else if (IS_NORM_0_X(shard.amp0)) {
             logFidelity += (double)log(clampProb(ONE_R1_F - norm(complexFixedToFloating(shard.amp0))));
             SeparateBit(true, qubit);
         }
@@ -823,8 +823,9 @@ protected:
             return;
         }
 
-        QRACK_CONST complex_x row1 = complex_x(SQRT1_2_R1, ZERO_R1);
-        QRACK_CONST complex_x mtrx[4U]{ row1, row1, complex_x(ZERO_R1, SQRT1_2_R1), complex_x(ZERO_R1, -SQRT1_2_R1) };
+        QRACK_CONST complex_x row1 = complex_x(SQRT1_2_R1_X, ZERO_R1_X);
+        QRACK_CONST complex_x mtrx[4U]{ row1, row1, complex_x(ZERO_R1_X, SQRT1_2_R1_X),
+            complex_x(ZERO_R1_X, -SQRT1_2_R1_X) };
 
         const complex_x Y0 = shard.amp0;
         shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
@@ -846,8 +847,9 @@ protected:
             return;
         }
 
-        QRACK_CONST complex_x col1 = complex_x(SQRT1_2_R1, ZERO_R1);
-        QRACK_CONST complex_x mtrx[4U]{ col1, complex_x(ZERO_R1, -SQRT1_2_R1), col1, complex_x(ZERO_R1, SQRT1_2_R1) };
+        QRACK_CONST complex_x col1 = complex_x(SQRT1_2_R1_X, ZERO_R1_X);
+        QRACK_CONST complex_x mtrx[4U]{ col1, complex_x(ZERO_R1_X, -SQRT1_2_R1_X), col1,
+            complex_x(ZERO_R1_X, SQRT1_2_R1_X) };
 
         const complex_x Y0 = shard.amp0;
         shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
@@ -856,10 +858,10 @@ protected:
     }
     void ShardAI(bitLenInt qubit, real1_f azimuth, real1_f inclination)
     {
-        real1_x cosineA = (real1)cos(azimuth);
-        real1_x sineA = (real1)sin(azimuth);
-        real1_x cosineI = (real1)cos(inclination / 2);
-        real1_x sineI = (real1)sin(inclination / 2);
+        real1_x cosineA = (real1_x)cos(azimuth);
+        real1_x sineA = (real1_x)sin(azimuth);
+        real1_x cosineI = (real1_x)cos(inclination / 2);
+        real1_x sineI = (real1_x)sin(inclination / 2);
         complex_x expA = complex_x(cosineA, sineA);
         complex_x expNegA = complex_x(cosineA, -sineA);
         complex_x mtrx[4U]{ cosineI, -expNegA * sineI, expA * sineI, cosineI };
@@ -969,9 +971,9 @@ protected:
             return;
         }
 
-        if (norm(shard.amp1) <= FP_NORM_EPSILON) {
+        if (norm(shard.amp1) <= FP_NORM_EPSILON_X) {
             shard.unit = MakeEngine(1U, ZERO_BCI);
-        } else if (norm(shard.amp0) <= FP_NORM_EPSILON) {
+        } else if (norm(shard.amp0) <= FP_NORM_EPSILON_X) {
             shard.unit = MakeEngine(1U, ONE_BCI);
         } else {
             complex bitState[2U]{ complexFixedToFloating(shard.amp0), complexFixedToFloating(shard.amp1) };

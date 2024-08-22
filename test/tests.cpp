@@ -1242,7 +1242,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaserootnmask")
     REQUIRE_THAT(qftReg, HasProbability(0U, 20U, ket));
 
     for (int ii = 0; ii < 6; ii++) {
-        const real1_f angle = -PI_R1 * (phaseCounts[ii] % modulus) / pow2Ocl(n - 1U);
+        const real1 angle = (real1)(-PI_R1 * (phaseCounts[ii] % modulus) / pow2Ocl(n - 1U));
         const complex expectedPhaseFactor = std::polar(ONE_R1, angle);
         const complex amp_before = qftReg->GetAmplitude(ket);
 

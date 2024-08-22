@@ -241,11 +241,17 @@ public:
     }
     void SetQuantumState(const complex* state)
     {
-        SetTraversal([state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = state[i]; });
+        SetTraversal([state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
+            const complex& s = state[i];
+            leaf->scale = complex_x((real1_f)s.real(), (real1_f)s.imag());
+        });
     }
     void SetQuantumState(QInterfacePtr eng)
     {
-        SetTraversal([eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = eng->GetAmplitude(i); });
+        SetTraversal([eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
+            const complex s = eng->GetAmplitude(i);
+            leaf->scale = complex_x((real1_f)s.real(), (real1_f)s.imag());
+        });
     }
     void GetProbs(real1* outputProbs)
     {

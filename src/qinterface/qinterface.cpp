@@ -470,7 +470,7 @@ void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArr
 }
 
 real1_f QInterface::ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits,
-    const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals)
+    const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1_f> eigenVals)
 {
     if (bits.empty()) {
         return ONE_R1;
@@ -502,8 +502,8 @@ real1_f QInterface::ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& b
     return toRet;
 }
 
-real1_f QInterface::ExpVarUnitaryAll(
-    bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals)
+real1_f QInterface::ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits,
+    const std::vector<real1_f>& basisOps, std::vector<real1_f> eigenVals)
 {
     if (bits.empty()) {
         return ONE_R1;
@@ -662,7 +662,7 @@ real1_f QInterface::VariancePauliAll(std::vector<bitLenInt> bits, std::vector<Pa
         return ONE_R1;
     }
 
-    std::vector<real1> eigenVals;
+    std::vector<real1_f> eigenVals;
     eigenVals.reserve(bits.size() << 1U);
     for (size_t i = 0U; i < bits.size(); ++i) {
         eigenVals.push_back(ONE_R1);
@@ -718,7 +718,7 @@ real1_f QInterface::ExpectationPauliAll(std::vector<bitLenInt> bits, std::vector
         return ONE_R1;
     }
 
-    std::vector<real1> eigenVals;
+    std::vector<real1_f> eigenVals;
     eigenVals.reserve(bits.size() << 1U);
     for (size_t i = 0U; i < bits.size(); ++i) {
         eigenVals.push_back(ONE_R1);

@@ -81,7 +81,7 @@ public:
 
     virtual void SetZero()
     {
-        scale = ZERO_CMPLX;
+        scale = ZERO_CMPLX_X;
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         if (branches[0U]) {

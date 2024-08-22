@@ -23,6 +23,8 @@
 
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX_X)
 #define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX_X)
+#define IS_ARG_0_X(c) IS_SAME_X(c, ONE_CMPLX_X)
+#define IS_ARG_PI_X(c) IS_OPPOSITE_X(c, ONE_CMPLX_X)
 
 namespace Qrack {
 
@@ -305,10 +307,10 @@ public:
     {
         return (unit && unit->isClifford(mapped)) ||
             (!unit &&
-                ((norm(amp0) <= FP_NORM_EPSILON) || (norm(amp1) <= FP_NORM_EPSILON) ||
-                    (norm(amp0 - amp1) <= FP_NORM_EPSILON) || (norm(amp0 + amp1) <= FP_NORM_EPSILON) ||
-                    (norm(amp0 - I_CMPLX_X * amp1) <= FP_NORM_EPSILON) ||
-                    (norm(amp0 + I_CMPLX_X * amp1) <= FP_NORM_EPSILON)));
+                ((norm(amp0) <= FP_NORM_EPSILON_X) || (norm(amp1) <= FP_NORM_EPSILON_X) ||
+                    (norm(amp0 - amp1) <= FP_NORM_EPSILON_X) || (norm(amp0 + amp1) <= FP_NORM_EPSILON_X) ||
+                    (norm(amp0 - I_CMPLX_X * amp1) <= FP_NORM_EPSILON_X) ||
+                    (norm(amp0 + I_CMPLX_X * amp1) <= FP_NORM_EPSILON_X)));
     };
 };
 

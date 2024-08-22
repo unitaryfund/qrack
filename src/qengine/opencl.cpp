@@ -780,7 +780,7 @@ void QEngineOCL::PhaseRootNMask(bitLenInt n, bitCapInt mask)
     const real1_f radians = -PI_R1 / pow2Ocl(n - 1U);
 
     if (isPowerOfTwo(mask)) {
-        Phase(ONE_CMPLX, std::polar(ONE_R1, radians), log2(mask));
+        Phase(ONE_CMPLX, std::polar(ONE_R1_F, radians), log2(mask));
         return;
     }
 

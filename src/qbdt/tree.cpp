@@ -237,19 +237,18 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
-            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
-            phaseFac = complex((real1_f)cos(angle), (real1_f)sin(angle));
+            phaseFac = std::polar(ONE_R1, (real1)(Rand() * 2 * PI_R1));
         } else {
             phaseFac = ONE_CMPLX;
         }
     }
 
-    root = std::make_shared<QBdtNode>(phaseFac);
+    root = std::make_shared<QBdtNode>(complex_x((real1_f)phaseFac.real(), (real1_f)phaseFac.imag()));
     QBdtNodeInterfacePtr leaf = root;
     for (bitLenInt qubit = 0U; qubit < qubitCount; ++qubit) {
         const size_t bit = SelectBit(initState, qubit);
-        leaf->branches[bit] = std::make_shared<QBdtNode>(ONE_CMPLX);
-        leaf->branches[bit ^ 1U] = std::make_shared<QBdtNode>(ZERO_CMPLX);
+        leaf->branches[bit] = std::make_shared<QBdtNode>(ONE_CMPLX_X);
+        leaf->branches[bit ^ 1U] = std::make_shared<QBdtNode>(ZERO_CMPLX_X);
         leaf = leaf->branches[bit];
     }
 }
@@ -292,7 +291,7 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     if (randGlobalPhase) {
         real1_f lPhaseArg = FirstNonzeroPhase();
         real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
-        root->scale *= (complex_x)std::polar(ONE_R1, (real1)(rPhaseArg - lPhaseArg));
+        root->scale *= (complex_x)std::polar(ONE_R1_F, rPhaseArg - lPhaseArg);
     }
 
     _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
@@ -503,7 +502,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     shards[qubit] = NULL;
 
     const bitCapInt qPower = pow2(qubit);
-    root->scale = GetNonunitaryPhase();
+    root->scale = GetNonunitaryPhaseX();
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if (true) {
@@ -604,13 +603,13 @@ bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
         if (bitResult) {
             if (isCollapsing) {
                 leaf->branches[0U]->SetZero();
-                leaf->branches[1U]->scale = ONE_CMPLX;
+                leaf->branches[1U]->scale = ONE_CMPLX_X;
             }
             leaf = leaf->branches[1U];
             bi_or_ip(&result, pow2(i));
         } else {
             if (isCollapsing) {
-                leaf->branches[0U]->scale = ONE_CMPLX;
+                leaf->branches[0U]->scale = ONE_CMPLX_X;
                 leaf->branches[1U]->SetZero();
             }
             leaf = leaf->branches[0U];
@@ -631,7 +630,10 @@ void QBdt::ApplySingle(const complex* _mtrx, bitLenInt target)
         return;
     }
 
-    const complex_x mtrx[4U]{ (complex_x)_mtrx[0U], (complex_x)_mtrx[1U], (complex_x)_mtrx[2U], (complex_x)_mtrx[3U] };
+    const complex_x mtrx[4U]{ complex_x((real1_f)_mtrx[0U].real(), (real1_f)_mtrx[0U].imag()),
+        complex_x((real1_f)_mtrx[1U].real(), (real1_f)_mtrx[1U].imag()),
+        complex_x((real1_f)_mtrx[2U].real(), (real1_f)_mtrx[2U].imag()),
+        complex_x((real1_f)_mtrx[3U].real(), (real1_f)_mtrx[3U].imag()) };
 
     const bitCapInt qPower = pow2(target);
 
@@ -690,7 +692,10 @@ void QBdt::ApplyControlledSingle(const complex* _mtrx, std::vector<bitLenInt> co
         // Otherwise, the gate is symmetric in target and controls, so we can continue.
     }
 
-    const complex_x mtrx[4U]{ (complex_x)_mtrx[0U], (complex_x)_mtrx[1U], (complex_x)_mtrx[2U], (complex_x)_mtrx[3U] };
+    const complex_x mtrx[4U]{ complex_x((real1_f)_mtrx[0U].real(), (real1_f)_mtrx[0U].imag()),
+        complex_x((real1_f)_mtrx[1U].real(), (real1_f)_mtrx[1U].imag()),
+        complex_x((real1_f)_mtrx[2U].real(), (real1_f)_mtrx[2U].imag()),
+        complex_x((real1_f)_mtrx[3U].real(), (real1_f)_mtrx[3U].imag()) };
 
     const bitCapInt qPower = pow2(target);
     bitCapInt controlMask = ZERO_BCI;
@@ -838,7 +843,7 @@ void QBdt::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     const std::vector<bitLenInt> controls{ qubit1 };
     real1_x sinTheta = (real1_x)sin(theta);
 
-    if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
+    if ((sinTheta * sinTheta) <= FP_NORM_EPSILON_X) {
         MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
@@ -846,14 +851,14 @@ void QBdt::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
 
     const real1_x sinThetaDiffNeg = ONE_R1_X + sinTheta;
-    if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
+    if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON_X) {
         ISwap(qubit1, qubit2);
         MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         return;
     }
 
     const real1_x sinThetaDiffPos = ONE_R1_X - sinTheta;
-    if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
+    if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON_X) {
         IISwap(qubit1, qubit2);
         MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         return;

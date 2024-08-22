@@ -173,6 +173,16 @@ protected:
         }
     }
 
+    complex_x GetNonunitaryPhaseX()
+    {
+        if (randGlobalPhase) {
+            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
+            return complex_x((real1_x)cos(angle), (real1_x)sin(angle));
+        } else {
+            return ONE_CMPLX_X;
+        }
+    }
+
     template <typename Fn> void MACWrapper(const std::vector<bitLenInt>& controls, Fn fn)
     {
         bitCapInt xMask = ZERO_BCI;
@@ -201,9 +211,9 @@ protected:
     }
 
     virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits,
-        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {});
-    virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps,
-        std::vector<real1> eigenVals = {});
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1_f> eigenVals = {});
+    virtual real1_f ExpVarUnitaryAll(bool isExp, const std::vector<bitLenInt>& bits,
+        const std::vector<real1_f>& basisOps, std::vector<real1_f> eigenVals = {});
     virtual real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
     {
         std::vector<bitCapInt> perms;
@@ -2500,7 +2510,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f VarianceUnitaryAll(
-        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {})
+        const std::vector<bitLenInt>& bits, const std::vector<real1_f>& basisOps, std::vector<real1_f> eigenVals = {})
     {
         return ExpVarUnitaryAll(false, bits, basisOps, eigenVals);
     }
@@ -2514,7 +2524,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f VarianceUnitaryAll(const std::vector<bitLenInt>& bits,
-        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {})
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1_f> eigenVals = {})
     {
         return ExpVarUnitaryAll(false, bits, basisOps, eigenVals);
     }
@@ -2602,7 +2612,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationUnitaryAll(const std::vector<bitLenInt>& bits,
-        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1> eigenVals = {})
+        const std::vector<std::shared_ptr<complex>>& basisOps, std::vector<real1_f> eigenVals = {})
     {
         return ExpVarUnitaryAll(true, bits, basisOps, eigenVals);
     }
@@ -2616,7 +2626,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationUnitaryAll(
-        const std::vector<bitLenInt>& bits, const std::vector<real1>& basisOps, std::vector<real1> eigenVals = {})
+        const std::vector<bitLenInt>& bits, const std::vector<real1_f>& basisOps, std::vector<real1_f> eigenVals = {})
     {
         return ExpVarUnitaryAll(true, bits, basisOps, eigenVals);
     }

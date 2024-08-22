@@ -111,9 +111,8 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
 
-        const complex_x phaseFac = (complex_x)std::polar(ONE_R1, std::arg(complexFixedToFloating(b0->scale)));
-        scale *= phaseFac;
-        b0->scale /= phaseFac;
+        b0->scale /= (real1_f)abs(complexFixedToFloating(b0->scale));
+        scale = scale * b0->scale;
 
         // Phase factor applied, and branches point to same object.
         return;
@@ -141,9 +140,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #endif
     }
 
-    const complex_x phaseFac = (complex_x)std::polar(ONE_R1,
-        (b0->scale == ZERO_CMPLX_X) ? std::arg(complexFixedToFloating(b1->scale))
-                                    : std::arg(complexFixedToFloating(b0->scale)));
+    const complex_x phaseFac = (b0->scale == ZERO_CMPLX_X)
+        ? (b1->scale / complex_x((real1_f)abs(complexFixedToFloating(b1->scale)), ZERO_R1_X))
+        : (b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X));
     scale *= phaseFac;
 
     b0->scale /= phaseFac;
@@ -373,25 +372,18 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 #endif
         b0->PopStateVector(depth);
 
-#if !defined(__GNUC__) || defined(__clang__)
-        const real1_x nrm = (real1_x)sqrt(2 * norm(b0->scale));
-#else
-        const real1_x nrm = (real1_x)sqrt(2 * (norm(b0->scale).to_double()));
-#endif
+        const real1_f nrm = sqrt(2 * norm(complexFixedToFloating(b0->scale)));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
-            scale = ZERO_CMPLX;
+            scale = ZERO_CMPLX_X;
             branches[0U] = NULL;
             branches[1U] = NULL;
 
             return;
         }
 
-#if !defined(__GNUC__) || defined(__clang__)
-        scale = std::polar(sqrt(nrm), std::arg(b0->scale));
-#else
-        scale = (complex_x)std::polar((real1)sqrt(nrm.to_double()), std::arg(complexFixedToFloating(b0->scale)));
-#endif
+        scale =
+            ((real1_x)sqrt(nrm)) * (b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X));
         b0->scale /= scale;
 
         return;
@@ -408,11 +400,11 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     b0->PopStateVector(depth);
     b1->PopStateVector(depth);
 
-    const real1_x nrm0 = norm(b0->scale);
-    const real1_x nrm1 = norm(b1->scale);
+    const real1_f nrm0 = norm(complexFixedToFloating(b0->scale));
+    const real1_f nrm1 = norm(complexFixedToFloating(b1->scale));
 
     if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
-        scale = ZERO_CMPLX;
+        scale = ZERO_CMPLX_X;
         branches[0U] = NULL;
         branches[1U] = NULL;
 
@@ -422,22 +414,19 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     if (nrm0 <= _qrack_qbdt_sep_thresh) {
         scale = b1->scale;
         b0->SetZero();
-        b1->scale = ONE_CMPLX;
+        b1->scale = ONE_CMPLX_X;
         return;
     }
 
     if (nrm1 <= _qrack_qbdt_sep_thresh) {
         scale = b0->scale;
-        b0->scale = ONE_CMPLX;
+        b0->scale = ONE_CMPLX_X;
         b1->SetZero();
         return;
     }
 
-#if !defined(__GNUC__) || defined(__clang__)
-    scale = std::polar(sqrt(nrm0 + nrm1), std::arg(b0->scale));
-#else
-    scale = (complex_x)std::polar((real1)sqrt((nrm0 + nrm1).to_double()), std::arg(complexFixedToFloating(b0->scale)));
-#endif
+    scale = ((real1_x)sqrt(nrm0 + nrm1)) *
+        (b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X));
     b0->scale /= scale;
     b1->scale /= scale;
 }
@@ -589,7 +578,7 @@ void QBdtNode::Apply2x2(complex_x const* mtrx, bitLenInt depth)
     QBdtNodeInterfacePtr b0 = branches[0U];
     QBdtNodeInterfacePtr b1 = branches[1U];
 
-    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
+    if (IS_NORM_0_X(mtrx[1U]) && IS_NORM_0_X(mtrx[2U])) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         if (true) {
             std::lock(b0->mtx, b1->mtx);
@@ -608,7 +597,7 @@ void QBdtNode::Apply2x2(complex_x const* mtrx, bitLenInt depth)
         return;
     }
 
-    if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
+    if (IS_NORM_0_X(mtrx[0U]) && IS_NORM_0_X(mtrx[3U])) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         if (true) {
             std::lock(b0->mtx, b1->mtx);
@@ -654,12 +643,12 @@ void QBdtNode::PushStateVector(
 
     if (isB0Zero) {
         b0 = b1->ShallowClone();
-        b0->scale = ZERO_CMPLX;
+        b0->scale = ZERO_CMPLX_X;
     }
 
     if (isB1Zero) {
         b1 = b0->ShallowClone();
-        b1->scale = ZERO_CMPLX;
+        b1->scale = ZERO_CMPLX_X;
     }
 
     if (isB0Zero || isB1Zero) {
@@ -715,7 +704,7 @@ void QBdtNode::PushStateVector(
     b00->scale *= b0->scale;
     b01->scale *= b0->scale;
 #endif
-    b0->scale = SQRT1_2_R1;
+    b0->scale = SQRT1_2_R1_X;
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if (true) {
@@ -729,7 +718,7 @@ void QBdtNode::PushStateVector(
     b10->scale *= b1->scale;
     b11->scale *= b1->scale;
 #endif
-    b1->scale = SQRT1_2_R1;
+    b1->scale = SQRT1_2_R1_X;
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
