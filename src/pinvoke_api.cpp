@@ -2799,7 +2799,7 @@ double MatrixExpVarEigenVal(bool isExp, uintq sid, uintq n, uintq* q, real1_f* b
     for (size_t i = 0U; i < n; ++i) {
         _q.emplace_back(shards[simulators[sid].get()][q[i]]);
 
-        const size_t i2 = i << 2U;
+        const size_t i2 = i << 1U;
         _e.emplace_back(e[i2]);
         _e.emplace_back(e[i2 + 1U]);
 
