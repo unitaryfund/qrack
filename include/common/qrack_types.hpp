@@ -140,7 +140,7 @@ constexpr real1_x ZERO_R1_X = 0.0f;
 constexpr complex_x ONE_CMPLX_X = complex_x(ONE_R1_X, ZERO_R1_X);
 constexpr complex_x ZERO_CMPLX_X = complex_x(ZERO_R1_X, ZERO_R1_X);
 constexpr complex_x I_CMPLX_X = complex_x(ZERO_R1_X, ONE_R1_X);
-const real1_x SQRT1_2_R1_X = (real1_x)M_SQRT1_2;
+constexpr real1_x SQRT1_2_R1_X = (real1_x)M_SQRT1_2;
 
 typedef std::shared_ptr<complex> BitOp;
 
