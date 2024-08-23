@@ -9,6 +9,7 @@
 #cmakedefine ENABLE_PTHREAD 1
 #cmakedefine ENABLE_QBDT_CPU_PARALLEL 1
 #cmakedefine ENABLE_QBDT 1
+#cmakedefine ENABLE_RNDFILE 1
 #cmakedefine ENABLE_REG_GATES 1
 #cmakedefine ENABLE_ROT_API 1
 #cmakedefine SEED_DEVRAND 1
