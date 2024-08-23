@@ -288,6 +288,14 @@ $ cmake -DSEED_DEVRAND=OFF ..
 ```
 If pure software pseudo-random number generator is used, it will be seeded from `/dev/random` by default. `-DSEED_DEVRAND=OFF` will use the system clock for Mersenne twister seeding, instead of `/dev/random`.
 
+If you prefer to "bring your own RNG," from any source, then save it as a binary bit string file or files in `~/.qrack/rng/` (or override that path with environment variable `QRACK_RNG_PATH`), and Qrack will use these for random bit streams, in lexigraphical order of file name in the directory, with the following CMake options:
+
+```sh
+$ cmake -DENABLE_RNDFILE=ON [-DENABLE_RDRAND=OFF] [-DENABLE_DEVRAND=OFF] ..
+```
+
+Also see [scripts/qrng.py](https://github.com/unitaryfund/qrack/blob/main/scripts/qrng.py) for an example of how one could request quantum random bit strings from [https://quantumnumbers.anu.edu.au](https://quantumnumbers.anu.edu.au) and use them as a source of random numbers for Qrack.
+
 ## Pure 32 bit OpenCL kernels (including OpenCL on Raspberry Pi 3)
 
 ```sh
