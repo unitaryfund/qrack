@@ -27,6 +27,10 @@
 #include <immintrin.h>
 #endif
 
+#if ENABLE_RNDFILE
+#include <vector>
+#endif
+
 namespace Qrack {
 
 class RandSupportSingleton {
