@@ -294,6 +294,11 @@ public:
     /// Apply a CZ gate with control and target
     void CZ(bitLenInt c, bitLenInt t)
     {
+        const real1_f p = Prob(t);
+        if (p > (3 * ONE_R1_F / 4)) {
+            Z(c);
+            return;
+        }
         CGate(
             c, t, NULL,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) { unit->CZ(c, t); },
@@ -322,6 +327,11 @@ public:
     /// Apply an (anti-)CZ gate with control and target
     void AntiCZ(bitLenInt c, bitLenInt t)
     {
+        const real1_f p = Prob(t);
+        if (p > (3 * ONE_R1_F / 4)) {
+            Phase(-ONE_CMPLX, ONE_CMPLX, c);
+            return;
+        }
         CGate(
             c, t, NULL,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
