@@ -160,14 +160,14 @@ public:
 
     real1_f Next()
     {
+#if FPPOW < 6
+        constexpr real1_f inc = ONE_R1_F / (1ULL << 32U);
+#else
+        constexpr real1_f inc = ONE_R1_F / (1ULL << 64U);
+#endif
         unsigned v = NextRaw();
         real1_f res = ZERO_R1_F;
-#if FPPOW < 6
-        real1_f part = ONE_R1_F / (1ULL << 32U);
-#else
-        real1_f part = ONE_R1_F / (1ULL << 64U);
-#endif
-
+        real1_f part = inc;
         for (unsigned i = 0U; i < 32U; ++i) {
             if ((v >> i) & 1U) {
                 res += part;
