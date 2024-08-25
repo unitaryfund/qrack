@@ -168,7 +168,7 @@ public:
         real1_f part = ONE_R1_F / (1ULL << 64U);
 #endif
 
-        for (int i = 31; i >= 0; --i) {
+        for (unsigned i = 0U; i < 32U; ++i) {
             if ((v >> i) & 1U) {
                 res += part;
             }
@@ -178,7 +178,7 @@ public:
 #if FPPOW > 5
         v = NextRaw();
 
-        for (int i = 31; i >= 0; --i) {
+        for (unsigned i = 0U; i < 32; ++i) {
             if ((v >> i) & 1U) {
                 res += part;
             }
