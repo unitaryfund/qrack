@@ -13,6 +13,7 @@
 #pragma once
 
 #include "qstabilizer.hpp"
+#include "qunitstatevector.hpp"
 
 namespace Qrack {
 
@@ -216,7 +217,8 @@ public:
             QStabilizerPtr unit = shards[i].unit;
             if (engines.find(unit) == engines.end()) {
                 const bitCapInt pg = pow2(unit->gaussian());
-                permCount = permCount * pg;
+                // This would be "*", but Schmidt decomposition makes it "+".
+                permCount = permCount + pg;
             }
         }
 
@@ -451,6 +453,9 @@ public:
 
     /// Convert the state to sparse ket notation
     std::map<bitCapInt, complex> GetQuantumState();
+
+    /// Convert the state to Schmidt-decomposed sparse ket notation
+    QUnitStateVectorPtr GetDecomposedQuantumState();
 
     /// Get all probabilities corresponding to ket notation
     void GetProbs(real1* outputProbs);

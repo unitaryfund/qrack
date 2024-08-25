@@ -1435,7 +1435,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         }
 
         if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
-            stateMapCache = stabilizer->GetQuantumState();
+            stateMapCache = stabilizer->GetDecomposedQuantumState();
         }
 
         const bitCapInt qPower = pow2(qubit);
@@ -1614,7 +1614,7 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
     if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
-        stateMapCache = stabilizer->GetQuantumState();
+        stateMapCache = stabilizer->GetDecomposedQuantumState();
     }
 
 #if ENABLE_PTHREAD
@@ -1736,7 +1736,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     bitCapInt d = ZERO_BCI;
 
     if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
-        stateMapCache = stabilizer->GetQuantumState();
+        stateMapCache = stabilizer->GetDecomposedQuantumState();
     }
 
 #if ENABLE_PTHREAD
@@ -1826,7 +1826,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     bitCapInt d = ZERO_BCI;
 
     if (stabilizer->PermCount() < pow2(maxStateMapCacheQubitCount)) {
-        stateMapCache = stabilizer->GetQuantumState();
+        stateMapCache = stabilizer->GetDecomposedQuantumState();
     }
 
 #if ENABLE_PTHREAD

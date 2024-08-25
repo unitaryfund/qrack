@@ -389,6 +389,7 @@ install (FILES
     include/qunit.hpp
     include/qunitclifford.hpp
     include/qunitmulti.hpp
+    include/qunitstatevector.hpp
     include/qengine_gpu_util.hpp
     include/qengine_opencl.hpp
     include/qengine_cuda.hpp
