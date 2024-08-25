@@ -276,6 +276,13 @@ public:
     /// Apply a CNOT gate with control and target
     void CNOT(bitLenInt c, bitLenInt t)
     {
+        H(t);
+        if (IsSeparableZ(t)) {
+            CZ(c, t);
+            H(t);
+            return;
+        }
+        H(t);
         CGate(
             c, t, NULL,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
@@ -307,6 +314,13 @@ public:
     /// Apply an (anti-)CNOT gate with control and target
     void AntiCNOT(bitLenInt c, bitLenInt t)
     {
+        H(t);
+        if (IsSeparableZ(t)) {
+            AntiCZ(c, t);
+            H(t);
+            return;
+        }
+        H(t);
         CGate(
             c, t, NULL,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
