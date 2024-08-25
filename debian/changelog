@@ -1,3 +1,27 @@
+libqrack (9.9.12) bionic; urgency=medium
+
+  * RNG improvements and micro-optimizations (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 25 Aug 2024 11:12:37 -0400
+
+libqrack (9.9.11) focal; urgency=medium
+
+  * RNG improvements and micro-optimizations (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 25 Aug 2024 11:10:32 -0400
+
+libqrack (9.9.10) jammy; urgency=medium
+
+  * RNG improvements and micro-optimizations (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 25 Aug 2024 11:08:29 -0400
+
+libqrack (9.9.9) noble; urgency=medium
+
+  * RNG improvements and micro-optimizations (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 25 Aug 2024 11:04:33 -0400
+
 libqrack (9.9.5) bionic; urgency=medium
 
   * Depolarizing noise layer and Clifford+RZ env. var. debugging (Bionic 4/4)
