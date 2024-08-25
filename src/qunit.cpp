@@ -314,8 +314,8 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
         if (decomposedUnits.find(unit) == decomposedUnits.end()) {
             decomposedUnits[unit] = start + i;
-            bitLenInt subLen = subunits[unit];
-            bitLenInt origLen = unit->GetQubitCount();
+            const bitLenInt subLen = subunits[unit];
+            const bitLenInt origLen = unit->GetQubitCount();
             if (subLen != origLen) {
                 if (dest) {
                     QInterfacePtr nUnit = MakeEngine(subLen, ZERO_BCI);
@@ -412,7 +412,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
         // Work odd unit into collapse sequence:
         if (units.size() & 1U) {
             QInterfacePtr consumed = units[1U];
-            bitLenInt offset = unit1->ComposeNoClone(consumed);
+            const bitLenInt offset = unit1->ComposeNoClone(consumed);
             units.erase(units.begin() + 1U);
 
             for (auto&& shard : shards) {
@@ -627,7 +627,7 @@ bool QUnit::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol)
         "QUnit::TrySeparate parameter controls array values must be within allocated qubit bounds!");
 
     if (qubits.size() == 1U) {
-        bitLenInt qubit = qubits[0U];
+        const bitLenInt qubit = qubits[0U];
         QEngineShard& shard = shards[qubit];
 
         if (shard.GetQubitCount() == 1U) {
@@ -685,7 +685,7 @@ bool QUnit::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol)
     QUnitPtr dest = std::dynamic_pointer_cast<QUnit>(std::make_shared<QUnit>(
         engines, q.size(), ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam));
 
-    bool toRet = TryDecompose(0U, dest, error_tol);
+    const bool toRet = TryDecompose(0U, dest, error_tol);
     if (toRet) {
         if (q.size() == 1U) {
             dest->ProbBase(0U);
@@ -805,8 +805,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     const QInterfacePtr unit = shard1.unit;
-    bitLenInt mapped1 = shard1.mapped;
-    bitLenInt mapped2 = shard2.mapped;
+    const bitLenInt mapped1 = shard1.mapped;
+    const bitLenInt mapped2 = shard2.mapped;
 
     // Both shards are in the same unit.
     if (unit->isClifford() && !unit->TrySeparate(mapped1, mapped2)) {
@@ -1023,7 +1023,6 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
 
     if (shard.unit && shard.isProbDirty) {
         shard.isProbDirty = false;
-
         QInterfacePtr unit = shard.unit;
         bitLenInt mapped = shard.mapped;
         real1_f prob = unit->Prob(mapped);
@@ -1357,7 +1356,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
     QInterfacePtr unit = shard.unit;
-    bitLenInt mapped = shard.mapped;
+    const bitLenInt mapped = shard.mapped;
 
     if (unit && unit->isClifford() && !unit->TrySeparate(mapped)) {
         // This conditional coaxes the unit into separable form, so this should never actually happen.
