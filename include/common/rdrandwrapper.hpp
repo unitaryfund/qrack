@@ -94,9 +94,9 @@ public:
     {
         size_t fSize = 0;
         unsigned v;
-        while (fSize < 1) {
+        while (!fSize) {
             fSize = fread(&v, sizeof(unsigned), 1, dataFile);
-            if (fSize < 1) {
+            if (!fSize) {
                 _readNextRandDataFile();
             }
         }
@@ -161,24 +161,28 @@ public:
     real1_f Next()
     {
         unsigned v = NextRaw();
-
         real1_f res = ZERO_R1_F;
-        real1_f part = ONE_R1_F;
-        for (unsigned i = 0U; i < 32U; ++i) {
-            part /= 2;
+#if FPPOW < 6
+        real1_f part = ONE_R1_F / (1ULL << 32U);
+#else
+        real1_f part = ONE_R1_F / (1ULL << 64U);
+#endif
+
+        for (int i = 31; i >= 0; --i) {
             if ((v >> i) & 1U) {
                 res += part;
             }
+            part *= 2;
         }
 
 #if FPPOW > 5
         v = NextRaw();
 
-        for (unsigned i = 0U; i < 32U; ++i) {
-            part /= 2;
+        for (int i = 31; i >= 0; --i) {
             if ((v >> i) & 1U) {
                 res += part;
             }
+            part *= 2;
         }
 #endif
 
