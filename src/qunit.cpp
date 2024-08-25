@@ -824,8 +824,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
 
     // "Controlled inverse state preparation"
-    const complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1), complex(SQRT1_2_R1, ZERO_R1),
-        complex(ZERO_R1, SQRT1_2_R1) };
+    QRACK_CONST complex mtrx[4U]{ complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
+        complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1) };
     const std::vector<bitLenInt> controls{ mapped1 };
 
     real1_f z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
