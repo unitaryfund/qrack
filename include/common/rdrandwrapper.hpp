@@ -160,33 +160,14 @@ public:
 
     real1_f Next()
     {
-#if FPPOW < 6
         constexpr real1_f inc = ONE_R1_F / (1ULL << 32U);
+
+        // NextRaw() has 32 bits; double has >= 53 bits of precision
+#if FPPOW < 6
+        return (real1_f)(((double)NextRaw()) * inc);
 #else
-        constexpr real1_f inc = ONE_R1_F / (1ULL << 64U);
+        return ((((real1_f)NextRaw()) * inc) + ((real1_f)NextRaw())) * inc;
 #endif
-        unsigned v = NextRaw();
-        real1_f res = ZERO_R1_F;
-        real1_f part = inc;
-        for (unsigned i = 0U; i < 32U; ++i) {
-            if ((v >> i) & 1U) {
-                res += part;
-            }
-            part *= 2;
-        }
-
-#if FPPOW > 5
-        v = NextRaw();
-
-        for (unsigned i = 0U; i < 32; ++i) {
-            if ((v >> i) & 1U) {
-                res += part;
-            }
-            part *= 2;
-        }
-#endif
-
-        return res;
     }
 };
 } // namespace Qrack
