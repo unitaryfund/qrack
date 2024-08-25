@@ -92,6 +92,7 @@ protected:
     typedef std::function<void(QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t)> SwapGateFn;
     void CGate(bitLenInt control, bitLenInt target, const complex* mtrx, CGateFn cfn, GateFn fn, bool isAnti)
     {
+        ThrowIfQubitInvalid(target);
         const real1_f p = Prob(control);
         if (p < (ONE_R1_F / 4)) {
             if (isAnti) {
