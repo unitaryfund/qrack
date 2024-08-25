@@ -88,12 +88,45 @@ protected:
 
     typedef std::function<void(QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx)>
         CGateFn;
-    void CGate(bitLenInt control, bitLenInt target, const complex* mtrx, CGateFn fn)
+    typedef std::function<void(QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx)> GateFn;
+    typedef std::function<void(QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t)> SwapGateFn;
+    void CGate(bitLenInt control, bitLenInt target, const complex* mtrx, CGateFn cfn, GateFn fn, bool isAnti)
     {
+        const real1_f p = Prob(control);
+        if (p < (ONE_R1_F / 4)) {
+            if (isAnti) {
+                fn(shards[target].unit, target, mtrx);
+            }
+            return;
+        } else if (p > (3 * ONE_R1_F / 4)) {
+            if (!isAnti) {
+                fn(shards[target].unit, target, mtrx);
+            }
+            return;
+        }
+
         std::vector<bitLenInt> bits{ control, target };
         std::vector<bitLenInt*> ebits{ &bits[0U], &bits[1U] };
         QStabilizerPtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-        fn(unit, bits[0U], bits[1U], mtrx);
+        cfn(unit, bits[0U], bits[1U], mtrx);
+        CombinePhaseOffsets(unit);
+        TrySeparate(control);
+        TrySeparate(target);
+    }
+    void SwapGate(bitLenInt control, bitLenInt target, SwapGateFn ufn, complex phaseFac)
+    {
+        const real1_f pc = Prob(control);
+        const real1_f pt = Prob(target);
+        if (((pc < (ONE_R1_F / 4)) && (pt > (3 * ONE_R1_F / 4))) ||
+            ((pt < (ONE_R1_F / 4)) && (pc > (3 * ONE_R1_F / 4)))) {
+            Swap(control, target);
+            Phase(phaseFac, phaseFac, target);
+            return;
+        }
+        std::vector<bitLenInt> bits{ control, target };
+        std::vector<bitLenInt*> ebits{ &bits[0U], &bits[1U] };
+        QStabilizerPtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
+        ufn(unit, bits[0U], bits[1U]);
         CombinePhaseOffsets(unit);
         TrySeparate(control);
         TrySeparate(target);
@@ -243,42 +276,58 @@ public:
     /// Apply a CNOT gate with control and target
     void CNOT(bitLenInt c, bitLenInt t)
     {
-        CGate(c, t, NULL, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
-            unit->CNOT(c, t);
-        });
+        CGate(
+            c, t, NULL,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
+                unit->CNOT(c, t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* unused) { unit->X(t); }, false);
     }
     /// Apply a CY gate with control and target
     void CY(bitLenInt c, bitLenInt t)
     {
-        CGate(c, t, NULL,
-            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) { unit->CY(c, t); });
+        CGate(
+            c, t, NULL,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) { unit->CY(c, t); },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* unused) { unit->Y(t); }, false);
     }
     /// Apply a CZ gate with control and target
     void CZ(bitLenInt c, bitLenInt t)
     {
-        CGate(c, t, NULL,
-            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) { unit->CZ(c, t); });
+        CGate(
+            c, t, NULL,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) { unit->CZ(c, t); },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* unused) { unit->Z(t); }, false);
     }
     /// Apply an (anti-)CNOT gate with control and target
     void AntiCNOT(bitLenInt c, bitLenInt t)
     {
-        CGate(c, t, NULL, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
-            unit->AntiCNOT(c, t);
-        });
+        CGate(
+            c, t, NULL,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
+                unit->AntiCNOT(c, t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* unused) { unit->X(t); }, true);
     }
     /// Apply an (anti-)CY gate with control and target
     void AntiCY(bitLenInt c, bitLenInt t)
     {
-        CGate(c, t, NULL, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
-            unit->AntiCY(c, t);
-        });
+        CGate(
+            c, t, NULL,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
+                unit->AntiCY(c, t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* unused) { unit->Y(t); }, true);
     }
     /// Apply an (anti-)CZ gate with control and target
     void AntiCZ(bitLenInt c, bitLenInt t)
     {
-        CGate(c, t, NULL, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
-            unit->AntiCZ(c, t);
-        });
+        CGate(
+            c, t, NULL,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
+                unit->AntiCZ(c, t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* unused) { unit->Z(t); }, true);
     }
     /// Apply a Hadamard gate to target
     using QInterface::H;
@@ -344,16 +393,14 @@ public:
     // Swap two bits and apply a phase factor of i if they are different
     void ISwap(bitLenInt c, bitLenInt t)
     {
-        CGate(c, t, NULL, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
-            unit->ISwap(c, t);
-        });
+        SwapGate(
+            c, t, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t) { unit->ISwap(c, t); }, I_CMPLX);
     }
     // Swap two bits and apply a phase factor of -i if they are different
     void IISwap(bitLenInt c, bitLenInt t)
     {
-        CGate(c, t, NULL, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
-            unit->IISwap(c, t);
-        });
+        SwapGate(
+            c, t, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t) { unit->IISwap(c, t); }, -I_CMPLX);
     }
 
     /// Measure qubit t
@@ -570,9 +617,13 @@ public:
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCPhase"));
 
         const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-        CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
-            unit->MCPhase({ c }, mtrx[0U], mtrx[3U], t);
-        });
+        CGate(
+            c, t, mtrx,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
+                unit->MCPhase({ c }, mtrx[0U], mtrx[3U], t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Phase(mtrx[0U], mtrx[3U], t); },
+            false);
     }
     void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt t)
     {
@@ -584,9 +635,13 @@ public:
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACPhase"));
 
         const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-        CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
-            unit->MACPhase({ c }, mtrx[0U], mtrx[3U], t);
-        });
+        CGate(
+            c, t, mtrx,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
+                unit->MACPhase({ c }, mtrx[0U], mtrx[3U], t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Phase(mtrx[0U], mtrx[3U], t); },
+            true);
     }
     void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt t)
     {
@@ -598,9 +653,13 @@ public:
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCInvert"));
 
         const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-        CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
-            unit->MCInvert({ c }, mtrx[1U], mtrx[2U], t);
-        });
+        CGate(
+            c, t, mtrx,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
+                unit->MCInvert({ c }, mtrx[1U], mtrx[2U], t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Invert(mtrx[1U], mtrx[2U], t); },
+            false);
     }
     void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt t)
     {
@@ -612,9 +671,13 @@ public:
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACInvert"));
 
         const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-        CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
-            unit->MACInvert({ c }, mtrx[1U], mtrx[2U], t);
-        });
+        CGate(
+            c, t, mtrx,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
+                unit->MACInvert({ c }, mtrx[1U], mtrx[2U], t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Invert(mtrx[1U], mtrx[2U], t); },
+            true);
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
@@ -625,9 +688,12 @@ public:
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCMtrx"));
 
-        CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
-            unit->MCMtrx({ c }, mtrx, t);
-        });
+        CGate(
+            c, t, mtrx,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
+                unit->MCMtrx({ c }, mtrx, t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Mtrx(mtrx, t); }, false);
     }
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
@@ -638,19 +704,25 @@ public:
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACMtrx"));
 
-        CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
-            unit->MACMtrx({ c }, mtrx, t);
-        });
+        CGate(
+            c, t, mtrx,
+            [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
+                unit->MACMtrx({ c }, mtrx, t);
+            },
+            [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Mtrx(mtrx, t); }, true);
     }
     void FSim(real1_f theta, real1_f phi, bitLenInt c, bitLenInt t)
     {
         ThrowIfQubitInvalid(c, std::string("QUnitClifford::FSim"));
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::FSim"));
 
-        const complex mtrx[4]{ (real1)theta, (real1)phi, ZERO_CMPLX, ZERO_CMPLX };
-        CGate(c, t, mtrx, [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* mtrx) {
-            unit->FSim((real1_f)std::real(mtrx[0U]), (real1_f)std::real(mtrx[1U]), c, t);
-        });
+        std::vector<bitLenInt> bits{ c, t };
+        std::vector<bitLenInt*> ebits{ &bits[0U], &bits[1U] };
+        QStabilizerPtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
+        unit->FSim(theta, phi, c, t);
+        CombinePhaseOffsets(unit);
+        TrySeparate(c);
+        TrySeparate(t);
     }
 
     bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored)
