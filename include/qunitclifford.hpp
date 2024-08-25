@@ -640,6 +640,11 @@ public:
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCPhase"));
 
+        if (IS_SAME(topLeft, ONE_CMPLX) && IS_SAME(bottomRight, -ONE_CMPLX)) {
+            CZ(c, t);
+            return;
+        }
+
         const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         CGate(
             c, t, mtrx,
@@ -657,6 +662,11 @@ public:
         }
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACPhase"));
+
+        if (IS_SAME(topLeft, ONE_CMPLX) && IS_SAME(bottomRight, -ONE_CMPLX)) {
+            AntiCZ(c, t);
+            return;
+        }
 
         const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         CGate(
@@ -676,6 +686,11 @@ public:
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCInvert"));
 
+        if (IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
+            CNOT(c, t);
+            return;
+        }
+
         const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         CGate(
             c, t, mtrx,
@@ -694,6 +709,11 @@ public:
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACInvert"));
 
+        if (IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
+            AntiCNOT(c, t);
+            return;
+        }
+
         const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         CGate(
             c, t, mtrx,
@@ -705,6 +725,15 @@ public:
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
+        if ((norm(mtrx[1U]) <= FP_NORM_EPSILON) && (norm(mtrx[2U]) <= FP_NORM_EPSILON)) {
+            MCPhase(controls, mtrx[0U], mtrx[3U], t);
+            return;
+        }
+        if ((norm(mtrx[0U]) <= FP_NORM_EPSILON) && (norm(mtrx[3U]) <= FP_NORM_EPSILON)) {
+            MCInvert(controls, mtrx[1U], mtrx[2U], t);
+            return;
+        }
+
         if (controls.empty()) {
             Mtrx(mtrx, t);
             return;
@@ -721,6 +750,15 @@ public:
     }
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
+        if ((norm(mtrx[1U]) <= FP_NORM_EPSILON) && (norm(mtrx[2U]) <= FP_NORM_EPSILON)) {
+            MACPhase(controls, mtrx[0U], mtrx[3U], t);
+            return;
+        }
+        if ((norm(mtrx[0U]) <= FP_NORM_EPSILON) && (norm(mtrx[3U]) <= FP_NORM_EPSILON)) {
+            MACInvert(controls, mtrx[1U], mtrx[2U], t);
+            return;
+        }
+
         if (controls.empty()) {
             Mtrx(mtrx, t);
             return;
