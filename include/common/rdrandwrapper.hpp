@@ -46,7 +46,7 @@ private:
     static bool CheckHardwareRDRANDSupport()
     {
 #if ENABLE_RDRAND
-        const unsigned flag_RDRAND = (1 << 30);
+        constexpr unsigned flag_RDRAND = (1 << 30);
 
 #if _MSC_VER
         int ex[4];

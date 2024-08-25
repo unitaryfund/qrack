@@ -1,4 +1,4 @@
-# With `cmake -DENABLE_RNDFILE=ON -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=OFF`,
+# With `cmake -DENABLE_RNDFILE=ON -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=OFF ..`,
 # Qrack can read random number generation data in from a set of files, like
 # from https://github.com/sbalian/quantum-random
 

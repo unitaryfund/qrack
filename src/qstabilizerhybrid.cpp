@@ -1618,8 +1618,8 @@ bitCapInt QStabilizerHybrid::MAll()
     }
 
 #if ENABLE_PTHREAD
+    const real1_f resProb = Rand();
     real1_f partProb = ZERO_R1;
-    real1_f resProb = Rand();
     bitCapInt d = ZERO_BCI;
     bitCapInt m;
     bool foundM = false;
@@ -1651,8 +1651,8 @@ bitCapInt QStabilizerHybrid::MAll()
         }
     }
 #else
+    const real1 resProb = (real1)Rand();
     real1 partProb = ZERO_R1;
-    real1 resProb = (real1)Rand();
     bitCapInt d = 0U;
     bitCapInt m;
     bool foundM = false;
