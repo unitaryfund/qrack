@@ -82,7 +82,7 @@ protected:
     void FlushBuffers();
     void DumpBuffers()
     {
-        for (size_t i = 0; i < shards.size(); ++i) {
+        for (size_t i = 0U; i < shards.size(); ++i) {
             shards[i] = NULL;
         }
     }
