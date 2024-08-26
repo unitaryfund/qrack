@@ -2972,44 +2972,25 @@ bitCapInt QEngineOCL::MAll()
         return ZERO_BCI;
     }
 
-    // It's much more costly, by the end, to read amplitudes one-at-a-time from the GPU instead of all-at-once. However,
-    // we might need to less work, overall, if we generate an (unbiased) sample before "walking" the full probability
-    // distribution. Hence, if we try this special-case approach, we should mask GPU-read latency with non-blocking
-    // calls.
-
-    constexpr size_t cReadWidth = (QRACK_ALIGN_SIZE > sizeof(complex)) ? (QRACK_ALIGN_SIZE / sizeof(complex)) : 1U;
-    const size_t alignSize = (maxQPowerOcl > cReadWidth) ? cReadWidth : maxQPowerOcl;
     const real1_f rnd = Rand();
     real1_f totProb = ZERO_R1_F;
     bitCapIntOcl lastNonzero = maxQPowerOcl - 1U;
     bitCapIntOcl perm = 0U;
-    std::unique_ptr<complex[]> amp(new complex[alignSize]);
+    std::unique_ptr<complex[]> amp(new complex[maxQPowerOcl]);
     EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_BLOCK_READ(
-        waitVec, *stateBuffer, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex) * alignSize, amp.get());
-    while (perm < maxQPowerOcl) {
-        Finish();
-        const std::vector<complex> partAmp{ amp.get(), amp.get() + alignSize };
-        if ((perm + alignSize) < maxQPowerOcl) {
-            device_context->EmplaceEvent([&](cl::Event& event) {
-                tryOcl("Failed to read buffer", [&] {
-                    return queue.enqueueReadBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * perm + alignSize,
-                        sizeof(complex) * alignSize, amp.get(), NULL, &event);
-                });
-            });
-        }
-        for (size_t i = 0U; i < alignSize; ++i) {
-            const real1_f partProb = (real1_f)norm(partAmp[i]);
-            if (partProb > REAL1_EPSILON) {
-                totProb += partProb;
-                if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
-                    SetPermutation(perm);
-                    return perm;
-                }
-                lastNonzero = perm;
+    DISPATCH_BLOCK_READ(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, amp.get());
+
+    for (size_t i = 0U; i < maxQPowerOcl; ++i) {
+        const real1_f partProb = (real1_f)norm(amp.get()[i]);
+        if (partProb > REAL1_EPSILON) {
+            totProb += partProb;
+            if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
+                SetPermutation(perm);
+                return perm;
             }
-            ++perm;
+            lastNonzero = perm;
         }
+        ++perm;
     }
 
     SetPermutation(lastNonzero);
