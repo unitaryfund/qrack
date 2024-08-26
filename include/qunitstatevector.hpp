@@ -63,9 +63,8 @@ struct QUnitStateVector {
         }
 
         complex result(ONE_R1, ZERO_R1);
-        for (auto qi = perms.begin(); qi != perms.end(); ++qi) {
-            const size_t i = std::distance(perms.begin(), qi);
-            const auto& found = amps[i].find(qi->second);
+        for (size_t i = 0U; i < amps.size(); ++i) {
+            const auto& found = amps[i].find(perms[i]);
             if (found == amps[i].end()) {
                 result = ZERO_CMPLX;
                 break;
