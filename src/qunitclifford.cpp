@@ -432,10 +432,9 @@ QUnitStateVectorPtr QUnitClifford::GetDecomposedQuantumState()
     std::vector<std::map<bitCapInt, complex>> amps;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         const auto& shard = shards[i];
-        if (qis.find(shard.unit) != qis.end()) {
+        if (qis.find(shard.unit) == qis.end()) {
             qis[shard.unit] = i;
             amps.push_back(shard.unit->GetQuantumState());
-            continue;
         }
         idMap[i] = shard.mapped + qis[shard.unit];
         offsetMap[i] = qis[shard.unit];

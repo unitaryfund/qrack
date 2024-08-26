@@ -24,14 +24,8 @@ struct QUnitStateVector {
     std::map<bitLenInt, bitLenInt> offsetMap;
     std::vector<std::map<bitCapInt, complex>> amps;
 
-    QUnitStateVector()
-        : phaseOffset(ONE_CMPLX)
-    {
-        // Intentionally left blank
-    }
-
     QUnitStateVector(
-        const bitCapInt& m, const complex& p, const std::map<bitLenInt, bitLenInt>& i, const std::map<bitLenInt, bitLenInt>& o, const std::vector<std::map<bitCapInt, complex>>& a)
+        const bitCapInt& m, complex p, const std::map<bitLenInt, bitLenInt>& i, const std::map<bitLenInt, bitLenInt>& o, const std::vector<std::map<bitCapInt, complex>>& a)
         : maxQPower(m)
         , phaseOffset(p)
         , idMap(i)
