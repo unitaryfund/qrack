@@ -430,22 +430,17 @@ QUnitStateVectorPtr QUnitClifford::GetDecomposedQuantumState()
     std::map<bitLenInt, bitLenInt> idMap;
     std::map<bitLenInt, bitLenInt> offsetMap;
     std::vector<std::map<bitCapInt, complex>> amps;
-    size_t qbCount = 0U;
-    size_t qbInc = 0U;
     for (size_t i = 0U; i < qubitCount; ++i) {
         const auto& shard = shards[i];
         if (qis.find(shard.unit) != qis.end()) {
             qis.insert(shard.unit);
-            qbCount += qbInc;
-            qbInc = shard.unit->GetQubitCount();
             amps.push_back(shard.unit->GetQuantumState());
             continue;
         }
         idMap[i] = shard.mapped;
     }
-    const bitCapInt maxQPower = pow2(qbCount + qbInc);
 
-    return std::make_shared<QUnitStateVector>(maxQPower, phaseOffset, idMap, amps);
+    return std::make_shared<QUnitStateVector>(phaseOffset, idMap, amps);
 }
 
 /// Get all probabilities corresponding to ket notation

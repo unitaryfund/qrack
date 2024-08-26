@@ -30,21 +30,22 @@ struct QUnitStateVector {
         // Intentionally left blank
     }
 
-    QUnitStateVector(const bitCapInt& m, const complex& p, const std::map<bitLenInt, bitLenInt>& i, const std::vector<std::map<bitCapInt, complex>>& a)
-        : maxQPower(m)
-        , phaseOffset(p)
+    QUnitStateVector(
+        const complex& p, const std::map<bitLenInt, bitLenInt>& i, const std::vector<std::map<bitCapInt, complex>>& a)
+        : phaseOffset(p)
         , idMap(i)
         , amps(a)
     {
         bitLenInt totQubits = 0U;
         for (const auto& a : amps) {
-             const bitLenInt lastQubits = log2(a.size());
-             for (size_t j = 0U; j < lastQubits; ++j) {
-                  offsetMap[totQubits + j] = totQubits;
-                  idMap[totQubits + j] += totQubits;
-             }
-             totQubits += lastQubits;
+            const bitLenInt lastQubits = log2(a.size());
+            for (size_t j = 0U; j < lastQubits; ++j) {
+                offsetMap[totQubits + j] = totQubits;
+                idMap[totQubits + j] += totQubits;
+            }
+            totQubits += lastQubits;
         }
+        maxQPower = pow2(totQubits);
     }
 
     complex operator[](size_t p)
@@ -65,7 +66,12 @@ struct QUnitStateVector {
         complex result(ONE_R1, ZERO_R1);
         for (auto qi = perms.begin(); qi != perms.end(); ++qi) {
             const size_t i = std::distance(perms.begin(), qi);
-            result *= amps[i][qi->second];
+            const auto& found = amps[i].find(qi->second);
+            if (found == amps[i].end()) {
+                result = ZERO_CMPLX;
+                break;
+            }
+            result *= found->second;
             if ((2 * norm(result)) <= FP_NORM_EPSILON) {
                 break;
             }
