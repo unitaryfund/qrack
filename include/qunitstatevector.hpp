@@ -18,6 +18,7 @@ struct QUnitStateVector;
 typedef std::shared_ptr<QUnitStateVector> QUnitStateVectorPtr;
 
 struct QUnitStateVector {
+    bitCapInt maxQPower;
     complex phaseOffset;
     std::map<bitLenInt, bitLenInt> idMap;
     std::map<bitLenInt, bitLenInt> offsetMap;
@@ -29,25 +30,42 @@ struct QUnitStateVector {
         // Intentionally left blank
     }
 
-    QUnitStateVector(const complex& p, const std::map<bitLenInt, bitLenInt>& i, const std::vector<std::map<bitCapInt, complex>>& a)
-        : phaseOffset(p)
+    QUnitStateVector(const bitCapInt& m, const complex& p, const std::map<bitLenInt, bitLenInt>& i,
+        const std::map<bitLenInt, bitLenInt>& o, const std::vector<std::map<bitCapInt, complex>>& a)
+        : maxQPower(m)
+        , phaseOffset(p)
         , idMap(i)
+        , offsetMap(o)
         , amps(a)
     {
-        bitLenInt totQubits = 0U;
-        for (size_t i = 0U; i < amps.size(); ++i) {
-             const bitLenInt lastQubits = log2(amps[i].size());
-             for (size_t j = 0U; j < l; ++j) {
-                  offsetMap[totQubits + j] = totQubits;
-             }
-             totQubits += lastQubits;
-        }
+        // Intentionally left blank
     }
 
-    complex operator[](size_t p) const
+    complex operator[](size_t p)
     {
-        complex amp = ONE_CMPLX;
-        
+        if (p >= maxQPower) {
+            throw std::invalid_argument("QUnit::GetAmplitudeOrProb argument out-of-bounds!");
+        }
+
+        complex result(ONE_R1, ZERO_R1);
+        std::map<bitLenInt, bitCapInt> perms;
+        for (auto qid = idMap.begin(); qid != idMap.end(); ++qid) {
+            const size_t i = std::distance(idMap.begin(), qid);
+            const bitLenInt& m = offsetMap[i];
+            if (bi_and_1(p >> i)) {
+                bi_or_ip(&(perms[m]), pow2(idMap[i] - m));
+            }
+        }
+
+        for (auto qi = perms.begin(); qi != perms.end(); ++qi) {
+            const size_t i = std::distance(perms.begin(), qi);
+            result *= amps[i][qi->second];
+            if ((2 * norm(result)) <= FP_NORM_EPSILON) {
+                break;
+            }
+        }
+
+        return result;
     }
 };
 

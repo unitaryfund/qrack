@@ -65,6 +65,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , engineTypes(eng)
     , cloneEngineTypes(eng)
     , shards(qubitCount)
+    , stateMapCache(NULL)
 {
     const bitLenInt maxCpuQubitCount =
         getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 28U;
@@ -762,14 +763,9 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     if (!ancillaCount) {
         std::vector<complex> amps;
         amps.reserve(perms.size());
-        if (stateMapCache.size()) {
+        if (stateMapCache) {
             for (size_t i = 0U; i < perms.size(); ++i) {
-                const auto it = stateMapCache.find(perms[i]);
-                if (it == stateMapCache.end()) {
-                    amps.push_back(ZERO_CMPLX);
-                } else {
-                    amps.push_back(it->second);
-                }
+                amps.push_back((*stateMapCache)[(size_t)perms[i]]);
             }
         } else {
             amps = stabilizer->GetAmplitudes(perms);
@@ -806,14 +802,9 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
 
     std::vector<complex> amps;
     amps.reserve(perms.size());
-    if (stateMapCache.size()) {
+    if (stateMapCache) {
         for (size_t i = 0U; i < perms.size(); ++i) {
-            const auto it = stateMapCache.find(perms[i]);
-            if (it == stateMapCache.end()) {
-                amps.push_back(ZERO_CMPLX);
-            } else {
-                amps.push_back(it->second);
-            }
+            amps.push_back((*stateMapCache)[(size_t)perms[i]]);
         }
     } else {
         amps = stabilizer->GetAmplitudes(perms);
@@ -1467,14 +1458,14 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
                 partProb += futures[j].get();
             }
         }
-        stateMapCache.clear();
+        stateMapCache = NULL;
 #else
         for (bitCapInt i = 0U; bi_compare(i, maxLcv) < 0; bi_increment(&i, 1U)) {
             bitCapInt j = i & (qPower - 1U);
             bi_or_ip(&j, (i ^ j) << 1U);
             partProb += norm(GetAmplitude(j | qPower));
         }
-        stateMapCache.clear();
+        stateMapCache = NULL;
 #endif
         return partProb;
     }
@@ -1590,7 +1581,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         m = d;                                                                                                         \
     }                                                                                                                  \
     SetPermutation(m);                                                                                                 \
-    stateMapCache.clear();
+    stateMapCache = NULL;
 bitCapInt QStabilizerHybrid::MAll()
 {
     if (engine) {
@@ -1682,7 +1673,7 @@ void QStabilizerHybrid::UniformlyControlledSingleBit(
     if (rng.size()) {                                                                                                  \
         results[d] += shots - rng.size();                                                                              \
     }                                                                                                                  \
-    stateMapCache.clear();
+    stateMapCache = NULL;
 
 #define ADD_SHOTS_PROB(m)                                                                                              \
     if (rng.empty()) {                                                                                                 \
@@ -1787,7 +1778,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     }                                                                                                                  \
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();                                       \
     std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));                                    \
-    stateMapCache.clear();
+    stateMapCache = NULL;
 
 void QStabilizerHybrid::MultiShotMeasureMask(
     const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
