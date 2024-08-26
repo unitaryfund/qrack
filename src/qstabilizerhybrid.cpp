@@ -878,6 +878,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         aEngine->SetAmplitude(a, amp);
     }
 #endif
+    amps.clear();
 
     for (bitLenInt i = 0U; i < ancillaCount; ++i) {
         const MpsShardPtr& shard = shards[i + qubitCount];
