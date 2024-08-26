@@ -30,15 +30,21 @@ struct QUnitStateVector {
         // Intentionally left blank
     }
 
-    QUnitStateVector(const bitCapInt& m, const complex& p, const std::map<bitLenInt, bitLenInt>& i,
-        const std::map<bitLenInt, bitLenInt>& o, const std::vector<std::map<bitCapInt, complex>>& a)
+    QUnitStateVector(const bitCapInt& m, const complex& p, const std::map<bitLenInt, bitLenInt>& i, const std::vector<std::map<bitCapInt, complex>>& a)
         : maxQPower(m)
         , phaseOffset(p)
         , idMap(i)
-        , offsetMap(o)
         , amps(a)
     {
-        // Intentionally left blank
+        bitLenInt totQubits = 0U;
+        for (const auto& a : amps) {
+             const bitLenInt lastQubits = log2(a.size());
+             for (size_t j = 0U; j < lastQubits; ++j) {
+                  offsetMap[totQubits + j] = totQubits;
+                  idMap[totQubits + j] += totQubits;
+             }
+             totQubits += lastQubits;
+        }
     }
 
     complex operator[](size_t p)
@@ -47,16 +53,16 @@ struct QUnitStateVector {
             throw std::invalid_argument("QUnit::GetAmplitudeOrProb argument out-of-bounds!");
         }
 
-        complex result(ONE_R1, ZERO_R1);
         std::map<bitLenInt, bitCapInt> perms;
         for (auto qid = idMap.begin(); qid != idMap.end(); ++qid) {
             const size_t i = std::distance(idMap.begin(), qid);
             const bitLenInt& m = offsetMap[i];
             if (bi_and_1(p >> i)) {
-                bi_or_ip(&(perms[m]), pow2(idMap[i] - m));
+                bi_or_ip(&(perms[m]), pow2(qid->first - m));
             }
         }
 
+        complex result(ONE_R1, ZERO_R1);
         for (auto qi = perms.begin(); qi != perms.end(); ++qi) {
             const size_t i = std::distance(perms.begin(), qi);
             result *= amps[i][qi->second];

@@ -441,12 +441,11 @@ QUnitStateVectorPtr QUnitClifford::GetDecomposedQuantumState()
             amps.push_back(shard.unit->GetQuantumState());
             continue;
         }
-        idMap[i] = shard.mapped + qbCount;
-        offsetMap[i] = qbCount;
+        idMap[i] = shard.mapped;
     }
     const bitCapInt maxQPower = pow2(qbCount + qbInc);
 
-    return std::make_shared<QUnitStateVector>(maxQPower, phaseOffset, idMap, offsetMap, amps);
+    return std::make_shared<QUnitStateVector>(maxQPower, phaseOffset, idMap, amps);
 }
 
 /// Get all probabilities corresponding to ket notation
