@@ -62,7 +62,7 @@ struct QUnitStateVector {
             }
         }
 
-        complex result(ONE_R1, ZERO_R1);
+        complex result = phaseOffset;
         for (size_t i = 0U; i < amps.size(); ++i) {
             const auto& found = amps[i].find(perms[i]);
             if (found == amps[i].end()) {
@@ -75,7 +75,7 @@ struct QUnitStateVector {
             }
         }
 
-        return phaseOffset * result;
+        return result;
     }
 };
 
