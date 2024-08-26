@@ -263,6 +263,7 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     for (const auto& qi : perms) {
         result *= qi.first->GetAmplitude(qi.second);
         if (IS_AMP_0(result)) {
+            result = ZERO_CMPLX;
             break;
         }
     }
