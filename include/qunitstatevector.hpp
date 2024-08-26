@@ -17,19 +17,32 @@ namespace Qrack {
 struct QUnitStateVector;
 typedef std::shared_ptr<QUnitStateVector> QUnitStateVectorPtr;
 
+struct IdOffset {
+    bitLenInt id;
+    bitLenInt offset;
+
+    IdOffset()
+    {
+        // Intentionally left blank
+    }
+
+    IdOffset(bitLenInt i, bitLenInt o)
+        : id(i)
+        , offset(o)
+    {
+        // Intentionally left blank
+    }
+};
+
 struct QUnitStateVector {
-    bitCapInt maxQPower;
     complex phaseOffset;
-    std::map<bitLenInt, bitLenInt> idMap;
-    std::map<bitLenInt, bitLenInt> offsetMap;
+    std::map<bitLenInt, IdOffset> idMap;
     std::vector<std::map<bitCapInt, complex>> amps;
 
     QUnitStateVector(
-        const bitCapInt& m, complex p, const std::map<bitLenInt, bitLenInt>& i, const std::map<bitLenInt, bitLenInt>& o, const std::vector<std::map<bitCapInt, complex>>& a)
-        : maxQPower(m)
-        , phaseOffset(p)
+        complex p, const std::map<bitLenInt, IdOffset>& i, const std::vector<std::map<bitCapInt, complex>>& a)
+        : phaseOffset(p)
         , idMap(i)
-        , offsetMap(o)
         , amps(a)
     {
         // Intentionally left blank
@@ -37,16 +50,15 @@ struct QUnitStateVector {
 
     complex operator[](size_t p)
     {
-        if (p >= maxQPower) {
+        if (p >= pow2(idMap.size())) {
             throw std::invalid_argument("QUnit::GetAmplitudeOrProb argument out-of-bounds!");
         }
 
         std::map<bitLenInt, bitCapInt> perms;
         for (auto qid = idMap.begin(); qid != idMap.end(); ++qid) {
             const size_t i = std::distance(idMap.begin(), qid);
-            const bitLenInt& m = offsetMap[i];
             if (bi_and_1(p >> i)) {
-                bi_or_ip(&(perms[m]), pow2(qid->first - m));
+                bi_or_ip(&(perms[qid->second.offset]), pow2(qid->second.id));
             }
         }
 
