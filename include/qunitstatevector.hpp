@@ -31,8 +31,9 @@ struct QUnitStateVector {
     }
 
     QUnitStateVector(
-        const complex& p, const std::map<bitLenInt, bitLenInt>& i, const std::vector<std::map<bitCapInt, complex>>& a)
-        : phaseOffset(p)
+        const bitCapInt& m, const complex& p, const std::map<bitLenInt, bitLenInt>& i, const std::vector<std::map<bitCapInt, complex>>& a)
+        : maxQPower(m)
+        , phaseOffset(p)
         , idMap(i)
         , amps(a)
     {
@@ -41,11 +42,9 @@ struct QUnitStateVector {
             const bitLenInt lastQubits = log2(a.size());
             for (size_t j = 0U; j < lastQubits; ++j) {
                 offsetMap[totQubits + j] = totQubits;
-                idMap[totQubits + j] += totQubits;
             }
             totQubits += lastQubits;
         }
-        maxQPower = pow2(totQubits);
     }
 
     complex operator[](size_t p)
