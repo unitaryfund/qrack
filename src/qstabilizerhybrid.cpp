@@ -765,7 +765,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         amps.reserve(perms.size());
         if (stateMapCache) {
             for (size_t i = 0U; i < perms.size(); ++i) {
-                amps.push_back((*stateMapCache)[(size_t)perms[i]]);
+                amps.push_back((*stateMapCache)[perms[i]]);
             }
         } else {
             amps = stabilizer->GetAmplitudes(perms);
@@ -804,7 +804,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
     amps.reserve(perms.size());
     if (stateMapCache) {
         for (size_t i = 0U; i < perms.size(); ++i) {
-            amps.push_back((*stateMapCache)[(size_t)perms[i]]);
+            amps.push_back((*stateMapCache)[perms[i]]);
         }
     } else {
         amps = stabilizer->GetAmplitudes(perms);
