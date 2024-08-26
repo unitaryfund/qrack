@@ -1,3 +1,27 @@
+libqrack (9.9.16) bionic; urgency=medium
+
+  * QUnitStateVector and QEngineOCL debugging (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 26 Aug 2024 17:38:08 -0400
+
+libqrack (9.9.15) focal; urgency=medium
+
+  * QUnitStateVector and QEngineOCL debugging (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 26 Aug 2024 17:36:01 -0400
+
+libqrack (9.9.14) jammy; urgency=medium
+
+  * QUnitStateVector and QEngineOCL debugging (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 26 Aug 2024 17:32:25 -0400
+
+libqrack (9.9.13) noble; urgency=medium
+
+  * QUnitStateVector and QEngineOCL debugging (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 26 Aug 2024 17:27:37 -0400
+
 libqrack (9.9.12) bionic; urgency=medium
 
   * RNG improvements and micro-optimizations (Bionic 4/4)

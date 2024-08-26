@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.9.13 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.9.17 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -524,13 +524,13 @@ if (PACK_DEBIAN)
         set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "")
     endif (FPPOW GREATER 6)
 
-    if (ENABLE_OPENCL)
+    if (ENABLE_OPENCL AND NOT ((CMAKE_SYSTEM_PROCESSOR MATCHES "^powerpc") OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^ppc")))
         set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "${CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS}opencl-headers, ocl-icd-opencl-dev, xxd")
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "ocl-icd-opencl-dev")
-    else (ENABLE_OPENCL)
+    else (ENABLE_OPENCL AND NOT ((CMAKE_SYSTEM_PROCESSOR MATCHES "^powerpc") OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^ppc")))
         set(CPACK_DEBIAN_PACKAGE_BUILD_DEPENDS "")
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
-    endif (ENABLE_OPENCL)
+    endif (ENABLE_OPENCL AND NOT ((CMAKE_SYSTEM_PROCESSOR MATCHES "^powerpc") OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^ppc")))
 
     set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
     set(CPACK_DEB_COMPONENT_INSTALL YES)
