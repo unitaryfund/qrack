@@ -48,7 +48,7 @@ struct QUnitStateVector {
         // Intentionally left blank
     }
 
-    complex operator[](const bitCapInt& p)
+    complex get(const bitCapInt& p)
     {
         if (p >= pow2(idMap.size())) {
             throw std::invalid_argument("QUnit::GetAmplitudeOrProb argument out-of-bounds!");
