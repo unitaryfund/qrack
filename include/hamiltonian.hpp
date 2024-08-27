@@ -77,8 +77,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
         targetBit = (bitLenInt)(teoh.target);
 
         const bitLenInt controlLen = (bitLenInt)teoh.controlLen;
-        controls = std::vector<bitLenInt>(controlLen);
-        std::copy(teoh.controls, teoh.controls + controlLen, controls.begin());
+        controls = std::vector<bitLenInt>(teoh.controls, teoh.controls + controlLen);
 
         uniform = true;
 
