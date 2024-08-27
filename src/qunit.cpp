@@ -674,8 +674,7 @@ bool QUnit::TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol)
         return false;
     }
 
-    std::vector<bitLenInt> q(qubits.size());
-    std::copy(qubits.begin(), qubits.end(), q.begin());
+    std::vector<bitLenInt> q(qubits.begin(), qubits.end());
     std::sort(q.begin(), q.end());
 
     // Swap gate is free, so just bring into the form of the contiguous overload.
