@@ -188,7 +188,7 @@ public:
 
     void copy_out(complex* copyOut, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
-        par_for(0, capacity,
+        par_for(0, length,
             [&](const bitCapIntOcl& lcv, const unsigned& cpu) { copyOut[lcv] = amplitudes[lcv + offset]; });
     }
 
