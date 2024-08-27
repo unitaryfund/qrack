@@ -97,7 +97,7 @@ void DispatchQueue::dispatch_thread_handler(void)
             continue;
         }
 
-        auto op = std::move(q_.front());
+        const auto op = std::move(q_.front());
         q_.pop();
 
         // unlock now that we're done messing with the queue
