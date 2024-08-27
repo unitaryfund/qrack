@@ -200,7 +200,7 @@ protected:
             angle += Period;
         }
 
-        long sector = std::lround((real1_s)(angle / sectorAngle));
+        const long sector = std::lround((real1_s)(angle / sectorAngle));
         if (!isGateSuppressed) {
             switch (sector) {
             case 1:
@@ -708,7 +708,7 @@ public:
     void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     {
         const std::vector<bitLenInt> controls{ qubit1 };
-        real1 sinTheta = (real1)sin(theta);
+        const real1 sinTheta = (real1)sin(theta);
 
         if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
             MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);

@@ -474,7 +474,7 @@ public:
     /**
      * Apply an arbitrary single bit unitary transformation.
      */
-    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex) = 0;
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubit) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
@@ -505,23 +505,23 @@ public:
     /**
      * Apply a single bit transformation that only effects phase.
      */
-    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubit)
     {
         if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft)) && IS_NORM_0(topLeft - bottomRight)) {
             return;
         }
 
         const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-        Mtrx(mtrx, qubitIndex);
+        Mtrx(mtrx, qubit);
     }
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase.
      */
-    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubit)
     {
         const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-        Mtrx(mtrx, qubitIndex);
+        Mtrx(mtrx, qubit);
     }
 
     /**
@@ -616,11 +616,11 @@ public:
      */
 
     virtual void UniformlyControlledSingleBit(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, const complex* mtrxs)
+        const std::vector<bitLenInt>& controls, bitLenInt qubit, const complex* mtrxs)
     {
-        UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, std::vector<bitCapInt>(), ZERO_BCI);
+        UniformlyControlledSingleBit(controls, qubit, mtrxs, std::vector<bitCapInt>(), ZERO_BCI);
     }
-    virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
+    virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubit,
         const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
 
     /**
@@ -899,7 +899,7 @@ public:
     /**
      * Hadamard gate
      *
-     * Applies a Hadamard gate on qubit at "qubitIndex."
+     * Applies a Hadamard gate on qubit at "qubit."
      */
     virtual void H(bitLenInt qubit)
     {
@@ -912,7 +912,7 @@ public:
     /**
      * Square root of Hadamard gate
      *
-     * Applies the square root of the Hadamard gate on qubit at "qubitIndex."
+     * Applies the square root of the Hadamard gate on qubit at "qubit."
      */
     virtual void SqrtH(bitLenInt qubit)
     {
@@ -957,7 +957,7 @@ public:
     /**
      * Measurement gate
      *
-     * Measures the qubit at "qubitIndex" and returns either "true" or "false."
+     * Measures the qubit at "qubit" and returns either "true" or "false."
      * (This "gate" breaks unitarity.)
      *
      * All physical evolution of a quantum state should be "unitary," except
@@ -1001,7 +1001,7 @@ public:
      * assumed to be in a known fixed state, like all |0>, ahead of time to
      * produce unitary logical comparison operations.)
      */
-    virtual bool M(bitLenInt qubitIndex) { return ForceM(qubitIndex, false, false); };
+    virtual bool M(bitLenInt qubit) { return ForceM(qubit, false, false); };
 
     /**
      * Act as if is a measurement was applied, except force the (usually random) result
@@ -1013,35 +1013,35 @@ public:
     /**
      * S gate
      *
-     * Applies a 1/4 phase rotation to the qubit at "qubitIndex."
+     * Applies a 1/4 phase rotation to the qubit at "qubit."
      */
     virtual void S(bitLenInt qubit) { Phase(ONE_CMPLX, I_CMPLX, qubit); }
 
     /**
      * Inverse S gate
      *
-     * Applies an inverse 1/4 phase rotation to the qubit at "qubitIndex."
+     * Applies an inverse 1/4 phase rotation to the qubit at "qubit."
      */
     virtual void IS(bitLenInt qubit) { Phase(ONE_CMPLX, -I_CMPLX, qubit); }
 
     /**
      * T gate
      *
-     * Applies a 1/8 phase rotation to the qubit at "qubitIndex."
+     * Applies a 1/8 phase rotation to the qubit at "qubit."
      */
     virtual void T(bitLenInt qubit) { Phase(ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), qubit); }
 
     /**
      * Inverse T gate
      *
-     * Applies an inverse 1/8 phase rotation to the qubit at "qubitIndex."
+     * Applies an inverse 1/8 phase rotation to the qubit at "qubit."
      */
     virtual void IT(bitLenInt qubit) { Phase(ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), qubit); }
 
     /**
      * "PhaseRootN" gate
      *
-     * Applies a -2 * PI_R1 / (2^N) phase rotation to the qubit at "qubitIndex."
+     * Applies a -2 * PI_R1 / (2^N) phase rotation to the qubit at "qubit."
      */
     virtual void PhaseRootN(bitLenInt n, bitLenInt qubit)
     {
@@ -1069,7 +1069,7 @@ public:
     /**
      * X gate
      *
-     * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
+     * Applies the Pauli "X" operator to the qubit at "qubit." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
     virtual void X(bitLenInt qubit) { Invert(ONE_CMPLX, ONE_CMPLX, qubit); }
@@ -1085,7 +1085,7 @@ public:
     /**
      * Y gate
      *
-     * Applies the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
+     * Applies the Pauli "Y" operator to the qubit at "qubit." The Pauli
      * "Y" operator is similar to a logical "NOT" with permutation phase.
      * effects.
      */
@@ -1102,7 +1102,7 @@ public:
     /**
      * Z gate
      *
-     * Applies the Pauli "Z" operator to the qubit at "qubitIndex." The Pauli
+     * Applies the Pauli "Z" operator to the qubit at "qubit." The Pauli
      * "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
     virtual void Z(bitLenInt qubit) { Phase(ONE_CMPLX, -ONE_CMPLX, qubit); }
@@ -1118,7 +1118,7 @@ public:
     /**
      * Square root of X gate
      *
-     * Applies the square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
+     * Applies the square root of the Pauli "X" operator to the qubit at "qubit." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
     virtual void SqrtX(bitLenInt qubit)
@@ -1132,7 +1132,7 @@ public:
     /**
      * Inverse square root of X gate
      *
-     * Applies the (by convention) inverse square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
+     * Applies the (by convention) inverse square root of the Pauli "X" operator to the qubit at "qubit." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
     virtual void ISqrtX(bitLenInt qubit)
@@ -1146,7 +1146,7 @@ public:
     /**
      * Square root of Y gate
      *
-     * Applies the square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
+     * Applies the square root of the Pauli "Y" operator to the qubit at "qubit." The Pauli
      * "Y" operator is similar to a logical "NOT" with permutation phase
      * effects.
      */
@@ -1161,7 +1161,7 @@ public:
     /**
      * Inverse square root of Y gate
      *
-     * Applies the (by convention) inverse square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
+     * Applies the (by convention) inverse square root of the Pauli "Y" operator to the qubit at "qubit." The Pauli
      * "Y" operator is similar to a logical "NOT" with permutation phase
      * effects.
      */
@@ -1477,8 +1477,7 @@ public:
      * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
      * bits, there are therefore 2^k real components in "angles."
      */
-    virtual void UniformlyControlledRY(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, real1 const* angles);
+    virtual void UniformlyControlledRY(const std::vector<bitLenInt>& controls, bitLenInt qubit, real1 const* angles);
 
     /**
      * Apply a "uniformly controlled" rotation of a bit around the Pauli Z axis. (See
@@ -1490,36 +1489,35 @@ public:
      * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
      * bits, there are therefore 2^k real components in "angles."
      */
-    virtual void UniformlyControlledRZ(
-        const std::vector<bitLenInt>& controls, bitLenInt qubitIndex, real1 const* angles);
+    virtual void UniformlyControlledRZ(const std::vector<bitLenInt>& controls, bitLenInt qubit, real1 const* angles);
 
     /**
      * Phase shift gate
      *
      * Rotates as \f$ e^{-i \theta/2} \f$ around |1> state
      */
-    virtual void RT(real1_f radians, bitLenInt qubitIndex);
+    virtual void RT(real1_f radians, bitLenInt qubit);
 
     /**
      * X axis rotation gate
      *
      * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli X axis
      */
-    virtual void RX(real1_f radians, bitLenInt qubitIndex);
+    virtual void RX(real1_f radians, bitLenInt qubit);
 
     /**
      * Y axis rotation gate
      *
      * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli y axis.
      */
-    virtual void RY(real1_f radians, bitLenInt qubitIndex);
+    virtual void RY(real1_f radians, bitLenInt qubit);
 
     /**
      * Z axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
      */
-    virtual void RZ(real1_f radians, bitLenInt qubitIndex);
+    virtual void RZ(real1_f radians, bitLenInt qubit);
 
     /**
      * Controlled Z axis rotation gate
@@ -1544,21 +1542,21 @@ public:
      * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around |1>
      * state.
      */
-    virtual void RTDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+    virtual void RTDyad(int numerator, int denomPower, bitLenInt qubit);
 
     /**
      * Dyadic fraction X axis rotation gate
      *
      * Rotates \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ on Pauli x axis.
      */
-    virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+    virtual void RXDyad(int numerator, int denomPower, bitLenInt qubit);
 
     /**
      * (Identity) Exponentiation gate
      *
      * Applies \f$ e^{-i \theta*I} \f$, exponentiation of the identity operator
      */
-    virtual void Exp(real1_f radians, bitLenInt qubitIndex);
+    virtual void Exp(real1_f radians, bitLenInt qubit);
 
     /**
      *  Imaginary exponentiation of arbitrary 2x2 gate
@@ -1574,14 +1572,14 @@ public:
      * Applies \f$ \exp\left(-i \pi numerator I / 2^{denomPower}\right) \f$, exponentiation of the identity
      * operator
      */
-    virtual void ExpDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+    virtual void ExpDyad(int numerator, int denomPower, bitLenInt qubit);
 
     /**
      * Pauli X exponentiation gate
      *
      * Applies \f$ e^{-i \theta \sigma_x} \f$, exponentiation of the Pauli X operator
      */
-    virtual void ExpX(real1_f radians, bitLenInt qubitIndex);
+    virtual void ExpX(real1_f radians, bitLenInt qubit);
 
     /**
      * Dyadic fraction Pauli X exponentiation gate
@@ -1589,14 +1587,14 @@ public:
      * Applies \f$ \exp\left(-i \pi numerator \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
      * operator
      */
-    virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+    virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubit);
 
     /**
      * Pauli Y exponentiation gate
      *
      * Applies \f$ e^{-i \theta \sigma_y} \f$, exponentiation of the Pauli Y operator
      */
-    virtual void ExpY(real1_f radians, bitLenInt qubitIndex);
+    virtual void ExpY(real1_f radians, bitLenInt qubit);
 
     /**
      * Dyadic fraction Pauli Y exponentiation gate
@@ -1604,14 +1602,14 @@ public:
      * Applies \f$ \exp\left(-i \pi numerator \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
      * operator
      */
-    virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+    virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubit);
 
     /**
      * Pauli Z exponentiation gate
      *
      * Applies \f$ e^{-i \theta \sigma_z} \f$, exponentiation of the Pauli Z operator
      */
-    virtual void ExpZ(real1_f radians, bitLenInt qubitIndex);
+    virtual void ExpZ(real1_f radians, bitLenInt qubit);
 
     /**
      * Dyadic fraction Pauli Z exponentiation gate
@@ -1619,7 +1617,7 @@ public:
      * Applies \f$ \exp\left(-i \pi numerator \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
      * operator
      */
-    virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+    virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubit);
 
     /**
      * Controlled X axis rotation gate
@@ -1640,7 +1638,7 @@ public:
      *
      * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y axis.
      */
-    virtual void RYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+    virtual void RYDyad(int numerator, int denomPower, bitLenInt qubit);
 
     /**
      * Controlled dyadic fraction y axis rotation gate
@@ -1655,7 +1653,7 @@ public:
      *
      * Rotates as \f$ \exp\left(i \pi numerator / 2^{denomPower}\right) \f$ around Pauli Z axis.
      */
-    virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+    virtual void RZDyad(int numerator, int denomPower, bitLenInt qubit);
 
     /**
      * Controlled dyadic fraction Z axis rotation gate
@@ -2351,22 +2349,22 @@ public:
     virtual bitCapInt ForceM(const std::vector<bitLenInt>& bits, const std::vector<bool>& values, bool doApply = true);
 
     /** Swap values of two bits in register */
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
 
     /** Swap values of two bits in register, and apply phase factor of i if bits are different */
-    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
 
     /** Inverse ISwap - Swap values of two bits in register, and apply phase factor of -i if bits are different */
-    virtual void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void IISwap(bitLenInt qubit1, bitLenInt qubit2);
 
     /** Square root of Swap gate */
-    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
 
     /** Inverse square root of Swap gate */
-    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
 
     /** The 2-qubit "fSim" gate, (useful in the simulation of particles with fermionic statistics) */
-    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2) = 0;
 
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
@@ -2391,7 +2389,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f Prob(bitLenInt qubitIndex) = 0;
+    virtual real1_f Prob(bitLenInt qubit) = 0;
     /**
      * Direct measure of bit probability to be in |1> state, if control bit is |1>.
      *
@@ -2689,7 +2687,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbRdm(bitLenInt qubitIndex) { return Prob(qubitIndex); }
+    virtual real1_f ProbRdm(bitLenInt qubit) { return Prob(qubit); }
     /**
      * Direct measure of full permutation probability, treating all ancillary qubits as post-selected T gate gadgets
      *

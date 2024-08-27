@@ -188,8 +188,8 @@ public:
 
     void copy_out(complex* copyOut, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
-        par_for(0, length,
-            [&](const bitCapIntOcl& lcv, const unsigned& cpu) { copyOut[lcv] = amplitudes[lcv + offset]; });
+        par_for(
+            0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { copyOut[lcv] = amplitudes[lcv + offset]; });
     }
 
     void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
