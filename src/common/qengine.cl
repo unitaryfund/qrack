@@ -75,8 +75,8 @@ inline cmplx polar_unit(const real1 theta) {
 
 #define PUSH_APART_2()                                                                                                 \
     bitCapIntOcl i = lcv & qMask1;                                                                                     \
-    bitCapIntOcl iHigh = (lcv ^ i) << ONE_BCI;                                                                         \
-    bitCapIntOcl iLow = iHigh & qMask2;                                                                                \
+    const bitCapIntOcl iHigh = (lcv ^ i) << ONE_BCI;                                                                   \
+    const bitCapIntOcl iLow = iHigh & qMask2;                                                                          \
     i |= iLow | ((iHigh ^ iLow) << ONE_BCI);
 
 #define APPLY_AND_OUT()                                                                                                \
@@ -267,8 +267,9 @@ void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
 {
 
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl mask = bitCapIntOclPtr[1];
+    const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl mask = args.y;
     const bitCapIntOcl otherMask = bitCapIntOclPtr[2];
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -293,8 +294,9 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 {
     const bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl mask = bitCapIntOclPtr[1];
+    const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl mask = args.y;
     const bitCapIntOcl otherMask = bitCapIntOclPtr[2];
     const cmplx phaseFac = cmplxPtr[0];
     const cmplx iPhaseFac = cmplxPtr[1];
@@ -314,10 +316,10 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     }
 }
 
-void kernel phasemask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel phasemask(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     // const bitCapIntOcl maxI = args.x;
     // const bitCapIntOcl mask = args.y;
     // const bitCapIntOcl nPhases = args.z;
@@ -409,11 +411,12 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
     constant bitCapIntOcl* qPowers, global cmplx4* mtrxs, constant real1* nrmIn)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl targetPower = bitCapIntOclPtr[1];
+    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl targetPower = args.y;
     const bitCapIntOcl targetMask = targetPower - ONE_BCI;
-    const bitCapIntOcl controlLen = bitCapIntOclPtr[2];
-    const bitCapIntOcl mtrxSkipLen = bitCapIntOclPtr[3];
+    const bitCapIntOcl controlLen = args.z;
+    const bitCapIntOcl mtrxSkipLen = args.w;
     const bitCapIntOcl mtrxSkipValueMask = bitCapIntOclPtr[4];
     const real1 nrm = nrmIn[0];
 
@@ -447,11 +450,12 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
     }
 }
 
-void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
+void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl2* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl qMask = bitCapIntOclPtr[1];
+    const bitCapIntOcl2 args = bitCapIntOclPtr[0];
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl qMask = args.y;
     const cmplx phaseFac = cmplx_ptr[0];
     const cmplx phaseFacAdj = cmplx_ptr[1];
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -465,11 +469,12 @@ void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitCa
     }
 }
 
-void kernel uniformparityrznorm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
+void kernel uniformparityrznorm(global cmplx* stateVec, constant bitCapIntOcl2* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl qMask = bitCapIntOclPtr[1];
+    const bitCapIntOcl2 args = bitCapIntOclPtr[0];
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl qMask = args.y;
     const cmplx phaseFac = cmplx_ptr[0];
     const cmplx phaseFacAdj = cmplx_ptr[1];
     const cmplx nrm = cmplx_ptr[2];
@@ -485,13 +490,14 @@ void kernel uniformparityrznorm(global cmplx* stateVec, constant bitCapIntOcl* b
     }
 }
 
-void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr, constant bitCapIntOcl* qPowers)
+void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, constant cmplx* cmplx_ptr, constant bitCapIntOcl* qPowers)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl qMask = bitCapIntOclPtr[1];
-    const bitCapIntOcl cMask = bitCapIntOclPtr[2];
-    const bitLenInt cLen = (bitLenInt)bitCapIntOclPtr[3];
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl qMask = args.y;
+    const bitCapIntOcl cMask = args.z;
+    const bitLenInt cLen = (bitLenInt)args.w;
     const cmplx phaseFac = cmplx_ptr[0];
     const cmplx phaseFacAdj = cmplx_ptr[1];
 
@@ -516,10 +522,10 @@ void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitC
 }
 
 void kernel compose(
-    global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+    global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl4* bitCapIntOclPtr, global cmplx* nStateVec)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     // For reference:
     // bitCapIntOcl nMaxQPower = args.x;
     // bitCapIntOcl qubitCount = args.y;
@@ -532,10 +538,10 @@ void kernel compose(
 }
 
 void kernel composewide(
-    global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+    global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl4* bitCapIntOclPtr, global cmplx* nStateVec)
 {
     const bitCapIntOcl lcv = ID;
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     // For reference:
     // bitCapIntOcl nMaxQPower = args.x;
     // bitCapIntOcl qubitCount = args.y;
@@ -551,7 +557,7 @@ void kernel composemid(
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
     const bitCapIntOcl nMaxQPower = args.x;
-    // bitCapIntOcl qubitCount = args.y;
+    // const bitCapIntOcl qubitCount = args.y;
     const bitCapIntOcl oQubitCount = args.z;
     const bitCapIntOcl startMask = args.w;
     const bitCapIntOcl midMask = bitCapIntOclPtr[4];
@@ -564,12 +570,12 @@ void kernel composemid(
     }
 }
 
-void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
+void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr,
     global real1* remainderStateProb, global real1* remainderStateAngle, global real1* partStateProb,
     global real1* partStateAngle)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     const bitCapIntOcl partPower = args.x;
     const bitCapIntOcl remainderPower = args.y;
     const bitLenInt start = (bitLenInt)args.z;
@@ -631,11 +637,11 @@ void kernel decomposeamp(
     }
 }
 
-void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
+void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr,
     global real1* remainderStateProb, global real1* remainderStateAngle)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     const bitCapIntOcl partPower = args.x;
     const bitCapIntOcl remainderPower = args.y;
     const bitLenInt start = (bitLenInt)args.z;
@@ -685,13 +691,14 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     }
 }
 
-void kernel dispose(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel dispose(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, global cmplx* nStateVec)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl remainderPower = bitCapIntOclPtr[0];
-    const bitLenInt len = (bitLenInt)bitCapIntOclPtr[1];
-    const bitCapIntOcl skipMask = bitCapIntOclPtr[2];
-    const bitCapIntOcl disposedRes = bitCapIntOclPtr[3];
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
+    const bitCapIntOcl remainderPower = args.x;
+    const bitLenInt len = (bitLenInt)args.y;
+    const bitCapIntOcl skipMask = args.z;
+    const bitCapIntOcl disposedRes = args.w;
     for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         const bitCapIntOcl iLow = lcv & skipMask;
         bitCapIntOcl i = iLow | ((lcv ^ iLow) << (bitCapIntOcl)len) | disposedRes;
@@ -699,11 +706,11 @@ void kernel dispose(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     }
 }
 
-void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+void kernel prob(global cmplx* stateVec, constant bitCapIntOcl2* bitCapIntOclPtr, global real1* sumBuffer,
     local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    const bitCapIntOcl2 args = bitCapIntOclPtr[0];
     const bitCapIntOcl maxI = args.x;
     const bitCapIntOcl qPower = args.y;
     const bitCapIntOcl qMask = qPower - ONE_BCI;
@@ -720,11 +727,11 @@ void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     SUM_LOCAL(oneChancePart)
 }
 
-void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, global real1* sumBuffer,
     local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     const bitCapIntOcl maxI = args.x;
     const bitCapIntOcl qPower = args.y;
     const bitCapIntOcl qControlPower = args.z;
@@ -750,11 +757,11 @@ void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
     SUM_LOCAL(oneChancePart)
 }
 
-void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, global real1* sumBuffer,
     local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     const bitCapIntOcl maxI = args.x;
     const bitCapIntOcl perm = args.y;
     const bitLenInt start = (bitLenInt)args.z;
@@ -773,10 +780,10 @@ void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     SUM_LOCAL(oneChancePart)
 }
 
-void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer)
+void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, global real1* sumBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     const bitCapIntOcl maxI = args.x;
     const bitCapIntOcl maxJ = args.y;
     const bitLenInt start = (bitLenInt)args.z;
@@ -796,11 +803,11 @@ void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     }
 }
 
-void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, global real1* sumBuffer,
     constant bitCapIntOcl* qPowers, local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     const bitCapIntOcl maxI = args.x;
     //bitCapIntOcl mask = args.y;
     const bitCapIntOcl perm = args.z;
@@ -825,11 +832,11 @@ void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
     SUM_LOCAL(oneChancePart)
 }
 
-void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, global real1* sumBuffer,
     constant bitCapIntOcl* qPowersMask, constant bitCapIntOcl* qPowersSkip)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl4 args = bitCapIntOclPtr[0];
     const bitCapIntOcl maxI = args.x;
     const bitCapIntOcl maxJ = args.y;
     const bitLenInt maskLen = (bitLenInt)args.z;
@@ -863,12 +870,12 @@ void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     }
 }
 
-void kernel probparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* sumBuffer,
+void kernel probparity(global cmplx* stateVec, constant bitCapIntOcl2* bitCapIntOclPtr, global real1* sumBuffer,
     local real1* lBuffer)
 {
 
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    const bitCapIntOcl2 args = bitCapIntOclPtr[0];
     const bitCapIntOcl maxI = args.x;
     const bitCapIntOcl mask = args.y;
 
@@ -925,8 +932,9 @@ void kernel expperm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     local real1* lBuffer)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitLenInt len = (bitLenInt)bitCapIntOclPtr[1];
+    const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    const bitCapIntOcl maxI = args.x;
+    const bitLenInt len = (bitLenInt)args.y;
     const bitCapIntOcl offset = bitCapIntOclPtr[2];
 
     real1 expectation = 0;
@@ -1010,8 +1018,9 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
 void kernel applym(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl qPower = bitCapIntOclPtr[1];
+    const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl qPower = args.y;
     const bitCapIntOcl qMask = qPower - ONE_BCI;
     const bitCapIntOcl savePower = bitCapIntOclPtr[2];
     const bitCapIntOcl discardPower = qPower ^ savePower;
@@ -1029,8 +1038,9 @@ void kernel applym(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
 void kernel applymreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl mask = bitCapIntOclPtr[1];
+    const bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl mask = args.y;
     const bitCapIntOcl result = bitCapIntOclPtr[2];
     const cmplx nrm = cmplx_ptr[0];
 
@@ -1039,11 +1049,12 @@ void kernel applymreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOc
     }
 }
 
-void kernel clearbuffer(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel clearbuffer(global cmplx* stateVec, constant bitCapIntOcl2* bitCapIntOclPtr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0] + bitCapIntOclPtr[1];
-    const bitCapIntOcl offset = bitCapIntOclPtr[1];
+    const bitCapIntOcl2 args = bitCapIntOclPtr[0];
+    const bitCapIntOcl maxI = args.x + args.y;
+    const bitCapIntOcl offset = args.y;
     const cmplx amp0 = (cmplx)(ZERO_R1, ZERO_R1);
     for (bitCapIntOcl lcv = (ID + offset); lcv < maxI; lcv += Nthreads) {
         stateVec[lcv] = amp0;
@@ -1064,10 +1075,11 @@ void kernel shufflebuffers(global cmplx* stateVec1, global cmplx* stateVec2, con
 void kernel rol(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
-    const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const bitCapIntOcl regMask = bitCapIntOclPtr[1];
-    const bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    const bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
+    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl regMask = args.y;
+    const bitCapIntOcl otherMask = args.z;
+    const bitCapIntOcl lengthMask = args.w - ONE_BCI;
     const bitLenInt start = (bitLenInt)bitCapIntOclPtr[4];
     const bitLenInt shift = (bitLenInt)bitCapIntOclPtr[5];
     const bitLenInt length = (bitLenInt)bitCapIntOclPtr[6];
