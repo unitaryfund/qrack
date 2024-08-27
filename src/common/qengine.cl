@@ -290,7 +290,7 @@ void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
     }
 }
 
-void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplxPtr)
+void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx2* cmplxPtr)
 {
     const bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
     const bitCapIntOcl Nthreads = get_global_size(0);
@@ -298,8 +298,7 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     const bitCapIntOcl maxI = args.x;
     const bitCapIntOcl mask = args.y;
     const bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    const cmplx phaseFac = cmplxPtr[0];
-    const cmplx iPhaseFac = cmplxPtr[1];
+    const cmplx2 phaseFac = cmplxPtr[0];
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl setInt = lcv & mask;
@@ -312,7 +311,7 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 
         setInt |= lcv & otherMask;
 
-        stateVec[setInt] = zmul(v ? phaseFac : iPhaseFac, stateVec[setInt]);
+        stateVec[setInt] = zmul(v ? phaseFac.lo : phaseFac.hi, stateVec[setInt]);
     }
 }
 
@@ -450,14 +449,13 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
     }
 }
 
-void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl2* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
+void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl2* bitCapIntOclPtr, constant cmplx2* cmplx_ptr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl2 args = bitCapIntOclPtr[0];
     const bitCapIntOcl maxI = args.x;
     const bitCapIntOcl qMask = args.y;
-    const cmplx phaseFac = cmplx_ptr[0];
-    const cmplx phaseFacAdj = cmplx_ptr[1];
+    const cmplx2 phaseFac = cmplx_ptr[0];
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl perm = lcv & qMask;
         bitLenInt c;
@@ -465,7 +463,7 @@ void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl2* bitC
             // clear the least significant bit set
             perm &= perm - ONE_BCI;
         }
-        stateVec[lcv] = zmul(stateVec[lcv], ((c & 1U) ? phaseFac : phaseFacAdj));
+        stateVec[lcv] = zmul(stateVec[lcv], ((c & 1U) ? phaseFac.lo : phaseFac.hi));
     }
 }
 
@@ -490,7 +488,7 @@ void kernel uniformparityrznorm(global cmplx* stateVec, constant bitCapIntOcl2* 
     }
 }
 
-void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, constant cmplx* cmplx_ptr, constant bitCapIntOcl* qPowers)
+void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIntOclPtr, constant cmplx2* cmplx_ptr, constant bitCapIntOcl* qPowers)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl4 args = bitCapIntOclPtr[0];
@@ -498,8 +496,7 @@ void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl4* bit
     const bitCapIntOcl qMask = args.y;
     const bitCapIntOcl cMask = args.z;
     const bitLenInt cLen = (bitLenInt)args.w;
-    const cmplx phaseFac = cmplx_ptr[0];
-    const cmplx phaseFacAdj = cmplx_ptr[1];
+    const cmplx2 phaseFac = cmplx_ptr[0];
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl iHigh = lcv;
@@ -517,7 +514,7 @@ void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl4* bit
             // clear the least significant bit set
             perm &= perm - ONE_BCI;
         }
-        stateVec[i] = zmul(stateVec[i], ((c & 1U) ? phaseFac : phaseFacAdj));
+        stateVec[i] = zmul(stateVec[i], ((c & 1U) ? phaseFac.lo : phaseFac.hi));
     }
 }
 

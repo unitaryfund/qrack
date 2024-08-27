@@ -1405,7 +1405,8 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
     const bitCapIntOcl startMask = pow2Ocl(start) - 1U;
     const bitCapIntOcl midMask = bitRegMaskOcl(start, oQubitCount);
     const bitCapIntOcl endMask = pow2MaskOcl(qubitCount + oQubitCount) & ~(startMask | midMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ nMaxQPower, oQubitCount, startMask, midMask, endMask, start, 0U, 0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ nMaxQPower, oQubitCount, startMask, midMask, endMask, start, 0U, 0U, 0U,
+        0U };
 
     Compose(OCL_API_COMPOSE_MID, bciArgs, toCopy);
 
