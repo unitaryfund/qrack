@@ -133,7 +133,6 @@ void _expLog2x2(complex const* matrix2x2, complex* outMatrix2x2, bool isExp)
     // Diagonal matrices are a special case.
     const bool isDiag = IS_NORM_0(matrix2x2[1U]) && IS_NORM_0(matrix2x2[2U]);
 
-    complex expOfGate[4U];
     complex jacobian[4U];
     complex inverseJacobian[4U];
     complex tempMatrix2x2[4U];
@@ -155,10 +154,10 @@ void _expLog2x2(complex const* matrix2x2, complex* outMatrix2x2, bool isExp)
         jacobian[1U] = matrix2x2[1U];
         jacobian[3U] = matrix2x2[3U] - eigenvalue2;
 
-        expOfGate[0U] = eigenvalue1;
-        expOfGate[1U] = ZERO_CMPLX;
-        expOfGate[2U] = ZERO_CMPLX;
-        expOfGate[3U] = eigenvalue2;
+        outMatrix2x2[0U] = eigenvalue1;
+        outMatrix2x2[1U] = ZERO_CMPLX;
+        outMatrix2x2[2U] = ZERO_CMPLX;
+        outMatrix2x2[3U] = eigenvalue2;
 
         real1 nrm = (real1)std::sqrt((real1_s)(norm(jacobian[0U]) + norm(jacobian[2U])));
         jacobian[0U] /= nrm;
@@ -174,36 +173,34 @@ void _expLog2x2(complex const* matrix2x2, complex* outMatrix2x2, bool isExp)
         inverseJacobian[2U] = -jacobian[2U] / determinant;
         inverseJacobian[3U] = jacobian[0U] / determinant;
     } else {
-        expOfGate[0U] = matrix2x2[0U];
-        expOfGate[1U] = ZERO_CMPLX;
-        expOfGate[2U] = ZERO_CMPLX;
-        expOfGate[3U] = matrix2x2[3U];
+        outMatrix2x2[0U] = matrix2x2[0U];
+        outMatrix2x2[1U] = ZERO_CMPLX;
+        outMatrix2x2[2U] = ZERO_CMPLX;
+        outMatrix2x2[3U] = matrix2x2[3U];
     }
 
     if (isExp) {
         // In this branch, we calculate e^(matrix2x2).
 
         // Note: For a (2x2) hermitian input gate, this theoretically produces a unitary output transformation.
-        expOfGate[0U] = ((real1)std::exp((real1_s)real(expOfGate[0U]))) *
-            complex((real1)cos(imag(expOfGate[0U])), (real1)sin(imag(expOfGate[0U])));
-        expOfGate[1U] = ZERO_CMPLX;
-        expOfGate[2U] = ZERO_CMPLX;
-        expOfGate[3U] = ((real1)std::exp((real1_s)real(expOfGate[3U]))) *
-            complex((real1)cos(imag(expOfGate[3U])), (real1)sin(imag(expOfGate[3U])));
+        outMatrix2x2[0U] = ((real1)std::exp((real1_s)real(outMatrix2x2[0U]))) *
+            complex((real1)cos(imag(outMatrix2x2[0U])), (real1)sin(imag(outMatrix2x2[0U])));
+        outMatrix2x2[1U] = ZERO_CMPLX;
+        outMatrix2x2[2U] = ZERO_CMPLX;
+        outMatrix2x2[3U] = ((real1)std::exp((real1_s)real(outMatrix2x2[3U]))) *
+            complex((real1)cos(imag(outMatrix2x2[3U])), (real1)sin(imag(outMatrix2x2[3U])));
     } else {
         // In this branch, we calculate log(matrix2x2).
-        expOfGate[0U] = complex((real1)std::log((real1_s)abs(expOfGate[0U])), (real1)arg(expOfGate[0U]));
-        expOfGate[1U] = ZERO_CMPLX;
-        expOfGate[2U] = ZERO_CMPLX;
-        expOfGate[3U] = complex((real1)std::log((real1_s)abs(expOfGate[3U])), (real1)arg(expOfGate[3U]));
+        outMatrix2x2[0U] = complex((real1)std::log((real1_s)abs(outMatrix2x2[0U])), (real1)arg(outMatrix2x2[0U]));
+        outMatrix2x2[1U] = ZERO_CMPLX;
+        outMatrix2x2[2U] = ZERO_CMPLX;
+        outMatrix2x2[3U] = complex((real1)std::log((real1_s)abs(outMatrix2x2[3U])), (real1)arg(outMatrix2x2[3U]));
     }
 
     if (!isDiag) {
-        mul2x2(expOfGate, inverseJacobian, tempMatrix2x2);
-        mul2x2(jacobian, tempMatrix2x2, expOfGate);
+        mul2x2(outMatrix2x2, inverseJacobian, tempMatrix2x2);
+        mul2x2(jacobian, tempMatrix2x2, outMatrix2x2);
     }
-
-    std::copy(expOfGate, expOfGate + 4U, outMatrix2x2);
 }
 
 void exp2x2(complex const* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
