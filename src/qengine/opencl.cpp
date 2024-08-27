@@ -1318,7 +1318,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
 
     const bitCapIntOcl oMaxQPower = maxQPowerOcl;
     const bitCapIntOcl nMaxQPower = bciArgs[0];
-    const bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
+    const bitCapIntOcl nQubitCount = qubitCount + toCopy->qubitCount;
     const size_t nStateVecSize = nMaxQPower * sizeof(complex);
 #if ENABLE_OCL_MEM_GUARDS
     if (nStateVecSize > device_context->GetMaxAlloc()) {
@@ -1405,8 +1405,7 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
     const bitCapIntOcl startMask = pow2Ocl(start) - 1U;
     const bitCapIntOcl midMask = bitRegMaskOcl(start, oQubitCount);
     const bitCapIntOcl endMask = pow2MaskOcl(qubitCount + oQubitCount) & ~(startMask | midMask);
-    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start,
-        0U, 0U, 0U };
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ nMaxQPower, oQubitCount, startMask, midMask, endMask, start, 0U, 0U, 0U, 0U };
 
     Compose(OCL_API_COMPOSE_MID, bciArgs, toCopy);
 

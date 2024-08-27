@@ -557,12 +557,11 @@ void kernel composemid(
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
     const bitCapIntOcl nMaxQPower = args.x;
-    // const bitCapIntOcl qubitCount = args.y;
-    const bitCapIntOcl oQubitCount = args.z;
-    const bitCapIntOcl startMask = args.w;
-    const bitCapIntOcl midMask = bitCapIntOclPtr[4];
-    const bitCapIntOcl endMask = bitCapIntOclPtr[5];
-    const bitLenInt start = (bitLenInt)bitCapIntOclPtr[6];
+    const bitCapIntOcl oQubitCount = args.y;
+    const bitCapIntOcl startMask = args.z;
+    const bitCapIntOcl midMask = args.w;
+    const bitCapIntOcl endMask = bitCapIntOclPtr[4];
+    const bitLenInt start = (bitLenInt)bitCapIntOclPtr[5];
 
     for (bitCapIntOcl lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
         nStateVec[lcv] =
