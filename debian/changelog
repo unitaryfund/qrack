@@ -1,3 +1,9 @@
+libqrack (9.9.19) noble; urgency=medium
+
+  * Various optimizations; PowerPC fix (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 27 Aug 2024 19:53:20 -0400
+
 libqrack (9.9.16) bionic; urgency=medium
 
   * QUnitStateVector and QEngineOCL debugging (Bionic 4/4)
