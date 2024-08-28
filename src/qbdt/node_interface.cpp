@@ -110,8 +110,8 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 
     const real1 lWeight = ((real1)lLeaf.use_count()) * ((real1)lLeaf.use_count());
     const real1 rWeight = ((real1)rLeaf.use_count()) * ((real1)rLeaf.use_count());
-    const complex_x nScale = ((real1_x)sqrt(lWeight / (lWeight + rWeight))) * lLeaf->scale +
-        ((real1_x)sqrt(rWeight / (lWeight + rWeight))) * rLeaf->scale;
+    const complex_x nScale = ((real1_x)(lWeight / (lWeight + rWeight))) * lLeaf->scale +
+        ((real1_x)(rWeight / (lWeight + rWeight))) * rLeaf->scale;
 
     if (IS_NODE_0(nScale)) {
         lLeaf->SetZero();
