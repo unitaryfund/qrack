@@ -96,20 +96,16 @@ protected:
 
         _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
             QBdtNodeInterfacePtr leaf = root;
-            complex_x scale = leaf->scale;
+            complex scale = complexFixedToFloating(leaf->scale);
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
                 leaf = leaf->branches[SelectBit(i, j)];
                 if (!leaf) {
                     break;
                 }
-                scale *= leaf->scale;
+                scale *= complexFixedToFloating(leaf->scale);
             }
 
-#if !defined(__GNUC__) || defined(__clang__)
             getLambda((bitCapIntOcl)i, scale);
-#else
-            getLambda((bitCapIntOcl)i, complex((real1)(real(scale).to_double()), (real1)(imag(scale).to_double())));
-#endif
         });
     }
     template <typename Fn> void SetTraversal(Fn setLambda)
@@ -243,14 +239,14 @@ public:
     {
         SetTraversal([state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
             const complex& s = state[i];
-            leaf->scale = complex_x((real1_f)s.real(), (real1_f)s.imag());
+            leaf->scale = complex_x((real1_x)s.real(), (real1_x)s.imag());
         });
     }
     void SetQuantumState(QInterfacePtr eng)
     {
         SetTraversal([eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
             const complex s = eng->GetAmplitude(i);
-            leaf->scale = complex_x((real1_f)s.real(), (real1_f)s.imag());
+            leaf->scale = complex_x((real1_x)s.real(), (real1_x)s.imag());
         });
     }
     void GetProbs(real1* outputProbs)
