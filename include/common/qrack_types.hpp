@@ -25,7 +25,7 @@
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
 #define IS_OPPOSITE(c1, c2) (IS_NORM_0((c1) + (c2)))
-#define IS_NORM_0_X(c) (norm(c) <= FP_NORM_EPSILON_X)
+#define IS_NORM_0_X(c) (norm(complexFixedToFloating(c)) <= FP_NORM_EPSILON)
 #define IS_SAME_X(c1, c2) (IS_NORM_0_X((c1) - (c2)))
 #define IS_OPPOSITE_X(c1, c2) (IS_NORM_0_X((c1) + (c2)))
 
@@ -265,5 +265,4 @@ QRACK_CONST complex CMPLX_DEFAULT_ARG = complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT
 QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<real1>::epsilon() / 2);
 QRACK_CONST real1_f TRYDECOMPOSE_EPSILON = (real1_f)(16 * FP_NORM_EPSILON);
 constexpr real1_f FP_NORM_EPSILON_F = std::numeric_limits<real1_f>::epsilon() / 2;
-constexpr real1_x FP_NORM_EPSILON_X = (real1_x)(std::numeric_limits<real1_f>::epsilon() / 2);
 } // namespace Qrack

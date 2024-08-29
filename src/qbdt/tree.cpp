@@ -829,24 +829,22 @@ void QBdt::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     }
 
     const std::vector<bitLenInt> controls{ qubit1 };
-    real1_x sinTheta = (real1_x)sin(theta);
-
-    if ((sinTheta * sinTheta) <= FP_NORM_EPSILON_X) {
+    const real1_f sinTheta = sin(theta);
+    if ((sinTheta * sinTheta) <= FP_NORM_EPSILON_F) {
         MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
 
     const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
-
-    const real1_x sinThetaDiffNeg = ONE_R1_X + sinTheta;
-    if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON_X) {
+    const real1_f sinThetaDiffNeg = ONE_R1_F + sinTheta;
+    if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON_F) {
         ISwap(qubit1, qubit2);
         MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         return;
     }
 
-    const real1_x sinThetaDiffPos = ONE_R1_X - sinTheta;
-    if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON_X) {
+    const real1_f sinThetaDiffPos = ONE_R1_F - sinTheta;
+    if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON_F) {
         IISwap(qubit1, qubit2);
         MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         return;

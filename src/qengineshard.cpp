@@ -29,14 +29,14 @@ bool QEngineShard::ClampAmps()
         return false;
     }
 
-    if (norm(amp0) <= FP_NORM_EPSILON_X) {
+    if (norm(complexFixedToFloating(amp0)) <= FP_NORM_EPSILON) {
         amp0 = ZERO_R1_X;
         amp1 /= (real1_f)abs(complexFixedToFloating(amp1));
         isPhaseDirty = false;
         return true;
     }
 
-    if (norm(amp1) <= FP_NORM_EPSILON_X) {
+    if (norm(complexFixedToFloating(amp1)) <= FP_NORM_EPSILON) {
         amp1 = ZERO_R1_X;
         amp0 /= (real1_f)abs(complexFixedToFloating(amp0));
         isPhaseDirty = false;

@@ -971,9 +971,9 @@ protected:
             return;
         }
 
-        if (norm(shard.amp1) <= FP_NORM_EPSILON_X) {
+        if (norm(complexFixedToFloating(shard.amp1)) <= FP_NORM_EPSILON) {
             shard.unit = MakeEngine(1U, ZERO_BCI);
-        } else if (norm(shard.amp0) <= FP_NORM_EPSILON_X) {
+        } else if (norm(complexFixedToFloating(shard.amp0)) <= FP_NORM_EPSILON) {
             shard.unit = MakeEngine(1U, ONE_BCI);
         } else {
             complex bitState[2U]{ complexFixedToFloating(shard.amp0), complexFixedToFloating(shard.amp1) };

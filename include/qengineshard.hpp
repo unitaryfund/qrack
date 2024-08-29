@@ -307,10 +307,12 @@ public:
     {
         return (unit && unit->isClifford(mapped)) ||
             (!unit &&
-                ((norm(amp0) <= FP_NORM_EPSILON_X) || (norm(amp1) <= FP_NORM_EPSILON_X) ||
-                    (norm(amp0 - amp1) <= FP_NORM_EPSILON_X) || (norm(amp0 + amp1) <= FP_NORM_EPSILON_X) ||
-                    (norm(amp0 - I_CMPLX_X * amp1) <= FP_NORM_EPSILON_X) ||
-                    (norm(amp0 + I_CMPLX_X * amp1) <= FP_NORM_EPSILON_X)));
+                ((norm(complexFixedToFloating(amp0)) <= FP_NORM_EPSILON) ||
+                    (norm(complexFixedToFloating(amp1)) <= FP_NORM_EPSILON) ||
+                    (norm(complexFixedToFloating(amp0 - amp1)) <= FP_NORM_EPSILON) ||
+                    (norm(complexFixedToFloating(amp0 + amp1)) <= FP_NORM_EPSILON) ||
+                    (norm(complexFixedToFloating(amp0 - I_CMPLX_X * amp1)) <= FP_NORM_EPSILON) ||
+                    (norm(complexFixedToFloating(amp0 + I_CMPLX_X * amp1)) <= FP_NORM_EPSILON)));
     };
 };
 
