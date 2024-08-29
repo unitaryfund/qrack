@@ -397,8 +397,11 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
             return;
         }
 
-        scale = std::polar(sqrt(nrm), std::arg(complexFixedToFloating(b0->scale)));
-        b0->scale /= scale;
+        const real1_f r = sqrt(nrm);
+        const real1_f theta = std::arg(complexFixedToFloating(b0->scale));
+        const complex_x phaseFac = std::polar(ONE_R1 / r, -theta);
+        scale = std::polar(r, theta);
+        b0->scale *= phaseFac;
 
         return;
     }
@@ -439,9 +442,12 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    scale = std::polar(sqrt(nrm0 + nrm1), std::arg(complexFixedToFloating(b0->scale)));
-    b0->scale /= scale;
-    b1->scale /= scale;
+    const real1_f r = sqrt(nrm0 + nrm1);
+    const real1_f theta = std::arg(complexFixedToFloating(b0->scale));
+    const complex_x phaseFac = std::polar(ONE_R1 / r, -theta);
+    scale = std::polar(r, theta);
+    b0->scale *= phaseFac;
+    b1->scale *= phaseFac;
 }
 
 void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
