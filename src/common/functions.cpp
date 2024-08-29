@@ -95,7 +95,7 @@ complex complexFixedToFloating(complex_x f)
 #if !defined(__GNUC__) || defined(__clang__)
     return f;
 #else
-    return complex((real1)(real(f).to_double()), (real1)(imag(f).to_double()));
+    return complex((real1)(f.real().to_double()), (real1)(f.imag().to_double()));
 #endif
 }
 
