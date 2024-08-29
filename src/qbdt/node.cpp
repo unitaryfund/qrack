@@ -152,7 +152,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
         b1->scale /= nrm;
 
-        phaseFac = b1->scale / complex_x((real1_x)nrm, ZERO_R1_X);
+        phaseFac = b1->scale;
     } else if (IS_NODE_0(b1->scale)) {
         b1->SetZero();
 
@@ -167,7 +167,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
         b0->scale /= nrm;
 
-        phaseFac = b0->scale / (real1_x)nrm;
+        phaseFac = b0->scale;
     } else {
         phaseFac = b0->scale / (real1_x)abs(complexFixedToFloating(b0->scale));
     }
@@ -569,27 +569,8 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             QBdtNodeInterfacePtr n0 = branches[0U];
             QBdtNodeInterfacePtr n1 = branches[1U];
 
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            // These were just created, so there's no chance of deadlock in separate locks.
-            std::lock_guard<std::mutex> nLock0(n0->mtx);
-            std::lock_guard<std::mutex> nLock1(n1->mtx);
-
-            if ((depth >= pStridePow) || (bi_compare(pow2(parDepth), numThreads) <= 0)) {
-                ++parDepth;
-
-                std::future<void> future0 =
-                    std::async(std::launch::async, [&] { n0->InsertAtDepth(b, size, 0U, parDepth); });
-                n1->InsertAtDepth(b, size, 0U, parDepth);
-
-                future0.get();
-            } else {
-                n0->InsertAtDepth(b, size, 0U, parDepth);
-                n1->InsertAtDepth(b, size, 0U, parDepth);
-            }
-#else
             n0->InsertAtDepth(b, size, 0U, parDepth);
             n1->InsertAtDepth(b, size, 0U, parDepth);
-#endif
         }
 
         return;

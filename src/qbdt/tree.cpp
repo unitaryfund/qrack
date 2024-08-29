@@ -647,14 +647,14 @@ void QBdt::ApplySingle(const complex* _mtrx, bitLenInt target)
             }
         }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+        std::lock_guard<std::mutex> lock(leaf->mtx);
+#endif
+
         if (!leaf->branches[0U] || !leaf->branches[1U] || IS_NORM_0_X(leaf->scale)) {
             leaf->SetZero();
             return ZERO_BCI;
         }
-
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        std::lock_guard<std::mutex> lock(leaf->mtx);
-#endif
 
         leaf->Apply2x2(mtrx, qubitCount - target);
 
@@ -720,14 +720,14 @@ void QBdt::ApplyControlledSingle(const complex* _mtrx, std::vector<bitLenInt> co
             }
         }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+        std::lock_guard<std::mutex> lock(leaf->mtx);
+#endif
+
         if (!leaf->branches[0U] || !leaf->branches[1U] || IS_NORM_0_X(leaf->scale)) {
             leaf->SetZero();
             return ZERO_BCI;
         }
-
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        std::lock_guard<std::mutex> lock(leaf->mtx);
-#endif
 
         leaf->Apply2x2(mtrx, qubitCount - target);
 
