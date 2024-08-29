@@ -78,7 +78,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         if (underThreads == 1U) {
             underThreads = 0U;
         }
-        if ((depth >= pStridePow) && (bi_compare((pow2(parDepth) * (underThreads + 1U)), numThreads) <= 0)) {
+        if ((depth >= pStridePow) || (bi_compare((pow2(parDepth) * (underThreads + 1U)), numThreads) <= 0)) {
             ++parDepth;
 
             std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
@@ -124,8 +124,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
             return;
         }
 
-        b0->scale /= nrm;
-        scale = scale * b0->scale;
+        const complex_x phaseFac = b0->scale / (real1_x)nrm;
+        scale *= phaseFac;
+        b0->scale /= phaseFac;
 
         // Phase factor applied, and branches point to same object.
         return;
@@ -137,43 +138,26 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 #endif
 
-    complex_x phaseFac;
-    if (IS_NODE_0(b0->scale)) {
+    const real1_f nrmB0 = abs(complexFixedToFloating(b0->scale));
+    const real1_f nrmB1 = abs(complexFixedToFloating(b1->scale));
+    if ((nrmB0 <= _qrack_qbdt_sep_thresh) && (nrmB1 <= _qrack_qbdt_sep_thresh)) {
+        scale = ZERO_CMPLX_X;
+        branches[0U] = NULL;
+        branches[1U] = NULL;
+        return;
+    }
+    if (nrmB0 <= _qrack_qbdt_sep_thresh) {
         b0->SetZero();
-
-        const real1_f nrm = abs(complexFixedToFloating(b1->scale));
-
-        if (nrm <= _qrack_qbdt_sep_thresh) {
-            scale = ZERO_CMPLX_X;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
-            return;
-        }
-
-        b1->scale /= nrm;
-
-        phaseFac = b1->scale;
-    } else if (IS_NODE_0(b1->scale)) {
+        b1->scale /= nrmB1;
+    } else if (nrmB1 <= _qrack_qbdt_sep_thresh) {
         b1->SetZero();
-
-        const real1_f nrm = abs(complexFixedToFloating(b0->scale));
-
-        if (nrm <= _qrack_qbdt_sep_thresh) {
-            scale = ZERO_CMPLX_X;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
-            return;
-        }
-
-        b0->scale /= nrm;
-
-        phaseFac = b0->scale;
-    } else {
-        phaseFac = b0->scale / (real1_x)abs(complexFixedToFloating(b0->scale));
+        b0->scale /= nrmB0;
     }
 
-    scale *= phaseFac;
+    const complex_x phaseFac =
+        (b0->scale == ZERO_CMPLX_X) ? b1->scale : (b0->scale / (real1_x)abs(complexFixedToFloating(b0->scale)));
 
+    scale *= phaseFac;
     b0->scale /= phaseFac;
     b1->scale /= phaseFac;
 
