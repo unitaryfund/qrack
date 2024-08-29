@@ -318,13 +318,18 @@ void QBdtNode::Normalize(bitLenInt depth)
 #endif
 
 #if !defined(__GNUC__) || defined(__clang__)
-        const real1_x nrm = (real1_x)sqrt(2 * norm(b0->scale));
+        const real1_f nrm = sqrt(2 * norm(b0->scale));
 #else
-        const real1_x nrm = (real1_x)sqrt(2 * (norm(b0->scale).to_double()));
+        const real1_f nrm = sqrt(2 * (norm(b0->scale).to_double()));
 #endif
 
+        if (nrm <= _qrack_qbdt_sep_thresh) {
+            SetZero();
+            return;
+        }
+
         b0->Normalize(depth);
-        b0->scale *= ONE_R1_X / nrm;
+        b0->scale /= nrm;
     } else {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock(b0->mtx, b1->mtx);
@@ -333,16 +338,21 @@ void QBdtNode::Normalize(bitLenInt depth)
 #endif
 
 #if !defined(__GNUC__) || defined(__clang__)
-        const real1_x nrm = (real1_x)sqrt(norm(b0->scale) + norm(b1->scale));
+        const real1_f nrm = sqrt(norm(b0->scale) + norm(b1->scale));
 #else
-        const real1_x nrm = (real1_x)sqrt((norm(b0->scale) + norm(b1->scale)).to_double());
+        const real1_f nrm = sqrt((norm(b0->scale) + norm(b1->scale)).to_double());
 #endif
+
+        if (nrm <= _qrack_qbdt_sep_thresh) {
+            SetZero();
+            return;
+        }
 
         b0->Normalize(depth);
         b1->Normalize(depth);
 
-        b0->scale *= ONE_R1_X / nrm;
-        b1->scale *= ONE_R1_X / nrm;
+        b0->scale /= nrm;
+        b1->scale /= nrm;
     }
 }
 
@@ -375,15 +385,13 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         const real1_f nrm = sqrt(2 * norm(complexFixedToFloating(b0->scale)));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
-            scale = ZERO_CMPLX_X;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
-
+            SetZero();
             return;
         }
 
         scale =
             ((real1_x)sqrt(nrm)) * (b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X));
+
         b0->scale /= scale;
 
         return;
@@ -400,8 +408,13 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     b0->PopStateVector(depth);
     b1->PopStateVector(depth);
 
-    const real1_f nrm0 = norm(complexFixedToFloating(b0->scale));
-    const real1_f nrm1 = norm(complexFixedToFloating(b1->scale));
+#if !defined(__GNUC__) || defined(__clang__)
+    const real1_f nrm0 = norm(b0->scale);
+    const real1_f nrm1 = norm(b1->scale);
+#else
+    const real1_f nrm0 = norm(b0->scale).to_double();
+    const real1_f nrm1 = norm(b1->scale).to_double();
+#endif
 
     if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
         scale = ZERO_CMPLX_X;
