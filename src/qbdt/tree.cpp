@@ -651,7 +651,7 @@ void QBdt::ApplySingle(const complex* _mtrx, bitLenInt target)
         std::lock_guard<std::mutex> lock(leaf->mtx);
 #endif
 
-        if (!leaf->branches[0U] || !leaf->branches[1U]) {
+        if (!leaf->branches[0U] || !leaf->branches[1U] || IS_NORM_0_X(leaf->scale)) {
             leaf->SetZero();
             return ZERO_BCI;
         }
@@ -724,7 +724,7 @@ void QBdt::ApplyControlledSingle(const complex* _mtrx, std::vector<bitLenInt> co
         std::lock_guard<std::mutex> lock(leaf->mtx);
 #endif
 
-        if (!leaf->branches[0U] || !leaf->branches[1U]) {
+        if (!leaf->branches[0U] || !leaf->branches[1U] || IS_NORM_0_X(leaf->scale)) {
             leaf->SetZero();
             return ZERO_BCI;
         }
