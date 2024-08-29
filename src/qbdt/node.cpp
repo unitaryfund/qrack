@@ -383,74 +383,82 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     // Depth-first
     --depth;
     if (b0.get() == b1.get()) {
+        if (true) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        std::lock_guard<std::mutex> lock(b0->mtx);
+            std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
-        b0->PopStateVector(depth);
+            b0->PopStateVector(depth);
 
-        const real1_f nrm = 2 * norm(complexFixedToFloating(b0->scale));
+            const real1_f nrm = 2 * norm(complexFixedToFloating(b0->scale));
 
-        if (nrm <= _qrack_qbdt_sep_thresh) {
-            scale = ZERO_CMPLX_X;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
-            return;
+            if (nrm <= _qrack_qbdt_sep_thresh) {
+                scale = ZERO_CMPLX_X;
+                branches[0U] = NULL;
+                branches[1U] = NULL;
+                return;
+            }
+
+            const real1_f r = sqrt(nrm);
+            const real1_f theta = std::arg(complexFixedToFloating(b0->scale));
+            const complex_x phaseFac = std::polar(ONE_R1_F, -theta);
+            scale = std::polar(r, theta);
+            b0->scale /= r;
+            b0->scale *= phaseFac;
         }
 
-        const real1_f r = sqrt(nrm);
-        const real1_f theta = std::arg(complexFixedToFloating(b0->scale));
-        const complex_x phaseFac = std::polar(ONE_R1_F, -theta);
-        scale = std::polar(r, theta);
-        b0->scale /= r;
-        b0->scale *= phaseFac;
+        Normalize();
 
         return;
     }
 
     ++parDepth;
 
+    if (true) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    std::lock(b0->mtx, b1->mtx);
-    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+        std::lock(b0->mtx, b1->mtx);
+        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 #endif
 
-    b0->PopStateVector(depth);
-    b1->PopStateVector(depth);
+        b0->PopStateVector(depth);
+        b1->PopStateVector(depth);
 
-    const real1_f nrm0 = norm(complexFixedToFloating(b0->scale));
-    const real1_f nrm1 = norm(complexFixedToFloating(b1->scale));
+        const real1_f nrm0 = norm(complexFixedToFloating(b0->scale));
+        const real1_f nrm1 = norm(complexFixedToFloating(b1->scale));
 
-    if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
-        scale = ZERO_CMPLX_X;
-        branches[0U] = NULL;
-        branches[1U] = NULL;
+        if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
+            scale = ZERO_CMPLX_X;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
 
-        return;
+            return;
+        }
+
+        if (nrm0 <= _qrack_qbdt_sep_thresh) {
+            scale = b1->scale;
+            b0->SetZero();
+            b1->scale = ONE_CMPLX_X;
+            return;
+        }
+
+        if (nrm1 <= _qrack_qbdt_sep_thresh) {
+            scale = b0->scale;
+            b0->scale = ONE_CMPLX_X;
+            b1->SetZero();
+            return;
+        }
+
+        const real1_f r = sqrt(nrm0 + nrm1);
+        const real1_f theta = std::arg(complexFixedToFloating(b0->scale));
+        const complex_x phaseFac = std::polar(ONE_R1_F, -theta);
+        scale = std::polar(r, theta);
+        b0->scale /= r;
+        b0->scale *= phaseFac;
+        b1->scale /= r;
+        b1->scale *= phaseFac;
     }
 
-    if (nrm0 <= _qrack_qbdt_sep_thresh) {
-        scale = b1->scale;
-        b0->SetZero();
-        b1->scale = ONE_CMPLX_X;
-        return;
-    }
-
-    if (nrm1 <= _qrack_qbdt_sep_thresh) {
-        scale = b0->scale;
-        b0->scale = ONE_CMPLX_X;
-        b1->SetZero();
-        return;
-    }
-
-    const real1_f r = sqrt(nrm0 + nrm1);
-    const real1_f theta = std::arg(complexFixedToFloating(b0->scale));
-    const complex_x phaseFac = std::polar(ONE_R1_F, -theta);
-    scale = std::polar(r, theta);
-    b0->scale /= r;
-    b0->scale *= phaseFac;
-    b1->scale /= r;
-    b1->scale *= phaseFac;
+    Normalize();
 }
 
 void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
