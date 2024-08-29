@@ -385,7 +385,9 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         const real1_f nrm = sqrt(2 * norm(complexFixedToFloating(b0->scale)));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
-            SetZero();
+            scale = ZERO_CMPLX_X;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
             return;
         }
 
