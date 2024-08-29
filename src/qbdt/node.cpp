@@ -416,7 +416,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
             return;
         }
 
-        scale = ((real1_x)(SQRT2_R1 / sqrt(nrm))) * b0->scale;
+        scale = (real1_x)SQRT2_R1 * b0->scale;
         b0->scale /= scale;
 
         return;
@@ -458,7 +458,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    scale = ((real1_x)(sqrt(nrm0 + nrm1) / nrm0)) * b0->scale;
+    scale = ((real1_x)(sqrt(nrm0 + nrm1) / sqrt(nrm0))) * b0->scale;
     b0->scale /= scale;
     b1->scale /= scale;
 }
