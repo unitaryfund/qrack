@@ -25,7 +25,7 @@ typedef std::shared_ptr<QBdtNode> QBdtNodePtr;
 
 class QBdtNode : public QBdtNodeInterface {
 protected:
-    virtual void PushStateVector(complex_x const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
+    virtual void PushStateVector(const complex_x* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
         bitLenInt depth, bitLenInt parDepth = 1U);
 
 public:

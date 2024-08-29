@@ -31,7 +31,7 @@ protected:
     static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
 
 public:
-    virtual void PushStateVector(complex_x const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
+    virtual void PushStateVector(const complex_x* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
         bitLenInt depth, bitLenInt parDepth = 1U)
     {
         throw std::out_of_range("QBdtNodeInterface::PushStateVector() not implemented! (You probably set "
@@ -153,7 +153,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    virtual void Apply2x2(complex_x const* mtrx, bitLenInt depth)
+    virtual void Apply2x2(const complex_x* mtrx, bitLenInt depth)
     {
         if (!depth) {
             return;
@@ -163,7 +163,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    virtual void PushSpecial(complex_x const* mtrx, QBdtNodeInterfacePtr& b1)
+    virtual void PushSpecial(const complex_x* mtrx, QBdtNodeInterfacePtr& b1)
     {
         throw std::out_of_range("QBdtNodeInterface::PushSpecial() not implemented! (You probably called "
                                 "PushStateVector() past terminal depth.)");
