@@ -21,8 +21,8 @@
 #include <thread>
 #endif
 
-#define IS_NODE_0(c) (norm(complexFixedToFloating(c)) <= _qrack_qbdt_sep_thresh)
-#define IS_SAME_AMP(a, b) (norm(complexFixedToFloating(a) - complexFixedToFloating(b)) <= _qrack_qbdt_sep_thresh)
+#define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
+#define IS_SAME_AMP(a, b) (norm((a) - (b)) <= _qrack_qbdt_sep_thresh)
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #define ATOMIC_ASYNC(...)                                                                                              \
     std::async(std::launch::async, [__VA_ARGS__]()
@@ -110,8 +110,8 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
 
     const real1 lWeight = ((real1)lLeaf.use_count()) * ((real1)lLeaf.use_count());
     const real1 rWeight = ((real1)rLeaf.use_count()) * ((real1)rLeaf.use_count());
-    const complex_x nScale = ((real1_x)sqrt(lWeight / (lWeight + rWeight))) * lLeaf->scale +
-        ((real1_x)sqrt(rWeight / (lWeight + rWeight))) * rLeaf->scale;
+    const complex nScale =
+        sqrt(lWeight / (lWeight + rWeight)) * lLeaf->scale + sqrt(rWeight / (lWeight + rWeight)) * rLeaf->scale;
 
     if (IS_NODE_0(nScale)) {
         lLeaf->SetZero();
@@ -168,16 +168,13 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
         toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
 #endif
 
-        return !toRet1 ? toRet2
-                       : (!toRet2 ? toRet1
-                                  : ((norm(complexFixedToFloating(branches[1U]->scale)) >
-                                         norm(complexFixedToFloating(branches[0U]->scale)))
-                                            ? toRet2
-                                            : toRet1));
+        return !toRet1
+            ? toRet2
+            : (!toRet2 ? toRet1 : ((norm(branches[1U]->scale) > norm(branches[0U]->scale)) ? toRet2 : toRet1));
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
-    toRet->scale = std::polar(ONE_R1_F, std::arg(complexFixedToFloating(toRet->scale)));
+    toRet->scale = std::polar(ONE_R1, std::arg(toRet->scale));
 
     if (!size) {
         branches[0U] = NULL;

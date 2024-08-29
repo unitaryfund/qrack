@@ -17,7 +17,7 @@
 #include "qbdt.hpp"
 #include "qfactory.hpp"
 
-#define IS_NODE_0(c) (norm(complexFixedToFloating(c)) <= _qrack_qbdt_sep_thresh)
+#define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
 
 namespace Qrack {
 
@@ -243,12 +243,12 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
         }
     }
 
-    root = std::make_shared<QBdtNode>(complex_x((real1_f)phaseFac.real(), (real1_f)phaseFac.imag()));
+    root = std::make_shared<QBdtNode>(phaseFac);
     QBdtNodeInterfacePtr leaf = root;
     for (bitLenInt qubit = 0U; qubit < qubitCount; ++qubit) {
         const size_t bit = SelectBit(initState, qubit);
-        leaf->branches[bit] = std::make_shared<QBdtNode>(ONE_CMPLX_X);
-        leaf->branches[bit ^ 1U] = std::make_shared<QBdtNode>(ZERO_CMPLX_X);
+        leaf->branches[bit] = std::make_shared<QBdtNode>(ONE_CMPLX);
+        leaf->branches[bit ^ 1U] = std::make_shared<QBdtNode>(ZERO_CMPLX);
         leaf = leaf->branches[bit];
     }
 }
@@ -291,7 +291,7 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     if (randGlobalPhase) {
         real1_f lPhaseArg = FirstNonzeroPhase();
         real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
-        root->scale *= (complex_x)std::polar(ONE_R1_F, rPhaseArg - lPhaseArg);
+        root->scale *= std::polar(ONE_R1_F, rPhaseArg - lPhaseArg);
     }
 
     _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
@@ -315,13 +315,13 @@ complex QBdt::GetAmplitude(bitCapInt perm)
     FlushBuffers();
 
     QBdtNodeInterfacePtr leaf = root;
-    complex scale = complexFixedToFloating(leaf->scale);
+    complex scale = leaf->scale;
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         leaf = leaf->branches[SelectBit(perm, j)];
         if (!leaf) {
             break;
         }
-        scale *= complexFixedToFloating(leaf->scale);
+        scale *= leaf->scale;
     }
 
     return scale;
@@ -438,20 +438,20 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf = root;
-        complex scale = complexFixedToFloating(leaf->scale);
+        complex scale = leaf->scale;
         for (bitLenInt j = 0U; j < qubit; ++j) {
             leaf = leaf->branches[SelectBit(i, j)];
             if (!leaf) {
                 break;
             }
-            scale *= complexFixedToFloating(leaf->scale);
+            scale *= leaf->scale;
         }
 
         if (!leaf || !leaf->branches[1U]) {
             return;
         }
 
-        oneChanceBuff[cpu] += norm(scale * complexFixedToFloating(leaf->branches[1U]->scale));
+        oneChanceBuff[cpu] += norm(scale * leaf->branches[1U]->scale);
     });
 
     real1 oneChance = ZERO_R1;
@@ -467,14 +467,14 @@ real1_f QBdt::ProbAll(bitCapInt perm)
     FlushBuffers();
 
     QBdtNodeInterfacePtr leaf = root;
-    complex scale = complexFixedToFloating(leaf->scale);
+    complex scale = leaf->scale;
 
     for (bitLenInt j = 0U; j < qubitCount; ++j) {
         leaf = leaf->branches[SelectBit(perm, j)];
         if (!leaf) {
             break;
         }
-        scale *= complexFixedToFloating(leaf->scale);
+        scale *= leaf->scale;
     }
 
     return clampProb((real1_f)norm(scale));
@@ -502,7 +502,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     shards[qubit] = NULL;
 
     const bitCapInt qPower = pow2(qubit);
-    root->scale = GetNonunitaryPhaseX();
+    root->scale = GetNonunitaryPhase();
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if (true) {
@@ -540,13 +540,13 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                 return;
             }
             b0->SetZero();
-            b1->scale = std::polar(ONE_R1_F, std::arg(complexFixedToFloating(b1->scale)));
+            b1->scale = std::polar(ONE_R1, std::arg(b1->scale));
         } else {
             if (IS_NODE_0(b0->scale)) {
                 b0->SetZero();
                 return;
             }
-            b0->scale = std::polar(ONE_R1_F, std::arg(complexFixedToFloating(b0->scale)));
+            b0->scale = std::polar(ONE_R1, std::arg(b0->scale));
             b1->SetZero();
         }
     });
@@ -570,7 +570,7 @@ bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
     }
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        real1_f oneChance = clampProb(norm(complexFixedToFloating(leaf->branches[1U]->scale)));
+        real1_f oneChance = clampProb(norm(leaf->branches[1U]->scale));
         bool bitResult;
         if (oneChance >= ONE_R1) {
             bitResult = true;
@@ -591,13 +591,13 @@ bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
         if (bitResult) {
             if (isCollapsing) {
                 leaf->branches[0U]->SetZero();
-                leaf->branches[1U]->scale = ONE_CMPLX_X;
+                leaf->branches[1U]->scale = ONE_CMPLX;
             }
             leaf = leaf->branches[1U];
             bi_or_ip(&result, pow2(i));
         } else {
             if (isCollapsing) {
-                leaf->branches[0U]->scale = ONE_CMPLX_X;
+                leaf->branches[0U]->scale = ONE_CMPLX;
                 leaf->branches[1U]->SetZero();
             }
             leaf = leaf->branches[0U];
@@ -607,50 +607,62 @@ bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
     return result;
 }
 
-void QBdt::ApplySingle(const complex* _mtrx, bitLenInt target)
+void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 {
     if (target >= qubitCount) {
         throw std::invalid_argument("QBdt::ApplySingle target parameter must be within allocated qubit bounds!");
     }
 
-    if (IS_NORM_0(_mtrx[1U]) && IS_NORM_0(_mtrx[2U]) && IS_NORM_0(_mtrx[0U] - _mtrx[3U]) &&
-        (randGlobalPhase || IS_NORM_0(ONE_CMPLX - _mtrx[0U]))) {
+    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && IS_NORM_0(mtrx[0U] - mtrx[3U]) &&
+        (randGlobalPhase || IS_NORM_0(ONE_CMPLX - mtrx[0U]))) {
         return;
     }
 
-    const complex_x mtrx[4U]{ complex_x((real1_f)_mtrx[0U].real(), (real1_f)_mtrx[0U].imag()),
-        complex_x((real1_f)_mtrx[1U].real(), (real1_f)_mtrx[1U].imag()),
-        complex_x((real1_f)_mtrx[2U].real(), (real1_f)_mtrx[2U].imag()),
-        complex_x((real1_f)_mtrx[3U].real(), (real1_f)_mtrx[3U].imag()) };
-
     const bitCapInt qPower = pow2(target);
 
-    par_for_qbdt(qPower, target, [this, target, mtrx](const bitCapInt& i) {
-        QBdtNodeInterfacePtr leaf = root;
-        // Iterate to qubit depth.
-        for (bitLenInt j = 0U; j < target; ++j) {
-            leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
-            if (!leaf) {
-                return (bitCapInt)(pow2(target - j) - ONE_BCI);
-            }
-        }
+#if ENABLE_COMPLEX_X2
+    const complex2 mtrxCol1(mtrx[0U], mtrx[2U]);
+    const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        std::lock_guard<std::mutex> lock(leaf->mtx);
+    const complex2 mtrxCol1Shuff = mtrxColShuff(mtrxCol1);
+    const complex2 mtrxCol2Shuff = mtrxColShuff(mtrxCol2);
 #endif
 
-        if (!leaf->branches[0U] || !leaf->branches[1U] || IS_NORM_0_X(leaf->scale)) {
-            leaf->SetZero();
+    par_for_qbdt(qPower, target,
+#if ENABLE_COMPLEX_X2
+        [this, target, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff](const bitCapInt& i) {
+#else
+        [this, target, mtrx](const bitCapInt& i) {
+#endif
+            QBdtNodeInterfacePtr leaf = root;
+            // Iterate to qubit depth.
+            for (bitLenInt j = 0U; j < target; ++j) {
+                leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
+                if (!leaf) {
+                    return (bitCapInt)(pow2(target - j) - ONE_BCI);
+                }
+            }
+
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+            std::lock_guard<std::mutex> lock(leaf->mtx);
+#endif
+
+            if (!leaf->branches[0U] || !leaf->branches[1U]) {
+                leaf->SetZero();
+                return ZERO_BCI;
+            }
+
+#if ENABLE_COMPLEX_X2
+            leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
+#else
+            leaf->Apply2x2(mtrx, qubitCount - target);
+#endif
+
             return ZERO_BCI;
-        }
-
-        leaf->Apply2x2(mtrx, qubitCount - target);
-
-        return ZERO_BCI;
-    });
+        });
 }
 
-void QBdt::ApplyControlledSingle(const complex* _mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti)
+void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> controls, bitLenInt target, bool isAnti)
 {
     if (target >= qubitCount) {
         throw std::invalid_argument(
@@ -660,9 +672,9 @@ void QBdt::ApplyControlledSingle(const complex* _mtrx, std::vector<bitLenInt> co
     ThrowIfQbIdArrayIsBad(controls, qubitCount,
         "QBdt::ApplyControlledSingle parameter controls array values must be within allocated qubit bounds!");
 
-    const bool isPhase = IS_NORM_0(_mtrx[1U]) && IS_NORM_0(_mtrx[2U]) &&
-        (isAnti ? IS_NORM_0(ONE_CMPLX - _mtrx[3U]) : IS_NORM_0(ONE_CMPLX - _mtrx[0U]));
-    if (isPhase && IS_NORM_0(ONE_CMPLX - _mtrx[0U]) && IS_NORM_0(ONE_CMPLX - _mtrx[3U])) {
+    const bool isPhase = IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) &&
+        (isAnti ? IS_NORM_0(ONE_CMPLX - mtrx[3U]) : IS_NORM_0(ONE_CMPLX - mtrx[0U]));
+    if (isPhase && IS_NORM_0(ONE_CMPLX - mtrx[0U]) && IS_NORM_0(ONE_CMPLX - mtrx[3U])) {
         return;
     }
 
@@ -672,18 +684,13 @@ void QBdt::ApplyControlledSingle(const complex* _mtrx, std::vector<bitLenInt> co
         if (!isPhase) {
             // We need the target at back, for QBdt, if this isn't symmetric.
             Swap(target, controls.back());
-            ApplyControlledSingle(_mtrx, controls, target, isAnti);
+            ApplyControlledSingle(mtrx, controls, target, isAnti);
             Swap(target, controls.back());
 
             return;
         }
         // Otherwise, the gate is symmetric in target and controls, so we can continue.
     }
-
-    const complex_x mtrx[4U]{ complex_x((real1_f)_mtrx[0U].real(), (real1_f)_mtrx[0U].imag()),
-        complex_x((real1_f)_mtrx[1U].real(), (real1_f)_mtrx[1U].imag()),
-        complex_x((real1_f)_mtrx[2U].real(), (real1_f)_mtrx[2U].imag()),
-        complex_x((real1_f)_mtrx[3U].real(), (real1_f)_mtrx[3U].imag()) };
 
     const bitCapInt qPower = pow2(target);
     bitCapInt controlMask = ZERO_BCI;
@@ -693,34 +700,52 @@ void QBdt::ApplyControlledSingle(const complex* _mtrx, std::vector<bitLenInt> co
     }
     const bitCapInt controlPerm = isAnti ? ZERO_BCI : controlMask;
 
-    par_for_qbdt(qPower, target, [this, controlMask, controlPerm, target, mtrx](const bitCapInt& i) {
-        if (bi_compare((i & controlMask), controlPerm) != 0) {
-            return controlMask - ONE_BCI;
-        }
+#if ENABLE_COMPLEX_X2
+    const complex2 mtrxCol1(mtrx[0U], mtrx[2U]);
+    const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 
-        QBdtNodeInterfacePtr leaf = root;
-        // Iterate to qubit depth.
-        for (bitLenInt j = 0U; j < target; ++j) {
-            leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
-            if (!leaf) {
-                // WARNING: Mutates loop control variable!
-                return (bitCapInt)(pow2(target - j) - ONE_BCI);
-            }
-        }
-
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        std::lock_guard<std::mutex> lock(leaf->mtx);
+    const complex2 mtrxCol1Shuff = mtrxColShuff(mtrxCol1);
+    const complex2 mtrxCol2Shuff = mtrxColShuff(mtrxCol2);
 #endif
 
-        if (!leaf->branches[0U] || !leaf->branches[1U] || IS_NORM_0_X(leaf->scale)) {
-            leaf->SetZero();
+    par_for_qbdt(qPower, target,
+#if ENABLE_COMPLEX_X2
+        [this, controlMask, controlPerm, target, &mtrxCol1, &mtrxCol2, &mtrxCol1Shuff, &mtrxCol2Shuff](
+            const bitCapInt& i) {
+#else
+        [this, controlMask, controlPerm, target, mtrx](const bitCapInt& i) {
+#endif
+            if (bi_compare((i & controlMask), controlPerm) != 0) {
+                return controlMask - ONE_BCI;
+            }
+
+            QBdtNodeInterfacePtr leaf = root;
+            // Iterate to qubit depth.
+            for (bitLenInt j = 0U; j < target; ++j) {
+                leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
+                if (!leaf) {
+                    // WARNING: Mutates loop control variable!
+                    return (bitCapInt)(pow2(target - j) - ONE_BCI);
+                }
+            }
+
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+            std::lock_guard<std::mutex> lock(leaf->mtx);
+#endif
+
+            if (!leaf->branches[0U] || !leaf->branches[1U]) {
+                leaf->SetZero();
+                return ZERO_BCI;
+            }
+
+#if ENABLE_COMPLEX_X2
+            leaf->Apply2x2(mtrxCol1, mtrxCol2, mtrxCol1Shuff, mtrxCol2Shuff, qubitCount - target);
+#else
+            leaf->Apply2x2(mtrx, qubitCount - target);
+#endif
+
             return ZERO_BCI;
-        }
-
-        leaf->Apply2x2(mtrx, qubitCount - target);
-
-        return ZERO_BCI;
-    });
+        });
 }
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
