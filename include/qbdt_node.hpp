@@ -64,7 +64,7 @@ public:
 
     virtual void Normalize(bitLenInt depth = 1U);
 
-    virtual void Apply2x2(complex_x const* mtrx, bitLenInt depth);
+    virtual void Apply2x2(const complex_x* mtrx, bitLenInt depth);
 };
 
 } // namespace Qrack

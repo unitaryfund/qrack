@@ -583,7 +583,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 #endif
 }
 
-void QBdtNode::Apply2x2(complex_x const* mtrx, bitLenInt depth)
+void QBdtNode::Apply2x2(const complex_x* mtrx, bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -638,7 +638,7 @@ void QBdtNode::Apply2x2(complex_x const* mtrx, bitLenInt depth)
 }
 
 void QBdtNode::PushStateVector(
-    complex_x const* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
+    const complex_x* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::lock(b0->mtx, b1->mtx);
@@ -668,7 +668,7 @@ void QBdtNode::PushStateVector(
 
     if (isB0Zero || isB1Zero) {
         const complex_x Y0 = b0->scale;
-        const complex_x Y1 = b1->scale;
+        const complex_x& Y1 = b1->scale;
         b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
         b1->scale = mtrx[2U] * Y0 + mtrx[3U] * Y1;
 
@@ -677,7 +677,7 @@ void QBdtNode::PushStateVector(
 
     if (b0->isEqualUnder(b1)) {
         const complex_x Y0 = b0->scale;
-        const complex_x Y1 = b1->scale;
+        const complex_x& Y1 = b1->scale;
         b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
         b1->scale = mtrx[2U] * Y0 + mtrx[3U] * Y1;
 
@@ -737,7 +737,7 @@ void QBdtNode::PushStateVector(
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) && (bi_compare(pow2(parDepth), numThreads) <= 0)) {
+    if ((depth >= pStridePow) || (bi_compare(pow2(parDepth), numThreads) <= 0)) {
         ++parDepth;
 
         std::future<void> future0 =
