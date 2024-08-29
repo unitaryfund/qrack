@@ -346,11 +346,7 @@ void QBdtNode::Normalize(bitLenInt depth)
         std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
 
-#if !defined(__GNUC__) || defined(__clang__)
-        const real1_f nrm = sqrt(2 * norm(b0->scale));
-#else
-        const real1_f nrm = sqrt(2 * (norm(b0->scale).to_double()));
-#endif
+        const real1_f nrm = sqrt(2 * norm(complexFixedToFloating(b0->scale)));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
             scale = ZERO_CMPLX_X;
@@ -368,11 +364,7 @@ void QBdtNode::Normalize(bitLenInt depth)
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 #endif
 
-#if !defined(__GNUC__) || defined(__clang__)
-        const real1_f nrm = sqrt(norm(b0->scale) + norm(b1->scale));
-#else
-        const real1_f nrm = sqrt((norm(b0->scale) + norm(b1->scale)).to_double());
-#endif
+        const real1_f nrm = sqrt(norm(complexFixedToFloating(b0->scale)) + norm(complexFixedToFloating(b1->scale)));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
             scale = ZERO_CMPLX_X;
@@ -415,11 +407,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 #endif
         b0->PopStateVector(depth);
 
-#if !defined(__GNUC__) || defined(__clang__)
-        const real1_f nrm = norm(b0->scale);
-#else
-        const real1_f nrm = norm(b0->scale).to_double();
-#endif
+        const real1_f nrm = norm(complexFixedToFloating(b0->scale));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
             scale = ZERO_CMPLX_X;
@@ -429,7 +417,6 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         }
 
         scale = ((real1_x)(SQRT2_R1 / sqrt(nrm))) * b0->scale;
-
         b0->scale /= scale;
 
         return;
@@ -446,13 +433,8 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     b0->PopStateVector(depth);
     b1->PopStateVector(depth);
 
-#if !defined(__GNUC__) || defined(__clang__)
-    const real1_f nrm0 = norm(b0->scale);
-    const real1_f nrm1 = norm(b1->scale);
-#else
-    const real1_f nrm0 = norm(b0->scale).to_double();
-    const real1_f nrm1 = norm(b1->scale).to_double();
-#endif
+    const real1_f nrm0 = norm(complexFixedToFloating(b0->scale));
+    const real1_f nrm1 = norm(complexFixedToFloating(b1->scale));
 
     if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
         scale = ZERO_CMPLX_X;
