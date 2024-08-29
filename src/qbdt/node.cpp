@@ -324,7 +324,9 @@ void QBdtNode::Normalize(bitLenInt depth)
 #endif
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
-            SetZero();
+            scale = ZERO_CMPLX_X;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
             return;
         }
 
@@ -344,7 +346,9 @@ void QBdtNode::Normalize(bitLenInt depth)
 #endif
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
-            SetZero();
+            scale = ZERO_CMPLX_X;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
             return;
         }
 
