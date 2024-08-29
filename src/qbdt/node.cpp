@@ -167,9 +167,9 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
         b0->scale /= nrm;
 
-        phaseFac = b0->scale / complex_x((real1_x)nrm, ZERO_R1_X);
+        phaseFac = b0->scale / (real1_x)nrm;
     } else {
-        phaseFac = b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X);
+        phaseFac = b0->scale / (real1_x)abs(complexFixedToFloating(b0->scale));
     }
 
     scale *= phaseFac;
@@ -415,7 +415,11 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 #endif
         b0->PopStateVector(depth);
 
-        const real1_f nrm = sqrt(2 * norm(complexFixedToFloating(b0->scale)));
+#if !defined(__GNUC__) || defined(__clang__)
+        const real1_f nrm = norm(b0->scale);
+#else
+        const real1_f nrm = norm(b0->scale).to_double();
+#endif
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
             scale = ZERO_CMPLX_X;
@@ -424,8 +428,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
             return;
         }
 
-        scale =
-            ((real1_x)sqrt(nrm)) * (b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X));
+        scale = ((real1_x)(SQRT1_2_R1 / sqrt(nrm))) * b0->scale;
 
         b0->scale /= scale;
 
@@ -473,8 +476,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    scale = ((real1_x)sqrt(nrm0 + nrm1)) *
-        (b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X));
+    scale = ((real1_x)(sqrt(nrm0 + nrm1) / nrm0)) * b0->scale;
     b0->scale /= scale;
     b1->scale /= scale;
 }
