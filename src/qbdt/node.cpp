@@ -97,6 +97,10 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     Normalize();
 
+    if (scale == ZERO_CMPLX_X) {
+         return;
+    }
+
     QBdtNodeInterfacePtr b0Ref = b0;
     QBdtNodeInterfacePtr b1Ref = b1;
 
@@ -124,25 +128,19 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 #endif
 
+    complex_x phaseFac;
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
-#if !defined(__GNUC__) || defined(__clang__)
-        b1->scale /= abs(b1->scale);
-#else
-        b1->scale /= (complex_x)sqrt(norm(b1->scale).to_double());
-#endif
+        b1->scale /= abs(complexFixedToFloating(b1->scale));
+        phaseFac = b1->scale / complex_x((real1_f)abs(complexFixedToFloating(b1->scale)), ZERO_R1_X);
     } else if (IS_NODE_0(b1->scale)) {
         b1->SetZero();
-#if !defined(__GNUC__) || defined(__clang__)
-        b0->scale /= abs(b0->scale);
-#else
-        b0->scale /= (complex_x)sqrt(norm(b0->scale).to_double());
-#endif
+        b0->scale /= abs(complexFixedToFloating(b0->scale));
+        phaseFac = b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X);
+    } else {
+        phaseFac = b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X);
     }
 
-    const complex_x phaseFac = (b0->scale == ZERO_CMPLX_X)
-        ? (b1->scale / complex_x((real1_f)abs(complexFixedToFloating(b1->scale)), ZERO_R1_X))
-        : (b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X));
     scale *= phaseFac;
 
     b0->scale /= phaseFac;
