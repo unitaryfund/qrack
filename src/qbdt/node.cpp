@@ -502,14 +502,9 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 
         QBdtNodeInterfacePtr c = ShallowClone();
 
-        if (true) {
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            std::lock_guard<std::mutex> lock(b->mtx);
-#endif
-            scale = b->scale;
-            branches[0U] = b->branches[0U]->ShallowClone();
-            branches[1U] = b->branches[1U]->ShallowClone();
-        }
+        scale = b->scale;
+        branches[0U] = b->branches[0U]->ShallowClone();
+        branches[1U] = b->branches[1U]->ShallowClone();
 
         InsertAtDepth(c, size, 0U, parDepth);
 
@@ -518,19 +513,11 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     --depth;
 
     if (b0.get() == b1.get()) {
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        std::lock_guard<std::mutex> lockb(b->mtx);
-        std::lock_guard<std::mutex> lock(b0->mtx);
-#endif
-
         if (!depth && size) {
             QBdtNodeInterfacePtr n0 = std::make_shared<QBdtNode>(b0->scale, b->branches);
             branches[0U] = n0;
             branches[1U] = n0;
 
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            std::lock_guard<std::mutex> nLock(n0->mtx);
-#endif
             n0->InsertAtDepth(b, size, 0U, parDepth);
 
             return;
@@ -542,13 +529,6 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     }
 
     if (!depth && size) {
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        std::lock_guard<std::mutex> lockb(b->mtx);
-        std::lock(b0->mtx, b1->mtx);
-        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
-#endif
-
         if (IS_NODE_0(b0->scale)) {
             branches[1U] = std::make_shared<QBdtNode>(b1->scale, b->branches);
             QBdtNodeInterfacePtr n1 = branches[1U];
@@ -562,24 +542,8 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             branches[1U] = std::make_shared<QBdtNode>(b1->scale, b->branches);
             QBdtNodeInterfacePtr n0 = branches[0U];
             QBdtNodeInterfacePtr n1 = branches[1U];
-
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            if ((depth >= pStridePow) || (bi_compare(pow2(parDepth), numThreads) <= 0)) {
-                ++parDepth;
-
-                std::future<void> future0 =
-                    std::async(std::launch::async, [&] { n0->InsertAtDepth(b, size, 0U, parDepth); });
-                n1->InsertAtDepth(b, size, 0U, parDepth);
-
-                future0.get();
-            } else {
-                n0->InsertAtDepth(b, size, 0U, parDepth);
-                n1->InsertAtDepth(b, size, 0U, parDepth);
-            }
-#else
             n0->InsertAtDepth(b, size, 0U, parDepth);
             n1->InsertAtDepth(b, size, 0U, parDepth);
-#endif
         }
 
         return;
