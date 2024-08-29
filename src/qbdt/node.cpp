@@ -127,10 +127,10 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
-        b1->scale = std::polar(ONE_R1, std::arg(b1->scale));
+        b1->scale /= abs(b1->scale);
     } else if (IS_NODE_0(b1->scale)) {
         b1->SetZero();
-        b0->scale = std::polar(ONE_R1, std::arg(b0->scale));
+        b0->scale /= abs(b0->scale);
     }
 
     const complex phaseFac =

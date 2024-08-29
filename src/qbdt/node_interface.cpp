@@ -174,7 +174,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
-    toRet->scale = std::polar(ONE_R1, std::arg(toRet->scale));
+    toRet->scale /= abs(toRet->scale);
 
     if (!size) {
         branches[0U] = NULL;
