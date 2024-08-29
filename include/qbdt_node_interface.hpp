@@ -20,14 +20,6 @@
 
 #include <mutex>
 
-#if ENABLE_COMPLEX_X2
-#if FPPOW == 5
-#include "common/complex8x2simd.hpp"
-#elif FPPOW == 6
-#include "common/complex16x2simd.hpp"
-#endif
-#endif
-
 namespace Qrack {
 
 class QBdtNodeInterface;
@@ -39,40 +31,34 @@ protected:
     static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
 
 public:
-#if ENABLE_COMPLEX_X2
-    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
-        bitLenInt parDepth = 1U)
-#else
-    virtual void PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
+    virtual void PushStateVector(const complex_x* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
         bitLenInt depth, bitLenInt parDepth = 1U)
-#endif
     {
         throw std::out_of_range("QBdtNodeInterface::PushStateVector() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-    complex scale;
+    complex_x scale;
     QBdtNodeInterfacePtr branches[2U];
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::mutex mtx;
 #endif
 
     QBdtNodeInterface()
-        : scale(ONE_CMPLX)
+        : scale(ONE_CMPLX_X)
     {
         branches[0U] = NULL;
         branches[1U] = NULL;
     }
 
-    QBdtNodeInterface(complex scl)
+    QBdtNodeInterface(complex_x scl)
         : scale(scl)
     {
         branches[0U] = NULL;
         branches[1U] = NULL;
     }
 
-    QBdtNodeInterface(complex scl, QBdtNodeInterfacePtr* b)
+    QBdtNodeInterface(complex_x scl, QBdtNodeInterfacePtr* b)
         : scale(scl)
     {
         branches[0U] = b[0U];
@@ -95,7 +81,7 @@ public:
 
     virtual void SetZero()
     {
-        scale = ZERO_CMPLX;
+        scale = ZERO_CMPLX_X;
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         if (branches[0U]) {
@@ -167,12 +153,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-#if ENABLE_COMPLEX_X2
-    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-        const complex2& mtrxColShuff2, bitLenInt depth)
-#else
-    virtual void Apply2x2(const complex* mtrx, bitLenInt depth)
-#endif
+    virtual void Apply2x2(const complex_x* mtrx, bitLenInt depth)
     {
         if (!depth) {
             return;
@@ -182,12 +163,7 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
-#if ENABLE_COMPLEX_X2
-    virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
-        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b1)
-#else
-    virtual void PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
-#endif
+    virtual void PushSpecial(const complex_x* mtrx, QBdtNodeInterfacePtr& b1)
     {
         throw std::out_of_range("QBdtNodeInterface::PushSpecial() not implemented! (You probably called "
                                 "PushStateVector() past terminal depth.)");

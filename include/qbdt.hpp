@@ -96,13 +96,13 @@ protected:
 
         _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
             QBdtNodeInterfacePtr leaf = root;
-            complex scale = leaf->scale;
+            complex scale = complexFixedToFloating(leaf->scale);
             for (bitLenInt j = 0U; j < qubitCount; ++j) {
                 leaf = leaf->branches[SelectBit(i, j)];
                 if (!leaf) {
                     break;
                 }
-                scale *= leaf->scale;
+                scale *= complexFixedToFloating(leaf->scale);
             }
 
             getLambda((bitCapIntOcl)i, scale);
@@ -237,11 +237,17 @@ public:
     }
     void SetQuantumState(const complex* state)
     {
-        SetTraversal([state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = state[i]; });
+        SetTraversal([state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
+            const complex& s = state[i];
+            leaf->scale = complex_x((real1_x)s.real(), (real1_x)s.imag());
+        });
     }
     void SetQuantumState(QInterfacePtr eng)
     {
-        SetTraversal([eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = eng->GetAmplitude(i); });
+        SetTraversal([eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
+            const complex s = eng->GetAmplitude(i);
+            leaf->scale = complex_x((real1_x)s.real(), (real1_x)s.imag());
+        });
     }
     void GetProbs(real1* outputProbs)
     {
