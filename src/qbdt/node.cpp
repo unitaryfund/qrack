@@ -98,7 +98,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     Normalize();
 
     if (scale == ZERO_CMPLX_X) {
-         return;
+        return;
     }
 
     QBdtNodeInterfacePtr b0Ref = b0;
@@ -115,7 +115,16 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
 
-        b0->scale /= (real1_f)abs(complexFixedToFloating(b0->scale));
+        const real1_f nrm = abs(complexFixedToFloating(b0->scale));
+
+        if (nrm <= _qrack_qbdt_sep_thresh) {
+            scale = ZERO_CMPLX_X;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
+            return;
+        }
+
+        b0->scale /= nrm;
         scale = scale * b0->scale;
 
         // Phase factor applied, and branches point to same object.
@@ -131,12 +140,34 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     complex_x phaseFac;
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
-        b1->scale /= abs(complexFixedToFloating(b1->scale));
-        phaseFac = b1->scale / complex_x((real1_f)abs(complexFixedToFloating(b1->scale)), ZERO_R1_X);
+
+        const real1_f nrm = abs(complexFixedToFloating(b1->scale));
+
+        if (nrm <= _qrack_qbdt_sep_thresh) {
+            scale = ZERO_CMPLX_X;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
+            return;
+        }
+
+        b1->scale /= nrm;
+
+        phaseFac = b1->scale / complex_x((real1_x)nrm, ZERO_R1_X);
     } else if (IS_NODE_0(b1->scale)) {
         b1->SetZero();
-        b0->scale /= abs(complexFixedToFloating(b0->scale));
-        phaseFac = b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X);
+
+        const real1_f nrm = abs(complexFixedToFloating(b0->scale));
+
+        if (nrm <= _qrack_qbdt_sep_thresh) {
+            scale = ZERO_CMPLX_X;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
+            return;
+        }
+
+        b0->scale /= nrm;
+
+        phaseFac = b0->scale / complex_x((real1_x)nrm, ZERO_R1_X);
     } else {
         phaseFac = b0->scale / complex_x((real1_f)abs(complexFixedToFloating(b0->scale)), ZERO_R1_X);
     }
