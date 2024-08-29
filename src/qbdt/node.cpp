@@ -97,10 +97,6 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     Normalize();
 
-    if (scale == ZERO_CMPLX) {
-        return;
-    }
-
     QBdtNodeInterfacePtr b0Ref = b0;
     QBdtNodeInterfacePtr b1Ref = b1;
 
@@ -114,13 +110,6 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
-
-        if (IS_NODE_0(b0->scale)) {
-            scale = ZERO_CMPLX;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
-            return;
-        }
 
         const complex phaseFac = std::polar(ONE_R1, std::arg(b0->scale));
         scale *= phaseFac;
@@ -137,12 +126,6 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 #endif
 
     if (IS_NODE_0(b0->scale)) {
-        if (IS_NODE_0(b1->scale)) {
-            scale = ZERO_CMPLX;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
-            return;
-        }
         b0->SetZero();
         b1->scale = std::polar(ONE_R1, std::arg(b1->scale));
     } else if (IS_NODE_0(b1->scale)) {
@@ -325,16 +308,7 @@ void QBdtNode::Normalize(bitLenInt depth)
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
-
         const real1 nrm = (real1)sqrt(2 * norm(b0->scale));
-
-        if (nrm <= _qrack_qbdt_sep_thresh) {
-            scale = ZERO_CMPLX;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
-            return;
-        }
-
         b0->Normalize(depth);
         b0->scale /= nrm;
     } else {
@@ -345,13 +319,6 @@ void QBdtNode::Normalize(bitLenInt depth)
 #endif
 
         const real1 nrm = sqrt(norm(b0->scale) + norm(b1->scale));
-
-        if (nrm <= _qrack_qbdt_sep_thresh) {
-            scale = ZERO_CMPLX;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
-            return;
-        }
 
         b0->Normalize(depth);
         b1->Normalize(depth);
