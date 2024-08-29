@@ -25,8 +25,14 @@ typedef std::shared_ptr<QBdtNode> QBdtNodePtr;
 
 class QBdtNode : public QBdtNodeInterface {
 protected:
-    virtual void PushStateVector(const complex_x* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
+#if ENABLE_COMPLEX_X2
+    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
+        bitLenInt parDepth = 1U);
+#else
+    virtual void PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
         bitLenInt depth, bitLenInt parDepth = 1U);
+#endif
 
 public:
     QBdtNode()
@@ -35,13 +41,13 @@ public:
         // Intentionally left blank
     }
 
-    QBdtNode(complex_x scl)
+    QBdtNode(complex scl)
         : QBdtNodeInterface(scl)
     {
         // Intentionally left blank
     }
 
-    QBdtNode(complex_x scl, QBdtNodeInterfacePtr* b)
+    QBdtNode(complex scl, QBdtNodeInterfacePtr* b)
         : QBdtNodeInterface(scl, b)
     {
         // Intentionally left blank
@@ -64,7 +70,12 @@ public:
 
     virtual void Normalize(bitLenInt depth = 1U);
 
-    virtual void Apply2x2(const complex_x* mtrx, bitLenInt depth);
+#if ENABLE_COMPLEX_X2
+    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+        const complex2& mtrxColShuff2, bitLenInt depth);
+#else
+    virtual void Apply2x2(const complex* mtrx, bitLenInt depth);
+#endif
 };
 
 } // namespace Qrack
