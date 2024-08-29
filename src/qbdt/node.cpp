@@ -552,16 +552,10 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         if (IS_NODE_0(b0->scale)) {
             branches[1U] = std::make_shared<QBdtNode>(b1->scale, b->branches);
             QBdtNodeInterfacePtr n1 = branches[1U];
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            std::lock_guard<std::mutex> nLock(n1->mtx);
-#endif
             n1->InsertAtDepth(b, size, 0U, parDepth);
         } else if (IS_NODE_0(b0->scale)) {
             branches[0U] = std::make_shared<QBdtNode>(b0->scale, b->branches);
             QBdtNodeInterfacePtr n0 = branches[0U];
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            std::lock_guard<std::mutex> nLock(n0->mtx);
-#endif
             n0->InsertAtDepth(b, size, 0U, parDepth);
         } else {
             branches[0U] = std::make_shared<QBdtNode>(b0->scale, b->branches);
@@ -569,8 +563,23 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             QBdtNodeInterfacePtr n0 = branches[0U];
             QBdtNodeInterfacePtr n1 = branches[1U];
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
+            if ((depth >= pStridePow) || (bi_compare(pow2(parDepth), numThreads) <= 0)) {
+                ++parDepth;
+
+                std::future<void> future0 =
+                    std::async(std::launch::async, [&] { n0->InsertAtDepth(b, size, 0U, parDepth); });
+                n1->InsertAtDepth(b, size, 0U, parDepth);
+
+                future0.get();
+            } else {
+                n0->InsertAtDepth(b, size, 0U, parDepth);
+                n1->InsertAtDepth(b, size, 0U, parDepth);
+            }
+#else
             n0->InsertAtDepth(b, size, 0U, parDepth);
             n1->InsertAtDepth(b, size, 0U, parDepth);
+#endif
         }
 
         return;
