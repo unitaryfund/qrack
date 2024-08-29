@@ -382,73 +382,65 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     // Depth-first
     --depth;
     if (b0.get() == b1.get()) {
-        if (true) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            std::lock_guard<std::mutex> lock(b0->mtx);
+        std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
-            b0->PopStateVector(depth);
+        b0->PopStateVector(depth);
 
-            const real1 nrm = 2 * norm(b0->scale);
+        const real1 nrm = 2 * norm(b0->scale);
 
-            if (nrm <= _qrack_qbdt_sep_thresh) {
-                scale = ZERO_CMPLX;
-                branches[0U] = NULL;
-                branches[1U] = NULL;
-                return;
-            }
-
-            scale = std::polar(sqrt(nrm), std::arg(b0->scale));
-            b0->scale /= scale;
+        if (nrm <= _qrack_qbdt_sep_thresh) {
+            scale = ZERO_CMPLX;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
+            return;
         }
 
-        Normalize();
+        scale = std::polar(sqrt(nrm), std::arg(b0->scale));
+        b0->scale /= scale;
 
         return;
     }
 
     ++parDepth;
 
-    if (true) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-        std::lock(b0->mtx, b1->mtx);
-        std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+    std::lock(b0->mtx, b1->mtx);
+    std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
+    std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 #endif
 
-        b0->PopStateVector(depth);
-        b1->PopStateVector(depth);
+    b0->PopStateVector(depth);
+    b1->PopStateVector(depth);
 
-        const real1 nrm0 = norm(b0->scale);
-        const real1 nrm1 = norm(b1->scale);
+    const real1 nrm0 = norm(b0->scale);
+    const real1 nrm1 = norm(b1->scale);
 
-        if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
-            scale = ZERO_CMPLX;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
+    if ((nrm0 + nrm1) <= _qrack_qbdt_sep_thresh) {
+        scale = ZERO_CMPLX;
+        branches[0U] = NULL;
+        branches[1U] = NULL;
 
-            return;
-        }
-
-        if (nrm0 <= _qrack_qbdt_sep_thresh) {
-            scale = b1->scale;
-            b0->SetZero();
-            b1->scale = ONE_CMPLX;
-            return;
-        }
-
-        if (nrm1 <= _qrack_qbdt_sep_thresh) {
-            scale = b0->scale;
-            b0->scale = ONE_CMPLX;
-            b1->SetZero();
-            return;
-        }
-
-        scale = std::polar(sqrt(nrm0 + nrm1), std::arg(b0->scale));
-        b0->scale /= scale;
-        b1->scale /= scale;
+        return;
     }
 
-    Normalize();
+    if (nrm0 <= _qrack_qbdt_sep_thresh) {
+        scale = b1->scale;
+        b0->SetZero();
+        b1->scale = ONE_CMPLX;
+        return;
+    }
+
+    if (nrm1 <= _qrack_qbdt_sep_thresh) {
+        scale = b0->scale;
+        b0->scale = ONE_CMPLX;
+        b1->SetZero();
+        return;
+    }
+
+    scale = std::polar(sqrt(nrm0 + nrm1), std::arg(b0->scale));
+    b0->scale /= scale;
+    b1->scale /= scale;
 }
 
 void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
