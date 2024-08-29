@@ -291,7 +291,7 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     if (randGlobalPhase) {
         real1_f lPhaseArg = FirstNonzeroPhase();
         real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
-        root->scale *= std::polar(ONE_R1_F, rPhaseArg - lPhaseArg);
+        root->scale *= std::polar(ONE_R1, (real1)(rPhaseArg - lPhaseArg));
     }
 
     _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
