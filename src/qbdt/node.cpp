@@ -115,16 +115,14 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         std::lock_guard<std::mutex> lock(b0->mtx);
 #endif
 
-        const real1_f nrm = abs(complexFixedToFloating(b0->scale));
-
-        if (nrm <= _qrack_qbdt_sep_thresh) {
+        if (IS_NODE_0(b0->scale)) {
             scale = ZERO_CMPLX_X;
             branches[0U] = NULL;
             branches[1U] = NULL;
             return;
         }
 
-        const complex_x phaseFac = b0->scale / (real1_x)nrm;
+        const complex_x phaseFac = std::polar(ONE_R1_F, std::arg(complexFixedToFloating(b0->scale)));
         scale *= phaseFac;
         b0->scale /= phaseFac;
 
@@ -138,24 +136,23 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 #endif
 
-    const real1_f nrmB0 = abs(complexFixedToFloating(b0->scale));
-    const real1_f nrmB1 = abs(complexFixedToFloating(b1->scale));
-    if ((nrmB0 <= _qrack_qbdt_sep_thresh) && (nrmB1 <= _qrack_qbdt_sep_thresh)) {
-        scale = ZERO_CMPLX_X;
-        branches[0U] = NULL;
-        branches[1U] = NULL;
-        return;
-    }
-    if (nrmB0 <= _qrack_qbdt_sep_thresh) {
+    if (IS_NODE_0(b0->scale)) {
+        if (IS_NODE_0(b1->scale)) {
+            scale = ZERO_CMPLX_X;
+            branches[0U] = NULL;
+            branches[1U] = NULL;
+            return;
+        }
         b0->SetZero();
-        b1->scale /= nrmB1;
-    } else if (nrmB1 <= _qrack_qbdt_sep_thresh) {
+        b1->scale = std::polar(ONE_R1_F, std::arg(complexFixedToFloating(b1->scale)));
+    } else if (IS_NODE_0(b1->scale)) {
         b1->SetZero();
-        b0->scale /= nrmB0;
+        b0->scale = std::polar(ONE_R1_F, std::arg(complexFixedToFloating(b0->scale)));
     }
 
-    const complex_x phaseFac =
-        (b0->scale == ZERO_CMPLX_X) ? b1->scale : (b0->scale / (real1_x)abs(complexFixedToFloating(b0->scale)));
+    const complex_x phaseFac = std::polar(ONE_R1_F,
+        ((b0->scale == ZERO_CMPLX_X) ? std::arg(complexFixedToFloating(b1->scale))
+                                     : std::arg(complexFixedToFloating(b0->scale))));
 
     scale *= phaseFac;
     b0->scale /= phaseFac;
@@ -391,7 +388,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 #endif
         b0->PopStateVector(depth);
 
-        const real1_f nrm = norm(complexFixedToFloating(b0->scale));
+        const real1_f nrm = 2 * norm(complexFixedToFloating(b0->scale));
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
             scale = ZERO_CMPLX_X;
@@ -400,7 +397,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
             return;
         }
 
-        scale = ((real1_x)SQRT2_R1) * b0->scale;
+        scale = std::polar(sqrt(nrm), std::arg(complexFixedToFloating(b0->scale)));
         b0->scale /= scale;
 
         return;
@@ -442,7 +439,7 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    scale = ((real1_x)(sqrt(nrm0 + nrm1) / sqrt(nrm0))) * b0->scale;
+    scale = std::polar(sqrt(nrm0 + nrm1), std::arg(complexFixedToFloating(b0->scale)));
     b0->scale /= scale;
     b1->scale /= scale;
 }

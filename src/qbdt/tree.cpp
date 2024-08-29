@@ -540,13 +540,13 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                 return;
             }
             b0->SetZero();
-            b1->scale /= abs(complexFixedToFloating(b1->scale));
+            b1->scale = std::polar(ONE_R1_F, std::arg(complexFixedToFloating(b1->scale)));
         } else {
             if (IS_NODE_0(b0->scale)) {
                 b0->SetZero();
                 return;
             }
-            b0->scale /= abs(complexFixedToFloating(b0->scale));
+            b0->scale = std::polar(ONE_R1_F, std::arg(complexFixedToFloating(b0->scale)));
             b1->SetZero();
         }
     });
