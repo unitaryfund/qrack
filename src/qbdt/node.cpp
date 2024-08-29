@@ -21,7 +21,7 @@
 #include <thread>
 #endif
 
-#define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
+#define IS_NODE_0(c) (norm(complexFixedToFloating(c)) <= _qrack_qbdt_sep_thresh)
 
 namespace Qrack {
 

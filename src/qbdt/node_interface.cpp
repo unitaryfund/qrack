@@ -21,8 +21,8 @@
 #include <thread>
 #endif
 
-#define IS_NODE_0(c) (norm(c) <= _qrack_qbdt_sep_thresh)
-#define IS_SAME_AMP(a, b) (norm((a) - (b)) <= _qrack_qbdt_sep_thresh)
+#define IS_NODE_0(c) (norm(complexFixedToFloating(c)) <= _qrack_qbdt_sep_thresh)
+#define IS_SAME_AMP(a, b) (norm(complexFixedToFloating(a) - complexFixedToFloating(b)) <= _qrack_qbdt_sep_thresh)
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #define ATOMIC_ASYNC(...)                                                                                              \
     std::async(std::launch::async, [__VA_ARGS__]()
@@ -168,9 +168,12 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
         toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
 #endif
 
-        return !toRet1
-            ? toRet2
-            : (!toRet2 ? toRet1 : ((norm(branches[1U]->scale) > norm(branches[0U]->scale)) ? toRet2 : toRet1));
+        return !toRet1 ? toRet2
+                       : (!toRet2 ? toRet1
+                                  : ((norm(complexFixedToFloating(branches[1U]->scale)) >
+                                         norm(complexFixedToFloating(branches[0U]->scale)))
+                                            ? toRet2
+                                            : toRet1));
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
