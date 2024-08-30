@@ -108,10 +108,10 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
     // We can weight by square use_count() of each leaf, which should roughly
     // correspond to the number of branches that point to each node.
 
-    const real1 lWeight = ((real1)lLeaf.use_count()) * ((real1)lLeaf.use_count());
-    const real1 rWeight = ((real1)rLeaf.use_count()) * ((real1)rLeaf.use_count());
+    const double lWeight = ((double)lLeaf.use_count()) * ((double)lLeaf.use_count());
+    const double rWeight = ((double)rLeaf.use_count()) * ((double)rLeaf.use_count());
     const complex nScale =
-        sqrt(lWeight / (lWeight + rWeight)) * lLeaf->scale + sqrt(rWeight / (lWeight + rWeight)) * rLeaf->scale;
+        ((real1)(lWeight / (lWeight + rWeight))) * lLeaf->scale + ((real1)(rWeight / (lWeight + rWeight))) * rLeaf->scale;
 
     if (IS_NODE_0(nScale)) {
         lLeaf->SetZero();
