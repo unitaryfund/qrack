@@ -137,25 +137,23 @@ void QUnit::SetQuantumState(const complex* inputState)
         if (IS_AMP_0(shard.amp0 - shard.amp1)) {
             logFidelity += (double)log(clampProb(ONE_R1_F - norm(shard.amp0 - shard.amp1)));
             shard.pauliBasis = PauliX;
-            shard.amp0 /= (real1_f)abs(shard.amp0);
+            shard.amp0 /= abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_AMP_0(shard.amp0 + shard.amp1)) {
             logFidelity += (double)log(clampProb(ONE_R1_F - norm(shard.amp0 + shard.amp1)));
             shard.pauliBasis = PauliX;
-            shard.amp0 /= (real1_f)abs(shard.amp0);
-            shard.amp1 = ZERO_R1;
-            std::swap(shard.amp0, shard.amp1);
+            shard.amp1 = shard.amp0 / abs(shard.amp0);
+            shard.amp0 = ZERO_R1;
         } else if (IS_AMP_0((I_CMPLX * in0) - in1)) {
-            logFidelity += (double)log(clampProb(ONE_R1_F - norm((I_CMPLX * inputState[0U]) - inputState[1U])));
+            logFidelity += (double)log(clampProb(ONE_R1_F - norm((I_CMPLX * in0) - in1)));
             shard.pauliBasis = PauliY;
-            shard.amp0 /= (real1_f)abs(shard.amp0);
+            shard.amp0 /= abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_AMP_0((I_CMPLX * in0) + in1)) {
-            logFidelity += (double)log(clampProb(ONE_R1_F - norm((I_CMPLX * inputState[0U]) - inputState[1U])));
+            logFidelity += (double)log(clampProb(ONE_R1_F - norm((I_CMPLX * in0) - in1)));
             shard.pauliBasis = PauliY;
-            shard.amp0 /= (real1_f)abs(shard.amp0);
-            shard.amp1 = ZERO_R1;
-            std::swap(shard.amp0, shard.amp1);
+            shard.amp1 = shard.amp0 / abs(shard.amp0);
+            shard.amp0 = ZERO_R1;
         }
         return;
     }
