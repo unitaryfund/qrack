@@ -727,8 +727,9 @@ protected:
         QRACK_CONST complex mtrx[4U]{ diag, cross, cross, diag };
 
         const complex Y0 = shard.amp0;
-        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
-        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
+        const complex& Y1 = shard.amp1;
+        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * Y1);
+        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * Y1);
         ClampShard(i);
     }
 
@@ -804,8 +805,9 @@ protected:
         QRACK_CONST complex mtrx[4U]{ diag, cross, cross, diag };
 
         const complex Y0 = shard.amp0;
-        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
-        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
+        const complex& Y1 = shard.amp1;
+        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * Y1);
+        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * Y1);
         ClampShard(i);
     }
     void ConvertYToZ(bitLenInt i)
@@ -827,8 +829,9 @@ protected:
         QRACK_CONST complex mtrx[4U]{ row1, row1, complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
 
         const complex Y0 = shard.amp0;
-        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
-        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
+        const complex& Y1 = shard.amp1;
+        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * Y1);
+        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * Y1);
         ClampShard(i);
     }
     void ConvertZToY(bitLenInt i)
@@ -850,8 +853,9 @@ protected:
         QRACK_CONST complex mtrx[4U]{ col1, complex(ZERO_R1, -SQRT1_2_R1), col1, complex(ZERO_R1, SQRT1_2_R1) };
 
         const complex Y0 = shard.amp0;
-        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
-        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
+        const complex& Y1 = shard.amp1;
+        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * Y1);
+        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * Y1);
         ClampShard(i);
     }
     void ShardAI(bitLenInt qubit, real1_f azimuth, real1_f inclination)
@@ -867,8 +871,9 @@ protected:
         QEngineShard& shard = shards[qubit];
 
         const complex Y0 = shard.amp0;
-        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * shard.amp1);
-        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * shard.amp1);
+        const complex& Y1 = shard.amp1;
+        shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * Y1);
+        shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * Y1);
         ClampShard(qubit);
     }
 
