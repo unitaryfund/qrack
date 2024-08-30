@@ -179,7 +179,7 @@ constexpr real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 #define PI_R1 M_PI
 #define SQRT2_R1 M_SQRT2
 #define SQRT1_2_R1 M_SQRT1_2
-#define REAL1_DEFAULT_ARG -999.0f
+#define REAL1_DEFAULT_ARG -999.0
 // Half the probability in any single permutation of 96 maximally superposed qubits
 #define REAL1_EPSILON 6.310887241768095e-30
 #else
