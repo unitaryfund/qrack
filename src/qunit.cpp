@@ -331,7 +331,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                     shard.unit->GetQuantumState(amps);
                     shard.amp0 = amps[0U];
                     shard.amp1 = amps[1U];
-                    ;
                     shard.isProbDirty = false;
                     shard.isPhaseDirty = false;
                     shard.unit = NULL;
