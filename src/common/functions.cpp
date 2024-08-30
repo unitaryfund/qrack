@@ -90,14 +90,6 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
 
     return tmp;
 }
-complex complexFixedToFloating(complex_x f)
-{
-#if !defined(__GNUC__) || defined(__clang__)
-    return f;
-#else
-    return complex((real1)(f.real().to_double()), (real1)(f.imag().to_double()));
-#endif
-}
 
 #if ENABLE_COMPLEX_X2
 void mul2x2(complex const* left, complex const* right, complex* out)

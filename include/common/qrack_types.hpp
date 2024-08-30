@@ -25,9 +25,6 @@
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
 #define IS_OPPOSITE(c1, c2) (IS_NORM_0((c1) + (c2)))
-#define IS_NORM_0_X(c) (norm(complexFixedToFloating(c)) <= FP_NORM_EPSILON)
-#define IS_SAME_X(c1, c2) (IS_NORM_0_X((c1) - (c2)))
-#define IS_OPPOSITE_X(c1, c2) (IS_NORM_0_X((c1) + (c2)))
 
 #if ENABLE_CUDA
 #include <cuda_runtime.h>
@@ -65,8 +62,6 @@
 #include "big_integer.hpp"
 #define bitCapInt BigInteger
 #endif
-
-#include "fixed.hpp"
 
 #if FPPOW < 5
 #ifdef __arm__
@@ -124,23 +119,6 @@ typedef std::complex<real1> complex;
 const bitCapInt ONE_BCI = 1U;
 const bitCapInt ZERO_BCI = 0U;
 constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);
-
-// We want to be able to represent at least 1
-// (and no less, for maximum capacity).
-// 1 bit is +/- sign.
-// 1 bit is 0/1 on the left side of the decimal point.
-#if !defined(__GNUC__) || defined(__clang__)
-typedef real1 real1_x;
-#else
-typedef numeric::fixed<4U, (1U << FPPOW) - 4U> real1_x;
-#endif
-typedef std::complex<real1_x> complex_x;
-constexpr real1_x ONE_R1_X = 1.0f;
-constexpr real1_x ZERO_R1_X = 0.0f;
-constexpr complex_x ONE_CMPLX_X = complex_x(ONE_R1_X, ZERO_R1_X);
-constexpr complex_x ZERO_CMPLX_X = complex_x(ZERO_R1_X, ZERO_R1_X);
-constexpr complex_x I_CMPLX_X = complex_x(ZERO_R1_X, ONE_R1_X);
-constexpr real1_x SQRT1_2_R1_X = (real1_x)M_SQRT1_2;
 
 typedef std::shared_ptr<complex> BitOp;
 

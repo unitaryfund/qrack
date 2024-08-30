@@ -46,11 +46,6 @@ add_library (qrack STATIC
     src/qinterface_noisy.cpp
     )
 set_property(TARGET qrack PROPERTY POSITION_INDEPENDENT_CODE ON)
-if (NOT APPLE)
-    target_sources (qrack PRIVATE
-        src/common/fixed.cpp
-        )
-endif (NOT APPLE)
 if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
     target_sources (qrack PRIVATE
         src/common/dispatchqueue.cpp
@@ -367,7 +362,6 @@ install (FILES
     include/common/dispatchqueue.hpp
     include/common/big_integer.hpp
     include/common/half.hpp
-    include/common/fixed.hpp
     include/common/qneuron_activation_function.hpp
     include/common/pauli.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common

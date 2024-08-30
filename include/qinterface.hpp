@@ -173,16 +173,6 @@ protected:
         }
     }
 
-    complex_x GetNonunitaryPhaseX()
-    {
-        if (randGlobalPhase) {
-            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
-            return complex_x((real1_x)cos(angle), (real1_x)sin(angle));
-        } else {
-            return ONE_CMPLX_X;
-        }
-    }
-
     template <typename Fn> void MACWrapper(const std::vector<bitLenInt>& controls, Fn fn)
     {
         bitCapInt xMask = ZERO_BCI;
