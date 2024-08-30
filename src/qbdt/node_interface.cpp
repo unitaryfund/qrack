@@ -109,8 +109,8 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
     // correspond to the number of branches that point to each node.
     const long lInt = lLeaf.use_count();
     const long rInt = rLeaf.use_count();
-    const complex nScale = ((real1)(((double)lInt) / (lInt + rInt))) * lLeaf->scale +
-        ((real1)(((double)rInt) / (lInt + rInt))) * rLeaf->scale;
+    const complex nScale =
+        (((real1)lInt) / (lInt + rInt)) * lLeaf->scale + (((real1)rInt) / (lInt + rInt)) * rLeaf->scale;
 
     if (IS_NODE_0(nScale)) {
         lLeaf->SetZero();
