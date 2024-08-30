@@ -2515,8 +2515,8 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
 
     const complex Y0 = shard.amp0;
     const complex& Y1 = shard.amp1;
-    shard.amp0 = (mtrx[0U] * Y0) + (mtrx[1U] * Y1);
-    shard.amp1 = (mtrx[2U] * Y0) + (mtrx[3U] * Y1);
+    shard.amp0 = (trnsMtrx[0U] * Y0) + (trnsMtrx[1U] * Y1);
+    shard.amp1 = (trnsMtrx[2U] * Y0) + (trnsMtrx[3U] * Y1);
     ClampShard(target);
 }
 
