@@ -78,7 +78,7 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         if (underThreads == 1U) {
             underThreads = 0U;
         }
-        if ((depth >= pStridePow) || (bi_compare((pow2(parDepth) * (underThreads + 1U)), numThreads) <= 0)) {
+        if ((depth >= pStridePow) && (bi_compare((pow2(parDepth) * (underThreads + 1U)), numThreads) <= 0)) {
             ++parDepth;
 
             std::future<void> future0 = std::async(std::launch::async, [&] { b0->Prune(depth, parDepth); });
@@ -486,7 +486,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             QBdtNodeInterfacePtr n1 = branches[1U];
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-            if ((depth >= pStridePow) || (bi_compare(pow2(parDepth), numThreads) <= 0)) {
+            if ((depth >= pStridePow) && (bi_compare(pow2(parDepth), numThreads) <= 0)) {
                 ++parDepth;
 
                 std::future<void> future0 =
@@ -512,7 +512,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
-    if ((depth >= pStridePow) || (bi_compare(pow2(parDepth), numThreads) <= 0)) {
+    if ((depth >= pStridePow) && (bi_compare(pow2(parDepth), numThreads) <= 0)) {
         ++parDepth;
 
         std::future<void> future0 =
@@ -687,7 +687,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) || (bi_compare(pow2(parDepth), numThreads) <= 0)) {
+    if ((depth >= pStridePow) && (bi_compare(pow2(parDepth), numThreads) <= 0)) {
         ++parDepth;
 
         std::future<void> future0 = std::async(std::launch::async,
@@ -862,7 +862,7 @@ void QBdtNode::PushStateVector(
 
     --depth;
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth >= pStridePow) || (bi_compare(pow2(parDepth), numThreads) <= 0)) {
+    if ((depth >= pStridePow) && (bi_compare(pow2(parDepth), numThreads) <= 0)) {
         ++parDepth;
 
         std::future<void> future0 =
