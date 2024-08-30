@@ -160,13 +160,13 @@ public:
 
     real1_f Next()
     {
-        constexpr real1_f inc = ONE_R1_F / (1ULL << 32U);
+        constexpr double inc = 1.0 / (double)(1ULL << 32U);
 
         // NextRaw() has 32 bits; double has >= 53 bits of precision
 #if FPPOW < 6
         return (real1_f)(((double)NextRaw()) * inc);
 #else
-        return ((((real1_f)NextRaw()) * inc) + ((real1_f)NextRaw())) * inc;
+        return ((((double)NextRaw()) * inc) + ((double)NextRaw())) * inc;
 #endif
     }
 };
