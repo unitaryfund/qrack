@@ -787,10 +787,10 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, bitCapInt mask)
         return;
     }
 
-    const real1 radians = (real1)(-PI_R1 / pow2Ocl(n - 1U));
+    const real1_f radians = -PI_R1 / pow2Ocl(n - 1U);
 
     if (isPowerOfTwo(mask)) {
-        Phase(ONE_CMPLX, std::polar(ONE_R1, radians), log2(mask));
+        Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)radians), log2(mask));
         return;
     }
 
