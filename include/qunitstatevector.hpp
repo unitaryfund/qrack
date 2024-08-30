@@ -70,7 +70,7 @@ struct QUnitStateVector {
                 break;
             }
             result *= found->second;
-            if ((2 * norm(result)) <= FP_NORM_EPSILON) {
+            if (norm(result) <= FP_NORM_EPSILON) {
                 result = ZERO_CMPLX;
                 break;
             }
