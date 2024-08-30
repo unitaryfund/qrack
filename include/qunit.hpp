@@ -891,17 +891,19 @@ protected:
 
     void Flush0Eigenstate(bitLenInt i)
     {
-        shards[i].DumpControlOf();
+        QEngineShard& shard = shards[i];
+        shard.DumpControlOf();
         if (randGlobalPhase) {
-            shards[i].DumpSamePhaseAntiControlOf();
+            shard.DumpSamePhaseAntiControlOf();
         }
         RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_ANTI);
     }
     void Flush1Eigenstate(bitLenInt i)
     {
-        shards[i].DumpAntiControlOf();
+        QEngineShard& shard = shards[i];
+        shard.DumpAntiControlOf();
         if (randGlobalPhase) {
-            shards[i].DumpSamePhaseControlOf();
+            shard.DumpSamePhaseControlOf();
         }
         RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_CTRL);
     }
