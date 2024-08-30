@@ -172,8 +172,8 @@ void QUnit::GetQuantumState(complex* outputState)
 {
     if (qubitCount == 1U) {
         RevertBasis1Qb(0U);
-        if (!shards[0U].unit) {
-            const QEngineShard& shard = shards[0U];
+        const QEngineShard& shard = shards[0U];
+        if (!shard.unit) {
             outputState[0U] = shard.amp0;
             outputState[1U] = shard.amp1;
 
@@ -3811,21 +3811,21 @@ real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
         RevertBasis1Qb(0U);
         toCompare->RevertBasis1Qb(0U);
 
+        const QEngineShard& thisShard = shards[0U];
         complex mAmps[2U];
-        if (shards[0U].unit) {
-            shards[0U].unit->GetQuantumState(mAmps);
+        if (thisShard.unit) {
+            thisShard.unit->GetQuantumState(mAmps);
         } else {
-            const QEngineShard& shard = shards[0U];
-            mAmps[0U] = shard.amp0;
-            mAmps[1U] = shard.amp1;
+            mAmps[0U] = thisShard.amp0;
+            mAmps[1U] = thisShard.amp1;
         }
+        const QEngineShard& thatShard = toCompare->shards[0U];
         complex oAmps[2U];
-        if (toCompare->shards[0U].unit) {
-            toCompare->shards[0U].unit->GetQuantumState(oAmps);
+        if (thatShard.unit) {
+            thatShard.unit->GetQuantumState(oAmps);
         } else {
-            const QEngineShard& shard = toCompare->shards[0U];
-            oAmps[0U] = shard.amp0;
-            oAmps[1U] = shard.amp1;
+            oAmps[0U] = thatShard.amp0;
+            oAmps[1U] = thatShard.amp1;
         }
 
         return (real1_f)(norm(mAmps[0U] - oAmps[0U]) + norm(mAmps[1U] - oAmps[1U]));
