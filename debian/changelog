@@ -1,3 +1,27 @@
+libqrack (9.9.32) bionic; urgency=medium
+
+  * Stable maintenance release (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 30 Aug 2024 15:09:15 -0400
+
+libqrack (9.9.31) focal; urgency=medium
+
+  * Stable maintenance release (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 30 Aug 2024 15:06:42 -0400
+
+libqrack (9.9.30) jammy; urgency=medium
+
+  * Stable maintenance release (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 30 Aug 2024 15:05:10 -0400
+
+libqrack (9.9.29) noble; urgency=medium
+
+  * Stable maintenance release (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Fri, 30 Aug 2024 15:00:54 -0400
+
 libqrack (9.9.27) bionic; urgency=medium
 
   * QBdt debugging (Bionic 4/4)

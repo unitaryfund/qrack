@@ -31,14 +31,14 @@ bool QEngineShard::ClampAmps()
 
     if (norm(amp0) <= FP_NORM_EPSILON) {
         amp0 = ZERO_R1;
-        amp1 /= (real1_f)abs(amp1);
+        amp1 /= abs(amp1);
         isPhaseDirty = false;
         return true;
     }
 
     if (norm(amp1) <= FP_NORM_EPSILON) {
         amp1 = ZERO_R1;
-        amp0 /= (real1_f)abs(amp0);
+        amp0 /= abs(amp0);
         isPhaseDirty = false;
         return true;
     }
@@ -124,9 +124,9 @@ void QEngineShard::AddAngles(QEngineShardPtr control, complex cmplxDiff, complex
     PhaseShardPtr targetOfShard = localMap[control];
 
     complex ncmplxDiff = targetOfShard->cmplxDiff * cmplxDiff;
-    ncmplxDiff /= (real1_f)abs(ncmplxDiff);
+    ncmplxDiff /= abs(ncmplxDiff);
     complex ncmplxSame = targetOfShard->cmplxSame * cmplxSame;
-    ncmplxSame /= (real1_f)abs(ncmplxSame);
+    ncmplxSame /= abs(ncmplxSame);
 
     if (!targetOfShard->isInvert && IS_ARG_0(ncmplxDiff) && IS_ARG_0(ncmplxSame)) {
         /* The buffer is equal to the identity operator, and it can be removed. */

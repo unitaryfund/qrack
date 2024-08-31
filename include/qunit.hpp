@@ -800,8 +800,8 @@ protected:
             return;
         }
 
-        QRACK_CONST complex diag = complex(ONE_R1 / 2, -ONE_R1 / 2);
-        QRACK_CONST complex cross = complex(ONE_R1 / 2, ONE_R1 / 2);
+        QRACK_CONST complex diag = complex(ONE_R1 / (real1)2, -ONE_R1 / (real1)2);
+        QRACK_CONST complex cross = complex(ONE_R1 / (real1)2, ONE_R1 / (real1)2);
         QRACK_CONST complex mtrx[4U]{ diag, cross, cross, diag };
 
         const complex Y0 = shard.amp0;
