@@ -56,9 +56,9 @@ BigInteger operator*(const BigInteger& left, BIG_INTEGER_HALF_WORD right)
     return result;
 }
 
-#if true
+#if ((1 << QBCAPPOW) > 175) || (!defined(__SIZEOF_INT128__) && ((1 << QBCAPPOW) > 80))
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
-// Complexity - O(log)
+// Complexity - O(log of bits)
 BigInteger operator*(const BigInteger& left, const BigInteger& right)
 {
     int rightLog2 = bi_log2(right);
