@@ -29,11 +29,9 @@ namespace Qrack {
 const unsigned numThreads = std::thread::hardware_concurrency() << 1U;
 #if ENABLE_ENV_VARS
 const bitLenInt pStridePow =
-    (((bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW)) +
-        7U) >>
-    1U;
+    (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
-const bitLenInt pStridePow = (PSTRIDEPOW + 7U) >> 1U;
+const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
 const bitCapInt pStride = pow2(pStridePow);
 #endif
