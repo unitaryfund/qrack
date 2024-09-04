@@ -40,8 +40,10 @@
 #define bitLenInt uint16_t
 #elif QBCAPPOW < 32
 #define bitLenInt uint32_t
-#else
+#elif (QBCAPPOW < 64) || !defined(__SIZEOF_INT128__)
 #define bitLenInt uint64_t
+#else
+#define bitLenInt unsigned __int128
 #endif
 
 #if UINTPOW < 4
