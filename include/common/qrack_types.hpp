@@ -58,6 +58,8 @@
 #define bitCapInt uint32_t
 #elif QBCAPPOW < 7
 #define bitCapInt uint64_t
+#elif (QBCAPPOW < 8) && defined(__SIZEOF_INT128__)
+#define bitCapInt unsigned __int128
 #else
 #include "big_integer.hpp"
 #define bitCapInt BigInteger

@@ -39,63 +39,33 @@
                                                                                                                        \
     return 0;
 
-#if QBCAPPOW < 6
-inline void bi_not_ip(uint32_t* left) { *left = ~(*left); }
-inline void bi_and_ip(uint32_t* left, const uint32_t& right) { *left &= right; }
-inline void bi_or_ip(uint32_t* left, const uint32_t& right) { *left |= right; }
-inline void bi_xor_ip(uint32_t* left, const uint32_t& right) { *left ^= right; }
-inline double bi_to_double(const uint32_t& in) { return (double)in; }
+#if (QBCAPPOW < 7) || ((QBCAPPOW < 8) && defined(__SIZEOF_INT128__))
+inline void bi_not_ip(bitCapInt* left) { *left = ~(*left); }
+inline void bi_and_ip(bitCapInt* left, const bitCapInt& right) { *left &= right; }
+inline void bi_or_ip(bitCapInt* left, const bitCapInt& right) { *left |= right; }
+inline void bi_xor_ip(bitCapInt* left, const bitCapInt& right) { *left ^= right; }
+inline double bi_to_double(const bitCapInt& in) { return (double)in; }
 
-inline void bi_increment(uint32_t* pBigInt, const uint32_t& value) { *pBigInt += value; }
-inline void bi_decrement(uint32_t* pBigInt, const uint32_t& value) { *pBigInt -= value; }
+inline void bi_increment(bitCapInt* pBigInt, const bitCapInt& value) { *pBigInt += value; }
+inline void bi_decrement(bitCapInt* pBigInt, const bitCapInt& value) { *pBigInt -= value; }
 
-inline void bi_lshift_ip(uint32_t* left, const uint32_t& right) { *left <<= right; }
-inline void bi_rshift_ip(uint32_t* left, const uint32_t& right) { *left >>= right; }
+inline void bi_lshift_ip(bitCapInt* left, const bitCapInt& right) { *left <<= right; }
+inline void bi_rshift_ip(bitCapInt* left, const bitCapInt& right) { *left >>= right; }
 
-inline int bi_and_1(const uint32_t& left) { return left & 1; }
+inline int bi_and_1(const bitCapInt& left) { return left & 1; }
 
-inline int bi_compare(const uint32_t& left, const uint32_t& right) { _bi_compare(left, right) }
-inline int bi_compare_0(const uint32_t& left) { return (int)(bool)left; }
-inline int bi_compare_1(const uint32_t& left) { _bi_compare(left, 1U); }
+inline int bi_compare(const bitCapInt& left, const bitCapInt& right) { _bi_compare(left, right) }
+inline int bi_compare_0(const bitCapInt& left) { return (int)(bool)left; }
+inline int bi_compare_1(const bitCapInt& left) { _bi_compare(left, 1U); }
 
-inline void bi_add_ip(uint32_t* left, const uint32_t& right) { *left += right; }
-inline void bi_sub_ip(uint32_t* left, const uint32_t& right) { *left -= right; }
+inline void bi_add_ip(bitCapInt* left, const bitCapInt& right) { *left += right; }
+inline void bi_sub_ip(bitCapInt* left, const bitCapInt& right) { *left -= right; }
 
-inline void bi_div_mod(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr)
+inline void bi_div_mod(const bitCapInt& left, const bitCapInt& right, bitCapInt* quotient, bitCapInt* rmndr)
 {
     _bi_div_mod(left, right, quotient, rmndr)
 }
-inline void bi_div_mod_small(const uint32_t& left, const uint32_t& right, uint32_t* quotient, uint32_t* rmndr)
-{
-    _bi_div_mod(left, right, quotient, rmndr)
-}
-#elif QBCAPPOW < 7
-inline void bi_not_ip(uint64_t* left) { *left = ~(*left); }
-inline void bi_and_ip(uint64_t* left, const uint64_t& right) { *left &= right; }
-inline void bi_or_ip(uint64_t* left, const uint64_t& right) { *left |= right; }
-inline void bi_xor_ip(uint64_t* left, const uint64_t& right) { *left ^= right; }
-inline double bi_to_double(const uint64_t& in) { return (double)in; }
-
-inline void bi_increment(uint64_t* pBigInt, const uint64_t& value) { *pBigInt += value; }
-inline void bi_decrement(uint64_t* pBigInt, const uint64_t& value) { *pBigInt -= value; }
-
-inline void bi_lshift_ip(uint64_t* left, const uint64_t& right) { *left <<= right; }
-inline void bi_rshift_ip(uint64_t* left, const uint64_t& right) { *left >>= right; }
-
-inline int bi_and_1(const uint64_t& left) { return left & 1; }
-
-inline int bi_compare(const uint64_t& left, const uint64_t& right) { _bi_compare(left, right) }
-inline int bi_compare_0(const uint64_t& left) { return (int)(bool)left; }
-inline int bi_compare_1(const uint64_t& left) { _bi_compare(left, 1U) }
-
-inline void bi_add_ip(uint64_t* left, const uint64_t& right) { *left += right; }
-inline void bi_sub_ip(uint64_t* left, const uint64_t& right) { *left -= right; }
-
-inline void bi_div_mod(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr)
-{
-    _bi_div_mod(left, right, quotient, rmndr)
-}
-inline void bi_div_mod_small(const uint64_t& left, const uint64_t& right, uint64_t* quotient, uint64_t* rmndr)
+inline void bi_div_mod_small(const bitCapInt& left, uint32_t right, bitCapInt* quotient, uint32_t* rmndr)
 {
     _bi_div_mod(left, right, quotient, rmndr)
 }
@@ -129,9 +99,8 @@ inline bitLenInt log2Ocl(bitCapIntOcl n)
 #endif
 }
 
-#if QBCAPPOW < 7
-inline int bi_log2(const uint64_t& n) { return log2Ocl(n); }
-inline int bi_log2(const uint32_t& n) { return log2Ocl(n); }
+#if (QBCAPPOW < 7) || ((QBCAPPOW < 8) && defined(__SIZEOF_INT128__))
+inline int bi_log2(const bitCapInt& n) { return log2Ocl(n); }
 #endif
 inline bitLenInt log2(bitCapInt n) { return (bitLenInt)bi_log2(n); }
 
