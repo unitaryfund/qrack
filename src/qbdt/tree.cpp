@@ -71,75 +71,9 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bo
         root->Branch(maxQubit);
     }
 
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    const bitCapInt Stride = bdtStride;
-    bitCapInt _t;
-    bi_div_mod(pow2(qubitCount - (maxQubit + 1U)), Stride, &_t, NULL);
-    unsigned underThreads = (bitCapIntOcl)_t;
-    if (underThreads == 1U) {
-        underThreads = 0U;
-    }
-    const unsigned nmCrs = (unsigned)(GetConcurrencyLevel() / (underThreads + 1U));
-    bi_div_mod(end, Stride, &_t, NULL);
-    unsigned threads = (bitCapIntOcl)_t;
-    if (threads > nmCrs) {
-        threads = nmCrs;
-    }
-
-    if (threads <= 1U) {
-        for (bitCapInt j = ZERO_BCI; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
-            bi_or_ip(&j, fn(j));
-        }
-        if (branch) {
-            root->Prune(maxQubit);
-        }
-
-        return;
-    }
-
-    std::mutex myMutex;
-    bitCapInt idx = ZERO_BCI;
-    std::vector<std::future<void>> futures;
-    futures.reserve(threads);
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures.push_back(std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, fn]() {
-            for (;;) {
-                bitCapInt i;
-                if (true) {
-                    std::lock_guard<std::mutex> lock(myMutex);
-                    i = idx;
-                    bi_increment(&idx, 1U);
-                }
-                const bitCapInt l = i * Stride;
-                if (bi_compare(l, end) >= 0) {
-                    break;
-                }
-                const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
-                bitCapInt j;
-                for (j = ZERO_BCI; bi_compare(j, maxJ) < 0; bi_increment(&j, 1U)) {
-                    bitCapInt k = j + l;
-                    bi_or_ip(&k, fn(k));
-                    j = k - l;
-                    if (bi_compare(j, maxJ) >= 0) {
-                        std::lock_guard<std::mutex> lock(myMutex);
-                        bitCapInt _j;
-                        bi_div_mod(j, Stride, &_j, NULL);
-                        bi_or_ip(&idx, _j);
-                        break;
-                    }
-                }
-            }
-        }));
-    }
-
-    for (unsigned cpu = 0U; cpu < futures.size(); ++cpu) {
-        futures[cpu].get();
-    }
-#else
     for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
         bi_or_ip(&j, fn(j));
     }
-#endif
 
     if (branch) {
         root->Prune(maxQubit);
@@ -148,56 +82,9 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bo
 
 void QBdt::_par_for(const bitCapInt& end, ParallelFuncBdt fn)
 {
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    const bitCapInt Stride = bdtStride;
-    const unsigned nmCrs = GetConcurrencyLevel();
-    bitCapInt _t;
-    bi_div_mod(end, Stride, &_t, NULL);
-    unsigned threads = (bitCapIntOcl)_t;
-    if (threads > nmCrs) {
-        threads = nmCrs;
-    }
-
-    if (threads <= 1U) {
-        for (bitCapInt j = ZERO_BCI; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
-            fn(j, 0U);
-        }
-        return;
-    }
-
-    std::mutex myMutex;
-    bitCapInt idx = ZERO_BCI;
-    std::vector<std::future<void>> futures;
-    futures.reserve(threads);
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures.push_back(std::async(std::launch::async, [&myMutex, &idx, &end, &Stride, cpu, fn]() {
-            for (;;) {
-                bitCapInt i;
-                if (true) {
-                    std::lock_guard<std::mutex> lock(myMutex);
-                    i = idx;
-                    bi_increment(&idx, 1U);
-                }
-                const bitCapInt l = i * Stride;
-                if (bi_compare(l, end) >= 0) {
-                    break;
-                }
-                const bitCapInt maxJ = (bi_compare((l + Stride), end) < 0) ? Stride : (end - l);
-                for (bitCapInt j = ZERO_BCI; bi_compare(j, maxJ) < 0; bi_increment(&j, 1U)) {
-                    fn(j + l, cpu);
-                }
-            }
-        }));
-    }
-
-    for (unsigned cpu = 0U; cpu < futures.size(); ++cpu) {
-        futures[cpu].get();
-    }
-#else
     for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
         fn(j, 0U);
     }
-#endif
 }
 
 size_t QBdt::CountBranches()

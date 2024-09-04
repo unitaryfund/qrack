@@ -189,69 +189,10 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     return toRet;
 }
 
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
-{
-    const bitCapInt Stride = pStride;
-    bitCapInt _t;
-    bi_div_mod(end, pStride, &_t, NULL);
-    unsigned threads = (bitCapIntOcl)_t;
-    if (threads > numThreads) {
-        threads = numThreads;
-    }
-
-    if (threads <= 1U) {
-        for (bitCapInt j = ZERO_BCI; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
-            bi_or_ip(&j, fn(j));
-        }
-        return;
-    }
-
-    std::mutex myMutex;
-    bitCapInt idx = ZERO_BCI;
-    std::vector<std::future<void>> futures;
-    futures.reserve(threads);
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures.emplace_back(ATOMIC_ASYNC(&myMutex, &idx, &end, &Stride, fn) {
-            for (;;) {
-                bitCapInt i;
-                if (true) {
-                    std::lock_guard<std::mutex> lock(myMutex);
-                    i = idx;
-                    bi_increment(&idx, 1U);
-                }
-                const bitCapInt l = i * Stride;
-                if (bi_compare(l, end) >= 0) {
-                    break;
-                }
-                const bitCapInt maxJ = ((l + Stride) < end) ? Stride : (end - l);
-                bitCapInt j;
-                for (j = ZERO_BCI; bi_compare(j, maxJ) < 0; bi_increment(&j, 1U)) {
-                    bitCapInt k = j + l;
-                    bi_or_ip(&k, fn(k));
-                    j = k - l;
-                    if (bi_compare(j, maxJ) >= 0) {
-                        std::lock_guard<std::mutex> lock(myMutex);
-                        bitCapInt _j;
-                        bi_div_mod(j, Stride, &_j, NULL);
-                        bi_or_ip(&idx, _j);
-                        break;
-                    }
-                }
-            }
-        }));
-    }
-
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu].get();
-    }
-}
-#else
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
 {
     for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
         bi_or_ip(&j, fn(j));
     }
 }
-#endif
 } // namespace Qrack
