@@ -635,33 +635,21 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
 
-    if (isB0Zero && isB1Zero) {
-        b0->SetZero();
-        b1->SetZero();
-
-        return;
-    }
-
     if (isB0Zero) {
+        if (isB1Zero) {
+            b0->SetZero();
+            b1->SetZero();
+
+            return;
+        }
         b0 = b1->ShallowClone();
         b0->scale = ZERO_CMPLX;
-    }
-
-    if (isB1Zero) {
+    } else if (isB1Zero) {
         b1 = b0->ShallowClone();
         b1->scale = ZERO_CMPLX;
     }
 
-    if (isB0Zero || isB1Zero) {
-        complex2 qubit(b0->scale, b1->scale);
-        qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
-        b0->scale = qubit.c(0U);
-        b1->scale = qubit.c(1U);
-
-        return;
-    }
-
-    if (b0->isEqualUnder(b1)) {
+    if (isB0Zero || isB1Zero || b0->isEqualUnder(b1)) {
         complex2 qubit(b0->scale, b1->scale);
         qubit = matrixMul(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, qubit);
         b0->scale = qubit.c(0U);
@@ -810,33 +798,21 @@ void QBdtNode::PushStateVector(
     const bool isB0Zero = IS_NODE_0(b0->scale);
     const bool isB1Zero = IS_NODE_0(b1->scale);
 
-    if (isB0Zero && isB1Zero) {
-        b0->SetZero();
-        b1->SetZero();
-
-        return;
-    }
-
     if (isB0Zero) {
+        if (isB1Zero) {
+            b0->SetZero();
+            b1->SetZero();
+
+            return;
+        }
         b0 = b1->ShallowClone();
         b0->scale = ZERO_CMPLX;
-    }
-
-    if (isB1Zero) {
+    } else if (isB1Zero) {
         b1 = b0->ShallowClone();
         b1->scale = ZERO_CMPLX;
     }
 
-    if (isB0Zero || isB1Zero) {
-        const complex Y0 = b0->scale;
-        const complex& Y1 = b1->scale;
-        b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
-        b1->scale = mtrx[2U] * Y0 + mtrx[3U] * Y1;
-
-        return;
-    }
-
-    if (b0->isEqualUnder(b1)) {
+    if (isB0Zero || isB1Zero || b0->isEqualUnder(b1)) {
         const complex Y0 = b0->scale;
         const complex& Y1 = b1->scale;
         b0->scale = mtrx[0U] * Y0 + mtrx[1U] * Y1;
