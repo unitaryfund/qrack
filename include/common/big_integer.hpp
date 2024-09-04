@@ -39,17 +39,25 @@
 #include <cmath>
 #include <cstdint>
 
+#ifdef __SIZEOF_INT128__
+#define BIG_INTEGER_WORD_BITS 128U
+#define BIG_INTEGER_WORD_POWER 7U
+#define BIG_INTEGER_WORD unsigned __int128
+#define BIG_INTEGER_HALF_WORD uint64_t
+#define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFFFFFFFFFFULL
+#define BIG_INTEGER_HALF_WORD_MASK_NOT 0xFFFFFFFFFFFFFFFF0000000000000000ULL
+#else
 #define BIG_INTEGER_WORD_BITS 64U
 #define BIG_INTEGER_WORD_POWER 6U
 #define BIG_INTEGER_WORD uint64_t
 #define BIG_INTEGER_HALF_WORD uint32_t
-#define BIG_INTEGER_HALF_WORD_POW 0x100000000ULL
 #define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFFULL
 #define BIG_INTEGER_HALF_WORD_MASK_NOT 0xFFFFFFFF00000000ULL
+#endif
 
 // This can be any power of 2 greater than (or equal to) 64:
-#define BIG_INTEGER_BITS (1 << QBCAPPOW)
-#define BIG_INTEGER_WORD_SIZE (long long)(BIG_INTEGER_BITS / BIG_INTEGER_WORD_BITS)
+constexpr size_t BIG_INTEGER_BITS = (1 << QBCAPPOW);
+constexpr int BIG_INTEGER_WORD_SIZE = BIG_INTEGER_BITS / BIG_INTEGER_WORD_BITS;
 
 // The rest of the constants need to be consistent with the one above:
 constexpr size_t BIG_INTEGER_HALF_WORD_BITS = BIG_INTEGER_WORD_BITS >> 1U;
@@ -79,7 +87,10 @@ typedef struct BigInteger {
         }
     }
 
-    inline explicit operator BIG_INTEGER_WORD() const { return bits[0U]; }
+#ifdef __SIZEOF_INT128__
+    inline explicit operator unsigned __int128() const { return (unsigned __int128)bits[0U]; }
+#endif
+    inline explicit operator uint64_t() const { return (uint64_t)bits[0U]; }
     inline explicit operator uint32_t() const { return (uint32_t)bits[0U]; }
 } BigInteger;
 
@@ -480,7 +491,7 @@ inline bool operator>=(const BigInteger& left, const BigInteger& right) { return
  */
 BigInteger operator*(const BigInteger& left, BIG_INTEGER_HALF_WORD right);
 
-#if BIG_INTEGER_BITS > 80
+#if true
 /**
  * Adapted from Qrack! (The fundamental algorithm was discovered before.)
  * Complexity - O(log)

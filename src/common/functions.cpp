@@ -280,7 +280,11 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
     std::vector<std::string> digits;
     while (bi_compare_0(b) != 0) {
         bitCapInt quo;
+#ifdef __SIZEOF_INT128__
+        uint64_t rem;
+#else
         uint32_t rem;
+#endif
         bi_div_mod_small(b, 10U, &quo, &rem);
         digits.push_back(std::to_string((unsigned char)rem));
         b = quo;

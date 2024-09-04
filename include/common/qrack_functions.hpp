@@ -65,10 +65,17 @@ inline void bi_div_mod(const bitCapInt& left, const bitCapInt& right, bitCapInt*
 {
     _bi_div_mod(left, right, quotient, rmndr)
 }
+#ifdef __SIZEOF_INT128__
+inline void bi_div_mod_small(const bitCapInt& left, uint64_t right, bitCapInt* quotient, uint64_t* rmndr)
+{
+    _bi_div_mod(left, right, quotient, rmndr)
+}
+#else
 inline void bi_div_mod_small(const bitCapInt& left, uint32_t right, bitCapInt* quotient, uint32_t* rmndr)
 {
     _bi_div_mod(left, right, quotient, rmndr)
 }
+#endif
 #endif
 
 namespace Qrack {

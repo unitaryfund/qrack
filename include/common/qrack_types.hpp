@@ -50,8 +50,10 @@
 #define bitCapIntOcl uint16_t
 #elif UINTPOW < 6
 #define bitCapIntOcl uint32_t
-#else
+#elif (UINTPOW < 7) || !defined(__SIZEOF_INT128__)
 #define bitCapIntOcl uint64_t
+#else
+#define bitCapIntOcl unsigned __int128
 #endif
 
 #if QBCAPPOW < 6

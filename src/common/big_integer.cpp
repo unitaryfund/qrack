@@ -56,7 +56,7 @@ BigInteger operator*(const BigInteger& left, BIG_INTEGER_HALF_WORD right)
     return result;
 }
 
-#if BIG_INTEGER_BITS > 80
+#if true
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
 BigInteger operator*(const BigInteger& left, const BigInteger& right)
@@ -95,7 +95,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
 // Complexity - O(x^2)
 BigInteger operator*(const BigInteger& left, const BigInteger& right)
 {
-    if (right->bits[0] < BIG_INTEGER_HALF_WORD_POW) {
+    if (right->bits[0] <= BIG_INTEGER_HALF_WORD_MASK) {
         int wordSize;
         for (wordSize = 1; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
             if (right->bits[wordSize]) {
@@ -107,7 +107,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
         }
     }
 
-    if (left.bits[0] < BIG_INTEGER_HALF_WORD_POW) {
+    if (left.bits[0] <= BIG_INTEGER_HALF_WORD_MASK) {
         int wordSize;
         for (wordSize = 1; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
             if (left.bits[wordSize]) {
@@ -248,7 +248,7 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
 
     // Otherwise, past this point, left > right.
 
-    if (right.bits[0] < BIG_INTEGER_HALF_WORD_POW) {
+    if (right.bits[0] <= BIG_INTEGER_HALF_WORD_MASK) {
         int wordSize;
         for (wordSize = 1; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
             if (right.bits[wordSize]) {
