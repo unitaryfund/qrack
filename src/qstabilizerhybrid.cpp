@@ -1931,7 +1931,7 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             }
 
             const complex phaseFac = nShard->gate[3U] / nShard->gate[0U];
-            logFidelity += log(0.25 * norm(ONE_CMPLX + phaseFac));
+            logFidelity += (double)log(0.25 * norm(ONE_CMPLX + phaseFac));
 
             // We're round the gates to 0, and we eliminate the ancillae.
             FractionalRzAngleWithFlush(i, std::arg(phaseFac));

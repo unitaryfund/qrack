@@ -150,7 +150,7 @@ message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
 
 if (FPPOW GREATER 6)
-    set(QRACK_LIBS ${QRACK_LIBS} quadmath)
+    target_link_libraries(qrack PUBLIC quadmath)
 endif (FPPOW GREATER 6)
 
 if (ENABLE_COMPLEX_X2)

@@ -78,7 +78,7 @@ if (ENABLE_OPENCL)
     link_directories (${QRACK_OpenCL_LINK_DIRS})
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${QRACK_OpenCL_INCLUDE_DIRS})
     target_compile_options (qrack PUBLIC ${QRACK_OpenCL_COMPILATION_OPTIONS})
-    target_link_libraries (qrack ${QRACK_OpenCL_LIBRARIES})
+    target_link_libraries (qrack PUBLIC ${QRACK_OpenCL_LIBRARIES})
 
     # Build the OpenCL command files
     find_program (XXD_BIN xxd)
