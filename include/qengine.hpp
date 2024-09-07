@@ -85,7 +85,7 @@ public:
     QEngine()
         : useHostRam(false)
         , runningNorm(ONE_R1)
-        , maxQPowerOcl(0U)
+        , maxQPowerOcl(1U)
     {
         // Intentionally left blank
     }
