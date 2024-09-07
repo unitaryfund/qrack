@@ -1048,7 +1048,14 @@ MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ real1_f* ket)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
+#if FPPOW == 4
+    const size_t maxQPowerMult2 = (size_t)(simulator->GetMaxQPower() << 1U);
+    std::unique_ptr<real1[]> _ket(new real1[maxQPowerMult2]);
+    std::transform(ket, ket + maxQPowerMult2, _ket.get(), [](real1_f c) { return (real1)c; });
+    simulator->SetQuantumState(reinterpret_cast<complex*>(_ket.get()));
+#else
     simulator->SetQuantumState(reinterpret_cast<complex*>(ket));
+#endif
 }
 
 /**
@@ -1058,7 +1065,16 @@ MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ real1_f* ket)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
+#if FPPOW == 4
+    const size_t maxQPower = (size_t)simulator->GetMaxQPower();
+    const size_t maxQPowerMult2 = maxQPower << 1U;
+    std::unique_ptr<complex[]> _ket(new complex[maxQPower]);
+    simulator->GetQuantumState(_ket.get());
+    real1* _ket_comp = reinterpret_cast<real1*>(_ket.get());
+    std::transform(_ket_comp, _ket_comp + maxQPowerMult2, ket, [](real1 c) { return (real1_f)c; });
+#else
     simulator->GetQuantumState(reinterpret_cast<complex*>(ket));
+#endif
 }
 
 /**
