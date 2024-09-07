@@ -2598,7 +2598,7 @@ double _FactorizedExpVar(uintq sid, uintq n, uintq* q, uintq m, uintq* c, real1_
 #endif
     }
 
-    std::vector<real1> _f;
+    std::vector<real1_f> _f;
     if (f) {
         _f.reserve(n2);
         for (uintq i = 0U; i < n2; ++i) {
@@ -2701,7 +2701,7 @@ double UnitaryExpVar(bool isExp, uintq sid, uintq n, uintq* q, real1_s* b)
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
     std::vector<bitLenInt> _q;
-    std::vector<real1> _b;
+    std::vector<real1_f> _b;
     _q.reserve(n);
     _b.reserve(3U * n);
     for (size_t i = 0U; i < n; ++i) {
@@ -2777,8 +2777,8 @@ double UnitaryExpVarEigenVal(bool isExp, uintq sid, uintq n, uintq* q, real1_s* 
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)
 
     std::vector<bitLenInt> _q;
-    std::vector<real1> _b;
-    std::vector<real1> _e;
+    std::vector<real1_f> _b;
+    std::vector<real1_f> _e;
     _q.reserve(n);
     _b.reserve(3U * n);
     _e.reserve(n << 1U);
@@ -2822,7 +2822,7 @@ double MatrixExpVarEigenVal(bool isExp, uintq sid, uintq n, uintq* q, real1_s* b
 
     std::vector<bitLenInt> _q;
     std::vector<std::shared_ptr<complex>> _b;
-    std::vector<real1> _e;
+    std::vector<real1_f> _e;
     _q.reserve(n);
     _b.reserve(n << 3U);
     _e.reserve(n << 1U);
