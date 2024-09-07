@@ -42,12 +42,6 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
-    // If scale of this node is zero, nothing under it makes a difference.
-    if (IS_NODE_0(scale)) {
-        SetZero();
-        return;
-    }
-
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
         SetZero();
@@ -125,18 +119,18 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
 
     if (IS_NODE_0(b0->scale)) {
         b0->SetZero();
-        b1->scale /= abs(b1->scale);
+        scale *= b1->scale / abs(b1->scale);
+        b1->scale = ONE_CMPLX;
     } else if (IS_NODE_0(b1->scale)) {
         b1->SetZero();
-        b0->scale /= abs(b0->scale);
+        scale *= b0->scale / abs(b0->scale);
+        b0->scale = ONE_CMPLX;
+    } else {
+        const complex phaseFac = std::polar(ONE_R1, std::arg(b1->scale));
+        scale *= phaseFac;
+        b0->scale /= phaseFac;
+        b1->scale /= phaseFac;
     }
-
-    const complex phaseFac =
-        std::polar(ONE_R1, ((b0->scale == ZERO_CMPLX) ? std::arg(b1->scale) : std::arg(b0->scale)));
-
-    scale *= phaseFac;
-    b0->scale /= phaseFac;
-    b1->scale /= phaseFac;
 
     // Now, we try to combine pointers to equivalent branches.
     const bitCapInt depthPow = pow2(depth);
@@ -289,11 +283,6 @@ void QBdtNode::Normalize(bitLenInt depth)
         return;
     }
 
-    if (IS_NODE_0(scale)) {
-        SetZero();
-        return;
-    }
-
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
         SetZero();
@@ -329,11 +318,6 @@ void QBdtNode::Normalize(bitLenInt depth)
 void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
 {
     if (!depth) {
-        return;
-    }
-
-    if (IS_NODE_0(scale)) {
-        SetZero();
         return;
     }
 

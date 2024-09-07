@@ -47,11 +47,7 @@ bool operator!=(QBdtNodeInterfacePtr lhs, QBdtNodeInterfacePtr rhs) { return !(l
 
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
-    if (!r) {
-        return false;
-    }
-
-    if (!IS_SAME_AMP(scale, r->scale)) {
+    if (!r || !IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
 
@@ -103,13 +99,7 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
     const double denom = lSqr + rSqr;
     const complex nScale = (real1)(lSqr / denom) * lLeaf->scale + (real1)(rSqr / denom) * rLeaf->scale;
 
-    if (IS_NODE_0(nScale)) {
-        lLeaf->SetZero();
-        rLeaf->SetZero();
-    } else {
-        lLeaf->scale = nScale;
-        rLeaf->scale = nScale;
-    }
+    lLeaf->scale = nScale;
 
     // Set the branches equal.
     rLeaf = lLeaf;
