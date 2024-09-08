@@ -230,7 +230,7 @@ bool QTensorNetwork::ForceM(bitLenInt qubit, bool result, bool doForce, bool doA
     }
 
     // Identify whether we need a totally new measurement layer.
-    if ((layerId + 1U) > measurements.size()) {
+    if (layerId >= measurements.size()) {
         // Insert the required measurement layer.
         measurements.emplace_back();
     }
