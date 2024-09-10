@@ -1,3 +1,33 @@
+libqrack (9.9.41) bionic; urgency=medium
+
+  * QBDD and stabilizer optimization (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 08 Sep 2024 15:58:05 -0400
+
+libqrack (9.9.40) focal; urgency=medium
+
+  * QBDD and stabilizer optimization (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 08 Sep 2024 15:56:00 -0400
+
+libqrack (9.9.39) jammy; urgency=medium
+
+  * QBDD and stabilizer optimization (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 08 Sep 2024 15:54:25 -0400
+
+libqrack (9.9.38) noble; urgency=medium
+
+  * QBDD and stabilizer optimization (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 08 Sep 2024 15:49:26 -0400
+
+libqrack (9.9.37) noble; urgency=medium
+
+  * QBDD and stabilizer optimization (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 08 Sep 2024 15:45:33 -0400
+
 libqrack (9.9.36) bionic; urgency=medium
 
   * QBdt and BigInteger debugging and performance (Bionic 4/4)
