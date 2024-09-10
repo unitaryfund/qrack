@@ -80,7 +80,7 @@ protected:
         const bitLenInt pStridePow =
             (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
-        const bitLenInt pStridePow = (PSTRIDEPOW + 7U) >> 1U;
+        const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
         const bitLenInt strideBits = log2Ocl(GetConcurrencyLevel() * pow2Ocl(pStridePow));
 
