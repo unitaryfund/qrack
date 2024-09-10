@@ -476,7 +476,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             std::lock_guard<std::mutex> nLock(n1->mtx);
 #endif
             n1->InsertAtDepth(b, size, 0U, parDepth);
-        } else if (IS_NODE_0(b0->scale)) {
+        } else if (IS_NODE_0(b1->scale)) {
             if (true) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
                 std::lock_guard<std::mutex> lock(b->mtx);
