@@ -255,13 +255,9 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
         const bitCapIntOcl otherRes = lcv & otherMask;
         const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         const bitCapIntOcl outInt = inOutInt + toAddOcl;
-        bitCapIntOcl outRes;
-        if (outInt < lengthPower) {
-            outRes = (outInt << inOutStart) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << inOutStart) | otherRes;
-        }
-        bool isOverflow = isOverflowAdd(inOutInt, toAddOcl, signMask, lengthPower);
+        const bitCapIntOcl outRes = (outInt < lengthPower) ? ((outInt << inOutStart) | otherRes)
+                                                           : (((outInt - lengthPower) << inOutStart) | otherRes);
+        const bool isOverflow = isOverflowAdd(inOutInt, toAddOcl, signMask, lengthPower);
         if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
             nStateVec->write(outRes, -stateVec->read(lcv));
         } else {
@@ -317,13 +313,10 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt lengt
         const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         const bitCapIntOcl inInt = toModOcl;
         const bitCapIntOcl outInt = inOutInt + toModOcl;
-        bitCapIntOcl outRes;
-        if (outInt < lengthPower) {
-            outRes = (outInt << inOutStart) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
-        }
-        bool isOverflow = isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        const bitCapIntOcl outRes = (outInt < lengthPower)
+            ? ((outInt << inOutStart) | otherRes)
+            : (((outInt - lengthPower) << inOutStart) | otherRes | carryMask);
+        const bool isOverflow = isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
         if (isOverflow) {
             nStateVec->write(outRes, -stateVec->read(lcv));
         } else {
@@ -378,13 +371,10 @@ void QEngineCPU::INCDECSC(
         const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         const bitCapIntOcl inInt = toModOcl;
         const bitCapIntOcl outInt = inOutInt + toModOcl;
-        bitCapIntOcl outRes;
-        if (outInt < lengthPower) {
-            outRes = (outInt << inOutStart) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
-        }
-        bool isOverflow = isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        const bitCapIntOcl outRes = (outInt < lengthPower)
+            ? ((outInt << inOutStart) | otherRes)
+            : (((outInt - lengthPower) << inOutStart) | otherRes | carryMask);
+        const bool isOverflow = isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
         if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
             nStateVec->write(outRes, -stateVec->read(lcv));
         } else {
@@ -1059,13 +1049,13 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
-        bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl otherRes = lcv & otherMask;
 
         // These are bits that index the classical memory we're loading from:
-        bitCapIntOcl inputRes = lcv & inputMask;
+        const bitCapIntOcl inputRes = lcv & inputMask;
 
         // If we read these as a char type, this is their value as a char:
-        bitCapIntOcl inputInt = inputRes >> indexStart;
+        const bitCapIntOcl inputInt = inputRes >> indexStart;
 
         // This is the initial value that's entangled with the "inputStart"
         // register in "outputStart."
@@ -1181,13 +1171,13 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
-        bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl otherRes = lcv & otherMask;
 
         // These are bits that index the classical memory we're loading from:
-        bitCapIntOcl inputRes = lcv & inputMask;
+        const bitCapIntOcl inputRes = lcv & inputMask;
 
         // If we read these as a char type, this is their value as a char:
-        bitCapIntOcl inputInt = inputRes >> indexStart;
+        const bitCapIntOcl inputInt = inputRes >> indexStart;
 
         // This is the initial value that's entangled with the "inputStart"
         // register in "outputStart."
