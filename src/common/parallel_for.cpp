@@ -177,7 +177,6 @@ void ParallelFor::par_for_inc(
     if (threads > numCores) {
         threads = numCores;
     }
-
     if (threads <= 1U) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; ++j) {
@@ -201,8 +200,7 @@ void ParallelFor::par_for_inc(
                 }
                 const bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
                 for (bitCapIntOcl j = 0U; j < maxJ; ++j) {
-                    bitCapIntOcl k = j + l;
-                    fn(inc(begin + k), cpu);
+                    fn(inc(begin + j + l), cpu);
                 }
             }
         }));
@@ -224,7 +222,6 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     if (threads > numCores) {
         threads = numCores;
     }
-
     if (threads <= 1U) {
         real1 nrmSqr = ZERO_R1;
         const real1 nrm_thresh = (real1)norm_thresh;
@@ -281,7 +278,6 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
     if (threads > numCores) {
         threads = numCores;
     }
-
     if (threads <= 1U) {
         real1 nrmSqr = ZERO_R1;
         for (bitCapIntOcl j = 0U; j < itemCount; ++j) {

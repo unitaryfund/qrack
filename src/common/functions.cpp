@@ -310,7 +310,7 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
     b = ZERO_BCI;
     for (size_t i = 0; i < input.size(); ++i) {
         // Left shift by 1 base-10 digit.
-        b = b * 10;
+        b = b * 10U;
         // Add the next lowest base-10 digit.
         bi_increment(&b, (input[i] - 48U));
     }
