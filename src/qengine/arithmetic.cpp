@@ -199,12 +199,9 @@ void QEngineCPU::INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length
         const bitCapIntOcl otherRes = lcv & otherMask;
         const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         const bitCapIntOcl outInt = inOutInt + toModOcl;
-        bitCapIntOcl outRes;
-        if (outInt < lengthPower) {
-            outRes = (outInt << inOutStart) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
-        }
+        const bitCapIntOcl outRes = (outInt < lengthPower)
+            ? ((outInt << inOutStart) | otherRes)
+            : (((outInt - lengthPower) << inOutStart) | otherRes | carryMask);
         nStateVec->write(outRes, stateVec->read(lcv));
     });
     ResetStateVec(nStateVec);
