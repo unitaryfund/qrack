@@ -41,13 +41,13 @@ public:
         // Intentionally left blank
     }
 
-    QBdtNode(complex scl)
+    QBdtNode(const complex& scl)
         : QBdtNodeInterface(scl)
     {
         // Intentionally left blank
     }
 
-    QBdtNode(complex scl, QBdtNodeInterfacePtr* b)
+    QBdtNode(const complex& scl, QBdtNodeInterfacePtr* b)
         : QBdtNodeInterface(scl, b)
     {
         // Intentionally left blank

@@ -65,14 +65,14 @@ public:
         branches[1U] = NULL;
     }
 
-    QBdtNodeInterface(complex scl)
+    QBdtNodeInterface(const complex& scl)
         : scale(scl)
     {
         branches[0U] = NULL;
         branches[1U] = NULL;
     }
 
-    QBdtNodeInterface(complex scl, QBdtNodeInterfacePtr* b)
+    QBdtNodeInterface(const complex& scl, QBdtNodeInterfacePtr* b)
         : scale(scl)
     {
         branches[0U] = b[0U];

@@ -26,7 +26,7 @@ void QCircuit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
         return;
     }
 
-    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    QRACK_CONST complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
 
     if (length == 1U) {
         if (bi_and_1(toAdd)) {
