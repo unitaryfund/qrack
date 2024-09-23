@@ -154,10 +154,10 @@ After CMake, the project must be built in Visual Studio. Once installed, the `qr
 To change the C++ language standard language with which Qrack is applied, use `-DCPP_STD=n`, where "`n`" is the two-digit standard year:
 
 ```sh
-cmake -DCPP_SIM=14 ..
+cmake -DCPP_SIM=11 ..
 ```
 
-By default, Qrack builds for C++11. For minimum support for all optional dependencies, C++14 or later might be required.
+Qrack is backwards compatible as far as C++11. By default, Qrack builds for C++14. For minimum support for all optional dependencies, C++14 or later might be required.
 
 ## Optional CUDA instead of OpenCL
 
