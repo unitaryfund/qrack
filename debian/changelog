@@ -1,3 +1,27 @@
+libqrack (9.9.45) bionic; urgency=medium
+
+  * QBDD deadlock fix and style (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 23 Sep 2024 08:08:15 -0400
+
+libqrack (9.9.44) focal; urgency=medium
+
+  * QBDD deadlock fix and style (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 23 Sep 2024 08:06:37 -0400
+
+libqrack (9.9.43) jammy; urgency=medium
+
+  * QBDD deadlock fix and style (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 23 Sep 2024 08:04:55 -0400
+
+libqrack (9.9.42) noble; urgency=medium
+
+  * QBDD deadlock fix and style (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 23 Sep 2024 08:02:21 -0400
+
 libqrack (9.9.41) bionic; urgency=medium
 
   * QBDD and stabilizer optimization (Bionic 4/4)
