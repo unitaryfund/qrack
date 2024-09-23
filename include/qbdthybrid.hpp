@@ -111,21 +111,21 @@ protected:
     }
 
 public:
-    QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+    QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
+        qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     QBdtHybrid(QBdtPtr q, QEnginePtr e, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
-        bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG,
-        bool doNorm = false, bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1,
-        bool useHardwareRNG = true, bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON,
-        std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
+        const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+        bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QBdtHybrid(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+    QBdtHybrid(bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
@@ -135,7 +135,8 @@ public:
     {
     }
 
-    QInterfacePtr MakeSimulator(bool isBdt, bitCapInt perm = ZERO_BCI, complex phaseFac = CMPLX_DEFAULT_ARG);
+    QInterfacePtr MakeSimulator(
+        bool isBdt, const bitCapInt& perm = ZERO_BCI, const complex& phaseFac = CMPLX_DEFAULT_ARG);
 
     bool isBinaryDecisionTree() { return !engine; }
 
@@ -149,7 +150,7 @@ public:
         }
     }
 
-    real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+    real1_f ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation)
     {
         if (qbdt) {
             return qbdt->ProbReg(start, length, permutation);
@@ -262,7 +263,7 @@ public:
             engine->Dispose(start, length);
         }
     }
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+    void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm)
     {
         SetQubitCount(qubitCount - length);
         if (qbdt) {
@@ -314,14 +315,14 @@ public:
             engine->GetProbs(outputProbs);
         }
     }
-    complex GetAmplitude(bitCapInt perm)
+    complex GetAmplitude(const bitCapInt& perm)
     {
         if (qbdt) {
             return qbdt->GetAmplitude(perm);
         }
         return engine->GetAmplitude(perm);
     }
-    void SetAmplitude(bitCapInt perm, complex amp)
+    void SetAmplitude(const bitCapInt& perm, const complex& amp)
     {
         if (qbdt) {
             qbdt->SetAmplitude(perm, amp);
@@ -329,7 +330,7 @@ public:
             engine->SetAmplitude(perm, amp);
         }
     }
-    void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
+    void SetPermutation(const bitCapInt& perm, const complex& phaseFac = CMPLX_DEFAULT_ARG)
     {
         if (qbdt) {
             qbdt->SetPermutation(perm, phaseFac);
@@ -347,7 +348,7 @@ public:
             engine->Mtrx(mtrx, qubitIndex);
         }
     }
-    void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
+    void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt qubitIndex)
     {
         if (qbdt) {
             qbdt->Phase(topLeft, bottomRight, qubitIndex);
@@ -355,7 +356,7 @@ public:
             engine->Phase(topLeft, bottomRight, qubitIndex);
         }
     }
-    void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex)
+    void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt qubitIndex)
     {
         if (qbdt) {
             qbdt->Invert(topRight, bottomLeft, qubitIndex);
@@ -384,7 +385,7 @@ public:
 
     using QInterface::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        const complex* mtrxs, const std::vector<bitCapInt> mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+        const complex* mtrxs, const std::vector<bitCapInt> mtrxSkipPowers, const bitCapInt& mtrxSkipValueMask)
     {
         if (qbdt) {
             qbdt->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
@@ -394,7 +395,7 @@ public:
         }
     }
 
-    void XMask(bitCapInt mask)
+    void XMask(const bitCapInt& mask)
     {
         if (qbdt) {
             qbdt->XMask(mask);
@@ -402,7 +403,7 @@ public:
             engine->XMask(mask);
         }
     }
-    void PhaseParity(real1_f radians, bitCapInt mask)
+    void PhaseParity(real1_f radians, const bitCapInt& mask)
     {
         if (qbdt) {
             qbdt->PhaseParity(radians, mask);
@@ -426,7 +427,7 @@ public:
         return engine->ACProb(control, target);
     }
 
-    void UniformParityRZ(bitCapInt mask, real1_f angle)
+    void UniformParityRZ(const bitCapInt& mask, real1_f angle)
     {
         if (qbdt) {
             qbdt->UniformParityRZ(mask, angle);
@@ -435,7 +436,7 @@ public:
             engine->UniformParityRZ(mask, angle);
         }
     }
-    void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle)
+    void CUniformParityRZ(const std::vector<bitLenInt>& controls, const bitCapInt& mask, real1_f angle)
     {
         if (qbdt) {
             qbdt->CUniformParityRZ(controls, mask, angle);
@@ -539,7 +540,7 @@ public:
             engine->X(q);
         }
     }
-    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+    void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length)
     {
         if (qbdt) {
             qbdt->INC(toAdd, start, length);
@@ -547,7 +548,7 @@ public:
             engine->INC(toAdd, start, length);
         }
     }
-    void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
+    void DEC(const bitCapInt& toSub, bitLenInt start, bitLenInt length)
     {
         if (qbdt) {
             qbdt->DEC(toSub, start, length);
@@ -555,7 +556,7 @@ public:
             engine->DEC(toSub, start, length);
         }
     }
-    void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+    void CDEC(const bitCapInt& toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         if (qbdt) {
             qbdt->CDEC(toSub, inOutStart, length, controls);
@@ -564,7 +565,7 @@ public:
             engine->CDEC(toSub, inOutStart, length, controls);
         }
     }
-    void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void INCDECC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         if (qbdt) {
             qbdt->INCDECC(toAdd, start, length, carryIndex);
@@ -572,7 +573,7 @@ public:
             engine->INCDECC(toAdd, start, length, carryIndex);
         }
     }
-    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+    void CINC(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         if (qbdt) {
             qbdt->CINC(toAdd, inOutStart, length, controls);
@@ -581,7 +582,7 @@ public:
             engine->CINC(toAdd, inOutStart, length, controls);
         }
     }
-    void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void INCC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         if (qbdt) {
             qbdt->INCC(toAdd, start, length, carryIndex);
@@ -590,7 +591,7 @@ public:
             engine->INCC(toAdd, start, length, carryIndex);
         }
     }
-    void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    void INCS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         if (qbdt) {
             qbdt->INCS(toAdd, start, length, overflowIndex);
@@ -599,7 +600,7 @@ public:
             engine->INCS(toAdd, start, length, overflowIndex);
         }
     }
-    void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    void DECS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         if (qbdt) {
             qbdt->DECS(toAdd, start, length, overflowIndex);
@@ -608,17 +609,17 @@ public:
             engine->DECS(toAdd, start, length, overflowIndex);
         }
     }
-    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    void INCSC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
         SwitchMode(false);
         engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
     }
-    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void INCSC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchMode(false);
         engine->INCSC(toAdd, start, length, carryIndex);
     }
-    void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void DECC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         if (qbdt) {
             qbdt->DECC(toSub, start, length, carryIndex);
@@ -627,44 +628,45 @@ public:
             engine->DECC(toSub, start, length, carryIndex);
         }
     }
-    void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    void DECSC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
         SwitchMode(false);
         engine->DECSC(toSub, start, length, overflowIndex, carryIndex);
     }
-    void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void DECSC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchMode(false);
         engine->DECSC(toSub, start, length, carryIndex);
     }
-    void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    void INCDECSC(
+        const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
         SwitchMode(false);
         engine->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
     }
-    void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void INCDECSC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchMode(false);
         engine->INCDECSC(toAdd, start, length, carryIndex);
     }
 #if ENABLE_BCD
-    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+    void INCBCD(const bitCapInt& toAdd, bitLenInt start, bitLenInt length)
     {
         SwitchMode(false);
         engine->INCBCD(toAdd, start, length);
     }
-    void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void INCBCDC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchMode(false);
         engine->INCBCDC(toAdd, start, length, carryIndex);
     }
-    void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void DECBCDC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchMode(false);
         engine->DECBCDC(toSub, start, length, carryIndex);
     }
 #endif
-    void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+    void MUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
         if (qbdt) {
             qbdt->MUL(toMul, inOutStart, carryStart, length);
@@ -672,7 +674,7 @@ public:
             engine->MUL(toMul, inOutStart, carryStart, length);
         }
     }
-    void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+    void DIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
         if (qbdt) {
             qbdt->DIV(toDiv, inOutStart, carryStart, length);
@@ -680,7 +682,8 @@ public:
             engine->DIV(toDiv, inOutStart, carryStart, length);
         }
     }
-    void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    void MULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         if (qbdt) {
             qbdt->MULModNOut(toMul, modN, inStart, outStart, length);
@@ -688,7 +691,8 @@ public:
             engine->MULModNOut(toMul, modN, inStart, outStart, length);
         }
     }
-    void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    void IMULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         if (qbdt) {
             qbdt->IMULModNOut(toMul, modN, inStart, outStart, length);
@@ -696,12 +700,13 @@ public:
             engine->IMULModNOut(toMul, modN, inStart, outStart, length);
         }
     }
-    void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    void POWModNOut(
+        const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         SwitchMode(false);
         engine->POWModNOut(base, modN, inStart, outStart, length);
     }
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    void CMUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
         if (qbdt) {
@@ -711,7 +716,7 @@ public:
             engine->CMUL(toMul, inOutStart, carryStart, length, controls);
         }
     }
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    void CDIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls)
     {
         if (qbdt) {
@@ -721,8 +726,8 @@ public:
             engine->CDIV(toDiv, inOutStart, carryStart, length, controls);
         }
     }
-    void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
+    void CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         if (qbdt) {
             qbdt->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
@@ -731,8 +736,8 @@ public:
             engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls);
         }
     }
-    void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
+    void CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         if (qbdt) {
             qbdt->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
@@ -741,8 +746,8 @@ public:
             engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
         }
     }
-    void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
+    void CPOWModNOut(const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         SwitchMode(false);
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls);
@@ -772,12 +777,12 @@ public:
         engine->Hash(start, length, values);
     }
 
-    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    void CPhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         SwitchMode(false);
         engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
     }
-    void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    void PhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length)
     {
         SwitchMode(false);
         engine->PhaseFlipIfLess(greaterPerm, start, length);
@@ -845,7 +850,7 @@ public:
         }
         return engine->Prob(qubitIndex);
     }
-    real1_f ProbAll(bitCapInt fullRegister)
+    real1_f ProbAll(const bitCapInt& fullRegister)
     {
         const real1_f toRet = qbdt ? qbdt->ProbAll(fullRegister) : engine->ProbAll(fullRegister);
         if (toRet >= (ONE_R1_F - FP_NORM_EPSILON)) {
@@ -854,21 +859,21 @@ public:
 
         return toRet;
     }
-    real1_f ProbMask(bitCapInt mask, bitCapInt permutation)
+    real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     {
         if (qbdt) {
             return qbdt->ProbMask(mask, permutation);
         }
         return engine->ProbMask(mask, permutation);
     }
-    real1_f ProbParity(bitCapInt mask)
+    real1_f ProbParity(const bitCapInt& mask)
     {
         if (qbdt) {
             return qbdt->ProbParity(mask);
         }
         return engine->ProbParity(mask);
     }
-    bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
+    bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
     {
         if (qbdt) {
             return qbdt->ForceMParity(mask, result, doForce);

@@ -36,9 +36,9 @@
 
 namespace Qrack {
 
-QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool ignored2, int64_t ignored3, bool useHardwareRNG, bool ignored4, real1_f ignored5,
-    std::vector<int64_t> ignored6, bitLenInt ignored7, real1_f ignored8)
+QStabilizer::QStabilizer(bitLenInt n, const bitCapInt& perm, qrack_rand_gen_ptr rgp, const complex& phaseFac,
+    bool doNorm, bool randomGlobalPhase, bool ignored2, int64_t ignored3, bool useHardwareRNG, bool ignored4,
+    real1_f ignored5, std::vector<int64_t> ignored6, bitLenInt ignored7, real1_f ignored8)
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , rawRandBools(0U)
     , rawRandBoolsRemaining(0U)
@@ -86,7 +86,7 @@ QInterfacePtr QStabilizer::Clone()
     return clone;
 }
 
-void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
+void QStabilizer::SetPermutation(const bitCapInt& perm, const complex& phaseFac)
 {
     Dump();
 
@@ -493,7 +493,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
 }
 
 /// Convert the state to ket notation (warning: could be huge!)
-complex QStabilizer::GetAmplitude(bitCapInt perm)
+complex QStabilizer::GetAmplitude(const bitCapInt& perm)
 {
     Finish();
 
@@ -774,19 +774,19 @@ real1_f QStabilizer::VarianceFloatsFactorized(const std::vector<bitLenInt>& bits
     return expectation;
 }
 
-real1_f QStabilizer::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
+real1_f QStabilizer::ProbPermRdm(const bitCapInt& _perm, bitLenInt ancillaeStart)
 {
     if (ancillaeStart > qubitCount) {
         throw std::invalid_argument("QStabilizer::ProbPermRDM ancillaeStart is out-of-bounds!");
     }
 
     if (ancillaeStart == qubitCount) {
-        return ProbAll(perm);
+        return ProbAll(_perm);
     }
 
     bitCapInt qubitMask = pow2(ancillaeStart);
     bi_decrement(&qubitMask, 1U);
-    bi_and_ip(&perm, qubitMask);
+    bitCapInt perm = _perm & qubitMask;
 
     Finish();
 
@@ -816,7 +816,7 @@ real1_f QStabilizer::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
     return prob;
 }
 
-real1_f QStabilizer::ProbMask(bitCapInt mask, bitCapInt perm)
+real1_f QStabilizer::ProbMask(const bitCapInt& mask, const bitCapInt& perm)
 {
     Finish();
 
@@ -1985,7 +1985,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     throw std::domain_error("QStabilizer::Mtrx() not implemented for non-Clifford/Pauli cases!");
 }
 
-void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
+void QStabilizer::Phase(const complex& topLeft, const complex& bottomRight, bitLenInt target)
 {
     if (IS_SAME(topLeft, bottomRight)) {
         SetPhaseOffset(phaseOffset + std::arg(topLeft));
@@ -2023,7 +2023,7 @@ void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
     throw std::domain_error("QStabilizer::Phase() not implemented for non-Clifford/Pauli cases!");
 }
 
-void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
+void QStabilizer::Invert(const complex& topRight, const complex& bottomLeft, bitLenInt target)
 {
     if (IS_SAME(topRight, bottomLeft)) {
         X(target);
@@ -2065,7 +2065,7 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 }
 
 void QStabilizer::MCPhase(
-    const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
         return;
@@ -2132,7 +2132,7 @@ void QStabilizer::MCPhase(
 }
 
 void QStabilizer::MACPhase(
-    const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+    const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
 {
     if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
         return;
@@ -2199,7 +2199,7 @@ void QStabilizer::MACPhase(
 }
 
 void QStabilizer::MCInvert(
-    const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
 {
     if (controls.empty()) {
         Invert(topRight, bottomLeft, target);
@@ -2260,7 +2260,7 @@ void QStabilizer::MCInvert(
 }
 
 void QStabilizer::MACInvert(
-    const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+    const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
 {
     if (controls.empty()) {
         Invert(topRight, bottomLeft, target);

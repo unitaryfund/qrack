@@ -90,7 +90,7 @@ struct QCircuitGate {
     /**
      * Controlled gate constructor
      */
-    QCircuitGate(bitLenInt trgt, const complex matrix[], const std::set<bitLenInt>& ctrls, bitCapInt perm)
+    QCircuitGate(bitLenInt trgt, const complex matrix[], const std::set<bitLenInt>& ctrls, const bitCapInt& perm)
         : target(trgt)
         , controls(ctrls)
     {
@@ -774,7 +774,7 @@ public:
 
 #if ENABLE_ALU
     /** Add integer (without sign) */
-    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length);
 #endif
 };
 

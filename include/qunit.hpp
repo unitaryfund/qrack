@@ -45,17 +45,17 @@ protected:
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
 
-    QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
+    QInterfacePtr MakeEngine(bitLenInt length, const bitCapInt& perm);
 
 public:
-    QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+    QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
+        qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devIDs = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QUnit(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+    QUnit(bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devIDs = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
@@ -124,8 +124,8 @@ public:
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
-    virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetAmplitude(bitCapInt perm, complex amp)
+    virtual complex GetAmplitude(const bitCapInt& perm);
+    virtual void SetAmplitude(const bitCapInt& perm, const complex& amp)
     {
         if (bi_compare(perm, maxQPower) >= 0) {
             throw std::invalid_argument("QUnit::SetAmplitude argument out-of-bounds!");
@@ -134,7 +134,7 @@ public:
         EntangleAll();
         shards[0U].unit->SetAmplitude(perm, amp);
     }
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
+    virtual void SetPermutation(const bitCapInt& perm, const complex& phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
     virtual bitLenInt Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); }
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnit>(toCopy)); }
@@ -174,7 +174,10 @@ public:
         return dest;
     }
     virtual void Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
-    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { Detach(start, length, nullptr); }
+    virtual void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm)
+    {
+        Detach(start, length, nullptr);
+    }
     using QInterface::Allocate;
     virtual bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
@@ -190,38 +193,39 @@ public:
     using QInterface::IS;
     virtual void IS(bitLenInt target);
 
-    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
-    virtual void PhaseParity(real1 radians, bitCapInt mask);
+    virtual void ZMask(const bitCapInt& mask) { PhaseParity(PI_R1, mask); }
+    virtual void PhaseParity(real1 radians, const bitCapInt& mask);
 
-    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex);
-    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex);
-    virtual void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+    virtual void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt qubitIndex);
+    virtual void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt qubitIndex);
+    virtual void MCPhase(
+        const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
     {
         bitCapInt m = pow2(controls.size());
         bi_decrement(&m, 1U);
         UCPhase(controls, topLeft, bottomRight, target, m);
     }
     virtual void MCInvert(
-        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+        const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
     {
         bitCapInt m = pow2(controls.size());
         bi_decrement(&m, 1U);
         UCInvert(controls, topRight, bottomLeft, target, m);
     }
     virtual void MACPhase(
-        const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+        const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
     {
         UCPhase(controls, topLeft, bottomRight, target, ZERO_BCI);
     }
     virtual void MACInvert(
-        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+        const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
     {
         UCInvert(controls, topRight, bottomLeft, target, ZERO_BCI);
     }
-    virtual void UCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target,
-        bitCapInt controlPerm);
-    virtual void UCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft,
-        bitLenInt target, bitCapInt controlPerm);
+    virtual void UCPhase(const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight,
+        bitLenInt target, const bitCapInt& controlPerm);
+    virtual void UCInvert(const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft,
+        bitLenInt target, const bitCapInt& controlPerm);
     virtual void Mtrx(const complex* mtrx, bitLenInt qubit);
     virtual void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
@@ -234,11 +238,11 @@ public:
         UCMtrx(controls, mtrx, target, ZERO_BCI);
     }
     virtual void UCMtrx(
-        const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm);
+        const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, const bitCapInt& controlPerm);
     using QInterface::UniformlyControlledSingleBit;
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
-    virtual void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
+        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, const bitCapInt& mtrxSkipValueMask);
+    virtual void CUniformParityRZ(const std::vector<bitLenInt>& controls, const bitCapInt& mask, real1_f angle);
     virtual void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
     virtual void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
     virtual void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
@@ -249,7 +253,7 @@ public:
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     using QInterface::ForceMReg;
     virtual bitCapInt ForceMReg(
-        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
+        bitLenInt start, bitLenInt length, const bitCapInt& result, bool doForce = true, bool doApply = true);
     virtual bitCapInt MAll();
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned shots);
     virtual void MultiShotMeasureMask(
@@ -269,60 +273,68 @@ public:
      * @{
      */
 
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    virtual void DEC(const bitCapInt& toSub, bitLenInt start, bitLenInt length)
+    {
+        QInterface::DEC(toSub, start, length);
+    }
+    virtual void DECS(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         QInterface::DECS(toSub, start, length, overflowIndex);
     }
-    virtual void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+    virtual void CDEC(
+        const bitCapInt& toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         QInterface::CDEC(toSub, inOutStart, length, controls);
     }
-    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INCDECC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         QInterface::INCDECC(toAdd, start, length, carryIndex);
     }
-    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    virtual void MULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         QInterface::MULModNOut(toMul, modN, inStart, outStart, length);
     }
-    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    virtual void IMULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         QInterface::IMULModNOut(toMul, modN, inStart, outStart, length);
     }
-    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
+    virtual void CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         QInterface::CMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
-    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
+    virtual void CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         QInterface::CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
 
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    virtual void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    virtual void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length);
+    virtual void CINC(
+        const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
+    virtual void INCC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
     virtual void INCDECSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
-    virtual void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+        const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void INCDECSC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 #if ENABLE_BCD
-    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    virtual void INCDECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCBCD(const bitCapInt& toAdd, bitLenInt start, bitLenInt length);
+    virtual void DECBCD(const bitCapInt& toAdd, bitLenInt start, bitLenInt length);
+    virtual void INCDECBCDC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 #endif
-    virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
-    virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
-    virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    virtual void MUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
+    virtual void DIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
+    virtual void POWModNOut(
+        const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    virtual void CMUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls);
-    virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    virtual void CDIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls);
-    virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
+    virtual void CPOWModNOut(const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, const unsigned char* values, bool resetValue = true);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -330,8 +342,8 @@ public:
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values);
     virtual void Hash(bitLenInt start, bitLenInt length, const unsigned char* values);
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
+    virtual void CPhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void PhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length);
 
     /** @} */
 #endif
@@ -342,7 +354,7 @@ public:
      * @{
      */
 
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual void SetReg(bitLenInt start, bitLenInt length, const bitCapInt& value);
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
         if (qubit1 >= qubitCount) {
@@ -383,8 +395,8 @@ public:
         ToPermBasisProb(qubit);
         return ProbBase(qubit);
     }
-    virtual real1_f ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true))); }
-    virtual real1_f ProbAllRdm(bool roundRz, bitCapInt perm)
+    virtual real1_f ProbAll(const bitCapInt& perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true))); }
+    virtual real1_f ProbAllRdm(bool roundRz, const bitCapInt& perm)
     {
         if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
             OrderContiguous(shards[0U].unit);
@@ -397,8 +409,8 @@ public:
 
         return unit->ProbAllRdm(roundRz, perm);
     }
-    virtual real1_f ProbParity(bitCapInt mask);
-    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
+    virtual real1_f ProbParity(const bitCapInt& mask);
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QUnit>(toCompare));
@@ -464,7 +476,7 @@ public:
     /** @} */
 
 protected:
-    virtual complex GetAmplitudeOrProb(bitCapInt perm, bool isProb);
+    virtual complex GetAmplitudeOrProb(const bitCapInt& perm, bool isProb);
 
     virtual void XBase(bitLenInt target)
     {
@@ -519,38 +531,37 @@ protected:
     virtual void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
 #if ENABLE_ALU
-    typedef void (QAlu::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
-    typedef void (QAlu::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
-    typedef void (QAlu::*CMULFn)(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
-    typedef void (QAlu::*CMULModFn)(bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
-        bitLenInt length, const std::vector<bitLenInt>& controls);
-    void INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
+    typedef void (QAlu::*INCxFn)(const bitCapInt&, bitLenInt, bitLenInt, bitLenInt);
+    typedef void (QAlu::*INCxxFn)(const bitCapInt&, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
+    typedef void (QAlu::*CMULFn)(const bitCapInt&, bitLenInt, bitLenInt, bitLenInt, const std::vector<bitLenInt>&);
+    typedef void (QAlu::*CMULModFn)(
+        const bitCapInt&, const bitCapInt&, bitLenInt, bitLenInt, bitLenInt, const std::vector<bitLenInt>&);
+    void INT(const bitCapInt& toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
         std::vector<bitLenInt> controlVec = std::vector<bitLenInt>());
-    void INTS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex,
+    void INTS(const bitCapInt& toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex,
         bool hasCarry);
-    void INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
-    void INCxx(
-        INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index);
+    void INCx(INCxFn fn, const bitCapInt& toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    void INCxx(INCxxFn fn, const bitCapInt& toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index,
+        bitLenInt flag2Index);
     QInterfacePtr CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt start, bitLenInt carryStart,
         bitLenInt length, std::vector<bitLenInt>* controlsMapped);
     std::vector<bitLenInt> CMULEntangle(
-        std::vector<bitLenInt> controlVec, bitLenInt start, bitCapInt carryStart, bitLenInt length);
-    void CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
+        std::vector<bitLenInt> controlVec, bitLenInt start, const bitCapInt& carryStart, bitLenInt length);
+    void CMULx(CMULFn fn, const bitCapInt& toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
         std::vector<bitLenInt> controlVec);
-    void CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
+    void CMULModx(CMULModFn fn, const bitCapInt& toMod, const bitCapInt& modN, bitLenInt start, bitLenInt carryStart,
         bitLenInt length, std::vector<bitLenInt> controlVec);
-    bool INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex);
-    bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
-    bool INTSCOptimize(
-        bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
+    bool INTCOptimize(const bitCapInt& toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex);
+    bool INTSOptimize(const bitCapInt& toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
+    bool INTSCOptimize(const bitCapInt& toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex,
+        bitLenInt overflowIndex);
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, const unsigned char* values);
     bitCapInt GetIndexedEigenstate(bitLenInt start, bitLenInt length, const unsigned char* values);
 #endif
 
     real1_f ExpVarFactorized(bool isExp, bool isRdm, bool isFloat, const std::vector<bitLenInt>& bits,
-        const std::vector<bitCapInt>& perms, const std::vector<real1_f>& weights, bitCapInt offset, bool roundRz)
+        const std::vector<bitCapInt>& perms, const std::vector<real1_f>& weights, const bitCapInt& offset, bool roundRz)
     {
         if ((isFloat && (weights.size() < bits.size())) || (!isFloat && (perms.size() < bits.size()))) {
             throw std::invalid_argument("QUnit::ExpectationFactorized() must supply at least as many weights as bits!");
@@ -657,7 +668,7 @@ protected:
         mtrxOut[3U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - mtrxIn[1U] - mtrxIn[2U] + mtrxIn[3U]);
     }
 
-    void TransformXInvert(complex topRight, complex bottomLeft, complex* mtrxOut)
+    void TransformXInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
     {
         mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(topRight + bottomLeft);
         mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(-topRight + bottomLeft);
@@ -673,7 +684,7 @@ protected:
         mtrxOut[3U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
     }
 
-    void TransformYInvert(complex topRight, complex bottomLeft, complex* mtrxOut)
+    void TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
     {
         mtrxOut[0U] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(topRight - bottomLeft);
         mtrxOut[1U] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(-topRight - bottomLeft);
@@ -681,7 +692,7 @@ protected:
         mtrxOut[3U] = -mtrxOut[0U];
     }
 
-    void TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOut)
+    void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
     {
         mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(topLeft + bottomRight);
         mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(topLeft - bottomRight);
@@ -981,7 +992,7 @@ protected:
         } else if (norm(shard.amp0) <= FP_NORM_EPSILON) {
             shard.unit = MakeEngine(1U, ONE_BCI);
         } else {
-            complex bitState[2U]{ shard.amp0, shard.amp1 };
+            const complex bitState[2U]{ shard.amp0, shard.amp1 };
             shard.unit = MakeEngine(1U, ZERO_BCI);
             shard.unit->SetQuantumState(bitState);
         }

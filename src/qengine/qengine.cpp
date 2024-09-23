@@ -16,7 +16,7 @@
 
 namespace Qrack {
 
-void QEngine::Mtrx(complex const* mtrx, bitLenInt qubit)
+void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
 {
     if (IsIdentity(mtrx, false)) {
         return;
@@ -26,7 +26,7 @@ void QEngine::Mtrx(complex const* mtrx, bitLenInt qubit)
     Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx)));
 }
 
-void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target, bool isAnti)
+void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bool isAnti)
 {
     if (controls.empty()) {
         Mtrx(mtrx, target);
@@ -49,7 +49,7 @@ void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, complex const* 
 }
 
 void QEngine::UCMtrx(
-    const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
+    const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, const bitCapInt& controlPerm)
 {
     if (controls.empty()) {
         Mtrx(mtrx, target);
@@ -380,7 +380,7 @@ void QEngine::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q
     Apply2x2(pow2Ocl(qubit1), pow2Ocl(qubit2), iSqrtX, controls.size() + 2U, qPowersSorted.get(), false);
 }
 
-void QEngine::ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx)
+void QEngine::ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controls.size() + 1U]);
     const bitCapIntOcl targetMask = pow2Ocl(target);
@@ -396,7 +396,7 @@ void QEngine::ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenI
     Apply2x2(controlMask, fullMask, mtrx, controls.size() + 1U, qPowersSorted.get(), false);
 }
 
-void QEngine::ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx)
+void QEngine::ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controls.size() + 1U]);
     const bitCapIntOcl targetMask = pow2Ocl(target);
@@ -500,7 +500,7 @@ void QEngine::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray)
 }
 
 /// Measure permutation state of a register
-bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
+bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, const bitCapInt& _result, bool doForce, bool doApply)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QEngine::ForceMReg range is out-of-bounds!");
@@ -508,13 +508,14 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
-        return ForceM(start, bi_and_1(result), doForce, doApply) ? ONE_BCI : ZERO_BCI;
+        return ForceM(start, bi_and_1(_result), doForce, doApply) ? ONE_BCI : ZERO_BCI;
     }
 
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl regMask = (lengthPower - 1U) << (bitCapIntOcl)start;
     real1 nrmlzr = ONE_R1;
 
+    bitCapInt result = _result;
     if (doForce) {
         nrmlzr = ProbMask(regMask, result << start);
     } else {

@@ -21,7 +21,7 @@ QRACK_CONST complex I_CMPLX_NEG = complex(ZERO_R1, -ONE_R1);
 QRACK_CONST complex C_SQRT1_2_NEG = complex(-SQRT1_2_R1, ZERO_R1);
 
 void QInterface::UCMtrx(
-    const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm)
+    const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, const bitCapInt& controlPerm)
 {
     size_t setCount = 0U;
     for (size_t i = 0U; i < controls.size(); ++i) {
@@ -60,7 +60,7 @@ void QInterface::UCMtrx(
 }
 
 void QInterface::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-    complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+    const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, const bitCapInt& mtrxSkipValueMask)
 {
     for (const bitLenInt& control : controls) {
         X(control);
@@ -99,8 +99,9 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     MACPhase(controls, -ONE_CMPLX, ONE_CMPLX, start + controls.size());
 }
 
-void QInterface::XMask(bitCapInt mask)
+void QInterface::XMask(const bitCapInt& _mask)
 {
+    bitCapInt mask = _mask;
     bitCapInt v = mask;
     while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
@@ -109,22 +110,23 @@ void QInterface::XMask(bitCapInt mask)
     }
 }
 
-void QInterface::YMask(bitCapInt mask)
+void QInterface::YMask(const bitCapInt& _mask)
 {
-    bitLenInt bit = log2(mask);
-    if (bi_compare(pow2(bit), mask) == 0) {
+    bitLenInt bit = log2(_mask);
+    if (bi_compare(pow2(bit), _mask) == 0) {
         Y(bit);
         return;
     }
 
-    ZMask(mask);
-    XMask(mask);
+    ZMask(_mask);
+    XMask(_mask);
 
     if (randGlobalPhase) {
         return;
     }
 
     int parity = 0;
+    bitCapInt mask = _mask;
     bitCapInt v = mask;
     while (bi_compare_0(v) != 0) {
         v = v & (v - ONE_BCI);
@@ -140,8 +142,9 @@ void QInterface::YMask(bitCapInt mask)
     }
 }
 
-void QInterface::ZMask(bitCapInt mask)
+void QInterface::ZMask(const bitCapInt& _mask)
 {
+    bitCapInt mask = _mask;
     bitCapInt v = mask;
     while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
@@ -150,8 +153,9 @@ void QInterface::ZMask(bitCapInt mask)
     }
 }
 
-void QInterface::PhaseRootNMask(bitLenInt n, bitCapInt mask)
+void QInterface::PhaseRootNMask(bitLenInt n, const bitCapInt& _mask)
 {
+    bitCapInt mask = _mask;
     bitCapInt v = mask;
     while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);
@@ -395,13 +399,14 @@ void QInterface::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenIn
     XMask(m);
 }
 
-void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
+void QInterface::PhaseParity(real1_f radians, const bitCapInt& _mask)
 {
-    if (bi_compare_0(mask) == 0) {
+    if (bi_compare_0(_mask) == 0) {
         return;
     }
 
     std::vector<bitLenInt> qubits;
+    bitCapInt mask = _mask;
     bitCapInt v = mask;
     while (bi_compare_0(mask) != 0) {
         v = v & (v - ONE_BCI);

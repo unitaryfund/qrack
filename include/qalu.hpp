@@ -31,79 +31,82 @@ public:
      */
 
     /** This is an expedient for an adaptive Grover's search for a function's global minimum. */
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length) = 0;
+    virtual void PhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length) = 0;
     /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
+    virtual void CPhaseFlipIfLess(
+        const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
 
     /** Add integer (without sign) */
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
+    virtual void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length) = 0;
     /** Add integer (without sign) */
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) = 0;
+    virtual void DEC(const bitCapInt& toSub, bitLenInt start, bitLenInt length) = 0;
     /** Add integer (without sign, with controls) */
-    virtual void CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls) = 0;
+    virtual void CINC(
+        const bitCapInt& toAdd, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls) = 0;
     /** Subtract integer (without sign, with controls) */
-    virtual void CDEC(bitCapInt toSub, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls);
+    virtual void CDEC(
+        const bitCapInt& toSub, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls);
     /** Add integer (without sign, with carry) */
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     /** Subtract classical integer (without sign, with carry) */
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     /** Common driver method behind INCC and DECC (without sign, with carry) */
-    virtual void INCDECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+    virtual void INCDECC(const bitCapInt& toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
     /** Add a classical integer to the register, with sign and without carry. */
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
+    virtual void INCS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
     /** Add a classical integer to the register, with sign and without carry. */
-    virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
+    virtual void DECS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
     /** Add a classical integer to the register, with sign and with carry. */
     virtual void INCSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+        const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     /** Add a classical integer to the register, with sign and with (phase-based) carry. */
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCSC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     /** Subtract a classical integer from the register, with sign and with carry. */
     virtual void DECSC(
-        bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+        const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     /** Subtract a classical integer from the register, with sign and with carry. */
-    virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECSC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     /** Common driver method behind INCSC and DECSC (without overflow flag) */
-    virtual void INCDECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+    virtual void INCDECSC(const bitCapInt& toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
     /** Common driver method behind INCSC and DECSC (with overflow flag) */
     virtual void INCDECSC(
-        bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) = 0;
+        const bitCapInt& toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) = 0;
     /** Multiply by integer */
-    virtual void MUL(bitCapInt toMul, bitLenInt start, bitLenInt carryStart, bitLenInt length) = 0;
+    virtual void MUL(const bitCapInt& toMul, bitLenInt start, bitLenInt carryStart, bitLenInt length) = 0;
     /** Divide by integer */
-    virtual void DIV(bitCapInt toDiv, bitLenInt start, bitLenInt carryStart, bitLenInt length) = 0;
+    virtual void DIV(const bitCapInt& toDiv, bitLenInt start, bitLenInt carryStart, bitLenInt length) = 0;
     /** Multiplication modulo N by integer, (out of place) */
     virtual void MULModNOut(
-        bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
     /** Inverse of multiplication modulo N by integer, (out of place) */
     virtual void IMULModNOut(
-        bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
     /** Raise a classical base to a quantum power, modulo N, (out of place) */
     virtual void POWModNOut(
-        bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+        const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
     /** Controlled multiplication by integer */
-    virtual void CMUL(bitCapInt toMul, bitLenInt start, bitLenInt carryStart, bitLenInt length,
+    virtual void CMUL(const bitCapInt& toMul, bitLenInt start, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls) = 0;
     /** Controlled division by power of integer */
-    virtual void CDIV(bitCapInt toDiv, bitLenInt start, bitLenInt carryStart, bitLenInt length,
+    virtual void CDIV(const bitCapInt& toDiv, bitLenInt start, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls) = 0;
     /** Controlled multiplication modulo N by integer, (out of place) */
-    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls) = 0;
+    virtual void CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls) = 0;
     /** Inverse of controlled multiplication modulo N by integer, (out of place) */
-    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls) = 0;
+    virtual void CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls) = 0;
     /** Controlled, raise a classical base to a quantum power, modulo N, (out of place) */
-    virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls) = 0;
+    virtual void CPOWModNOut(const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls) = 0;
 
 #if ENABLE_BCD
     /** Add classical BCD integer (without sign) */
-    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
+    virtual void INCBCD(const bitCapInt& toAdd, bitLenInt start, bitLenInt length) = 0;
     /** Subtract classical BCD integer (without sign) */
-    virtual void DECBCD(bitCapInt toSub, bitLenInt start, bitLenInt length);
+    virtual void DECBCD(const bitCapInt& toSub, bitLenInt start, bitLenInt length);
     /** Common driver method behind INCSC and DECSC (without overflow flag) */
-    virtual void INCDECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+    virtual void INCDECBCDC(const bitCapInt& toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 #endif
 
     /**
@@ -235,10 +238,10 @@ public:
 #if ENABLE_BCD
 
     /** Add classical BCD integer (without sign, with carry) */
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCBCDC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Subtract BCD integer (without sign, with carry) */
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECBCDC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 #endif
 
     /** @} */

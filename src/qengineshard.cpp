@@ -116,8 +116,8 @@ void QEngineShard::AddBuffer(QEngineShardPtr p, ShardToPhaseMap& localMap, GetBu
     }
 }
 
-void QEngineShard::AddAngles(QEngineShardPtr control, complex cmplxDiff, complex cmplxSame, AddRemoveFn localFn,
-    ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
+void QEngineShard::AddAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame,
+    AddRemoveFn localFn, ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
 {
     ((*this).*localFn)(control);
 
@@ -275,7 +275,7 @@ void QEngineShard::FlipPhaseAnti()
     }
 }
 
-void QEngineShard::CommutePhase(complex topLeft, complex bottomRight)
+void QEngineShard::CommutePhase(const complex& topLeft, const complex& bottomRight)
 {
     for (const auto& phaseShard : targetOfShards) {
         const PhaseShardPtr& buffer = phaseShard.second;

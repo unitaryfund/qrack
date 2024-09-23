@@ -77,19 +77,20 @@ protected:
     template <typename Qubit1Fn>
     void SingleBitGate(bitLenInt target, Qubit1Fn fn, bool isSqiCtrl = false, bool isAnti = false);
     template <typename Qubit1Fn>
-    void MetaControlled(bitCapInt controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
-        const complex* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
+    void MetaControlled(const bitCapInt& controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target,
+        Qubit1Fn fn, const complex* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
     template <typename Qubit1Fn>
-    void SemiMetaControlled(bitCapInt controlPerm, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
+    void SemiMetaControlled(
+        const bitCapInt& controlPerm, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac, bool isInverse);
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
     void CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, const std::vector<bitLenInt>& controls);
 
-    void ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target);
+    void ApplySingleEither(bool isInvert, const complex& top, const complex& bottom, bitLenInt target);
     void ApplyEitherControlledSingleBit(
-        bitCapInt controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx);
+        const bitCapInt& controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx);
     void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
     void Init();
@@ -99,14 +100,14 @@ protected:
     real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
 
 public:
-    QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+    QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
+        qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool ignored = false, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
-    QPager(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
+    QPager(bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
@@ -125,11 +126,12 @@ public:
     {
     }
 
-    QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ignored = ZERO_BCI,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
-        bool ignored2 = false, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
-        bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
+    QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
+        const bitCapInt& ignored = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored2 = false,
+        bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
+        real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     void SetConcurrency(uint32_t threadsPerEngine)
     {
@@ -236,13 +238,13 @@ public:
         Finish();
         runningNorm = runningNrm;
     }
-    real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+    real1_f ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation)
     {
         CombineEngines();
         return qPages[0U]->ProbReg(start, length, permutation);
     }
     using QEngine::ApplyM;
-    void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
+    void ApplyM(const bitCapInt& regMask, const bitCapInt& result, const complex& nrm)
     {
         CombineEngines();
         return qPages[0U]->ApplyM(regMask, result, nrm);
@@ -282,26 +284,26 @@ public:
     void SetQuantumState(const complex* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
-    complex GetAmplitude(bitCapInt perm)
+    complex GetAmplitude(const bitCapInt& perm)
     {
         bitCapInt p, a;
         bi_div_mod(perm, pageMaxQPower(), &p, &a);
         return qPages[(bitCapIntOcl)p]->GetAmplitude(a);
     }
-    void SetAmplitude(bitCapInt perm, complex amp)
+    void SetAmplitude(const bitCapInt& perm, const complex& amp)
     {
         bitCapInt p, a;
         bi_div_mod(perm, pageMaxQPower(), &p, &a);
         qPages[(bitCapIntOcl)p]->SetAmplitude(a, amp);
     }
-    real1_f ProbAll(bitCapInt perm)
+    real1_f ProbAll(const bitCapInt& perm)
     {
         bitCapInt p, a;
         bi_div_mod(perm, pageMaxQPower(), &p, &a);
         return qPages[(bitCapIntOcl)p]->ProbAll(a);
     }
 
-    void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
+    void SetPermutation(const bitCapInt& perm, const complex& phaseFac = CMPLX_DEFAULT_ARG);
 
     using QEngine::Compose;
     bitLenInt Compose(QPagerPtr toCopy) { return ComposeEither(toCopy, false); }
@@ -313,16 +315,16 @@ public:
     void Decompose(bitLenInt start, QPagerPtr dest);
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length);
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
+    void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm);
     using QEngine::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
     void Mtrx(const complex* mtrx, bitLenInt target);
-    void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
+    void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);
     }
-    void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex)
+    void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt qubitIndex)
     {
         ApplySingleEither(true, topRight, bottomLeft, qubitIndex);
     }
@@ -337,42 +339,47 @@ public:
         ApplyEitherControlledSingleBit(ZERO_BCI, controls, target, mtrx);
     }
 
-    void UniformParityRZ(bitCapInt mask, real1_f angle);
-    void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
+    void UniformParityRZ(const bitCapInt& mask, real1_f angle);
+    void CUniformParityRZ(const std::vector<bitLenInt>& controls, const bitCapInt& mask, real1_f angle);
 
-    void XMask(bitCapInt mask);
-    void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
-    void PhaseParity(real1_f radians, bitCapInt mask);
+    void XMask(const bitCapInt& mask);
+    void ZMask(const bitCapInt& mask) { PhaseParity(PI_R1, mask); }
+    void PhaseParity(real1_f radians, const bitCapInt& mask);
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
-    bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true)
+    bitCapInt ForceMReg(
+        bitLenInt start, bitLenInt length, const bitCapInt& result, bool doForce = true, bool doApply = true)
     {
         // Don't use QEngine::ForceMReg().
         return QInterface::ForceMReg(start, length, result, doForce, doApply);
     }
 
 #if ENABLE_ALU
-    void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
-    void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    void INCDECSC(
+        const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    void INCDECSC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 #if ENABLE_BCD
-    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    void INCDECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    void INCBCD(const bitCapInt& toAdd, bitLenInt start, bitLenInt length);
+    void INCDECBCDC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 #endif
-    void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
-    void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
-    void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    void MUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
+    void DIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
+    void MULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    void IMULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    void POWModNOut(
+        const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    void CMUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls);
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    void CDIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls);
-    void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
-    void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
-    void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
+    void CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
+    void CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
+    void CPOWModNOut(const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
 
     bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
         const unsigned char* values, bool resetValue = true);
@@ -382,8 +389,8 @@ public:
         bitLenInt carryIndex, const unsigned char* values);
     void Hash(bitLenInt start, bitLenInt length, const unsigned char* values);
 
-    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
-    void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
+    void CPhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    void PhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length);
 #endif
 
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
@@ -392,9 +399,9 @@ public:
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     real1_f Prob(bitLenInt qubitIndex);
-    real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
+    real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     // TODO: QPager not yet used in Q#, but this would need a real implementation:
-    real1_f ProbParity(bitCapInt mask)
+    real1_f ProbParity(const bitCapInt& mask)
     {
         if (bi_compare_0(mask) == 0) {
             return ZERO_R1_F;
@@ -403,7 +410,7 @@ public:
         CombineEngines();
         return qPages[0U]->ProbParity(mask);
     }
-    bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
+    bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
     {
         if (bi_compare_0(mask) == 0) {
             return ZERO_R1_F;

@@ -182,11 +182,11 @@ bool isOverflowAdd(
 bool isOverflowSub(
     bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& skipPowers);
-bitCapInt intPow(bitCapInt base, bitCapInt power);
+bitCapInt intPow(const bitCapInt& base, const bitCapInt& power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
 
 #if QBCAPPOW > 6
-std::ostream& operator<<(std::ostream& os, bitCapInt b);
+std::ostream& operator<<(std::ostream& os, const bitCapInt& b);
 std::istream& operator>>(std::istream& is, bitCapInt& b);
 #endif
 

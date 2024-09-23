@@ -170,7 +170,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     return toRet;
 }
 
-void QBdtNodeInterface::_par_for_qbdt(const bitCapInt end, BdtFunc fn)
+void QBdtNodeInterface::_par_for_qbdt(const bitCapInt& end, BdtFunc fn)
 {
     for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
         bi_or_ip(&j, fn(j));

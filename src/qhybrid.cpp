@@ -20,8 +20,8 @@
 
 namespace Qrack {
 
-QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int64_t deviceId, bool useHardwareRNG, bool useSparseStateVec,
+QHybrid::QHybrid(bitLenInt qBitCount, const bitCapInt& initState, qrack_rand_gen_ptr rgp, const complex& phaseFac,
+    bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceId, bool useHardwareRNG, bool useSparseStateVec,
     real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , useRDRAND(useHardwareRNG)

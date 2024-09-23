@@ -24,13 +24,13 @@ public:
     /**
      * Measure (and collapse) parity of the masked set of qubits
      */
-    virtual bool MParity(bitCapInt mask) { return ForceMParity(mask, false, false); }
+    virtual bool MParity(const bitCapInt& mask) { return ForceMParity(mask, false, false); }
 
     /**
      * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set
      * parity is even, this applies the conjugate, e^{-i angle}.
      */
-    virtual void UniformParityRZ(bitCapInt mask, real1_f angle)
+    virtual void UniformParityRZ(const bitCapInt& mask, real1_f angle)
     {
         CUniformParityRZ(std::vector<bitLenInt>(), mask, angle);
     }
@@ -38,7 +38,7 @@ public:
     /**
      * Overall probability of any odd permutation of the masked set of bits
      */
-    virtual real1_f ProbParity(bitCapInt mask) = 0;
+    virtual real1_f ProbParity(const bitCapInt& mask) = 0;
 
     /**
      * Act as if is a measurement of parity of the masked set of qubits was applied, except force the (usually random)
@@ -46,13 +46,13 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true) = 0;
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true) = 0;
 
     /**
      * If the controls are set and the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$.
      * If the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
      * Otherwise, do nothing if any control is not set.
      */
-    virtual void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle) = 0;
+    virtual void CUniformParityRZ(const std::vector<bitLenInt>& controls, const bitCapInt& mask, real1_f angle) = 0;
 };
 } // namespace Qrack

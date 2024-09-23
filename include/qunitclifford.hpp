@@ -115,7 +115,7 @@ protected:
         TrySeparate(control);
         TrySeparate(target);
     }
-    void SwapGate(bitLenInt control, bitLenInt target, SwapGateFn ufn, complex phaseFac)
+    void SwapGate(bitLenInt control, bitLenInt target, SwapGateFn ufn, const complex& phaseFac)
     {
         const real1_f pc = Prob(control);
         const real1_f pt = Prob(target);
@@ -170,10 +170,11 @@ protected:
     real1_f ExpVarFloatsFactorized(bool isExp, const std::vector<bitLenInt>& bits, const std::vector<real1_f>& weights);
 
 public:
-    QUnitClifford(bitLenInt n, bitCapInt perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
-        complex phasFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
-        int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
-        std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
+    QUnitClifford(bitLenInt n, const bitCapInt& perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phasFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+        bool ignored2 = false, int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false,
+        real1_f ignored5 = REAL1_EPSILON, std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U,
+        real1_f ignored8 = FP_NORM_EPSILON_F);
 
     ~QUnitClifford() { Dump(); }
 
@@ -255,14 +256,14 @@ public:
         return ExpVarFloatsFactorized(false, bits, weights);
     }
 
-    real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
+    real1_f ProbPermRdm(const bitCapInt& perm, bitLenInt ancillaeStart);
 
-    real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
+    real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
 
-    void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
+    void SetPermutation(const bitCapInt& perm, const complex& phaseFac = CMPLX_DEFAULT_ARG);
 
     QStabilizerPtr MakeStabilizer(
-        bitLenInt length = 1U, bitCapInt perm = ZERO_BCI, complex phaseFac = CMPLX_DEFAULT_ARG)
+        bitLenInt length = 1U, const bitCapInt& perm = ZERO_BCI, const complex& phaseFac = CMPLX_DEFAULT_ARG)
     {
         QStabilizerPtr toRet = std::make_shared<QStabilizer>(
             length, perm, rand_generator, phaseFac, false, randGlobalPhase, false, -1, useRDRAND);
@@ -271,7 +272,7 @@ public:
     }
 
     void SetQuantumState(const complex* inputState);
-    void SetAmplitude(bitCapInt perm, complex amp)
+    void SetAmplitude(const bitCapInt& perm, const complex& amp)
     {
         throw std::domain_error("QUnitClifford::SetAmplitude() not implemented!");
     }
@@ -461,7 +462,7 @@ public:
     void GetProbs(real1* outputProbs);
 
     /// Get a single basis state amplitude
-    complex GetAmplitude(bitCapInt perm);
+    complex GetAmplitude(const bitCapInt& perm);
 
     /// Get a single basis state amplitude
     std::vector<complex> GetAmplitudes(std::vector<bitCapInt> perms);
@@ -551,7 +552,7 @@ public:
         return dest;
     }
     void Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { Detach(start, length, nullptr); }
+    void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm) { Detach(start, length, nullptr); }
     using QInterface::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length)
     {
@@ -623,21 +624,22 @@ public:
         shard.unit->Mtrx(mtrx, shard.mapped);
         CombinePhaseOffsets(shard.unit);
     }
-    void Phase(complex topLeft, complex bottomRight, bitLenInt t)
+    void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt t)
     {
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::Phase"));
         CliffordShard& shard = shards[t];
         shard.unit->Phase(topLeft, bottomRight, shard.mapped);
         CombinePhaseOffsets(shard.unit);
     }
-    void Invert(complex topRight, complex bottomLeft, bitLenInt t)
+    void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt t)
     {
         ThrowIfQubitInvalid(t, std::string("QUnitClifford::Invert"));
         CliffordShard& shard = shards[t];
         shard.unit->Invert(topRight, bottomLeft, shard.mapped);
         CombinePhaseOffsets(shard.unit);
     }
-    void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt t)
+    void MCPhase(
+        const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt t)
     {
         if (controls.empty()) {
             Phase(topLeft, bottomRight, t);
@@ -660,7 +662,8 @@ public:
             [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Phase(mtrx[0U], mtrx[3U], t); },
             false);
     }
-    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt t)
+    void MACPhase(
+        const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt t)
     {
         if (controls.empty()) {
             Phase(topLeft, bottomRight, t);
@@ -683,7 +686,8 @@ public:
             [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Phase(mtrx[0U], mtrx[3U], t); },
             true);
     }
-    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt t)
+    void MCInvert(
+        const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt t)
     {
         if (controls.empty()) {
             Invert(topRight, bottomLeft, t);
@@ -706,7 +710,8 @@ public:
             [](QStabilizerPtr unit, const bitLenInt& t, const complex* mtrx) { unit->Invert(mtrx[1U], mtrx[2U], t); },
             false);
     }
-    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt t)
+    void MACInvert(
+        const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt t)
     {
         if (controls.empty()) {
             Invert(topRight, bottomLeft, t);

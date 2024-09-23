@@ -50,8 +50,8 @@ protected:
     }
 
 public:
-    QInterfaceNoisy(bitLenInt qBitCount, bitCapInt initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+    QInterfaceNoisy(bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
@@ -62,8 +62,8 @@ public:
         // Intentionally left blank;
     }
 
-    QInterfaceNoisy(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = ZERO_BCI,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+    QInterfaceNoisy(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
+        qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
@@ -96,7 +96,7 @@ public:
         engine->SetConcurrency(GetConcurrencyLevel());
     }
 
-    real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+    real1_f ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation)
     {
         return engine->ProbReg(start, length, permutation);
     }
@@ -157,7 +157,7 @@ public:
         engine->Dispose(start, length);
         SetQubitCount(qubitCount - length);
     }
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+    void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm)
     {
         engine->Dispose(start, length, disposedPerm);
         SetQubitCount(qubitCount - length);
@@ -176,9 +176,9 @@ public:
     void SetQuantumState(const complex* inputState) { engine->SetQuantumState(inputState); }
     void GetQuantumState(complex* outputState) { engine->GetQuantumState(outputState); }
     void GetProbs(real1* outputProbs) { engine->GetProbs(outputProbs); }
-    complex GetAmplitude(bitCapInt perm) { return engine->GetAmplitude(perm); }
-    void SetAmplitude(bitCapInt perm, complex amp) { engine->SetAmplitude(perm, amp); }
-    void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
+    complex GetAmplitude(const bitCapInt& perm) { return engine->GetAmplitude(perm); }
+    void SetAmplitude(const bitCapInt& perm, const complex& amp) { engine->SetAmplitude(perm, amp); }
+    void SetPermutation(const bitCapInt& perm, const complex& phaseFac = CMPLX_DEFAULT_ARG)
     {
         engine->SetPermutation(perm, phaseFac);
     }
@@ -188,12 +188,12 @@ public:
         engine->Mtrx(mtrx, qubitIndex);
         Apply1QbNoise(qubitIndex);
     }
-    void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
+    void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt qubitIndex)
     {
         engine->Phase(topLeft, bottomRight, qubitIndex);
         Apply1QbNoise(qubitIndex);
     }
-    void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex)
+    void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt qubitIndex)
     {
         engine->Invert(topRight, bottomLeft, qubitIndex);
         Apply1QbNoise(qubitIndex);
@@ -211,7 +211,7 @@ public:
 
     using QInterface::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        const complex* mtrxs, const std::vector<bitCapInt> mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+        const complex* mtrxs, const std::vector<bitCapInt> mtrxSkipPowers, const bitCapInt& mtrxSkipValueMask)
     {
         engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
         Apply1QbNoise(qubitIndex);
@@ -220,8 +220,9 @@ public:
         }
     }
 
-    void XMask(bitCapInt mask)
+    void XMask(const bitCapInt& _mask)
     {
+        bitCapInt mask = _mask;
         engine->XMask(mask);
         bitCapInt v = mask;
         while (bi_compare_0(mask) != 0) {
@@ -230,8 +231,9 @@ public:
             mask = v;
         }
     }
-    void PhaseParity(real1_f radians, bitCapInt mask)
+    void PhaseParity(real1_f radians, const bitCapInt& _mask)
     {
+        bitCapInt mask = _mask;
         engine->PhaseParity(radians, mask);
         bitCapInt v = mask;
         while (bi_compare_0(mask) != 0) {
@@ -342,8 +344,11 @@ public:
     }
 
     real1_f Prob(bitLenInt qubitIndex) { return engine->Prob(qubitIndex); }
-    real1_f ProbAll(bitCapInt fullRegister) { return engine->ProbAll(fullRegister); }
-    real1_f ProbMask(bitCapInt mask, bitCapInt permutation) { return engine->ProbMask(mask, permutation); }
+    real1_f ProbAll(const bitCapInt& fullRegister) { return engine->ProbAll(fullRegister); }
+    real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+    {
+        return engine->ProbMask(mask, permutation);
+    }
 
     real1_f SumSqrDiff(QInterfacePtr toCompare)
     {

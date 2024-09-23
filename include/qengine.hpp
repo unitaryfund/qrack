@@ -39,10 +39,10 @@ protected:
     real1 runningNorm;
     bitCapIntOcl maxQPowerOcl;
 
-    inline bool IsPhase(complex const* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
-    inline bool IsInvert(complex const* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
+    inline bool IsPhase(const complex* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
+    inline bool IsInvert(const complex* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
 
-    bool IsIdentity(complex const* mtrx, bool isControlled)
+    bool IsIdentity(const complex* mtrx, bool isControlled)
     {
         // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
         // operator, then we can discard this buffer without applying it.
@@ -65,7 +65,7 @@ protected:
         return true;
     }
 
-    void EitherMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target, bool isAnti);
+    void EitherMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bool isAnti);
 
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
@@ -126,7 +126,7 @@ public:
     /** Copy a "page" of amplitudes from this QEngine's internal state, into `pagePtr`. */
     virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length) = 0;
     /** Copy a "page" of amplitudes from `pagePtr` into this QEngine's internal state. */
-    virtual void SetAmplitudePage(complex const* pagePtr, bitCapIntOcl offset, bitCapIntOcl length) = 0;
+    virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length) = 0;
     /** Copy a "page" of amplitudes from another QEngine, pointed to by `pageEnginePtr`, into this QEngine's internal
      * state. */
     virtual void SetAmplitudePage(
@@ -144,31 +144,31 @@ public:
      * for the next normalization operation. */
     virtual void QueueSetRunningNorm(real1_f runningNrm) = 0;
 
-    virtual void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
+    virtual void ZMask(const bitCapInt& mask) { PhaseParity((real1_f)PI_R1, mask); }
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const std::vector<bitLenInt>& bits, const std::vector<bool>& values, bool doApply = true);
     virtual bitCapInt ForceMReg(
-        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
+        bitLenInt start, bitLenInt length, const bitCapInt& result, bool doForce = true, bool doApply = true);
 
-    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm)
+    virtual void ApplyM(const bitCapInt& qPower, bool result, const complex& nrm)
     {
         const bitCapInt powerTest = result ? qPower : ZERO_BCI;
         ApplyM(qPower, powerTest, nrm);
     }
-    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
+    virtual void ApplyM(const bitCapInt& regMask, const bitCapInt& result, const complex& nrm) = 0;
 
-    virtual void Mtrx(complex const* mtrx, bitLenInt qubit);
-    virtual void MCMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubit);
+    virtual void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         EitherMtrx(controls, mtrx, target, false);
     }
-    virtual void MACMtrx(const std::vector<bitLenInt>& controls, complex const* mtrx, bitLenInt target)
+    virtual void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         EitherMtrx(controls, mtrx, target, true);
     }
     virtual void UCMtrx(
-        const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm);
+        const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, const bitCapInt& controlPerm);
     virtual void CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
     virtual void AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
     virtual void CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2);
@@ -181,51 +181,61 @@ public:
     virtual bool M(bitLenInt q) { return QInterface::M(q); }
     using QInterface::X;
     virtual void X(bitLenInt q) { QInterface::X(q); }
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length)
+    {
+        QInterface::INC(toAdd, start, length);
+    }
+    virtual void DEC(const bitCapInt& toSub, bitLenInt start, bitLenInt length)
+    {
+        QInterface::DEC(toSub, start, length);
+    }
+    virtual void INCC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         QInterface::INCC(toAdd, start, length, carryIndex);
     }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void DECC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         QInterface::DECC(toSub, start, length, carryIndex);
     }
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    virtual void INCS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         QInterface::INCS(toAdd, start, length, overflowIndex);
     }
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    virtual void DECS(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         QInterface::DECS(toSub, start, length, overflowIndex);
     }
-    virtual void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+    virtual void CINC(
+        const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         QInterface::CINC(toAdd, inOutStart, length, controls);
     }
-    virtual void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+    virtual void CDEC(
+        const bitCapInt& toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         QInterface::CDEC(toSub, inOutStart, length, controls);
     }
-    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INCDECC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         QInterface::INCDECC(toAdd, start, length, carryIndex);
     }
-    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    virtual void MULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         QInterface::MULModNOut(toMul, modN, inStart, outStart, length);
     }
-    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    virtual void IMULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         QInterface::IMULModNOut(toMul, modN, inStart, outStart, length);
     }
-    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
+    virtual void CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         QInterface::CMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
-    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls)
+    virtual void CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         QInterface::CIMULModNOut(toMul, modN, inStart, outStart, length, controls);
     }
@@ -244,7 +254,7 @@ public:
     using QInterface::FSim;
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual real1_f ProbAll(bitCapInt fullRegister)
+    virtual real1_f ProbAll(const bitCapInt& fullRegister)
     {
         if (doNormalize) {
             NormalizeState();
@@ -255,16 +265,16 @@ public:
     virtual real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target);
     virtual real1_f CProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(true, control, target); }
     virtual real1_f ACProb(bitLenInt control, bitLenInt target) { return CtrlOrAntiProb(false, control, target); }
-    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation) = 0;
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
-    virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation) = 0;
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
 
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
 
-    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         bitCapIntOcl const* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
-    virtual void ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
-    virtual void ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, complex const* mtrx);
+    virtual void ApplyControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx);
+    virtual void ApplyAntiControlled2x2(const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx);
 
     using QInterface::Decompose;
     virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length)

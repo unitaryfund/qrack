@@ -17,7 +17,7 @@ namespace Qrack {
 // Arithmetic:
 
 /** Add integer (without sign) */
-void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QInterface::INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length)
 {
     if (!length) {
         return;
@@ -49,7 +49,7 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     }
 }
 
-void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QInterface::INCDECC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     if (!length) {
         return;
@@ -75,7 +75,7 @@ void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
 }
 
 /** Add integer (without sign, with controls) */
-void QInterface::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls)
+void QInterface::CINC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (!controls.size()) {
         INC(toAdd, start, length);
@@ -123,7 +123,8 @@ void QInterface::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const 
 /**
  * Multiplication modulo N by integer, (out of place)
  */
-void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QInterface::MULModNOut(
+    const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
@@ -160,7 +161,8 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
 /**
  * Inverse of multiplication modulo N by integer, (out of place)
  */
-void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QInterface::IMULModNOut(
+    const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
@@ -195,8 +197,8 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 /**
  * Controlled multiplication modulo N by integer, (out of place)
  */
-void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const std::vector<bitLenInt>& controls)
+void QInterface::CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+    bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
@@ -234,8 +236,8 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 /**
  * Inverse of controlled multiplication modulo N by integer, (out of place)
  */
-void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const std::vector<bitLenInt>& controls)
+void QInterface::CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+    bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);

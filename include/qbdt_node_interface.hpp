@@ -36,7 +36,7 @@ typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 class QBdtNodeInterface {
 protected:
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)(bi_and_1(perm >> bit)); }
-    static void _par_for_qbdt(const bitCapInt end, BdtFunc fn);
+    static void _par_for_qbdt(const bitCapInt& end, BdtFunc fn);
 
 public:
 #if ENABLE_COMPLEX_X2

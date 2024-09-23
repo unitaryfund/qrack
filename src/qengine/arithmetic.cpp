@@ -65,7 +65,7 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 
 #if ENABLE_ALU
 /// Add integer (without sign)
-void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+void QEngineCPU::INC(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::INC range is out-of-bounds!");
@@ -108,7 +108,8 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 }
 
 /// Add integer (without sign, with controls)
-void QEngineCPU::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+void QEngineCPU::CINC(
+    const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     CHECK_ZERO_SKIP();
 
@@ -162,7 +163,7 @@ void QEngineCPU::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, c
 }
 
 /// Add integer (without sign, with carry)
-void QEngineCPU::INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+void QEngineCPU::INCDECC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::INCDECC range is out-of-bounds!");
@@ -214,7 +215,7 @@ void QEngineCPU::INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length
  * to an unsigned format, with the sign bit assumed to be set at the
  * appropriate position before the cast.
  */
-void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+void QEngineCPU::INCS(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::INCS range is out-of-bounds!");
@@ -271,7 +272,7 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+void QEngineCPU::INCDECSC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::INCDECSC range is out-of-bounds!");
@@ -324,7 +325,7 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt lengt
 }
 
 void QEngineCPU::INCDECSC(
-    bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::INCDECSC range is out-of-bounds!");
@@ -418,7 +419,7 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+void QEngineCPU::MUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     SetReg(carryStart, length, ZERO_BCI);
 
@@ -434,7 +435,7 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
         [](const bitCapIntOcl& orig, const bitCapIntOcl& mul) { return mul; }, toMul, inOutStart, carryStart, length);
 }
 
-void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+void QEngineCPU::DIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     if (bi_compare_0(toDiv) == 0) {
         throw std::invalid_argument("DIV by zero");
@@ -513,7 +514,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+void QEngineCPU::CMUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
@@ -536,7 +537,7 @@ void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
         controls);
 }
 
-void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+void QEngineCPU::CDIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
@@ -596,7 +597,8 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QEngineCPU::MULModNOut(
+    const bitCapInt& toMod, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     SetReg(outStart, length, ZERO_BCI);
 
@@ -608,7 +610,8 @@ void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, 
     ModNOut([&toModOcl](const bitCapIntOcl& inInt) { return inInt * toModOcl; }, modN, inStart, outStart, length);
 }
 
-void QEngineCPU::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QEngineCPU::IMULModNOut(
+    const bitCapInt& toMod, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     if (bi_compare_0(toMod) == 0) {
         return;
@@ -618,7 +621,8 @@ void QEngineCPU::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
     ModNOut([&toModOcl](const bitCapIntOcl& inInt) { return inInt * toModOcl; }, modN, inStart, outStart, length, true);
 }
 
-void QEngineCPU::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QEngineCPU::POWModNOut(
+    const bitCapInt& toMod, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     if (bi_compare_1(toMod) == 0) {
         SetReg(outStart, length, ONE_BCI);
@@ -698,8 +702,8 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const std::vector<bitLenInt>& controls)
+void QEngineCPU::CMULModNOut(const bitCapInt& toMod, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+    bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (!controls.size()) {
         MULModNOut(toMod, modN, inStart, outStart, length);
@@ -713,8 +717,8 @@ void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
         [&toModOcl](const bitCapIntOcl& inInt) { return inInt * toModOcl; }, modN, inStart, outStart, length, controls);
 }
 
-void QEngineCPU::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const std::vector<bitLenInt>& controls)
+void QEngineCPU::CIMULModNOut(const bitCapInt& toMod, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+    bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
         IMULModNOut(toMod, modN, inStart, outStart, length);
@@ -726,8 +730,8 @@ void QEngineCPU::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart
         controls, true);
 }
 
-void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    const std::vector<bitLenInt>& controls)
+void QEngineCPU::CPOWModNOut(const bitCapInt& toMod, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+    bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
         POWModNOut(toMod, modN, inStart, outStart, length);
@@ -741,7 +745,7 @@ void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
 
 #if ENABLE_BCD
 /// Add BCD integer (without sign)
-void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+void QEngineCPU::INCBCD(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::INC range is out-of-bounds!");
@@ -817,7 +821,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 }
 
 /// Add BCD integer (without sign, with carry)
-void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+void QEngineCPU::INCDECBCDC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     if (isBadBitRange(inOutStart, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::INCDECBCDC range is out-of-bounds!");
@@ -1449,7 +1453,7 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
-void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+void QEngineCPU::CPhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::CPhaseFlipIfLess range is out-of-bounds!");
@@ -1474,7 +1478,7 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 }
 
 /// This is an expedient for an adaptive Grover's search for a function's global minimum.
-void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+void QEngineCPU::PhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::CPhaseFlipIfLess range is out-of-bounds!");

@@ -21,10 +21,10 @@
 
 namespace Qrack {
 
-QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
-    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceId, bool useHardwareRNG,
-    bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds, bitLenInt qubitThreshold,
-    real1_f sep_thresh)
+QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState, qrack_rand_gen_ptr rgp,
+    const complex& phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceId,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds,
+    bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , devID(deviceId)
     , root(NULL)
@@ -56,7 +56,7 @@ void QBdt::Init()
     }
 }
 
-QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, bitCapInt perm)
+QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, const bitCapInt& perm)
 {
     return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX,
         doNormalize, false, false, devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs));
@@ -114,7 +114,7 @@ size_t QBdt::CountBranches()
     return nodes.size();
 }
 
-void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
+void QBdt::SetPermutation(const bitCapInt& initState, const complex& _phaseFac)
 {
     DumpBuffers();
 
@@ -122,6 +122,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
         return;
     }
 
+    complex phaseFac = _phaseFac;
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
             phaseFac = std::polar(ONE_R1, (real1)(Rand() * 2 * PI_R1));
@@ -193,7 +194,7 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     return ONE_R1_F - clampProb((real1_f)norm(projection));
 }
 
-complex QBdt::GetAmplitude(bitCapInt perm)
+complex QBdt::GetAmplitude(const bitCapInt& perm)
 {
     if (bi_compare(perm, maxQPower) >= 0) {
         throw std::invalid_argument("QBdt::GetAmplitude argument out-of-bounds!");
@@ -349,7 +350,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
     return clampProb((real1_f)oneChance);
 }
 
-real1_f QBdt::ProbAll(bitCapInt perm)
+real1_f QBdt::ProbAll(const bitCapInt& perm)
 {
     FlushBuffers();
 
@@ -676,7 +677,8 @@ void QBdt::MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, 
     }
 }
 
-void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+void QBdt::MCPhase(
+    const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
 {
     if (controls.empty()) {
         Phase(topLeft, bottomRight, target);
@@ -704,7 +706,8 @@ void QBdt::MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, comp
     ApplyControlledSingle(mtrx, lControls, target, false);
 }
 
-void QBdt::MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+void QBdt::MCInvert(
+    const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
 {
     if (controls.empty()) {
         Invert(topRight, bottomLeft, target);

@@ -52,7 +52,8 @@ protected:
     typedef ShardToPhaseMap& (QEngineShard::*GetBufferFn)();
     typedef void (QEngineShard::*OptimizeFn)();
     typedef void (QEngineShard::*AddRemoveFn)(QEngineShardPtr);
-    typedef void (QEngineShard::*AddAnglesFn)(QEngineShardPtr control, complex cmplxDiff, complex cmplxSame);
+    typedef void (QEngineShard::*AddAnglesFn)(
+        QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame);
 
 public:
     QInterfacePtr unit;
@@ -97,7 +98,7 @@ public:
     {
     }
 
-    QEngineShard(const bool& set, const complex rand_phase = ONE_CMPLX)
+    QEngineShard(const bool& set, const complex& rand_phase = ONE_CMPLX)
         : unit(NULL)
         , mapped(0)
         , isProbDirty(false)
@@ -189,28 +190,28 @@ public:
     }
 
 protected:
-    void AddAngles(QEngineShardPtr control, complex cmplxDiff, complex cmplxSame, AddRemoveFn localFn,
+    void AddAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame, AddRemoveFn localFn,
         ShardToPhaseMap& localMap, AddRemoveFn remoteFn);
 
 public:
-    void AddPhaseAngles(QEngineShardPtr control, complex topLeft, complex bottomRight)
+    void AddPhaseAngles(QEngineShardPtr control, const complex& topLeft, const complex& bottomRight)
     {
         AddAngles(control, topLeft, bottomRight, &QEngineShard::MakePhaseControlledBy, targetOfShards,
             &QEngineShard::RemoveControl);
     }
-    void AddAntiPhaseAngles(QEngineShardPtr control, complex bottomRight, complex topLeft)
+    void AddAntiPhaseAngles(QEngineShardPtr control, const complex& bottomRight, const complex& topLeft)
     {
         AddAngles(control, bottomRight, topLeft, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
             &QEngineShard::RemoveAntiControl);
     }
-    void AddInversionAngles(QEngineShardPtr control, complex topRight, complex bottomLeft)
+    void AddInversionAngles(QEngineShardPtr control, const complex& topRight, const complex& bottomLeft)
     {
         MakePhaseControlledBy(control);
         targetOfShards[control]->isInvert = !targetOfShards[control]->isInvert;
         std::swap(targetOfShards[control]->cmplxDiff, targetOfShards[control]->cmplxSame);
         AddPhaseAngles(control, topRight, bottomLeft);
     }
-    void AddAntiInversionAngles(QEngineShardPtr control, complex bottomLeft, complex topRight)
+    void AddAntiInversionAngles(QEngineShardPtr control, const complex& bottomLeft, const complex& topRight)
     {
         MakePhaseAntiControlledBy(control);
         antiTargetOfShards[control]->isInvert = !antiTargetOfShards[control]->isInvert;
@@ -258,7 +259,7 @@ public:
 
     void SwapTargetAnti(QEngineShardPtr control);
     void FlipPhaseAnti();
-    void CommutePhase(complex topLeft, complex bottomRight);
+    void CommutePhase(const complex& topLeft, const complex& bottomRight);
 
 protected:
     void RemoveIdentityBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet);

@@ -255,8 +255,8 @@ public:
      * general system instability). For safety, "useHostMem" can be turned on.
      */
 
-    QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+    QEngineCUDA(bitLenInt qBitCount, const bitCapInt& initState, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t devID = -1, bool useHardwareRNG = true, bool ignored = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> ignored2 = {}, bitLenInt ignored4 = 0U,
         real1_f ignored3 = FP_NORM_EPSILON_F);
@@ -340,26 +340,26 @@ public:
 
     bitCapIntOcl GetMaxSize() { return device_context->GetMaxAlloc() / sizeof(complex); };
 
-    void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
+    void SetPermutation(const bitCapInt& perm, const complex& phaseFac = CMPLX_DEFAULT_ARG);
 
     using QEngine::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-        complex const* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
-    void UniformParityRZ(bitCapInt mask, real1_f angle);
-    void CUniformParityRZ(const std::vector<bitLenInt>& controls, bitCapInt mask, real1_f angle);
+        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, const bitCapInt& mtrxSkipValueMask);
+    void UniformParityRZ(const bitCapInt& mask, real1_f angle);
+    void CUniformParityRZ(const std::vector<bitLenInt>& controls, const bitCapInt& mask, real1_f angle);
 
     using QEngine::X;
     void X(bitLenInt target);
     using QEngine::Z;
     void Z(bitLenInt target);
     using QEngine::Invert;
-    void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex);
+    void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt qubitIndex);
     using QEngine::Phase;
-    void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex);
+    void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt qubitIndex);
 
-    void XMask(bitCapInt mask);
-    void PhaseParity(real1_f radians, bitCapInt mask);
-    void PhaseRootNMask(bitLenInt n, bitCapInt mask);
+    void XMask(const bitCapInt& mask);
+    void PhaseParity(real1_f radians, const bitCapInt& mask);
+    void PhaseRootNMask(bitLenInt n, const bitCapInt& mask);
 
     using QEngine::Compose;
     bitLenInt Compose(QEngineCUDAPtr toCopy);
@@ -372,34 +372,37 @@ public:
     using QEngine::Decompose;
     void Decompose(bitLenInt start, QInterfacePtr dest);
     void Dispose(bitLenInt start, bitLenInt length);
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
+    void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm);
     using QEngine::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
     void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
 #if ENABLE_ALU
-    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
-    void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length);
+    void CINC(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
+    void INCS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 #if ENABLE_BCD
-    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    void INCBCD(const bitCapInt& toAdd, bitLenInt start, bitLenInt length);
 #endif
-    void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
-    void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
-    void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    void MUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
+    void DIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
+    void MULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    void IMULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    void POWModNOut(
+        const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    void CMUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls);
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    void CDIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const std::vector<bitLenInt>& controls);
-    void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
-    void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
-    void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
+    void CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
+    void CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
+    void CPOWModNOut(const bitCapInt& base, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
     void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
     void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
 
@@ -411,29 +414,29 @@ public:
         bitLenInt carryIndex, const unsigned char* values);
     void Hash(bitLenInt start, bitLenInt length, const unsigned char* values);
 
-    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
-    void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
+    void CPhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    void PhaseFlipIfLess(const bitCapInt& greaterPerm, bitLenInt start, bitLenInt length);
 #endif
 
     real1_f Prob(bitLenInt qubit);
     real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target);
-    real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
+    real1_f ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation);
     void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
-    real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
-    void ProbMaskAll(bitCapInt mask, real1* probsArray);
-    real1_f ProbParity(bitCapInt mask);
-    bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
+    real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
+    real1_f ProbParity(const bitCapInt& mask);
+    bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
     real1_f ExpectationBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
 
     void SetDevice(int64_t dID);
     int64_t GetDevice() { return deviceID; }
 
-    void SetQuantumState(complex const* inputState);
+    void SetQuantumState(const complex* inputState);
     void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
     bitCapInt MAll();
-    complex GetAmplitude(bitCapInt perm);
-    void SetAmplitude(bitCapInt perm, complex amp);
+    complex GetAmplitude(const bitCapInt& perm);
+    void SetAmplitude(const bitCapInt& perm, const complex& amp);
 
     real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
@@ -599,25 +602,25 @@ protected:
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUDAPtr dest);
 
     using QEngine::Apply2x2;
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE, norm_thresh);
     }
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, complex const* mtrx, bitLenInt bitCount,
+    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special,
         real1_f norm_thresh = REAL1_DEFAULT_ARG);
 
     void BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase = (real1_f)PI_R1);
 
-    void ApplyM(bitCapInt mask, bool result, complex nrm);
-    void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
+    void ApplyM(const bitCapInt& mask, bool result, const complex& nrm);
+    void ApplyM(const bitCapInt& mask, const bitCapInt& result, const complex& nrm);
 
     /* Utility functions used by the operations above. */
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U);
     EventVecPtr ResetWaitEvents(bool waitQueue = true);
-    void ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex nrm);
+    void ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, const complex& nrm);
     real1_f Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs);
 
     void ArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], const unsigned char* values = NULL,
@@ -627,12 +630,12 @@ protected:
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
 
 #if ENABLE_ALU
-    void INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
-    void INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
+    void INCDECC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
+    void INCDECSC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
     void INCDECSC(
-        bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+        const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 #if ENABLE_BCD
-    void INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
+    void INCDECBCDC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
 #endif
 
     void INT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt length);

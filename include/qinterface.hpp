@@ -150,7 +150,7 @@ protected:
 
     // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
     // you need a safe pointer to norm(), try this:
-    static inline real1_f normHelper(complex c) { return (real1_f)norm(c); }
+    static inline real1_f normHelper(const complex& c) { return (real1_f)norm(c); }
 
     static inline real1_f clampProb(real1_f toClamp)
     {
@@ -296,16 +296,16 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual complex GetAmplitude(bitCapInt perm) = 0;
+    virtual complex GetAmplitude(const bitCapInt& perm) = 0;
 
     /** Sets the representational amplitude of a full permutation
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void SetAmplitude(bitCapInt perm, complex amp) = 0;
+    virtual void SetAmplitude(const bitCapInt& perm, const complex& amp) = 0;
 
     /** Set to a specific permutation of all qubits */
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
+    virtual void SetPermutation(const bitCapInt& perm, const complex& phaseFac = CMPLX_DEFAULT_ARG);
 
     /**
      * Combine another QInterface with this one, after the last bit index of
@@ -444,7 +444,7 @@ public:
     /**
      * Dispose a a contiguous set of qubits that are already in a permutation eigenstate.
      */
-    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) = 0;
+    virtual void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm) = 0;
 
     /**
      * Allocate new "length" count of |0> state qubits at end of qubit index position
@@ -490,12 +490,12 @@ public:
      * permutation.
      */
     virtual void UCMtrx(
-        const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bitCapInt controlPerm);
+        const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, const bitCapInt& controlPerm);
 
     /**
      * Apply a single bit transformation that only effects phase.
      */
-    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubit)
+    virtual void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt qubit)
     {
         if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft)) && IS_NORM_0(topLeft - bottomRight)) {
             return;
@@ -508,7 +508,7 @@ public:
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase.
      */
-    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubit)
+    virtual void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt qubit)
     {
         const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         Mtrx(mtrx, qubit);
@@ -517,7 +517,8 @@ public:
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary control bits.
      */
-    virtual void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+    virtual void MCPhase(
+        const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
     {
         if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
             return;
@@ -532,7 +533,7 @@ public:
      * bits.
      */
     virtual void MCInvert(
-        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+        const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
     {
         const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         MCMtrx(controls, mtrx, target);
@@ -542,7 +543,7 @@ public:
      * Apply a single bit transformation that only effects phase, with arbitrary (anti-)control bits.
      */
     virtual void MACPhase(
-        const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target)
+        const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
     {
         if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
             return;
@@ -558,7 +559,7 @@ public:
      * (anti-)control bits.
      */
     virtual void MACInvert(
-        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target)
+        const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
     {
         MACWrapper(controls, [this, topRight, bottomLeft, target](const std::vector<bitLenInt>& lc) {
             MCInvert(lc, topRight, bottomLeft, target);
@@ -569,8 +570,8 @@ public:
      * Apply a single bit transformation that only effects phase, with arbitrary control bits, with arbitrary control
      * permutation.
      */
-    virtual void UCPhase(
-        const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target, bitCapInt perm)
+    virtual void UCPhase(const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight,
+        bitLenInt target, const bitCapInt& perm)
     {
         if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
             return;
@@ -584,8 +585,8 @@ public:
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary control
      * bits, with arbitrary control permutation.
      */
-    virtual void UCInvert(
-        const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target, bitCapInt perm)
+    virtual void UCInvert(const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft,
+        bitLenInt target, const bitCapInt& perm)
     {
         const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         UCMtrx(controls, mtrx, target, perm);
@@ -611,7 +612,7 @@ public:
         UniformlyControlledSingleBit(controls, qubit, mtrxs, std::vector<bitCapInt>(), ZERO_BCI);
     }
     virtual void UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubit,
-        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask);
+        const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, const bitCapInt& mtrxSkipValueMask);
 
     /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
@@ -1047,14 +1048,14 @@ public:
      *
      * Applies a -2 * PI_R1 / (2^N) phase rotation to each qubit in the mask.
      */
-    virtual void PhaseRootNMask(bitLenInt n, bitCapInt mask);
+    virtual void PhaseRootNMask(bitLenInt n, const bitCapInt& mask);
 
     /**
      * Parity phase gate
      *
      * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
      */
-    virtual void PhaseParity(real1_f radians, bitCapInt mask);
+    virtual void PhaseParity(real1_f radians, const bitCapInt& mask);
 
     /**
      * X gate
@@ -1070,7 +1071,7 @@ public:
      * Applies the Pauli "X" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
      * > 0). The Pauli "X" operator is equivalent to a logical "NOT."
      */
-    virtual void XMask(bitCapInt mask);
+    virtual void XMask(const bitCapInt& mask);
 
     /**
      * Y gate
@@ -1087,7 +1088,7 @@ public:
      * Applies the Pauli "Y" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
      * > 0). The Pauli "Y" operator is similar to a logical "NOT" with permutation phase.
      */
-    virtual void YMask(bitCapInt mask);
+    virtual void YMask(const bitCapInt& mask);
 
     /**
      * Z gate
@@ -1103,7 +1104,7 @@ public:
      * Applies the Pauli "Z" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
      * > 0). The Pauli "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
-    virtual void ZMask(bitCapInt mask);
+    virtual void ZMask(const bitCapInt& mask);
 
     /**
      * Square root of X gate
@@ -1809,37 +1810,39 @@ public:
      * "AND" registers at "inputStart1" and the classic bits of "classicalInput," of "length" bits,
      * placing the result in "outputStart".
      */
-    virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+    virtual void CLAND(bitLenInt qInputStart, const bitCapInt& classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** Bitwise "OR" */
     virtual void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /** Classical bitwise "OR" */
-    virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+    virtual void CLOR(bitLenInt qInputStart, const bitCapInt& classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** Bitwise "XOR" */
     virtual void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /** Classical bitwise "XOR" */
-    virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+    virtual void CLXOR(bitLenInt qInputStart, const bitCapInt& classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** Bitwise "NAND" */
     virtual void NAND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /** Classical bitwise "NAND" */
-    virtual void CLNAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+    virtual void CLNAND(
+        bitLenInt qInputStart, const bitCapInt& classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** Bitwise "NOR" */
     virtual void NOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /** Classical bitwise "NOR" */
-    virtual void CLNOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+    virtual void CLNOR(bitLenInt qInputStart, const bitCapInt& classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** Bitwise "XNOR" */
     virtual void XNOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /** Classical bitwise "XNOR" */
-    virtual void CLXNOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+    virtual void CLXNOR(
+        bitLenInt qInputStart, const bitCapInt& classicalInput, bitLenInt outputStart, bitLenInt length);
 
 #if ENABLE_ROT_API
     /**
@@ -2107,56 +2110,58 @@ public:
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign) */
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length);
 
     /** Subtract classical integer (without sign) */
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
+    virtual void DEC(const bitCapInt& toSub, bitLenInt start, bitLenInt length)
     {
         const bitCapInt invToSub = pow2(length) - toSub;
         INC(invToSub, start, length);
     }
 
     /** Common driver method behind INCC and DECC */
-    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCDECC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Add integer (without sign, with carry) */
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INCC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         const bool hasCarry = M(carryIndex);
         if (hasCarry) {
             X(carryIndex);
-            bi_increment(&toAdd, 1U);
+            INCDECC(toAdd + 1U, start, length, carryIndex);
+        } else {
+            INCDECC(toAdd, start, length, carryIndex);
         }
-
-        INCDECC(toAdd, start, length, carryIndex);
     }
 
     /** Subtract classical integer (without sign, with carry) */
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void DECC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         const bool hasCarry = M(carryIndex);
+        bitCapInt invToSub = pow2(length) - toSub;
         if (hasCarry) {
             X(carryIndex);
         } else {
-            bi_increment(&toSub, 1U);
+            --invToSub;
         }
 
-        const bitCapInt invToSub = pow2(length) - toSub;
         INCDECC(invToSub, start, length, carryIndex);
     }
 
     /** Add integer (without sign, with controls) */
-    virtual void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
+    virtual void CINC(
+        const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls);
 
     /** Subtract classical integer (without sign, with controls) */
-    virtual void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
+    virtual void CDEC(
+        const bitCapInt& toSub, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         const bitCapInt invToSub = pow2(length) - toSub;
         CINC(invToSub, inOutStart, length, controls);
     }
 
     /** Add a classical integer to the register, with sign and without carry. */
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    virtual void INCS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         const bitCapInt signMask = pow2(length - 1U);
         INC(signMask, start, length);
@@ -2167,25 +2172,27 @@ public:
     }
 
     /** Subtract a classical integer from the register, with sign and without carry. */
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    virtual void DECS(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         const bitCapInt invToSub = pow2(length) - toSub;
         INCS(invToSub, start, length, overflowIndex);
     }
 
     /** Multiplication modulo N by integer, (out of place) */
-    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    virtual void MULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
 
     /** Inverse of multiplication modulo N by integer, (out of place) */
-    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    virtual void IMULModNOut(
+        const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
 
     /** Controlled multiplication modulo N by integer, (out of place) */
-    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
+    virtual void CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
 
     /** Inverse of controlled multiplication modulo N by integer, (out of place) */
-    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        const std::vector<bitLenInt>& controls);
+    virtual void CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart,
+        bitLenInt length, const std::vector<bitLenInt>& controls);
 
     /**
      * Quantum analog of classical "Full Adder" gate
@@ -2316,7 +2323,7 @@ public:
     virtual void PhaseFlip() { Phase(-ONE_CMPLX, -ONE_CMPLX, 0); }
 
     /** Set register bits to given permutation */
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual void SetReg(bitLenInt start, bitLenInt length, const bitCapInt& value);
 
     /** Measure permutation state of a register */
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, ZERO_BCI, false); }
@@ -2330,7 +2337,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual bitCapInt ForceMReg(
-        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
+        bitLenInt start, bitLenInt length, const bitCapInt& result, bool doForce = true, bool doApply = true);
 
     /** Measure bits with indices in array, and return a mask of the results */
     virtual bitCapInt M(const std::vector<bitLenInt>& bits) { return ForceM(bits, std::vector<bool>()); }
@@ -2412,14 +2419,17 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbAll(bitCapInt fullRegister) { return clampProb((real1_f)norm(GetAmplitude(fullRegister))); }
+    virtual real1_f ProbAll(const bitCapInt& fullRegister)
+    {
+        return clampProb((real1_f)norm(GetAmplitude(fullRegister)));
+    }
 
     /**
      * Direct measure of register permutation probability
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation);
 
     /**
      * Direct measure of masked permutation probability
@@ -2430,7 +2440,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
 
     /**
      * Direct measure of masked permutation probability
@@ -2440,7 +2450,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void ProbMaskAll(bitCapInt mask, real1* probsArray);
+    virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
     /**
      * Direct measure of listed permutation probability
@@ -2683,7 +2693,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbAllRdm(bool roundRz, bitCapInt fullRegister) { return ProbAll(fullRegister); }
+    virtual real1_f ProbAllRdm(bool roundRz, const bitCapInt& fullRegister) { return ProbAll(fullRegister); }
     /**
      * Direct measure of masked permutation probability, treating all ancillary qubits as post-selected T gate gadgets
      *
@@ -2693,7 +2703,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbMaskRdm(bool roundRz, bitCapInt mask, bitCapInt permutation)
+    virtual real1_f ProbMaskRdm(bool roundRz, const bitCapInt& mask, const bitCapInt& permutation)
     {
         return ProbMask(mask, permutation);
     }

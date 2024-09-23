@@ -17,9 +17,9 @@
 
 namespace Qrack {
 
-QUnitClifford::QUnitClifford(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool ignored2, int64_t ignored3, bool useHardwareRNG, bool ignored4, real1_f ignored5,
-    std::vector<int64_t> ignored6, bitLenInt ignored7, real1_f ignored8)
+QUnitClifford::QUnitClifford(bitLenInt n, const bitCapInt& perm, qrack_rand_gen_ptr rgp, const complex& phaseFac,
+    bool doNorm, bool randomGlobalPhase, bool ignored2, int64_t ignored3, bool useHardwareRNG, bool ignored4,
+    real1_f ignored5, std::vector<int64_t> ignored6, bitLenInt ignored7, real1_f ignored8)
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , phaseOffset(ONE_CMPLX)
 {
@@ -112,7 +112,7 @@ real1_f QUnitClifford::ExpVarFloatsFactorized(
     return expectation;
 }
 
-real1_f QUnitClifford::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
+real1_f QUnitClifford::ProbPermRdm(const bitCapInt& perm, bitLenInt ancillaeStart)
 {
     if (ancillaeStart > qubitCount) {
         throw std::invalid_argument("QUnitClifford::ProbPermRdm() ancillaeStart is out-of-bounds!");
@@ -150,7 +150,7 @@ real1_f QUnitClifford::ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart)
     return (real1_f)prob;
 }
 
-real1_f QUnitClifford::ProbMask(bitCapInt mask, bitCapInt perm)
+real1_f QUnitClifford::ProbMask(const bitCapInt& mask, const bitCapInt& perm)
 {
     bitCapInt v = mask; // count the number of bits set in v
     std::vector<bitLenInt> bits;
@@ -178,7 +178,7 @@ real1_f QUnitClifford::ProbMask(bitCapInt mask, bitCapInt perm)
     return (real1_f)expectation;
 }
 
-void QUnitClifford::SetPermutation(bitCapInt perm, complex phaseFac)
+void QUnitClifford::SetPermutation(const bitCapInt& perm, const complex& phaseFac)
 {
     Dump();
 
@@ -450,7 +450,7 @@ void QUnitClifford::GetProbs(real1* outputProbs)
 }
 
 /// Convert the state to ket notation (warning: could be huge!)
-complex QUnitClifford::GetAmplitude(bitCapInt perm)
+complex QUnitClifford::GetAmplitude(const bitCapInt& perm)
 {
     if (bi_compare(perm, maxQPower) >= 0) {
         throw std::invalid_argument("QUnitClifford::GetAmplitudeOrProb argument out-of-bounds!");

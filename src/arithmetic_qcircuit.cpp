@@ -20,7 +20,7 @@ namespace Qrack {
 
 // Arithmetic:
 /** Add integer (without sign) */
-void QCircuit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QCircuit::INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length)
 {
     if (!length) {
         return;

@@ -40,7 +40,7 @@ public:
 
     void swap(bitLenInt qubit1, bitLenInt qubit2) { std::swap(swapMap[qubit1], swapMap[qubit2]); }
 
-    bitCapInt map(bitCapInt perm)
+    bitCapInt map(const bitCapInt& perm)
     {
         bitCapInt toRet = 0U;
         for (bitLenInt i = 0U; i < size(); ++i) {
@@ -51,7 +51,7 @@ public:
         return toRet;
     }
 
-    bitCapInt inverseMap(bitCapInt perm)
+    bitCapInt inverseMap(const bitCapInt& perm)
     {
         bitCapInt toRet = 0U;
         for (bitLenInt i = 0U; i < size(); ++i) {

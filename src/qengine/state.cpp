@@ -32,8 +32,8 @@ namespace Qrack {
  * \warning Overall phase is generally arbitrary and unknowable. Setting two QEngineCPU instances to the same
  * phase usually makes sense only if they are initialized at the same time.
  */
-QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int64_t deviceID, bool useHardwareRNG, bool useSparseStateVec,
+QEngineCPU::QEngineCPU(bitLenInt qBitCount, const bitCapInt& initState, qrack_rand_gen_ptr rgp, const complex& phaseFac,
+    bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceID, bool useHardwareRNG, bool useSparseStateVec,
     real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
@@ -192,7 +192,7 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
     runningNorm = src->GetRunningNorm();
 }
 
-complex QEngineCPU::GetAmplitude(bitCapInt perm)
+complex QEngineCPU::GetAmplitude(const bitCapInt& perm)
 {
     if (perm >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::GetAmplitude argument out-of-bounds!");
@@ -208,7 +208,7 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
     return stateVec->read((bitCapIntOcl)perm);
 }
 
-void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
+void QEngineCPU::SetAmplitude(const bitCapInt& perm, const complex& amp)
 {
     if (perm >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::SetAmplitude argument out-of-bounds!");
@@ -233,7 +233,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     stateVec->write((bitCapIntOcl)perm, amp);
 }
 
-void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
+void QEngineCPU::SetPermutation(const bitCapInt& perm, const complex& phaseFac)
 {
     Dump();
 
@@ -677,7 +677,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
 }
 #endif
 
-void QEngineCPU::XMask(bitCapInt mask)
+void QEngineCPU::XMask(const bitCapInt& mask)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::XMask mask out-of-bounds!");
@@ -723,7 +723,7 @@ void QEngineCPU::XMask(bitCapInt mask)
     });
 }
 
-void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
+void QEngineCPU::PhaseParity(real1_f radians, const bitCapInt& mask)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::PhaseParity mask out-of-bounds!");
@@ -771,7 +771,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
     });
 }
 
-void QEngineCPU::PhaseRootNMask(bitLenInt n, bitCapInt mask)
+void QEngineCPU::PhaseRootNMask(bitLenInt n, const bitCapInt& mask)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::PhaseRootNMask mask out-of-bounds!");
@@ -824,7 +824,7 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, bitCapInt mask)
 }
 
 void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
-    const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, bitCapInt mtrxSkipValueMask)
+    const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, const bitCapInt& mtrxSkipValueMask)
 {
     CHECK_ZERO_SKIP();
 
@@ -847,7 +847,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     std::vector<bitCapIntOcl> mtrxSkipPowersOcl(mtrxSkipPowers.size());
     std::transform(mtrxSkipPowers.begin(), mtrxSkipPowers.end(), mtrxSkipPowersOcl.begin(),
-        [](bitCapInt i) { return (bitCapIntOcl)i; });
+        [](const bitCapInt& i) { return (bitCapIntOcl)i; });
 
     const bitCapIntOcl mtrxSkipValueMaskOcl = (bitCapIntOcl)mtrxSkipValueMask;
 
@@ -929,7 +929,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
     }
 }
 
-void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
+void QEngineCPU::UniformParityRZ(const bitCapInt& mask, real1_f angle)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::UniformParityRZ mask out-of-bounds!");
@@ -962,7 +962,7 @@ void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
     });
 }
 
-void QEngineCPU::CUniformParityRZ(const std::vector<bitLenInt>& cControls, bitCapInt mask, real1_f angle)
+void QEngineCPU::CUniformParityRZ(const std::vector<bitLenInt>& cControls, const bitCapInt& mask, real1_f angle)
 {
     if (cControls.empty()) {
         return UniformParityRZ(mask, angle);
@@ -1362,7 +1362,7 @@ void QEngineCPU::Decompose(bitLenInt start, QInterfacePtr destination)
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineCPUPtr)NULL); }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QEngineCPU::Dispose range is out-of-bounds!");
@@ -1531,7 +1531,7 @@ real1_f QEngineCPU::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenI
 }
 
 // Returns probability of permutation of the register
-real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation)
 {
     if (doNormalize) {
         NormalizeState();
@@ -1567,7 +1567,7 @@ real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
 }
 
 // Returns probability of permutation of the mask
-real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
+real1_f QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::ProbMask mask out-of-bounds!");
@@ -1608,7 +1608,7 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
     return clampProb((real1_f)prob);
 }
 
-real1_f QEngineCPU::ProbParity(bitCapInt mask)
+real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::ProbParity mask out-of-bounds!");
@@ -1681,7 +1681,7 @@ bitCapInt QEngineCPU::MAll()
     return lastNonzero;
 }
 
-bool QEngineCPU::ForceMParity(bitCapInt mask, bool result, bool doForce)
+bool QEngineCPU::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCPU::ForceMParity mask out-of-bounds!");
@@ -1801,7 +1801,7 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     return ONE_R1_F - clampProb((real1_f)norm(totInner));
 }
 
-void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
+void QEngineCPU::ApplyM(const bitCapInt& regMask, const bitCapInt& result, const complex& nrm)
 {
     CHECK_ZERO_SKIP();
 

@@ -40,7 +40,7 @@ struct QUnitStateVector {
     std::vector<std::map<bitCapInt, complex>> amps;
 
     QUnitStateVector(
-        complex p, const std::map<bitLenInt, IdOffset>& i, const std::vector<std::map<bitCapInt, complex>>& a)
+        const complex& p, const std::map<bitLenInt, IdOffset>& i, const std::vector<std::map<bitCapInt, complex>>& a)
         : phaseOffset(p)
         , idMap(i)
         , amps(a)

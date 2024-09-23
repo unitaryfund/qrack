@@ -28,9 +28,9 @@
 
 namespace Qrack {
 
-QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
-    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceID,
-    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
+QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState,
+    qrack_rand_gen_ptr rgp, const complex& phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem,
+    int64_t deviceID, bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QUnit(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
           useSparseStateVec, norm_thresh, devList, qubitThreshold, sep_thresh)
@@ -169,7 +169,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     }
 }
 
-QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
+QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, const bitCapInt& perm)
 {
     size_t deviceId = defaultDeviceID;
     uint64_t sz = QRACK_GPU_SINGLETON.GetActiveAllocSize(deviceId);

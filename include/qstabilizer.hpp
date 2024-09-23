@@ -81,10 +81,11 @@ protected:
     }
 
 public:
-    QStabilizer(bitLenInt n, bitCapInt perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false,
-        int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
-        std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
+    QStabilizer(bitLenInt n, const bitCapInt& perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
+        const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+        bool ignored2 = false, int64_t ignored3 = -1, bool useHardwareRNG = true, bool ignored4 = false,
+        real1_f ignored5 = REAL1_EPSILON, std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U,
+        real1_f ignored8 = FP_NORM_EPSILON_F);
 
     ~QStabilizer() { Dump(); }
 
@@ -101,7 +102,7 @@ public:
     void ResetPhaseOffset() { phaseOffset = ZERO_R1; }
     complex GetPhaseOffset() { return std::polar(ONE_R1, phaseOffset); }
 
-    void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
+    void SetPermutation(const bitCapInt& perm, const complex& phaseFac = CMPLX_DEFAULT_ARG);
 
     void SetRandomSeed(uint32_t seed)
     {
@@ -241,7 +242,7 @@ public:
     bitCapInt PermCount() { return pow2(gaussian()); }
 
     void SetQuantumState(const complex* inputState);
-    void SetAmplitude(bitCapInt perm, complex amp)
+    void SetAmplitude(const bitCapInt& perm, const complex& amp)
     {
         throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
     }
@@ -297,7 +298,7 @@ public:
     void GetProbs(real1* outputProbs);
 
     /// Get a single basis state amplitude
-    complex GetAmplitude(bitCapInt perm);
+    complex GetAmplitude(const bitCapInt& perm);
 
     /// Get a single basis state amplitude
     std::vector<complex> GetAmplitudes(std::vector<bitCapInt> perms);
@@ -319,10 +320,10 @@ public:
 
     /// Under assumption of a QStabilizerHybrid ancillary buffer, trace out the permutation probability
     /// of the reduced density matrx without ancillae.
-    real1_f ProbPermRdm(bitCapInt perm, bitLenInt ancillaeStart);
+    real1_f ProbPermRdm(const bitCapInt& perm, bitLenInt ancillaeStart);
 
     /// Direct measure of masked permutation probability
-    real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
+    real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
 
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
@@ -359,7 +360,7 @@ public:
     }
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QStabilizerPtr)NULL); }
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt ignored)
+    void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& ignored)
     {
         DecomposeDispose(start, length, (QStabilizerPtr)NULL);
     }
@@ -433,12 +434,16 @@ public:
     real1_f Prob(bitLenInt qubit);
 
     void Mtrx(const complex* mtrx, bitLenInt target);
-    void Phase(complex topLeft, complex bottomRight, bitLenInt target);
-    void Invert(complex topRight, complex bottomLeft, bitLenInt target);
-    void MCPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
-    void MACPhase(const std::vector<bitLenInt>& controls, complex topLeft, complex bottomRight, bitLenInt target);
-    void MCInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
-    void MACInvert(const std::vector<bitLenInt>& controls, complex topRight, complex bottomLeft, bitLenInt target);
+    void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt target);
+    void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt target);
+    void MCPhase(
+        const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target);
+    void MACPhase(
+        const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target);
+    void MCInvert(
+        const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target);
+    void MACInvert(
+        const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target);
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {

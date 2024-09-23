@@ -93,7 +93,7 @@ QInterface::QInterface(
 }
 
 /// Set to a specific permutation of all qubits
-void QInterface::SetPermutation(bitCapInt perm, complex ignored)
+void QInterface::SetPermutation(const bitCapInt& perm, const complex& ignored)
 {
     const bitCapInt measured = MAll();
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
@@ -185,7 +185,7 @@ void QInterface::IQFTR(const std::vector<bitLenInt>& qubits, bool trySeparate)
 }
 
 /// Set register bits to given permutation
-void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
+void QInterface::SetReg(bitLenInt start, bitLenInt length, const bitCapInt& value)
 {
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
@@ -207,7 +207,7 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 }
 
 /// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
+bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, const bitCapInt& result, bool doForce, bool doApply)
 {
     bitCapInt res = ZERO_BCI;
     for (bitLenInt bit = 0U; bit < length; ++bit) {
@@ -254,7 +254,7 @@ bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vect
 }
 
 /// Returns probability of permutation of the register
-real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation)
 {
     const bitCapIntOcl startMask = pow2Ocl(start) - 1U;
     const bitCapIntOcl maxLcv = (bitCapIntOcl)(maxQPower >> length);
@@ -270,7 +270,7 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
 }
 
 /// Returns probability of permutation of the mask
-real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
+real1_f QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     if (bi_compare(maxQPower - ONE_BCI, mask) == 0) {
         return ProbAll(permutation);
@@ -413,7 +413,7 @@ std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr
     return ret;
 }
 
-void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
+void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
     bitCapInt v = mask; // count the number of bits set in v
     std::vector<bitCapInt> bitPowers;
@@ -876,7 +876,8 @@ REG_GATE_1(H);
     }
 
 #define REG_GATE_3B(gate)                                                                                              \
-    void QInterface::gate(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)    \
+    void QInterface::gate(                                                                                             \
+        bitLenInt qInputStart, const bitCapInt& classicalInput, bitLenInt outputStart, bitLenInt length)               \
     {                                                                                                                  \
         for (bitLenInt i = 0U; i < length; ++i) {                                                                      \
             gate(qInputStart + i, (bitCapIntOcl)bitSlice(i, classicalInput), outputStart + i);                         \

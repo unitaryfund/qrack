@@ -56,7 +56,7 @@ void cl_free(void* toFree)
 }
 
 // See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
-bitCapInt intPow(bitCapInt base, bitCapInt power)
+bitCapInt intPow(const bitCapInt& base, const bitCapInt& power)
 {
     if (bi_compare_0(power) == 0U) {
         return ONE_BCI;
@@ -92,7 +92,7 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
 }
 
 #if ENABLE_COMPLEX_X2
-void mul2x2(complex const* left, complex const* right, complex* out)
+void mul2x2(const complex* left, const complex* right, complex* out)
 {
     const complex2 left0(left[0U], left[2U]);
     const complex2 left1(left[1U], left[3U]);
@@ -108,7 +108,7 @@ void mul2x2(complex const* left, complex const* right, complex* out)
     out[3U] = col.c(1U);
 }
 #else
-void mul2x2(complex const* left, complex const* right, complex* out)
+void mul2x2(const complex* left, const complex* right, complex* out)
 {
     out[0U] = (left[0U] * right[0U]) + (left[1U] * right[2U]);
     out[1U] = (left[0U] * right[1U]) + (left[1U] * right[3U]);
@@ -117,7 +117,7 @@ void mul2x2(complex const* left, complex const* right, complex* out)
 }
 #endif
 
-void _expLog2x2(complex const* matrix2x2, complex* outMatrix2x2, bool isExp)
+void _expLog2x2(const complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 {
     // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
     // basis, and apply.
@@ -195,11 +195,11 @@ void _expLog2x2(complex const* matrix2x2, complex* outMatrix2x2, bool isExp)
     }
 }
 
-void exp2x2(complex const* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
+void exp2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
 
-void log2x2(complex const* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
+void log2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
 
-void inv2x2(complex const* matrix2x2, complex* outMatrix2x2)
+void inv2x2(const complex* matrix2x2, complex* outMatrix2x2)
 {
     const complex det = ONE_CMPLX / (matrix2x2[0U] * matrix2x2[3U] - matrix2x2[1U] * matrix2x2[2U]);
     outMatrix2x2[0U] = det * matrix2x2[3U];
@@ -269,7 +269,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
 }
 
 #if QBCAPPOW > 6
-std::ostream& operator<<(std::ostream& os, bitCapInt b)
+std::ostream& operator<<(std::ostream& os, const bitCapInt& b)
 {
     if (bi_compare_0(b) == 0) {
         os << "0";
@@ -278,6 +278,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
 
     // Calculate the base-10 digits, from lowest to highest.
     std::vector<std::string> digits;
+    bitCapInt _b = b;
     while (bi_compare_0(b) != 0) {
         bitCapInt quo;
 #ifdef __SIZEOF_INT128__
@@ -285,9 +286,9 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
 #else
         uint32_t rem;
 #endif
-        bi_div_mod_small(b, 10U, &quo, &rem);
+        bi_div_mod_small(_b, 10U, &quo, &rem);
         digits.push_back(std::to_string((unsigned char)rem));
-        b = quo;
+        _b = quo;
     }
 
     // Reversing order, print the digits from highest to lowest.

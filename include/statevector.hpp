@@ -65,8 +65,8 @@ public:
     /// tensor slicing.)
     virtual void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2) = 0;
     virtual void clear() = 0;
-    virtual void copy_in(complex const* inArray) = 0;
-    virtual void copy_in(complex const* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
+    virtual void copy_in(const complex* inArray) = 0;
+    virtual void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
     virtual void copy_in(StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset,
         const bitCapIntOcl length) = 0;
     virtual void copy_out(complex* outArray) = 0;
@@ -148,7 +148,7 @@ public:
         par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv] = ZERO_CMPLX; });
     }
 
-    void copy_in(complex const* copyIn)
+    void copy_in(const complex* copyIn)
     {
         if (copyIn) {
             par_for(0, capacity, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv] = copyIn[lcv]; });
@@ -157,7 +157,7 @@ public:
         }
     }
 
-    void copy_in(complex const* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
+    void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (copyIn) {
             par_for(0, length,
@@ -172,7 +172,7 @@ public:
         StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset, const bitCapIntOcl length)
     {
         if (copyInSv) {
-            complex const* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes.get() + srcOffset;
+            const complex* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes.get() + srcOffset;
             par_for(0, length,
                 [&](const bitCapIntOcl& lcv, const unsigned& cpu) { amplitudes[lcv + dstOffset] = copyIn[lcv]; });
         } else {
@@ -315,7 +315,7 @@ public:
         amplitudes.clear();
     }
 
-    void copy_in(complex const* copyIn)
+    void copy_in(const complex* copyIn)
     {
         if (!copyIn) {
             clear();
@@ -332,7 +332,7 @@ public:
         }
     }
 
-    void copy_in(complex const* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
+    void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (!copyIn) {
             std::lock_guard<std::mutex> lock(mtx);

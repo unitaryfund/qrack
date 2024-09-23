@@ -19,14 +19,14 @@
 namespace Qrack {
 
 /// Subtract integer (without sign)
-void QAlu::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
+void QAlu::DEC(const bitCapInt& toSub, bitLenInt start, bitLenInt length)
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     INC(invToSub, start, length);
 }
 
 /// Subtract integer (without sign, with controls)
-void QAlu::CDEC(bitCapInt toSub, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls)
+void QAlu::CDEC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     CINC(invToSub, start, length, controls);
@@ -37,13 +37,13 @@ void QAlu::CDEC(bitCapInt toSub, bitLenInt start, bitLenInt length, const std::v
  * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
  * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
  */
-void QAlu::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+void QAlu::DECS(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     INCS(invToSub, start, length, overflowIndex);
 }
 
-void QAlu::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QAlu::INCC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     if (!length) {
         return;
@@ -52,23 +52,23 @@ void QAlu::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt ca
     const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-        bi_increment(&toAdd, 1U);
+        INCDECC(toAdd + 1U, start, length, carryIndex);
+    } else {
+        INCDECC(toAdd, start, length, carryIndex);
     }
-
-    INCDECC(toAdd, start, length, carryIndex);
 }
 
 /// Subtract integer (without sign, with carry)
-void QAlu::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QAlu::DECC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     const bool hasCarry = M(carryIndex);
+    bitCapInt invToSub = pow2(length) - toSub;
     if (hasCarry) {
         X(carryIndex);
     } else {
-        bi_increment(&toSub, 1U);
+        --invToSub;
     }
 
-    const bitCapInt invToSub = pow2(length) - toSub;
     INCDECC(invToSub, start, length, carryIndex);
 }
 
@@ -78,15 +78,16 @@ void QAlu::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt ca
  * integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate
  * position before the cast.
  */
-void QAlu::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+void QAlu::INCSC(
+    const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-        bi_increment(&toAdd, 1U);
+        INCDECSC(toAdd + 1U, start, length, overflowIndex, carryIndex);
+    } else {
+        INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
     }
-
-    INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
 }
 
 /**
@@ -94,16 +95,17 @@ void QAlu::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt o
  * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
  * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
  */
-void QAlu::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+void QAlu::DECSC(
+    const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     const bool hasCarry = M(carryIndex);
+    bitCapInt invToSub = pow2(length) - toSub;
     if (hasCarry) {
         X(carryIndex);
     } else {
-        bi_increment(&toSub, 1U);
+        --invToSub;
     }
 
-    bitCapInt invToSub = pow2(length) - toSub;
     INCDECSC(invToSub, start, length, overflowIndex, carryIndex);
 }
 
@@ -113,15 +115,15 @@ void QAlu::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt o
  * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
  * cast.
  */
-void QAlu::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QAlu::INCSC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-        bi_increment(&toAdd, 1U);
+        INCDECSC(toAdd + 1U, start, length, carryIndex);
+    } else {
+        INCDECSC(toAdd, start, length, carryIndex);
     }
-
-    INCDECSC(toAdd, start, length, carryIndex);
 }
 
 /**
@@ -130,29 +132,29 @@ void QAlu::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt c
  * Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
  * appropriate position before the cast.
  */
-void QAlu::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QAlu::DECSC(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     const bool hasCarry = M(carryIndex);
+    bitCapInt invToSub = pow2(length) - toSub;
     if (hasCarry) {
         X(carryIndex);
     } else {
-        bi_increment(&toSub, 1U);
+        --invToSub;
     }
 
-    bitCapInt invToSub = pow2(length) - toSub;
     INCDECSC(invToSub, start, length, carryIndex);
 }
 
 #if ENABLE_BCD
 /// Subtract BCD integer (without sign)
-void QAlu::DECBCD(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
+void QAlu::DECBCD(const bitCapInt& toSub, bitLenInt inOutStart, bitLenInt length)
 {
     const bitCapInt invToSub = intPow(10U, length / 4U) - toSub;
     INCBCD(invToSub, inOutStart, length);
 }
 
 /// Add BCD integer (without sign, with carry)
-void QAlu::INCBCDC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+void QAlu::INCBCDC(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     const bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -164,7 +166,7 @@ void QAlu::INCBCDC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitL
 }
 
 /// Subtract BCD integer (without sign, with carry)
-void QAlu::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+void QAlu::DECBCDC(const bitCapInt& toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     const bool hasCarry = M(carryIndex);
     if (hasCarry) {
