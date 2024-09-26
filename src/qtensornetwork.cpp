@@ -101,18 +101,19 @@ bitLenInt QTensorNetwork::GetThresholdQb()
         return (bitLenInt)std::stoi(std::string(getenv("QRACK_QTENSORNETWORK_THRESHOLD_QB")));
     }
 #endif
-#if ENABLE_OPENCL || ENABLE_CUDA
+
+#if ENABLE_OPENCL || ENABLE_CUD
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_MAX_PAGING_QB")) {
         return (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
     }
 #endif
     if (isCpu) {
-        return 32U;
+        return QRACK_MAX_CPU_QB_DEFAULT;
     }
     const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
     if (!devCount) {
-        return 32U;
+        return QRACK_MAX_CPU_QB_DEFAULT;
     }
     const bitLenInt perPage = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
 #if ENABLE_OPENCL
@@ -127,12 +128,7 @@ bitLenInt QTensorNetwork::GetThresholdQb()
     return (perPage + log2Ocl(devCount)) - 1U;
 #endif
 #else
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_MAX_CPU_QB")) {
-        return (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB")));
-    }
-#endif
-    return 32U;
+    return QRACK_MAX_CPU_QB_DEFAULT;
 #endif
 }
 

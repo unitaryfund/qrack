@@ -191,10 +191,28 @@ std::istream& operator>>(std::istream& is, bitCapInt& b);
 #endif
 
 #if ENABLE_ENV_VARS
+const real1_f _qrack_qunit_sep_thresh = getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")
+    ? (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")))
+    : (FP_NORM_EPSILON / 2);
 const real1_f _qrack_qbdt_sep_thresh = getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")
     ? (real1_f)std::stof(std::string(getenv("QRACK_QBDT_SEPARABILITY_THRESHOLD")))
     : (FP_NORM_EPSILON / 2);
+const bitLenInt QRACK_MAX_CPU_QB_DEFAULT =
+    getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : -1;
+const bitLenInt QRACK_MAX_PAGE_QB_DEFAULT = getenv("QRACK_MAX_PAGE_QB")
+    ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")))
+    : QRACK_MAX_CPU_QB_DEFAULT;
+const bitLenInt QRACK_MAX_PAGING_QB_DEFAULT = getenv("QRACK_MAX_PAGING_QB")
+    ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")))
+    : QRACK_MAX_CPU_QB_DEFAULT;
+const bitLenInt PSTRIDEPOW_DEFAULT =
+    (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
-const real1_f _qrack_qbdt_sep_thresh = FP_NORM_EPSILON;
+const real1_f _qrack_qunit_sep_thresh = FP_NORM_EPSILON / 2;
+const real1_f _qrack_qbdt_sep_thresh = FP_NORM_EPSILON / 2;
+const bitLenInt QRACK_MAX_CPU_QB_DEFAULT = -1;
+const bitLenInt QRACK_MAX_PAGE_QB_DEFAULT = QRACK_MAX_CPU_QB_DEFAULT;
+const bitLenInt QRACK_MAX_PAGING_QB_DEFAULT = QRACK_MAX_CPU_QB_DEFAULT;
+const bitLenInt PSTRIDEPOW_DEFAULT = PSTRIDEPOW;
 #endif
 } // namespace Qrack

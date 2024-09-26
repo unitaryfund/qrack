@@ -621,6 +621,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     bool isOcl = oc && (CUDAEngine::Instance().GetDeviceCount() > 0);
     bool isOclMulti = oc && md && (CUDAEngine::Instance().GetDeviceCount() > 1);
 #else
+    bool isOcl = false;
     bool isOclMulti = false;
 #endif
 
@@ -637,7 +638,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     }
 #endif
 
-    if (pg && simulatorType.size()) {
+    if (pg && isOcl && simulatorType.size()) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 

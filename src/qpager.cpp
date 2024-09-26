@@ -114,14 +114,10 @@ void QPager::Init()
         rootEngine = engines[engineLevel];
     }
 
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_MAX_PAGE_QB")) {
-        maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
-    }
-#endif
+    maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
 
 #if ENABLE_OPENCL || ENABLE_CUDA
-    if (rootEngine != QINTERFACE_CPU) {
+    if (QRACK_GPU_SINGLETON.GetDeviceCount() && (rootEngine != QINTERFACE_CPU)) {
         maxPageQubits = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
         if (maxPageSetting == (bitLenInt)(-1)) {
             maxPageSetting = maxPageQubits;
@@ -150,18 +146,11 @@ void QPager::Init()
     if (!thresholdQubitsPerPage) {
         useGpuThreshold = false;
 
-#if ENABLE_ENV_VARS
-        const bitLenInt pStridePow =
-            (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
-#else
-        const bitLenInt pStridePow = PSTRIDEPOW;
-#endif
-
 #if ENABLE_PTHREAD
         const unsigned numCores = GetConcurrencyLevel();
-        thresholdQubitsPerPage = pStridePow + ((numCores == 1U) ? 1U : (log2Ocl(numCores - 1U) + 1U));
+        thresholdQubitsPerPage = PSTRIDEPOW_DEFAULT + ((numCores == 1U) ? 1U : (log2Ocl(numCores - 1U) + 1U));
 #else
-        thresholdQubitsPerPage = pStridePow + 1U;
+        thresholdQubitsPerPage = PSTRIDEPOW_DEFAULT + 1U;
 #endif
     }
 

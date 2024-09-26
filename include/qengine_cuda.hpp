@@ -259,7 +259,7 @@ public:
         const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t devID = -1, bool useHardwareRNG = true, bool ignored = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> ignored2 = {}, bitLenInt ignored4 = 0U,
-        real1_f ignored3 = FP_NORM_EPSILON_F);
+        real1_f ignored3 = _qrack_qunit_sep_thresh);
 
     ~QEngineCUDA()
     {

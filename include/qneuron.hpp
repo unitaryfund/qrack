@@ -82,7 +82,7 @@ public:
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input).
      */
     QNeuron(QInterfacePtr reg, const std::vector<bitLenInt>& inputIndcs, bitLenInt outputIndx,
-        QNeuronActivationFn activationFn = Sigmoid, real1_f alpha = ONE_R1_F, real1_f tol = FP_NORM_EPSILON)
+        QNeuronActivationFn activationFn = Sigmoid, real1_f alpha = ONE_R1_F, real1_f tol = FP_NORM_EPSILON / 2)
         : inputPower(pow2Ocl(inputIndcs.size()))
         , outputIndex(outputIndx)
         , activationFn(activationFn)

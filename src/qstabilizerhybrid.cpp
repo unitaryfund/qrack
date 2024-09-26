@@ -67,19 +67,18 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , shards(qubitCount)
     , stateMapCache(NULL)
 {
-    const bitLenInt maxCpuQubitCount =
-        getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 28U;
 #if ENABLE_OPENCL || ENABLE_CUDA
+    const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
     const bool isQPager = (engineTypes[0U] == QINTERFACE_HYBRID) || (engineTypes[0U] == QINTERFACE_OPENCL);
-    if (isQPager ||
-        ((engineTypes[0U] == QINTERFACE_QPAGER) &&
-            ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL)))) {
+    if (devCount &&
+        (isQPager ||
+            ((engineTypes[0U] == QINTERFACE_QPAGER) &&
+                ((engineTypes.size() == 1U) || (engineTypes[1U] == QINTERFACE_OPENCL))))) {
         DeviceContextPtr devContext = QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID);
         maxEngineQubitCount = log2Ocl(devContext->GetMaxAlloc() / sizeof(complex));
         maxAncillaCount = maxEngineQubitCount;
         if (isQPager) {
             --maxEngineQubitCount;
-            const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
             const bitLenInt perPage =
                 log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
 #if ENABLE_OPENCL
@@ -87,40 +86,30 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 #else
             maxAncillaCount = perPage + log2Ocl(devCount);
 #endif
-#if ENABLE_ENV_VARS
-            if (getenv("QRACK_MAX_PAGE_QB")) {
-                const bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
-                if (maxPageSetting < maxEngineQubitCount) {
-                    maxEngineQubitCount = maxPageSetting;
-                }
+            if (QRACK_MAX_PAGE_QB_DEFAULT < maxEngineQubitCount) {
+                maxEngineQubitCount = QRACK_MAX_PAGE_QB_DEFAULT;
             }
 #if ENABLE_OPENCL
             else {
                 maxEngineQubitCount = (maxEngineQubitCount > 1U) ? (maxEngineQubitCount - 1U) : 1U;
             }
 #endif
-            if (getenv("QRACK_MAX_PAGING_QB")) {
-                const bitLenInt maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-                if (maxPageSetting < maxAncillaCount) {
-                    maxAncillaCount = maxPageSetting;
-                }
+            if (QRACK_MAX_PAGING_QB_DEFAULT < maxAncillaCount) {
+                maxAncillaCount = QRACK_MAX_PAGING_QB_DEFAULT;
             }
         }
     } else {
-        maxEngineQubitCount = maxCpuQubitCount;
+        maxEngineQubitCount = QRACK_MAX_CPU_QB_DEFAULT;
         maxAncillaCount = maxEngineQubitCount;
-#endif
     }
+#if ENABLE_ENV_VARS
     if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
         maxAncillaCount = -1;
     }
-#elif ENABLE_ENV_VARS
-    maxEngineQubitCount = -1;
-    maxAncillaCount = -1;
+#endif
 #endif
 
-    maxStateMapCacheQubitCount = maxCpuQubitCount - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
-
+    maxStateMapCacheQubitCount = QRACK_MAX_CPU_QB_DEFAULT - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
     stabilizer = MakeStabilizer(initState);
 }
 

@@ -1,3 +1,27 @@
+libqrack (9.9.49) bionic; urgency=medium
+
+  * Fix edge case segfault with 0 OpenCL/CUDA devices (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 26 Sep 2024 12:05:34 -0400
+
+libqrack (9.9.48) focal; urgency=medium
+
+  * Fix edge case segfault with 0 OpenCL/CUDA devices (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 26 Sep 2024 12:03:57 -0400
+
+libqrack (9.9.47) jammy; urgency=medium
+
+  * Fix edge case segfault with 0 OpenCL/CUDA devices (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 26 Sep 2024 12:02:08 -0400
+
+libqrack (9.9.46) noble; urgency=medium
+
+  * Fix edge case segfault with 0 OpenCL/CUDA devices (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 26 Sep 2024 11:59:18 -0400
+
 libqrack (9.9.45) bionic; urgency=medium
 
   * QBDD deadlock fix and style (Bionic 4/4)

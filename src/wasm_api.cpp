@@ -557,6 +557,7 @@ quid init_count_type(
     bool isOcl = oc && (CUDAEngine::Instance().GetDeviceCount() > 0);
     bool isOclMulti = oc && md && (CUDAEngine::Instance().GetDeviceCount() > 1);
 #else
+    bool isOcl = false;
     bool isOclMulti = false;
 #endif
 
@@ -573,7 +574,7 @@ quid init_count_type(
     }
 #endif
 
-    if (pg && simulatorType.size()) {
+    if (pg && isOcl && simulatorType.size()) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 

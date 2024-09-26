@@ -28,7 +28,7 @@
 #include <map>
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_AMP_0(c) ((2 * norm(c)) <= separabilityThreshold)
+#define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
 #define IS_1_CMPLX(c) (norm(ONE_CMPLX - (c)) <= FP_NORM_EPSILON)
 #define SHARD_STATE(shard) ((2 * norm(shard.amp0)) < ONE_R1)
 #define QUEUED_PHASE(shard)                                                                                            \
@@ -83,11 +83,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
         engines.push_back(QINTERFACE_STABILIZER_HYBRID);
     }
 
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
-        separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
-    }
-#endif
     isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
 
     if (qubitCount) {
