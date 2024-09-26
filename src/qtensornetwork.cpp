@@ -41,6 +41,9 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     , isSparse(useSparseStateVec)
     , useTGadget(true)
     , isNearClifford(true)
+#if ENABLE_OPENCL || ENABLE_CUDA
+    , isCpu(false)
+#endif
     , devID(deviceId)
     , separabilityThreshold(sep_thresh)
     , globalPhase(phaseFac)
@@ -76,6 +79,18 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
         }
     }
 
+#if ENABLE_OPENCL || ENABLE_CUDA
+    for (const QInterfaceEngine& et : engines) {
+        if ((et == QINTERFACE_HYBRID) || (et == QINTERFACE_OPENCL) || (et == QINTERFACE_CUDA)) {
+            break;
+        }
+        if (et == QINTERFACE_CPU) {
+            isCpu = true;
+            break;
+        }
+    }
+#endif
+
     SetPermutation(initState, globalPhase);
 }
 
@@ -92,6 +107,9 @@ bitLenInt QTensorNetwork::GetThresholdQb()
         return (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
     }
 #endif
+    if (isCpu) {
+        return 32U;
+    }
     const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
     if (!devCount) {
         return 32U;

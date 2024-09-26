@@ -761,7 +761,8 @@ quid init_qbdd_count(bitLenInt q)
         }
     }
 
-    const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_QUNIT, QINTERFACE_STABILIZER_HYBRID, QINTERFACE_BDT };
+    const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_QUNIT,
+        QINTERFACE_STABILIZER_HYBRID, QINTERFACE_BDT };
 
     QInterfacePtr simulator = NULL;
     if (q) {

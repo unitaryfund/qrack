@@ -33,6 +33,9 @@ protected:
     bool isReactiveSeparate;
     bool useTGadget;
     bool isNearClifford;
+#if ENABLE_OPENCL || ENABLE_CUDA
+    bool isCpu;
+#endif
     int64_t devID;
     real1_f separabilityThreshold;
     complex globalPhase;
