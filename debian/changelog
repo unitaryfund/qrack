@@ -1,3 +1,27 @@
+libqrack (9.9.53) bionic; urgency=medium
+
+  * 0-GPU edge case; env. vars.; precision (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 26 Sep 2024 16:10:29 -0400
+
+libqrack (9.9.52) focal; urgency=medium
+
+  * 0-GPU edge case; env. vars.; precision (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 26 Sep 2024 16:08:11 -0400
+
+libqrack (9.9.51) jammy; urgency=medium
+
+  * 0-GPU edge case; env. vars.; precision (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 26 Sep 2024 16:06:31 -0400
+
+libqrack (9.9.50) noble; urgency=medium
+
+  * 0-GPU edge case; env. vars.; precision (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 26 Sep 2024 16:03:11 -0400
+
 libqrack (9.9.49) bionic; urgency=medium
 
   * Fix edge case segfault with 0 OpenCL/CUDA devices (Bionic 4/4)
