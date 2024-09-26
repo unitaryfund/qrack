@@ -53,7 +53,7 @@ namespace Qrack {
 // Public singleton methods to get pointers to various methods
 DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t& dev)
 {
-    if ((dev >= GetDeviceCount()) || (dev < -1) || (dev > ((int64_t)all_device_contexts.size()))) {
+    if ((dev >= GetDeviceCount()) || (dev < -1) || (dev >= ((int64_t)all_device_contexts.size()))) {
         throw std::invalid_argument("Invalid OpenCL device selection");
     } else if (dev == -1) {
         return default_device_context;

@@ -24,7 +24,7 @@ namespace Qrack {
 // Public singleton methods to get pointers to various methods
 DeviceContextPtr CUDAEngine::GetDeviceContextPtr(const int64_t& dev)
 {
-    if ((dev >= GetDeviceCount()) || (dev < -1) || (dev > ((int64_t)all_device_contexts.size()))) {
+    if ((dev >= GetDeviceCount()) || (dev < -1) || (dev >= ((int64_t)all_device_contexts.size()))) {
         throw std::runtime_error("Invalid CUDA device selection");
     } else if (dev == -1) {
         return default_device_context;

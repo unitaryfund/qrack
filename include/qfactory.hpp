@@ -265,6 +265,7 @@ QInterfacePtr CreateArrangedLayersFull(
     bool isOcl = oc && (DEVICE_COUNT > 0);
     bool isOclMulti = oc && md && (DEVICE_COUNT > 1);
 #else
+    bool isOcl = false;
     bool isOclMulti = false;
 #endif
 
@@ -281,7 +282,7 @@ QInterfacePtr CreateArrangedLayersFull(
     }
 #endif
 
-    if (pg && simulatorType.size()) {
+    if (pg && isOcl && simulatorType.size()) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
