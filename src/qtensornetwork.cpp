@@ -50,11 +50,6 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     , deviceIDs(devList)
     , engines(eng)
 {
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
-        separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
-    }
-#endif
     isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
 
     if (engines.empty()) {

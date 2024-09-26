@@ -157,8 +157,7 @@ void QPager::Init()
     SetQubitCount(qubitCount);
 
     maxQubits = QRACK_MAX_PAGING_QB_DEFAULT;
-    if (qubitCount > maxQubits)
-    {
+    if (qubitCount > maxQubits) {
         throw std::invalid_argument(
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }

@@ -246,7 +246,7 @@ QRACK_CONST complex ONE_CMPLX = complex(ONE_R1, ZERO_R1);
 QRACK_CONST complex ZERO_CMPLX = complex(ZERO_R1, ZERO_R1);
 QRACK_CONST complex I_CMPLX = complex(ZERO_R1, ONE_R1);
 QRACK_CONST complex CMPLX_DEFAULT_ARG = complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG);
-QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<real1>::epsilon() / 2);
-QRACK_CONST real1_f TRYDECOMPOSE_EPSILON = (real1_f)(16 * FP_NORM_EPSILON);
-constexpr real1_f FP_NORM_EPSILON_F = std::numeric_limits<real1_f>::epsilon() / 2;
+QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<real1>::epsilon() / 4);
+QRACK_CONST real1_f TRYDECOMPOSE_EPSILON = (real1_f)(32 * FP_NORM_EPSILON);
+constexpr real1_f FP_NORM_EPSILON_F = std::numeric_limits<real1_f>::epsilon() / 4;
 } // namespace Qrack
