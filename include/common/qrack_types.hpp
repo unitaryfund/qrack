@@ -152,48 +152,46 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 #define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>
 #define QRACK_ALIGN_SIZE 64U
 
-#if FPPOW < 5
-#ifdef __arm__
+#if FPPOW < 6
+#define ZERO_R1_F 0.0f
+#define ONE_R1_F 1.0f
+#else
+#define ZERO_R1_F 0.0
+#define ONE_R1_F 1.0
+#endif
+
+#if (FPPOW > 4) || defined(__arm__)
 #define QRACK_CONST constexpr
 #else
 #define QRACK_CONST const
-#endif
-QRACK_CONST real1 ZERO_R1 = (real1)0.0f;
-#define ZERO_R1_F 0.0f
-QRACK_CONST real1 ONE_R1 = (real1)1.0f;
-#define ONE_R1_F 1.0f
-// Half the probability in any single permutation of 20 maximally superposed qubits
-QRACK_CONST real1 REAL1_EPSILON = (real1)0.000000477f;
-#elif FPPOW < 6
-#define QRACK_CONST constexpr
-#define ZERO_R1 0.0f
-#define ZERO_R1_F 0.0f
-#define ONE_R1 1.0f
-#define ONE_R1_F 1.0f
-// Half the probability in any single permutation of 48 maximally superposed qubits
-#define REAL1_EPSILON 1.7763568394002505e-15f
-#elif FPPOW < 7
-#define QRACK_CONST constexpr
-#define ZERO_R1 0.0
-#define ZERO_R1_F 0.0
-#define ONE_R1 1.0
-#define ONE_R1_F 1.0
-// Half the probability in any single permutation of 96 maximally superposed qubits
-#define REAL1_EPSILON 6.310887241768095e-30
-#else
-#define QRACK_CONST constexpr
-QRACK_CONST real1 ZERO_R1 = (real1)0.0;
-#define ZERO_R1_F 0.0
-QRACK_CONST real1 ONE_R1 = (real1)1.0;
-#define ONE_R1_F 1.0
-// Half the probability in any single permutation of 192 maximally superposed qubits
-QRACK_CONST real1 REAL1_EPSILON = (real1)7.965459555662261e-59;
 #endif
 
 #define REAL1_DEFAULT_ARG -999.0f
 QRACK_CONST real1 PI_R1 = (real1)M_PI;
 QRACK_CONST real1 SQRT2_R1 = (real1)M_SQRT2;
 QRACK_CONST real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
+
+#if FPPOW < 5
+QRACK_CONST real1 ZERO_R1 = (real1)0.0f;
+QRACK_CONST real1 ONE_R1 = (real1)1.0f;
+// Half the probability in any single permutation of 20 maximally superposed qubits
+QRACK_CONST real1 REAL1_EPSILON = (real1)0.000000477f;
+#elif FPPOW < 6
+#define ZERO_R1 0.0f
+#define ONE_R1 1.0f
+// Half the probability in any single permutation of 48 maximally superposed qubits
+#define REAL1_EPSILON 1.7763568394002505e-15f
+#elif FPPOW < 7
+#define ZERO_R1 0.0
+#define ONE_R1 1.0
+// Half the probability in any single permutation of 96 maximally superposed qubits
+#define REAL1_EPSILON 6.310887241768095e-30
+#else
+QRACK_CONST real1 ZERO_R1 = (real1)0.0;
+QRACK_CONST real1 ONE_R1 = (real1)1.0;
+// Half the probability in any single permutation of 192 maximally superposed qubits
+QRACK_CONST real1 REAL1_EPSILON = (real1)7.965459555662261e-59;
+#endif
 
 #if ENABLE_CUDA
 #if FPPOW < 5
