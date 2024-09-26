@@ -114,7 +114,7 @@ void QPager::Init()
         rootEngine = engines[engineLevel];
     }
 
-    maxPageSetting = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGE_QB")));
+    maxPageSetting = QRACK_MAX_PAGE_QB_DEFAULT;
 
 #if ENABLE_OPENCL || ENABLE_CUDA
     if (QRACK_GPU_SINGLETON.GetDeviceCount() && (rootEngine != QINTERFACE_CPU)) {
@@ -156,13 +156,9 @@ void QPager::Init()
 
     SetQubitCount(qubitCount);
 
-    maxQubits = sizeof(bitCapIntOcl) * bitsInByte;
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_MAX_PAGING_QB")) {
-        maxQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-    }
-#endif
-    if (qubitCount > maxQubits) {
+    maxQubits = QRACK_MAX_PAGING_QB_DEFAULT;
+    if (qubitCount > maxQubits)
+    {
         throw std::invalid_argument(
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
