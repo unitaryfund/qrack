@@ -187,7 +187,7 @@ QRACK_CONST real1 ZERO_R1 = (real1)0.0;
 QRACK_CONST real1 ONE_R1 = (real1)1.0;
 #define ONE_R1_F 1.0
 // Half the probability in any single permutation of 192 maximally superposed qubits
-#define REAL1_EPSILON 7.965459555662261e-59
+QRACK_CONST real1 REAL1_EPSILON = (real1)7.965459555662261e-59;
 #endif
 
 #define REAL1_DEFAULT_ARG -999.0f
