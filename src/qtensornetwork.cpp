@@ -93,6 +93,9 @@ bitLenInt QTensorNetwork::GetThresholdQb()
     }
 #endif
     const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
+    if (!devCount) {
+        return 32U;
+    }
     const bitLenInt perPage = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
 #if ENABLE_OPENCL
     if (devCount < 2U) {
