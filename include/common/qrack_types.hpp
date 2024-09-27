@@ -171,24 +171,27 @@ QRACK_CONST real1 PI_R1 = (real1)M_PI;
 QRACK_CONST real1 SQRT2_R1 = (real1)M_SQRT2;
 QRACK_CONST real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 
-#if FPPOW < 5
+#if (FPPOW < 5) || (FPPOW > 6)
 QRACK_CONST real1 ZERO_R1 = (real1)0.0f;
 QRACK_CONST real1 ONE_R1 = (real1)1.0f;
+#elif FPPOW == 5
+#define ZERO_R1 0.0f
+#define ONE_R1 1.0f
+#else
+#define ZERO_R1 0.0
+#define ONE_R1 1.0
+#endif
+
+#if FPPOW < 5
 // Half the probability in any single permutation of 20 maximally superposed qubits
 QRACK_CONST real1 REAL1_EPSILON = (real1)0.000000477f;
 #elif FPPOW < 6
-#define ZERO_R1 0.0f
-#define ONE_R1 1.0f
 // Half the probability in any single permutation of 48 maximally superposed qubits
 #define REAL1_EPSILON 1.7763568394002505e-15f
 #elif FPPOW < 7
-#define ZERO_R1 0.0
-#define ONE_R1 1.0
 // Half the probability in any single permutation of 96 maximally superposed qubits
 #define REAL1_EPSILON 6.310887241768095e-30
 #else
-QRACK_CONST real1 ZERO_R1 = (real1)0.0;
-QRACK_CONST real1 ONE_R1 = (real1)1.0;
 // Half the probability in any single permutation of 192 maximally superposed qubits
 QRACK_CONST real1 REAL1_EPSILON = (real1)7.965459555662261e-59;
 #endif
