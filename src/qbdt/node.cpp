@@ -382,14 +382,14 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
+    scale = std::polar(sqrtNrm, std::arg(b0->scale));
+
     if (nrm1 <= _qrack_qbdt_sep_thresh) {
-        scale = std::polar(sqrtNrm, std::arg(b0->scale));
         b0->scale = ONE_CMPLX;
         b1->SetZero();
         return;
     }
 
-    scale = std::polar(sqrtNrm, std::arg(b0->scale));
     b0->scale /= scale;
     b1->scale /= scale;
 }
