@@ -205,6 +205,8 @@ const bitLenInt QRACK_MAX_PAGE_QB_DEFAULT = getenv("QRACK_MAX_PAGE_QB")
 const bitLenInt QRACK_MAX_PAGING_QB_DEFAULT = getenv("QRACK_MAX_PAGING_QB")
     ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")))
     : QRACK_MAX_CPU_QB_DEFAULT;
+const bitLenInt QRACK_QRACK_QTENSORNETWORK_THRESHOLD_CPU_QB =
+    getenv("QRACK_MAX_CPU_QB") ? QRACK_MAX_CPU_QB_DEFAULT : 32U;
 const bitLenInt PSTRIDEPOW_DEFAULT =
     (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
@@ -213,6 +215,7 @@ const real1_f _qrack_qbdt_sep_thresh = FP_NORM_EPSILON;
 const bitLenInt QRACK_MAX_CPU_QB_DEFAULT = -1;
 const bitLenInt QRACK_MAX_PAGE_QB_DEFAULT = QRACK_MAX_CPU_QB_DEFAULT;
 const bitLenInt QRACK_MAX_PAGING_QB_DEFAULT = QRACK_MAX_CPU_QB_DEFAULT;
+const bitLenInt QRACK_QRACK_QTENSORNETWORK_THRESHOLD_CPU_QB = 32U;
 const bitLenInt PSTRIDEPOW_DEFAULT = PSTRIDEPOW;
 #endif
 } // namespace Qrack
