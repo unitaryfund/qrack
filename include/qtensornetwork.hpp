@@ -414,7 +414,7 @@ public:
                             bi_or_ip(&result, pow2(i));
                         }
                     }
-                    shotsArray[(size_t)shot] = result;
+                    shotsArray[shot] = (bitCapIntOcl)result;
                 });
             }
 #endif
