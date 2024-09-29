@@ -579,9 +579,7 @@ quid init_count_type(
     }
 
     if (bdt) {
-        // To recover the original QBdt stack behavior,
-        // set env. var. QRACK_QBDT_HYBRID_THRESHOLD=1
-        simulatorType.push_back(QINTERFACE_BDT_HYBRID);
+        simulatorType.push_back(QINTERFACE_BDT);
     }
 
     if (sh && (!sd || simulatorType.size())) {
