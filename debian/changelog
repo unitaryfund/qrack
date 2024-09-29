@@ -1,3 +1,27 @@
+libqrack (9.9.57) bionic; urgency=medium
+
+  * QBDD optimization (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 29 Sep 2024 11:14:08 -0400
+
+libqrack (9.9.56) focal; urgency=medium
+
+  * QBDD optimization (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 29 Sep 2024 11:12:16 -0400
+
+libqrack (9.9.55) jammy; urgency=medium
+
+  * QBDD optimization (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 29 Sep 2024 11:10:26 -0400
+
+libqrack (9.9.54) noble; urgency=medium
+
+  * QBDD optimization (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 29 Sep 2024 11:07:31 -0400
+
 libqrack (9.9.53) bionic; urgency=medium
 
   * 0-GPU edge case; env. vars.; precision (Bionic 4/4)

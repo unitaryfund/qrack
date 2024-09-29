@@ -373,6 +373,8 @@ public:
                     std::lock_guard<std::mutex> mapLock(mapMtx);
                     ++toRet[result];
                 });
+
+                return toRet;
             }
 #endif
             for (unsigned shot = 0U; shot < shots; ++shot) {
@@ -416,6 +418,7 @@ public:
                     }
                     shotsArray[shot] = (bitCapIntOcl)result;
                 });
+                return;
             }
 #endif
             for (unsigned shot = 0U; shot < shots; ++shot) {
