@@ -426,7 +426,7 @@ public:
                         bi_or_ip(&result, pow2(i));
                     }
                 }
-                shotsArray[shot] = result;
+                shotsArray[shot] = (bitCapIntOcl)result;
             }
         }
     }
