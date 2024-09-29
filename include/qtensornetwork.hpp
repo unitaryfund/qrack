@@ -36,6 +36,9 @@ protected:
 #if ENABLE_OPENCL || ENABLE_CUDA
     bool isCpu;
 #endif
+#if ENABLE_QBDT
+    bool isQBdt;
+#endif
     int64_t devID;
     real1_f separabilityThreshold;
     complex globalPhase;
@@ -356,6 +359,22 @@ public:
             for (const bitCapInt& qPow : qPowers) {
                 qubits.push_back(log2(qPow));
             }
+#if ENABLE_QBDT && !ENABLE_QBDT_CPU_PARALLEL
+            if (isQBdt) {
+                std::mutex mapMtx;
+                par_for(0U, shots, [&](const bitCapIntOcl& ignored, const unsigned& ignored2) {
+                    QInterfacePtr clone = Clone();
+                    bitCapInt result = ZERO_BCI;
+                    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+                        if (clone->M(qubits[i])) {
+                            bi_or_ip(&result, pow2(i));
+                        }
+                    }
+                    std::lock_guard<std::mutex> mapLock(mapMtx);
+                    ++toRet[result];
+                });
+            }
+#endif
             for (unsigned shot = 0U; shot < shots; ++shot) {
                 QInterfacePtr clone = Clone();
                 bitCapInt result = ZERO_BCI;
@@ -385,6 +404,20 @@ public:
             for (const bitCapInt& qPow : qPowers) {
                 qubits.push_back(log2(qPow));
             }
+#if ENABLE_QBDT && !ENABLE_QBDT_CPU_PARALLEL
+            if (isQBdt) {
+                par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& ignored) {
+                    QInterfacePtr clone = Clone();
+                    bitCapInt result = ZERO_BCI;
+                    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+                        if (clone->M(qubits[i])) {
+                            bi_or_ip(&result, pow2(i));
+                        }
+                    }
+                    shotsArray[shot] = result;
+                });
+            }
+#endif
             for (unsigned shot = 0U; shot < shots; ++shot) {
                 QInterfacePtr clone = Clone();
                 bitCapInt result = ZERO_BCI;

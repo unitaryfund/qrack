@@ -107,8 +107,12 @@ bool QBdtNodeInterface::isEqualBranch(QBdtNodeInterfacePtr r, const bool& b)
     return true;
 }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
     bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
+#else
+QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
+#endif
 {
     if (IS_NODE_0(scale)) {
         SetZero();
@@ -144,8 +148,8 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(
             }
         }
 #else
-        toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size, parDepth);
-        toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size, parDepth);
+        toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size);
+        toRet2 = branches[1U]->RemoveSeparableAtDepth(depth, size);
 #endif
 
         return !toRet1

@@ -44,6 +44,9 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
 #if ENABLE_OPENCL || ENABLE_CUDA
     , isCpu(false)
 #endif
+#if ENABLE_QBDT
+    , isQBdt(false)
+#endif
     , devID(deviceId)
     , separabilityThreshold(sep_thresh)
     , globalPhase(phaseFac)
@@ -67,8 +70,9 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
         if (et == QINTERFACE_STABILIZER_HYBRID) {
             break;
         }
-        if ((et == QINTERFACE_BDT) || (et == QINTERFACE_QPAGER) || (et == QINTERFACE_HYBRID) ||
-            (et == QINTERFACE_CPU) || (et == QINTERFACE_OPENCL) || (et == QINTERFACE_CUDA)) {
+        if ((et == QINTERFACE_BDT_HYBRID) || (et == QINTERFACE_BDT) || (et == QINTERFACE_QPAGER) ||
+            (et == QINTERFACE_HYBRID) || (et == QINTERFACE_CPU) || (et == QINTERFACE_OPENCL) ||
+            (et == QINTERFACE_CUDA)) {
             isNearClifford = false;
             break;
         }
@@ -81,6 +85,19 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
         }
         if (et == QINTERFACE_CPU) {
             isCpu = true;
+            break;
+        }
+    }
+#endif
+
+#if ENABLE_QBDT
+    for (const QInterfaceEngine& et : engines) {
+        if ((et == QINTERFACE_BDT_HYBRID) || (et == QINTERFACE_BDT)) {
+            isQBdt = true;
+            break;
+        }
+        if ((et == QINTERFACE_STABILIZER_HYBRID) || (et == QINTERFACE_QPAGER) || (et == QINTERFACE_HYBRID) ||
+            (et == QINTERFACE_CPU) || (et == QINTERFACE_OPENCL) || (et == QINTERFACE_CUDA)) {
             break;
         }
     }

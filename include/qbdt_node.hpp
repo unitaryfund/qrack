@@ -25,6 +25,7 @@ typedef std::shared_ptr<QBdtNode> QBdtNodePtr;
 
 class QBdtNode : public QBdtNodeInterface {
 protected:
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
@@ -32,6 +33,15 @@ protected:
 #else
     virtual void PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
         bitLenInt depth, bitLenInt parDepth = 1U);
+#endif
+#else
+#if ENABLE_COMPLEX_X2
+    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth);
+#else
+    virtual void PushStateVector(
+        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth);
+#endif
 #endif
 
 public:
@@ -60,13 +70,29 @@ public:
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U);
+#else
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size);
+#endif
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
+#else
+    virtual void PopStateVector(bitLenInt depth = 1U);
+#endif
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual void Branch(bitLenInt depth = 1U, bitLenInt parDeth = 1U);
+#else
+    virtual void Branch(bitLenInt depth = 1U);
+#endif
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U);
+#else
+    virtual void Prune(bitLenInt depth = 1U);
+#endif
 
     virtual void Normalize(bitLenInt depth = 1U);
 

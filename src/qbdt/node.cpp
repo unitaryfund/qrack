@@ -36,7 +36,11 @@ const bitLenInt pStridePow = PSTRIDEPOW;
 const bitCapInt pStride = pow2(pStridePow);
 #endif
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
+#else
+void QBdtNode::Prune(bitLenInt depth)
+#endif
 {
     if (!depth) {
         return;
@@ -55,8 +59,10 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     if (b0.get() == b1.get()) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(b0->mtx);
-#endif
         b0->Prune(depth, parDepth);
+#else
+        b0->Prune(depth);
+#endif
     } else {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock(b0->mtx, b1->mtx);
@@ -82,8 +88,8 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
             b1->Prune(depth, parDepth);
         }
 #else
-        b0->Prune(depth, parDepth);
-        b1->Prune(depth, parDepth);
+        b0->Prune(depth);
+        b1->Prune(depth);
 #endif
     }
 
@@ -209,7 +215,11 @@ void QBdtNode::Prune(bitLenInt depth, bitLenInt parDepth)
     }
 }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
+#else
+void QBdtNode::Branch(bitLenInt depth)
+#endif
 {
     if (!depth) {
         return;
@@ -272,8 +282,8 @@ void QBdtNode::Branch(bitLenInt depth, bitLenInt parDepth)
     }
     future0.get();
 #else
-    b0->Branch(depth, parDepth);
-    b1->Branch(depth, parDepth);
+    b0->Branch(depth);
+    b1->Branch(depth);
 #endif
 }
 
@@ -315,7 +325,11 @@ void QBdtNode::Normalize(bitLenInt depth)
     }
 }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
+#else
+void QBdtNode::PopStateVector(bitLenInt depth)
+#endif
 {
     if (!depth) {
         return;
@@ -333,8 +347,10 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     if (b0.get() == b1.get()) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(b0->mtx);
-#endif
+        b0->PopStateVector(depth, parDepth);
+#else
         b0->PopStateVector(depth);
+#endif
 
         const real1 nrm = (real1)(2 * norm(b0->scale));
 
@@ -351,16 +367,19 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
         return;
     }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     ++parDepth;
 
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::lock(b0->mtx, b1->mtx);
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
-#endif
 
+    b0->PopStateVector(depth, parDepth);
+    b1->PopStateVector(depth, parDepth);
+#else
     b0->PopStateVector(depth);
     b1->PopStateVector(depth);
+#endif
 
     const real1 nrm0 = norm(b0->scale);
     const real1 nrm1 = norm(b1->scale);
@@ -397,7 +416,11 @@ void QBdtNode::PopStateVector(bitLenInt depth, bitLenInt parDepth)
     b1->scale /= scale;
 }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth)
+#else
+void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
+#endif
 {
     if (!b) {
         return;
@@ -427,7 +450,11 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             branches[1U] = b->branches[1U]->ShallowClone();
         }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         InsertAtDepth(c, size, 0U, parDepth);
+#else
+        InsertAtDepth(c, size, 0U);
+#endif
 
         return;
     }
@@ -451,13 +478,19 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
             std::lock_guard<std::mutex> nLock(n0->mtx);
-#endif
             n0->InsertAtDepth(b, size, 0U, parDepth);
+#else
+            n0->InsertAtDepth(b, size, 0U);
+#endif
 
             return;
         }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         b0->InsertAtDepth(b, depth, size, parDepth);
+#else
+        b0->InsertAtDepth(b, depth, size);
+#endif
 
         return;
     }
@@ -479,8 +512,10 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             QBdtNodeInterfacePtr n1 = branches[1U];
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
             std::lock_guard<std::mutex> nLock(n1->mtx);
-#endif
             n1->InsertAtDepth(b, size, 0U, parDepth);
+#else
+            n1->InsertAtDepth(b, size, 0U);
+#endif
         } else if (IS_NODE_0(b1->scale)) {
             if (true) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -491,8 +526,10 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
             QBdtNodeInterfacePtr n0 = branches[0U];
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
             std::lock_guard<std::mutex> nLock(n0->mtx);
-#endif
             n0->InsertAtDepth(b, size, 0U, parDepth);
+#else
+            n0->InsertAtDepth(b, size, 0U);
+#endif
         } else {
             if (true) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -522,8 +559,8 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
                 n1->InsertAtDepth(b, size, 0U, parDepth);
             }
 #else
-            n0->InsertAtDepth(b, size, 0U, parDepth);
-            n1->InsertAtDepth(b, size, 0U, parDepth);
+            n0->InsertAtDepth(b, size, 0U);
+            n1->InsertAtDepth(b, size, 0U);
 #endif
         }
 
@@ -548,8 +585,8 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         b1->InsertAtDepth(b, depth, size, parDepth);
     }
 #else
-    b0->InsertAtDepth(b, depth, size, parDepth);
-    b1->InsertAtDepth(b, depth, size, parDepth);
+    b0->InsertAtDepth(b, depth, size);
+    b1->InsertAtDepth(b, depth, size);
 #endif
 }
 
@@ -609,14 +646,18 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, cons
     Prune(depth);
 }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
     const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
     bitLenInt parDepth)
 {
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::lock(b0->mtx, b1->mtx);
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+#else
+void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+    const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+{
 #endif
 
     const bool isB0Zero = IS_NODE_0(b0->scale);
@@ -774,13 +815,16 @@ void QBdtNode::Apply2x2(const complex* mtrx, bitLenInt depth)
     Prune(depth);
 }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 void QBdtNode::PushStateVector(
     const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth, bitLenInt parDepth)
 {
-#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     std::lock(b0->mtx, b1->mtx);
     std::lock_guard<std::mutex> lock0(b0->mtx, std::adopt_lock);
     std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
+#else
+void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+{
 #endif
 
     const bool isB0Zero = IS_NODE_0(b0->scale);

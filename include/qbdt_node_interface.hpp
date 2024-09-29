@@ -39,6 +39,7 @@ protected:
     static void _par_for_qbdt(const bitCapInt& end, BdtFunc fn);
 
 public:
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
         const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth,
@@ -46,6 +47,15 @@ public:
 #else
     virtual void PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1,
         bitLenInt depth, bitLenInt parDepth = 1U)
+#endif
+#else
+#if ENABLE_COMPLEX_X2
+    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, const complex2& mtrxColShuff1,
+        const complex2& mtrxColShuff2, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+#else
+    virtual void PushStateVector(
+        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+#endif
 #endif
     {
         throw std::out_of_range("QBdtNodeInterface::PushStateVector() not implemented! (You probably set "
@@ -84,14 +94,22 @@ public:
         // Virtual destructor for inheritance
     }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U)
+#else
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
+#endif
     {
         throw std::out_of_range("QBdtNodeInterface::InsertAtDepth() not implemented! (You probably set "
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(
         bitLenInt depth, const bitLenInt& size, bitLenInt parDepth = 1U);
+#else
+    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
+#endif
 
     virtual void SetZero()
     {
@@ -127,7 +145,11 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual void PopStateVector(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+#else
+    virtual void PopStateVector(bitLenInt depth = 1U)
+#endif
     {
         if (!depth) {
             return;
@@ -137,7 +159,11 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual void Branch(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+#else
+    virtual void Branch(bitLenInt depth = 1U)
+#endif
     {
         if (!depth) {
             return;
@@ -147,7 +173,11 @@ public:
                                 "QRACK_QBDT_SEPARABILITY_THRESHOLD too high.)");
     }
 
+#if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     virtual void Prune(bitLenInt depth = 1U, bitLenInt parDepth = 1U)
+#else
+    virtual void Prune(bitLenInt depth = 1U)
+#endif
     {
         if (!depth) {
             return;
