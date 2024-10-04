@@ -775,7 +775,7 @@ void QEngineCUDA::Invert(const complex &topRight, const complex &bottomLeft, bit
         return;
     }
 
-    QRACK_CONST complex pauliX[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    const complex pauliX[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     const bitCapIntOcl qPowers[1]{ pow2Ocl(qubitIndex) };
     Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::INVERT);
 }
