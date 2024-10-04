@@ -430,10 +430,6 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     QBdtNodeInterfacePtr b0 = branches[0U];
     QBdtNodeInterfacePtr b1 = branches[1U];
 
-    if (!b0) {
-        return;
-    }
-
     if (!depth) {
         if (!size) {
             return;
@@ -459,6 +455,10 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
         return;
     }
     --depth;
+
+    if (!b0) {
+        return;
+    }
 
     if (b0.get() == b1.get()) {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
