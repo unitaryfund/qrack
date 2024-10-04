@@ -422,10 +422,6 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
 #endif
 {
-    if (!b) {
-        return;
-    }
-
     if (IS_NODE_0(scale)) {
         SetZero();
         return;
@@ -433,6 +429,10 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     QBdtNodeInterfacePtr b1 = branches[1U];
+
+    if (!b0) {
+        return;
+    }
 
     if (!depth) {
         if (!size) {
