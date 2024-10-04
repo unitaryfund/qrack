@@ -1,3 +1,27 @@
+libqrack (9.9.61) bionic; urgency=medium
+
+  * Debug QBDD sampling (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 29 Sep 2024 12:31:37 -0400
+
+libqrack (9.9.60) focal; urgency=medium
+
+  * Debug QBDD sampling (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 29 Sep 2024 12:30:04 -0400
+
+libqrack (9.9.59) jammy; urgency=medium
+
+  * Debug QBDD sampling (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 29 Sep 2024 12:28:19 -0400
+
+libqrack (9.9.58) noble; urgency=medium
+
+  * Debug QBDD sampling (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 29 Sep 2024 12:25:16 -0400
+
 libqrack (9.9.57) bionic; urgency=medium
 
   * QBDD optimization (Bionic 4/4)

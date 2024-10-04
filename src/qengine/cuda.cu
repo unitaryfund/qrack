@@ -768,7 +768,7 @@ void QEngineCUDA::Z(bitLenInt qubit)
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PAULIZ);
 }
 
-void QEngineCUDA::Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex)
+void QEngineCUDA::Invert(const complex &topRight, const complex &bottomLeft, bitLenInt qubitIndex)
 {
     if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topRight)) && IS_NORM_0(topRight - bottomLeft)) {
         X(qubitIndex);
@@ -780,7 +780,7 @@ void QEngineCUDA::Invert(complex topRight, complex bottomLeft, bitLenInt qubitIn
     Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::INVERT);
 }
 
-void QEngineCUDA::Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
+void QEngineCUDA::Phase(const complex &topLeft, const complex &bottomRight, bitLenInt qubitIndex)
 {
     if (randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft)) {
         if (IS_NORM_0(topLeft - bottomRight)) {
@@ -1236,7 +1236,7 @@ void QEngineCUDA::CUniformParityRZ(const std::vector<bitLenInt>& controls, const
     QueueSetRunningNorm(ONE_R1_F);
 }
 
-void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex nrm)
+void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, const complex &nrm)
 {
     CHECK_ZERO_SKIP();
 
@@ -1253,7 +1253,7 @@ void QEngineCUDA::ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex 
     QueueSetRunningNorm(ONE_R1_F);
 }
 
-void QEngineCUDA::ApplyM(const bitCapInt& qPower, bool result, complex nrm)
+void QEngineCUDA::ApplyM(const bitCapInt& qPower, bool result, const complex &nrm)
 {
     bitCapIntOcl powerTest = result ? (bitCapIntOcl)qPower : 0U;
 
@@ -1263,7 +1263,7 @@ void QEngineCUDA::ApplyM(const bitCapInt& qPower, bool result, complex nrm)
     ApplyMx(OCL_API_APPLYM, bciArgs, nrm);
 }
 
-void QEngineCUDA::ApplyM(const bitCapInt& mask, const bitCapInt& result, complex nrm)
+void QEngineCUDA::ApplyM(const bitCapInt& mask, const bitCapInt& result, const complex &nrm)
 {
     if (mask >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::ApplyM mask out-of-bounds!");
@@ -2954,7 +2954,7 @@ complex QEngineCUDA::GetAmplitude(const bitCapInt& perm)
     return amp;
 }
 
-void QEngineCUDA::SetAmplitude(const bitCapInt& perm, complex amp)
+void QEngineCUDA::SetAmplitude(const bitCapInt& perm, const complex &amp)
 {
     if (perm >= maxQPower) {
         throw std::invalid_argument("QEngineCUDA::SetAmplitude argument out-of-bounds!");
