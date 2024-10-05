@@ -1100,7 +1100,7 @@ MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ real1_s* ket)
 /**
  * (External API) Get basis dimension probabilities for the selected simulator ID.
  */
-MICROSOFT_QUANTUM_DECL void OutProb(_In_ uintq sid, _In_ real1_s* probs)
+MICROSOFT_QUANTUM_DECL void OutProbs(_In_ uintq sid, _In_ real1_s* probs)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
