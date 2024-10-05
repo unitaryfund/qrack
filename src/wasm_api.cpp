@@ -1738,12 +1738,28 @@ std::vector<real1> ProbAll(quid sid, std::vector<bitLenInt> q)
         return std::vector<real1>();
     }
 
-    for (size_t i = 0; i < q.size(); ++i) {
+    for (size_t i = 0U; i < q.size(); ++i) {
         q[i] = shards[simulator.get()][q[i]];
     }
 
+    bool isOutProbs = false;
+    if (q.size() == simulator->GetQubitCount()) {
+        isOutProbs = true;
+        for (size_t i = 0U; i < q.size(); ++i) {
+            if (q[i] == i) {
+                continue;
+            }
+            isOutProbs = false;
+            break;
+        }
+    }
+
     std::vector<real1> p(pow2Ocl(q.size()));
-    simulator->ProbBitsAll(q, &(p[0U]));
+    if (isOutProbs) {
+        simulator->GetProbs(&(p[0U]));
+    } else {
+        simulator->ProbBitsAll(q, &(p[0U]));
+    }
 
     return p;
 }

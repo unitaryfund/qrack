@@ -128,9 +128,11 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback);
 #if FPPOW < 6
 MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ float* ket);
 MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ float* ket);
+MICROSOFT_QUANTUM_DECL void OutProbs(_In_ uintq sid, _In_ float* ket);
 #else
 MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ double* ket);
 MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ double* ket);
+MICROSOFT_QUANTUM_DECL void OutProbs(_In_ uintq sid, _In_ double* ket);
 #endif
 
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ uintq sid, _In_ size_t n, _In_reads_(n) double* p);

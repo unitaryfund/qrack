@@ -1068,7 +1068,7 @@ MICROSOFT_QUANTUM_DECL void InKet(_In_ uintq sid, _In_ real1_s* ket)
 }
 
 /**
- * (External API) Set state vector for the selected simulator ID.
+ * (External API) Get state vector for the selected simulator ID.
  */
 MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ real1_s* ket)
 {
@@ -1094,6 +1094,34 @@ MICROSOFT_QUANTUM_DECL void OutKet(_In_ uintq sid, _In_ real1_s* ket)
     }
     real1* _ket_comp = reinterpret_cast<real1*>(_ket.get());
     std::transform(_ket_comp, _ket_comp + maxQPowerMult2, ket, [](real1 c) { return (real1_s)c; });
+#endif
+}
+
+/**
+ * (External API) Get basis dimension probabilities for the selected simulator ID.
+ */
+MICROSOFT_QUANTUM_DECL void OutProb(_In_ uintq sid, _In_ real1_s* probs)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+#if (FPPOW == 5) || (FPPOW == 6)
+    try {
+        simulator->GetProbs(probs);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+#else
+    const size_t maxQPower = (size_t)simulator->GetMaxQPower();
+    std::unique_ptr<real1[]> _probs(new real1[maxQPower]);
+    try {
+        simulator->GetProbs(_probs.get());
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+        return;
+    }
+    std::transform(_probs, _probs + maxQPower, probs, [](real1 c) { return (real1_s)c; });
 #endif
 }
 
@@ -2439,6 +2467,18 @@ MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
         _q[i] = shards[simulator.get()][q[i]];
     }
 
+    bool isOutProbs = false;
+    if (_q.size() == simulator->GetQubitCount()) {
+        isOutProbs = true;
+        for (size_t i = 0U; i < _q.size(); ++i) {
+            if (_q[i] == i) {
+                continue;
+            }
+            isOutProbs = false;
+            break;
+        }
+    }
+
 #if (FPPOW < 5) || (FPPOW > 6)
     const bitCapIntOcl npow = pow2Ocl(n);
     std::unique_ptr<real1[]> _p(new real1[npow]);
@@ -2446,10 +2486,18 @@ MICROSOFT_QUANTUM_DECL void ProbAll(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
 
     try {
 #if (FPPOW < 5) || (FPPOW > 6)
-        simulator->ProbBitsAll(_q, _p.get());
+        if (isOutProbs) {
+            simulator->GetProbs(_p.get());
+        } else {
+            simulator->ProbBitsAll(_q, _p.get());
+        }
         std::transform(_p.get(), _p.get() + npow, p, [](real1 c) { return (real1_s)c; });
 #else
-        simulator->ProbBitsAll(_q, p);
+        if (isOutProbs) {
+            simulator->GetProbs(p);
+        } else {
+            simulator->ProbBitsAll(_q, p);
+        }
 #endif
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
