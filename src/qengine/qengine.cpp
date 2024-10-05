@@ -571,11 +571,22 @@ std::map<bitCapInt, int> QEngine::MultiShotMeasureMask(const std::vector<bitCapI
     std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
 
     std::random_device rd;
-    std::mt19937 gen(rd());
+    std::vector<std::mt19937> genVec;
+    const unsigned numThreads = GetConcurrencyLevel();
+    genVec.reserve(numThreads);
+    for (unsigned i = 0U; i < numThreads; ++i) {
+        genVec.emplace_back(rd());
+    }
+    std::vector<std::map<bitCapInt, int>> resultsVec(numThreads);
 
-    std::map<bitCapInt, int> results;
-    for (unsigned int shot = 0U; shot < shots; ++shot) {
-        ++(results[dist(gen)]);
+    par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) { ++(resultsVec[cpu][dist(genVec[cpu])]); });
+
+    std::map<bitCapInt, int> results(resultsVec[0U]);
+    for (size_t i = 1U; i < resultsVec.size(); ++i) {
+        const std::map<bitCapInt, int>& toAdd = resultsVec[i];
+        for (auto const& kv : toAdd) {
+            results[kv.first] += kv.second;
+        }
     }
 
     return results;
@@ -600,9 +611,15 @@ void QEngine::MultiShotMeasureMask(
     std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
 
     std::random_device rd;
-    std::mt19937 gen(rd());
+    std::vector<std::mt19937> genVec;
+    const unsigned numThreads = GetConcurrencyLevel();
+    genVec.reserve(numThreads);
+    for (unsigned i = 0U; i < numThreads; ++i) {
+        genVec.emplace_back(rd());
+    }
 
-    par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)dist(gen); });
+    par_for(0, shots,
+        [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)dist(genVec[cpu]); });
 }
 
 } // namespace Qrack
