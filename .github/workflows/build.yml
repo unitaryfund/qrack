@@ -105,8 +105,41 @@ jobs:
             build/libqrack-*.sh
             build/benchmarks
 
+  build_mac_15:
+    runs-on: macos-15  # Use a Mac OS runner
+    strategy:
+      matrix:
+        platform:
+          - macosx_15_0_arm64
+    steps:
+      - name: Checkout Qrack
+        uses: actions/checkout@v4
+
+      - name: Install Homebrew (MacOS)
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Prepare Build Environment (MacOS)
+        run: |
+          brew install cmake
+
+      - name: Build Qrack MacOS
+        run: |
+          mkdir build
+          cd build
+          cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX_X2=OFF -DENABLE_SSE3=OFF -DENABLE_RDRAND=OFF -DQBCAPPOW=7 -DCPP_STD=14 ..
+          make qrack_pinvoke benchmarks
+          sudo cpack
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libqrack-${{ matrix.platform }}
+          path: |
+            build/libqrack-*.sh
+            build/benchmarks
+
   build_mac_14:
-    runs-on: macos-latest  # Use a Mac OS runner
+    runs-on: macos-14  # Use a Mac OS runner
     strategy:
       matrix:
         platform:
