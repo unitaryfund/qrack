@@ -13,6 +13,7 @@
 #include "qengine.hpp"
 
 #include <algorithm>
+#include <future>
 
 namespace Qrack {
 
@@ -581,15 +582,38 @@ std::map<bitCapInt, int> QEngine::MultiShotMeasureMask(const std::vector<bitCapI
 
     par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) { ++(resultsVec[cpu][dist(genVec[cpu])]); });
 
-    std::map<bitCapInt, int> results(resultsVec[0U]);
-    for (size_t i = 1U; i < resultsVec.size(); ++i) {
-        const std::map<bitCapInt, int>& toAdd = resultsVec[i];
-        for (auto const& kv : toAdd) {
-            results[kv.first] += kv.second;
+    if (numThreads == 1U) {
+        return resultsVec[0U];
+    }
+
+    size_t itemCount = resultsVec.size();
+    for (size_t step = 2U; itemCount > 1U; step *= 2U) {
+        if (itemCount & 1U) {
+            std::map<bitCapInt, int>& orig = resultsVec[0U];
+            const std::map<bitCapInt, int>& toAdd = resultsVec[((itemCount >> 1U) * step) + (step >> 1U) - 1U];
+            for (auto const& kv : toAdd) {
+                orig[kv.first] += kv.second;
+            }
+            resultsVec.pop_back();
+        }
+        itemCount >>= 1U;
+        std::vector<std::future<void>> futures;
+        for (size_t i = 0U; i < itemCount; ++i) {
+            futures.emplace_back(std::async(std::launch::async, [i, step, &resultsVec] {
+                std::map<bitCapInt, int>& orig = resultsVec[i * step];
+                const std::map<bitCapInt, int>& toAdd = resultsVec[(i * step) + (step >> 1U)];
+                for (auto const& kv : toAdd) {
+                    orig[kv.first] += kv.second;
+                }
+                resultsVec[(i * step) + (step >> 1U)].clear();
+            }));
+        }
+        for (size_t i = 0U; i < futures.size(); ++i) {
+            futures[i].get();
         }
     }
 
-    return results;
+    return resultsVec[0U];
 }
 
 void QEngine::MultiShotMeasureMask(

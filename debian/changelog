@@ -1,3 +1,27 @@
+libqrack (9.10.3) bionic; urgency=medium
+
+  * Better sampling; OutProbs() (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 05 Oct 2024 12:28:37 -0400
+
+libqrack (9.10.2) focal; urgency=medium
+
+  * Better sampling; OutProbs() (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 05 Oct 2024 12:26:59 -0400
+
+libqrack (9.10.1) jammy; urgency=medium
+
+  * Better sampling; OutProbs() (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 05 Oct 2024 12:25:33 -0400
+
+libqrack (9.10.0) noble; urgency=medium
+
+  * Better sampling; OutProbs() (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 05 Oct 2024 12:23:03 -0400
+
 libqrack (9.9.65) bionic; urgency=medium
 
   * Debug QBDD high rounding (Bionic 4/4)
