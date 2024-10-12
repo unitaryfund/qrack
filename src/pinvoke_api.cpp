@@ -1121,7 +1121,7 @@ MICROSOFT_QUANTUM_DECL void OutProbs(_In_ uintq sid, _In_ real1_s* probs)
         std::cout << ex.what() << std::endl;
         return;
     }
-    std::transform(_probs, _probs + maxQPower, probs, [](real1 c) { return (real1_s)c; });
+    std::transform(_probs.get(), _probs.get() + maxQPower, probs, [](real1 c) { return (real1_s)c; });
 #endif
 }
 
