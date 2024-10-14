@@ -3973,11 +3973,6 @@ TEST_CASE("test_quantum_supremacy_patch", "[supreme]")
                         continue;
                     }
 
-                    if (((row < patchBound) && (tempRow >= patchBound)) ||
-                        ((tempRow < patchBound) && (row >= patchBound))) {
-                        continue;
-                    }
-
                     b1 = row * colLen + col;
                     b2 = tempRow * colLen + tempCol;
 
@@ -3996,9 +3991,36 @@ TEST_CASE("test_quantum_supremacy_patch", "[supreme]")
                         continue;
                     }
 
-                    qReg->TrySeparate(b1, b2);
-                    qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
-                    qReg->TrySeparate(b1, b2);
+                    if (((row < patchBound) && (tempRow >= patchBound)) ||
+                        ((tempRow < patchBound) && (row >= patchBound))) {
+                        // This is our version of ("semi-classical") gate "elision":
+                        QRACK_CONST real1_f phase_fac = 3 * PI_R1 / 2;
+                        // FSim controlled phase
+                        real1_f prob1 = qReg->Prob(b1);
+                        qReg->U(0, 0, -prob1 * PI_R1 / 6, b2);
+                        // CNOT(b1, b2)^x
+                        qReg->H(b2);
+                        qReg->U(b2, 0, 0, prob1 * phase_fac);
+                        qReg->H(b2);
+                        // CNOT(b2, b1)^x
+                        real1_f prob2 = qReg->Prob(b2);
+                        qReg->H(b1);
+                        qReg->U(b1, 0, 0, prob2 * phase_fac);
+                        qReg->H(b1);
+                        // CNOT(b1, b2)^x
+                        prob1 = qReg->Prob(b1);
+                        qReg->H(b2);
+                        qReg->U(b2, 0, 0, prob1 * phase_fac);
+                        qReg->H(b2);
+                        // CZ(b1, b2)^-x
+                        qReg->U(b2, 0, 0, -prob1 * phase_fac);
+                        // T(b1)
+                        qReg->T(b1);
+                        // T(b2)
+                        qReg->T(b2);
+                    } else {
+                        qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
+                    }
                 }
             }
             // std::cout<<"Depth++"<<std::endl;
