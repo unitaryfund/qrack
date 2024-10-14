@@ -3997,7 +3997,7 @@ TEST_CASE("test_quantum_supremacy_patch", "[supreme]")
                         QRACK_CONST real1_f phase_fac = 3 * PI_R1 / 2;
                         // FSim controlled phase
                         real1_f prob1 = qReg->Prob(b1);
-                        qReg->U(0, 0, -prob1 * PI_R1 / 6, b2);
+                        qReg->U(b2, 0, 0, -prob1 * PI_R1 / 6);
                         // CNOT(b1, b2)^x
                         qReg->H(b2);
                         qReg->U(b2, 0, 0, prob1 * phase_fac);
