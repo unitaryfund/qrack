@@ -3993,6 +3993,176 @@ TEST_CASE("test_quantum_supremacy_patch", "[supreme]")
 
                     if (((row < patchBound) && (tempRow >= patchBound)) ||
                         ((tempRow < patchBound) && (row >= patchBound))) {
+                        continue;
+                    }
+
+                    qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
+                }
+            }
+            // std::cout<<"Depth++"<<std::endl;
+        }
+    });
+}
+
+TEST_CASE("test_quantum_supremacy_elided", "[supreme]")
+{
+    if (benchmarkDepth <= 0) {
+        std::cout << "(random circuit depth: square)" << std::endl;
+    } else {
+        std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    }
+    std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit.";
+
+    // This is an attempt to simulate the circuit argued to establish quantum supremacy.
+    // See https://doi.org/10.1038/s41586-019-1666-5
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
+
+        // The test runs 2 bit gates according to a tiling sequence.
+        // The 1 bit indicates +/- column offset.
+        // The 2 bit indicates +/- row offset.
+        // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
+        // paper.
+        const bitLenInt deadQubit = 3U;
+        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+
+        // We factor the qubit count into two integers, as close to a perfect square as we can.
+        int colLen = std::sqrt(n);
+        while (((n / colLen) * colLen) != n) {
+            colLen--;
+        }
+        int rowLen = n / colLen;
+        const bitLenInt patchBound = rowLen >> 1U;
+
+        // std::cout<<"n="<<(int)n<<std::endl;
+        // std::cout<<"rowLen="<<(int)rowLen<<std::endl;
+        // std::cout<<"colLen="<<(int)colLen<<std::endl;
+
+        real1_f gateRand;
+        bitLenInt gate;
+        int b1, b2;
+        bitLenInt i;
+        int d;
+        int row, col;
+        int tempRow, tempCol;
+
+        std::vector<bitLenInt> controls(1);
+
+        std::vector<int> lastSingleBitGates;
+        std::set<int>::iterator gateChoiceIterator;
+        int gateChoice;
+
+        // We repeat the entire prepartion for "depth" iterations.
+        // We can avoid maximal representational entanglement of the state as a single Schr{\"o}dinger method unit.
+        // See https://arxiv.org/abs/1710.05867
+        for (d = 0; d < depth; d++) {
+            for (i = 0; i < n; i++) {
+                if ((n == 54U) && (i == deadQubit)) {
+                    if (d == 0) {
+                        lastSingleBitGates.push_back(0);
+                    }
+                    continue;
+                }
+
+                // Each individual bit has one of these 3 gates applied at random.
+                // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants
+                // are handled as general single bit gates.
+
+                // The same gate is not applied twice consecutively in sequence.
+
+                if (d == 0) {
+                    // For the first iteration, we can pick any gate.
+
+                    gateRand = 3 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->SqrtX(i);
+                        // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
+                        lastSingleBitGates.push_back(0);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        qReg->SqrtY(i);
+                        // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
+                        lastSingleBitGates.push_back(1);
+                    } else {
+                        qReg->SqrtW(i);
+                        // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
+                        lastSingleBitGates.push_back(2);
+                    }
+                } else {
+                    // For all subsequent iterations after the first, we eliminate the choice of the same gate applied
+                    // on the immediately previous iteration.
+
+                    gateChoice = (int)(2 * qReg->Rand());
+                    if (gateChoice >= 2) {
+                        gateChoice = 1;
+                    }
+                    if (gateChoice >= lastSingleBitGates[i]) {
+                        ++gateChoice;
+                    }
+
+                    if (gateChoice == 0) {
+                        qReg->SqrtX(i);
+                        // std::cout << "qReg->SqrtX(" << (int)i << ");" << std::endl;
+                        lastSingleBitGates[i] = 0;
+                    } else if (gateChoice == 1) {
+                        qReg->SqrtY(i);
+                        // std::cout << "qReg->SqrtY(" << (int)i << ");" << std::endl;
+                        lastSingleBitGates[i] = 1;
+                    } else {
+                        qReg->SqrtW(i);
+                        // std::cout << "qReg->SqrtW(" << (int)i << ");" << std::endl;
+                        lastSingleBitGates[i] = 2;
+                    }
+                }
+
+                // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose")
+                // the representation without changing the logical state of the QUnit, up to float error:
+                // qReg->TrySeparate(i);
+            }
+
+            gate = gateSequence.front();
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+
+            for (row = 1; row < rowLen; row += 2) {
+                for (col = 0; col < colLen; col++) {
+                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                    // In this test, the boundaries of the rectangle have no couplers.
+                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                    // awkwardly.)
+
+                    tempRow = row;
+                    tempCol = col;
+
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
+
+                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
+                        continue;
+                    }
+
+                    b1 = row * colLen + col;
+                    b2 = tempRow * colLen + tempCol;
+
+                    if ((n == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
+                        continue;
+                    }
+
+                    // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
+                    // std::endl;
+
+                    if (d == (depth - 1)) {
+                        // For the last layer of couplers, the immediately next operation is measurement, and the phase
+                        // effects make no observable difference.
+                        qReg->Swap(b1, b2);
+
+                        continue;
+                    }
+
+                    if (((row < patchBound) && (tempRow >= patchBound)) ||
+                        ((tempRow < patchBound) && (row >= patchBound))) {
                         // This is our version of ("semi-classical") gate "elision":
                         QRACK_CONST real1_f phase_fac = 3 * PI_R1 / 2;
                         // FSim controlled phase
