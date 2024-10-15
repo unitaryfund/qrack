@@ -3816,14 +3816,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
                     // std::endl;
 
-                    if (d == (depth - 1)) {
-                        // For the last layer of couplers, the immediately next operation is measurement, and the phase
-                        // effects make no observable difference.
-                        qReg->Swap(b1, b2);
-
-                        continue;
-                    }
-
                     qReg->TrySeparate(b1, b2);
                     qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, b1, b2);
                     qReg->TrySeparate(b1, b2);
@@ -3982,14 +3974,6 @@ TEST_CASE("test_quantum_supremacy_patch", "[supreme]")
 
                     // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
                     // std::endl;
-
-                    if (d == (depth - 1)) {
-                        // For the last layer of couplers, the immediately next operation is measurement, and the phase
-                        // effects make no observable difference.
-                        qReg->Swap(b1, b2);
-
-                        continue;
-                    }
 
                     if (((row < patchBound) && (tempRow >= patchBound)) ||
                         ((tempRow < patchBound) && (row >= patchBound))) {
@@ -4152,14 +4136,6 @@ TEST_CASE("test_quantum_supremacy_elided", "[supreme]")
 
                     // std::cout << "qReg->FSim((3 * PI_R1) / 2, PI_R1 / 6, " << (int)b1 << ", " << (int)b2 << ");" <<
                     // std::endl;
-
-                    if (d == (depth - 1)) {
-                        // For the last layer of couplers, the immediately next operation is measurement, and the phase
-                        // effects make no observable difference.
-                        qReg->Swap(b1, b2);
-
-                        continue;
-                    }
 
                     if (((row < patchBound) && (tempRow >= patchBound)) ||
                         ((tempRow < patchBound) && (row >= patchBound))) {
