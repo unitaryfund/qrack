@@ -586,6 +586,10 @@ quid init_count_type(
         simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
     }
 
+    if ((simulatorType.size() == 0) && !sh) {
+        simulatorType.push_back(isOcl ? QINTERFACE_HYBRID : QINTERFACE_CPU);
+    }
+
     if (sd) {
         simulatorType.push_back(isOclMulti ? QINTERFACE_QUNIT_MULTI : QINTERFACE_QUNIT);
     }
@@ -769,7 +773,8 @@ uintq init_clone_size(uintq sid, uintq n)
     bool isSuccess = true;
     QInterfacePtr simulator;
     try {
-        simulator = CreateQuantumInterface(simulatorTypes[sid], n, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
+        simulator = CreateQuantumInterface(
+            simulatorTypes[sid], n, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
     } catch (const std::exception& ex) {
         std::cout << ex.what() << std::endl;
         isSuccess = false;
