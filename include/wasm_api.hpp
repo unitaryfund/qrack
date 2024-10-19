@@ -538,6 +538,10 @@ bool TrySeparate2Qb(quid sid, bitLenInt qi1, bitLenInt qi2);
  */
 bool TrySeparateTol(quid sid, std::vector<bitLenInt> q, real1_f tol);
 /**
+ * Force (inexact) factorization of qubit subsystem out of "bulk" simulator state.
+ */
+void Separate(quid sid, std::vector<bitLenInt> q);
+/**
  * Report fidelity for "Schmidt decomposition rounding parameter" (SDRP) and "near-Clifford rounding"
  */
 double GetUnitaryFidelity(quid sid);

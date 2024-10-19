@@ -3391,6 +3391,37 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(_In_ uintq sid, _In_ uintq n, _In_rea
     }
 }
 
+MICROSOFT_QUANTUM_DECL void Separate(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    std::vector<bitLenInt> bitArray(n);
+    for (uintq i = 0U; i < n; ++i) {
+        bitArray[i] = shards[simulator.get()][q[i]];
+    }
+
+    const bitLenInt end = simulator->GetQubitCount() - 1U;
+    for (uintq i = 0U; i < n; ++i) {
+        simulator->Swap(end - i, bitArray[i]);
+    }
+
+    try {
+        QInterfacePtr partSim = simulator->Decompose(end - n, n);
+        simulator->UpdateRunningNorm();
+        simulator->NormalizeState();
+        partSim->UpdateRunningNorm();
+        partSim->NormalizeState();
+        simulator->Compose(partSim);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+
+    for (uintq i = 0U; i < n; ++i) {
+        simulator->Swap(end - i, bitArray[i]);
+    }
+}
+
 MICROSOFT_QUANTUM_DECL double GetUnitaryFidelity(_In_ uintq sid)
 {
     SIMULATOR_LOCK_GUARD_DOUBLE(sid)

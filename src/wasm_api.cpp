@@ -2419,6 +2419,32 @@ bool TrySeparateTol(quid sid, std::vector<bitLenInt> q, real1_f tol)
     return simulator->TrySeparate(q, tol);
 }
 
+void Separate(quid sid, std::vector<bitLenInt> q)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+
+    std::vector<bitLenInt> bitArray(q.size());
+    for (size_t i = 0U; i < q.size(); ++i) {
+        bitArray[i] = shards[simulator.get()][q[i]];
+    }
+
+    const bitLenInt end = simulator->GetQubitCount() - 1U;
+    for (size_t i = 0U; i < q.size(); ++i) {
+        simulator->Swap(end - i, bitArray[i]);
+    }
+
+    QInterfacePtr partSim = simulator->Decompose(end - q.size(), q.size());
+    simulator->UpdateRunningNorm();
+    simulator->NormalizeState();
+    partSim->UpdateRunningNorm();
+    partSim->NormalizeState();
+    simulator->Compose(partSim);
+
+    for (size_t i = 0U; i < q.size(); ++i) {
+        simulator->Swap(end - i, bitArray[i]);
+    }
+}
+
 double GetUnitaryFidelity(quid sid)
 {
     SIMULATOR_LOCK_GUARD_REAL1_F(sid)
