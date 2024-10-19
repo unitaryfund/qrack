@@ -378,5 +378,20 @@ public:
     }
 
     void swap(bitLenInt qubit1, bitLenInt qubit2) { std::swap(swapMap[qubit1], swapMap[qubit2]); }
+
+    void reindex()
+    {
+        std::map<QInterfacePtr, bitLenInt> indices;
+        for (auto&& shard : shards) {
+            if (!shard.unit) {
+                shard.mapped = 0U;
+                continue;
+            }
+            shard.mapped = indices[shard.unit]++;
+        }
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
+            swapMap[i] = i;
+        }
+    }
 };
 } // namespace Qrack

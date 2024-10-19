@@ -367,16 +367,11 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         }
     }
 
-    // Find the rest of the qubits.
-    for (auto&& shard : shards) {
-        const auto subunit = subunits.find(shard.unit);
-        if (subunit != subunits.end() &&
-            shard.mapped >= (shards[decomposedUnits[shard.unit]].mapped + subunit->second)) {
-            shard.mapped -= subunit->second;
-        }
-    }
-
     shards.erase(start, start + length);
+    shards.reindex();
+    if (dest) {
+        dest->shards.reindex();
+    }
     SetQubitCount(qubitCount - length);
 }
 
