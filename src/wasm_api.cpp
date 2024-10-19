@@ -1687,9 +1687,6 @@ quid Decompose(quid sid, std::vector<bitLenInt> q)
         shards[simulator.get()].erase(q[j]);
     }
 
-    simulatorTypes[nSid] = simulatorTypes[sid];
-    simulatorHostPointer[nSid] = simulatorHostPointer[sid];
-
     return nSid;
 }
 

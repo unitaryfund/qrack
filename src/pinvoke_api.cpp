@@ -2320,9 +2320,6 @@ MICROSOFT_QUANTUM_DECL uintq Decompose(_In_ uintq sid, _In_ uintq n, _In_reads_(
         shards[simulator.get()].erase(q[j]);
     }
 
-    simulatorTypes[nSid] = simulatorTypes[sid];
-    simulatorHostPointer[nSid] = simulatorHostPointer[sid];
-
     return nSid;
 }
 
