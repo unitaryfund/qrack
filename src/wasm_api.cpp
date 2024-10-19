@@ -1661,7 +1661,7 @@ void Compose(quid sid1, quid sid2, std::vector<bitLenInt> q)
 
 quid Decompose(quid sid, std::vector<bitLenInt> q)
 {
-    quid nSid = init_clone_count(sid, q.size());
+    quid nSid = init_clone_size(sid, q.size());
 
     SIMULATOR_LOCK_GUARD_INT(sid)
 
