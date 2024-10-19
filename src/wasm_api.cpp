@@ -743,6 +743,61 @@ quid init_clone(quid sid)
     return nsid;
 }
 
+uintq init_clone_size(uintq sid, uintq n)
+{
+    META_LOCK_GUARD()
+
+    if (sid > simulators.size()) {
+        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
+        metaError = 2;
+        return 0U;
+    }
+    QInterfacePtr oSimulator = simulators[sid];
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
+        new const std::lock_guard<std::mutex>(simulatorMutexes[oSimulator.get()]));
+
+    uintq nsid = (uintq)simulators.size();
+
+    for (uintq i = 0U; i < simulators.size(); ++i) {
+        if (simulatorReservations[i] == false) {
+            nsid = i;
+            simulatorReservations[i] = true;
+            break;
+        }
+    }
+
+    bool isSuccess = true;
+    QInterfacePtr simulator;
+    try {
+        simulator = CreateQuantumInterface(simulatorTypes[sid], n, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
+    } catch (const std::exception& ex) {
+        std::cout << ex.what() << std::endl;
+        isSuccess = false;
+    }
+
+    if (nsid == simulators.size()) {
+        simulatorReservations.push_back(true);
+        simulators.push_back(simulator);
+        simulatorTypes.push_back(simulatorTypes[sid]);
+        simulatorHostPointer.push_back(simulatorHostPointer[sid]);
+        simulatorErrors.push_back(isSuccess ? 0 : 1);
+        shards[simulator.get()] = {};
+    } else {
+        simulatorReservations[nsid] = true;
+        simulators[nsid] = simulator;
+        simulatorTypes[nsid] = simulatorTypes[sid];
+        simulatorHostPointer[nsid] = simulatorHostPointer[sid];
+        simulatorErrors[nsid] = isSuccess ? 0 : 1;
+    }
+
+    shards[simulator.get()] = {};
+    for (uintq i = 0U; i < simulator->GetQubitCount(); ++i) {
+        shards[simulator.get()][i] = shards[simulators[sid].get()][i];
+    }
+
+    return nsid;
+}
+
 /**
  * (External API) Initialize a simulator ID with "q" qubits and implicit default layer options.
  */
@@ -1606,7 +1661,7 @@ void Compose(quid sid1, quid sid2, std::vector<bitLenInt> q)
 
 quid Decompose(quid sid, std::vector<bitLenInt> q)
 {
-    quid nSid = init_count(q.size(), false);
+    quid nSid = init_clone_count(sid, q.size());
 
     SIMULATOR_LOCK_GUARD_INT(sid)
 
