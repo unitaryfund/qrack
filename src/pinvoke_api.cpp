@@ -3416,6 +3416,18 @@ MICROSOFT_QUANTUM_DECL void SetNoiseParameter(_In_ uintq sid, _In_ double np)
     }
 }
 
+MICROSOFT_QUANTUM_DECL void Normalize(_In_ uintq sid)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    try {
+        simulator->UpdateRunningNorm();
+        simulator->NormalizeState();
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
 #if !(FPPOW < 6 && !defined(ENABLE_COMPLEX_X2))
 /**
  * (External API) Simulate a Hamiltonian

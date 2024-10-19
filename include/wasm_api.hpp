@@ -565,6 +565,10 @@ void SetTInjection(quid sid, bool iti);
  * Set noise parameter (for QInterfaceNoisy)
  */
 void SetNoiseParameter(quid sid, double np);
+/**
+ * Normalize the state (which should never be necessary unless Decompose() is "abused")
+ */
+void Normalize(quid sid);
 
 /**
  * Initialize a "quantum neuron" that takes a list of qubit "controls" for input and acts on a single "target" output

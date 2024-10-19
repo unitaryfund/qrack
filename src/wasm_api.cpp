@@ -2404,6 +2404,13 @@ void SetNoiseParameter(quid sid, double np)
     simulator->SetNoiseParameter((real1_f)np);
 }
 
+void Normalize(quid sid)
+{
+    SIMULATOR_LOCK_GUARD_VOID(sid)
+    simulator->UpdateRunningNorm();
+    simulator->NormalizeState();
+}
+
 quid init_qneuron(quid sid, std::vector<bitLenInt> c, bitLenInt q, QNeuronActivationFn f, real1_f a, real1_f tol)
 {
     META_LOCK_GUARD()
