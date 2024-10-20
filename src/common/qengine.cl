@@ -587,8 +587,8 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
         for (bitCapIntOcl k = 0U; k < partPower; k++) {
             bitCapIntOcl l = j | (k << start);
 
-            cmplx amp = stateVec[l];
-            real1 nrm = dot(amp, amp);
+            const cmplx amp = stateVec[l];
+            const real1 nrm = dot(amp, amp);
             partProb += nrm;
             partStateAngle[k] += arg(amp) * nrm;
         }
@@ -606,13 +606,27 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
             l |= (k ^ l) << len;
             l = j | l;
 
-            cmplx amp = stateVec[l];
-            real1 nrm = dot(amp, amp);
+            const cmplx amp = stateVec[l];
+            const real1 nrm = dot(amp, amp);
             partProb += nrm;
             remainderStateAngle[k] += arg(amp) * nrm;
         }
 
         partStateProb[lcv] = partProb;
+    }
+
+    for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
+        const real1 prob = remainderStateProb[lcv];
+        if (prob > REAL1_EPSILON) {
+            remainderStateAngle[lcv] /= prob;
+        }
+    }
+
+    for (bitCapIntOcl lcv = ID; lcv < partPower; lcv += Nthreads) {
+        const real1 prob = partStateProb[lcv];
+        if (prob > REAL1_EPSILON) {
+            partStateAngle[lcv] /= prob;
+        }
     }
 }
 
@@ -647,7 +661,7 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIn
         for (bitCapIntOcl k = 0U; k < partPower; k++) {
             bitCapIntOcl l = j | (k << start);
 
-            cmplx amp = stateVec[l];
+            const cmplx amp = stateVec[l];
             partProb += dot(amp, amp);
         }
 
@@ -662,8 +676,15 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIn
             l |= (k ^ l) << len;
             l = j | l;
 
-            cmplx amp = stateVec[l];
+            const cmplx amp = stateVec[l];
             remainderStateAngle[k] += arg(amp) * dot(amp, amp);
+        }
+    }
+
+    for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
+        const real1 prob = remainderStateProb[lcv];
+        if (prob > REAL1_EPSILON) {
+            remainderStateAngle[lcv] /= prob;
         }
     }
 }
