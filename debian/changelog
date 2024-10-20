@@ -1,3 +1,27 @@
+libqrack (9.11.11) bionic; urgency=medium
+
+  * Fix QUnit Detach() (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 20 Oct 2024 10:00:04 -0400
+
+libqrack (9.11.10) focal; urgency=medium
+
+  * Fix QUnit Detach() (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 20 Oct 2024 09:58:20 -0400
+
+libqrack (9.11.9) jammy; urgency=medium
+
+  * Fix QUnit Detach() (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 20 Oct 2024 09:56:44 -0400
+
+libqrack (9.11.8) noble; urgency=medium
+
+  * Fix QUnit Detach() (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 20 Oct 2024 09:54:28 -0400
+
 libqrack (9.11.7) bionic; urgency=medium
 
   * Decompose() / Dispose() algorithm improvement (Bionic 4/4)

@@ -3407,10 +3407,6 @@ MICROSOFT_QUANTUM_DECL void Separate(_In_ uintq sid, _In_ uintq n, _In_reads_(n)
 
     try {
         QInterfacePtr partSim = simulator->Decompose(end - n, n);
-        simulator->UpdateRunningNorm();
-        simulator->NormalizeState();
-        partSim->UpdateRunningNorm();
-        partSim->NormalizeState();
         simulator->Compose(partSim);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
