@@ -1,3 +1,27 @@
+libqrack (9.11.7) bionic; urgency=medium
+
+  * Decompose() / Dispose() algorithm improvement (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 20 Oct 2024 07:23:25 -0400
+
+libqrack (9.11.6) focal; urgency=medium
+
+  * Decompose() / Dispose() algorithm improvement (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 20 Oct 2024 07:21:25 -0400
+
+libqrack (9.11.5) jammy; urgency=medium
+
+  * Decompose() / Dispose() algorithm improvement (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 20 Oct 2024 07:19:41 -0400
+
+libqrack (9.11.4) noble; urgency=medium
+
+  * Decompose() / Dispose() algorithm improvement (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 20 Oct 2024 07:16:21 -0400
+
 libqrack (9.9.65) bionic; urgency=medium
 
   * Debug QBDD high rounding (Bionic 4/4)
