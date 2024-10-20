@@ -590,10 +590,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
             cmplx amp = stateVec[l];
             real1 nrm = dot(amp, amp);
             partProb += nrm;
-
-            if (nrm >= REAL1_EPSILON) {
-                partStateAngle[k] = arg(amp);
-            }
+            partStateAngle[k] += arg(amp) * nrm;
         }
 
         remainderStateProb[lcv] = partProb;
@@ -612,10 +609,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
             cmplx amp = stateVec[l];
             real1 nrm = dot(amp, amp);
             partProb += nrm;
-
-            if (nrm >= REAL1_EPSILON) {
-                remainderStateAngle[k] = arg(amp);
-            }
+            remainderStateAngle[k] += arg(amp) * nrm;
         }
 
         partStateProb[lcv] = partProb;
@@ -643,8 +637,6 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIn
     const bitLenInt start = (bitLenInt)args.z;
     const bitCapIntOcl startMask = (ONE_BCI << start) - ONE_BCI;
     const bitLenInt len = args.w;
-    const real1 angleThresh = -8 * PI_R1;
-    const real1 initAngle = -16 * PI_R1;
 
     for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         bitCapIntOcl j = lcv & startMask;
@@ -656,8 +648,7 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIn
             bitCapIntOcl l = j | (k << start);
 
             cmplx amp = stateVec[l];
-            real1 nrm = dot(amp, amp);
-            partProb += nrm;
+            partProb += dot(amp, amp);
         }
 
         remainderStateProb[lcv] = partProb;
@@ -666,23 +657,13 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIn
     for (bitCapIntOcl lcv = ID; lcv < partPower; lcv += Nthreads) {
         const bitCapIntOcl j = lcv << start;
 
-        real1 firstAngle = initAngle;
-
         for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
             bitCapIntOcl l = k & startMask;
             l |= (k ^ l) << len;
             l = j | l;
 
             cmplx amp = stateVec[l];
-            real1 nrm = dot(amp, amp);
-
-            if (nrm >= REAL1_EPSILON) {
-                real1 currentAngle = arg(amp);
-                if (firstAngle < angleThresh) {
-                    firstAngle = currentAngle;
-                }
-                remainderStateAngle[k] = currentAngle - firstAngle;
-            }
+            remainderStateAngle[k] += arg(amp) * dot(amp, amp);
         }
     }
 }
