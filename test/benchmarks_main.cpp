@@ -36,7 +36,6 @@ bool disable_terminal_measurement = false;
 bool use_host_dma = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
-bool sparse = false;
 int device_id = -1;
 bitLenInt max_qubits = 24;
 bitLenInt min_qubits = 4;
@@ -160,8 +159,6 @@ int main(int argc, char* argv[])
                                                "type should be binary. (By default, it is "
                                                "human-readable.)") |
         Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests") |
-        Opt(sparse)["--sparse"](
-            "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.") |
         Opt(benchmarkSamples, "samples")["--samples"]("number of samples to collect (default: 100)") |
         Opt(benchmarkDepth, "depth")["--benchmark-depth"](
             "depth of randomly constructed circuits, when applicable, with 1 round of single qubit and 1 round of "
@@ -423,11 +420,7 @@ int main(int argc, char* argv[])
     if (num_failed == 0 && qunit) {
         testEngineType = QINTERFACE_QUNIT;
         if (num_failed == 0 && cpu) {
-            if (sparse) {
-                session.config().stream() << "############ QUnit -> QEngine -> CPU (Sparse) ############" << std::endl;
-            } else {
-                session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
-            }
+            session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
             testSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }

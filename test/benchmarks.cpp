@@ -121,7 +121,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
     for (bitLenInt numBits = mnQbts; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG,
-            enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+            enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, false, REAL1_EPSILON, devList);
         if (disable_t_injection) {
             qftReg->SetTInjection(false);
         }
@@ -182,7 +182,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 // Re-alloc:
                 qftReg =
                     CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG, enable_normalization,
-                        true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+                        true, use_host_dma, device_id, !disable_hardware_rng, false, REAL1_EPSILON, devList);
                 if (disable_t_injection) {
                     qftReg->SetTInjection(false);
                 }
@@ -207,7 +207,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
                             // Re-alloc:
                             qftReg = CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG,
-                                enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
+                                enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, false,
                                 REAL1_EPSILON, devList);
                             if (disable_t_injection) {
                                 qftReg->SetTInjection(false);
@@ -261,7 +261,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 // Re-alloc:
                 qftReg =
                     CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG, enable_normalization,
-                        true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+                        true, use_host_dma, device_id, !disable_hardware_rng, false, REAL1_EPSILON, devList);
                 if (disable_t_injection) {
                     qftReg->SetTInjection(false);
                 }
@@ -4749,7 +4749,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::cout << "Gold standard vs. gold standard cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
     QInterfacePtr testCase = CreateQuantumInterface({ testEngineType, testSubEngineType }, n, ZERO_BCI, rng, ONE_CMPLX,
-        enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse);
+        enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, false);
     if (disable_t_injection) {
         testCase->SetTInjection(false);
     }
