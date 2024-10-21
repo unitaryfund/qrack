@@ -450,7 +450,7 @@ public:
     using QInterface::isClifford;
     virtual bool isClifford(bitLenInt qubit) { return shards[qubit].isClifford(); };
 
-    virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol);
+    using QInterface::TrySeparate;
     virtual bool TrySeparate(bitLenInt qubit);
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
     virtual double GetUnitaryFidelity();
