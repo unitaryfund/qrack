@@ -452,18 +452,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                 }
             }
 
-            if (stateVec->is_sparse()) {
-                const bitCapIntOcl setMask = offset1 ^ offset2;
-                bitCapIntOcl filterMask = 0U;
-                for (bitLenInt i = 0U; i < bitCount; ++i) {
-                    filterMask |= qPowersSorted[i];
-                }
-                filterMask &= ~setMask;
-                const bitCapIntOcl filterValues = filterMask & offset1 & offset2;
-                par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
-            } else {
-                par_for_mask(0U, maxQPowerOcl, qPowersSorted, fn);
-            }
+            par_for_mask(0U, maxQPowerOcl, qPowersSorted, fn);
 
             if (doApplyNorm) {
                 runningNorm = ONE_R1;
@@ -635,18 +624,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                 }
             }
 
-            if (stateVec->is_sparse()) {
-                const bitCapIntOcl setMask = offset1 ^ offset2;
-                bitCapIntOcl filterMask = 0U;
-                for (bitLenInt i = 0U; i < bitCount; ++i) {
-                    filterMask |= qPowersSorted[i];
-                }
-                filterMask &= ~setMask;
-                const bitCapIntOcl filterValues = filterMask & offset1 & offset2;
-                par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
-            } else {
-                par_for_mask(0U, maxQPowerOcl, qPowersSorted, fn);
-            }
+            par_for_mask(0U, maxQPowerOcl, qPowersSorted, fn);
 
             if (doApplyNorm) {
                 runningNorm = ONE_R1;
@@ -684,11 +662,6 @@ void QEngineCPU::XMask(const bitCapInt& mask)
 
     if (isPowerOfTwo(mask)) {
         X(log2(mask));
-        return;
-    }
-
-    if (stateVec->is_sparse()) {
-        QInterface::XMask(mask);
         return;
     }
 
@@ -731,11 +704,6 @@ void QEngineCPU::PhaseParity(real1_f radians, const bitCapInt& mask)
     if (isPowerOfTwo(mask)) {
         const complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
         Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
-        return;
-    }
-
-    if (stateVec->is_sparse()) {
-        QInterface::PhaseParity(radians, mask);
         return;
     }
 
@@ -784,11 +752,6 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, const bitCapInt& mask)
 
     if (isPowerOfTwo(mask)) {
         Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)radians), log2(mask));
-        return;
-    }
-
-    if (stateVec->is_sparse()) {
-        QInterface::PhaseRootNMask(n, mask);
         return;
     }
 
@@ -935,7 +898,8 @@ void QEngineCPU::UniformParityRZ(const bitCapInt& mask, real1_f angle)
         const real1 sine = (real1)sin(angle);
         const complex phaseFac(cosine, sine);
         const complex phaseFacAdj(cosine, -sine);
-        ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+
+        par_for(0U, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             bitCapIntOcl perm = lcv & (bitCapIntOcl)mask;
             // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
             // c accumulates the total bits set in v
@@ -945,13 +909,7 @@ void QEngineCPU::UniformParityRZ(const bitCapInt& mask, real1_f angle)
                 perm &= perm - 1U;
             }
             stateVec->write(lcv, stateVec->read(lcv) * ((c & 1U) ? phaseFac : phaseFacAdj));
-        };
-
-        if (stateVec->is_sparse()) {
-            par_for_set(CastStateVecSparse()->iterable(), fn);
-        } else {
-            par_for(0U, maxQPowerOcl, fn);
-        }
+        });
     });
 }
 
@@ -1057,21 +1015,14 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
     stateVec->isReadLocked = false;
 
-    ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        nStateVec->write(lcv, stateVec->read(lcv & startMask) * toCopy->stateVec->read((lcv & endMask) >> qubitCount));
-    };
-
     if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
         toCopy->NormalizeState();
     }
     toCopy->Finish();
 
-    if (stateVec->is_sparse() || toCopy->stateVec->is_sparse()) {
-        par_for_sparse_compose(
-            CastStateVecSparse()->iterable(), toCopy->CastStateVecSparse()->iterable(), qubitCount, fn);
-    } else {
-        par_for(0U, nMaxQPower, fn);
-    }
+    par_for(0U, nMaxQPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+        nStateVec->write(lcv, stateVec->read(lcv & startMask) * toCopy->stateVec->read((lcv & endMask) >> qubitCount));
+    });
 
     SetQubitCount(nQubitCount);
 
@@ -1457,19 +1408,15 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     }
 
     stateVec->isReadLocked = false;
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(qPower, qPower, qPower), fn);
-    } else {
 #if ENABLE_COMPLEX_X2
-        if (qPower == 1U) {
-            par_for(0U, maxQPowerOcl >> 2U, fn);
-        } else {
-            par_for_skip(0U, maxQPowerOcl >> 1U, qPower >> 1U, 1U, fn);
-        }
-#else
-        par_for_skip(0U, maxQPowerOcl, qPower, 1U, fn);
-#endif
+    if (qPower == 1U) {
+        par_for(0U, maxQPowerOcl >> 2U, fn);
+    } else {
+        par_for_skip(0U, maxQPowerOcl >> 1U, qPower >> 1U, 1U, fn);
     }
+#else
+    par_for_skip(0U, maxQPowerOcl, qPower, 1U, fn);
+#endif
     stateVec->isReadLocked = true;
 
     real1 oneChance = ZERO_R1;
@@ -1517,11 +1464,7 @@ real1_f QEngineCPU::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenI
     });
 
     stateVec->isReadLocked = false;
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(qPower, qPower, qPower), fn);
-    } else {
-        par_for_skip(0U, maxQPowerOcl, qPower, 1U, fn);
-    }
+    par_for_skip(0U, maxQPowerOcl, qPower, 1U, fn);
     stateVec->isReadLocked = true;
 
     real1 oneChance = ZERO_R1;
@@ -1554,11 +1497,7 @@ real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& 
     };
 
     stateVec->isReadLocked = false;
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(0, bitRegMaskOcl(start, length), perm), fn);
-    } else {
-        par_for_skip(0U, maxQPowerOcl, pow2Ocl(start), length, fn);
-    }
+    par_for_skip(0U, maxQPowerOcl, pow2Ocl(start), length, fn);
     stateVec->isReadLocked = true;
 
     real1 prob = ZERO_R1;
@@ -1632,7 +1571,9 @@ real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
     std::unique_ptr<real1[]> oddChanceBuff(new real1[numCores]());
 
     const bitCapIntOcl maskOcl = (bitCapIntOcl)mask;
-    ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+
+    stateVec->isReadLocked = false;
+    par_for(0U, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         bool parity = false;
         bitCapIntOcl v = lcv & maskOcl;
         while (v) {
@@ -1643,14 +1584,7 @@ real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
         if (parity) {
             oddChanceBuff[cpu] += norm(stateVec->read(lcv));
         }
-    };
-
-    stateVec->isReadLocked = false;
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(), fn);
-    } else {
-        par_for(0U, maxQPowerOcl, fn);
-    }
+    });
     stateVec->isReadLocked = true;
 
     for (unsigned i = 0U; i < numCores; ++i) {
@@ -1704,7 +1638,9 @@ bool QEngineCPU::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     std::unique_ptr<real1[]> oddChanceBuff(new real1[numCores]());
 
     const bitCapIntOcl maskOcl = (bitCapIntOcl)mask;
-    ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+
+    stateVec->isReadLocked = false;
+    par_for(0U, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         bool parity = false;
         bitCapIntOcl v = lcv & maskOcl;
         while (v) {
@@ -1717,14 +1653,7 @@ bool QEngineCPU::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
         } else {
             stateVec->write(lcv, ZERO_CMPLX);
         }
-    };
-
-    stateVec->isReadLocked = false;
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(), fn);
-    } else {
-        par_for(0U, maxQPowerOcl, fn);
-    }
+    });
     stateVec->isReadLocked = true;
 
     for (unsigned i = 0U; i < numCores; ++i) {
@@ -1811,19 +1740,14 @@ void QEngineCPU::ApplyM(const bitCapInt& regMask, const bitCapInt& result, const
     Dispatch(maxQPowerOcl, [this, regMask, result, nrm] {
         const bitCapIntOcl regMaskOcl = (bitCapIntOcl)regMask;
         const bitCapIntOcl resultOcl = (bitCapIntOcl)result;
-        ParallelFunc fn = [&](const bitCapIntOcl& i, const unsigned& cpu) {
+
+        par_for(0U, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
             if ((i & regMaskOcl) == resultOcl) {
                 stateVec->write(i, nrm * stateVec->read(i));
             } else {
                 stateVec->write(i, ZERO_CMPLX);
             }
-        };
-
-        if (stateVec->is_sparse()) {
-            par_for_set(CastStateVecSparse()->iterable(), fn);
-        } else {
-            par_for(0U, maxQPowerOcl, fn);
-        }
+        });
 
         runningNorm = ONE_R1;
     });
@@ -1899,10 +1823,6 @@ void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
 
 StateVectorPtr QEngineCPU::AllocStateVec(bitCapIntOcl elemCount)
 {
-    if (isSparse) {
-        return std::make_shared<StateVectorSparse>(elemCount);
-    } else {
-        return std::make_shared<StateVectorArray>(elemCount);
-    }
+    return std::make_shared<StateVectorArray>(elemCount);
 }
 } // namespace Qrack
