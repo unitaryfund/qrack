@@ -260,29 +260,12 @@ public:
     void write(const bitCapIntOcl& i, const complex& c)
     {
         const bool isCSet = abs(c) > REAL1_EPSILON;
-        ;
-        bool isFound;
-        SparseStateVecMap::iterator it;
-
-        // For lock_guard scope
-        if (true) {
+        if (isCSet) {
             std::lock_guard<std::mutex> lock(mtx);
-
-            it = amplitudes.find(i);
-            isFound = (it != amplitudes.end());
-            if (isCSet != isFound) {
-                if (isCSet) {
-                    amplitudes[i] = c;
-                } else {
-                    amplitudes.erase(it);
-                }
-            }
-        }
-
-        if (isCSet == isFound) {
-            if (isCSet) {
-                it->second = c;
-            }
+            amplitudes[i] = c;
+        } else {
+            std::lock_guard<std::mutex> lock(mtx);
+            amplitudes.erase(i);
         }
     }
 
