@@ -36,7 +36,6 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, const bitCapInt& initState, qrack_ra
     bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceID, bool useHardwareRNG, bool useSparseStateVec,
     real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
-    , isSparse(useSparseStateVec)
 {
     if (qBitCount > QRACK_MAX_CPU_QB_DEFAULT) {
         throw std::invalid_argument(
@@ -174,13 +173,7 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
         ResetStateVec(AllocStateVec(maxQPowerOcl));
     }
 
-    if (isSparse) {
-        std::unique_ptr<complex[]> sv(new complex[maxQPowerOcl]);
-        src->GetQuantumState(sv.get());
-        SetQuantumState(sv.get());
-    } else {
-        src->GetQuantumState(std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes.get());
-    }
+    src->GetQuantumState(std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes.get());
 
     runningNorm = src->GetRunningNorm();
 }
@@ -1385,27 +1378,21 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
     ParallelFunc fn;
-    if (isSparse) {
+#if ENABLE_COMPLEX_X2
+    if (qPower == 1U) {
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
+            oneChanceBuff[cpu] += norm(stateVec->read2((lcv << 2U) | 1U, (lcv << 2U) | 3U));
         };
     } else {
-#if ENABLE_COMPLEX_X2
-        if (qPower == 1U) {
-            fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                oneChanceBuff[cpu] += norm(stateVec->read2((lcv << 2U) | 1U, (lcv << 2U) | 3U));
-            };
-        } else {
-            fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                oneChanceBuff[cpu] += norm(stateVec->read2((lcv << 1U) | qPower, (lcv << 1U) | 1U | qPower));
-            };
-        }
-#else
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
+            oneChanceBuff[cpu] += norm(stateVec->read2((lcv << 1U) | qPower, (lcv << 1U) | 1U | qPower));
         };
-#endif
     }
+#else
+    fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+        oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
+    };
+#endif
 
     stateVec->isReadLocked = false;
 #if ENABLE_COMPLEX_X2
