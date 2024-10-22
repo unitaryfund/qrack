@@ -768,29 +768,20 @@ quid init_clone_size(quid sid, bitLenInt n)
         }
     }
 
-    bool isSuccess = true;
-    QInterfacePtr simulator;
-    try {
-        simulator = CreateQuantumInterface(
-            simulatorTypes[sid], n, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
-    } catch (const std::exception& ex) {
-        std::cout << ex.what() << std::endl;
-        isSuccess = false;
-    }
+    QInterfacePtr simulator = CreateQuantumInterface(
+        simulatorTypes[sid], n, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
 
     if (nsid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorTypes[sid]);
         simulatorHostPointer.push_back(simulatorHostPointer[sid]);
-        simulatorErrors.push_back(isSuccess ? 0 : 1);
         shards[simulator.get()] = {};
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
         simulatorTypes[nsid] = simulatorTypes[sid];
         simulatorHostPointer[nsid] = simulatorHostPointer[sid];
-        simulatorErrors[nsid] = isSuccess ? 0 : 1;
     }
 
     shards[simulator.get()] = {};
