@@ -1,3 +1,27 @@
+libqrack (9.11.15) bionic; urgency=medium
+
+  * Improved TrySeparate(); sparse state vector removed (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 21 Oct 2024 11:45:45 -0400
+
+libqrack (9.11.14) focal; urgency=medium
+
+  * Improved TrySeparate(); sparse state vector removed (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 21 Oct 2024 11:43:51 -0400
+
+libqrack (9.11.13) jammy; urgency=medium
+
+  * Improved TrySeparate(); sparse state vector removed (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 21 Oct 2024 11:42:14 -0400
+
+libqrack (9.11.12) noble; urgency=medium
+
+  * Improved TrySeparate(); sparse state vector removed (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Mon, 21 Oct 2024 11:39:26 -0400
+
 libqrack (9.11.11) bionic; urgency=medium
 
   * Fix QUnit Detach() (Bionic 4/4)

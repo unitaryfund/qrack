@@ -747,7 +747,7 @@ quid init_clone(quid sid)
     return nsid;
 }
 
-uintq init_clone_size(uintq sid, uintq n)
+quid init_clone_size(quid sid, bitLenInt n)
 {
     META_LOCK_GUARD()
 
@@ -760,9 +760,9 @@ uintq init_clone_size(uintq sid, uintq n)
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
         new const std::lock_guard<std::mutex>(simulatorMutexes[oSimulator.get()]));
 
-    uintq nsid = (uintq)simulators.size();
+    quid nsid = (quid)simulators.size();
 
-    for (uintq i = 0U; i < simulators.size(); ++i) {
+    for (quid i = 0U; i < simulators.size(); ++i) {
         if (simulatorReservations[i] == false) {
             nsid = i;
             simulatorReservations[i] = true;
@@ -796,7 +796,7 @@ uintq init_clone_size(uintq sid, uintq n)
     }
 
     shards[simulator.get()] = {};
-    for (uintq i = 0U; i < simulator->GetQubitCount(); ++i) {
+    for (bitLenInt i = 0U; i < simulator->GetQubitCount(); ++i) {
         shards[simulator.get()][i] = shards[simulators[sid].get()][i];
     }
 
