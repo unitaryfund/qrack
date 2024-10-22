@@ -752,9 +752,7 @@ quid init_clone_size(quid sid, bitLenInt n)
     META_LOCK_GUARD()
 
     if (sid > simulators.size()) {
-        std::cout << "Invalid argument: simulator ID not found!" << std::endl;
-        metaError = 2;
-        return 0U;
+        throw std::invalid_argument("Simulator ID not found!");
     }
     QInterfacePtr oSimulator = simulators[sid];
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock(
