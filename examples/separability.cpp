@@ -74,10 +74,6 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    cout << "NOTE: Qrack time includes actually separating the representation of state on separable success, while "
-            "Schmidt decomposition does not do this at all, in general."
-         << endl;
-
     const bitLenInt width = (bitLenInt)std::stoi(argv[1U]);
     const bitLenInt halfWidth = width >> 1U;
     const bitCapIntOcl maxQPower = Qrack::pow2Ocl(width);
@@ -98,12 +94,21 @@ int main(int argc, char* argv[])
 
         auto start = std::chrono::high_resolution_clock::now();
         bool result = isSeparable(vec, subsystemSize, width - subsystemSize);
+        if (result) {
+            // We do this with Qrack, but it's the part where we ACTUALLY decompose the original implementation.
+            qsim->Decompose(subsystemSize, qsim_b);
+        }
         auto end = std::chrono::high_resolution_clock::now();
         double duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1e6;
 
         cout << "Schmidt decomposition, " << (int)width << " qubits, " << (int)subsystemSize
              << " qubit subsystem, nonseparable: " << duration << " seconds, " << (result ? "failure." : "success.")
              << endl;
+
+        if (result) {
+            qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_OPTIMAL_BASE }, width, Qrack::ZERO_BCI);
+            ghz(qsim);
+        }
 
         start = std::chrono::high_resolution_clock::now();
         result = qsim->TryDecompose(subsystemSize, qsim_b, tolerance);
@@ -129,6 +134,10 @@ int main(int argc, char* argv[])
 
         start = std::chrono::high_resolution_clock::now();
         result = isSeparable(vec, subsystemSize, width - subsystemSize);
+        if (result) {
+            // We do this with Qrack, but it's the part where we ACTUALLY decompose the original implementation.
+            qsim->Decompose(subsystemSize, qsim_b);
+        }
         end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         // Report in seconds:
@@ -137,6 +146,17 @@ int main(int argc, char* argv[])
         cout << "Schmidt decomposition, " << (int)width << " qubits, " << (int)subsystemSize
              << " qubit subsystem, separable: " << duration << " seconds, " << (result ? "success." : "failure.")
              << endl;
+
+        if (result) {
+            qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_OPTIMAL_BASE }, subsystemSize, Qrack::ZERO_BCI);
+            qsim_b =
+                Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_OPTIMAL_BASE }, width - subsystemSize, Qrack::ZERO_BCI);
+
+            ghz(qsim);
+            ghz(qsim_b);
+
+            qsim->Compose(qsim_b);
+        }
 
         start = std::chrono::high_resolution_clock::now();
         result = qsim->TryDecompose(subsystemSize, qsim_b, tolerance);
