@@ -58,6 +58,45 @@ bool isSeparable(const EigenVec& stateVector, int qubitsA, int qubitsB)
     return (nonZeroCount == 1);
 }
 
+// Function to perform Schmidt decomposition and extract the separable pure states
+bool decomposeAndExtractStates(const EigenVec& stateVector, int qubitsA, int qubitsB, EigenVec& psi_a, EigenVec& psi_b)
+{
+    // Calculate the dimensions of the subsystems
+    int dimA = 1 << qubitsA; // 2^qubitsA
+    int dimB = 1 << qubitsB; // 2^qubitsB
+
+    // Reshape the state vector into a matrix of size (dimA x dimB)
+    EigenMat reshapedState = reshapeToMatrix(stateVector, dimA, dimB);
+
+    // Perform Singular Value Decomposition (SVD)
+    // Full U and Full V are needed to actually extract the decomposed states.
+    // However, this quickly becomes very memory prohibitive!
+    // The truth, there's virtually no other choice but to use Qrack's algorithm to actually extract the state vectors,
+    // above a very limited scale!
+    JacobiSVD<EigenMat> svd(reshapedState, ComputeFullU | ComputeFullV);
+    EigenVec singularValues = svd.singularValues();
+
+    // Check the number of non-zero singular values
+    int nonZeroCount = 0;
+    for (int i = 0; i < singularValues.size(); ++i) {
+        if (std::abs(singularValues(i)) > tolerance) {
+            nonZeroCount++;
+        }
+    }
+
+    // If there is more than one non-zero singular value, the state is entangled
+    if (nonZeroCount > 1) {
+        return false; // Not separable (entangled)
+    }
+
+    // If separable, extract the first column of U and V
+    psi_a = svd.matrixU().col(0);
+    psi_b = svd.matrixV().col(0);
+    // These are the actual decomposed state vectors.
+
+    return true; // Separable
+}
+
 void ghz(Qrack::QInterfacePtr qsim)
 {
     const bitLenInt n = qsim->GetQubitCount();
@@ -149,8 +188,8 @@ int main(int argc, char* argv[])
 
         if (result) {
             qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_OPTIMAL_BASE }, subsystemSize, Qrack::ZERO_BCI);
-            qsim_b =
-                Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_OPTIMAL_BASE }, width - subsystemSize, Qrack::ZERO_BCI);
+            qsim_b = Qrack::CreateQuantumInterface(
+                { Qrack::QINTERFACE_OPTIMAL_BASE }, width - subsystemSize, Qrack::ZERO_BCI);
 
             ghz(qsim);
             ghz(qsim_b);
