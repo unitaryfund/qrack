@@ -22,6 +22,17 @@ add_executable (cosmology
 set_target_properties(cosmology PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
 target_link_libraries (cosmology ${QRACK_LIBS})
 
+if ((FPPOW EQUAL 5) OR (FPPOW EQUAL 6))
+    find_package(Eigen3)
+    if (Eigen3_FOUND)
+        add_executable (separability
+            examples/separability.cpp
+            )
+        set_target_properties(separability PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
+        target_link_libraries (separability ${QRACK_LIBS} Eigen3::Eigen)
+    endif (Eigen3_FOUND)
+endif ((FPPOW EQUAL 5) OR (FPPOW EQUAL 6))
+
 if (ENABLE_ALU)
 add_executable (grovers
     examples/grovers.cpp
