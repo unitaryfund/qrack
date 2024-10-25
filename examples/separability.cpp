@@ -1,4 +1,4 @@
-#include "qrack/qfactory.hpp"
+#include "qfactory.hpp"
 #include <Eigen/Dense>
 #include <iostream>
 #include <memory>
