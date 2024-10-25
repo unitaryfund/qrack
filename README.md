@@ -46,7 +46,7 @@ For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTI
 
 ## Installing Qrack
 
-If you're on Ubuntu 18.04, 20.04, or 22.04 LTS, you're in luck: Qrack manages a PPA that provides binary installers for _all_ available CPU architectures (except any that require administrative attention from Ubuntu or Canonical).
+If you're on Ubuntu 18.04, 20.04, 22.04, or 24.04 LTS, you're in luck: Qrack manages a PPA that provides binary installers for _all_ available CPU architectures (except any that require administrative attention from Ubuntu or Canonical).
 
 ```sh
     $ sudo add-apt-repository ppa:wrathfulspatula/vm6502q
