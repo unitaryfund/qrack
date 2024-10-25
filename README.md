@@ -151,7 +151,7 @@ After CMake, the project must be built in Visual Studio. Once installed, the `qr
 
 ## C++ language standard
 
-To change the C++ language standard language with which Qrack is applied, use `-DCPP_STD=n`, where "`n`" is the two-digit standard year:
+To change the C++ language standard language with which Qrack is compiled, use `-DCPP_STD=n`, where "`n`" is the two-digit standard year:
 
 ```sh
 cmake -DCPP_SIM=11 ..
