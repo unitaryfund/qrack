@@ -40,7 +40,7 @@ ParallelFor::ParallelFor()
 #if ENABLE_PTHREAD
     , numCores(std::thread::hardware_concurrency())
 #else
-    , numCores(1)
+    , numCores(1U)
 #endif
 {
     const bitLenInt pStridePow = log2Ocl(pStride);
