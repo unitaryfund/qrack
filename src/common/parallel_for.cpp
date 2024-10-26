@@ -31,9 +31,8 @@ namespace Qrack {
 
 ParallelFor::ParallelFor()
 #if ENABLE_ENV_VARS
-    : pStride(getenv("QRACK_PSTRIDEPOW")
-              ? pow2Ocl((bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))))
-              : pow2Ocl((bitLenInt)PSTRIDEPOW))
+    : pStride(getenv("QRACK_PSTRIDEPOW") ? pow2Ocl((bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))))
+                                         : pow2Ocl((bitLenInt)PSTRIDEPOW))
 #else
     : pStride(pow2Ocl((bitLenInt)PSTRIDEPOW))
 #endif

@@ -395,7 +395,7 @@ __global__ void phasemask(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
     const bitCapIntOcl mask = bitCapIntOclPtr[1];
     const bitCapIntOcl nPhases = bitCapIntOclPtr[2];
-    const real1 phaseAngle = -PI_R1 / bitCapIntOclPtr[3];
+    const real1 phaseAngle = (real1)(-PI_R1_CUDA / bitCapIntOclPtr[3]);
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl popCount = 0;
@@ -665,13 +665,10 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
         for (bitCapIntOcl k = 0U; k < partPower; k++) {
             bitCapIntOcl l = j | (k << start);
 
-            qCudaCmplx amp = stateVec[l];
-            qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
+            const qCudaCmplx amp = stateVec[l];
+            const qCudaReal1_f nrm = dot(amp, amp);
             partProb += nrm;
-
-            if (nrm >= REAL1_EPSILON_CUDA) {
-                partStateAngle[k] = qCudaArg(amp);
-            }
+            partStateAngle[k] += arg(amp) * nrm;
         }
 
         remainderStateProb[lcv] = partProb;
@@ -687,13 +684,10 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             l |= (k ^ l) << len;
             l = j | l;
 
-            qCudaCmplx amp = stateVec[l];
-            qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
+            const qCudaCmplx amp = stateVec[l];
+            const qCudaReal1_f nrm = dot(amp, amp);
             partProb += nrm;
-
-            if (nrm >= REAL1_EPSILON_CUDA) {
-                remainderStateAngle[k] = qCudaArg(amp);
-            }
+            remainderStateAngle[k] += arg(amp) * nrm;
         }
 
         partStateProb[lcv] = partProb;
