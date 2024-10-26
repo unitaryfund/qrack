@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
     const bitLenInt width = (bitLenInt)std::stoi(argv[1U]);
     const bitLenInt halfWidth = width >> 1U;
     const bitCapIntOcl maxQPower = Qrack::pow2Ocl(width);
-    std::unique_ptr<Qrack::complex> arr(new Qrack::complex[maxQPower]);
+    std::unique_ptr<Qrack::complex[]> arr(new Qrack::complex[maxQPower]);
 
     for (bitLenInt i = 0U; i < halfWidth; ++i) {
         const bitLenInt subsystemSize = i + 1U;
