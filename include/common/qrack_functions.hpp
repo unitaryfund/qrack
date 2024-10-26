@@ -95,6 +95,8 @@ inline bitLenInt log2Ocl(bitCapIntOcl n)
 #else
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #endif
+#elif CPP_STD >= 20
+    return std::bit_width(n) - 1U;
 #else
     bitLenInt pow = 0U;
     bitCapIntOcl p = n >> 1U;
