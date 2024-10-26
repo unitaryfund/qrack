@@ -35,7 +35,7 @@ ParallelFor::ParallelFor()
               ? pow2Ocl((bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))))
               : pow2Ocl((bitLenInt)PSTRIDEPOW))
 #else
-    : pStride((bitCapIntOcl)ONE_BCI << PSTRIDEPOW)
+    : pStride(pow2Ocl((bitLenInt)PSTRIDEPOW))
 #endif
 #if ENABLE_PTHREAD
     , numCores(std::thread::hardware_concurrency())
