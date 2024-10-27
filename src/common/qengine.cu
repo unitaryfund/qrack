@@ -12,6 +12,8 @@
 
 #include "common/cuda_kernels.cuh"
 
+#include <complex>
+
 namespace Qrack {
 
 __device__ inline qCudaCmplx zmul(const qCudaCmplx lhs, const qCudaCmplx rhs)
