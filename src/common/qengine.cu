@@ -57,7 +57,11 @@ __device__ inline qCudaReal1 qCudaDot(qCudaReal4 a, qCudaReal4 b)
 #endif
 }
 
+#if FPPOW > 4
 __device__ inline qCudaCmplx polar_unit(const qCudaReal1 theta) { return make_qCudaCmplx(cos(theta), sin(theta)); }
+#else
+__device__ inline qCudaCmplx polar_unit(const qCudaReal1 theta) { return make_qCudaCmplx((qCudaReal1)cos((qCudaReal1_f)theta), (qCudaReal1)sin((qCudaReal1_f)theta)); }
+#endif
 
 __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.x, -a.y); }
 
@@ -395,7 +399,7 @@ __global__ void phasemask(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
     const bitCapIntOcl mask = bitCapIntOclPtr[1];
     const bitCapIntOcl nPhases = bitCapIntOclPtr[2];
-    const real1 phaseAngle = (real1)(-PI_R1_CUDA / bitCapIntOclPtr[3]);
+    const qCudaReal1 phaseAngle = (qCudaReal1)(-PI_R1_CUDA / bitCapIntOclPtr[3]);
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         bitCapIntOcl popCount = 0;
@@ -407,7 +411,11 @@ __global__ void phasemask(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr)
 
         const bitCapIntOcl nPhaseSteps = popCount % nPhases;
         if (nPhaseSteps) {
+#if FPPOW > 4
             stateVec[lcv] = zmul(polar_unit(nPhaseSteps * phaseAngle), stateVec[lcv]);
+#else
+            stateVec[lcv] = zmul(polar_unit(((qCudaReal1)(unsigned long long)nPhaseSteps) * phaseAngle), stateVec[lcv]);
+#endif
         }
     }
 }
@@ -668,7 +676,7 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             const qCudaCmplx amp = stateVec[l];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
-            partStateAngle[k] += qCudaArg(amp) * nrm;
+            partStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
         }
 
         remainderStateProb[lcv] = partProb;
@@ -687,7 +695,7 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             const qCudaCmplx amp = stateVec[l];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
-            remainderStateAngle[k] += qCudaArg(amp) * nrm;
+            remainderStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
         }
 
         partStateProb[lcv] = partProb;
