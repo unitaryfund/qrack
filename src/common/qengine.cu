@@ -12,8 +12,6 @@
 
 #include "common/cuda_kernels.cuh"
 
-#include <complex>
-
 namespace Qrack {
 
 __device__ inline qCudaCmplx zmul(const qCudaCmplx lhs, const qCudaCmplx rhs)
@@ -668,9 +666,9 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             bitCapIntOcl l = j | (k << start);
 
             const qCudaCmplx amp = stateVec[l];
-            const qCudaReal1_f nrm = dot(amp, amp);
+            const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
-            partStateAngle[k] += arg(amp) * nrm;
+            partStateAngle[k] += qCudaArg(amp) * nrm;
         }
 
         remainderStateProb[lcv] = partProb;
@@ -687,9 +685,9 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             l = j | l;
 
             const qCudaCmplx amp = stateVec[l];
-            const qCudaReal1_f nrm = dot(amp, amp);
+            const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
-            remainderStateAngle[k] += arg(amp) * nrm;
+            remainderStateAngle[k] += qCudaArg(amp) * nrm;
         }
 
         partStateProb[lcv] = partProb;
