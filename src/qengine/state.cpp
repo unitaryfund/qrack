@@ -1206,14 +1206,11 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     if (destination) {
         par_for(0U, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl j;
-            j = lcv & pow2MaskOcl(start);
+            bitCapIntOcl j = lcv & pow2MaskOcl(start);
             j |= (lcv ^ j) << length;
 
             for (bitCapIntOcl k = 0U; k < partPower; ++k) {
-                bitCapIntOcl l = j | (k << start);
-
-                const complex amp = stateVec->read(l);
+                const complex amp = stateVec->read(j | (k << start));
                 const real1 nrm = norm(amp);
                 remainderStateProb[lcv] += nrm;
                 partStateAngle[k] += arg(amp) * nrm;
@@ -1221,11 +1218,11 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         });
 
         par_for(0U, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl j;
-            j = lcv << start;
+            const bitCapIntOcl startMask = pow2MaskOcl(start);
+            const bitCapIntOcl j = lcv << start;
 
             for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
-                bitCapIntOcl l = k & pow2MaskOcl(start);
+                bitCapIntOcl l = k & startMask;
                 l |= j | ((k ^ l) << length);
 
                 const complex amp = stateVec->read(l);
@@ -1253,17 +1250,16 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             j |= (lcv ^ j) << length;
 
             for (bitCapIntOcl k = 0U; k < partPower; ++k) {
-                bitCapIntOcl l = j | (k << start);
-                remainderStateProb[lcv] += norm(stateVec->read(l));
+                remainderStateProb[lcv] += norm(stateVec->read(j | (k << start)));
             }
         });
 
         par_for(0U, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl j;
-            j = lcv << start;
+            const bitCapIntOcl startMask = pow2MaskOcl(start);
+            const bitCapIntOcl j = lcv << start;
 
             for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
-                bitCapIntOcl l = k & pow2MaskOcl(start);
+                bitCapIntOcl l = k & startMask;
                 l |= j | ((k ^ l) << length);
 
                 const complex amp = stateVec->read(l);

@@ -671,9 +671,7 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
         qCudaReal1_f partProb = ZERO_R1_CUDA;
 
         for (bitCapIntOcl k = 0U; k < partPower; k++) {
-            bitCapIntOcl l = j | (k << start);
-
-            const qCudaCmplx amp = stateVec[l];
+            const qCudaCmplx amp = stateVec[j | (k << start)];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
             partStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
@@ -734,9 +732,7 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
         qCudaReal1 partProb = ZERO_R1_CUDA;
 
         for (bitCapIntOcl k = 0U; k < partPower; k++) {
-            bitCapIntOcl l = j | (k << start);
-
-            qCudaCmplx amp = stateVec[l];
+            qCudaCmplx amp = stateVec[j | (k << start)];
             qCudaReal1 nrm = qCudaDot(amp, amp);
             partProb += nrm;
         }
@@ -754,16 +750,9 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
             l |= (k ^ l) << len;
             l = j | l;
 
-            qCudaCmplx amp = stateVec[l];
-            qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
-
-            if (nrm >= REAL1_EPSILON_CUDA) {
-                qCudaReal1 currentAngle = qCudaArg(amp);
-                if (firstAngle < angleThresh) {
-                    firstAngle = currentAngle;
-                }
-                remainderStateAngle[k] = currentAngle - (qCudaReal1)firstAngle;
-            }
+            const qCudaCmplx amp = stateVec[l];
+            const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
+            remainderStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
         }
     }
 }
