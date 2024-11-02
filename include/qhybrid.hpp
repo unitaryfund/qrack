@@ -167,7 +167,6 @@ public:
         oEngine->SwitchModes(isGpu, isPager);
         engine->ShuffleBuffers(oEngine->engine);
     }
-    QEnginePtr CloneEmpty() { return engine->CloneEmpty(); }
     void QueueSetDoNormalize(bool doNorm) { engine->QueueSetDoNormalize(doNorm); }
     void QueueSetRunningNorm(real1_f runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
 
@@ -518,6 +517,20 @@ public:
         c->runningNorm = runningNorm;
         c->SetConcurrency(GetConcurrencyLevel());
         c->engine->CopyStateVec(engine);
+        return c;
+    }
+    QEnginePtr CloneEmpty()
+    {
+        QHybridPtr c = std::make_shared<QHybrid>(0U, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
+            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+            gpuThresholdQubits, separabilityThreshold);
+        c->SetQubitCount(qubitCount);
+        return c;
+    }
+    QInterfacePtr Copy()
+    {
+        QHybridPtr c = std::dynamic_pointer_cast<QHybrid>(CloneEmpty());
+        c->engine = std::dynamic_pointer_cast<QEngine>(engine->Copy());
         return c;
     }
 

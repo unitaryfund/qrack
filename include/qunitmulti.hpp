@@ -94,18 +94,20 @@ public:
 
     virtual QInterfacePtr Clone()
     {
-        // TODO: Copy buffers instead of flushing?
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            RevertBasis2Qb(i);
-        }
-
         QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
             doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
             deviceIDs, thresholdQubits, separabilityThreshold);
 
-        copyPtr->SetReactiveSeparate(isReactiveSeparate);
+        return CloneBody(copyPtr, false);
+    }
 
-        return CloneBody(copyPtr);
+    virtual QInterfacePtr Copy()
+    {
+        QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+            deviceIDs, thresholdQubits, separabilityThreshold);
+
+        return CloneBody(copyPtr, true);
     }
 
 protected:

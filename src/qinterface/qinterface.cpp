@@ -830,7 +830,7 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error
 
     const bool tempDoNorm = doNormalize;
     doNormalize = false;
-    QInterfacePtr unitCopy = Clone();
+    QInterfacePtr unitCopy = Copy();
     doNormalize = tempDoNorm;
 
     unitCopy->Decompose(start, dest);

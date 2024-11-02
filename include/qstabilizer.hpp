@@ -90,7 +90,6 @@ public:
     ~QStabilizer() { Dump(); }
 
     QInterfacePtr Clone();
-    QStabilizerPtr CloneEmpty();
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };

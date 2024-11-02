@@ -319,6 +319,8 @@ protected:
 
     complex GetAmplitudeOrProb(const bitCapInt& perm, bool isProb = false);
 
+    QInterfacePtr CloneBody(bool isCopy);
+
 public:
     QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -868,7 +870,8 @@ public:
     bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
     bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol);
 
-    QInterfacePtr Clone();
+    QInterfacePtr Clone() { return CloneBody(false); }
+    QInterfacePtr Copy() { return CloneBody(true); }
 
     void SetDevice(int64_t dID)
     {

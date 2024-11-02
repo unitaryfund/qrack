@@ -222,6 +222,7 @@ public:
     real1_f SumSqrDiff(QInterfacePtr toCompare) { return SumSqrDiff(std::dynamic_pointer_cast<QEngineCPU>(toCompare)); }
     real1_f SumSqrDiff(QEngineCPUPtr toCompare);
     QInterfacePtr Clone();
+    QInterfacePtr Copy();
 
     /** @} */
 

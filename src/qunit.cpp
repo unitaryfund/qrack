@@ -3797,25 +3797,33 @@ real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
 
 QInterfacePtr QUnit::Clone()
 {
+    QUnitPtr copyPtr = std::make_shared<QUnit>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        separabilityThreshold);
+
+    return CloneBody(copyPtr, false);
+}
+QInterfacePtr QUnit::Copy()
+{
+    QUnitPtr copyPtr = std::make_shared<QUnit>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        separabilityThreshold);
+
+    return CloneBody(copyPtr, true);
+}
+
+QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr, bool isCopy)
+{
     // TODO: Copy buffers instead of flushing?
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         RevertBasis2Qb(i);
     }
-
-    QUnitPtr copyPtr = std::make_shared<QUnit>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
-        separabilityThreshold);
 
     copyPtr->SetReactiveSeparate(isReactiveSeparate);
     copyPtr->SetTInjection(useTGadget);
     copyPtr->SetNcrp(roundingThreshold);
     copyPtr->logFidelity = logFidelity;
 
-    return CloneBody(copyPtr);
-}
-
-QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
-{
     std::map<QInterfacePtr, QInterfacePtr> dupeEngines;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
         copyPtr->shards[i] = QEngineShard(shards[i]);
@@ -3826,7 +3834,7 @@ QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
         }
 
         if (dupeEngines.find(unit) == dupeEngines.end()) {
-            dupeEngines[unit] = unit->Clone();
+            dupeEngines[unit] = isCopy ? unit->Copy() : unit->Clone();
         }
 
         copyPtr->shards[i].unit = dupeEngines[unit];

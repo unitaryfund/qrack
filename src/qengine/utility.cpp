@@ -41,6 +41,14 @@ QEnginePtr QEngineCPU::CloneEmpty()
     return clone;
 }
 
+QInterfacePtr QEngineCPU::Copy()
+{
+    QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(CloneEmpty());
+    clone->stateVec = stateVec;
+
+    return clone;
+}
+
 bitLenInt QEngineCPU::Allocate(bitLenInt start, bitLenInt length)
 {
     if (start > qubitCount) {

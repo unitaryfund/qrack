@@ -468,6 +468,7 @@ public:
     bool isFinished() { return wait_queue_items.empty(); };
 
     QInterfacePtr Clone();
+    QInterfacePtr Copy();
 
     void PopQueue(bool isDispatch);
     void DispatchQueue();

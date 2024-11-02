@@ -472,6 +472,7 @@ public:
     }
 
     virtual QInterfacePtr Clone();
+    virtual QInterfacePtr Copy();
 
     /** @} */
 
@@ -610,7 +611,7 @@ protected:
         return toRet;
     }
 
-    virtual QInterfacePtr CloneBody(QUnitPtr copyPtr);
+    virtual QInterfacePtr CloneBody(QUnitPtr copyPtr, bool isCopy);
 
     virtual bool CheckBitsPermutation(bitLenInt start, bitLenInt length = 1);
     virtual bitCapInt GetCachedPermutation(bitLenInt start, bitLenInt length);

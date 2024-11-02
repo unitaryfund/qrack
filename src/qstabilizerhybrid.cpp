@@ -362,7 +362,7 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
     shard = toRet;
 }
 
-QInterfacePtr QStabilizerHybrid::Clone()
+QInterfacePtr QStabilizerHybrid::CloneBody(bool isCopy)
 {
     QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, qubitCount, ZERO_BCI, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
@@ -370,7 +370,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
 
     if (engine) {
         // Clone and set engine directly.
-        c->engine = engine->Clone();
+        c->engine = isCopy ? engine->Copy() : engine->Clone();
         c->stabilizer = NULL;
         return c;
     }

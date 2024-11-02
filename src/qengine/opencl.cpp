@@ -3187,6 +3187,15 @@ QEnginePtr QEngineOCL::CloneEmpty()
     return copyPtr;
 }
 
+QInterfacePtr QEngineOCL::Copy()
+{
+    QEngineOCLPtr copyPtr = std::dynamic_pointer_cast<QEngineOCL>(CloneEmpty());
+    copyPtr->stateVec = stateVec;
+    copyPtr->stateBuffer = stateBuffer;
+
+    return copyPtr;
+}
+
 void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
     CHECK_ZERO_SKIP();

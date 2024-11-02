@@ -2942,6 +2942,11 @@ public:
     virtual QInterfacePtr Clone() = 0;
 
     /**
+     *  Copy this QInterface
+     */
+    virtual QInterfacePtr Copy() { return Clone(); }
+
+    /**
      *  Set the device index, if more than one device is available.
      */
     virtual void SetDevice(int64_t dID) = 0;

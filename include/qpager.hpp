@@ -450,6 +450,7 @@ public:
     };
 
     QInterfacePtr Clone();
+    QInterfacePtr Copy();
 
     void SetDevice(int64_t dID)
     {
