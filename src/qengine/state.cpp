@@ -232,7 +232,7 @@ void QEngineCPU::SetPermutation(const bitCapInt& perm, const complex& phaseFac)
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         complex phase;
         if (randGlobalPhase) {
-            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
+            const real1_f angle = Rand() * 2 * (real1_f)PI_R1;
             phase = complex((real1)cos(angle), (real1)sin(angle));
         } else {
             phase = ONE_CMPLX;
