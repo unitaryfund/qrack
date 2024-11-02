@@ -677,7 +677,9 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             const qCudaCmplx amp = stateVec[j | (k << start)];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
-            partStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
+            if (nrm > REAL1_EPSILON_CUDA) {
+                partStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
+            }
         }
 
         remainderStateProb[lcv] = partProb;
@@ -695,7 +697,9 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             const qCudaCmplx amp = stateVec[l];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
-            remainderStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
+            if (nrm > REAL1_EPSILON_CUDA) {
+                remainderStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
+            }
         }
 
         if (partProb > REAL1_EPSILON_CUDA) {
@@ -734,8 +738,6 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
     const bitLenInt start = (bitLenInt)bitCapIntOclPtr[2];
     const bitCapIntOcl startMask = (1U << start) - 1U;
     const bitLenInt len = bitCapIntOclPtr[3];
-    const qCudaReal1_f angleThresh = -8 * PI_R1_CUDA;
-    const qCudaReal1_f initAngle = -16 * PI_R1_CUDA;
 
     for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         bitCapIntOcl j = lcv & startMask;
@@ -755,15 +757,15 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
     for (bitCapIntOcl lcv = ID; lcv < partPower; lcv += Nthreads) {
         const bitCapIntOcl j = lcv << start;
 
-        qCudaReal1_f firstAngle = initAngle;
-
         for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
             bitCapIntOcl l = k & startMask;
             l |= j | ((k ^ l) << len);
 
             const qCudaCmplx amp = stateVec[l];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
-            remainderStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
+            if (nrm > REAL1_EPSILON_CUDA) {
+                remainderStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
+            }
         }
     }
 

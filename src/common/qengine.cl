@@ -588,7 +588,9 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
             const cmplx amp = stateVec[j | (k << start)];
             const real1 nrm = dot(amp, amp);
             partProb += nrm;
-            partStateAngle[k] += arg(amp) * nrm;
+            if (nrm > REAL1_EPSILON) {
+                partStateAngle[k] += arg(amp) * nrm;
+            }
         }
 
         remainderStateProb[lcv] = partProb;
@@ -606,7 +608,9 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
             const cmplx amp = stateVec[l];
             const real1 nrm = dot(amp, amp);
             partProb += nrm;
-            remainderStateAngle[k] += arg(amp) * nrm;
+            if (nrm > REAL1_EPSILON) {
+                remainderStateAngle[k] += arg(amp) * nrm;
+            }
         }
 
         if (partProb > REAL1_EPSILON) {
@@ -667,7 +671,10 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIn
             l |= j | ((k ^ l) << len);
 
             const cmplx amp = stateVec[l];
-            remainderStateAngle[k] += arg(amp) * dot(amp, amp);
+            const real1 nrm = dot(amp, amp);
+            if (nrm > REAL1_EPSILON) {
+                remainderStateAngle[k] += arg(amp) * nrm;
+            }
         }
     }
 
