@@ -20,6 +20,9 @@
 
 #include <set>
 #include <vector>
+#if CPP_STD >= 20
+#include <bit>
+#endif
 
 #define _bi_div_mod(left, right, quotient, rmndr)                                                                      \
     if (quotient) {                                                                                                    \
@@ -83,7 +86,9 @@ namespace Qrack {
 inline bitLenInt log2Ocl(bitCapIntOcl n)
 {
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
-#if ENABLE_INTRINSICS && defined(_WIN32) && !defined(__CYGWIN__)
+#if CPP_STD >= 20
+    return std::bit_width(n) - 1U;
+#elif ENABLE_INTRINSICS && defined(_WIN32) && !defined(__CYGWIN__)
 #if UINTPOW < 6
     return (bitLenInt)(bitsInByte * sizeof(unsigned int) - _lzcnt_u32((unsigned int)n) - 1U);
 #else
@@ -95,8 +100,6 @@ inline bitLenInt log2Ocl(bitCapIntOcl n)
 #else
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #endif
-#elif CPP_STD >= 20
-    return std::bit_width(n) - 1U;
 #else
     bitLenInt pow = 0U;
     bitCapIntOcl p = n >> 1U;
@@ -105,6 +108,21 @@ inline bitLenInt log2Ocl(bitCapIntOcl n)
         ++pow;
     }
     return pow;
+#endif
+}
+
+inline bitLenInt popCountOcl(bitCapIntOcl n)
+{
+#if CPP_STD >= 20
+    return std::popcount(n);
+#elif defined(__GNUC__) || defined(__clang__)
+    return __builtin_popcount(n);
+#else
+    bitCapIntOcl popCount;
+    for (popCount = 0U; n; ++popCount) {
+        n &= n - 1U;
+    }
+    return popCount;
 #endif
 }
 

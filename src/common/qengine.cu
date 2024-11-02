@@ -60,7 +60,10 @@ __device__ inline qCudaReal1 qCudaDot(qCudaReal4 a, qCudaReal4 b)
 #if FPPOW > 4
 __device__ inline qCudaCmplx polar_unit(const qCudaReal1 theta) { return make_qCudaCmplx(cos(theta), sin(theta)); }
 #else
-__device__ inline qCudaCmplx polar_unit(const qCudaReal1 theta) { return make_qCudaCmplx((qCudaReal1)cos((qCudaReal1_f)theta), (qCudaReal1)sin((qCudaReal1_f)theta)); }
+__device__ inline qCudaCmplx polar_unit(const qCudaReal1 theta)
+{
+    return make_qCudaCmplx((qCudaReal1)cos((qCudaReal1_f)theta), (qCudaReal1)sin((qCudaReal1_f)theta));
+}
 #endif
 
 __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.x, -a.y); }

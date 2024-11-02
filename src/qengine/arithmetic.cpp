@@ -45,7 +45,6 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     Finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
-    stateVec->isReadLocked = false;
 
     par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -83,7 +82,6 @@ void QEngineCPU::INC(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt len
     Finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
-    stateVec->isReadLocked = false;
 
     par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -138,7 +136,6 @@ void QEngineCPU::CINC(
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->copy(stateVec);
-    stateVec->isReadLocked = false;
 
     par_for_mask(0, maxQPowerOcl, controlPowers, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -182,7 +179,6 @@ void QEngineCPU::INCDECC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(carryIndex), 1U, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -235,7 +231,6 @@ void QEngineCPU::INCS(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt le
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -286,7 +281,6 @@ void QEngineCPU::INCDECSC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenIn
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, carryMask, 1U, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -344,7 +338,6 @@ void QEngineCPU::INCDECSC(
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, carryMask, 1U, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -388,7 +381,6 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(carryStart), length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -470,7 +462,6 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for_mask(0, maxQPowerOcl, skipPowers, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -563,7 +554,6 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(outStart), length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -656,7 +646,6 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for_mask(0, maxQPowerOcl, skipPowers, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -758,7 +747,6 @@ void QEngineCPU::INCBCD(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt 
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -833,7 +821,6 @@ void QEngineCPU::INCDECBCDC(const bitCapInt& toMod, bitLenInt inOutStart, bitLen
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(carryIndex), ONE_BCI, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
@@ -919,7 +906,6 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     ParallelFunc fn;
     if (valueBytes == 1) {
@@ -1004,7 +990,6 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // We calloc a new stateVector for output.
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     // We're going to loop over every eigenstate in the vector, (except, we
     // already know the carry is zero).  This bit masks let us quickly
@@ -1121,7 +1106,6 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // We calloc a new stateVector for output.
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
     // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
@@ -1214,7 +1198,6 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, const unsigned char* va
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPowerOcl);
     nStateVec->clear();
-    stateVec->isReadLocked = false;
 
     par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl inputRes = lcv & inputMask;

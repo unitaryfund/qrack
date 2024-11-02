@@ -40,11 +40,8 @@ protected:
     bitCapIntOcl capacity;
 
 public:
-    bool isReadLocked;
-
     StateVector(bitCapIntOcl cap)
         : capacity(cap)
-        , isReadLocked(true)
     {
     }
     virtual ~StateVector()
