@@ -673,7 +673,7 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
 
         qCudaReal1_f partProb = ZERO_R1_CUDA;
 
-        for (bitCapIntOcl k = 0U; k < partPower; k++) {
+        for (bitCapIntOcl k = 0U; k < partPower; ++k) {
             const qCudaCmplx amp = stateVec[j | (k << start)];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             partProb += nrm;
@@ -688,10 +688,9 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
 
         qCudaReal1 partProb = ZERO_R1_CUDA;
 
-        for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
+        for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
             bitCapIntOcl l = k & startMask;
-            l |= (k ^ l) << len;
-            l = j | l;
+            l |= j | ((k ^ l) << len);
 
             const qCudaCmplx amp = stateVec[l];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
@@ -734,7 +733,7 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
 
         qCudaReal1 partProb = ZERO_R1_CUDA;
 
-        for (bitCapIntOcl k = 0U; k < partPower; k++) {
+        for (bitCapIntOcl k = 0U; k < partPower; ++k) {
             qCudaCmplx amp = stateVec[j | (k << start)];
             qCudaReal1 nrm = qCudaDot(amp, amp);
             partProb += nrm;
@@ -748,10 +747,9 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
 
         qCudaReal1_f firstAngle = initAngle;
 
-        for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
+        for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
             bitCapIntOcl l = k & startMask;
-            l |= (k ^ l) << len;
-            l = j | l;
+            l |= j | ((k ^ l) << len);
 
             const qCudaCmplx amp = stateVec[l];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);

@@ -584,10 +584,8 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
 
         real1 partProb = ZERO_R1;
 
-        for (bitCapIntOcl k = 0U; k < partPower; k++) {
-            bitCapIntOcl l = j | (k << start);
-
-            const cmplx amp = stateVec[l];
+        for (bitCapIntOcl k = 0U; k < partPower; ++k) {
+            const cmplx amp = stateVec[j | (k << start)];
             const real1 nrm = dot(amp, amp);
             partProb += nrm;
             partStateAngle[k] += arg(amp) * nrm;
@@ -601,10 +599,9 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
 
         real1 partProb = ZERO_R1;
 
-        for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
+        for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
             bitCapIntOcl l = k & startMask;
-            l |= (k ^ l) << len;
-            l = j | l;
+            l |= j | ((k ^ l) << len);
 
             const cmplx amp = stateVec[l];
             const real1 nrm = dot(amp, amp);
@@ -658,10 +655,8 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIn
 
         real1 partProb = ZERO_R1;
 
-        for (bitCapIntOcl k = 0U; k < partPower; k++) {
-            bitCapIntOcl l = j | (k << start);
-
-            const cmplx amp = stateVec[l];
+        for (bitCapIntOcl k = 0U; k < partPower; ++k) {
+            const cmplx amp = stateVec[j | (k << start)];
             partProb += dot(amp, amp);
         }
 
@@ -671,10 +666,9 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCapIn
     for (bitCapIntOcl lcv = ID; lcv < partPower; lcv += Nthreads) {
         const bitCapIntOcl j = lcv << start;
 
-        for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
+        for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
             bitCapIntOcl l = k & startMask;
-            l |= (k ^ l) << len;
-            l = j | l;
+            l |= j | ((k ^ l) << len);
 
             const cmplx amp = stateVec[l];
             remainderStateAngle[k] += arg(amp) * dot(amp, amp);

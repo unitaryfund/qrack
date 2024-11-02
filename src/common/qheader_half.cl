@@ -22,7 +22,7 @@
 #define ONE_R1 ((real1)1.0f)
 #define SineShift ((real1)M_PI_2_F)
 #define PI_R1 ((real1)M_PI_F)
-#define REAL1_EPSILON ((real1)2e-17h)
+#define REAL1_EPSILON 0.000000477h
 
 // Macro is defined, and functions are undefined, for NVIDIA pragma
 #ifdef __OVERLOADABLE__

@@ -20,4 +20,4 @@
 #define ONE_R1 1.0
 #define SineShift M_PI_2
 #define PI_R1 M_PI
-#define REAL1_EPSILON 2e-65
+#define REAL1_EPSILON 6.310887241768095e-30
