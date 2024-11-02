@@ -698,7 +698,7 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
             remainderStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
         }
 
-        if (partProb > REAL1_EPSILON) {
+        if (partProb > REAL1_EPSILON_CUDA) {
             partStateAngle[lcv] /= partProb;
         }
         partStateProb[lcv] = partProb;
@@ -706,7 +706,7 @@ __global__ void decomposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPt
 
     for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         const real1 prob = remainderStateProb[lcv];
-        if (prob > REAL1_EPSILON) {
+        if (prob > REAL1_EPSILON_CUDA) {
             remainderStateAngle[lcv] /= prob;
         }
     }
@@ -764,6 +764,13 @@ __global__ void disposeprob(qCudaCmplx* stateVec, bitCapIntOcl* bitCapIntOclPtr,
             const qCudaCmplx amp = stateVec[l];
             const qCudaReal1_f nrm = (qCudaReal1_f)qCudaDot(amp, amp);
             remainderStateAngle[k] += qCudaArg(amp) * (qCudaReal1)nrm;
+        }
+    }
+
+    for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
+        const real1 prob = remainderStateProb[lcv];
+        if (prob > REAL1_EPSILON_CUDA) {
+            remainderStateAngle[lcv] /= prob;
         }
     }
 }
