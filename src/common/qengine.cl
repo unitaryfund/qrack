@@ -609,11 +609,10 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl4* bitCap
             remainderStateAngle[k] += arg(amp) * nrm;
         }
 
-        partStateProb[lcv] = partProb;
-        const real1 prob = partStateProb[lcv];
-        if (prob > REAL1_EPSILON) {
-            partStateAngle[lcv] /= prob;
+        if (partProb > REAL1_EPSILON) {
+            partStateAngle[lcv] /= partProb;
         }
+        partStateProb[lcv] = partProb;
     }
 
     for (bitCapIntOcl lcv = ID; lcv < remainderPower; lcv += Nthreads) {
