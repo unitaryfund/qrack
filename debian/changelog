@@ -1,3 +1,27 @@
+libqrack (9.11.19) bionic; urgency=medium
+
+  * Debug OpenCL/CUDA Decompose()/Dispose(); optimize for CPU (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 02 Nov 2024 10:54:38 -0400
+
+libqrack (9.11.18) focal; urgency=medium
+
+  * Debug OpenCL/CUDA Decompose()/Dispose(); optimize for CPU (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 02 Nov 2024 10:52:45 -0400
+
+libqrack (9.11.17) jammy; urgency=medium
+
+  * Debug OpenCL/CUDA Decompose()/Dispose(); optimize for CPU (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 02 Nov 2024 10:50:50 -0400
+
+libqrack (9.11.16) noble; urgency=medium
+
+  * Debug OpenCL/CUDA Decompose()/Dispose(); optimize for CPU (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 02 Nov 2024 10:47:23 -0400
+
 libqrack (9.11.15) bionic; urgency=medium
 
   * Improved TrySeparate(); sparse state vector removed (Bionic 4/4)
