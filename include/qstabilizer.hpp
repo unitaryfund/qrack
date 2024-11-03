@@ -81,10 +81,17 @@ protected:
     }
 
     using QInterface::Copy;
-    void Copy(QInterfacePtr orig)
+    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QStabilizer>(orig)); }
+    void Copy(QStabilizerPtr orig)
     {
-        throw std::domain_error("Can't TryDecompose() on QStabilizerHybrid! (If you know the system is exactly "
-                                "separable, just use Decompose() instead.)");
+        QInterface::Copy(std::dynamic_pointer_cast<QInterface>(orig));
+        rawRandBools = orig->rawRandBools;
+        rawRandBoolsRemaining = orig->rawRandBoolsRemaining;
+        phaseOffset = orig->phaseOffset;
+        maxStateMapCacheQubitCount = orig->maxStateMapCacheQubitCount;
+        r = orig->r;
+        x = orig->x;
+        z = orig->z;
     }
 
 public:

@@ -47,7 +47,6 @@ class QStabilizerHybrid : public QParity, public QInterface {
 protected:
     bool useHostRam;
     bool doNormalize;
-    bool isSparse;
     bool useTGadget;
     bool isRoundingFlushed;
     bitLenInt thresholdQubits;
@@ -321,27 +320,48 @@ protected:
 
     QInterfacePtr CloneBody(bool isCopy);
     using QInterface::Copy;
-    void Copy(QInterfacePtr orig)
+    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QStabilizerHybrid>(orig)); }
+    void Copy(QStabilizerHybridPtr orig)
     {
-        throw std::domain_error("Can't TryDecompose() on QStabilizerHybrid! (If you know the system is exactly "
-                                "separable, just use Decompose() instead.)");
+        QInterface::Copy(std::dynamic_pointer_cast<QInterface>(orig));
+        useHostRam = orig->useHostRam;
+        doNormalize = orig->doNormalize;
+        useTGadget = orig->useTGadget;
+        isRoundingFlushed = orig->isRoundingFlushed;
+        thresholdQubits = orig->thresholdQubits;
+        ancillaCount = orig->ancillaCount;
+        deadAncillaCount = orig->deadAncillaCount;
+        maxEngineQubitCount = orig->maxEngineQubitCount;
+        maxAncillaCount = orig->maxAncillaCount;
+        maxStateMapCacheQubitCount = orig->maxStateMapCacheQubitCount;
+        separabilityThreshold = orig->separabilityThreshold;
+        roundingThreshold = orig->roundingThreshold;
+        devID = orig->devID;
+        phaseFactor = orig->phaseFactor;
+        logFidelity = orig->logFidelity;
+        engine = orig->engine;
+        stabilizer = orig->stabilizer;
+        deviceIDs = orig->deviceIDs;
+        engineTypes = orig->engineTypes;
+        cloneEngineTypes = orig->cloneEngineTypes;
+        shards = orig->shards;
+        stateMapCache = orig->stateMapCache;
     }
 
 public:
     QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
+        bool ignored = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = _qrack_qunit_sep_thresh);
 
     QStabilizerHybrid(bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool ignored = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = _qrack_qunit_sep_thresh)
         : QStabilizerHybrid({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
-              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
-              separation_thresh)
+              useHostMem, deviceId, useHardwareRNG, ignored, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
 

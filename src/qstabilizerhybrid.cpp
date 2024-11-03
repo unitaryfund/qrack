@@ -47,7 +47,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , useHostRam(useHostMem)
     , doNormalize(doNorm)
-    , isSparse(useSparseStateVec)
     , useTGadget(true)
     , isRoundingFlushed(false)
     , thresholdQubits(qubitThreshold)
@@ -121,7 +120,7 @@ QUnitCliffordPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
 QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs,
         thresholdQubits, separabilityThreshold);
     toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
@@ -129,7 +128,7 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm, bitLenInt qbCount)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qbCount, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
     toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
@@ -365,7 +364,7 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
 QInterfacePtr QStabilizerHybrid::CloneBody(bool isCopy)
 {
     QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, qubitCount, ZERO_BCI, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor,
         std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
     if (engine) {
@@ -589,7 +588,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
 QInterfacePtr QStabilizerHybrid::Decompose(bitLenInt start, bitLenInt length)
 {
     QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, length, ZERO_BCI, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor,
         std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
     Decompose(start, dest);
@@ -660,7 +659,7 @@ bitLenInt QStabilizerHybrid::Allocate(bitLenInt start, bitLenInt length)
     }
 
     QStabilizerHybridPtr nQubits = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, length, ZERO_BCI,
-        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, false,
         (real1_f)amplitudeFloor, std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
     return Compose(nQubits, start);
 }
@@ -809,7 +808,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(const bitCapInt& perm, bool isProb
     }
     QEnginePtr aEngine = std::dynamic_pointer_cast<QEngine>(
         CreateQuantumInterface(et, ancillaCount, ZERO_BCI, rand_generator, ONE_CMPLX, false, false, useHostRam, devID,
-            useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
+            useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
 
 #if ENABLE_COMPLEX_X2
     std::vector<complex2> top;
