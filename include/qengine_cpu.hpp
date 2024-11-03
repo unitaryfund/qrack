@@ -40,6 +40,7 @@ protected:
     DispatchQueue dispatchQueue;
 #endif
 
+    using QEngine::Copy;
     void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QEngineCPU>(orig)); }
     void Copy(QEngineCPUPtr orig)
     {

@@ -246,6 +246,7 @@ protected:
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
     }
 
+    using QEngine::Copy;
     void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QEngineOCL>(orig)); }
     void Copy(QEngineOCLPtr orig)
     {
