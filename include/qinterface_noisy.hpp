@@ -49,6 +49,7 @@ protected:
         }
     }
 
+    using QInterface::Copy;
     void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QInterfaceNoisy>(orig)); }
     void Copy(QInterfaceNoisyPtr orig)
     {
