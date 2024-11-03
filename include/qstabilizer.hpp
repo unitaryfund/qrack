@@ -80,6 +80,7 @@ protected:
         }
     }
 
+    using QInterface::Copy;
     void Copy(QInterfacePtr orig)
     {
         throw std::domain_error("Can't TryDecompose() on QStabilizerHybrid! (If you know the system is exactly "
