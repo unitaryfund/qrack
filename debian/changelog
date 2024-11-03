@@ -1,3 +1,27 @@
+libqrack (9.12.3) bionic; urgency=medium
+
+  * Optimize TryDecompose(); Copy() method (Bionic 4/4)
+
+ -- Daniel Strano <iamu@sekhmet>  Sun, 03 Nov 2024 03:44:15 -0500
+
+libqrack (9.12.2) focal; urgency=medium
+
+  * Optimize TryDecompose(); Copy() method (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 03 Nov 2024 03:42:16 -0500
+
+libqrack (9.12.1) jammy; urgency=medium
+
+  * Optimize TryDecompose(); Copy() method (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 03 Nov 2024 03:40:30 -0500
+
+libqrack (9.12.0) noble; urgency=medium
+
+  * Optimize TryDecompose(); Copy() method (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 03 Nov 2024 03:37:15 -0500
+
 libqrack (9.11.19) bionic; urgency=medium
 
   * Debug OpenCL/CUDA Decompose()/Dispose(); optimize for CPU (Bionic 4/4)

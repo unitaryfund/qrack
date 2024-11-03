@@ -1183,12 +1183,11 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
                 const complex amp = stateVec->read(j | (k << start));
                 const real1 nrm = norm(amp);
                 remainderStateProb[lcv] += nrm;
-                if (nrm > REAL1_EPSILON) {
+                if (nrm > amplitudeFloor) {
                     partStateAngle[k] += arg(amp) * nrm;
                 }
             }
         });
-
         par_for(0U, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             const bitCapIntOcl startMask = pow2MaskOcl(start);
             const bitCapIntOcl j = lcv << start;
@@ -1200,7 +1199,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
                 const complex amp = stateVec->read(l);
                 const real1 nrm = norm(amp);
                 partStateProb[lcv] += nrm;
-                if (nrm > REAL1_EPSILON) {
+                if (nrm > amplitudeFloor) {
                     remainderStateAngle[k] += arg(amp) * nrm;
                 }
             }
@@ -1225,7 +1224,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
                 remainderStateProb[lcv] += norm(stateVec->read(j | (k << start)));
             }
         });
-
         par_for(0U, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             const bitCapIntOcl startMask = pow2MaskOcl(start);
             const bitCapIntOcl j = lcv << start;
@@ -1236,7 +1234,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
                 const complex amp = stateVec->read(l);
                 const real1 nrm = norm(amp);
-                if (nrm > REAL1_EPSILON) {
+                if (nrm > amplitudeFloor) {
                     remainderStateAngle[k] += arg(amp) * nrm;
                 }
             }
