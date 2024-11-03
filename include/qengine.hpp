@@ -67,6 +67,15 @@ protected:
 
     void EitherMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bool isAnti);
 
+    virtual void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QEngine>(orig)); }
+    virtual void Copy(QEnginePtr orig)
+    {
+        QInterface::Copy(orig);
+        useHostRam = orig->useHostRam;
+        runningNorm = orig->runningNorm;
+        maxQPowerOcl = orig->maxQPowerOcl;
+    }
+
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
@@ -94,6 +103,8 @@ public:
     {
         // Virtual destructor for inheritance
     }
+
+    using QInterface::Copy;
 
     virtual void SetQubitCount(bitLenInt qb)
     {

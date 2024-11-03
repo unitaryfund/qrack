@@ -3112,6 +3112,17 @@ QEnginePtr QEngineCUDA::CloneEmpty()
     return copyPtr;
 }
 
+QInterfacePtr QEngineCUDA::Copy()
+{
+    QEngineCUDAPtr copyPtr = std::dynamic_pointer_cast<QEngineCUDA>(CloneEmpty());
+    copyPtr->stateVec = stateVec;
+    copyPtr->stateBuffer = stateBuffer;
+    // TODO: This is a hack for TryDecompose():
+    AddAlloc(sizeof(complex) * maxQPowerOcl);
+
+    return copyPtr;
+}
+
 void QEngineCUDA::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
     CHECK_ZERO_SKIP();

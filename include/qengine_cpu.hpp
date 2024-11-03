@@ -40,6 +40,13 @@ protected:
     DispatchQueue dispatchQueue;
 #endif
 
+    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QEngineCPU>(orig)); }
+    void Copy(QEngineCPUPtr orig)
+    {
+        QEngine::Copy(std::dynamic_pointer_cast<QEngine>(orig));
+        stateVec = orig->stateVec;
+    }
+
 public:
     QEngineCPU(bitLenInt qBitCount, const bitCapInt& initState, qrack_rand_gen_ptr rgp = nullptr,
         const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,

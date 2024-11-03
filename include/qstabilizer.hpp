@@ -80,6 +80,12 @@ protected:
         }
     }
 
+    void Copy(QInterfacePtr orig)
+    {
+        throw std::domain_error("Can't TryDecompose() on QStabilizerHybrid! (If you know the system is exactly "
+                                "separable, just use Decompose() instead.)");
+    }
+
 public:
     QStabilizer(bitLenInt n, const bitCapInt& perm = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,

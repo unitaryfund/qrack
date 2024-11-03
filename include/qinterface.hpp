@@ -216,6 +216,21 @@ protected:
         return isExp ? ExpectationBitsFactorized(bits, perms, offset) : VarianceBitsFactorized(bits, perms, offset);
     }
 
+    virtual void Copy(QInterfacePtr orig)
+    {
+        orig->Finish();
+        doNormalize = orig->doNormalize;
+        randGlobalPhase = orig->randGlobalPhase;
+        useRDRAND = orig->useRDRAND;
+        qubitCount = orig->qubitCount;
+        randomSeed = orig->randomSeed;
+        amplitudeFloor = orig->amplitudeFloor;
+        maxQPower = orig->maxQPower;
+        rand_generator = orig->rand_generator;
+        rand_distribution = orig->rand_distribution;
+        hardware_rand_generator = orig->hardware_rand_generator;
+    }
+
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
         bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON);

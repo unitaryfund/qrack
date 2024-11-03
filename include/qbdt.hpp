@@ -186,6 +186,19 @@ protected:
         return sample;
     }
 
+    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QBdt>(orig)); }
+    void Copy(QBdtPtr orig)
+    {
+        QInterface::Copy(orig);
+        bdtStride = orig->bdtStride;
+        devID = orig->devID;
+        root = orig->root;
+        bdtMaxQPower = orig->bdtMaxQPower;
+        deviceIDs = orig->deviceIDs;
+        engines = orig->engines;
+        shards = orig->shards;
+    }
+
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,

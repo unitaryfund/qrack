@@ -49,6 +49,16 @@ protected:
         }
     }
 
+    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QInterfaceNoisy>(orig)); }
+    void Copy(QInterfaceNoisyPtr orig)
+    {
+        QInterface::Copy(orig);
+        logFidelity = orig->logFidelity;
+        noiseParam = orig->noiseParam;
+        engine = orig->engine;
+        engines = orig->engines;
+    }
+
 public:
     QInterfaceNoisy(bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,

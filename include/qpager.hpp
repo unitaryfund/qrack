@@ -99,6 +99,29 @@ protected:
 
     real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
 
+    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QPager>(orig)); }
+    void Copy(QPagerPtr orig)
+    {
+        QEngine::Copy(std::dynamic_pointer_cast<QEngine>(orig));
+        useGpuThreshold = orig->useGpuThreshold;
+        isSparse = orig->isSparse;
+        useTGadget = orig->useTGadget;
+        maxPageSetting = orig->maxPageSetting;
+        maxPageQubits = orig->maxPageQubits;
+        thresholdQubitsPerPage = orig->thresholdQubitsPerPage;
+        baseQubitsPerPage = orig->baseQubitsPerPage;
+        maxQubits = orig->maxQubits;
+        devID = orig->devID;
+        rootEngine = orig->rootEngine;
+        basePageMaxQPower = orig->basePageMaxQPower;
+        basePageCount = orig->basePageCount;
+        phaseFactor = orig->phaseFactor;
+        devicesHostPointer = orig->devicesHostPointer;
+        deviceIDs = orig->deviceIDs;
+        engines = orig->engines;
+        qPages = orig->qPages;
+    }
+
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,

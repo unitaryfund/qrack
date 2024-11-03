@@ -46,6 +46,23 @@ protected:
     complex phaseFactor;
     std::vector<int64_t> deviceIDs;
 
+    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QHybrid>(orig)); }
+    void Copy(QHybridPtr orig)
+    {
+        QEngine::Copy(std::dynamic_pointer_cast<QEngine>(orig));
+        isGpu = orig->isGpu;
+        isPager = orig->isPager;
+        useRDRAND = orig->useRDRAND;
+        isSparse = orig->isSparse;
+        gpuThresholdQubits = orig->gpuThresholdQubits;
+        pagerThresholdQubits = orig->pagerThresholdQubits;
+        separabilityThreshold = orig->separabilityThreshold;
+        devID = orig->devID;
+        engine = orig->engine;
+        phaseFactor = orig->phaseFactor;
+        deviceIDs = orig->deviceIDs;
+    }
+
 public:
     QHybrid(bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,

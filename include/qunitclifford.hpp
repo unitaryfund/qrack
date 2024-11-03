@@ -44,6 +44,12 @@ protected:
     complex phaseOffset;
     std::vector<CliffordShard> shards;
 
+    void Copy(QInterfacePtr orig)
+    {
+        throw std::domain_error("Can't TryDecompose() on QUnitClifford! (If you know the system is exactly separable, "
+                                "just use Decompose() instead.)");
+    }
+
     void CombinePhaseOffsets(QStabilizerPtr unit)
     {
         if (randGlobalPhase) {

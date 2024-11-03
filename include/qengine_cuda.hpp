@@ -232,6 +232,29 @@ protected:
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
     }
 
+    void Copy(QInterfacePtr orig) {Copy(std::dynamic_pointer_cast<QEngineOCL>(orig); }
+    void Copy(QEngineOCLPtr orig)
+    {
+        didInit = orig->didInit;
+        usingHostRam = orig->usingHostRam;
+        unlockHostMem = orig->unlockHostMem;
+        nrmGroupCount = orig->nrmGroupCount;
+        nrmGroupSize = orig->nrmGroupSize;
+        AddAlloc(orig->totalOclAllocSize);
+        deviceID = orig->deviceID;
+        lockSyncFlags = orig->lockSyncFlags;
+        permutationAmp = orig->permutationAmp;
+        stateVec = orig->stateVec;
+        // queue_mutex = orig->queue_mutex;
+        stateBuffer = orig->stateBuffer;
+        nrmBuffer = orig->nrmBuffer;
+        device_context = orig->device_context;
+        wait_refs = orig->wait_refs;
+        wait_queue_items = orig->wait_queue_items;
+        poolItems = orig->poolItems;
+        nrmArray = orig->nrmArray;
+    }
+
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
     /// design of the QEngine.
@@ -451,6 +474,7 @@ public:
     bool isFinished() { return wait_queue_items.empty(); };
 
     QInterfacePtr Clone();
+    QInterfacePtr Copy();
 
     void PopQueue();
     void DispatchQueue();

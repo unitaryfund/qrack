@@ -320,6 +320,11 @@ protected:
     complex GetAmplitudeOrProb(const bitCapInt& perm, bool isProb = false);
 
     QInterfacePtr CloneBody(bool isCopy);
+    void Copy(QInterfacePtr orig)
+    {
+        throw std::domain_error("Can't TryDecompose() on QStabilizerHybrid! (If you know the system is exactly "
+                                "separable, just use Decompose() instead.)");
+    }
 
 public:
     QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,

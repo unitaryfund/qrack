@@ -47,6 +47,26 @@ protected:
 
     QInterfacePtr MakeEngine(bitLenInt length, const bitCapInt& perm);
 
+    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QUnit>(orig)); }
+    void Copy(QUnitPtr orig)
+    {
+        QInterface::Copy(orig);
+        freezeBasis2Qb = orig->freezeBasis2Qb;
+        useHostRam = orig->useHostRam;
+        isSparse = orig->isSparse;
+        isReactiveSeparate = orig->isReactiveSeparate;
+        useTGadget = orig->useTGadget;
+        thresholdQubits = orig->thresholdQubits;
+        separabilityThreshold = orig->separabilityThreshold;
+        roundingThreshold = orig->roundingThreshold;
+        logFidelity = orig->logFidelity;
+        devID = orig->devID;
+        phaseFactor = orig->phaseFactor;
+        shards = orig->shards;
+        deviceIDs = orig->deviceIDs;
+        engines = orig->engines;
+    }
+
 public:
     QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,

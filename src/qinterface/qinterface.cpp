@@ -828,19 +828,16 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error
 {
     Finish();
 
-    const bool tempDoNorm = doNormalize;
-    doNormalize = false;
-    QInterfacePtr unitCopy = Copy();
-    doNormalize = tempDoNorm;
+    QInterfacePtr orig = Copy();
+    orig->Decompose(start, dest);
+    QInterfacePtr output = orig->Copy();
+    orig->Compose(dest, start);
 
-    unitCopy->Decompose(start, dest);
-    unitCopy->Compose(dest, start);
-
-    const bool didSeparate = ApproxCompare(unitCopy, error_tol);
+    const bool didSeparate = ApproxCompare(orig, error_tol);
 
     if (didSeparate) {
         // The subsystem is separable.
-        Dispose(start, dest->GetQubitCount());
+        Copy(output);
     }
 
     return didSeparate;
