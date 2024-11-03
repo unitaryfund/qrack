@@ -186,6 +186,7 @@ protected:
         return sample;
     }
 
+    using QInterface::Copy;
     void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QBdt>(orig)); }
     void Copy(QBdtPtr orig)
     {
