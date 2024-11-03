@@ -99,6 +99,7 @@ protected:
 
     real1_f ExpVarBitsAll(bool isExp, const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI);
 
+    using QEngine::Copy;
     void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QPager>(orig)); }
     void Copy(QPagerPtr orig)
     {
