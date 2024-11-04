@@ -317,7 +317,13 @@ bool QBdt::IsSeparable(bitLenInt start)
 
     // If the tree has been fully reduced, this should ALWAYS be the same for ALL branches
     // (that have nonzero amplitude), if-and-only-if the state is separable.
-    QBdtNodeInterface* subsystemPtr = NULL;
+    // QBdtNodeInterface* subsystemPtr = NULL;
+
+    // Alternatively, using shared_ptr with our custom (non-)equality operator will reduce
+    // the tree in-flight if it is not already fully-reduced, at no significant additional
+    // overhead if the tree is already fully-reduced.
+    QBdtNodeInterfacePtr subsystemPtr = NULL;
+
     bool result = true;
     const bitCapInt qPower = pow2(start);
 
@@ -335,10 +341,10 @@ bool QBdt::IsSeparable(bitLenInt start)
         }
 
         if (!subsystemPtr) {
-            subsystemPtr = leaf.get();
+            subsystemPtr = leaf;
         }
 
-        if (subsystemPtr != leaf.get()) {
+        if (subsystemPtr != leaf) {
             result = false;
             return (bitCapInt)(pow2(start) - ONE_BCI);
         }
