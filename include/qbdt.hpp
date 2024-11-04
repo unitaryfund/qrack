@@ -268,6 +268,12 @@ public:
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
     }
 
+    /**
+     * Inexpensive check for whether the QBdt is separable between low and high qubit indices at the bipartite boundary
+     * of qubit index "start" (for "high" qubit indices).
+     */
+    bool IsSeparable(bitLenInt start);
+
     using QInterface::Compose;
     bitLenInt Compose(QBdtPtr toCopy, bitLenInt start);
     bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)

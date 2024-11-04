@@ -290,6 +290,62 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     root->Prune(qubitCount);
 }
 
+bool QBdt::IsSeparable(bitLenInt start)
+{
+    if (!start || (start >= qubitCount)) {
+        throw std::invalid_argument(
+            "QBdt::IsSeparable() start parameter must be at least 1 and less than the QBdt qubit width!");
+    }
+
+    if ((start << 1U) > qubitCount) {
+        const bitLenInt nStart = qubitCount - start;
+        for (size_t i = 0U; i < nStart; ++i) {
+            Swap(i, qubitCount - (i + 1U));
+        }
+        const bool result = IsSeparable(nStart);
+        for (size_t i = 0U; i < nStart; ++i) {
+            Swap(i, qubitCount - (i + 1U));
+        }
+
+        return result;
+    }
+
+    FlushBuffers();
+
+    // If the tree has been fully reduced, this should ALWAYS be the same for ALL branches
+    // (that have nonzero amplitude), if-and-only-if the state is separable.
+    QBdtNodeInterface* subsystemPtr = NULL;
+    bool result = true;
+    const bitCapInt qPower = pow2(start);
+
+    par_for_qbdt(qPower, start, [this, start, &subsystemPtr, &result](const bitCapInt& i) {
+        QBdtNodeInterfacePtr leaf = root;
+        for (bitLenInt j = 0U; j < start; ++j) {
+            leaf = leaf->branches[SelectBit(i, start - (j + 1U))];
+            if (!leaf) {
+                return (bitCapInt)(pow2(start - j) - ONE_BCI);
+            }
+        }
+
+        if (!leaf->branches[0U] || !leaf->branches[1U]) {
+            return ZERO_BCI;
+        }
+
+        if (!subsystemPtr) {
+            subsystemPtr = leaf.get();
+        }
+
+        if (subsystemPtr != leaf.get()) {
+            result = false;
+            return (bitCapInt)(pow2(start) - ONE_BCI);
+        }
+
+        return ZERO_BCI;
+    }, false);
+
+    return result;
+}
+
 bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
 {
     if (!length) {
