@@ -297,6 +297,8 @@ bool QBdt::IsSeparable(bitLenInt start)
             "QBdt::IsSeparable() start parameter must be at least 1 and less than the QBdt qubit width!");
     }
 
+#if 0
+    // Premature optimization, but works in principle if Swap() is inexpensive:
     if ((start << 1U) > qubitCount) {
         const bitLenInt nStart = qubitCount - start;
         for (size_t i = 0U; i < nStart; ++i) {
@@ -309,6 +311,7 @@ bool QBdt::IsSeparable(bitLenInt start)
 
         return result;
     }
+#endif
 
     FlushBuffers();
 
