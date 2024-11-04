@@ -233,8 +233,8 @@ protected:
     }
 
     using QEngine::Copy;
-    void Copy(QInterfacePtr orig) {Copy(std::dynamic_pointer_cast<QEngineOCL>(orig); }
-    void Copy(QEngineOCLPtr orig)
+    void Copy(QInterfacePtr orig) {Copy(std::dynamic_pointer_cast<QEngineCUDA>(orig); }
+    void Copy(QEngineCUDA orig)
     {
         didInit = orig->didInit;
         usingHostRam = orig->usingHostRam;
@@ -250,7 +250,6 @@ protected:
         stateBuffer = orig->stateBuffer;
         nrmBuffer = orig->nrmBuffer;
         device_context = orig->device_context;
-        wait_refs = orig->wait_refs;
         wait_queue_items = orig->wait_queue_items;
         poolItems = orig->poolItems;
         nrmArray = orig->nrmArray;

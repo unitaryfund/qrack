@@ -1,8 +1,32 @@
+libqrack (9.12.7) bionic; urgency=medium
+
+  * Pareto-optimal TryDecompose() (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 03 Nov 2024 10:12:10 -0500
+
+libqrack (9.12.6) focal; urgency=medium
+
+  * Pareto-optimal TryDecompose() (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 03 Nov 2024 10:10:22 -0500
+
+libqrack (9.12.5) jammy; urgency=medium
+
+  * Pareto-optimal TryDecompose() (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 03 Nov 2024 10:08:32 -0500
+
+libqrack (9.12.4) noble; urgency=medium
+
+  * Pareto-optimal TryDecompose() (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 03 Nov 2024 10:05:29 -0500
+
 libqrack (9.12.3) bionic; urgency=medium
 
   * Optimize TryDecompose(); Copy() method (Bionic 4/4)
 
- -- Daniel Strano <iamu@sekhmet>  Sun, 03 Nov 2024 03:44:15 -0500
+ -- Daniel Strano <dan@unitary.fund>  Sun, 03 Nov 2024 03:44:15 -0500
 
 libqrack (9.12.2) focal; urgency=medium
 
