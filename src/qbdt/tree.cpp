@@ -327,30 +327,42 @@ bool QBdt::IsSeparable(bitLenInt start)
     bool result = true;
     const bitCapInt qPower = pow2(start);
 
-    par_for_qbdt(qPower, start, [this, start, &subsystemPtr, &result](const bitCapInt& i) {
-        QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0U; j < start; ++j) {
-            leaf = leaf->branches[SelectBit(i, start - (j + 1U))];
-            if (!leaf) {
-                return (bitCapInt)(pow2(start - j) - ONE_BCI);
+    par_for_qbdt(
+        qPower, start,
+        [this, start, &subsystemPtr, &result](const bitCapInt& i) {
+            QBdtNodeInterfacePtr leaf = root;
+            for (bitLenInt j = 0U; j < start; ++j) {
+                leaf = leaf->branches[SelectBit(i, start - (j + 1U))];
+                if (!leaf) {
+                    // The immediate parent of "leaf" has 0 amplitude.
+                    return (bitCapInt)(pow2(start - j) - ONE_BCI);
+                }
             }
-        }
 
-        if (!leaf->branches[0U] || !leaf->branches[1U]) {
+            if (!leaf->branches[0U] || !leaf->branches[1U]) {
+                // "leaf" is a 0-amplitude branch.
+                return ZERO_BCI;
+            }
+
+            // "leaf" is nonzero.
+            // Every such instance must be identical.
+
+            if (!subsystemPtr) {
+                // Even if another thread "clobbers" this assignment,
+                // then the equality check afterward will fail.
+                subsystemPtr = leaf;
+            }
+
+            if (subsystemPtr != leaf) {
+                // There are at least two distinct possible subsystem states for the "high-index" subsystem,
+                // depending specifically on which dimension of the "low-index" subsystem we're inspecting.
+                result = false;
+                return (bitCapInt)(pow2(start) - ONE_BCI);
+            }
+
             return ZERO_BCI;
-        }
-
-        if (!subsystemPtr) {
-            subsystemPtr = leaf;
-        }
-
-        if (subsystemPtr != leaf) {
-            result = false;
-            return (bitCapInt)(pow2(start) - ONE_BCI);
-        }
-
-        return ZERO_BCI;
-    }, false);
+        },
+        false);
 
     return result;
 }
