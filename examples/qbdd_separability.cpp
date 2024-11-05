@@ -120,8 +120,10 @@ int main(int argc, char* argv[])
 
     for (bitLenInt i = 0U; i < halfWidth; ++i) {
         const bitLenInt subsystemSize = i + 1U;
-        Qrack::QBdtPtr qsim = std::dynamic_pointer_cast<Qrack::QBdt>(Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width, Qrack::ZERO_BCI));
-        Qrack::QBdtPtr qsim_b = std::dynamic_pointer_cast<Qrack::QBdt>(Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI));
+        Qrack::QBdtPtr qsim = std::dynamic_pointer_cast<Qrack::QBdt>(
+            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width, Qrack::ZERO_BCI));
+        Qrack::QBdtPtr qsim_b = std::dynamic_pointer_cast<Qrack::QBdt>(
+            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI));
 
         ghz(qsim);
 
@@ -147,8 +149,10 @@ int main(int argc, char* argv[])
              << " qubit subsystem, nonseparable: " << duration << " seconds, " << (result ? "failure." : "success.")
              << endl;
 
-        qsim = std::dynamic_pointer_cast<Qrack::QBdt>(Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, subsystemSize, Qrack::ZERO_BCI));
-        qsim_b = std::dynamic_pointer_cast<Qrack::QBdt>(Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI));
+        qsim = std::dynamic_pointer_cast<Qrack::QBdt>(
+            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, subsystemSize, Qrack::ZERO_BCI));
+        qsim_b = std::dynamic_pointer_cast<Qrack::QBdt>(
+            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI));
 
         ghz(qsim);
         ghz(qsim_b);

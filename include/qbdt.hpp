@@ -274,6 +274,33 @@ public:
      */
     bool IsSeparable(bitLenInt start);
 
+    bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        if (error_tol > TRYDECOMPOSE_EPSILON) {
+            return QInterface::TryDecompose(start, dest, error_tol);
+        }
+
+        const bitLenInt length = dest->GetQubitCount();
+        const bitLenInt nStart = qubitCount - length;
+        const bitLenInt shift = nStart - start;
+        for (bitLenInt i = 0U; i < shift; ++i) {
+            Swap(start + i, qubitCount - (i + 1U));
+        }
+
+        const bool isSeparable = IsSeparable(nStart);
+
+        for (bitLenInt i = shift; i > 0U; --i) {
+            Swap(start + (i - 1U), qubitCount - i);
+        }
+
+        if (isSeparable) {
+            Decompose(start, dest);
+            return true;
+        }
+
+        return false;
+    }
+
     using QInterface::Compose;
     bitLenInt Compose(QBdtPtr toCopy, bitLenInt start);
     bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)

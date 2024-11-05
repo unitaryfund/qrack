@@ -297,35 +297,14 @@ bool QBdt::IsSeparable(bitLenInt start)
             "QBdt::IsSeparable() start parameter must be at least 1 and less than the QBdt qubit width!");
     }
 
-#if 0
-    // Premature optimization, but works in principle if Swap() is inexpensive:
-    if ((start << 1U) > qubitCount) {
-        const bitLenInt nStart = qubitCount - start;
-        for (size_t i = 0U; i < nStart; ++i) {
-            Swap(i, qubitCount - (i + 1U));
-        }
-        const bool result = IsSeparable(nStart);
-        for (size_t i = 0U; i < nStart; ++i) {
-            Swap(i, qubitCount - (i + 1U));
-        }
-
-        return result;
-    }
-#endif
-
     FlushBuffers();
 
     // If the tree has been fully reduced, this should ALWAYS be the same for ALL branches
     // (that have nonzero amplitude), if-and-only-if the state is separable.
-    // QBdtNodeInterface* subsystemPtr = NULL;
-
-    // Alternatively, using shared_ptr with our custom (non-)equality operator will reduce
-    // the tree in-flight if it is not already fully-reduced, at no significant additional
-    // overhead if the tree is already fully-reduced.
     QBdtNodeInterfacePtr subsystemPtr = NULL;
 
-    bool result = true;
     const bitCapInt qPower = pow2(start);
+    bool result = true;
 
     par_for_qbdt(
         qPower, start,
