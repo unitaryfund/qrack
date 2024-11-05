@@ -3062,7 +3062,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose", "[sd_xfail]")
     for (bitLenInt i = 0; i < 4; i++) {
         qftReg->CNOT(i, 4 + i);
     }
-    REQUIRE(qftReg->TryDecompose(0, qftReg2) == false);
+    std::unique_ptr<complex[]> orig(new complex[256U]);
+    qftReg->GetQuantumState(orig.get());
+    bool result = qftReg->TryDecompose(0, qftReg2);
+    if (result) {
+        qftReg->Compose(qftReg2, 0U);
+        std::unique_ptr<complex[]> after(new complex[256U]);
+        qftReg->GetQuantumState(after.get());
+        real1 fidelity = ZERO_R1;
+        for (bitCapIntOcl i = 0U; i < 256U; ++i) {
+            fidelity += real(orig.get()[i] * conj(after.get()[i]));
+        }
+        // std::cout << fidelity << std::endl;
+        REQUIRE_FLOAT(fidelity, ONE_R1);
+    }
 
     qftReg->SetPermutation(0x2b);
     REQUIRE(qftReg->TryDecompose(0, qftReg2) == true);

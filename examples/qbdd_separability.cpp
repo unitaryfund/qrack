@@ -120,8 +120,7 @@ int main(int argc, char* argv[])
 
     for (bitLenInt i = 0U; i < halfWidth; ++i) {
         const bitLenInt subsystemSize = i + 1U;
-        Qrack::QInterfacePtr qsim =
-            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width, Qrack::ZERO_BCI);
+        Qrack::QInterfacePtr qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width, Qrack::ZERO_BCI);
         Qrack::QInterfacePtr qsim_b =
             Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI);
 
@@ -159,8 +158,7 @@ int main(int argc, char* argv[])
              << endl;
 
         qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, subsystemSize, Qrack::ZERO_BCI);
-        qsim_b =
-            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI);
+        qsim_b = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI);
 
         ghz(qsim);
         ghz(qsim_b);
@@ -188,8 +186,7 @@ int main(int argc, char* argv[])
 
         if (result) {
             qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, subsystemSize, Qrack::ZERO_BCI);
-            qsim_b = Qrack::CreateQuantumInterface(
-                { Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI);
+            qsim_b = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI);
 
             ghz(qsim);
             ghz(qsim_b);
