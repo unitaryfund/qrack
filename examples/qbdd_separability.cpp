@@ -120,10 +120,10 @@ int main(int argc, char* argv[])
 
     for (bitLenInt i = 0U; i < halfWidth; ++i) {
         const bitLenInt subsystemSize = i + 1U;
-        Qrack::QBdtPtr qsim = std::dynamic_pointer_cast<Qrack::QBdt>(
-            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width, Qrack::ZERO_BCI));
-        Qrack::QBdtPtr qsim_b = std::dynamic_pointer_cast<Qrack::QBdt>(
-            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI));
+        Qrack::QInterfacePtr qsim =
+            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width, Qrack::ZERO_BCI);
+        Qrack::QInterfacePtr qsim_b =
+            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI);
 
         ghz(qsim);
 
@@ -133,6 +133,10 @@ int main(int argc, char* argv[])
 
         auto start = std::chrono::high_resolution_clock::now();
         bool result = isSeparable(vec, subsystemSize, width - subsystemSize);
+        if (result) {
+            // We do this with Qrack, but it's the part where we ACTUALLY decompose the original implementation.
+            qsim->Decompose(subsystemSize, qsim_b);
+        }
         auto end = std::chrono::high_resolution_clock::now();
         double duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1e6;
 
@@ -140,8 +144,13 @@ int main(int argc, char* argv[])
              << " qubit subsystem, nonseparable: " << duration << " seconds, " << (result ? "failure." : "success.")
              << endl;
 
+        if (result) {
+            qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width, Qrack::ZERO_BCI);
+            ghz(qsim);
+        }
+
         start = std::chrono::high_resolution_clock::now();
-        result = qsim->IsSeparable(subsystemSize);
+        result = qsim->TryDecompose(subsystemSize, qsim_b, tolerance);
         end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1e6;
 
@@ -149,10 +158,9 @@ int main(int argc, char* argv[])
              << " qubit subsystem, nonseparable: " << duration << " seconds, " << (result ? "failure." : "success.")
              << endl;
 
-        qsim = std::dynamic_pointer_cast<Qrack::QBdt>(
-            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, subsystemSize, Qrack::ZERO_BCI));
-        qsim_b = std::dynamic_pointer_cast<Qrack::QBdt>(
-            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI));
+        qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, subsystemSize, Qrack::ZERO_BCI);
+        qsim_b =
+            Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI);
 
         ghz(qsim);
         ghz(qsim_b);
@@ -165,6 +173,10 @@ int main(int argc, char* argv[])
 
         start = std::chrono::high_resolution_clock::now();
         result = isSeparable(vec, subsystemSize, width - subsystemSize);
+        if (result) {
+            // We do this with Qrack, but it's the part where we ACTUALLY decompose the original implementation.
+            qsim->Decompose(subsystemSize, qsim_b);
+        }
         end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         // Report in seconds:
@@ -174,8 +186,19 @@ int main(int argc, char* argv[])
              << " qubit subsystem, separable: " << duration << " seconds, " << (result ? "success." : "failure.")
              << endl;
 
+        if (result) {
+            qsim = Qrack::CreateQuantumInterface({ Qrack::QINTERFACE_BDT }, subsystemSize, Qrack::ZERO_BCI);
+            qsim_b = Qrack::CreateQuantumInterface(
+                { Qrack::QINTERFACE_BDT }, width - subsystemSize, Qrack::ZERO_BCI);
+
+            ghz(qsim);
+            ghz(qsim_b);
+
+            qsim->Compose(qsim_b);
+        }
+
         start = std::chrono::high_resolution_clock::now();
-        result = qsim->IsSeparable(subsystemSize);
+        result = qsim->TryDecompose(subsystemSize, qsim_b, tolerance);
         end = std::chrono::high_resolution_clock::now();
         // Report in seconds:
         duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1e6;
