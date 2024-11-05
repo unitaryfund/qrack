@@ -32,7 +32,6 @@ class QUnit : public QParity, public QInterface {
 protected:
     bool freezeBasis2Qb;
     bool useHostRam;
-    bool isSparse;
     bool isReactiveSeparate;
     bool useTGadget;
     bitLenInt thresholdQubits;
@@ -53,7 +52,6 @@ protected:
         QInterface::Copy(orig);
         freezeBasis2Qb = orig->freezeBasis2Qb;
         useHostRam = orig->useHostRam;
-        isSparse = orig->isSparse;
         isReactiveSeparate = orig->isReactiveSeparate;
         useTGadget = orig->useTGadget;
         thresholdQubits = orig->thresholdQubits;
@@ -71,17 +69,16 @@ public:
     QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devIDs = {},
+        bool ignored = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devIDs = {},
         bitLenInt qubitThreshold = 0U, real1_f separation_thresh = _qrack_qunit_sep_thresh);
 
     QUnit(bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI, qrack_rand_gen_ptr rgp = nullptr,
         const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool ignored = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devIDs = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = _qrack_qunit_sep_thresh)
         : QUnit({ QINTERFACE_STABILIZER_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
-              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devIDs, qubitThreshold,
-              separation_thresh)
+              useHostMem, deviceId, useHardwareRNG, ignored, norm_thresh, devIDs, qubitThreshold, separation_thresh)
     {
     }
 
@@ -115,7 +112,44 @@ public:
     virtual void SetDevice(int64_t dID);
     virtual int64_t GetDevice() { return devID; }
 
-    real1_f ProbRdm(bitLenInt qubit)
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        if (error_tol > TRYDECOMPOSE_EPSILON) {
+            return QInterface::TryDecompose(start, dest, error_tol);
+        }
+
+        const bitLenInt length = dest->GetQubitCount();
+
+        for (bitLenInt i = 0U; i < length; ++i) {
+            if (!shards[i].unit) {
+                continue;
+            }
+            if (!shards[i].unit->isBinaryDecisionTree()) {
+                return QInterface::TryDecompose(start, dest, error_tol);
+            }
+        }
+
+        const bitLenInt nStart = qubitCount - length;
+        const bitLenInt shift = nStart - start;
+        for (bitLenInt i = 0U; i < shift; ++i) {
+            Swap(start + i, qubitCount - (i + 1U));
+        }
+
+        const bool isSeparable = TryDetach(nStart);
+
+        for (bitLenInt i = shift; i > 0U; --i) {
+            Swap(start + (i - 1U), qubitCount - i);
+        }
+
+        if (isSeparable) {
+            Decompose(start, dest);
+            return true;
+        }
+
+        return false;
+    }
+
+    virtual real1_f ProbRdm(bitLenInt qubit)
     {
         const QEngineShard& shard = shards[qubit];
         if (!shard.unit) {
@@ -186,8 +220,8 @@ public:
     virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
     {
         QUnitPtr dest = std::make_shared<QUnit>(engines, length, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
-            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
-            thresholdQubits, separabilityThreshold);
+            randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+            separabilityThreshold);
 
         Decompose(start, dest);
 
@@ -473,6 +507,27 @@ public:
     using QInterface::TrySeparate;
     virtual bool TrySeparate(bitLenInt qubit);
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
+    virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol)
+    {
+        for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+            Swap(qubitCount - (i + 1U), qubits[i]);
+        }
+
+        QUnitPtr dest = std::make_shared<QUnit>(engines, qubits.size(), ZERO_BCI, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs,
+            thresholdQubits, separabilityThreshold);
+
+        const bool result = TryDecompose(qubitCount - qubits.size(), dest);
+        if (result) {
+            Compose(dest);
+        }
+
+        for (bitLenInt i = qubits.size(); i > 0U; --i) {
+            Swap(qubitCount - i, qubits[i - 1U]);
+        }
+
+        return result;
+    }
     virtual double GetUnitaryFidelity();
     virtual void ResetUnitaryFidelity() { logFidelity = 0.0; }
     virtual void SetSdrp(real1_f sdrp)
@@ -650,6 +705,7 @@ protected:
     void OrderContiguous(QInterfacePtr unit);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest);
+    bool TryDetach(bitLenInt length);
 
     struct QSortEntry {
         bitLenInt bit;

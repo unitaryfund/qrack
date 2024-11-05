@@ -95,7 +95,7 @@ public:
     virtual QInterfacePtr Clone()
     {
         QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
-            doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+            doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, false, (real1_f)amplitudeFloor,
             deviceIDs, thresholdQubits, separabilityThreshold);
 
         return CloneBody(copyPtr, false);
@@ -104,7 +104,7 @@ public:
     virtual QInterfacePtr Copy()
     {
         QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
-            doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+            doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, false, (real1_f)amplitudeFloor,
             deviceIDs, thresholdQubits, separabilityThreshold);
 
         return CloneBody(copyPtr, true);

@@ -138,8 +138,6 @@ public:
     QInterfacePtr MakeSimulator(
         bool isBdt, const bitCapInt& perm = ZERO_BCI, const complex& phaseFac = CMPLX_DEFAULT_ARG);
 
-    bool isBinaryDecisionTree() { return !engine; }
-
     void SetConcurrency(uint32_t threadCount)
     {
         QInterface::SetConcurrency(threadCount);

@@ -184,7 +184,7 @@ QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, const bitCapInt& perm)
 
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
     QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int64_t>{},
+        randGlobalPhase, useHostRam, deviceId, useRDRAND, false, (real1_f)amplitudeFloor, std::vector<int64_t>{},
         thresholdQubits, separabilityThreshold);
 
     return toRet;

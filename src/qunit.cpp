@@ -69,7 +69,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , freezeBasis2Qb(false)
     , useHostRam(useHostMem)
-    , isSparse(useSparseStateVec)
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
@@ -93,7 +92,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, const bitCapInt& perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
     toRet->SetTInjection(useTGadget);
     toRet->SetNcrp(roundingThreshold);
@@ -385,6 +384,61 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     SetQubitCount(qubitCount - length);
 }
 
+bool QUnit::TryDetach(bitLenInt length)
+{
+    if (!length || (length > qubitCount)) {
+        throw std::invalid_argument("QUnit::Detach range is out-of-bounds!");
+    }
+
+    const bitLenInt start = qubitCount - length;
+
+    for (bitLenInt i = 0U; i < length; ++i) {
+        RevertBasis2Qb(start + i);
+    }
+
+    // Move "emulated" bits immediately into the destination, which is initialized.
+    // Find a set of shard "units" to order contiguously. Also count how many bits to decompose are in each subunit.
+    std::map<QBdtPtr, bitLenInt> subunits;
+    for (bitLenInt i = 0U; i < length; ++i) {
+        QEngineShard& shard = shards[start + i];
+        if (shard.unit) {
+            ++(subunits[std::dynamic_pointer_cast<QBdt>(shard.unit)]);
+        }
+    }
+
+    // Order the subsystem units contiguously. (They might be entangled at random with bits not involed in the
+    // operation.)
+    if (length > 1U) {
+        for (const auto& subunit : subunits) {
+            OrderContiguous(subunit.first);
+        }
+    }
+
+    // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
+    // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
+    // entire subunit.
+    std::map<QBdtPtr, bitLenInt> decomposedUnits;
+    for (bitLenInt i = 0U; i < length; ++i) {
+        QEngineShard& shard = shards[start + i];
+        QBdtPtr unit = std::dynamic_pointer_cast<QBdt>(shard.unit);
+
+        if (unit == NULL) {
+            continue;
+        }
+
+        if (decomposedUnits.find(unit) == decomposedUnits.end()) {
+            decomposedUnits[unit] = start + i;
+            const bitLenInt subLen = subunits[unit];
+            const bitLenInt origLen = unit->GetQubitCount();
+            if ((subLen != origLen) && !unit->IsSeparable(shard.mapped)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
@@ -461,7 +515,7 @@ bitLenInt QUnit::Allocate(bitLenInt start, bitLenInt length)
     }
 
     QUnitPtr nQubits = std::make_shared<QUnit>(engines, length, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
     nQubits->SetReactiveSeparate(isReactiveSeparate);
     nQubits->SetTInjection(useTGadget);
@@ -3798,7 +3852,7 @@ real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
 QInterfacePtr QUnit::Clone()
 {
     QUnitPtr copyPtr = std::make_shared<QUnit>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
 
     return CloneBody(copyPtr, false);
@@ -3806,7 +3860,7 @@ QInterfacePtr QUnit::Clone()
 QInterfacePtr QUnit::Copy()
 {
     QUnitPtr copyPtr = std::make_shared<QUnit>(engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
 
     return CloneBody(copyPtr, true);
