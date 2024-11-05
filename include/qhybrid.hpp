@@ -46,6 +46,7 @@ protected:
     complex phaseFactor;
     std::vector<int64_t> deviceIDs;
 
+    using QEngine::Copy;
     void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QHybrid>(orig)); }
     void Copy(QHybridPtr orig)
     {
