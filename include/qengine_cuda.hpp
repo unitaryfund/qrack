@@ -252,7 +252,6 @@ protected:
         device_context = orig->device_context;
         wait_queue_items = orig->wait_queue_items;
         poolItems = orig->poolItems;
-        nrmArray = orig->nrmArray;
     }
 
 public:
