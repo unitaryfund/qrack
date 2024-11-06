@@ -70,7 +70,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
     , freezeBasis2Qb(false)
     , useHostRam(useHostMem)
     , useTGadget(true)
-    , isBdt(false)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
     , logFidelity(0.0)
@@ -81,17 +80,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
 {
     if (engines.empty()) {
         engines.push_back(QINTERFACE_STABILIZER_HYBRID);
-    } else {
-        for (size_t i = 0U; i < engines.size(); ++i) {
-            QInterfaceEngine e = engines[i];
-            if ((e == QINTERFACE_CPU) || (e == QINTERFACE_OPENCL) || (e == QINTERFACE_CUDA) || (e == QINTERFACE_HYBRID) || (e == QINTERFACE_BDT_HYBRID)) {
-                break;
-            }
-            if (e == QINTERFACE_BDT) {
-                isBdt = true;
-                break;
-            }
-        }
     }
 
     isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
@@ -394,46 +382,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     }
 
     SetQubitCount(qubitCount - length);
-}
-
-bool QUnit::TryDetach(bitLenInt length)
-{
-    if (!length || (length == qubitCount)) {
-        return true;
-    }
-    if (length > qubitCount) {
-        throw std::invalid_argument("QUnit::Detach range is out-of-bounds!");
-    }
-
-    const bitLenInt start = qubitCount - length;
-
-    for (bitLenInt i = 0U; i < length; ++i) {
-        RevertBasis2Qb(start + i);
-    }
-
-    // Move "emulated" bits immediately into the destination, which is initialized.
-    // Find a set of shard "units" to order contiguously. Also count how many bits to decompose are in each subunit.
-    std::vector<QBdtPtr> subunits;
-    for (bitLenInt i = 0U; i < length; ++i) {
-        QEngineShard& shard = shards[start + i];
-        if (shard.unit) {
-            subunits.push_back(std::dynamic_pointer_cast<QBdt>(shard.unit));
-        }
-    }
-
-    // Order the subsystem units contiguously. (They might be entangled at random with bits not involed in the
-    // operation.)
-    for (const auto& subunit : subunits) {
-        OrderContiguous(subunit);
-    }
-
-    // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
-    // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
-    // entire subunit.
-    QEngineShard& shard = shards[start];
-    QBdtPtr unit = std::dynamic_pointer_cast<QBdt>(shard.unit);
-
-    return (unit == NULL) || (shard.mapped == 0U) || unit->IsSeparable(shard.mapped);
 }
 
 QInterfacePtr QUnit::EntangleInCurrentBasis(

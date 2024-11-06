@@ -34,7 +34,6 @@ protected:
     bool useHostRam;
     bool isReactiveSeparate;
     bool useTGadget;
-    bool isBdt;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
     real1_f roundingThreshold;
@@ -112,57 +111,6 @@ public:
 
     virtual void SetDevice(int64_t dID);
     virtual int64_t GetDevice() { return devID; }
-
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
-    {
-        if (error_tol > TRYDECOMPOSE_EPSILON) {
-            return QInterface::TryDecompose(start, dest, error_tol);
-        }
-
-        const bitLenInt length = dest->GetQubitCount();
-        
-        if ((!length) || (length == qubitCount)) {
-            return true;
-        }
-        
-        if (!isBdt) {
-            return QInterface::TryDecompose(start, dest, error_tol);
-        }
-
-        if ((start + length) > qubitCount) {
-            throw std::invalid_argument("QUnit::TryDecompose qubit range out-of-bounds!");
-        }
-
-        for (bitLenInt i = 0U; i < length; ++i) {
-            QEngineShard& shard = shards[start + i];
-            if (!shard.unit) {
-                continue;
-            }
-            if (!shard.unit->isBinaryDecisionTree()) {
-                return QInterface::TryDecompose(start, dest, error_tol);
-            }
-        }
-
-        const bitLenInt nStart = qubitCount - length;
-        const bitLenInt shift = nStart - start;
-        for (bitLenInt i = 0U; i < shift; ++i) {
-            Swap(start + i, qubitCount - (i + 1U));
-        }
-
-        if (TryDetach(nStart)) {
-            Decompose(qubitCount - length, dest);
-            for (bitLenInt i = shift; i > 0U; --i) {
-                dest->Swap(i - 1U, dest->GetQubitCount() - i);
-            }
-            return true;
-        }
-
-        for (bitLenInt i = shift; i > 0U; --i) {
-            Swap(start + (i - 1U), qubitCount - i);
-        }
-
-        return false;
-    }
 
     virtual real1_f ProbRdm(bitLenInt qubit)
     {

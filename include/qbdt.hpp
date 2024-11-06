@@ -20,6 +20,8 @@
 #include "qbdt_node.hpp"
 #include "qengine.hpp"
 
+#include <algorithm>
+
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
@@ -299,6 +301,67 @@ public:
         }
 
         return false;
+    }
+
+    using QInterface::TrySeparate;
+    bool TrySeparate(const std::vector<bitLenInt>& _qubits, real1_f error_tol)
+    {
+        ThrowIfQbIdArrayIsBad(_qubits, qubitCount,
+            "QBdt::TrySeparate parameter qubit array values must be within allocated qubit bounds!");
+
+        if (!_qubits.size() || (_qubits.size() == qubitCount)) {
+            return true;
+        }
+
+        std::vector<bitLenInt> qubits(_qubits);
+        std::sort(qubits.begin(), qubits.end());
+        for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+            Swap(i, qubits[i]);
+        }
+        const bool result = IsSeparable(qubits.size());
+        for (bitLenInt i = qubits.size(); i > 0U; --i) {
+            Swap(i - 1U, qubits[i - 1U]);
+        }
+
+        return result;
+    }
+    bool TrySeparate(bitLenInt qubit)
+    {
+        if (qubit >= qubitCount) {
+            throw std::invalid_argument("QBdt::TrySeparate argument out-of-bounds!");
+        }
+        if (qubitCount == 1U) {
+            return true;
+        }
+
+        Swap(qubit, 0U);
+        const bool result = IsSeparable(1U);
+        Swap(qubit, 0U);
+
+        return result;
+    }
+    bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
+    {
+        if (qubit1 == qubit2) {
+            throw std::invalid_argument("QBdt::TrySeparate qubits must be distinct!");
+        }
+        if ((qubit1 >= qubitCount) || (qubit2 >= qubitCount)) {
+            throw std::invalid_argument("QBdt::TrySeparate argument out-of-bounds!");
+        }
+        if (qubitCount == 2U) {
+            return true;
+        }
+        if (qubit1 > qubit2) {
+            std::swap(qubit1, qubit2);
+        }
+
+        Swap(qubit1, 0U);
+        Swap(qubit2, 1U);
+        const bool result = IsSeparable(2U);
+        Swap(qubit2, 1U);
+        Swap(qubit1, 0U);
+
+        return result;
     }
 
     using QInterface::Compose;
