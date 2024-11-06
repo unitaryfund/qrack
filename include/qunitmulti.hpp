@@ -121,18 +121,23 @@ protected:
         return toRet;
     }
 
-    virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
+    virtual bool Detach(
+        bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry = false, real1_f tol = TRYDECOMPOSE_EPSILON)
     {
-        Detach(start, length, std::dynamic_pointer_cast<QUnitMulti>(dest));
+        return Detach(start, length, std::dynamic_pointer_cast<QUnitMulti>(dest), isTry, tol);
     }
-    virtual void Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
+    virtual bool Detach(
+        bitLenInt start, bitLenInt length, QUnitMultiPtr dest, bool isTry = false, real1_f tol = TRYDECOMPOSE_EPSILON)
     {
         if (!length) {
-            return;
+            return true;
         }
 
-        QUnit::Detach(start, length, dest);
+        const bool result = QUnit::Detach(start, length, dest, isTry, tol);
+
         RedistributeQEngines();
+
+        return result;
     }
 
     virtual QInterfacePtr EntangleInCurrentBasis(
