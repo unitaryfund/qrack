@@ -2833,9 +2833,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 {
-    const bool isStabilizerQBdt =
-        (testSubSubEngineType == QINTERFACE_BDT) && (testSubEngineType == QINTERFACE_STABILIZER_HYBRID);
-
     qftReg->SetPermutation(85);
 
     int i;
@@ -2846,10 +2843,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 
     for (i = 0; i < 8; i++) {
         qftReg->TrySeparate(i);
-        if (!isStabilizerQBdt) {
-            const std::vector<bitLenInt> toSep{ (bitLenInt)i };
-            qftReg->TrySeparate(toSep, FP_NORM_EPSILON_F);
-        }
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
@@ -2860,10 +2853,34 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     qftReg->CNOT(0, 2);
     qftReg->CNOT(0, 2);
     qftReg->TrySeparate(0, 1);
-    if (!isStabilizerQBdt) {
-        const std::vector<bitLenInt> toSep{ 0, 1 };
-        qftReg->TrySeparate(toSep, FP_NORM_EPSILON_F);
+    qftReg->CNOT(0, 1);
+    qftReg->Z(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate_tolerance")
+{
+    qftReg->SetPermutation(85);
+
+    bitLenInt i;
+
+    qftReg->QFT(0, 8);
+
+    qftReg->IQFT(0, 8);
+
+    for (i = 0; i < 8; i++) {
+        qftReg->TrySeparate(std::vector<bitLenInt>({ i }), FP_NORM_EPSILON);
     }
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->CNOT(0, 2);
+    qftReg->CNOT(0, 2);
+    qftReg->TrySeparate({ 0, 1 }, FP_NORM_EPSILON);
     qftReg->CNOT(0, 1);
     qftReg->Z(0);
     qftReg->H(0);

@@ -34,6 +34,7 @@ protected:
     bool useHostRam;
     bool isReactiveSeparate;
     bool useTGadget;
+    bool isBdt;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
     real1_f roundingThreshold;
@@ -119,6 +120,14 @@ public:
         }
 
         const bitLenInt length = dest->GetQubitCount();
+        
+        if ((!length) || (length == qubitCount)) {
+            return true;
+        }
+        
+        if (!isBdt) {
+            return QInterface::TryDecompose(start, dest, error_tol);
+        }
 
         if ((start + length) > qubitCount) {
             throw std::invalid_argument("QUnit::TryDecompose qubit range out-of-bounds!");

@@ -70,6 +70,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
     , freezeBasis2Qb(false)
     , useHostRam(useHostMem)
     , useTGadget(true)
+    , isBdt(false)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
     , logFidelity(0.0)
@@ -80,6 +81,17 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
 {
     if (engines.empty()) {
         engines.push_back(QINTERFACE_STABILIZER_HYBRID);
+    } else {
+        for (size_t i = 0U; i < engines.size(); ++i) {
+            QInterfaceEngine e = engines[i];
+            if ((e == QINTERFACE_CPU) || (e == QINTERFACE_OPENCL) || (e == QINTERFACE_CUDA) || (e == QINTERFACE_HYBRID) || (e == QINTERFACE_BDT_HYBRID)) {
+                break;
+            }
+            if (e == QINTERFACE_BDT) {
+                isBdt = true;
+                break;
+            }
+        }
     }
 
     isReactiveSeparate = (separabilityThreshold > FP_NORM_EPSILON_F);
