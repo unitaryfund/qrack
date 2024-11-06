@@ -413,20 +413,18 @@ bool QUnit::TryDetach(bitLenInt length)
 
     // Move "emulated" bits immediately into the destination, which is initialized.
     // Find a set of shard "units" to order contiguously. Also count how many bits to decompose are in each subunit.
-    std::map<QBdtPtr, bitLenInt> subunits;
+    std::vector<QBdtPtr> subunits;
     for (bitLenInt i = 0U; i < length; ++i) {
         QEngineShard& shard = shards[start + i];
         if (shard.unit) {
-            ++(subunits[std::dynamic_pointer_cast<QBdt>(shard.unit)]);
+            subunits.push_back(std::dynamic_pointer_cast<QBdt>(shard.unit));
         }
     }
 
     // Order the subsystem units contiguously. (They might be entangled at random with bits not involed in the
     // operation.)
-    if (length > 1U) {
-        for (const auto& subunit : subunits) {
-            OrderContiguous(subunit.first);
-        }
+    for (const auto& subunit : subunits) {
+        OrderContiguous(subunit);
     }
 
     // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
