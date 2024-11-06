@@ -120,11 +120,16 @@ public:
 
         const bitLenInt length = dest->GetQubitCount();
 
+        if ((start + length) > qubitCount) {
+            throw std::invalid_argument("QUnit::TryDecompose qubit range out-of-bounds!");
+        }
+
         for (bitLenInt i = 0U; i < length; ++i) {
-            if (!shards[i].unit) {
+            QEngineShard& shard = shards[start + i];
+            if (!shard.unit) {
                 continue;
             }
-            if (!shards[i].unit->isBinaryDecisionTree()) {
+            if (!shard.unit->isBinaryDecisionTree()) {
                 return QInterface::TryDecompose(start, dest, error_tol);
             }
         }
@@ -135,15 +140,16 @@ public:
             Swap(start + i, qubitCount - (i + 1U));
         }
 
-        const bool isSeparable = TryDetach(nStart);
+        if (TryDetach(nStart)) {
+            Decompose(qubitCount - length, dest);
+            for (bitLenInt i = shift; i > 0U; --i) {
+                dest->Swap(i - 1U, dest->GetQubitCount() - i);
+            }
+            return true;
+        }
 
         for (bitLenInt i = shift; i > 0U; --i) {
             Swap(start + (i - 1U), qubitCount - i);
-        }
-
-        if (isSeparable) {
-            Decompose(start, dest);
-            return true;
         }
 
         return false;

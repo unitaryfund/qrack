@@ -386,7 +386,10 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
 bool QUnit::TryDetach(bitLenInt length)
 {
-    if (!length || (length > qubitCount)) {
+    if (!length || (length == qubitCount)) {
+        return true;
+    }
+    if (length > qubitCount) {
         throw std::invalid_argument("QUnit::Detach range is out-of-bounds!");
     }
 
@@ -417,26 +420,10 @@ bool QUnit::TryDetach(bitLenInt length)
     // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
     // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
     // entire subunit.
-    std::map<QBdtPtr, bitLenInt> decomposedUnits;
-    for (bitLenInt i = 0U; i < length; ++i) {
-        QEngineShard& shard = shards[start + i];
-        QBdtPtr unit = std::dynamic_pointer_cast<QBdt>(shard.unit);
+    QEngineShard& shard = shards[start];
+    QBdtPtr unit = std::dynamic_pointer_cast<QBdt>(shard.unit);
 
-        if (unit == NULL) {
-            continue;
-        }
-
-        if (decomposedUnits.find(unit) == decomposedUnits.end()) {
-            decomposedUnits[unit] = start + i;
-            const bitLenInt subLen = subunits[unit];
-            const bitLenInt origLen = unit->GetQubitCount();
-            if ((subLen != origLen) && !unit->IsSeparable(shard.mapped)) {
-                return false;
-            }
-        }
-    }
-
-    return true;
+    return (unit == NULL) || (shard.mapped == 0U) || unit->IsSeparable(shard.mapped);
 }
 
 QInterfacePtr QUnit::EntangleInCurrentBasis(
