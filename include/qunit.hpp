@@ -139,8 +139,9 @@ public:
     }
 
     virtual void SetQuantumState(const complex* inputState);
-    virtual void GetQuantumState(complex* outputState);
-    virtual void GetProbs(real1* outputProbs);
+    virtual void GetQuantumState(complex* outputState) { GetQuantumStateOrProbs(outputState, nullptr); }
+    virtual void GetProbs(real1* outputProbs) { GetQuantumStateOrProbs(nullptr, outputProbs); }
+    virtual void GetQuantumStateOrProbs(complex* outputState, real1* outputProbs);
     virtual complex GetAmplitude(const bitCapInt& perm);
     virtual void SetAmplitude(const bitCapInt& perm, const complex& amp)
     {

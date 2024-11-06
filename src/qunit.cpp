@@ -160,7 +160,7 @@ void QUnit::SetQuantumState(const complex* inputState)
     }
 }
 
-void QUnit::GetQuantumState(complex* outputState)
+void QUnit::GetQuantumStateOrProbs(complex* outputState, real1* outputProbs)
 {
     if (qubitCount == 1U) {
         RevertBasis1Qb(0U);
@@ -174,28 +174,21 @@ void QUnit::GetQuantumState(complex* outputState)
     }
 
     ToPermBasisAll();
-    QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Copy());
-    thisCopy->EntangleAll();
-    thisCopy->shards[0U].unit->GetQuantumState(outputState);
-}
 
-void QUnit::GetProbs(real1* outputProbs)
-{
-    if (qubitCount == 1U) {
-        RevertBasis1Qb(0U);
-        const QEngineShard& shard = shards[0U];
-        if (!shard.unit) {
-            outputProbs[0U] = norm(shard.amp0);
-            outputProbs[1U] = norm(shard.amp1);
-
-            return;
-        }
+    QUnitPtr thisCopyShared;
+    QUnit* thisCopy;
+    if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
+        thisCopy = this;
+    } else {
+        thisCopyShared = std::dynamic_pointer_cast<QUnit>(Copy());
+        thisCopy = thisCopyShared.get();
+        thisCopy->EntangleAll();
     }
-
-    ToPermBasisProb();
-    QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Copy());
-    thisCopy->EntangleAll();
-    thisCopy->shards[0U].unit->GetProbs(outputProbs);
+    if (outputProbs) {
+        thisCopy->shards[0U].unit->GetProbs(outputProbs);
+    } else {
+        thisCopy->shards[0U].unit->GetQuantumState(outputState);
+    }
 }
 
 complex QUnit::GetAmplitude(const bitCapInt& perm) { return GetAmplitudeOrProb(perm, false); }
