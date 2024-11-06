@@ -243,7 +243,7 @@ complex QUnit::GetAmplitudeOrProb(const bitCapInt& perm, bool isProb)
     return result;
 }
 
-void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
+bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry, real1_f tol)
 {
     if (isBadBitRange(start, length, qubitCount)) {
         throw std::invalid_argument("QUnit::Detach range is out-of-bounds!");
@@ -273,6 +273,8 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         }
     }
 
+    const QUnitPtr copy = isTry ? std::dynamic_pointer_cast<QUnit>(Copy()) : NULL;
+
     // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
     // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
     // entire subunit.
@@ -290,9 +292,16 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
             const bitLenInt subLen = subunits[unit];
             const bitLenInt origLen = unit->GetQubitCount();
             if (subLen != origLen) {
-                if (dest) {
+                if (dest || isTry) {
                     QInterfacePtr nUnit = MakeEngine(subLen, ZERO_BCI);
-                    shard.unit->Decompose(shard.mapped, nUnit);
+                    if (isTry) {
+                        if (!shard.unit->TryDecompose(shard.mapped, nUnit, tol)) {
+                            Copy(copy);
+                            return false;
+                        }
+                    } else {
+                        shard.unit->Decompose(shard.mapped, nUnit);
+                    }
                     shard.unit = nUnit;
                 } else {
                     shard.unit->Dispose(shard.mapped, subLen);
@@ -362,6 +371,8 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     }
 
     SetQubitCount(qubitCount - length);
+
+    return true;
 }
 
 QInterfacePtr QUnit::EntangleInCurrentBasis(

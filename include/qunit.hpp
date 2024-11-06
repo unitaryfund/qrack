@@ -199,6 +199,14 @@ public:
     {
         Detach(start, length, nullptr);
     }
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return TryDecompose(start, std::dynamic_pointer_cast<QUnit>(dest), error_tol);
+    }
+    virtual bool TryDecompose(bitLenInt start, QUnitPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return Detach(start, dest->GetQubitCount(), dest, true, error_tol);
+    }
     using QInterface::Allocate;
     virtual bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
@@ -671,7 +679,8 @@ protected:
 
     void OrderContiguous(QInterfacePtr unit);
 
-    virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest);
+    virtual bool Detach(
+        bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry = false, real1_f tol = TRYDECOMPOSE_EPSILON);
 
     struct QSortEntry {
         bitLenInt bit;

@@ -36,6 +36,12 @@ if ((FPPOW EQUAL 5) OR (FPPOW EQUAL 6))
             )
         set_target_properties(qbdd_separability PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
         target_link_libraries (qbdd_separability ${QRACK_LIBS} Eigen3::Eigen)
+
+        add_executable (qunit_separability
+            examples/qunit_separability.cpp
+            )
+        set_target_properties(qunit_separability PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
+        target_link_libraries (qunit_separability ${QRACK_LIBS} Eigen3::Eigen)
     endif (Eigen3_FOUND)
 endif ((FPPOW EQUAL 5) OR (FPPOW EQUAL 6))
 
