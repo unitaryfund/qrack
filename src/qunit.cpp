@@ -173,19 +173,9 @@ void QUnit::GetQuantumState(complex* outputState)
         }
     }
 
-    QUnitPtr thisCopyShared;
-    QUnit* thisCopy;
-
-    if (shards[0U].GetQubitCount() == qubitCount) {
-        ToPermBasisAll();
-        OrderContiguous(shards[0U].unit);
-        thisCopy = this;
-    } else {
-        thisCopyShared = std::dynamic_pointer_cast<QUnit>(Clone());
-        thisCopyShared->EntangleAll();
-        thisCopy = thisCopyShared.get();
-    }
-
+    ToPermBasisAll();
+    QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Copy());
+    thisCopy->EntangleAll();
     thisCopy->shards[0U].unit->GetQuantumState(outputState);
 }
 
@@ -202,19 +192,9 @@ void QUnit::GetProbs(real1* outputProbs)
         }
     }
 
-    QUnitPtr thisCopyShared;
-    QUnit* thisCopy;
-
-    if (shards[0U].GetQubitCount() == qubitCount) {
-        ToPermBasisProb();
-        OrderContiguous(shards[0U].unit);
-        thisCopy = this;
-    } else {
-        thisCopyShared = std::dynamic_pointer_cast<QUnit>(Clone());
-        thisCopyShared->EntangleAll(true);
-        thisCopy = thisCopyShared.get();
-    }
-
+    ToPermBasisProb();
+    QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Copy());
+    thisCopy->EntangleAll();
     thisCopy->shards[0U].unit->GetProbs(outputProbs);
 }
 

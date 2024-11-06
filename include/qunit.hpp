@@ -161,8 +161,12 @@ public:
             throw std::invalid_argument("QUnit::Compose start index is out-of-bounds!");
         }
 
+        ToPermBasisAll();
+
         /* Create a clone of the quantum state in toCopy. */
         QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
+
+        clone->ToPermBasisAll();
 
         /* Insert the new shards in the middle */
         shards.insert(start, clone->shards);
@@ -668,7 +672,6 @@ protected:
     void OrderContiguous(QInterfacePtr unit);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest);
-    bool TryDetach(bitLenInt length);
 
     struct QSortEntry {
         bitLenInt bit;
