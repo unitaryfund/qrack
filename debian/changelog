@@ -1,3 +1,9 @@
+libqrack (9.12.11) bionic; urgency=medium
+
+  * Improve QBdt TryDecompose() (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 05 Nov 2024 11:09:34 -0500
+
 libqrack (9.12.7) bionic; urgency=medium
 
   * Pareto-optimal TryDecompose() (Bionic 4/4)

@@ -234,7 +234,7 @@ protected:
 
     using QEngine::Copy;
     void Copy(QInterfacePtr orig) {Copy(std::dynamic_pointer_cast<QEngineCUDA>(orig); }
-    void Copy(QEngineCUDA orig)
+    void Copy(QEngineCUDAPtr orig)
     {
         didInit = orig->didInit;
         usingHostRam = orig->usingHostRam;
