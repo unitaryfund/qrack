@@ -178,6 +178,7 @@ void QUnit::GetQuantumStateOrProbs(complex* outputState, real1* outputProbs)
     QUnitPtr thisCopyShared;
     QUnit* thisCopy;
     if (shards[0U].unit && (shards[0U].unit->GetQubitCount() == qubitCount)) {
+        OrderContiguous(shards[0U].unit);
         thisCopy = this;
     } else {
         thisCopyShared = std::dynamic_pointer_cast<QUnit>(Copy());
