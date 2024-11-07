@@ -297,8 +297,6 @@ bool QBdt::IsSeparable(bitLenInt start)
             "QBdt::IsSeparable() start parameter must be at least 1 and less than the QBdt qubit width!");
     }
 
-    FlushBuffers();
-
     // If the tree has been fully reduced, this should ALWAYS be the same for ALL branches
     // (that have nonzero amplitude), if-and-only-if the state is separable.
     QBdtNodeInterfacePtr subsystemPtr = NULL;
