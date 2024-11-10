@@ -997,8 +997,8 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 }
 
 /**
- * Combine (a copy of) another QEngineCPU with this one, inserted at the "start" index. (If the programmer doesn't want
- * to "cheat," it is left up to them to delete the old unit that was added.
+ * Combine (a copy of) another QEngineCPU with this one, inserted at the "start" index.
+ * (This is just a "Kronecker product" or "tensor product.")
  */
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
