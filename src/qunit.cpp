@@ -3873,17 +3873,61 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
     const complex& polarSame = phaseShard->cmplxSame;
 
     freezeBasis2Qb = true;
-    if (phaseShard->isInvert) {
-        if (isAnti) {
-            MACInvert(controls, polarSame, polarDiff, target);
+    try {
+        if (phaseShard->isInvert) {
+            if (isAnti) {
+                MACInvert(controls, polarSame, polarDiff, target);
+            } else {
+                MCInvert(controls, polarDiff, polarSame, target);
+            }
         } else {
-            MCInvert(controls, polarDiff, polarSame, target);
+            if (isAnti) {
+                MACPhase(controls, polarSame, polarDiff, target);
+            } else {
+                MCPhase(controls, polarDiff, polarSame, target);
+            }
         }
-    } else {
-        if (isAnti) {
-            MACPhase(controls, polarSame, polarDiff, target);
+    } catch (const bad_alloc& e) {
+        // We can't fully allocate for ideal simulation;
+        // try approximate simulation.
+        freezeBasis2Qb = false;
+
+        if (phaseShard->isInvert) {
+            H(target);
+        }
+
+        const complex& polarBottom = isAnti ? polarDiff : polarSame;
+        const complex& polarTop = isAnti ? polarSame : polarDiff;
+        const real1_f cProb = isAnti ? (ONE_R1_F - Prob(control)) : Prob(control);
+        const real1_f tProb = Prob(target);
+
+        if (tProb > cProb) {
+            if (tProb > (ONE_R1_F / 2)) {
+                Phase(ONE_CMPLX, polarBottom, control);
+            }
         } else {
-            MCPhase(controls, polarDiff, polarSame, target);
+            if (cProb > (ONE_R1_F / 2)) {
+                Phase(ONE_CMPLX, polarBottom, target);
+            }
+        }
+
+        X(target);
+
+        const real1_f antiCProb = ONE_R1_F - cProb;
+        if (tProb > antiCProb) {
+            if (tProb > (ONE_R1_F / 2)) {
+                Phase(ONE_CMPLX, polarTop, control);
+            }
+        } else {
+            if (antiCProb > (ONE_R1_F / 2)) {
+                Phase(ONE_CMPLX, polarTop, target);
+            }
+        }
+
+        X(target);
+
+        if (phaseShard->isInvert) {
+            H(target);
         }
     }
     freezeBasis2Qb = false;
