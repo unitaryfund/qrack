@@ -3739,7 +3739,7 @@ double QUnit::GetUnitaryFidelity()
 
     std::vector<QInterfacePtr> units;
     for (size_t i = 0U; i < shards.size(); ++i) {
-        QInterfacePtr toFind = shards[i].unit;
+        const QInterfacePtr& toFind = shards[i].unit;
         if (toFind && (find(units.begin(), units.end(), toFind) == units.end())) {
             units.push_back(toFind);
             fidelity *= toFind->GetUnitaryFidelity();
@@ -3752,7 +3752,7 @@ bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2,
 {
     std::vector<QInterfacePtr> units;
     for (size_t i = 0U; i < shards.size(); ++i) {
-        QInterfacePtr toFind = shards[i].unit;
+        const QInterfacePtr& toFind = shards[i].unit;
         if (toFind && (find(units.begin(), units.end(), toFind) == units.end())) {
             units.push_back(toFind);
             if (!fn(toFind, param1, param2, param3, param4)) {
