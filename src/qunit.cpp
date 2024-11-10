@@ -3923,8 +3923,25 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             }
         }
 
-        if (!phaseShard->isInvert) {
-            X(target);
+        X(target);
+
+        if (phaseShard->isInvert) {
+            H(target);
+
+            const real1_f tHProb = Prob(target);
+            const real1_f cHProb = isAnti ? antiCProb : cProb;
+
+            if (tHProb > cProb) {
+                if (tHProb > (ONE_R1_F / 2)) {
+                    Phase(ONE_CMPLX, -ONE_CMPLX, control);
+                }
+            } else {
+                if (cHProb > (ONE_R1_F / 2)) {
+                    Phase(ONE_CMPLX, -ONE_CMPLX, target);
+                }
+            }
+
+            H(target);
         }
     }
     freezeBasis2Qb = false;
