@@ -3901,18 +3901,16 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
 
         const complex& polarBottom = isAnti ? polarDiff : polarSame;
         const complex& polarTop = isAnti ? polarSame : polarDiff;
-        complex mtrx[4U];
-        TransformPhase(polarTop, polarBottom, mtrx);
         const real1_f cProb = isAnti ? (ONE_R1_F - Prob(control)) : Prob(control);
         const real1_f tProb = Prob(target);
 
         if (tProb > cProb) {
             if (tProb > (ONE_R1_F / 2)) {
-                Mtrx(mtrx, control);
+                Phase(ONE_CMPLX, polarBottom, control);
             }
         } else {
             if (cProb > (ONE_R1_F / 2)) {
-                Mtrx(mtrx, target);
+                Phase(ONE_CMPLX, polarBottom, target);
             }
         }
 
@@ -3921,18 +3919,16 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         const real1_f antiCProb = ONE_R1_F - cProb;
         if (tProb > antiCProb) {
             if (tProb > (ONE_R1_F / 2)) {
-                Mtrx(mtrx, control);
+                Phase(ONE_CMPLX, polarTop, control);
             }
         } else {
             if (antiCProb > (ONE_R1_F / 2)) {
-                Mtrx(mtrx, target);
+                Phase(ONE_CMPLX, polarTop, target);
             }
         }
 
-        X(target);
-
-        if (phaseShard->isInvert) {
-            H(target);
+        if (!phaseShard->isInvert) {
+            X(target);
         }
     }
     freezeBasis2Qb = false;
