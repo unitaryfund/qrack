@@ -3959,30 +3959,23 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
 
         const complex& polarBottom = isAnti ? polarDiff : polarSame;
         const complex& polarTop = isAnti ? polarSame : polarDiff;
-        const real1_f cProb = isAnti ? (ONE_R1_F - Prob(control)) : Prob(control);
-        const real1_f tProb = Prob(target);
+        const real1_f pc = isAnti ? (ONE_R1_F - Prob(control)) : Prob(control);
+        const real1_f pt = Prob(target);
+        const real1_f p = 2 * (pt > pc ? pt : pc) - ONE_R1_F;
+        const bitLenInt t = pt > pc ? control : target;
 
-        if (tProb > cProb) {
-            if (tProb > (ONE_R1_F / 2)) {
-                Phase(ONE_CMPLX, polarBottom, control);
-            }
+        if (p > ZERO_R1_F) {
+            Phase(ONE_CMPLX, polarBottom, t);
+            logFidelity += log(p);
         } else {
-            if (cProb > (ONE_R1_F / 2)) {
-                Phase(ONE_CMPLX, polarBottom, target);
-            }
+            logFidelity += log(-p);
         }
 
         X(target);
 
-        const real1_f antiCProb = ONE_R1_F - cProb;
-        if (tProb > antiCProb) {
-            if (tProb > (ONE_R1_F / 2)) {
-                Phase(ONE_CMPLX, polarTop, control);
-            }
-        } else {
-            if (antiCProb > (ONE_R1_F / 2)) {
-                Phase(ONE_CMPLX, polarTop, target);
-            }
+        const real1_f antiP = ONE_R1_F - p;
+        if (antiP > 0) {
+            Phase(ONE_CMPLX, polarTop, t);
         }
 
         X(target);
@@ -3990,17 +3983,16 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         if (phaseShard->isInvert) {
             H(target);
 
-            const real1_f tHProb = Prob(target);
-            const real1_f cHProb = isAnti ? antiCProb : cProb;
+            const real1_f pth = Prob(target);
+            const real1_f pch = isAnti ? antiP : p;
+            const real1_f ph = 2 * (pth > pch ? pth : pch) - ONE_R1_F;
+            const bitLenInt th = pth > pch ? control : target;
 
-            if (tHProb > cProb) {
-                if (tHProb > (ONE_R1_F / 2)) {
-                    Phase(ONE_CMPLX, -ONE_CMPLX, control);
-                }
+            if (pth > ZERO_R1_F) {
+                Phase(ONE_CMPLX, -ONE_CMPLX, th);
+                logFidelity += log(ph);
             } else {
-                if (cHProb > (ONE_R1_F / 2)) {
-                    Phase(ONE_CMPLX, -ONE_CMPLX, target);
-                }
+                logFidelity += log(-ph);
             }
 
             H(target);
