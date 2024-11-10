@@ -1775,15 +1775,14 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 
             const real1_f p1 = Prob(qubit1);
             const real1_f p2 = Prob(qubit2);
+            const real1_f p = 2 * (p2 > p1 ? p2 : p1) - ONE_R1_F;
+            const bitLenInt t = p2 > p1 ? qubit1 : qubit2;
 
-            if (p2 > p1) {
-                if (p2 > (ONE_R1_F / 2)) {
-                    Z(qubit1);
-                }
+            if (p > 0) {
+                Z(t);
+                logFidelity += log(p);
             } else {
-                if (p1 > (ONE_R1_F / 2)) {
-                    Z(qubit2);
-                }
+                logFidelity += log(-p);
             }
 
             S(qubit1);
@@ -2720,15 +2719,26 @@ void QUnit::ApplyEitherControlled(
             throw e;
         }
         // We overallocated; use a really primitive classical shadow, at least.
+        real1_f p = ONE_R1_F;
+        bool isDo = true;
         for (bitLenInt i = 0U; i < controlVec.size(); ++i) {
-            if (Prob(controlVec[i]) < (ONE_R1_F / 2)) {
+            const real1_f cp = Prob(controlVec[i]);
+            p *= cp;
+            if ((2 * cp) < ONE_R1_F) {
                 // Any control has less than 50% probability to be measured as |1>:
                 // Do nothing.
-                return;
+                isDo = false;
             }
-            // Act the classical shadow of the gate payload.
-            cfn(unit, {});
         }
+
+        // Act the classical shadow of the gate payload.
+        if (isDo) {
+            cfn(unit, {});
+            logFidelity += log(p);
+        } else {
+            logFidelity += log(ONE_R1_F - p);
+        }
+
         return;
     }
 
