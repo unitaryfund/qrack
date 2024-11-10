@@ -390,6 +390,8 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry,
 QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    const QUnitPtr backupCopy = std::dynamic_pointer_cast<QUnit>(Copy());
+
     for (auto bit = first; bit < last; ++bit) {
         EndEmulation(**bit);
     }
@@ -412,18 +414,19 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             }
 
             logMem += units.back()->GetQubitCount();
+
+            bool isThrow = false;
             if (isCpu) {
-                if (logMem > QRACK_MAX_CPU_QB_DEFAULT) {
-                    throw bad_alloc("RAM limits exceeded in QUnit::EntangleInCurrentBasis()");
-                }
+                isThrow = logMem > QRACK_MAX_CPU_QB_DEFAULT;
             } else if (isPager) {
-                if (logMem > QRACK_MAX_PAGING_QB_DEFAULT) {
-                    throw bad_alloc("RAM limits exceeded in QUnit::EntangleInCurrentBasis()");
-                }
+                isThrow = logMem > QRACK_MAX_PAGING_QB_DEFAULT;
             } else {
-                if (logMem > QRACK_MAX_PAGE_QB_DEFAULT) {
-                    throw bad_alloc("RAM limits exceeded in QUnit::EntangleInCurrentBasis()");
-                }
+                isThrow = logMem > QRACK_MAX_PAGE_QB_DEFAULT;
+            }
+
+            if (isThrow) {
+                Copy(backupCopy);
+                throw bad_alloc("RAM limits exceeded in QUnit::EntangleInCurrentBasis()");
             }
         }
     }
