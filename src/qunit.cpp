@@ -1987,7 +1987,17 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
         ebits[i] = &bits[i];
     }
 
-    QInterfacePtr unit = Entangle(ebits);
+    QInterfacePtr unit;
+    try {
+        unit = Entangle(ebits);
+    } catch (const bad_alloc& e) {
+        // We over allocated; try a classical shadow.
+        QInterface::UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
+        // (QInterface could make up to an exponential number of gate calls,
+        // but most could be identity operator, which Qrack should recognize
+        // and optimize.)
+        return;
+    }
 
     std::vector<bitLenInt> mappedControls(trimmedControls.size());
     for (size_t i = 0U; i < trimmedControls.size(); ++i) {
