@@ -1766,7 +1766,31 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
     const bool isSameUnit = IS_SAME_UNIT(shard1, shard2);
 
     if (isSameUnit || ARE_CLIFFORD(shard1, shard2)) {
-        QInterfacePtr unit = Entangle({ qubit1, qubit2 });
+        QInterfacePtr unit;
+        try {
+            unit = Entangle({ qubit1, qubit2 });
+        } catch (const bad_alloc& e) {
+            // We failed to allocate; use a classical shadow.
+            Swap(qubit1, qubit2);
+
+            const real1_f p1 = Prob(qubit1);
+            const real1_f p2 = Prob(qubit2);
+
+            if (p2 > p1) {
+                if (p2 > (ONE_R1_F / 2)) {
+                    Z(qubit1);
+                }
+            } else {
+                if (p1 > (ONE_R1_F / 2)) {
+                    Z(qubit2);
+                }
+            }
+
+            S(qubit1);
+            S(qubit2);
+
+            return;
+        }
         if (isInverse) {
             unit->IISwap(shard1.mapped, shard2.mapped);
         } else {
