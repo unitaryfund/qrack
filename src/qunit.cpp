@@ -3895,10 +3895,6 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         // try approximate simulation.
         freezeBasis2Qb = false;
 
-        if (phaseShard->isInvert) {
-            H(target);
-        }
-
         const complex& polarBottom = isAnti ? polarDiff : polarSame;
         const complex& polarTop = isAnti ? polarSame : polarDiff;
         const real1_f cProb = isAnti ? (ONE_R1_F - Prob(control)) : Prob(control);
