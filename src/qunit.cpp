@@ -1775,14 +1775,14 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 
             const real1_f p1 = Prob(qubit1);
             const real1_f p2 = Prob(qubit2);
-            const real1_f p = 2 * (p2 > p1 ? p2 : p1) - ONE_R1_F;
+            const real1_f p = p2 > p1 ? p2 : p1;
             const bitLenInt t = p2 > p1 ? qubit1 : qubit2;
 
-            if (p > 0) {
+            if ((2 * p) > ONE_R1_F) {
                 Z(t);
                 logFidelity += log(p);
             } else {
-                logFidelity += log(-p);
+                logFidelity += log(ONE_R1_F - p);
             }
 
             S(qubit1);
@@ -3961,14 +3961,14 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         const complex& polarTop = isAnti ? polarSame : polarDiff;
         const real1_f pc = isAnti ? (ONE_R1_F - Prob(control)) : Prob(control);
         const real1_f pt = Prob(target);
-        const real1_f p = 2 * (pt > pc ? pt : pc) - ONE_R1_F;
+        const real1_f p = pt > pc ? pt : pc;
         const bitLenInt t = pt > pc ? control : target;
 
-        if (p > ZERO_R1_F) {
+        if ((2 * p) > ONE_R1_F) {
             Phase(ONE_CMPLX, polarBottom, t);
             logFidelity += log(p);
         } else {
-            logFidelity += log(-p);
+            logFidelity += log(ONE_R1_F - p);
         }
 
         X(target);
@@ -3985,14 +3985,14 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
 
             const real1_f pth = Prob(target);
             const real1_f pch = isAnti ? antiP : p;
-            const real1_f ph = 2 * (pth > pch ? pth : pch) - ONE_R1_F;
+            const real1_f ph = pth > pch ? pth : pch;
             const bitLenInt th = pth > pch ? control : target;
 
-            if (pth > ZERO_R1_F) {
+            if ((2 * ph) > ONE_R1_F) {
                 Phase(ONE_CMPLX, -ONE_CMPLX, th);
                 logFidelity += log(ph);
             } else {
-                logFidelity += log(-ph);
+                 logFidelity += log(ONE_R1_F - ph);
             }
 
             H(target);
