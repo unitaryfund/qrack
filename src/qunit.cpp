@@ -4002,8 +4002,6 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
     } catch (const bad_alloc& e) {
         // We can't fully allocate for ideal simulation;
         // try approximate simulation.
-        freezeBasis2Qb = false;
-
         complex polarTop, polarBottom;
         if (isAnti) {
             polarTop = polarSame;
