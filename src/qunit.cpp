@@ -21,8 +21,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qfactory.hpp"
 #include "qengine_gpu_util.hpp"
+#include "qfactory.hpp"
 
 #include <ctime>
 #include <initializer_list>
@@ -1821,7 +1821,7 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
         shard1.MakeDirty();
         shard2.MakeDirty();
 
-        if (isSameUnit && !ARE_CLIFFORD(shard1, shard2)) {
+        if (isReactiveSeparate && !freezeBasis2Qb && isSameUnit && !ARE_CLIFFORD(shard1, shard2)) {
             TrySeparate(qubit1);
             TrySeparate(qubit2);
         }
@@ -1863,7 +1863,7 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     shard1.MakeDirty();
     shard2.MakeDirty();
 
-    if (isSameUnit) {
+    if (isReactiveSeparate && !freezeBasis2Qb && isSameUnit) {
         TrySeparate(qubit1);
         TrySeparate(qubit2);
     }
@@ -1897,7 +1897,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     shard1.MakeDirty();
     shard2.MakeDirty();
 
-    if (isSameUnit) {
+    if (isReactiveSeparate && !freezeBasis2Qb && isSameUnit) {
         TrySeparate(qubit1);
         TrySeparate(qubit2);
     }
@@ -1953,7 +1953,7 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     shard1.MakeDirty();
     shard2.MakeDirty();
 
-    if (isSameUnit && !ARE_CLIFFORD(shard1, shard2)) {
+    if (isReactiveSeparate && !freezeBasis2Qb && isSameUnit && !ARE_CLIFFORD(shard1, shard2)) {
         TrySeparate(qubit1);
         TrySeparate(qubit2);
     }
