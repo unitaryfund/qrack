@@ -3985,7 +3985,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             logFidel2 = log(ONE_R1_F - antiP);
         }
 
-        logFidelity += (logFidel > logFidel2) ? logFidel : logFidel2;
+        logFidelity += (logFidel + logFidel2) / 2;
 
         X(target);
 
