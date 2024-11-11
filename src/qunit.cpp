@@ -3966,22 +3966,26 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         const real1_f pLo = pt > pc ? pc : pt;
         const bitLenInt t = pt > pc ? control : target;
 
+        real1_f logFidel;
         if ((2 * pHi) > ONE_R1_F) {
             Phase(ONE_CMPLX, polarBottom, t);
-            logFidelity += log(pHi);
+            logFidel = log(pHi);
         } else {
-            logFidelity += log(ONE_R1_F - pLo);
+            logFidel = log(ONE_R1_F - pLo);
         }
 
         X(target);
 
         const real1_f antiP = ONE_R1_F - pLo;
+        real1_f logFidel2;
         if (antiP > 0) {
             Phase(ONE_CMPLX, polarTop, t);
-            logFidelity += log(antiP);
+            logFidel2 = log(antiP);
         } else {
-            logFidelity += log(ONE_R1_F - antiP);
+            logFidel2 = log(ONE_R1_F - antiP);
         }
+
+        logFidelity += (logFidel > logFidel2) ? logFidel : logFidel2;
 
         X(target);
 
