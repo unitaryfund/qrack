@@ -2285,7 +2285,6 @@ void QUnit::Phase(const complex& topLeft, const complex& bottomRight, bitLenInt 
     }
 
     complex mtrx[4U];
-    ;
     TransformPhase(topLeft, bottomRight, mtrx);
 
     if (shard.unit) {
@@ -4118,23 +4117,24 @@ void QUnit::ApplyBufferMap(bitLenInt bitIndex, ShardToPhaseMap bufferMap, Revert
             continue;
         }
 
+        PhaseShardPtr s = phaseShard->second;
+        bufferMap.erase(phaseShard);
+
         if (isControl) {
             if (isAnti) {
                 shard.RemoveAntiTarget(partner);
             } else {
                 shard.RemoveTarget(partner);
             }
-            ApplyBuffer(phaseShard->second, bitIndex, partnerIndex, isAnti);
+            ApplyBuffer(s, bitIndex, partnerIndex, isAnti);
         } else {
             if (isAnti) {
                 shard.RemoveAntiControl(partner);
             } else {
                 shard.RemoveControl(partner);
             }
-            ApplyBuffer(phaseShard->second, partnerIndex, bitIndex, isAnti);
+            ApplyBuffer(s, partnerIndex, bitIndex, isAnti);
         }
-
-        bufferMap.erase(phaseShard);
     }
 }
 
