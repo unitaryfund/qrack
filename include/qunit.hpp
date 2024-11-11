@@ -36,7 +36,7 @@ protected:
     bool useTGadget;
     bool isBdt;
     bool isCpu;
-    bool isPager;
+    bool isSinglePage;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
     real1_f roundingThreshold;

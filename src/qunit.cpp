@@ -28,6 +28,14 @@
 #include <initializer_list>
 #include <map>
 
+#if ENABLE_OPENCL
+#define QRACK_GPU_SINGLETON (OCLEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_OPENCL
+#elif ENABLE_CUDA
+#define QRACK_GPU_SINGLETON (CUDAEngine::Instance())
+#define QRACK_GPU_ENGINE QINTERFACE_CUDA
+#endif
+
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
 #define IS_1_CMPLX(c) (norm(ONE_CMPLX - (c)) <= FP_NORM_EPSILON)
@@ -72,8 +80,12 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
     , useHostRam(useHostMem)
     , useTGadget(true)
     , isBdt(false)
-    , isCpu(false)
-    , isPager(false)
+#if ENABLE_OPENCL || ENABLE_CUDA
+    , isCpu(QRACK_GPU_SINGLETON.GetDeviceCount() == 0)
+#else
+    , isCpu(true)
+#endif
+    , isSinglePage(false)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
     , logFidelity(0.0)
@@ -91,8 +103,8 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCa
                 isBdt = true;
             } else if (e == QINTERFACE_CPU) {
                 isCpu = true;
-            } else if ((e == QINTERFACE_HYBRID) || (e == QINTERFACE_QPAGER)) {
-                isPager = true;
+            } else if ((e == QINTERFACE_OPENCL) || (e == QINTERFACE_CUDA)) {
+                isSinglePage = true;
             }
             if ((e == QINTERFACE_BDT) || (e == QINTERFACE_CPU) || (e == QINTERFACE_OPENCL) || (e == QINTERFACE_CUDA) ||
                 (e == QINTERFACE_HYBRID) || (e == QINTERFACE_BDT_HYBRID)) {
@@ -424,10 +436,10 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             bool isThrow = false;
             if (isCpu) {
                 isThrow = logMem > QRACK_MAX_CPU_QB_DEFAULT;
-            } else if (isPager) {
-                isThrow = logMem > QRACK_MAX_PAGING_QB_DEFAULT;
-            } else {
+            } else if (isSinglePage) {
                 isThrow = logMem > QRACK_MAX_PAGE_QB_DEFAULT;
+            } else {
+                isThrow = logMem > QRACK_MAX_PAGING_QB_DEFAULT;
             }
 
             if (isThrow) {
