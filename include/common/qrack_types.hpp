@@ -195,7 +195,6 @@ QRACK_CONST real1 REAL1_EPSILON = (real1)0.000000477f;
 // Half the probability in any single permutation of 192 maximally superposed qubits
 QRACK_CONST real1 REAL1_EPSILON = (real1)7.965459555662261e-59;
 #endif
-const double FIDELITY_MIN = log((double)REAL1_EPSILON);
 
 #if ENABLE_CUDA
 #if FPPOW < 5
@@ -244,4 +243,5 @@ QRACK_CONST complex CMPLX_DEFAULT_ARG = complex((real1)REAL1_DEFAULT_ARG, (real1
 QRACK_CONST real1 FP_NORM_EPSILON = (real1)(std::numeric_limits<real1>::epsilon() / 4);
 QRACK_CONST real1_f FP_NORM_EPSILON_F = (real1_f)FP_NORM_EPSILON;
 QRACK_CONST real1_f TRYDECOMPOSE_EPSILON = 32 * FP_NORM_EPSILON_F;
+const double FIDELITY_MIN = log((double)FP_NORM_EPSILON);
 } // namespace Qrack

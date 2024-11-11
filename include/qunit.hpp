@@ -727,7 +727,7 @@ protected:
             SeparateBit(true, qubit);
         }
 
-        if (logFidelity < FIDELITY_MIN) {
+        if (logFidelity <= FIDELITY_MIN) {
             throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
     }
