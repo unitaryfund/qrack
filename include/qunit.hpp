@@ -714,6 +714,10 @@ protected:
             logFidelity += (double)log(clampProb(ONE_R1_F - norm(shard.amp0)));
             SeparateBit(true, qubit);
         }
+
+        if (logFidelity < FIDELITY_MIN) {
+            throw std::runtime_error("QUnit fidelity is effectively 0!");
+        }
     }
 
     void TransformX2x2(const complex* mtrxIn, complex* mtrxOut)

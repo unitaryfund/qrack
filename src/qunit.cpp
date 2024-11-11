@@ -135,6 +135,8 @@ void QUnit::SetQuantumState(const complex* inputState)
 {
     Dump();
 
+    logFidelity = ZERO_R1;
+
     if (qubitCount == 1U) {
         QEngineShard& shard = shards[0U];
         shard.unit = NULL;
@@ -166,6 +168,9 @@ void QUnit::SetQuantumState(const complex* inputState)
             shard.pauliBasis = PauliY;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
+        }
+        if (logFidelity < FIDELITY_MIN) {
+            throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
         return;
     }
@@ -726,6 +731,10 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     logFidelity += (double)log(clampProb(1.0 - oneMinR / 2));
 
+    if (logFidelity < FIDELITY_MIN) {
+        throw std::runtime_error("QUnit fidelity is effectively 0!");
+    }
+
     return true;
 }
 
@@ -955,6 +964,10 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
             amps[0U] = ZERO_CMPLX;
         }
 
+        if (logFidelity < FIDELITY_MIN) {
+            throw std::runtime_error("QUnit fidelity is effectively 0!");
+        }
+
         shard.amp0 = amps[0U];
         shard.amp1 = amps[1U];
         shard.isProbDirty = false;
@@ -982,6 +995,10 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     } else if (IS_NORM_0(shard.amp0)) {
         logFidelity += (double)log(clampProb(ONE_R1_F - norm(shard.amp0)));
         SeparateBit(true, qubit);
+    }
+
+    if (logFidelity < FIDELITY_MIN) {
+        throw std::runtime_error("QUnit fidelity is effectively 0!");
     }
 
     return clampProb(norm(shard.amp1));
@@ -1784,6 +1801,10 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
                 logFidelity += log(pHi);
             } else {
                 logFidelity += log(ONE_R1_F - pLo);
+            }
+
+            if (logFidelity < FIDELITY_MIN) {
+                throw std::runtime_error("QUnit fidelity is effectively 0!");
             }
 
             S(qubit1);
@@ -2738,6 +2759,10 @@ void QUnit::ApplyEitherControlled(
             logFidelity += log(p);
         } else {
             logFidelity += log(ONE_R1_F - p);
+        }
+
+        if (logFidelity < FIDELITY_MIN) {
+            throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
 
         return;
@@ -4006,6 +4031,10 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             }
 
             H(target);
+        }
+
+        if (logFidelity < FIDELITY_MIN) {
+            throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
     }
     freezeBasis2Qb = false;
