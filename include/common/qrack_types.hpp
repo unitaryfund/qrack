@@ -195,7 +195,7 @@ QRACK_CONST real1 REAL1_EPSILON = (real1)0.000000477f;
 // Half the probability in any single permutation of 192 maximally superposed qubits
 QRACK_CONST real1 REAL1_EPSILON = (real1)7.965459555662261e-59;
 #endif
-QRACK_CONST double FIDELITY_MIN = log((double)REAL1_EPSILON);
+const double FIDELITY_MIN = log((double)REAL1_EPSILON);
 
 #if ENABLE_CUDA
 #if FPPOW < 5
