@@ -68,6 +68,18 @@ protected:
         engines = orig->engines;
     }
 
+    real1_f angleFrac(complex cmplx)
+    {
+        real1_f at = arg(cmplx);
+        while (at >= PI_R1) {
+            at -= 2 * PI_R1;
+        }
+        while (at < -PI_R1) {
+            at += 2 * PI_R1;
+        }
+        return abs(at) / PI_R1;
+    }
+
 public:
     QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,

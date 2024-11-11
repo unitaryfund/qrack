@@ -4007,10 +4007,10 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             Phase(ONE_CMPLX, polarTop, t);
             logFidel2 = log(antiP);
         } else {
-            logFidel2 = log(ONE_R1_F - antiP);
+            logFidel2 = log(ONE_R1_F - pHi);
         }
 
-        logFidelity += (logFidel + logFidel2) / 2;
+        logFidelity += (angleFrac(polarTop) * logFidel + angleFrac(polarBottom) * logFidel2);
 
         X(target);
 
