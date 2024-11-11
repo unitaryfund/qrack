@@ -2758,10 +2758,15 @@ void QUnit::ApplyEitherControlled(
     try {
         unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
     } catch (const bad_alloc& e) {
-        if (freezeBasis2Qb || (targets.size() > 1U)) {
+        // We overallocated; use a really primitive classical shadow, at least.
+        if (freezeBasis2Qb) {
             throw e;
         }
-        // We overallocated; use a really primitive classical shadow, at least.
+
+        // If this over-allocates again, it will throw to a higher level
+        // (which is what we want).
+        unit = Entangle(targets);
+
         real1_f p = ONE_R1_F;
         for (bitLenInt i = 0U; i < controlVec.size(); ++i) {
             p *= Prob(controlVec[i]);
