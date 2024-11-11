@@ -2776,6 +2776,10 @@ void QUnit::ApplyEitherControlled(
         if (logFidelity <= FIDELITY_MIN) {
             throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
+        QEngineShard& shard = shards[targets[0]];
+        shard.isPhaseDirty = true;
+        shard.isProbDirty |= (shard.pauliBasis != PauliZ) || !isPhase;
+
         return;
     }
 
