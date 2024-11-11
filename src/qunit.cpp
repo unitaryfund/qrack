@@ -1775,14 +1775,15 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 
             const real1_f p1 = Prob(qubit1);
             const real1_f p2 = Prob(qubit2);
-            const real1_f p = p2 > p1 ? p2 : p1;
+            const real1_f pHi = p2 > p1 ? p2 : p1;
+            const real1_f pLo = p2 > p1 ? p1 : p2;
             const bitLenInt t = p2 > p1 ? qubit1 : qubit2;
 
-            if ((2 * p) > ONE_R1_F) {
+            if ((2 * pHi) > ONE_R1_F) {
                 Z(t);
-                logFidelity += log(p);
+                logFidelity += log(pHi);
             } else {
-                logFidelity += log(ONE_R1_F - p);
+                logFidelity += log(ONE_R1_F - pLo);
             }
 
             S(qubit1);
@@ -3961,21 +3962,25 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         const complex& polarTop = isAnti ? polarSame : polarDiff;
         const real1_f pc = isAnti ? (ONE_R1_F - Prob(control)) : Prob(control);
         const real1_f pt = Prob(target);
-        const real1_f p = pt > pc ? pt : pc;
+        const real1_f pHi = pt > pc ? pt : pc;
+        const real1_f pLo = pt > pc ? pc : pt;
         const bitLenInt t = pt > pc ? control : target;
 
-        if ((2 * p) > ONE_R1_F) {
+        if ((2 * pHi) > ONE_R1_F) {
             Phase(ONE_CMPLX, polarBottom, t);
-            logFidelity += log(p);
+            logFidelity += log(pHi);
         } else {
-            logFidelity += log(ONE_R1_F - p);
+            logFidelity += log(ONE_R1_F - pLo);
         }
 
         X(target);
 
-        const real1_f antiP = ONE_R1_F - p;
+        const real1_f antiP = ONE_R1_F - pLo;
         if (antiP > 0) {
             Phase(ONE_CMPLX, polarTop, t);
+            logFidelity += log(antiP);
+        } else {
+            logFidelity += log(ONE_R1_F - antiP);
         }
 
         X(target);
@@ -3984,15 +3989,16 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             H(target);
 
             const real1_f pth = Prob(target);
-            const real1_f pch = isAnti ? antiP : p;
-            const real1_f ph = pth > pch ? pth : pch;
+            const real1_f pch = Prob(control);
+            const real1_f phHi = pth > pch ? pth : pch;
+            const real1_f phLo = pth > pch ? pch : pth;
             const bitLenInt th = pth > pch ? control : target;
 
-            if ((2 * ph) > ONE_R1_F) {
+            if ((2 * phHi) > ONE_R1_F) {
                 Phase(ONE_CMPLX, -ONE_CMPLX, th);
-                logFidelity += log(ph);
+                logFidelity += log(phHi);
             } else {
-                 logFidelity += log(ONE_R1_F - ph);
+                logFidelity += log(ONE_R1_F - phLo);
             }
 
             H(target);
