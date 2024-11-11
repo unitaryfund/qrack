@@ -22,6 +22,7 @@
 // for details.
 
 #include "qfactory.hpp"
+#include "qengine_gpu_util.hpp"
 
 #include <ctime>
 #include <initializer_list>
