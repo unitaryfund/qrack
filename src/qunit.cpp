@@ -2766,6 +2766,11 @@ void QUnit::ApplyEitherControlled(
         for (bitLenInt i = 0U; i < controlVec.size(); ++i) {
             p *= Prob(controlVec[i]);
         }
+
+        QEngineShard& shard = shards[targets[0]];
+        shard.isPhaseDirty = true;
+        shard.isProbDirty |= (shard.pauliBasis != PauliZ) || !isPhase;
+
         // Act the classical shadow of the gate payload.
         if ((2 * p) > ONE_R1_F) {
             cfn(unit, {});
@@ -2776,9 +2781,6 @@ void QUnit::ApplyEitherControlled(
         if (logFidelity <= FIDELITY_MIN) {
             throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
-        QEngineShard& shard = shards[targets[0]];
-        shard.isPhaseDirty = true;
-        shard.isProbDirty |= (shard.pauliBasis != PauliZ) || !isPhase;
 
         return;
     }
