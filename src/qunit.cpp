@@ -1801,13 +1801,18 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
             unit = Entangle({ qubit1, qubit2 });
         } catch (const bad_alloc& e) {
             // We failed to allocate; use a classical shadow.
-            Swap(qubit1, qubit2);
-
             const real1_f p1 = Prob(qubit1);
             const real1_f p2 = Prob(qubit2);
             const real1_f pHi = p2 > p1 ? p2 : p1;
             const real1_f pLo = p2 > p1 ? p1 : p2;
             const bitLenInt t = p2 > p1 ? qubit1 : qubit2;
+
+            if (isInverse) {
+                IS(qubit1);
+                IS(qubit2);
+            } else {
+                Swap(qubit1, qubit2);
+            }
 
             if ((2 * pHi) > ONE_R1_F) {
                 Z(t);
@@ -1820,8 +1825,12 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
                 throw std::runtime_error("QUnit fidelity is effectively 0!");
             }
 
-            S(qubit1);
-            S(qubit2);
+            if (isInverse) {
+                Swap(qubit1, qubit2);
+            } else {
+                S(qubit1);
+                S(qubit2);
+            }
 
             return;
         }
@@ -3996,9 +4005,16 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         // try approximate simulation.
         freezeBasis2Qb = false;
 
-        const complex& polarBottom = isAnti ? polarDiff : polarSame;
-        const complex& polarTop = isAnti ? polarSame : polarDiff;
-        const real1_f pc = isAnti ? (ONE_R1_F - Prob(control)) : Prob(control);
+        complex polarTop, polarBottom;
+        if (isAnti) {
+            polarTop = polarSame;
+            polarBottom = polarDiff;
+            X(control);
+        } else {
+            polarTop = polarDiff;
+            polarBottom = polarSame;
+        }
+        const real1_f pc = Prob(control);
         const real1_f pt = Prob(target);
         const real1_f pHi = pt > pc ? pt : pc;
         const real1_f pLo = pt > pc ? pc : pt;
@@ -4051,6 +4067,10 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             }
 
             H(target);
+        }
+
+        if (isAnti) {
+            X(control);
         }
     }
     freezeBasis2Qb = false;
