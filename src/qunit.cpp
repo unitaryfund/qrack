@@ -2754,40 +2754,7 @@ void QUnit::ApplyEitherControlled(
         ebits[i] = &allBitsMapped[i];
     }
 
-    QInterfacePtr unit;
-    try {
-        unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-    } catch (const bad_alloc& e) {
-        if (targets.size() > 1U) {
-            throw e;
-        }
-        // We overallocated; use a really primitive classical shadow, at least.
-        real1_f p = ONE_R1_F;
-        bool isDo = true;
-        for (bitLenInt i = 0U; i < controlVec.size(); ++i) {
-            const real1_f cp = Prob(controlVec[i]);
-            p *= cp;
-            if ((2 * cp) < ONE_R1_F) {
-                // Any control has less than 50% probability to be measured as |1>:
-                // Do nothing.
-                isDo = false;
-            }
-        }
-
-        // Act the classical shadow of the gate payload.
-        if (isDo) {
-            cfn(unit, {});
-            logFidelity += log(p);
-        } else {
-            logFidelity += log(ONE_R1_F - p);
-        }
-
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
-        }
-
-        return;
-    }
+    QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     for (size_t i = 0U; i < controlVec.size(); ++i) {
         bitLenInt& c = controlVec[i];
