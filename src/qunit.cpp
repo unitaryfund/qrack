@@ -4048,9 +4048,10 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             const real1_f pch = Prob(control);
             const real1_f phHi = pth > pch ? pth : pch;
             const real1_f phLo = pth > pch ? pch : pth;
+            const bool phState = abs(phHi - (ONE_R1_F / 2)) >= abs(phLo - (ONE_R1_F / 2));
             const bitLenInt th = pth > pch ? control : target;
 
-            if ((2 * phHi) > ONE_R1_F) {
+            if (phState) {
                 Phase(ONE_CMPLX, -ONE_CMPLX, th);
                 logFidelity += log(phHi);
             } else {

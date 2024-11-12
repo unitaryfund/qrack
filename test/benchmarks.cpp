@@ -229,7 +229,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     qftReg->SetReactiveSeparate(false);
                 }
 
-                sampleFailureCount++;
+                ++sampleFailureCount;
             }
         }
 
