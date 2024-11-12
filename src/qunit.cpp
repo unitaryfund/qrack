@@ -4027,7 +4027,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         if (pState) {
             Phase(ONE_CMPLX, polarBottom, t);
         } else {
-            Phase(polarTop, ONE_CMPLX, t);
+            Phase(ONE_CMPLX, polarTop, t);
         }
 
         if (phaseShard->isInvert) {
