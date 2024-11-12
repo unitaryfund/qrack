@@ -1,3 +1,27 @@
+libqrack (9.12.22) bionic; urgency=medium
+
+  * QUnit classical shadows debugging (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Nov 2024 15:03:16 -0500
+
+libqrack (9.12.21) focal; urgency=medium
+
+  * QUnit classical shadows debugging (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Nov 2024 15:01:48 -0500
+
+libqrack (9.12.20) jammy; urgency=medium
+
+  * QUnit classical shadows debugging (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Nov 2024 15:00:15 -0500
+
+libqrack (9.12.19) noble; urgency=medium
+
+  * QUnit classical shadows debugging (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Tue, 12 Nov 2024 14:56:44 -0500
+
 libqrack (9.12.16) bionic; urgency=medium
 
   * QUnit classical shadows (Bionic 4/4)

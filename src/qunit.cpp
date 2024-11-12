@@ -4007,12 +4007,12 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         if (isAnti) {
             polarTop = polarSame;
             polarBottom = polarDiff;
-            X(control);
         } else {
             polarTop = polarDiff;
             polarBottom = polarSame;
         }
-        const real1_f pc = Prob(control);
+
+        const real1_f pc = isAnti ? ONE_R1_F - Prob(control) : Prob(control);
         const real1_f pt = Prob(target);
         bool ptHi = pt > pc;
         real1_f pHi = ptHi ? pt : pc;
@@ -4025,7 +4025,13 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         }
 
         if (pState) {
-            Phase(ONE_CMPLX, polarBottom, ptHi ? control : target);
+            if (!ptHi) {
+                Phase(ONE_CMPLX, polarBottom, target);
+            } else if (isAnti) {
+                Phase(polarBottom, ONE_CMPLX, control);
+            } else {
+                Phase(ONE_CMPLX, polarBottom, control);
+            }
         }
 
         const real1_f pcn = (ONE_R1_F - pc);
@@ -4042,6 +4048,8 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         if (!pState) {
             if (ptHi) {
                 Phase(polarTop, ONE_CMPLX, target);
+            } else if (isAnti) {
+                Phase(polarTop, ONE_CMPLX, control);
             } else {
                 Phase(ONE_CMPLX, polarTop, control);
             }
@@ -4067,10 +4075,6 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             }
 
             H(target);
-        }
-
-        if (isAnti) {
-            X(control);
         }
     }
     freezeBasis2Qb = false;
