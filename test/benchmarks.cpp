@@ -139,87 +139,48 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         for (int sample = 0; sample < benchmarkSamples; sample++) {
-            qftReg->ResetUnitaryFidelity();
-            if (!qUniverse) {
-                if (resetRandomPerm) {
-                    bitCapInt perm = (bitCapIntOcl)(qftReg->Rand() * bi_to_double(qftReg->GetMaxQPower()));
-                    if (bi_compare(perm, qftReg->GetMaxQPower()) >= 0) {
-                        perm = qftReg->GetMaxQPower() - ONE_BCI;
+            try {
+                qftReg->ResetUnitaryFidelity();
+                if (!qUniverse) {
+                    if (resetRandomPerm) {
+                        bitCapInt perm = (bitCapIntOcl)(qftReg->Rand() * bi_to_double(qftReg->GetMaxQPower()));
+                        if (bi_compare(perm, qftReg->GetMaxQPower()) >= 0) {
+                            perm = qftReg->GetMaxQPower() - ONE_BCI;
+                        }
+                        qftReg->SetPermutation(perm);
+                    } else {
+                        qftReg->SetPermutation(ZERO_BCI);
                     }
-                    qftReg->SetPermutation(perm);
-                } else {
-                    qftReg->SetPermutation(ZERO_BCI);
-                }
-                if (hadamardRandomBits) {
-                    for (bitLenInt j = 0; j < numBits; j++) {
-                        if (qftReg->Rand() >= ONE_R1 / 2) {
-                            qftReg->H(j);
+                    if (hadamardRandomBits) {
+                        for (bitLenInt j = 0; j < numBits; j++) {
+                            if (qftReg->Rand() >= ONE_R1 / 2) {
+                                qftReg->H(j);
+                            }
                         }
                     }
+                } else {
+                    qftReg->SetPermutation(ZERO_BCI);
+                    for (bitLenInt i = 0; i < numBits; i++) {
+                        RandomInitQubit(qftReg, i);
+                    }
                 }
-            } else {
-                qftReg->SetPermutation(ZERO_BCI);
-                for (bitLenInt i = 0; i < numBits; i++) {
-                    RandomInitQubit(qftReg, i);
-                }
-            }
-            qftReg->Finish();
+                qftReg->Finish();
 
-            const auto iterClock = std::chrono::high_resolution_clock::now();
+                const auto iterClock = std::chrono::high_resolution_clock::now();
 
-            // Run loop body
-            bool isTrialSuccessful = false;
-            try {
+                // Run loop body
                 fn(qftReg, numBits);
                 if (!async_time && qftReg) {
                     qftReg->Finish();
                 }
-                isTrialSuccessful = true;
-            } catch (const std::exception& e) {
-                // Release before re-alloc:
-                qftReg = NULL;
 
-                // Re-alloc:
-                qftReg =
-                    CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG, enable_normalization,
-                        true, use_host_dma, device_id, !disable_hardware_rng, false, REAL1_EPSILON, devList);
-                if (disable_t_injection) {
-                    qftReg->SetTInjection(false);
-                }
-                if (disable_reactive_separation) {
-                    qftReg->SetReactiveSeparate(false);
-                }
-
-                sampleFailureCount++;
-            }
-
-            // Collect interval data
-            if (isTrialSuccessful) {
+                // Collect interval data
                 double fidelity = qftReg->GetUnitaryFidelity();
                 if (!disable_terminal_measurement) {
                     if (benchmarkShots == 1) {
                         bitCapInt result;
-                        try {
-                            result = qftReg->MAll();
-                        } catch (const std::exception& e) {
-                            // Release before re-alloc:
-                            qftReg = NULL;
-
-                            // Re-alloc:
-                            qftReg = CreateQuantumInterface(engineStack, numBits, ZERO_BCI, rng, CMPLX_DEFAULT_ARG,
-                                enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, false,
-                                REAL1_EPSILON, devList);
-                            if (disable_t_injection) {
-                                qftReg->SetTInjection(false);
-                            }
-                            if (disable_reactive_separation) {
-                                qftReg->SetReactiveSeparate(false);
-                            }
-
-                            sampleFailureCount++;
-                            isTrialSuccessful = false;
-                        }
-                        if (isTrialSuccessful && mOutputFileName.compare("")) {
+                        result = qftReg->MAll();
+                        if (mOutputFileName.compare("")) {
                             mOutputFile << result << std::endl;
                         }
                     } else if (benchmarkShots) {
@@ -248,12 +209,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     trialClocks.push_back(tClock.count() * clockFactor);
                 }
                 avgt += trialClocks.back();
-            }
 
-            try {
                 if (async_time && qftReg) {
                     qftReg->Finish();
                 }
+
             } catch (const std::exception& e) {
                 // Release before re-alloc:
                 qftReg = NULL;
