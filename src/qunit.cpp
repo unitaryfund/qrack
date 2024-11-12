@@ -4033,9 +4033,9 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         const real1_f angleFidel2 = angleFrac(polarTop);
         if (!pState) {
             Phase(polarTop, ONE_CMPLX, t);
-            logFidelity += angleFidel2 * log(pLo);
+            logFidelity += angleFidel2 * log(ONE_R1_F - pLo);
         } else {
-            logFidelity += angleFidel2 * log(ONE_R1_F - pHi);
+            logFidelity += angleFidel2 * log(pHi);
         }
         if (logFidelity <= FIDELITY_MIN) {
             throw std::runtime_error("QUnit fidelity is effectively 0!");
