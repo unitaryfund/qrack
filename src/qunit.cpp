@@ -4014,25 +4014,34 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         }
         const real1_f pc = Prob(control);
         const real1_f pt = Prob(target);
-        const bool ptHi = pt > pc;
-        const real1_f pHi = ptHi ? pt : pc;
-        const real1_f pLo = ptHi ? pc : pt;
-        const bool pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
+        bool ptHi = pt > pc;
+        real1_f pHi = ptHi ? pt : pc;
+        real1_f pLo = ptHi ? pc : pt;
+        bool pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
 
-        logFidelity += (angleFrac(polarBottom) + angleFrac(polarTop)) * log(pState ? pHi : (ONE_R1_F - pLo));
+        logFidelity += angleFrac(polarBottom) * log(pState ? pHi : (ONE_R1_F - pLo));
         if (logFidelity <= FIDELITY_MIN) {
             throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
 
         if (pState) {
+            Phase(ONE_CMPLX, polarBottom, ptHi ? control : target);
+        }
+
+        const real1_f pcn = (ONE_R1_F - pc);
+        ptHi = pt > pcn;
+        pHi = ptHi ? pt : pcn;
+        pLo = ptHi ? pcn : pt;
+        pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
+
+        logFidelity += angleFrac(polarTop) * log(pState ? pHi : (ONE_R1_F - pLo));
+        if (logFidelity <= FIDELITY_MIN) {
+            throw std::runtime_error("QUnit fidelity is effectively 0!");
+        }
+
+        if (!pState) {
             if (ptHi) {
-                Phase(ONE_CMPLX, polarBottom, control);
-            } else {
                 Phase(polarTop, ONE_CMPLX, target);
-            }
-        } else {
-            if (ptHi) {
-                Phase(polarBottom, ONE_CMPLX, target);
             } else {
                 Phase(ONE_CMPLX, polarTop, control);
             }
