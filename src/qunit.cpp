@@ -4024,10 +4024,18 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
 
-        if (pState == ptHi) {
-            Phase(ONE_CMPLX, polarBottom, control);
+        if (pState) {
+            if (ptHi) {
+                Phase(ONE_CMPLX, polarBottom, control);
+            } else {
+                Phase(polarTop, ONE_CMPLX, target);
+            }
         } else {
-            Phase(polarTop, ONE_CMPLX, target);
+            if (ptHi) {
+                Phase(polarBottom, ONE_CMPLX, target);
+            } else {
+                Phase(ONE_CMPLX, polarTop, control);
+            }
         }
 
         if (phaseShard->isInvert) {
