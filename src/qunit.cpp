@@ -4017,7 +4017,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         const real1_f pHi = pt > pc ? pt : pc;
         const real1_f pLo = pt > pc ? pc : pt;
         const bool pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
-        const bitLenInt t = pt > pc ? control : target;
+        const bitLenInt t = (pState == (pt > pc)) ? control : target;
 
         const real1_f angleFidel = angleFrac(polarBottom);
         if (pState) {
