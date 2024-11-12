@@ -4017,28 +4017,17 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         const real1_f pHi = pt > pc ? pt : pc;
         const real1_f pLo = pt > pc ? pc : pt;
         const bool pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
-        const bitLenInt t = (pState == (pt > pc)) ? control : target;
 
-        const real1_f angleFidel = angleFrac(polarBottom);
+        logFidelity += (angleFrac(polarBottom) + angleFrac(polarTop)) * log(pState ? pHi : (ONE_R1_F - pLo));
+        if (logFidelity <= FIDELITY_MIN) {
+            throw std::runtime_error("QUnit fidelity is effectively 0!");
+        }
+
+        const bitLenInt t = (pState == (pt > pc)) ? control : target;
         if (pState) {
             Phase(ONE_CMPLX, polarBottom, t);
-            logFidelity += angleFidel * log(pHi);
         } else {
-            logFidelity += angleFidel * log(ONE_R1_F - pLo);
-        }
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
-        }
-
-        const real1_f angleFidel2 = angleFrac(polarTop);
-        if (!pState) {
             Phase(polarTop, ONE_CMPLX, t);
-            logFidelity += angleFidel2 * log(ONE_R1_F - pLo);
-        } else {
-            logFidelity += angleFidel2 * log(pHi);
-        }
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
         }
 
         if (phaseShard->isInvert) {
