@@ -4038,16 +4038,15 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             const real1_f phHi = pth > pch ? pth : pch;
             const real1_f phLo = pth > pch ? pch : pth;
             const bool phState = abs(phHi - (ONE_R1_F / 2)) >= abs(phLo - (ONE_R1_F / 2));
-            const bitLenInt th = pth > pch ? control : target;
 
-            if (phState) {
-                Phase(ONE_CMPLX, -ONE_CMPLX, th);
-                logFidelity += log(phHi);
-            } else {
-                logFidelity += log(ONE_R1_F - phLo);
-            }
+            logFidelity += log(phState ? phHi : (ONE_R1_F - phLo));
             if (logFidelity <= FIDELITY_MIN) {
                 throw std::runtime_error("QUnit fidelity is effectively 0!");
+            }
+
+            const bitLenInt th = (phState == (pth > pch)) ? control : target;
+            if (phState) {
+                Phase(ONE_CMPLX, -ONE_CMPLX, th);
             }
 
             H(target);
