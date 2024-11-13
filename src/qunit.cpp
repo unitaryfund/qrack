@@ -4071,8 +4071,8 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             }
 
             if (pState) {
-                if (ptHi) {
-                    Phase(ONE_CMPLX, -ONE_CMPLX, ptHi ? control : target);
+                if (!ptHi) {
+                    Phase(ONE_CMPLX, -ONE_CMPLX, target);
                 } else if (isAnti) {
                     // This makes absolutely no detectable difference,
                     // according to canonical quantum mechanics.
@@ -4080,9 +4080,9 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
                     // to make that explicitly obvious as part of
                     // the statement of free speech that is Qrack.
                     // (I'm saying, you should've already known.)
-                    Phase(-ONE_CMPLX, ONE_CMPLX, ptHi ? control : target);
+                    Phase(-ONE_CMPLX, ONE_CMPLX, control);
                 } else {
-                    Phase(ONE_CMPLX, -ONE_CMPLX, ptHi ? control : target);
+                    Phase(ONE_CMPLX, -ONE_CMPLX, control);
                 }
             }
 
