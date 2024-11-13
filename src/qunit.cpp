@@ -3555,7 +3555,7 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLengt
     bitLenInt valueLength, const unsigned char* values)
 {
     const bitCapIntOcl indexInt = (bitCapIntOcl)GetCachedPermutation(indexStart, indexLength);
-    const bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    const bitLenInt valueBytes = (valueLength + 7U) >> 3U;
     bitCapInt value = ZERO_BCI;
     for (bitCapIntOcl j = 0U; j < valueBytes; ++j) {
         bi_or_ip(&value, values[indexInt * valueBytes + j] << (8U * j));
@@ -3567,7 +3567,7 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLengt
 bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
     const bitCapIntOcl indexInt = (bitCapIntOcl)GetCachedPermutation(start, length);
-    const bitLenInt bytes = (length + 7U) / 8U;
+    const bitLenInt bytes = (length + 7U) >> 3U;
     bitCapInt value = ZERO_BCI;
     for (bitCapIntOcl j = 0U; j < bytes; ++j) {
         bi_or_ip(&value, values[indexInt * bytes + j] << (8U * j));

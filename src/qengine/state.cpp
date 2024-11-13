@@ -1251,9 +1251,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         destination->Dump();
 
         par_for(0U, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            destination->stateVec->write(lcv,
-                (real1)(std::sqrt((real1_s)partStateProb[lcv])) *
-                    complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv])));
+            destination->stateVec->write(
+                lcv, std::polar((real1)std::sqrt((real1_s)partStateProb[lcv]), partStateAngle[lcv]));
         });
 
         partStateProb.reset();
@@ -1265,9 +1264,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     ResetStateVec(AllocStateVec(maxQPowerOcl));
 
     par_for(0U, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        stateVec->write(lcv,
-            (real1)(std::sqrt((real1_s)remainderStateProb[lcv])) *
-                complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv])));
+        stateVec->write(lcv, std::polar((real1)std::sqrt((real1_s)remainderStateProb[lcv]), remainderStateAngle[lcv]));
     });
 }
 
