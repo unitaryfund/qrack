@@ -864,7 +864,7 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
         }
         return;
     }
-    QSortEntry pivot = bits[(low + high) / 2U];
+    QSortEntry pivot = bits[(low + high) >> 1U];
 
     while (i <= j) {
         while (bits[i] < pivot) {
@@ -1347,10 +1347,10 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         return true;
     }
 
-    const real1_f prob = ONE_R1_F / 2 - unit->Prob(shard.mapped);
+    const real1_f prob = HALF_R1_F - unit->Prob(shard.mapped);
     unit->Dispose(mapped, 1U, value ? ONE_BCI : ZERO_BCI);
 
-    if (!unit->isBinaryDecisionTree() && ((ONE_R1 / 2 - abs(prob)) > FP_NORM_EPSILON)) {
+    if (!unit->isBinaryDecisionTree() && ((HALF_R1 - abs(prob)) > FP_NORM_EPSILON)) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
             unit->NormalizeState();
@@ -4017,7 +4017,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         bool ptHi = pt > pc;
         real1_f pHi = ptHi ? pt : pc;
         real1_f pLo = ptHi ? pc : pt;
-        bool pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
+        bool pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
         logFidelity += angleFrac(polarBottom) * log(pState ? pHi : (ONE_R1_F - pLo));
         if (logFidelity <= FIDELITY_MIN) {
@@ -4038,7 +4038,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         ptHi = pt > pc;
         pHi = ptHi ? pt : pc;
         pLo = ptHi ? pc : pt;
-        pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
+        pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
         logFidelity += angleFrac(polarTop) * log(pState ? pHi : (ONE_R1_F - pLo));
         if (logFidelity <= FIDELITY_MIN) {
@@ -4063,7 +4063,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             ptHi = pth > pch;
             pHi = ptHi ? pth : pch;
             pLo = ptHi ? pch : pth;
-            pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
+            pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
             logFidelity += log(pState ? pHi : (ONE_R1_F - pLo));
             if (logFidelity <= FIDELITY_MIN) {

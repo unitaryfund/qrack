@@ -734,40 +734,40 @@ protected:
 
     void TransformX2x2(const complex* mtrxIn, complex* mtrxOut)
     {
-        mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + mtrxIn[1U] + mtrxIn[2U] + mtrxIn[3U]);
-        mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - mtrxIn[1U] + mtrxIn[2U] - mtrxIn[3U]);
-        mtrxOut[2U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + mtrxIn[1U] - mtrxIn[2U] - mtrxIn[3U]);
-        mtrxOut[3U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - mtrxIn[1U] - mtrxIn[2U] + mtrxIn[3U]);
+        mtrxOut[0U] = HALF_R1 * (mtrxIn[0U] + mtrxIn[1U] + mtrxIn[2U] + mtrxIn[3U]);
+        mtrxOut[1U] = HALF_R1 * (mtrxIn[0U] - mtrxIn[1U] + mtrxIn[2U] - mtrxIn[3U]);
+        mtrxOut[2U] = HALF_R1 * (mtrxIn[0U] + mtrxIn[1U] - mtrxIn[2U] - mtrxIn[3U]);
+        mtrxOut[3U] = HALF_R1 * (mtrxIn[0U] - mtrxIn[1U] - mtrxIn[2U] + mtrxIn[3U]);
     }
 
     void TransformXInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
     {
-        mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(topRight + bottomLeft);
-        mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(-topRight + bottomLeft);
+        mtrxOut[0U] = HALF_R1 * (topRight + bottomLeft);
+        mtrxOut[1U] = HALF_R1 * (-topRight + bottomLeft);
         mtrxOut[2U] = -mtrxOut[1U];
         mtrxOut[3U] = -mtrxOut[0U];
     }
 
     void TransformY2x2(const complex* mtrxIn, complex* mtrxOut)
     {
-        mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
-        mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);
-        mtrxOut[2U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);
-        mtrxOut[3U] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
+        mtrxOut[0U] = HALF_R1 * (mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
+        mtrxOut[1U] = HALF_R1 * (mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);
+        mtrxOut[2U] = HALF_R1 * (mtrxIn[0U] + I_CMPLX * (mtrxIn[1U] + mtrxIn[2U]) - mtrxIn[3U]);
+        mtrxOut[3U] = HALF_R1 * (mtrxIn[0U] - I_CMPLX * (mtrxIn[1U] - mtrxIn[2U]) + mtrxIn[3U]);
     }
 
     void TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
     {
-        mtrxOut[0U] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(topRight - bottomLeft);
-        mtrxOut[1U] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(-topRight - bottomLeft);
+        mtrxOut[0U] = I_CMPLX * HALF_R1 * (topRight - bottomLeft);
+        mtrxOut[1U] = I_CMPLX * HALF_R1 * (-topRight - bottomLeft);
         mtrxOut[2U] = -mtrxOut[1U];
         mtrxOut[3U] = -mtrxOut[0U];
     }
 
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
     {
-        mtrxOut[0U] = (real1)(ONE_R1 / 2) * (complex)(topLeft + bottomRight);
-        mtrxOut[1U] = (real1)(ONE_R1 / 2) * (complex)(topLeft - bottomRight);
+        mtrxOut[0U] = HALF_R1 * (topLeft + bottomRight);
+        mtrxOut[1U] = HALF_R1 * (topLeft - bottomRight);
         mtrxOut[2U] = mtrxOut[1U];
         mtrxOut[3U] = mtrxOut[0U];
     }
@@ -805,8 +805,8 @@ protected:
             return;
         }
 
-        QRACK_CONST complex diag = complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2));
-        QRACK_CONST complex cross = complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2));
+        QRACK_CONST complex diag = complex(HALF_R1, HALF_R1);
+        QRACK_CONST complex cross = complex(HALF_R1, -HALF_R1);
         QRACK_CONST complex mtrx[4U]{ diag, cross, cross, diag };
 
         const complex Y0 = shard.amp0;

@@ -263,7 +263,7 @@ protected:
     QStabilizerHybridPtr RdmCloneHelper()
     {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->RdmCloneFlush(ONE_R1 / 2);
+        clone->RdmCloneFlush(HALF_R1);
 
         return clone;
     }
@@ -410,7 +410,7 @@ public:
         QRACK_CONST complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX_NEG };
         complex pMtrx[4];
         mul2x2(dMtrx.get(), pauliZ, pMtrx);
-        return (ONE_R1 - std::real(pMtrx[0] + pMtrx[1])) / 2;
+        return (ONE_R1 - std::real(pMtrx[0]) + std::real(pMtrx[1])) / 2;
     }
 
     real1_f CProbRdm(bitLenInt control, bitLenInt target)

@@ -2147,7 +2147,7 @@ MICROSOFT_QUANTUM_DECL uintq Measure(_In_ uintq sid, _In_ uintq n, _In_reads_(n)
 
         double jointProb = _JointEnsembleProbabilityHelper(simulator, n, b, q, true);
 
-        toRet = (jointProb < (ONE_R1 / 2)) ? 0U : 1U;
+        toRet = (jointProb < HALF_R1) ? 0U : 1U;
 
         RevertPauliBasis(simulator, n, b, q);
     } catch (const std::exception& ex) {

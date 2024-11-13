@@ -1481,7 +1481,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         }
 
         // Otherwise, buffer will not change the fact that state appears maximally mixed.
-        return ONE_R1_F / 2;
+        return HALF_R1_F;
     }
 
     if (stabilizer->IsSeparableZ(qubit)) {
@@ -1489,7 +1489,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
     }
 
     // Otherwise, state appears locally maximally mixed.
-    return ONE_R1_F / 2;
+    return HALF_R1_F;
 }
 
 bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)

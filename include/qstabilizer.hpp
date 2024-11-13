@@ -137,7 +137,7 @@ public:
 
             return (bool)((rawRandBools >> rawRandBoolsRemaining) & 1U);
         } else {
-            return (rand_distribution(*rand_generator) >= (ONE_R1_F / 2));
+            return (rand_distribution(*rand_generator) >= HALF_R1_F);
         }
     }
 
@@ -435,7 +435,7 @@ public:
             (std::arg(thisAmpEntry.amplitude) - std::arg(toCompare->GetAmplitude(thisAmpEntry.permutation))) /
             (2 * PI_R1));
         argDiff -= (real1)(size_t)argDiff;
-        if (argDiff > (ONE_R1 / 2)) {
+        if (argDiff > HALF_R1) {
             argDiff -= ONE_R1;
         }
         if (FP_NORM_EPSILON >= abs(argDiff)) {

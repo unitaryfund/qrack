@@ -154,9 +154,11 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 
 #if FPPOW < 6
 #define ZERO_R1_F 0.0f
+#define HALF_R1_F 0.5f
 #define ONE_R1_F 1.0f
 #else
 #define ZERO_R1_F 0.0
+#define HALF_R1_F 0.5
 #define ONE_R1_F 1.0
 #endif
 
@@ -173,12 +175,15 @@ QRACK_CONST real1 SQRT1_2_R1 = (real1)M_SQRT1_2;
 
 #if (FPPOW < 5) || (FPPOW > 6)
 QRACK_CONST real1 ZERO_R1 = (real1)0.0f;
+QRACK_CONST real1 HALF_R1 = (real1)0.5f;
 QRACK_CONST real1 ONE_R1 = (real1)1.0f;
 #elif FPPOW == 5
 #define ZERO_R1 0.0f
+#define HALF_R1 0.5f
 #define ONE_R1 1.0f
 #else
 #define ZERO_R1 0.0
+#define HALF_R1 0.5
 #define ONE_R1 1.0
 #endif
 

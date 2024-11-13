@@ -368,7 +368,7 @@ void QUnitClifford::SortUnit(QStabilizerPtr unit, std::vector<QSortEntry>& bits,
         }
         return;
     }
-    QSortEntry pivot = bits[(low + high) / 2U];
+    QSortEntry pivot = bits[(low + high) >> 1U];
 
     while (i <= j) {
         while (bits[i] < pivot) {

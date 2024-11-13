@@ -1833,7 +1833,7 @@ real1_f QStabilizer::Prob(bitLenInt qubit)
     }
 
     // Otherwise, state appears locally maximally mixed.
-    return ONE_R1_F / 2;
+    return HALF_R1_F;
 }
 
 void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)

@@ -1556,7 +1556,7 @@ bool Measure(quid sid, std::vector<QubitPauliBasis> q)
     SIMULATOR_LOCK_GUARD_INT(sid)
 
     TransformPauliBasis(simulator, q);
-    const bool toRet = (ONE_R1 / 2) <= _JointEnsembleProbabilityHelper(simulator, q, true);
+    const bool toRet = HALF_R1 <= _JointEnsembleProbabilityHelper(simulator, q, true);
     RevertPauliBasis(simulator, q);
 
     return toRet;
