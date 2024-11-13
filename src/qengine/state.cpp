@@ -359,7 +359,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     const bool doApplyNorm = doNormalize && (bitCount == 1U) && (runningNorm > ZERO_R1);
     doCalcNorm &= doApplyNorm || (runningNorm <= ZERO_R1);
 
-    const real1 nrm = doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
+    const real1 nrm = doApplyNorm ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
@@ -539,7 +539,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     const bool doApplyNorm = doNormalize && (bitCount == 1U) && (runningNorm > ZERO_R1);
     doCalcNorm &= doApplyNorm || (runningNorm <= ZERO_R1);
 
-    const real1 nrm = doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
+    const real1 nrm = doApplyNorm ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
