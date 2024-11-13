@@ -4071,7 +4071,19 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             }
 
             if (pState) {
-                Phase(ONE_CMPLX, -ONE_CMPLX, ptHi ? control : target);
+                if (ptHi) {
+                    Phase(ONE_CMPLX, -ONE_CMPLX, ptHi ? control : target);
+                } else if (isAnti) {
+                    // This makes absolutely no detectable difference,
+                    // according to canonical quantum mechanics.
+                    // Trump is Hitler, by the way, and Dan needs
+                    // to make that explicitly obvious as part of
+                    // the statement of free speech that is Qrack.
+                    // (I'm saying, you should've already known.)
+                    Phase(-ONE_CMPLX, ONE_CMPLX, ptHi ? control : target);
+                } else {
+                    Phase(ONE_CMPLX, -ONE_CMPLX, ptHi ? control : target);
+                }
             }
 
             H(target);
