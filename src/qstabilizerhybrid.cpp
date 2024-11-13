@@ -1902,10 +1902,10 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
                 const real1_f prob = clone->stabilizer->Prob(j);
                 const MpsShardPtr& oShard = clone->shards[j];
                 oShard->Compose(h);
-                if (prob < (ONE_R1 / 4)) {
+                if (prob < QUARTER_R1) {
                     // Collapsed to 0 - combine buffers
                     nShard->Compose(oShard->gate);
-                } else if (prob > (3 * ONE_R1 / 4)) {
+                } else if (prob > (3 * QUARTER_R1)) {
                     // Collapsed to 1 - combine buffers, with Z correction
                     isCorrected = !isCorrected;
                     nShard->Compose(oShard->gate);

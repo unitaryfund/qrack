@@ -4059,10 +4059,10 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             H(target);
 
             const real1_f pth = Prob(target);
-            const real1_f pch = Prob(control);
-            ptHi = pth > pch;
-            pHi = ptHi ? pth : pch;
-            pLo = ptHi ? pch : pth;
+            pc = ONE_R1_F - pc;
+            ptHi = pth > pc;
+            pHi = ptHi ? pth : pc;
+            pLo = ptHi ? pc : pth;
             pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
             logFidelity += log(pState ? pHi : (ONE_R1_F - pLo));
@@ -4071,7 +4071,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             }
 
             if (pState) {
-                Phase(ONE_CMPLX, -ONE_CMPLX, pth > pch ? control : target);
+                Phase(ONE_CMPLX, -ONE_CMPLX, ptHi ? control : target);
             }
 
             H(target);
