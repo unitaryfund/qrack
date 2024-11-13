@@ -4059,7 +4059,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             H(target);
 
             const real1_f pth = Prob(target);
-            pc = ONE_R1_F - pc;
+            pc = isAnti ? pc : (ONE_R1_F - pc);
             ptHi = pth > pc;
             pHi = ptHi ? pth : pc;
             pLo = ptHi ? pc : pth;
