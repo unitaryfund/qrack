@@ -576,13 +576,13 @@ void QEngineOCL::SetDevice(int64_t dID)
     }
     // constrain to a power of two
     nrmGroupSize = pow2Ocl(log2Ocl(nrmGroupSize));
+    const bitCapIntOcl nNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
 
-    const size_t nrmArrayAllocSize =
-        (!nrmGroupSize || ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE))
+    const size_t nrmArrayAllocSize = (!nrmGroupSize || ((sizeof(real1) * nNrmVecAlignSize) < QRACK_ALIGN_SIZE))
         ? QRACK_ALIGN_SIZE
-        : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
+        : (sizeof(real1) * nNrmVecAlignSize);
 
-    const bool doResize = (nrmGroupCount / nrmGroupSize) != oldNrmVecAlignSize;
+    const bool doResize = nNrmVecAlignSize != oldNrmVecAlignSize;
 
     nrmBuffer = NULL;
     if (didInit && doResize) {
@@ -880,7 +880,7 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     std::copy(mtrx, mtrx + 4, cmplx);
 
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
-    cmplx[4] = complex(doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1, ZERO_R1);
+    cmplx[4] = complex(doApplyNorm ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1, ZERO_R1);
     cmplx[5] = (real1)norm_thresh;
 
     BufferPtr locCmplxBuffer;
@@ -1147,7 +1147,7 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, real1_f angle)
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
     const complex phaseFacs[3]{ complex(cosine, sine), complex(cosine, -sine),
-        (runningNorm > ZERO_R1) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1 };
+        (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1 };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -2373,7 +2373,7 @@ void QEngineOCL::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bi
         return;
     }
 
-    const bitLenInt nibbleCount = length / 4;
+    const bitLenInt nibbleCount = length >> 2U;
     if ((nibbleCount << 2U) != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -2413,7 +2413,7 @@ void QEngineOCL::INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, b
         return;
     }
 
-    const bitLenInt nibbleCount = length / 4;
+    const bitLenInt nibbleCount = length >> 2U;
     if ((nibbleCount << 2U) != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -2817,7 +2817,7 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
         SetReg(valueStart, valueLength, ZERO_BCI);
     }
 
-    const bitLenInt valueBytes = (valueLength + 7) / 8;
+    const bitLenInt valueBytes = (valueLength + 7U) >> 3U;
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ (bitCapIntOcl)(maxQPowerOcl >> valueLength), indexStart, inputMask,
         valueStart, valueBytes, valueLength, 0U, 0U, 0U, 0U };
@@ -2862,7 +2862,7 @@ bitCapIntOcl QEngineOCL::OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLen
         X(carryIndex);
     }
 
-    const bitLenInt valueBytes = (valueLength + 7) / 8;
+    const bitLenInt valueBytes = (valueLength + 7U) >> 3U;
     const bitCapIntOcl lengthPower = pow2Ocl(valueLength);
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
@@ -2897,7 +2897,7 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 /** Set 8 bit register bits based on read from classical memory */
 void QEngineOCL::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
-    const bitLenInt bytes = (length + 7) / 8;
+    const bitLenInt bytes = (length + 7U) >> 3U;
     const bitCapIntOcl inputMask = bitRegMaskOcl(start, length);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, start, inputMask, bytes, 0U, 0U, 0U, 0U, 0U, 0U };
 

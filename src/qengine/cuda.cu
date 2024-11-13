@@ -667,13 +667,13 @@ void QEngineCUDA::SetDevice(int64_t dID)
     }
     // constrain to a power of two
     nrmGroupSize = pow2Ocl(log2Ocl(nrmGroupSize));
+    const bitCapIntOcl nNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
 
-    const size_t nrmArrayAllocSize =
-        (!nrmGroupSize || ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE))
+    const size_t nrmArrayAllocSize = (!nrmGroupSize || ((sizeof(real1) * nNrmVecAlignSize) < QRACK_ALIGN_SIZE))
         ? QRACK_ALIGN_SIZE
-        : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
+        : (sizeof(real1) * nNrmVecAlignSize);
 
-    const bool doResize = (nrmGroupCount / nrmGroupSize) != oldNrmVecAlignSize;
+    const bool doResize = nNrmVecAlignSize != oldNrmVecAlignSize;
 
     nrmBuffer = NULL;
     if (didInit && doResize) {
@@ -1177,7 +1177,7 @@ void QEngineCUDA::UniformParityRZ(const bitCapInt& mask, real1_f angle)
     const real1 cosine = (real1)cos(angle);
     const real1 sine = (real1)sin(angle);
     const complex phaseFacs[3]{ complex(cosine, sine), complex(cosine, -sine),
-        (runningNorm > ZERO_R1) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1 };
+        (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1 };
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -2325,7 +2325,7 @@ void QEngineCUDA::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, b
         return;
     }
 
-    const bitLenInt nibbleCount = length / 4;
+    const bitLenInt nibbleCount = length >> 2U;
     if ((nibbleCount << 2U) != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -2365,7 +2365,7 @@ void QEngineCUDA::INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, 
         return;
     }
 
-    const bitLenInt nibbleCount = length / 4;
+    const bitLenInt nibbleCount = length >> 2U;
     if ((nibbleCount << 2U) != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -2759,7 +2759,7 @@ bitCapInt QEngineCUDA::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, b
         SetReg(valueStart, valueLength, ZERO_BCI);
     }
 
-    const bitLenInt valueBytes = (valueLength + 7) / 8;
+    const bitLenInt valueBytes = (valueLength + 7U) >> 3U;
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> valueLength, indexStart, inputMask, valueStart, valueBytes,
         valueLength, 0U, 0U, 0U, 0U };
@@ -2804,7 +2804,7 @@ bitCapIntOcl QEngineCUDA::OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLe
         X(carryIndex);
     }
 
-    const bitLenInt valueBytes = (valueLength + 7) / 8;
+    const bitLenInt valueBytes = (valueLength + 7U) >> 3U;
     const bitCapIntOcl lengthPower = pow2Ocl(valueLength);
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
@@ -2839,7 +2839,7 @@ bitCapInt QEngineCUDA::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, b
 /** Set 8 bit register bits based on read from classical memory */
 void QEngineCUDA::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
-    const bitLenInt bytes = (length + 7) / 8;
+    const bitLenInt bytes = (length + 7U) >> 3U;
     const bitCapIntOcl inputMask = bitRegMaskOcl(start, length);
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, start, inputMask, bytes, 0U, 0U, 0U, 0U, 0U, 0U };
 
