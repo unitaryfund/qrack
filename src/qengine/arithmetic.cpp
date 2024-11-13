@@ -728,7 +728,7 @@ void QEngineCPU::INCBCD(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt 
         return;
     }
 
-    const bitLenInt nibbleCount = length / 4;
+    const bitLenInt nibbleCount = length >> 2U;
     if (nibbleCount * 4 != (int)length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -801,7 +801,7 @@ void QEngineCPU::INCDECBCDC(const bitCapInt& toMod, bitLenInt inOutStart, bitLen
         return;
     }
 
-    const bitLenInt nibbleCount = length / 4;
+    const bitLenInt nibbleCount = length >> 2U;
     if (nibbleCount * 4 != (int)length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -898,7 +898,7 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
         SetReg(valueStart, valueLength, ZERO_BCI);
     }
 
-    const bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    const bitLenInt valueBytes = (valueLength + 7U) >> 3U;
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
     const bitCapIntOcl skipPower = pow2Ocl(valueStart);
 
@@ -995,7 +995,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // already know the carry is zero).  This bit masks let us quickly
     // distinguish the different values of the input register, output register,
     // carry, and other bits that aren't involved in the operation.
-    const bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    const bitLenInt valueBytes = (valueLength + 7U) >> 3U;
     const bitCapIntOcl lengthPower = pow2Ocl(valueLength);
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
@@ -1110,7 +1110,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
     // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
     // other bits that aren't involved in the operation.
-    const bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    const bitLenInt valueBytes = (valueLength + 7U) >> 3U;
     const bitCapIntOcl lengthPower = pow2Ocl(valueLength);
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
     const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
@@ -1191,7 +1191,7 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, const unsigned char* va
 
     CHECK_ZERO_SKIP();
 
-    const bitLenInt bytes = (length + 7U) / 8U;
+    const bitLenInt bytes = (length + 7U) >> 3U;
     const bitCapIntOcl inputMask = bitRegMaskOcl(start, length);
 
     Finish();
