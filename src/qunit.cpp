@@ -4012,8 +4012,8 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             polarBottom = polarSame;
         }
 
-        const real1_f pc = isAnti ? ONE_R1_F - Prob(control) : Prob(control);
         const real1_f pt = Prob(target);
+        real1_f pc = isAnti ? ONE_R1_F - Prob(control) : Prob(control);
         bool ptHi = pt > pc;
         real1_f pHi = ptHi ? pt : pc;
         real1_f pLo = ptHi ? pc : pt;
@@ -4034,10 +4034,10 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             }
         }
 
-        const real1_f pcn = (ONE_R1_F - pc);
-        ptHi = pt > pcn;
-        pHi = ptHi ? pt : pcn;
-        pLo = ptHi ? pcn : pt;
+        pc = ONE_R1_F - pc;
+        ptHi = pt > pc;
+        pHi = ptHi ? pt : pc;
+        pLo = ptHi ? pc : pt;
         pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
 
         logFidelity += angleFrac(polarTop) * log(pState ? pHi : (ONE_R1_F - pLo));
@@ -4060,18 +4060,18 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
 
             const real1_f pth = Prob(target);
             const real1_f pch = Prob(control);
-            const real1_f phHi = pth > pch ? pth : pch;
-            const real1_f phLo = pth > pch ? pch : pth;
-            const bool phState = abs(phHi - (ONE_R1_F / 2)) >= abs(phLo - (ONE_R1_F / 2));
+            ptHi = pth > pch;
+            pHi = ptHi ? pth : pch;
+            pLo = ptHi ? pch : pth;
+            pState = abs(pHi - (ONE_R1_F / 2)) >= abs(pLo - (ONE_R1_F / 2));
 
-            logFidelity += log(phState ? phHi : (ONE_R1_F - phLo));
+            logFidelity += log(pState ? pHi : (ONE_R1_F - pLo));
             if (logFidelity <= FIDELITY_MIN) {
                 throw std::runtime_error("QUnit fidelity is effectively 0!");
             }
 
-            const bitLenInt th = (phState == (pth > pch)) ? control : target;
-            if (phState) {
-                Phase(ONE_CMPLX, -ONE_CMPLX, th);
+            if (pState) {
+                Phase(ONE_CMPLX, -ONE_CMPLX, pth > pch ? control : target);
             }
 
             H(target);
