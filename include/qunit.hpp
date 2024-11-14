@@ -80,6 +80,17 @@ protected:
         return abs(at) / PI_R1;
     }
 
+    void CheckFidelity()
+    {
+#if ENABLE_ENV_VARS
+        if ((!(bool)getenv("QRACK_DISABLE_QUNIT_FIDELITY_GUARD")) && (logFidelity <= FIDELITY_MIN)) {
+#else
+        if (logFidelity <= FIDELITY_MIN) {
+#endif
+            throw std::runtime_error("QUnit fidelity is effectively 0!");
+        }
+    }
+
 public:
     QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -727,9 +738,7 @@ protected:
             SeparateBit(true, qubit);
         }
 
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
-        }
+        CheckFidelity();
     }
 
     void TransformX2x2(const complex* mtrxIn, complex* mtrxOut)

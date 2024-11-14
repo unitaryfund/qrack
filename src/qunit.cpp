@@ -182,9 +182,7 @@ void QUnit::SetQuantumState(const complex* inputState)
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
         }
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
-        }
+        CheckFidelity();
         return;
     }
 
@@ -408,6 +406,10 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry,
 QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    if (std::distance(last, first) == 0U) {
+        throw std::invalid_argument("QUnit::EntangleInCurrentBasis() vector argument cannot be empty!");
+    }
+
     const QUnitPtr backupCopy = std::dynamic_pointer_cast<QUnit>(Copy());
 
     for (auto bit = first; bit < last; ++bit) {
@@ -743,10 +745,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     ShardAI(qubit, azimuth, inclination);
 
     logFidelity += (double)log(clampProb(1.0 - oneMinR / 2));
-
-    if (logFidelity <= FIDELITY_MIN) {
-        throw std::runtime_error("QUnit fidelity is effectively 0!");
-    }
+    CheckFidelity();
 
     return true;
 }
@@ -977,9 +976,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
             amps[0U] = ZERO_CMPLX;
         }
 
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
-        }
+        CheckFidelity();
 
         shard.amp0 = amps[0U];
         shard.amp1 = amps[1U];
@@ -1010,9 +1007,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         SeparateBit(true, qubit);
     }
 
-    if (logFidelity <= FIDELITY_MIN) {
-        throw std::runtime_error("QUnit fidelity is effectively 0!");
-    }
+    CheckFidelity();
 
     return clampProb(norm(shard.amp1));
 }
@@ -1821,10 +1816,6 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
                 logFidelity += log(ONE_R1_F - pLo);
             }
 
-            if (logFidelity <= FIDELITY_MIN) {
-                throw std::runtime_error("QUnit fidelity is effectively 0!");
-            }
-
             if (isInverse) {
                 Swap(qubit1, qubit2);
             } else {
@@ -1834,6 +1825,7 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 
             return;
         }
+
         if (isInverse) {
             unit->IISwap(shard1.mapped, shard2.mapped);
         } else {
@@ -1846,6 +1838,7 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
             TrySeparate(qubit1);
             TrySeparate(qubit2);
         }
+
         return;
     }
 
@@ -2783,9 +2776,7 @@ void QUnit::ApplyEitherControlled(
         } else {
             logFidelity += log(ONE_R1_F - p);
         }
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
-        }
+        CheckFidelity();
 
         return;
     }
@@ -4020,9 +4011,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         bool pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
         logFidelity += angleFrac(polarBottom) * log(pState ? pHi : (ONE_R1_F - pLo));
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
-        }
+        CheckFidelity();
 
         if (pState) {
             if (!ptHi) {
@@ -4041,9 +4030,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
         logFidelity += angleFrac(polarTop) * log(pState ? pHi : (ONE_R1_F - pLo));
-        if (logFidelity <= FIDELITY_MIN) {
-            throw std::runtime_error("QUnit fidelity is effectively 0!");
-        }
+        CheckFidelity();
 
         if (!pState) {
             if (ptHi) {
@@ -4066,9 +4053,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
             pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
             logFidelity += log(pState ? pHi : (ONE_R1_F - pLo));
-            if (logFidelity <= FIDELITY_MIN) {
-                throw std::runtime_error("QUnit fidelity is effectively 0!");
-            }
+            CheckFidelity();
 
             if (pState) {
                 if (!ptHi) {
