@@ -1,3 +1,27 @@
+libqrack (9.12.26) bionic; urgency=medium
+
+  * Option to disable low-fidelity exception (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 14 Nov 2024 11:35:16 -0500
+
+libqrack (9.12.25) focal; urgency=medium
+
+  * Option to disable low-fidelity exception (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 14 Nov 2024 11:33:29 -0500
+
+libqrack (9.12.24) jammy; urgency=medium
+
+  * Option to disable low-fidelity exception (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 14 Nov 2024 11:31:55 -0500
+
+libqrack (9.12.23) noble; urgency=medium
+
+  * Option to disable low-fidelity exception (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Thu, 14 Nov 2024 11:29:32 -0500
+
 libqrack (9.12.22) bionic; urgency=medium
 
   * QUnit classical shadows debugging (Bionic 4/4)

@@ -32,7 +32,7 @@ std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
     os << std::setprecision(17);
 #endif
     for (const auto& p : g->payloads) {
-        os << p.first << " ";
+        os << (size_t)p.first << " ";
         for (size_t i = 0U; i < 4U; ++i) {
             os << p.second.get()[i] << " ";
         }
@@ -63,7 +63,7 @@ std::istream& operator>>(std::istream& is, QCircuitGatePtr& g)
         bitCapInt k;
         is >> k;
 
-        g->payloads[k] = std::shared_ptr<complex>(new complex[4], std::default_delete<complex[]>());
+        g->payloads[k] = std::shared_ptr<complex>(new complex[4U], std::default_delete<complex[]>());
         for (size_t j = 0U; j < 4U; ++j) {
             is >> g->payloads[k].get()[j];
         }
