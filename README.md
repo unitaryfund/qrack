@@ -48,7 +48,7 @@ For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTI
 
 To get up-and-running most easily with maximum performance, this is the minimum checklist:
 
-1. Install `pyqrack` from PyPi, if Python could be appropriate as an environment and language for your experiments. (`pip install pyqrack`)
+1. Install `pyqrack` from PyPi, if Python could be appropriate as an environment and language for your experiments (`pip install pyqrack`). Alternatively, the [Qook bindings](https://crates.io/crates/qook/) are available for Rust, though then you must typically install the C++ Qrack library to system folders.
 2. Run a preliminary round of CPU-only benchmarks (such as on the [quantum Fourier transform algorithm](https://github.com/vm6502q/pyqrack-examples/blob/main/qft.py)) to **tune the [`PSTRIDEPOW`](https://github.com/unitaryfund/qrack?tab=readme-ov-file#build-and-environment-options-for-cpu-engines) environment variable for best performance.** This can make a _big_ difference to CPU-based simulation performance, and be aware that CPU-based and GPU-based algorithms and implementations in Qrack work **together** to return the best possible performance for even GPU-based benchmarks.
 3. Consider [tuning light-cone optimization qubit threshold](https://github.com/unitaryfund/qrack?tab=readme-ov-file#qtensornetwork-options) and [setting manual system resource limit variables](https://github.com/unitaryfund/qrack?tab=readme-ov-file#maximum-allocation-guard) (though these are not strictly required and might be recognized accurately by default by Qrack).
 
