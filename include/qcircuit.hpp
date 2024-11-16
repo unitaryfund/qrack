@@ -338,15 +338,16 @@ struct QCircuitGate {
     bool IsIdentity()
     {
         const bitCapInt controlPow = pow2(controls.size());
-        if ((controlPow > 1U) && (payloads.size() == controlPow)) {
+        if (payloads.size() == controlPow) {
             const complex* refP = payloads.begin()->second.get();
             if (norm(refP[0U] - refP[3U]) > FP_NORM_EPSILON) {
                 return false;
             }
+            const complex phaseFac = refP[0U];
             for (const auto& payload : payloads) {
                 complex* p = payload.second.get();
                 if ((norm(p[1U]) > FP_NORM_EPSILON) || (norm(p[2U]) > FP_NORM_EPSILON) ||
-                    (norm(refP[0U] - p[0U]) > FP_NORM_EPSILON) || (norm(refP[3U] - p[3U]) > FP_NORM_EPSILON)) {
+                    (norm(phaseFac - p[0U]) > FP_NORM_EPSILON) || (norm(phaseFac - p[3U]) > FP_NORM_EPSILON)) {
                     return false;
                 }
             }
