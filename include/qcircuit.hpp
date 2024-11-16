@@ -340,6 +340,9 @@ struct QCircuitGate {
         const bitCapInt controlPow = pow2(controls.size());
         if ((controlPow > 1U) && (payloads.size() == controlPow)) {
             const complex* refP = payloads.begin()->second.get();
+            if (norm(refP[0U] - refP[3U]) > FP_NORM_EPSILON) {
+                return false;
+            }
             for (const auto& payload : payloads) {
                 complex* p = payload.second.get();
                 if ((norm(p[1U]) > FP_NORM_EPSILON) || (norm(p[2U]) > FP_NORM_EPSILON) ||
