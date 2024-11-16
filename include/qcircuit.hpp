@@ -124,11 +124,11 @@ struct QCircuitGate {
             return false;
         }
 
-        if (controls.empty() && other->controls.empty()) {
-            return true;
-        }
-
         if (clifford) {
+            if (controls.empty() && other->controls.empty()) {
+                return true;
+            }
+
             const bool mc = IsClifford();
             const bool oc = other->IsClifford();
 
@@ -140,6 +140,10 @@ struct QCircuitGate {
                 return controls.empty() || other->controls.empty() ||
                     (*(controls.begin()) == *(other->controls.begin()));
             }
+        }
+
+        if (controls.empty() || other->controls.empty()) {
+            return true;
         }
 
         if (std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end()) ||
