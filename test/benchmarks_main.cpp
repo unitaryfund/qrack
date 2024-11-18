@@ -376,6 +376,13 @@ int main(int argc, char* argv[])
 #endif
 
 #if ENABLE_OPENCL || ENABLE_CUDA
+        if (num_failed == 0 && hybrid) {
+            session.config().stream() << "############ QHybrid ############" << std::endl;
+            testEngineType = QINTERFACE_HYBRID;
+            testSubEngineType = QINTERFACE_HYBRID;
+            num_failed = session.run();
+        }
+
         if (num_failed == 0 && stabilizer) {
             session.config().stream() << "############ QStabilizerHybrid -> QHybrid ############" << std::endl;
             testEngineType = QINTERFACE_STABILIZER_HYBRID;

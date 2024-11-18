@@ -1,3 +1,27 @@
+libqrack (9.12.31) bionic; urgency=medium
+
+  * Debug QCircuit out-to-stream (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 17 Nov 2024 06:51:15 -0500
+
+libqrack (9.12.30) focal; urgency=medium
+
+  * Debug QCircuit out-to-stream (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 17 Nov 2024 06:49:42 -0500
+
+libqrack (9.12.29) jammy; urgency=medium
+
+  * Debug QCircuit out-to-stream (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 17 Nov 2024 06:47:45 -0500
+
+libqrack (9.12.28) noble; urgency=medium
+
+  * Debug QCircuit out-to-stream (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sun, 17 Nov 2024 06:44:54 -0500
+
 libqrack (9.12.26) bionic; urgency=medium
 
   * Option to disable low-fidelity exception (Bionic 4/4)
