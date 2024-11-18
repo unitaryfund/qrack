@@ -74,6 +74,17 @@ protected:
 
     QInterfacePtr MakeEngine(bitLenInt length, const bitCapInt& perm);
 
+    virtual void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QUnitMulti>(orig)); }
+    virtual void Copy(QUnitMultiPtr orig)
+    {
+        QUnit::Copy(std::dynamic_pointer_cast<QUnit>(orig));
+        isRedistributing = orig->isRedistributing;
+        isQEngineOCL = orig->isQEngineOCL;
+        defaultDeviceID = orig->defaultDeviceID;
+        deviceList = orig->deviceList;
+        deviceQbList = orig->deviceQbList;
+    }
+
 public:
     QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapInt& initState = ZERO_BCI,
         qrack_rand_gen_ptr rgp = nullptr, const complex& phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -116,7 +127,9 @@ protected:
     virtual bool SeparateBit(bool value, bitLenInt qubit)
     {
         const bool toRet = QUnit::SeparateBit(value, qubit);
-        RedistributeQEngines();
+        if (toRet) {
+            RedistributeQEngines();
+        }
 
         return toRet;
     }
@@ -135,7 +148,9 @@ protected:
 
         const bool result = QUnit::Detach(start, length, dest, isTry, tol);
 
-        RedistributeQEngines();
+        if (result) {
+            RedistributeQEngines();
+        }
 
         return result;
     }
@@ -147,6 +162,29 @@ protected:
         RedistributeQEngines();
 
         return toRet;
+    }
+
+    using QUnit::TrySeparate;
+    virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol)
+    {
+        for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+            Swap(qubitCount - (i + 1U), qubits[i]);
+        }
+
+        QUnitPtr dest = std::make_shared<QUnitMulti>(engines, qubits.size(), ZERO_BCI, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor, deviceIDs,
+            thresholdQubits, separabilityThreshold);
+
+        const bool result = TryDecompose(qubitCount - qubits.size(), dest);
+        if (result) {
+            Compose(dest);
+        }
+
+        for (bitLenInt i = qubits.size(); i > 0U; --i) {
+            Swap(qubitCount - i, qubits[i - 1U]);
+        }
+
+        return result;
     }
 
     virtual void RedistributeQEngines();

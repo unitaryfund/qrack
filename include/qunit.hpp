@@ -49,8 +49,8 @@ protected:
 
     QInterfacePtr MakeEngine(bitLenInt length, const bitCapInt& perm);
 
-    void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QUnit>(orig)); }
-    void Copy(QUnitPtr orig)
+    virtual void Copy(QInterfacePtr orig) { Copy(std::dynamic_pointer_cast<QUnit>(orig)); }
+    virtual void Copy(QUnitPtr orig)
     {
         QInterface::Copy(orig);
         freezeBasis2Qb = orig->freezeBasis2Qb;
