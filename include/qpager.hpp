@@ -37,7 +37,6 @@ protected:
     bitLenInt maxPageQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
-    bitLenInt maxQubits;
     int64_t devID;
     QInterfaceEngine rootEngine;
     bitCapIntOcl basePageMaxQPower;
@@ -111,7 +110,6 @@ protected:
         maxPageQubits = orig->maxPageQubits;
         thresholdQubitsPerPage = orig->thresholdQubitsPerPage;
         baseQubitsPerPage = orig->baseQubitsPerPage;
-        maxQubits = orig->maxQubits;
         devID = orig->devID;
         rootEngine = orig->rootEngine;
         basePageMaxQPower = orig->basePageMaxQPower;
