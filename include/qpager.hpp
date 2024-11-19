@@ -352,12 +352,20 @@ public:
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
+        if (qPages.size() == 1U) {
+            qPages[0U]->MCMtrx(controls, mtrx, target);
+            return;
+        }
         bitCapInt p = pow2(controls.size());
         bi_decrement(&p, 1U);
         ApplyEitherControlledSingleBit(p, controls, target, mtrx);
     }
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
+        if (qPages.size() == 1U) {
+            qPages[0U]->MACMtrx(controls, mtrx, target);
+            return;
+        }
         ApplyEitherControlledSingleBit(ZERO_BCI, controls, target, mtrx);
     }
 

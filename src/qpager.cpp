@@ -809,6 +809,11 @@ bitLenInt QPager::Allocate(bitLenInt start, bitLenInt length)
 
 void QPager::SetQuantumState(const complex* inputState)
 {
+    if (qPages.size() == 1U) {
+        qPages[0U]->SetQuantumState(inputState);
+        return;
+    }
+
     const bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     bitCapIntOcl pagePerm = 0U;
 #if ENABLE_PTHREAD
@@ -845,6 +850,11 @@ void QPager::SetQuantumState(const complex* inputState)
 
 void QPager::GetQuantumState(complex* outputState)
 {
+    if (qPages.size() == 1U) {
+        qPages[0U]->GetQuantumState(outputState);
+        return;
+    }
+
     const bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     bitCapIntOcl pagePerm = 0U;
 #if ENABLE_PTHREAD
@@ -875,6 +885,11 @@ void QPager::GetQuantumState(complex* outputState)
 
 void QPager::GetProbs(real1* outputProbs)
 {
+    if (qPages.size() == 1U) {
+        qPages[0U]->GetProbs(outputProbs);
+        return;
+    }
+
     const bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     bitCapIntOcl pagePerm = 0U;
 #if ENABLE_PTHREAD
@@ -982,7 +997,7 @@ void QPager::ApplySingleEither(bool isInvert, const complex& _top, const complex
 void QPager::ApplyEitherControlledSingleBit(
     const bitCapInt& controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
 {
-    if (controls.empty() || (qPages.size() == 1U)) {
+    if (controls.empty()) {
         Mtrx(mtrx, target);
         return;
     }
