@@ -573,7 +573,7 @@ quid init_count_type(
         simulatorType.push_back(QINTERFACE_CPU);
     }
 
-    if (pg && (!hy || !isOcl)) {
+    if (pg && isOcl && !hy) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 

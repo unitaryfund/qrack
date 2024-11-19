@@ -637,7 +637,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
         simulatorType.push_back(QINTERFACE_CPU);
     }
 
-    if (pg && (!hy || !isOcl)) {
+    if (pg && isOcl && !hy) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
