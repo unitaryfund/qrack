@@ -278,7 +278,7 @@ QInterfacePtr CreateArrangedLayersFull(
         simulatorType.push_back(QINTERFACE_CPU);
     }
 
-    if (pg && !hy) {
+    if (pg && (!hy || !isOcl)) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
