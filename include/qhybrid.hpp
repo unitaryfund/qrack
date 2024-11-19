@@ -155,6 +155,8 @@ public:
 
     bool IsZeroAmplitude() { return engine->IsZeroAmplitude(); }
 
+    real1_f FirstNonzeroPhase() { return engine->FirstNonzeroPhase(); }
+
     void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QHybrid>(src)); }
     void CopyStateVec(QHybridPtr src)
     {
@@ -196,6 +198,10 @@ public:
     real1_f ProbReg(bitLenInt start, bitLenInt length, const bitCapInt& permutation)
     {
         return engine->ProbReg(start, length, permutation);
+    }
+    void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray)
+    {
+        engine->ProbRegAll(start, length, probsArray);
     }
 
     using QEngine::Compose;
@@ -288,15 +294,24 @@ public:
         engine->SetPermutation(perm, phaseFac);
     }
 
-    void Mtrx(const complex* mtrx, bitLenInt qubitIndex) { engine->Mtrx(mtrx, qubitIndex); }
-    void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt qubitIndex)
-    {
-        engine->Phase(topLeft, bottomRight, qubitIndex);
-    }
+    using QEngine::X;
+    void X(bitLenInt target) { engine->X(target); }
+    using QEngine::Z;
+    void Z(bitLenInt target) { engine->Z(target); }
+    using QEngine::Invert;
     void Invert(const complex& topRight, const complex& bottomLeft, bitLenInt qubitIndex)
     {
         engine->Invert(topRight, bottomLeft, qubitIndex);
     }
+    using QEngine::Phase;
+    void Phase(const complex& topLeft, const complex& bottomRight, bitLenInt qubitIndex)
+    {
+        engine->Phase(topLeft, bottomRight, qubitIndex);
+    }
+    void XMask(const bitCapInt& mask) { engine->XMask(mask); }
+    void PhaseParity(real1_f radians, const bitCapInt& mask) { engine->PhaseParity(radians, mask); }
+    void PhaseRootNMask(bitLenInt n, const bitCapInt& mask) { engine->PhaseRootNMask(n, mask); }
+    void Mtrx(const complex* mtrx, bitLenInt qubitIndex) { engine->Mtrx(mtrx, qubitIndex); }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         engine->MCMtrx(controls, mtrx, target);
@@ -312,9 +327,6 @@ public:
     {
         engine->UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
     }
-
-    void XMask(const bitCapInt& mask) { engine->XMask(mask); }
-    void PhaseParity(real1_f radians, const bitCapInt& mask) { engine->PhaseParity(radians, mask); }
 
     real1_f CProb(bitLenInt control, bitLenInt target) { return engine->CProb(control, target); }
     real1_f ACProb(bitLenInt control, bitLenInt target) { return engine->ACProb(control, target); }
@@ -354,6 +366,9 @@ public:
     {
         return engine->ForceM(qubit, result, doForce, doApply);
     }
+    bitCapInt MAll() { return engine->MAll(); }
+
+    void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) { engine->ROL(shift, start, length); }
 
 #if ENABLE_ALU
     void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length) { engine->INC(toAdd, start, length); }

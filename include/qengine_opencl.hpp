@@ -322,33 +322,6 @@ public:
         return QInterface::FirstNonzeroPhase();
     }
 
-    void SwitchHostPtr(bool useHostMem)
-    {
-        if (useHostMem == usingHostRam) {
-            return;
-        }
-
-        std::shared_ptr<complex> copyVec = AllocStateVec(maxQPowerOcl, true);
-        GetQuantumState(copyVec.get());
-
-        if (useHostMem) {
-            stateVec = copyVec;
-            stateBuffer = MakeStateVecBuffer(stateVec);
-        } else {
-            stateVec = NULL;
-            stateBuffer = MakeStateVecBuffer(stateVec);
-            tryOcl("Failed to write buffer", [&] {
-                return queue.enqueueWriteBuffer(
-                    *stateBuffer, CL_TRUE, 0U, sizeof(complex) * maxQPowerOcl, copyVec.get(), ResetWaitEvents().get());
-            });
-            wait_refs.clear();
-            copyVec.reset();
-        }
-
-        usingHostRam = useHostMem;
-    }
-
-    void FreeAll();
     void ZeroAmplitudes();
     void CopyStateVec(QEnginePtr src);
 
@@ -358,32 +331,6 @@ public:
         QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length);
     void ShuffleBuffers(QEnginePtr engine);
     QEnginePtr CloneEmpty();
-
-    void QueueSetDoNormalize(bool doNorm) { AddQueueItem(QueueItem(doNorm)); }
-    void QueueSetRunningNorm(real1_f runningNrm) { AddQueueItem(QueueItem(runningNrm)); }
-    void AddQueueItem(const QueueItem& item)
-    {
-        bool isBase;
-        // For lock_guard:
-        if (true) {
-            std::lock_guard<std::mutex> lock(queue_mutex);
-            checkCallbackError();
-            isBase = wait_queue_items.empty();
-            wait_queue_items.push_back(item);
-        }
-
-        if (isBase) {
-            DispatchQueue();
-        }
-    }
-    void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-        size_t localBuffSize = 0U, size_t deallocSize = 0U)
-    {
-        if (localBuffSize > device_context->GetLocalSize()) {
-            throw bad_alloc("Local memory limits exceeded in QEngineOCL::QueueCall()");
-        }
-        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
-    }
 
     bitCapIntOcl GetMaxSize() { return device_context->GetMaxAlloc() / sizeof(complex); };
 
@@ -556,10 +503,64 @@ protected:
         return toRet;
     }
 
+    void SwitchHostPtr(bool useHostMem)
+    {
+        if (useHostMem == usingHostRam) {
+            return;
+        }
+
+        std::shared_ptr<complex> copyVec = AllocStateVec(maxQPowerOcl, true);
+        GetQuantumState(copyVec.get());
+
+        if (useHostMem) {
+            stateVec = copyVec;
+            stateBuffer = MakeStateVecBuffer(stateVec);
+        } else {
+            stateVec = NULL;
+            stateBuffer = MakeStateVecBuffer(stateVec);
+            tryOcl("Failed to write buffer", [&] {
+                return queue.enqueueWriteBuffer(
+                    *stateBuffer, CL_TRUE, 0U, sizeof(complex) * maxQPowerOcl, copyVec.get(), ResetWaitEvents().get());
+            });
+            wait_refs.clear();
+            copyVec.reset();
+        }
+
+        usingHostRam = useHostMem;
+    }
+
+    void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
+        size_t localBuffSize = 0U, size_t deallocSize = 0U)
+    {
+        if (localBuffSize > device_context->GetLocalSize()) {
+            throw bad_alloc("Local memory limits exceeded in QEngineOCL::QueueCall()");
+        }
+        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
+    }
+
+    void QueueSetDoNormalize(bool doNorm) { AddQueueItem(QueueItem(doNorm)); }
+    void QueueSetRunningNorm(real1_f runningNrm) { AddQueueItem(QueueItem(runningNrm)); }
+    void AddQueueItem(const QueueItem& item)
+    {
+        bool isBase;
+        // For lock_guard:
+        if (true) {
+            std::lock_guard<std::mutex> lock(queue_mutex);
+            checkCallbackError();
+            isBase = wait_queue_items.empty();
+            wait_queue_items.push_back(item);
+        }
+
+        if (isBase) {
+            DispatchQueue();
+        }
+    }
+
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     std::shared_ptr<complex> AllocStateVec(bitCapIntOcl elemCount, bool doForceAlloc = false);
     void FreeStateVec() { stateVec = NULL; }
+    void FreeAll();
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
     void ReinitBuffer();
