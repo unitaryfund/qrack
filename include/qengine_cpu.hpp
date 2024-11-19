@@ -98,8 +98,6 @@ public:
         runningNorm = ZERO_R1;
     }
 
-    void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
-
     bool IsZeroAmplitude() { return !stateVec; }
     void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
     void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
@@ -239,6 +237,7 @@ protected:
 
     StateVectorPtr AllocStateVec(bitCapIntOcl elemCount);
     void ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
+    void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
 
     void Dispatch(bitCapIntOcl workItemCount, DispatchFn fn)
     {
