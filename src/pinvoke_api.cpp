@@ -596,6 +596,12 @@ MICROSOFT_QUANTUM_DECL int get_error(_In_ uintq sid)
     return simulatorErrors[sid];
 }
 
+#if ENABLE_OPENCL
+#define DEVICE_COUNT (OCLEngine::Instance().GetDeviceCount())
+#elif ENABLE_CUDA
+#define DEVICE_COUNT (CUDAEngine::Instance().GetDeviceCount())
+#endif
+
 /**
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
@@ -614,12 +620,9 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
         }
     }
 
-#if ENABLE_OPENCL
-    bool isOcl = oc && (OCLEngine::Instance().GetDeviceCount() > 0);
-    bool isOclMulti = oc && md && (OCLEngine::Instance().GetDeviceCount() > 1);
-#elif ENABLE_CUDA
-    bool isOcl = oc && (CUDAEngine::Instance().GetDeviceCount() > 0);
-    bool isOclMulti = oc && md && (CUDAEngine::Instance().GetDeviceCount() > 1);
+#if ENABLE_OPENCL || ENABLE_CUDA
+    bool isOcl = oc && (DEVICE_COUNT > 0);
+    bool isOclMulti = oc && md && (DEVICE_COUNT > 1);
 #else
     bool isOcl = false;
     bool isOclMulti = false;

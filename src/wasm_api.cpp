@@ -532,6 +532,12 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, std::vector<bitLenI
     return MapArithmeticResult2(start1, start2);
 }
 
+#if ENABLE_OPENCL
+#define DEVICE_COUNT (OCLEngine::Instance().GetDeviceCount())
+#elif ENABLE_CUDA
+#define DEVICE_COUNT (CUDAEngine::Instance().GetDeviceCount())
+#endif
+
 /**
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
@@ -550,12 +556,9 @@ quid init_count_type(
         }
     }
 
-#if ENABLE_OPENCL
-    bool isOcl = oc && (OCLEngine::Instance().GetDeviceCount() > 0);
-    bool isOclMulti = oc && md && (OCLEngine::Instance().GetDeviceCount() > 1);
-#elif ENABLE_CUDA
-    bool isOcl = oc && (CUDAEngine::Instance().GetDeviceCount() > 0);
-    bool isOclMulti = oc && md && (CUDAEngine::Instance().GetDeviceCount() > 1);
+#if ENABLE_OPENCL || ENABLE_CUDA
+    bool isOcl = oc && (DEVICE_COUNT > 0);
+    bool isOclMulti = oc && md && (DEVICE_COUNT > 1);
 #else
     bool isOcl = false;
     bool isOclMulti = false;
