@@ -628,17 +628,13 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     // Construct backwards, then reverse:
     std::vector<QInterfaceEngine> simulatorType;
 
-#if ENABLE_OPENCL
-    if (!hy || !isOcl) {
-        simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+    if (isOcl) {
+        simulatorType.push_back(hy ? QINTERFACE_HYBRID : QINTERFACE_OPENCL);
+    } else {
+        simulatorType.push_back(QINTERFACE_CPU);
     }
-#elif ENABLE_CUDA
-    if (!hy || !isOcl) {
-        simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
-    }
-#endif
 
-    if (pg && isOcl && simulatorType.size()) {
+    if (pg && !hy) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
@@ -646,12 +642,8 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
         simulatorType.push_back(QINTERFACE_BDT);
     }
 
-    if (sh && (!sd || simulatorType.size())) {
+    if (sh) {
         simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
-    }
-
-    if ((simulatorType.size() == 0) && !sh) {
-        simulatorType.push_back(isOcl ? QINTERFACE_HYBRID : QINTERFACE_CPU);
     }
 
     if (sd) {
@@ -668,22 +660,6 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
 
     // (...then reverse:)
     std::reverse(simulatorType.begin(), simulatorType.end());
-
-    if (simulatorType.empty()) {
-#if ENABLE_OPENCL || ENABLE_CUDA
-        if (hy && isOcl) {
-            simulatorType.push_back(QINTERFACE_HYBRID);
-        } else {
-#if ENABLE_OPENCL
-            simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
-#else
-            simulatorType.push_back(isOcl ? QINTERFACE_CUDA : QINTERFACE_CPU);
-#endif
-        }
-#else
-        simulatorType.push_back(QINTERFACE_CPU);
-#endif
-    }
 
     bool isSuccess = true;
     QInterfacePtr simulator = NULL;
