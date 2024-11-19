@@ -53,17 +53,17 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bit
 
     const bitCapInt initState = maxQPower + ONE_BCI;
     const bitCapIntOcl initStateOcl = (bitCapIntOcl)initState;
-    bitCapIntOcl pagePerm = 0U;
+    bitCapIntOcl pagePerm = basePageMaxQPower;
     for (bitCapIntOcl i = 0U; i < basePageCount; ++i) {
-        bool isPermInPage = bi_compare(initState, pagePerm) >= 0;
-        pagePerm += basePageMaxQPower;
-        isPermInPage &= (initStateOcl < pagePerm);
-        if (isPermInPage) {
+        if (bi_compare(initState, pagePerm) < 0) {
+            // Init state is in this page.
             qPages.push_back(MakeEngine(baseQubitsPerPage, i));
             qPages.back()->SetPermutation(initStateOcl - (pagePerm - basePageMaxQPower));
         } else {
+            // Init state is in a higher page.
             qPages.push_back(MakeEngine(baseQubitsPerPage, i));
         }
+        pagePerm += basePageMaxQPower;
     }
 }
 
@@ -106,17 +106,20 @@ void QPager::Init()
 #endif
     }
 
-    bitLenInt engineLevel = 0U;
-    rootEngine = engines[0U];
-    while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QRACK_GPU_ENGINE) &&
-        (rootEngine != QINTERFACE_HYBRID)) {
-        ++engineLevel;
-        rootEngine = engines[engineLevel];
-    }
-
     maxPageSetting = QRACK_MAX_PAGE_QB_DEFAULT;
 
 #if ENABLE_OPENCL || ENABLE_CUDA
+    bitLenInt engineLevel = 0U;
+    rootEngine = engines[0U];
+    while ((engines.size() > engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QRACK_GPU_ENGINE) &&
+        (rootEngine != QINTERFACE_HYBRID)) {
+        rootEngine = engines[++engineLevel];
+    }
+
+    if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QRACK_GPU_ENGINE) && (rootEngine != QINTERFACE_HYBRID)) {
+        rootEngine = QRACK_GPU_ENGINE;
+    }
+
     if (QRACK_GPU_SINGLETON.GetDeviceCount() && (rootEngine != QINTERFACE_CPU)) {
         maxPageQubits = log2Ocl(QRACK_GPU_SINGLETON.GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
         if (maxPageSetting == (bitLenInt)(-1)) {
@@ -124,10 +127,8 @@ void QPager::Init()
         } else if (maxPageSetting < maxPageQubits) {
             maxPageQubits = maxPageSetting;
         }
-    }
-
-    if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QRACK_GPU_ENGINE)) {
-        rootEngine = QINTERFACE_HYBRID;
+    } else {
+        maxPageQubits = QRACK_MAX_CPU_QB_DEFAULT;
     }
 
     if (!thresholdQubitsPerPage && ((rootEngine == QRACK_GPU_ENGINE) || (rootEngine == QINTERFACE_HYBRID))) {
@@ -137,11 +138,15 @@ void QPager::Init()
         // environment variable.
         thresholdQubitsPerPage = maxPageQubits;
     }
-#endif
 
     if (maxPageSetting == (bitLenInt)(-1)) {
         maxPageSetting = maxPageQubits;
     }
+#else
+    rootEngine = QINTERFACE_CPU;
+    maxPageQubits = QRACK_MAX_CPU_QB_DEFAULT;
+    maxPageSetting = QRACK_MAX_CPU_QB_DEFAULT;
+#endif
 
     if (!thresholdQubitsPerPage) {
         useGpuThreshold = false;
@@ -978,7 +983,7 @@ void QPager::ApplySingleEither(bool isInvert, const complex& _top, const complex
 void QPager::ApplyEitherControlledSingleBit(
     const bitCapInt& controlPerm, const std::vector<bitLenInt>& controls, bitLenInt target, const complex* mtrx)
 {
-    if (controls.empty()) {
+    if (controls.empty() || (qPages.size() == 1U)) {
         Mtrx(mtrx, target);
         return;
     }
