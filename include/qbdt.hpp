@@ -214,14 +214,9 @@ public:
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = _qrack_qunit_sep_thresh)
-#if ENABLE_OPENCL || ENABLE_CUDA
-        : QBdt({ QINTERFACE_OPTIMAL_SCHROEDINGER }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
+        : QBdt({ QINTERFACE_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
               separation_thresh)
-#else
-        : QBdt({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem,
-              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
-#endif
     {
     }
 
