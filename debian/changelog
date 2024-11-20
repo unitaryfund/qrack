@@ -1,3 +1,27 @@
+libqrack (9.12.37) bionic; urgency=medium
+
+  * Major QHybrid optimization (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 20 Nov 2024 07:35:31 -0500
+
+libqrack (9.12.36) focal; urgency=medium
+
+  * Major QHybrid optimization (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 20 Nov 2024 07:33:42 -0500
+
+libqrack (9.12.35) jammy; urgency=medium
+
+  * Major QHybrid optimization (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 20 Nov 2024 07:31:53 -0500
+
+libqrack (9.12.34) noble; urgency=medium
+
+  * Major QHybrid optimization (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 20 Nov 2024 07:28:26 -0500
+
 libqrack (9.12.31) bionic; urgency=medium
 
   * Debug QCircuit out-to-stream (Bionic 4/4)

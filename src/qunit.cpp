@@ -196,18 +196,26 @@ void QUnit::SetQuantumState(const complex* inputState)
 
 void QUnit::GetQuantumStateOrProbs(complex* outputState, real1* outputProbs)
 {
+    if (outputState) {
+        ToPermBasisAll();
+    } else {
+        ToPermBasisProb();
+    }
+
     if (qubitCount == 1U) {
-        RevertBasis1Qb(0U);
         const QEngineShard& shard = shards[0U];
         if (!shard.unit) {
-            outputState[0U] = shard.amp0;
-            outputState[1U] = shard.amp1;
+            if (outputState) {
+                outputState[0U] = shard.amp0;
+                outputState[1U] = shard.amp1;
+            } else {
+                outputProbs[0U] = norm(shard.amp0);
+                outputProbs[1U] = norm(shard.amp1);
+            }
 
             return;
         }
     }
-
-    ToPermBasisAll();
 
     QUnitPtr thisCopyShared;
     QUnit* thisCopy;
