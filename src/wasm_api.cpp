@@ -1007,17 +1007,18 @@ bool release(quid sid, bitLenInt q)
     bool toRet = simulator->Prob(shards[simulator.get()][q]) < (ONE_R1 / 100);
 
     if (simulator->GetQubitCount() == 1U) {
-        shards[simulator.get()] = {};
+        shards.erase(simulator.get());
         simulators[sid] = NULL;
     } else {
-        bitLenInt oIndex = shards[simulator.get()][q];
+        std::map<quid, bitLenInt>& simShards = shards[simulator.get()];
+        bitLenInt oIndex = simShards[q];
         simulator->Dispose(oIndex, 1U);
-        for (size_t i = 0U; i < shards[simulator.get()].size(); ++i) {
-            if (shards[simulator.get()][i] > oIndex) {
-                --(shards[simulator.get()][i]);
+        for (auto it = simShards.begin(); it != simShards.end(); ++it) {
+            if (it->second > oIndex) {
+                --(it->second);
             }
         }
-        shards[simulator.get()].erase(q);
+        simShards.erase(q);
     }
 
     return toRet;
@@ -1644,15 +1645,15 @@ quid Decompose(quid sid, std::vector<bitLenInt> q)
     }
     simulator->Decompose(nQubitIndex, simulators[nSid]);
 
-    bitLenInt oIndex;
     for (size_t j = 0U; j < q.size(); ++j) {
-        oIndex = shards[simulator.get()][q[j]];
-        for (size_t i = 0U; i < shards[simulator.get()].size(); ++i) {
-            if (shards[simulator.get()][i] > oIndex) {
-                --(shards[simulator.get()][i]);
+        std::map<quid, bitLenInt>& simShards = shards[simulator.get()];
+        bitLenInt oIndex = simShards[q[j]];
+        for (auto it = simShards.begin(); it != simShards.end(); ++it) {
+            if (it->second > oIndex) {
+                --(it->second);
             }
         }
-        shards[simulator.get()].erase(q[j]);
+        simShards.erase(q[j]);
     }
 
     return nSid;
@@ -1668,15 +1669,15 @@ void Dispose(quid sid, std::vector<bitLenInt> q)
     }
     simulator->Dispose(nQubitIndex, q.size());
 
-    bitLenInt oIndex;
     for (size_t j = 0U; j < q.size(); ++j) {
-        oIndex = shards[simulator.get()][q[j]];
-        for (size_t i = 0U; i < shards[simulator.get()].size(); ++i) {
-            if (shards[simulator.get()][i] > oIndex) {
-                --(shards[simulator.get()][i]);
+        std::map<quid, bitLenInt>& simShards = shards[simulator.get()];
+        bitLenInt oIndex = simShards[q[j]];
+        for (auto it = simShards.begin(); it != simShards.end(); ++it) {
+            if (it->second > oIndex) {
+                --(it->second);
             }
         }
-        shards[simulator.get()].erase(q[j]);
+        simShards.erase(q[j]);
     }
 }
 

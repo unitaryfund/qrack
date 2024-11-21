@@ -1048,8 +1048,7 @@ MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
 
-    std::map<uintq, bitLenInt>::iterator it;
-    for (it = shards[simulator.get()].begin(); it != shards[simulator.get()].end(); ++it) {
+    for (auto it = shards[simulator.get()].begin(); it != shards[simulator.get()].end(); ++it) {
         callback(it->first);
     }
 }
@@ -1329,17 +1328,18 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ uintq sid, _In_ uintq q)
     bool toRet = simulator->Prob(shards[simulator.get()][q]) < (ONE_R1 / 100);
 
     if (simulator->GetQubitCount() == 1U) {
-        shards[simulator.get()] = {};
+        shards.erase(simulator.get());
         simulators[sid] = NULL;
     } else {
-        bitLenInt oIndex = shards[simulator.get()][q];
+        std::map<uintq, bitLenInt>& simShards = shards[simulator.get()];
+        bitLenInt oIndex = simShards[q];
         simulator->Dispose(oIndex, 1U);
-        for (uintq i = 0U; i < shards[simulator.get()].size(); ++i) {
-            if (shards[simulator.get()][i] > oIndex) {
-                --(shards[simulator.get()][i]);
+        for (auto it = simShards.begin(); it != simShards.end(); ++it) {
+            if (it->second > oIndex) {
+                --(it->second);
             }
         }
-        shards[simulator.get()].erase(q);
+        simShards.erase(q);
     }
 
     return toRet;
@@ -2288,15 +2288,15 @@ MICROSOFT_QUANTUM_DECL uintq Decompose(_In_ uintq sid, _In_ uintq n, _In_reads_(
         simulatorErrors[nSid] = 1;
     }
 
-    bitLenInt oIndex;
     for (uintq j = 0U; j < n; ++j) {
-        oIndex = shards[simulator.get()][q[j]];
-        for (uintq i = 0U; i < shards[simulator.get()].size(); ++i) {
-            if (shards[simulator.get()][i] > oIndex) {
-                --(shards[simulator.get()][i]);
+        std::map<uintq, bitLenInt>& simShards = shards[simulator.get()];
+        bitLenInt oIndex = simShards[q[j]];
+        for (auto it = simShards.begin(); it != simShards.end(); ++it) {
+            if (it->second > oIndex) {
+                --(it->second);
             }
         }
-        shards[simulator.get()].erase(q[j]);
+        simShards.erase(q[j]);
     }
 
     return nSid;
@@ -2321,15 +2321,15 @@ MICROSOFT_QUANTUM_DECL void Dispose(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
         std::cout << ex.what() << std::endl;
     }
 
-    bitLenInt oIndex;
     for (uintq j = 0U; j < n; ++j) {
-        oIndex = shards[simulator.get()][q[j]];
-        for (uintq i = 0U; i < shards[simulator.get()].size(); ++i) {
-            if (shards[simulator.get()][i] > oIndex) {
-                --(shards[simulator.get()][i]);
+        std::map<uintq, bitLenInt>& simShards = shards[simulator.get()];
+        bitLenInt oIndex = simShards[q[j]];
+        for (auto it = simShards.begin(); it != simShards.end(); ++it) {
+            if (it->second > oIndex) {
+                --(it->second);
             }
         }
-        shards[simulator.get()].erase(q[j]);
+        simShards.erase(q[j]);
     }
 }
 
