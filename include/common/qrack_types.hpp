@@ -60,13 +60,17 @@
 
 #if QBCAPPOW < 6
 #define bitCapInt uint32_t
+#define QRACK_MAX_QUBITS 32
 #elif QBCAPPOW < 7
 #define bitCapInt uint64_t
+#define QRACK_MAX_QUBITS 64
 #elif (QBCAPPOW < 8) && defined(__SIZEOF_INT128__)
 #define bitCapInt unsigned __int128
+#define QRACK_MAX_QUBITS 128
 #else
 #include "big_integer.hpp"
 #define bitCapInt BigInteger
+constexpr size_t QRACK_MAX_QUBITS = (1 << QBCAPPOW);
 #endif
 
 #if FPPOW < 5

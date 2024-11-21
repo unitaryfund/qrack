@@ -35,6 +35,11 @@ QInterface::QInterface(
     , rand_distribution(ZERO_R1_F, ONE_R1_F)
     , hardware_rand_generator(NULL)
 {
+    if (qubitCount > QRACK_MAX_QUBITS) {
+        throw std::invalid_argument(
+            "Requested QInterface qubit count is larger than the limits of the current Qrack build options!");
+    }
+
 #if ENABLE_RDRAND || ENABLE_RNDFILE || ENABLE_DEVRAND
     if (useHardwareRNG) {
         hardware_rand_generator = std::make_shared<RdRandom>();
