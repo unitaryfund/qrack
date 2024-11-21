@@ -2769,7 +2769,7 @@ void QUnit::ApplyEitherControlled(
         unit = Entangle(targets);
 
         real1_f p = ONE_R1_F;
-        for (bitLenInt i = 0U; i < controlVec.size(); ++i) {
+        for (size_t i = 0U; i < controlVec.size(); ++i) {
             p *= Prob(controlVec[i]);
         }
 
@@ -4018,7 +4018,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         real1_f pLo = ptHi ? pc : pt;
         bool pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
-        logFidelity += angleFrac(polarBottom) * log(pState ? pHi : (ONE_R1_F - pLo));
+        logFidelity += angleFrac(polarBottom) * log((double)(pState ? pHi : (ONE_R1_F - pLo)));
         CheckFidelity();
 
         if (pState) {
@@ -4037,7 +4037,7 @@ void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, bitLenInt control, bitLenInt t
         pLo = ptHi ? pc : pt;
         pState = abs(pHi - HALF_R1) >= abs(pLo - HALF_R1);
 
-        logFidelity += angleFrac(polarTop) * log(pState ? pHi : (ONE_R1_F - pLo));
+        logFidelity += angleFrac(polarTop) * log((double)(pState ? pHi : (ONE_R1_F - pLo)));
         CheckFidelity();
 
         if (!pState) {

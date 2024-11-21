@@ -389,7 +389,7 @@ public:
             }
             shard.mapped = indices[shard.unit]++;
         }
-        for (bitLenInt i = 0U; i < shards.size(); ++i) {
+        for (size_t i = 0U; i < shards.size(); ++i) {
             swapMap[i] = i;
         }
     }

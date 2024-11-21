@@ -114,7 +114,7 @@ void QPager::Init()
     maxPageSetting = QRACK_MAX_PAGE_QB_DEFAULT;
 
 #if ENABLE_OPENCL || ENABLE_CUDA
-    bitLenInt engineLevel = 0U;
+    size_t engineLevel = 0U;
     rootEngine = engines[0U];
     while ((engines.size() > engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QRACK_GPU_ENGINE) &&
         (rootEngine != QINTERFACE_HYBRID)) {

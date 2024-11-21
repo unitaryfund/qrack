@@ -214,9 +214,8 @@ public:
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = _qrack_qunit_sep_thresh)
-        : QBdt({ QINTERFACE_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
-              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
-              separation_thresh)
+        : QBdt({ QINTERFACE_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem,
+              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
 
@@ -316,7 +315,7 @@ public:
 
         std::vector<bitLenInt> qubits(_qubits);
         std::sort(qubits.begin(), qubits.end());
-        for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+        for (size_t i = 0U; i < qubits.size(); ++i) {
             Swap(i, qubits[i]);
         }
         const bool result = IsSeparable(qubits.size());

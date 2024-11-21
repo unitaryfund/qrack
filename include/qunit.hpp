@@ -68,16 +68,16 @@ protected:
         engines = orig->engines;
     }
 
-    real1_f angleFrac(complex cmplx)
+    double angleFrac(complex cmplx)
     {
-        real1_f at = arg(cmplx);
+        double at = (double)arg(cmplx);
         while (at >= PI_R1) {
-            at -= 2 * PI_R1;
+            at -= (double)(2 * PI_R1);
         }
         while (at < -PI_R1) {
-            at += 2 * PI_R1;
+            at += (double)(2 * PI_R1);
         }
-        return abs(at) / PI_R1;
+        return abs(at) / (double)PI_R1;
     }
 
     void CheckFidelity()
@@ -511,7 +511,7 @@ public:
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
     virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol)
     {
-        for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+        for (size_t i = 0U; i < qubits.size(); ++i) {
             Swap(qubitCount - (i + 1U), qubits[i]);
         }
 

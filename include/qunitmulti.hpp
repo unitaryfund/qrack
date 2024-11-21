@@ -167,7 +167,7 @@ protected:
     using QUnit::TrySeparate;
     virtual bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f error_tol)
     {
-        for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+        for (size_t i = 0U; i < qubits.size(); ++i) {
             Swap(qubitCount - (i + 1U), qubits[i]);
         }
 

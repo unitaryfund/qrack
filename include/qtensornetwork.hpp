@@ -371,7 +371,7 @@ public:
                 par_for(0U, shots, [&](const bitCapIntOcl& ignored, const unsigned& ignored2) {
                     QInterfacePtr clone = Clone();
                     bitCapInt result = ZERO_BCI;
-                    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+                    for (size_t i = 0U; i < qubits.size(); ++i) {
                         if (clone->M(qubits[i])) {
                             bi_or_ip(&result, pow2(i));
                         }
@@ -386,7 +386,7 @@ public:
             for (unsigned shot = 0U; shot < shots; ++shot) {
                 QInterfacePtr clone = Clone();
                 bitCapInt result = ZERO_BCI;
-                for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+                for (size_t i = 0U; i < qubits.size(); ++i) {
                     if (clone->M(qubits[i])) {
                         bi_or_ip(&result, pow2(i));
                     }
@@ -417,7 +417,7 @@ public:
                 par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& ignored) {
                     QInterfacePtr clone = Clone();
                     bitCapInt result = ZERO_BCI;
-                    for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+                    for (size_t i = 0U; i < qubits.size(); ++i) {
                         if (clone->M(qubits[i])) {
                             bi_or_ip(&result, pow2(i));
                         }
@@ -430,7 +430,7 @@ public:
             for (unsigned shot = 0U; shot < shots; ++shot) {
                 QInterfacePtr clone = Clone();
                 bitCapInt result = ZERO_BCI;
-                for (bitLenInt i = 0U; i < qubits.size(); ++i) {
+                for (size_t i = 0U; i < qubits.size(); ++i) {
                     if (clone->M(qubits[i])) {
                         bi_or_ip(&result, pow2(i));
                     }
