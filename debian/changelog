@@ -1,3 +1,27 @@
+libqrack (9.12.41) bionic; urgency=medium
+
+  * Fix segfault in 1qb QUnit::GetProbs() (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 20 Nov 2024 15:14:32 -0500
+
+libqrack (9.12.40) focal; urgency=medium
+
+  * Fix segfault in 1qb QUnit::GetProbs() (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 20 Nov 2024 15:12:53 -0500
+
+libqrack (9.12.39) jammy; urgency=medium
+
+  * Fix segfault in 1qb QUnit::GetProbs() (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 20 Nov 2024 15:10:59 -0500
+
+libqrack (9.12.38) noble; urgency=medium
+
+  * Fix segfault in 1qb QUnit::GetProbs() (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Wed, 20 Nov 2024 15:07:41 -0500
+
 libqrack (9.12.37) bionic; urgency=medium
 
   * Major QHybrid optimization (Bionic 4/4)

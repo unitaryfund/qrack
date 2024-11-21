@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.12.38 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.12.42 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -154,13 +154,13 @@ if (FPPOW GREATER 6)
 endif (FPPOW GREATER 6)
 
 if (ENABLE_COMPLEX_X2)
-    set(COMPLEX_X2_MACRO "(!(defined(__GNUC__) || defined(__MINGW32__)) || ((FPPOW == 5) && __SSE__) || ((FPPOW == 6) && __SSE2__))")
+    set(COMPLEX_X2_MACRO "((defined(__GNUC__) || defined(__MINGW32__)) && (((FPPOW == 5) && __SSE__) || ((FPPOW == 6) && __SSE2__)))")
 else (ENABLE_COMPLEX_X2)
     set(COMPLEX_X2_MACRO "0")
 endif (ENABLE_COMPLEX_X2)
 
 if (ENABLE_SSE3)
-    set(SSE3_MACRO "(!(defined(__GNUC__) || defined(__MINGW32__)) || __SSE3__)")
+    set(SSE3_MACRO "((defined(__GNUC__) || defined(__MINGW32__)) && __SSE3__)")
 else (ENABLE_SSE3)
     set(SSE3_MACRO "0")
 endif (ENABLE_SSE3)
