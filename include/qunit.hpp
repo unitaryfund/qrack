@@ -71,13 +71,13 @@ protected:
     double angleFrac(complex cmplx)
     {
         double at = (double)arg(cmplx);
-        while (at >= PI_R1) {
-            at -= (double)(2 * PI_R1);
+        while (at >= M_PI) {
+            at -= 2 * M_PI;
         }
-        while (at < -PI_R1) {
-            at += (double)(2 * PI_R1);
+        while (at < -M_PI) {
+            at += 2 * M_PI;
         }
-        return abs(at) / (double)PI_R1;
+        return abs(at) / M_PI;
     }
 
     void CheckFidelity()
