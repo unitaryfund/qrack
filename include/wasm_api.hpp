@@ -645,5 +645,5 @@ void qcircuit_append_mc(quid cid, std::vector<complex> m, std::vector<bitLenInt>
 void qcircuit_run(quid cid, quid sid);
 void qcircuit_out_to_file(quid cid, std::string f);
 void qcircuit_in_from_file(quid cid, std::string f);
-std::string qcircuit_out_to_string(uintq cid);
+std::string qcircuit_out_to_string(quid cid);
 } // namespace Qrack

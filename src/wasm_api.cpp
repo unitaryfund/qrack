@@ -2815,7 +2815,7 @@ void qcircuit_in_from_file(quid cid, std::string f)
     ifile.close();
 }
 
-std::string qcircuit_out_to_string(uintq cid)
+std::string qcircuit_out_to_string(quid cid)
 {
     CIRCUIT_LOCK_GUARD_TYPED(cid, "")
     std::stringstream ss;
