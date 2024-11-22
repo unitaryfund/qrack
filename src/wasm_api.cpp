@@ -18,6 +18,7 @@
 #include <map>
 #include <mutex>
 #include <numeric>
+#include <sstream>
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
@@ -2804,6 +2805,7 @@ void qcircuit_out_to_file(quid cid, std::string f)
     ofile << circuit;
     ofile.close();
 }
+
 void qcircuit_in_from_file(quid cid, std::string f)
 {
     CIRCUIT_LOCK_GUARD_VOID(cid)
@@ -2811,5 +2813,13 @@ void qcircuit_in_from_file(quid cid, std::string f)
     ifile.open(f.c_str());
     ifile >> circuit;
     ifile.close();
+}
+
+std::string qcircuit_out_to_string(uintq cid)
+{
+    CIRCUIT_LOCK_GUARD_TYPED(cid, "")
+    std::stringstream ss;
+    ss << circuit;
+    return ss.str();
 }
 } // namespace Qrack

@@ -22,6 +22,8 @@
 #include <map>
 #include <mutex>
 #include <numeric>
+#include <sstream>
+#include <string>
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
@@ -269,6 +271,7 @@ std::vector<bool> neuronReservations;
 std::vector<QCircuitPtr> circuits;
 std::map<QCircuit*, std::mutex> circuitMutexes;
 std::vector<bool> circuitReservations;
+std::map<QCircuit*, std::string> circuitStrings;
 bitLenInt _maxShardQubits = 0U;
 bitLenInt MaxShardQubits()
 {
@@ -3876,5 +3879,23 @@ MICROSOFT_QUANTUM_DECL void qcircuit_in_from_file(_In_ uintq cid, _In_ char* f)
     ifile.open(f);
     ifile >> circuit;
     ifile.close();
+}
+
+MICROSOFT_QUANTUM_DECL size_t qcircuit_out_to_string_length(_In_ uintq cid)
+{
+    CIRCUIT_LOCK_GUARD_TYPED(cid, 0U)
+
+    std::stringstream ss;
+    ss << circuit;
+    circuitStrings[circuit.get()] = ss.str();
+
+    return circuitStrings[circuit.get()].size();
+}
+
+MICROSOFT_QUANTUM_DECL void qcircuit_out_to_string(_In_ uintq cid, _In_ char* f)
+{
+    CIRCUIT_LOCK_GUARD_VOID(cid)
+    const std::string& s = circuitStrings[circuit.get()];
+    std::copy(s.begin(), s.end(), f);
 }
 }

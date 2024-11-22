@@ -359,4 +359,6 @@ MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
 MICROSOFT_QUANTUM_DECL void qcircuit_run(_In_ uintq cid, _In_ uintq sid);
 MICROSOFT_QUANTUM_DECL void qcircuit_out_to_file(_In_ uintq cid, _In_ char* f);
 MICROSOFT_QUANTUM_DECL void qcircuit_in_from_file(_In_ uintq cid, _In_ char* f);
+MICROSOFT_QUANTUM_DECL size_t qcircuit_out_to_string_length(_In_ uintq cid);
+MICROSOFT_QUANTUM_DECL void qcircuit_out_to_string(_In_ uintq cid, _In_ char* f);
 }
