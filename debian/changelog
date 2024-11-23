@@ -1,3 +1,27 @@
+libqrack (9.13.4) bionic; urgency=medium
+
+  * Shared library improvements and safety (Bionic 4/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 23 Nov 2024 09:43:29 -0500
+
+libqrack (9.13.3) focal; urgency=medium
+
+  * Shared library improvements and safety (Focal 3/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 23 Nov 2024 09:41:52 -0500
+
+libqrack (9.13.2) jammy; urgency=medium
+
+  * Shared library improvements and safety (Jammy 2/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 23 Nov 2024 09:40:16 -0500
+
+libqrack (9.13.1) noble; urgency=medium
+
+  * Shared library improvements and safety (Noble 1/4)
+
+ -- Daniel Strano <dan@unitary.fund>  Sat, 23 Nov 2024 09:36:43 -0500
+
 libqrack (9.12.37) bionic; urgency=medium
 
   * Major QHybrid optimization (Bionic 4/4)
