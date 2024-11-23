@@ -265,8 +265,8 @@ bitLenInt GetSimShardId(QInterfacePtr simulator, bitLenInt i)
 void FillSimShards(QInterfacePtr simulator)
 {
     shards[simulator.get()] = {};
-    std::map<uintq, bitLenInt>& s = shards[simulator.get()];
-    for (uintq i = 0U; i < simulator->GetQubitCount(); ++i) {
+    std::map<quid, bitLenInt>& s = shards[simulator.get()];
+    for (quid i = 0U; i < simulator->GetQubitCount(); ++i) {
         s[i] = (bitLenInt)i;
     }
 }
