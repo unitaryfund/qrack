@@ -251,30 +251,12 @@ bitLenInt GetSimShardId(QInterfacePtr simulator, bitLenInt i)
 {
     const auto& simShardsIt = shards.find(simulator.get());
     if (simShardsIt == shards.end()) {
-        const auto& simIt = std::find(simulators.begin(), simulators.end(), simulator);
-        if (simIt == simulators.end()) {
-            metaError = 1;
-            std::cout << "Could not find simulator ID!" << std::endl;
-        } else {
-            simulatorErrors[std::distance(simulators.begin(), simIt)] = 1;
-            std::cout << "Qubit ID is out-of-bounds!" << std::endl;
-        }
-
-        return -1;
+        throw std::invalid_argument("Invalid argument: simulator shards not found!");
     }
 
     const auto& shardIt = simShardsIt->second.find(i);
     if (shardIt == simShardsIt->second.end()) {
-        const auto& simIt = std::find(simulators.begin(), simulators.end(), simulator);
-        if (simIt == simulators.end()) {
-            metaError = 1;
-            std::cout << "Could not find simulator ID!" << std::endl;
-        } else {
-            simulatorErrors[std::distance(simulators.begin(), simIt)] = 1;
-            std::cout << "Qubit ID is out-of-bounds!" << std::endl;
-        }
-
-        return -1;
+        throw std::invalid_argument("Invalid argument: qubit ID not found!");
     }
 
     return shardIt->second;
