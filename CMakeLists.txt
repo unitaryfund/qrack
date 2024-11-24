@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 9.13.4 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
+project (Qrack VERSION 9.13.5 DESCRIPTION "High Performance Quantum Bit Simulation" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -196,6 +196,10 @@ if (QBCAPPOW GREATER 6)
 else (QBCAPPOW GREATER 6)
     set(QRACK_CUDA_COMPILE_OPTS -O3 -use_fast_math -Werror all-warnings ${QRACK_CPP_STD_OPT} --ptxas-options -O3,)
 endif (QBCAPPOW GREATER 6)
+
+if (ENABLE_GVIRTUS)
+    set(QRACK_CUDA_COMPILE_OPTS --cudart=shared ${QRACK_CUDA_COMPILE_OPTS})
+endif (ENABLE_GVIRTUS)
 
 if (MSVC)
     set(QRACK_COMPILE_OPTS ${QRACK_CPP_STD_OPT} /Wall)

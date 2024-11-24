@@ -1,4 +1,5 @@
 option (ENABLE_CUDA "Build CUDA-based QEngine type" OFF)
+option (ENABLE_GVIRTUS "Link against GVirtuS for distributed CUDA" OFF)
 
 if (ENABLE_OPENCL)
     set(ENABLE_CUDA OFF)

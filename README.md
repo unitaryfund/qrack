@@ -80,6 +80,12 @@ x86-64 Linux (CUDA):
 cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_OPENCL=OFF -DENABLE_CUDA=ON ..
 ```
 
+x86-64 Linux (GVirtuS distributed CUDA):
+```
+export LD_LIBRARY_PATH=${GVIRTUS_HOME}/lib:${GVIRTUS_HOME}/lib/frontend:${LD_LIBRARY_PATH}
+cmake -DENABLE_DEVRAND=ON -DENABLE_RDRAND=OFF -DENABLE_OPENCL=OFF -DENABLE_CUDA=ON -DENABLE_GVIRTUS=ON ..
+```
+
 x86-64 Mac (might need `-Werror`, "warning to error," disabled in CMake files):
 ```
 cmake ..
