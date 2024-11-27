@@ -1,4 +1,4 @@
-find_package(Boost)
+find_package(Boost CONFIG)
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIR})
     target_compile_definitions (qrack PUBLIC BOOST_AVAILABLE=1)
