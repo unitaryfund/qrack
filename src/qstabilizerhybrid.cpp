@@ -798,9 +798,10 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(const bitCapInt& perm, bool isProb
     }
 
     std::vector<QInterfaceEngine> et = engineTypes;
-    for (size_t i = et.size() - 1U; i >= 0; --i) {
-        if ((et[i] == QINTERFACE_BDT_HYBRID) || (et[i] == QINTERFACE_BDT)) {
-            et.erase(et.begin() + i);
+    for (size_t i = 0U; i < et.size(); ++i) {
+        const size_t j = et.size() - (i + 1U);
+        if ((et[j] == QINTERFACE_BDT_HYBRID) || (et[j] == QINTERFACE_BDT)) {
+            et.erase(et.begin() + j);
         }
     }
     if (et.empty()) {
