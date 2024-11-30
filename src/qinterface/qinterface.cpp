@@ -88,7 +88,7 @@ QInterface::QInterface(
         }
 #else
     std::random_device rd;
-    std::uniform_int_distribution<uint32_t> dist(0U, pow2Ocl(32U) - 1U);
+    std::uniform_int_distribution<uint32_t> dist(0U, (unsigned int)(pow2Ocl(32U) - 1U));
     randomSeed = dist(rd);
 #endif
         SetRandomSeed(randomSeed);
