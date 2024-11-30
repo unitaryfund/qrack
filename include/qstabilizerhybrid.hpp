@@ -155,7 +155,7 @@ protected:
     void CheckShots(unsigned shots, const bitCapInt& m, real1_f partProb, const std::vector<bitCapInt>& qPowers,
         std::vector<real1_f>& rng, F fn)
     {
-        for (unsigned int shot = rng.size() - 1U; shot >= 0; --shot) {
+        for (int64_t shot = rng.size() - 1U; shot >= 0; --shot) {
             if (rng[shot] >= partProb) {
                 break;
             }
@@ -166,7 +166,7 @@ protected:
                     bi_or_ip(&sample, pow2(i));
                 }
             }
-            fn(sample, shot);
+            fn(sample, (unsigned int)shot);
 
             rng.erase(rng.begin() + shot);
             if (rng.empty()) {
