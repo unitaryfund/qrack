@@ -798,7 +798,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(const bitCapInt& perm, bool isProb
     }
 
     std::vector<QInterfaceEngine> et = engineTypes;
-    for (int i = et.size() - 1U; i >= 0; --i) {
+    for (size_t i = et.size() - 1U; i >= 0; --i) {
         if ((et[i] == QINTERFACE_BDT_HYBRID) || (et[i] == QINTERFACE_BDT)) {
             et.erase(et.begin() + i);
         }
@@ -1763,8 +1763,9 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
     if (rng.size()) {                                                                                                  \
+        const unsigned long long _d = (unsigned long long)d;                                                           \
         for (unsigned shot = 0U; shot < rng.size(); ++shot) {                                                          \
-            shotsArray[shot + (shots - rng.size())] = (bitCapIntOcl)d;                                                 \
+            shotsArray[shot + (shots - rng.size())] = _d;                                                              \
         }                                                                                                              \
     }                                                                                                                  \
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();                                       \
@@ -1813,7 +1814,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
 #if ENABLE_PTHREAD
     const unsigned numCores =
-        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (unsigned)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
