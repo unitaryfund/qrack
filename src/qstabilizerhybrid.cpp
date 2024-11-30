@@ -1425,7 +1425,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         real1_f partProb = ZERO_R1_F;
 #if ENABLE_PTHREAD
         const unsigned numCores =
-            (bi_compare(maxLcv, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxLcv : GetConcurrencyLevel();
+            (bi_compare(maxLcv, GetConcurrencyLevel()) < 0) ? (unsigned)maxLcv : GetConcurrencyLevel();
         std::vector<QStabilizerHybridPtr> clones;
         for (unsigned i = 0U; i < numCores; ++i) {
             clones.push_back(std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()));
@@ -1607,7 +1607,7 @@ bitCapInt QStabilizerHybrid::MAll()
     bool foundM = false;
 
     const unsigned numCores =
-        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (unsigned)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
@@ -1723,7 +1723,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
 #if ENABLE_PTHREAD
     const unsigned numCores =
-        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (bitCapIntOcl)maxQPower : GetConcurrencyLevel();
+        (bi_compare(maxQPower, GetConcurrencyLevel()) < 0) ? (unsigned)maxQPower : GetConcurrencyLevel();
 
     std::vector<QStabilizerHybridPtr> clones;
     for (unsigned i = 0U; i < numCores; ++i) {
