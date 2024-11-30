@@ -1764,11 +1764,11 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
     if (rng.size()) {                                                                                                  \
         const unsigned long long _d = (unsigned long long)d;                                                           \
-        for (unsigned shot = 0U; shot < rng.size(); ++shot) {                                                          \
+        for (size_t shot = 0U; shot < rng.size(); ++shot) {                                                            \
             shotsArray[shot + (shots - rng.size())] = _d;                                                              \
         }                                                                                                              \
     }                                                                                                                  \
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();                                       \
+    auto seed = std::chrono::system_clock::now().time_since_epoch().count();                                           \
     std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));                                    \
     stateMapCache = NULL;
 
