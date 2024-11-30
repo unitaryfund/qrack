@@ -114,11 +114,9 @@ inline bitLenInt log2Ocl(bitCapIntOcl n)
 inline bitLenInt popCountOcl(bitCapIntOcl n)
 {
 #if CPP_STD >= 20
-    return std::popcount(n);
-#elif defined(__GNUC__) || defined(__clang__)
-    return (bitLenInt)__builtin_popcount(n);
+    return (bitLenInt)std::popcount(n);
 #else
-    bitCapIntOcl popCount;
+    bitLenInt popCount;
     for (popCount = 0U; n; ++popCount) {
         n &= n - 1U;
     }
