@@ -116,7 +116,7 @@ inline bitLenInt popCountOcl(bitCapIntOcl n)
 #if CPP_STD >= 20
     return std::popcount(n);
 #elif defined(__GNUC__) || defined(__clang__)
-    return __builtin_popcount(n);
+    return (bitLenInt)__builtin_popcount(n);
 #else
     bitCapIntOcl popCount;
     for (popCount = 0U; n; ++popCount) {
