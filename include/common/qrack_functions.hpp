@@ -14,7 +14,9 @@
 
 #include "qrack_types.hpp"
 
-#if ENABLE_INTRINSICS && !defined(__APPLE__)
+#ifdef __APPLE__
+#include "TargetConditionals.h"
+#elif ENABLE_INTRINSICS
 #include "immintrin.h"
 #endif
 
@@ -115,6 +117,8 @@ inline bitLenInt popCountOcl(bitCapIntOcl n)
 {
 #if CPP_STD >= 20
     return (bitLenInt)std::popcount(n);
+#elif (defined(__GNUC__) || defined(__clang__)) && !TARGET_OS_IPHONE && !TARGET_IPHONE_SIMULATOR
+    return __builtin_popcount(n);
 #else
     bitLenInt popCount;
     for (popCount = 0U; n; ++popCount) {
