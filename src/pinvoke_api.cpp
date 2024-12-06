@@ -3904,13 +3904,14 @@ MICROSOFT_QUANTUM_DECL size_t qcircuit_out_to_string_length(_In_ uintq cid)
     ss << circuit;
     circuitStrings[circuit.get()] = ss.str();
 
-    return circuitStrings[circuit.get()].size();
+    return circuitStrings[circuit.get()].size() + 1U;
 }
 
 MICROSOFT_QUANTUM_DECL void qcircuit_out_to_string(_In_ uintq cid, _In_ char* f)
 {
     CIRCUIT_LOCK_GUARD_VOID(cid)
     const std::string& s = circuitStrings[circuit.get()];
-    std::copy(s.begin(), s.end(), f);
+    const char* cs = s.c_str();
+    std::copy(cs, cs + s.size() + 1U, f);
 }
 }
