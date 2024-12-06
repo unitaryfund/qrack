@@ -12,8 +12,6 @@
 
 #include "qcircuit.hpp"
 
-#include <iomanip>
-
 namespace Qrack {
 
 std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
@@ -26,15 +24,12 @@ std::ostream& operator<<(std::ostream& os, const QCircuitGatePtr g)
     }
 
     os << g->payloads.size() << " ";
-#if FPPOW > 6
-    os << std::setprecision(36);
-#elif FPPOW > 5
-    os << std::setprecision(17);
-#endif
     for (const auto& p : g->payloads) {
         os << (size_t)p.first << " ";
+        complex_h u[4U];
+        makeUnitary(p.second.get(), u);
         for (size_t i = 0U; i < 4U; ++i) {
-            os << p.second.get()[i] << " ";
+            os << u[i] << " ";
         }
     }
 

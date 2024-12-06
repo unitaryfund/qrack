@@ -208,6 +208,42 @@ void inv2x2(const complex* matrix2x2, complex* outMatrix2x2)
     outMatrix2x2[3U] = det * matrix2x2[0U];
 }
 
+void makeUnitary(const complex* m, complex_h* u)
+{
+    real1 th, ph, lm;
+    complex phase;
+    real1 nrm = norm(m[0U]);
+    if (nrm <= FP_NORM_EPSILON) {
+        phase = ONE_CMPLX;
+        th = PI_R1 / 2;
+    } else {
+        nrm = sqrt(nrm);
+        phase = m[0U] / nrm;
+        if (nrm > ONE_R1) {
+            nrm = ONE_R1;
+        }
+        th = acos(nrm);
+    }
+    if ((norm(m[1U]) <= FP_NORM_EPSILON) || (norm(m[2U]) <= FP_NORM_EPSILON)) {
+        ph = arg(m[3U] / phase);
+        lm = ZERO_R1;
+    } else {
+        ph = arg(m[2U] / phase);
+        lm = arg(-m[1U] / phase);
+    }
+
+    const real1_h th_h = (real1_h)th;
+    const real1_h c = cos(th_h / 2);
+    const real1_h s = sin(th_h / 2);
+    const complex_h el = exp(complex_h(0.0, (real1_h)lm));
+    const complex_h ep = exp(complex_h(0.0, (real1_h)ph));
+    const complex_h p = (complex_h)phase;
+    u[0U] = p * c;
+    u[1U] = -p * el * s;
+    u[2U] = p * ep * s;
+    u[3U] = p * ep * el * c;
+}
+
 /// Check if an addition with overflow sets the flag
 bool isOverflowAdd(
     bitCapIntOcl inOutInt, bitCapIntOcl inInt, const bitCapIntOcl& signMask, const bitCapIntOcl& lengthPower)

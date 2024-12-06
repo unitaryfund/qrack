@@ -125,7 +125,9 @@ typedef double real1_s;
 #endif
 #endif
 
+typedef double real1_h;
 typedef std::complex<real1> complex;
+typedef std::complex<real1_h> complex_h;
 const bitCapInt ONE_BCI = 1U;
 const bitCapInt ZERO_BCI = 0U;
 constexpr bitLenInt bitsInCap = ((bitLenInt)1U) << ((bitLenInt)QBCAPPOW);
