@@ -142,11 +142,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
                     gates.erase(_g);
                 }
                 for (std::list<QCircuitGatePtr>::iterator g = head.begin(); g != head.end(); ++g) {
-                    if (!nGate->CanCombine(*g, isNearClifford) && !nGate->CanPass(*g)) {
-                        gates.push_back(*g);
-                    } else {
-                        AppendGate(*g);
-                    }
+                    AppendGate(*g);
                 }
             }
             return;
