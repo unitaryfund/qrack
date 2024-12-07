@@ -2144,12 +2144,10 @@ std::ostream& operator<<(std::ostream& os, const QStabilizerHybridPtr s)
     const std::vector<MpsShardPtr>& shards = s->shards;
     for (size_t i = 0U; i < shards.size(); ++i) {
         const complex* mtrx = !shards[i] ? id : shards[i]->gate;
-        complex_h u[4U];
-        makeUnitary(mtrx, u);
         for (size_t j = 0U; j < 3U; ++j) {
-            os << u[j] << " ";
+            os << mtrx[j] << " ";
         }
-        os << u[3U] << std::endl;
+        os << mtrx[3U] << std::endl;
     }
 
     return os;

@@ -855,7 +855,7 @@ void qstabilizer_out_to_file(quid sid, std::string f)
 
     std::ofstream ofile;
     ofile.open(f.c_str());
-    ofile.precision(17);
+    ofile.precision(36);
     ofile << std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
     ofile.close();
 }
@@ -869,7 +869,7 @@ void qstabilizer_in_from_file(quid sid, std::string f)
 
     std::ifstream ifile;
     ifile.open(f.c_str());
-    ifile.precision(17);
+    ifile.precision(36);
     ifile >> std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
     ifile.close();
 
@@ -2795,7 +2795,7 @@ void qcircuit_out_to_file(quid cid, std::string f)
     CIRCUIT_LOCK_GUARD_VOID(cid)
     std::ofstream ofile;
     ofile.open(f.c_str());
-    ofile.precision(17);
+    ofile.precision(36);
     ofile << circuit;
     ofile.close();
 }
@@ -2805,7 +2805,7 @@ void qcircuit_in_from_file(quid cid, std::string f)
     CIRCUIT_LOCK_GUARD_VOID(cid)
     std::ifstream ifile;
     ifile.open(f.c_str());
-    ifile.precision(17);
+    ifile.precision(36);
     ifile >> circuit;
     ifile.close();
 }
@@ -2814,7 +2814,7 @@ std::string qcircuit_out_to_string(quid cid)
 {
     CIRCUIT_LOCK_GUARD_TYPED(cid, "")
     std::stringstream ss;
-    ss.precision(17);
+    ss.precision(36);
     ss << circuit;
     return ss.str();
 }

@@ -1018,7 +1018,7 @@ MICROSOFT_QUANTUM_DECL void qstabilizer_out_to_file(_In_ uintq sid, _In_ char* f
 
     std::ofstream ofile;
     ofile.open(f);
-    ofile.precision(17);
+    ofile.precision(36);
 
     try {
         ofile << std::dynamic_pointer_cast<QStabilizerHybrid>(simulators[sid]);
@@ -3886,7 +3886,7 @@ MICROSOFT_QUANTUM_DECL void qcircuit_out_to_file(_In_ uintq cid, _In_ char* f)
     CIRCUIT_LOCK_GUARD_VOID(cid)
     std::ofstream ofile;
     ofile.open(f);
-    ofile.precision(17);
+    ofile.precision(36);
     ofile << circuit;
     ofile.close();
 }
@@ -3895,7 +3895,7 @@ MICROSOFT_QUANTUM_DECL void qcircuit_in_from_file(_In_ uintq cid, _In_ char* f)
     CIRCUIT_LOCK_GUARD_VOID(cid)
     std::ifstream ifile;
     ifile.open(f);
-    ifile.precision(17);
+    ifile.precision(36);
     ifile >> circuit;
     ifile.close();
 }
@@ -3905,7 +3905,7 @@ MICROSOFT_QUANTUM_DECL size_t qcircuit_out_to_string_length(_In_ uintq cid)
     CIRCUIT_LOCK_GUARD_TYPED(cid, 0U)
 
     std::stringstream ss;
-    ss.precision(17);
+    ss.precision(36);
     ss << circuit;
     circuitStrings[circuit.get()] = ss.str();
 
