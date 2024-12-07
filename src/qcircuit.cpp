@@ -126,7 +126,8 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
                 std::set<bitLenInt> gQubits((*gate)->controls);
                 gQubits.insert((*gate)->target);
                 std::list<QCircuitGatePtr> head;
-                for (std::list<QCircuitGatePtr>::iterator g = (gate++).base(); g != gates.end();) {
+                std::list<QCircuitGatePtr>::reverse_iterator _gate = gate++;
+                for (std::list<QCircuitGatePtr>::iterator g = _gate.base(); g != gates.end();) {
                     std::set<bitLenInt> hQubits((*g)->controls);
                     hQubits.insert((*g)->target);
                     if (!std::any_of(hQubits.begin(), hQubits.end(),
