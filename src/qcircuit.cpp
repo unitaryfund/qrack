@@ -123,9 +123,22 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
     for (std::list<QCircuitGatePtr>::reverse_iterator gate = gates.rbegin(); gate != gates.rend(); ++gate) {
         if ((*gate)->TryCombine(nGate, isNearClifford)) {
             if ((*gate)->IsIdentity()) {
-                std::list<QCircuitGatePtr>::reverse_iterator _gate = gate++;
-                std::list<QCircuitGatePtr> head(_gate.base(), gates.end());
-                gates.erase(gate.base(), gates.end());
+                std::set<bitLenInt> gQubits((*gate)->controls);
+                gQubits.insert((*gate)->target);
+                std::list<QCircuitGatePtr> head;
+                for (std::list<QCircuitGatePtr>::iterator g = (gate++).base(); g != gates.end();) {
+                    std::set<bitLenInt> hQubits((*g)->controls);
+                    hQubits.insert((*g)->target);
+                    if (!std::any_of(hQubits.begin(), hQubits.end(),
+                            [&gQubits](bitLenInt element) { return gQubits.count(element) > 0; })) {
+                        ++g;
+                        continue;
+                    }
+                    gQubits.insert(hQubits.begin(), hQubits.end());
+                    head.push_back(*g);
+                    std::list<QCircuitGatePtr>::iterator _g = g++;
+                    gates.erase(_g);
+                }
                 for (std::list<QCircuitGatePtr>::iterator g = head.begin(); g != head.end(); ++g) {
                     if (!nGate->CanCombine(*g, isNearClifford) && !nGate->CanPass(*g)) {
                         gates.push_back(*g);
