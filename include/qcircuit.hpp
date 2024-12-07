@@ -429,6 +429,23 @@ struct QCircuitGate {
     }
 
     /**
+     * Am I a CNOT gate?
+     */
+    bool IsAntiCnot()
+    {
+        if ((controls.size() != 1U) || (payloads.size() != 1U) || (payloads.find(ZERO_BCI) == payloads.end())) {
+            return false;
+        }
+        complex* p = payloads[ZERO_BCI].get();
+        if ((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON) ||
+            (norm(ONE_CMPLX - p[1]) > FP_NORM_EPSILON) || (norm(ONE_CMPLX - p[2]) > FP_NORM_EPSILON)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Am I a Clifford gate?
      */
     bool IsClifford()

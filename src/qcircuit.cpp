@@ -169,20 +169,22 @@ void QCircuit::Run(QInterfacePtr qsim)
         std::advance(end, gates.size() - 2U);
         std::list<QCircuitGatePtr>::iterator gate;
         for (gate = gates.begin(); gate != end; ++gate) {
-            if (!(*gate)->IsCnot()) {
+            bool isAnti = (*gate)->IsAntiCnot();
+            if (!((*gate)->IsCnot() || isAnti))
+            {
                 nGates.push_back(*gate);
                 continue;
             }
             std::list<QCircuitGatePtr>::iterator adv = gate;
             ++adv;
-            if (!(*adv)->IsCnot() || ((*adv)->target != *((*gate)->controls.begin())) ||
-                ((*gate)->target != *((*adv)->controls.begin()))) {
+            if (!((isAnti && (*adv)->IsAntiCnot()) || (!isAnti && (*adv)->IsCnot())) ||
+                ((*adv)->target != *((*gate)->controls.begin())) || ((*gate)->target != *((*adv)->controls.begin()))) {
                 nGates.push_back(*gate);
                 continue;
             }
             ++adv;
-            if (!(*adv)->IsCnot() || ((*adv)->target != (*gate)->target) ||
-                (*((*gate)->controls.begin()) != *((*adv)->controls.begin()))) {
+            if (!((isAnti && (*adv)->IsAntiCnot()) || (!isAnti && (*adv)->IsCnot())) ||
+                ((*adv)->target != (*gate)->target) || (*((*gate)->controls.begin()) != *((*adv)->controls.begin()))) {
                 nGates.push_back(*gate);
                 continue;
             }
