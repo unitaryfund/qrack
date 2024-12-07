@@ -138,7 +138,7 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
                     }
                     gQubits.insert(hQubits.begin(), hQubits.end());
                     head.push_back(*g);
-                    std::list<QCircuitGatePtr>::iterator _g = g++;
+                    const std::list<QCircuitGatePtr>::iterator _g = g++;
                     gates.erase(_g);
                 }
                 for (std::list<QCircuitGatePtr>::iterator g = head.begin(); g != head.end(); ++g) {
