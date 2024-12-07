@@ -723,7 +723,7 @@ public:
     /**
      * Add a gate to the gate sequence.
      */
-    void AppendGate(QCircuitGatePtr nGate);
+    bool AppendGate(QCircuitGatePtr nGate);
     /**
      * Run this circuit.
      */

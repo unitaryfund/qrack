@@ -98,15 +98,15 @@ std::istream& operator>>(std::istream& is, QCircuitPtr& c)
     return is;
 }
 
-void QCircuit::AppendGate(QCircuitGatePtr nGate)
+bool QCircuit::AppendGate(QCircuitGatePtr nGate)
 {
     if (!isCollapsed) {
         gates.push_back(nGate);
-        return;
+        return false;
     }
 
     if (nGate->IsIdentity()) {
-        return;
+        return true;
     }
 
     if ((nGate->target + 1U) > qubitCount) {
@@ -124,35 +124,38 @@ void QCircuit::AppendGate(QCircuitGatePtr nGate)
             if ((*gate)->IsIdentity()) {
                 std::set<bitLenInt> gQubits((*gate)->controls);
                 gQubits.insert((*gate)->target);
-                std::list<QCircuitGatePtr> head;
-                const std::list<QCircuitGatePtr>::reverse_iterator _gate = gate++;
-                gates.erase(gate.base());
-                for (std::list<QCircuitGatePtr>::iterator g = _gate.base(); g != gates.end();) {
-                    std::set<bitLenInt> hQubits((*g)->controls);
-                    hQubits.insert((*g)->target);
+                std::list<QCircuitGatePtr>::reverse_iterator _gate = gate++;
+                std::list<QCircuitGatePtr> head(_gate.base(), gates.end());
+                gates.erase(gate.base(), gates.end());
+                for (; head.size() && gQubits.size(); head.erase(head.begin())) {
+                    std::set<bitLenInt> hQubits(head.front()->controls);
+                    hQubits.insert((*head.begin())->target);
                     if (!std::any_of(hQubits.begin(), hQubits.end(),
                             [&gQubits](bitLenInt element) { return gQubits.count(element) > 0; })) {
-                        ++g;
+                        gates.push_back(head.front());
                         continue;
                     }
-                    gQubits.insert(hQubits.begin(), hQubits.end());
-                    head.push_back(*g);
-                    const std::list<QCircuitGatePtr>::iterator _g = g++;
-                    gates.erase(_g);
+                    if (AppendGate(head.front())) {
+                        gQubits.insert(hQubits.begin(), hQubits.end());
+                    } else {
+                        for (const auto& hq : hQubits) {
+                            gQubits.erase(hq);
+                        }
+                    }
                 }
-                for (std::list<QCircuitGatePtr>::iterator g = head.begin(); g != head.end(); ++g) {
-                    AppendGate(*g);
-                }
+                gates.insert(gates.end(), head.begin(), head.end());
             }
-            return;
+            return true;
         }
         if (!(*gate)->CanPass(nGate)) {
             gates.insert(gate.base(), { nGate });
-            return;
+            return false;
         }
     }
 
     gates.push_front(nGate);
+
+    return true;
 }
 
 void QCircuit::Run(QInterfacePtr qsim)
