@@ -155,7 +155,7 @@ bool QCircuit::AppendGate(QCircuitGatePtr nGate)
 
     gates.push_front(nGate);
 
-    return true;
+    return false;
 }
 
 void QCircuit::Run(QInterfacePtr qsim)
