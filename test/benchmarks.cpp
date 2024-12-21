@@ -26,6 +26,10 @@
 
 #include "tests.hpp"
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <direct.h>
+#endif
+
 #if ENABLE_OPENCL
 #define QRACK_GPU_SINGLETON (OCLEngine::Instance())
 #define QRACK_GPU_ENGINE QINTERFACE_OPENCL
