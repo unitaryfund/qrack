@@ -1762,9 +1762,10 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     return results;
 }
 
+#ifdef __SIZEOF_INT128__
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
     if (rng.size()) {                                                                                                  \
-        const unsigned long long _d = (unsigned long long)d;                                                           \
+        const unsigned long long _d = (unsigned long long)(unsigned __int128)d;                                        \
         for (size_t shot = 0U; shot < rng.size(); ++shot) {                                                            \
             shotsArray[shot + (shots - rng.size())] = _d;                                                              \
         }                                                                                                              \
@@ -1772,6 +1773,18 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     unsigned int seed = (unsigned int)std::chrono::system_clock::now().time_since_epoch().count();                     \
     std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));                                    \
     stateMapCache = NULL;
+#else
+#define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
+    if (rng.size()) {                                                                                                  \
+        const unsigned long long _d = (unsigned long long)(uint64_t)d;                                                 \
+        for (size_t shot = 0U; shot < rng.size(); ++shot) {                                                            \
+            shotsArray[shot + (shots - rng.size())] = _d;                                                              \
+        }                                                                                                              \
+    }                                                                                                                  \
+    unsigned int seed = (unsigned int)std::chrono::system_clock::now().time_since_epoch().count();                     \
+    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));                                    \
+    stateMapCache = NULL;
+#endif
 
 void QStabilizerHybrid::MultiShotMeasureMask(
     const std::vector<bitCapInt>& qPowers, unsigned shots, unsigned long long* shotsArray)
