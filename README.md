@@ -55,6 +55,14 @@ You could probably squeeze out more performance by following the "power user con
 2. Consider [tuning light-cone optimization qubit threshold](https://github.com/unitaryfund/qrack?tab=readme-ov-file#qtensornetwork-options) and [setting manual system resource limit variables](https://github.com/unitaryfund/qrack?tab=readme-ov-file#maximum-allocation-guard) (though these are not strictly required and might be recognized accurately by default by Qrack).
 3. Set `QRACK_DISABLE_QUNIT_FIDELITY_GUARD=1` as environment variable to disengage Qrack's fidelity estimate "limiter," if using approximate simulation.
 
+## Intel HD (or integrated graphics) power user considerations
+
+No GPU? No problem! Qrack supports (and loves) "integrated graphics coprocessors" like the Intel HD, not just "discrete" GPUs! Use the OpenCL version of Qrack or PyQrack, and it just works!
+
+In fact, there's a certain (limited) advantage to many "integrated graphics" accelerators like the Intel HD: they rely on _general_ memory rather than _dedicated_ memory. If you explicitly tell Qrack you want to use general memory, you might see a significant performance boost! If all you have for an accelerator is an Intel HD (or maybe another type of "integrated graphics"), try setting this option (to enable "zero-copy" mode): `QRACK_QPAGER_DEVICES_HOST_POINTER=1`
+
+In PyQrack, you'll also want to set `isHostPointer=True` in the constructor of the `QrackSimulator` class.
+
 ## Changing default OpenCL device
 OpenCL device(s) can be specified by index in `Qrack::QInterface` subclass constructors. The global default device can also be overridden with the environment variable `QRACK_OCL_DEFAULT_DEVICE=n`, where `n` is the index of the OpenCL device you want to use, as reported by the OpenCL initialization header.
 
