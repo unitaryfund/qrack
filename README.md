@@ -61,7 +61,7 @@ No GPU? No problem! Qrack supports (and loves) "integrated graphics coprocessors
 
 In fact, there's a certain (limited) advantage to many "integrated graphics" accelerators like the Intel HD: they often rely on _general_ memory rather than _dedicated_ memory. If you explicitly tell Qrack you want to use general memory, you might see a significant performance boost! If all you have for an accelerator is an Intel HD (or maybe another type of "integrated graphics"), try setting this option (to enable "zero-copy" mode): `QRACK_QPAGER_DEVICES_HOST_POINTER=1`
 
-In PyQrack, you'll also want to set `isHostPointer=True` in the constructor of the `QrackSimulator` class.
+For PyQrack, you'll also want to set environment variable `PYQRACK_HOST_POINTER_DEFAULT_ON=1`, which changes the default for `isHostPointer` option in the constructor of the `QrackSimulator` class to `True`. (You can, instead, control this on a case-by-case basis, per simulator, by passing `isHostPointer=True` to `QrackSimulator` on initialization.)
 
 ## Changing default OpenCL device
 OpenCL device(s) can be specified by index in `Qrack::QInterface` subclass constructors. The global default device can also be overridden with the environment variable `QRACK_OCL_DEFAULT_DEVICE=n`, where `n` is the index of the OpenCL device you want to use, as reported by the OpenCL initialization header.
