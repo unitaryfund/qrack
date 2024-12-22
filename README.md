@@ -101,28 +101,6 @@ You might need to install the `add-apt-repository` tool first, through `apt` its
 
 Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page. (Operating system targets include Linux, Windows, and Mac, alongside WebAssmembly. Qrack source also builds for native Android and iOS.)
 
-## test/tests.cpp
-
-The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
-
-```sh
-    $ _build/unittest
-```
-
-Similarly, benchmarks are in `test/benchmarks.cpp`:
-
-```sh
-    $ _build/benchmarks [--optimal] [--max-qubits=30] [test_qft_cosmology]
-```
-
-## OpenCL on systems prior to OpenCL v2.0
-
-Particularly on older hardware, it is possible that you do not have OpenCL v2.0 available. In theory, Qrack should work off-the-shelf anyway. However, if the OpenCL implementation isn't even aware of the existence of v2.0, use the following option to completely manually force all v2.0 functionality off and to set the target OpenCL API level expressly to target v1.2 and minimum level v1.1:
-
-```sh
-    $ cmake -DENALBE_OOO_OCL=OFF ..
-```
-
 ## Installing OpenCL on Mac
 
 While the OpenCL framework is available by default on most modern Macs, the C++ header `cl.hpp` is usually not. One option for building for OpenCL on Mac is to download this header file and include it in the Qrack project folder under include/OpenCL (as `cl.hpp`). The OpenCL C++ header can be found at the Khronos OpenCL registry:
@@ -144,6 +122,28 @@ Qrack requires the `xxd` command to convert its OpenCL kernel code into hexadeci
 ```
 
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
+
+## test/tests.cpp
+
+The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
+
+```sh
+    $ _build/unittest
+```
+
+Similarly, benchmarks are in `test/benchmarks.cpp`:
+
+```sh
+    $ _build/benchmarks [--optimal] [--max-qubits=30] [test_qft_cosmology]
+```
+
+## OpenCL on systems prior to OpenCL v2.0
+
+Particularly on older hardware, it is possible that you do not have OpenCL v2.0 available. In theory, Qrack should work off-the-shelf anyway. However, if the OpenCL implementation isn't even aware of the existence of v2.0, use the following option to completely manually force all v2.0 functionality off and to set the target OpenCL API level expressly to target v1.2 and minimum level v1.1:
+
+```sh
+    $ cmake -DENALBE_OOO_OCL=OFF ..
+```
 
 ## C++ language standard
 
