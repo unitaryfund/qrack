@@ -249,13 +249,6 @@ $ cmake -DENABLE_RNDFILE=ON [-DENABLE_RDRAND=OFF] [-DENABLE_DEVRAND=OFF] ..
 
 Also see [scripts/qrng.py](https://github.com/unitaryfund/qrack/blob/main/scripts/qrng.py) for an example of how one could request quantum random bit strings from [https://quantumnumbers.anu.edu.au](https://quantumnumbers.anu.edu.au) and use them as a source of random numbers for Qrack.
 
-## Pure 32 bit OpenCL kernels (including OpenCL on Raspberry Pi 3)
-
-```sh
-$ cmake -DENABLE_PURE32=ON ..
-```
-This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware, or in limited cases available for `QUnit` Schmidt decomposition). `-DENABLE_PURE32=ON` is necessary to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3. (Additionally, for that platform, the RDRAND instruction is not available, and you should `-DENABLE_RDRAND=OFF`. VC4CL for the VideoCore GPU is currently fully supported.)
-
 ## Reduced or increased coherent qubit addressing
 
 ```sh
