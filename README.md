@@ -38,9 +38,9 @@ Qrack has a community home at the Advanced Computing Topics server on Discord, a
 
 For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Quick start checklist
+## Quick start
 
-To get up-and-running most easily with maximum performance, just `pip install pyqrack`. That's it, basically! At minimum, you could stop here: it should _just work._
+To get up-and-running most easily with maximum performance, if Python is the appropriate language for what you want to do, just `pip install pyqrack`. (We also offer the [Qook](https://crates.io/crates/qook/0.1.1/dependencies) Rust language bindings.) That's it, basically! At minimum, you could stop here: it should _just work._
 
 If Qrack tells you its "default device" is the not the device you actually want to use (i.e. you have a NVIDIA GPU, but Qrack selects an Intel HD device instead) [change the default device environment variable setting.](https://github.com/unitaryfund/qrack?tab=readme-ov-file#changing-default-opencl-device) If you just have a single NVIDIA GPU, but Qrack detects other devices that you don't even want to bother with, you could uninstall all other versions of Qrack and then `pip install pyqrack-cuda`, but note that OpenCL performance tends to be better than CUDA (even though the CUDA and OpenCL APIs are almost line-by-line equivalent in terms of their implementations in the Qrack library internals).
 
