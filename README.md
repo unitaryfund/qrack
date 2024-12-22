@@ -137,6 +137,18 @@ Similarly, benchmarks are in `test/benchmarks.cpp`:
     $ _build/benchmarks [--optimal] [--max-qubits=30] [test_qft_cosmology]
 ```
 
+## Performing code coverage
+
+```sh
+    $ cd _build
+    $ cmake -DENABLE_CODECOVERAGE=ON ..
+    $ make -j 8 unittest
+    $ ./unittest
+    $ make coverage
+    $ cd coverage_results
+    $ python -m http.server
+```
+
 ## OpenCL on systems prior to OpenCL v2.0
 
 Particularly on older hardware, it is possible that you do not have OpenCL v2.0 available. In theory, Qrack should work off-the-shelf anyway. However, if the OpenCL implementation isn't even aware of the existence of v2.0, use the following option to completely manually force all v2.0 functionality off and to set the target OpenCL API level expressly to target v1.2 and minimum level v1.1:
@@ -174,18 +186,6 @@ emcmake cmake -DENABLE_RDRAND=OFF -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DUINT
 ```
 
 `-DUINTPOW=5` is optional, but WASM RAM limitations currently preclude >=32 qubits of potentially entangled state vector, so 64 bit ket addressing is not necessary. However, `-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
-
-## Performing code coverage
-
-```sh
-    $ cd _build
-    $ cmake -DENABLE_CODECOVERAGE=ON ..
-    $ make -j 8 unittest
-    $ ./unittest
-    $ make coverage
-    $ cd coverage_results
-    $ python -m http.server
-```
 
 ## Tune OpenCL preferred concurrency
 Preferred concurrency has a tunable offset with default value of `3`, with the environment variable setting `export QRACK_GPU_OFFSET_QB=[m]` for some (positive or negative) integer `m`. For each integer increment of `m`, the preferred concurrency is multiplied by 2. (Preferred concurrency is calculated as `pow2(ceil(log2(([GPU processing element count] * [preferred group size for the single qubit gate kernel, usually warp size])))) << QRACK_GPU_OFFSET_QB`.)
