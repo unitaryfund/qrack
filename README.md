@@ -97,11 +97,9 @@ If you're on Ubuntu 18.04, 20.04, 22.04, or 24.04 LTS, you're in luck: Qrack man
     $ sudo apt install libqrack-dev
 ```
 
-(You might need to install the `add-apt-repository` tool first, through `apt` itself.)
+You might need to install the `add-apt-repository` tool first, through `apt` itself. There is also a `pyqrack` package on the PPA, or you can get PyQrack from PyPi with `pip install pyqrack`.
 
 Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page. (Operating system targets include Linux, Windows, and Mac, alongside WebAssmembly. Qrack source also builds for native Android and iOS.)
-
-If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
 
 ## test/tests.cpp
 
