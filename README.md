@@ -59,7 +59,7 @@ You could probably squeeze out more performance by following the "power user con
 
 No GPU? No problem! Qrack supports (and loves) "integrated graphics coprocessors" like the Intel HD, not just "discrete" GPUs! Use the OpenCL version of Qrack or PyQrack, and it just works!
 
-In fact, there's a certain (limited) advantage to many "integrated graphics" accelerators like the Intel HD: they rely on _general_ memory rather than _dedicated_ memory. If you explicitly tell Qrack you want to use general memory, you might see a significant performance boost! If all you have for an accelerator is an Intel HD (or maybe another type of "integrated graphics"), try setting this option (to enable "zero-copy" mode): `QRACK_QPAGER_DEVICES_HOST_POINTER=1`
+In fact, there's a certain (limited) advantage to many "integrated graphics" accelerators like the Intel HD: they often rely on _general_ memory rather than _dedicated_ memory. If you explicitly tell Qrack you want to use general memory, you might see a significant performance boost! If all you have for an accelerator is an Intel HD (or maybe another type of "integrated graphics"), try setting this option (to enable "zero-copy" mode): `QRACK_QPAGER_DEVICES_HOST_POINTER=1`
 
 In PyQrack, you'll also want to set `isHostPointer=True` in the constructor of the `QrackSimulator` class.
 
