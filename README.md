@@ -10,9 +10,7 @@ Using the C++11 standard, at base, Qrack has an external-dependency-free CPU sim
 
 A `QInterface` can be thought of as like simply a one-dimensional array of qubits, within which any qubit has the capacity to directly and fully entangle with any and all others. Bits can be manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on arbitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
 
-Qrack has already been integrated with a [MOS 6502 emulator](https://github.com/vm6502q/vm6502q), which demonstrates Qrack's original purpose, for use in developing chip-like quantum computer emulators. (The base 6502 emulator to which Qrack was added for that project is by Marek Karcz, many thanks to Marek! See https://github.com/makarcz/vm6502.)
-
-A number of useful "pseudo-quantum" operations, which could not be carried out by true hardware quantum computers easily or at all, are included in the API for purposes like debugging, but also for potential speed-up, by allowing the classical emulation to leverage nonphysical exceptions to quantum logic, like by cloning a quantum state. In practice, though, quantum circuit programs might not rely on this (nonphysical) functionality at all. (The MOS 6502 emulator referenced above does not. It happens, many of these methods will not be exotic at all, to those familiar with other major quantum computing libraries. For example, notably, simply returning a full vector of probability amplitudes actually qualifies as "pseudo-quantum," in this sense.)
+Qrack was originally integrated with a [MOS 6502 emulator](https://github.com/vm6502q/vm6502q), demonstrating its originally intended user for developing chip-like quantum computer emulators. (The base 6502 emulator to which Qrack was added for that project is by Marek Karcz, many thanks to Marek! See https://github.com/makarcz/vm6502.)
 
 Qrack compiles like a library. To include in your project:
 
@@ -42,13 +40,52 @@ For help getting started with contributing, see our [CONTRIBUTING.md](CONTRIBUTI
 
 ## Quick start checklist
 
-To get up-and-running most easily with maximum performance, this is the minimum checklist:
+To get up-and-running most easily with maximum performance, just `pip install pyqrack`. That's it, basically! At minimum, you could stop here: it should _just work._
 
-1. Install `pyqrack` from PyPi, if Python could be appropriate as an environment and language for your experiments (`pip install pyqrack`). Alternatively, the [Qook bindings](https://crates.io/crates/qook/) are available for Rust, though then you must typically install the C++ Qrack library to system folders.
-2. Run a preliminary round of CPU-only benchmarks (such as on the [quantum Fourier transform algorithm](https://github.com/vm6502q/pyqrack-examples/blob/main/qft.py)) to **tune the [`PSTRIDEPOW`](https://github.com/unitaryfund/qrack?tab=readme-ov-file#build-and-environment-options-for-cpu-engines) environment variable for best performance.** This can make a _big_ difference to CPU-based simulation performance, and be aware that CPU-based and GPU-based algorithms and implementations in Qrack work **together** to return the best possible performance for even GPU-based benchmarks.
-3. Consider [tuning light-cone optimization qubit threshold](https://github.com/unitaryfund/qrack?tab=readme-ov-file#qtensornetwork-options) and [setting manual system resource limit variables](https://github.com/unitaryfund/qrack?tab=readme-ov-file#maximum-allocation-guard) (though these are not strictly required and might be recognized accurately by default by Qrack).
+If Qrack tells you its "default device" is the not the device you actually want to use (i.e. you have a NVIDIA GPU, but Qrack selects an Intel HD device instead) [change the default device environment variable setting.](https://github.com/unitaryfund/qrack?tab=readme-ov-file#changing-default-opencl-device) If you just have a single NVIDIA GPU, but Qrack detects other devices that you don't even want to bother with, you could uninstall all other versions of Qrack and then `pip install pyqrack-cuda`, but note that OpenCL performance tends to be better than CUDA (even though the CUDA and OpenCL APIs are almost line-by-line equivalent in terms of their implementations in the Qrack library internals).
 
-That's it, basically! 
+You could probably squeeze out more performance by following the "power user considerations," and other special considerations might be necessary for approximate simulation techniques or custom builds.
+
+## Power user considerations
+
+1. Run a preliminary round of CPU-only benchmarks (such as on the [quantum Fourier transform algorithm](https://github.com/vm6502q/pyqrack-examples/blob/main/qft.py)) to decide how to **tune the [`PSTRIDEPOW`](https://github.com/unitaryfund/qrack?tab=readme-ov-file#build-and-environment-options-for-cpu-engines) environment variable for best performance.** This can make a _big_ difference to CPU-based simulation performance, and be aware that CPU-based and GPU-based algorithms and implementations in Qrack work **together** to return the best possible performance for even GPU-based benchmarks.
+2. Try ["precompiling" your OpenCL kernels](https://github.com/unitaryfund/qrack?tab=readme-ov-file#precompiled-opencl-kernels), to skip the OpenCL JIT compilation step, every time you run. (This doesn't work on all systems.)
+2. Consider [tuning light-cone optimization qubit threshold](https://github.com/unitaryfund/qrack?tab=readme-ov-file#qtensornetwork-options) and [setting manual system resource limit variables](https://github.com/unitaryfund/qrack?tab=readme-ov-file#maximum-allocation-guard) (though these are not strictly required and might be recognized accurately by default by Qrack).
+3. Set `QRACK_DISABLE_QUNIT_FIDELITY_GUARD=1` as environment variable to disengage Qrack's fidelity estimate "limiter," if using approximate simulation.
+
+## Changing default OpenCL device
+OpenCL device(s) can be specified by index in `Qrack::QInterface` subclass constructors. The global default device can also be overridden with the environment variable `QRACK_OCL_DEFAULT_DEVICE=n`, where `n` is the index of the OpenCL device you want to use, as reported by the OpenCL initialization header.
+
+## Build and environment options for CPU engines
+`QEngineCPU` and `QHybrid` batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used. (The default is meant to work well across different typical consumer systems, but it can benefit greatly from system-tailored tuning via the environment variable. **This can be critical to performance of CPU-based simulation**, so you should _always_ tune it when deploying Qrack on a new system.)
+
+## Precompiled OpenCL kernels
+
+```sh
+$ qrack_cl_compile [path]
+```
+Precompile the OpenCL programs for all available devices, and save them to the optional "path" parameter location. By default, programs will be saved to a folder in the "home" directory, such as `~/.qrack/` on most Linux systems. (The default path can also be specified as an environment variable, `QRACK_OCL_PATH`.) Also by default, Qrack will attempt to load precompiled binaries from the same path, but the library will fall back to JIT compilation if program binaries are not available or are corrupt. To turn off default loading of binaries, one can simply delete the programs from this folder.
+
+## QTensorNetwork options
+`QTensorNetwork` has a qubit threshold up to which it is able to reuse more work in measurement and probability calculations, `QRACK_QTENSORNETWORK_THRESHOLD_QB`. By default, this is the same as qubit width that Qrack detects to be the maximum for state vector simulation (`QRACK_MAX_PAGING_QB` or `QRACK_MAX_CPU_QB`) Above (and not including) this threshold, `QTensorNetwork` will use techniques like restricting to "past light cones" for measurement and probablity calculation, in an attempt to reduce overall memory footprint at the cost of additional execution time.
+
+## Maximum allocation guard
+Set the maximum allowed allocation (in MB) for the global OpenCL pool with `QRACK_MAX_ALLOC_MB`. Per OpenCL device, this sets each maximum allocation limit with the same syntax as `QRACK_QPAGER_DEVICES`. (Succesive entries in the list are MB limits numbered according to Qrack's device IDs print-out on launch.) By default, each device is capped at 3/4 of its available global memory, for stability in common use cases. This includes (VRAM) state vectors and auxiliary buffers larger than approximately `sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl)`. This should also include out-of-place single duplication of any state vector. This does **not** include non-OpenCL general heap or stack allocation.
+
+`QRACK_MAX_PAGING_QB` and `QRACK_MAX_CPU_QB` environment variables set a maximum on how many qubits can be allocated on a single `QPager` or `QEngineCPU` instance, respectively. This qubit limit is for maximum single `QPager` or `QEngineCPU` allocation, whereas `QUnit` and `QUnitMulti` might allocate _more_ qubits than this as separable subsystems, requiring that no individual separable subsystem exceeds the qubit limit environment variables. (`QEngineOCL` limits are automatically maximal according to a query Qrack makes of maximum allocation segment on a given OpenCL device.)
+
+Note that this controls total direct Qrack OpenCL buffer allocation, not total Qrack library allocation. Total OpenCL buffer allocation is **not** fully indicative of total library allocation.
+
+## Approximation and noise options
+`QUnit` can optionally round qubit subsystems proactively or on-demand to the nearest single or double qubit eigenstate with the `QRACK_QUNIT_SEPARABILITY_THRESHOLD=[0.0 - 1.0]` environment variable, with a value between `0.0` and `1.0`. When trying to find separable subsystems, Qrack will start by making 3-axis (independent or conditional) probability measurements. Based on the probability measurements, under the assumption that the state _is_ separable, an inverse state preparation to |0> procedure is fixed. If inverse state preparation would bring any single qubit Bloch sphere projection within parameter range of the edge of the Bloch sphere, (with unit length, `1.0`,) then the subsystem will be rounded to that state, normalized, and then "uncomputed" with the corresponding (forward) state preparation, effectively "hyperpolarizing" one and two qubit separable substates by replacing entanglement with local qubit Bloch sphere extent. (If 3-axis probability is _not_ within rounding range, nothing is done directly to the substate.)
+
+Similarly functionality to above is available for `QBdt` with `QRACK_QBDT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]`. In the case of this parameter, any branch with less than the parameter value for probability is rounded to 0, and its partner branch is renormalized to unit length. This same value is also used for branch equality comparison.
+
+Environment variable `QRACK_NONCLIFFORD_ROUNDING_THRESHOLD` sets the non-Clifford phase gate magnitude, as a fraction of `T` gate phase angle, (from the closest Clifford state Bloch sphere orientation,) that will be rounded to 0 in terminal measurement and sampling operations. (For `0`/default value, all non-Clifford phase gates are exactly preserved.)
+
+For single-qubit depolarizing noise channels, `QInterfaceNoisy` exposes environment variable `QRACK_GATE_DEPOLARIZATION`, which is a per-gate, single-qubit (applied to all qubits in gate) noise parameter for depolarizing noise, typically taking a floating-point value between `0` and `1`.
+
+When `QUnit` encounters a situation where acting a coupler gate would require exceeding user-specified maximum system memory resources, it will automatically resort to replacing this gate with a "classical shadow" that will not require additional allocation. In the process, `QUnit` will decrease its internal first-principles unitary fidelity estimation under assumption that the classical shadow replacement effect is worst-case. If the fidelity estimate drops below floating-point rounding epsilon, `QUnit` will automatically `throw` to exit simulation early. However, particularly in cases of "anti-concentration," such as with universal random circuit sampling, this first-principles worst-case fidelity estimate might be very overly severe. In these cases, the worst-case fidelity estimate cannot necessarily be trusted not to be overly pessimistic, but the `throw` condition on low fidelity estimate can be disabled by assigning any value to environment variable `QRACK_DISABLE_QUNIT_FIDELITY_GUARD`.
 
 ## Installing Qrack
 
@@ -65,43 +102,6 @@ If you're on Ubuntu 18.04, 20.04, 22.04, or 24.04 LTS, you're in luck: Qrack man
 Otherwise, standardized builds are available on the [releases](https://github.com/unitaryfund/qrack/releases) page. (Operating system targets include Linux, Windows, and Mac, alongside WebAssmembly. Qrack source also builds for native Android and iOS.)
 
 If you're looking for [PyQrack](https://github.com/unitaryfund/pyqrack), know that the PyPi package has a self-contained Qrack release. (On Ubuntu, the PyPi package can be used, but it is **strongly recommended** that you instead install the `libqrack` or `libqrack-dev` packages from the PPA, as above, then install `main` branch PyQrack from source, which will use the Ubuntu `apt` packages.)
-
-## PyQrack Source Build
-
-The CMake settings for default build of [PyQrack](https://github.com/unitaryfund/pyqrack) are as follows, (assuming you are in a build directory created inside the top-level directory of the repo clone):
-
-x86-64 Linux (OpenCL):
-```
-cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON ..
-```
-
-x86-64 Linux (CUDA):
-```
-cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_OPENCL=OFF -DENABLE_CUDA=ON ..
-```
-
-x86-64 Linux (GVirtuS distributed CUDA):
-```
-export LD_LIBRARY_PATH=${GVIRTUS_HOME}/lib:${GVIRTUS_HOME}/lib/frontend:${LD_LIBRARY_PATH}
-cmake -DENABLE_DEVRAND=ON -DENABLE_RDRAND=OFF -DENABLE_OPENCL=OFF -DENABLE_CUDA=ON -DENABLE_GVIRTUS=ON ..
-```
-
-x86-64 Mac (might need `-Werror`, "warning to error," disabled in CMake files):
-```
-cmake ..
-```
-
-RISC (ARM) Linux:
-```
-cmake -DENABLE_RDRAND=OFF -DENABLE_DEVRAND=ON -DENABLE_COMPLEX_X2=OFF ..
-```
-
-[Emscripten (WASM)](https://qrack.net/):
-```
-emcmake cmake -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF ..
-```
-
-Windows-based systems are more specific, but there is a bit more information about them further below.
 
 ## test/tests.cpp
 
@@ -125,18 +125,6 @@ Particularly on older hardware, it is possible that you do not have OpenCL v2.0 
     $ cmake -DENALBE_OOO_OCL=OFF ..
 ```
 
-## Installing OpenCL on VMWare
-
-Most platforms offer a standardized way of installing OpenCL. However, a method for VMWare benefits from documentation, here.
-
-1.  Download the [AMD APP SDK](https://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
-1.  Install it.
-1.  Add symlinks for `/opt/AMDAPPSDK-3.0/lib/x86_64/sdk/libOpenCL.so.1` to `/usr/lib`
-1.  Add symlinks for `/opt/AMDAPPSDK-3.0/lib/x86_64/sdk/libamdocl64.so` to `/usr/lib`
-1.  Make sure `clinfo` reports back that there is a valid backend to use (anything other than an error should be fine).
-1.  Install OpenGL headers: `$ sudo apt install mesa-common-dev`
-1.  Adjust the `makefile` to have the appropriate search paths
-
 ## Installing OpenCL on Mac
 
 While the OpenCL framework is available by default on most modern Macs, the C++ header `cl.hpp` is usually not. One option for building for OpenCL on Mac is to download this header file and include it in the Qrack project folder under include/OpenCL (as `cl.hpp`). The OpenCL C++ header can be found at the Khronos OpenCL registry:
@@ -151,12 +139,10 @@ Qrack supports building on Windows, but some special configuration is required. 
 
 Qrack requires the `xxd` command to convert its OpenCL kernel code into hexadecimal format for building. `xxd` is not natively available on Windows systems, but Windows executables for it are provided by sources including the [Vim editor Windows port](https://www.vim.org/download.php).
 
-CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. `-DFPPOW=6` is used to set the systemic floating point accuracy to `double`, which is typically necessary for Q# accuracy tolerances. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
-
 ```sh
     $ mkdir _build
     $ cd _build
-    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" -DFPPOW=6 ..
+    $ cmake -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
 ```
 
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
@@ -191,24 +177,6 @@ emcmake cmake -DENABLE_RDRAND=OFF -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DUINT
 
 `-DUINTPOW=5` is optional, but WASM RAM limitations currently preclude >=32 qubits of potentially entangled state vector, so 64 bit ket addressing is not necessary. However, `-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
 
-## Compiling to C from WASM
-
-Arbitrary Qrack executables will not all necessarily link, at this time. However, `wasm2c` can generate C code from Qrack executables and modules, and *some* will successfully link.
-
-For example, generate a `.c` module and a `.h` header from your build/examples directory:
-
-```sh
-wasm2c teleport.wasm -o teleport.c
-```
-
-Compile and link it from `wabt`, (though the command below assumes that `wabt` is already in your path).
-
-```sh
-cc -o teleport -Iwabt/wasm2c/ teleport.c wabt/wasm2c/wasm-rt-impl.c -lm
-```
-
-We apologize for providing an example that will not quite work. However, with `emcc` or `cc`, this is the general idea. Once the generated `.c` and `.h` file are syntactically valid, via modification of your original Qrack C++ program, then static linkage must be specified with `-l`, assuming appropriate libraries for static linkage are actually available. (Emscripten is under active development, and we thank its maintainers.)
-
 ## Performing code coverage
 
 ```sh
@@ -221,17 +189,11 @@ We apologize for providing an example that will not quite work. However, with `e
     $ python -m http.server
 ```
 
-## Changing default OpenCL device
-OpenCL device(s) can be specified by index in `Qrack::QInterface` subclass constructors. The global default device can also be overridden with the environment variable `QRACK_OCL_DEFAULT_DEVICE=n`, where `n` is the index of the OpenCL device you want to use, as reported by the OpenCL initialization header.
-
-## Enable OpenCL device redistribution
-Setting the environment variable `QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE` to any value except a null string enables reactive load redistribution or balancing, in `QUnitMulti`. Otherwise, `QUnitMulti` only tries to balance load as opportunity arises when new separable `QEngineShard` instances are created.
-
 ## Tune OpenCL preferred concurrency
 Preferred concurrency has a tunable offset with default value of `3`, with the environment variable setting `export QRACK_GPU_OFFSET_QB=[m]` for some (positive or negative) integer `m`. For each integer increment of `m`, the preferred concurrency is multiplied by 2. (Preferred concurrency is calculated as `pow2(ceil(log2(([GPU processing element count] * [preferred group size for the single qubit gate kernel, usually warp size])))) << QRACK_GPU_OFFSET_QB`.)
 
 ## QPager distributed simulation options
-`QPager` attempts to smartly allocate low qubit widths for maximum performance. For heterogeneous GPU simulation, based on `clinfo`, you can set a ceiling on your maximum OpenCL accelerator state vector page allocation with the environment variable `QRACK_MAX_PAGE_QB=n`, where n is an integer >=0. The default `n` is max integer, meaning that maximum allocation segment of your GPU RAM is always a single hardware page.
+`QPager` attempts to intelligently allocate low qubit widths for maximum performance. For heterogeneous GPU simulation, based on `clinfo`, you can set a ceiling on your maximum OpenCL accelerator state vector page allocation with the environment variable `QRACK_MAX_PAGE_QB=n`, where n is an integer >=0. The default `n` is max integer, meaning that maximum allocation segment of your GPU RAM is always a single hardware page.
 
 To set a maximum on how many qubits can be allocated on a single `QPager` instance, use the environment variable `QRACK_MAX_PAGING_QB`, for example, `export QRACK_MAX_PAGING_QB=30` to cause `QPager` to throw an exception that can be caught if it is asked to allocate 31 or more qubits. 
 
@@ -244,34 +206,11 @@ There are two special device IDs that can be specified in these lists: `-1` is g
 ## QUnitMulti device list
 Specify a device list for `QUnitMulti` the same way you would for `QPager`, with environment variable `QRACK_QUNITMULTI_DEVICES`. Corresponding to each entry in `QRACK_QUNITMULTI_DEVICES`, use `QRACK_QUNITMULTI_DEVICES_MAX_QB` to (optionally) specify a per-entry ceiling on device usage. For smaller-width devices like CPUs, it might make sense to set the qubit ceiling to about the CPU `PSTRIDEPOW` plus logarithm base 2 of your hyperthread count.
 
-## QTensorNetwork options
-`QTensorNetwork` has a threshold up to which it is able to reuse more work in measurement and probability calculations, `QRACK_QTENSORNETWORK_THRESHOLD_QB`. Its default value for CPU simulation is 32 qubit; if environment variable `QRACK_MAX_PAGING_QB` is set, this becomes the default for GPUs and accelerators; otherwise, the default is the detected maximum qubit width of the single GPU or accelerator in use. Above (and not including) this threshold, `QTensorNetwork` will use techniques like restricting to "past light cones" for measurement and probablity calculation, in an attempt to reduce overall memory footprint at the cost of additional execution time.
-
 ## QBdt and QBdtHybrid options
 `QBdtHybrid` sets a threshold for "hybridization" between "quantum binary decision diagrams" (see Acknowledgements at bottom of document) and state vector simulation, based on how efficiently the "diagram" or "tree" can be "compressed." The environment variable `QRACK_QBDT_HYBRID_THRESHOLD` (typically taking values between 0 and 1) sets a multiplicative fraction for maximally-compressed size of the tree, as fraction of node count vs. equivalent state vector amplitude count, before switching over to state vector simulation. Note that maximum `QBdt` node count is _twice_ the count of amplitudes in the equivalent state vector simulation, so set the variable to 2 or higher to completely suppress switching and recover `QBdt`-only simulation in all cases.
 
-## Build and environment options for CPU engines
-`QEngineCPU` and `QHybrid` batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used. (The default is meant to work well across different typical consumer systems, but it can benefit greatly from system-tailored tuning via the environment variable. **This can be critical to performance of CPU-based simulation**, so you should _always_ tune it when deploying Qrack on a new system.)
-
-`-DENABLE_QUNIT_CPU_PARALLEL=OFF` disables asynchronous dispatch of `QStabilizerHybrid` and low width `QEngineCPU`/`QHybrid` gates with `std::future`. This option is on by default. Typically, `QUnit` stays safely under maximum thread count limits, but situations arise where async CPU simulation causes `QUnit` to dispatch too many CPU threads for the operating system. This build option can also reduce overall thread usage when Qrack user code operates in a multi-threaded or multi-shell environment. (Linux thread count limits might be smaller than Windows.)
-
-## Maximum allocation guard
-Set the maximum allowed allocation (in MB) for the global OpenCL pool with `QRACK_MAX_ALLOC_MB`. Per OpenCL device, this sets each maximum allocation limit with the same syntax as `QRACK_QPAGER_DEVICES`. (Succesive entries in the list are MB limits numbered according to Qrack's device IDs print-out on launch.) By default, each device is capped at 3/4 of its available global memory, for stability in common use cases. This includes (VRAM) state vectors and auxiliary buffers larger than approximately `sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl)`. This should also include out-of-place single duplication of any state vector. This does **not** include non-OpenCL general heap or stack allocation.
-
-`QRACK_MAX_PAGING_QB` and `QRACK_MAX_CPU_QB` environment variables set a maximum on how many qubits can be allocated on a single `QPager` or `QEngineCPU` instance, respectively. This qubit limit is for maximum single `QPager` or `QEngineCPU` allocation, whereas `QUnit` and `QUnitMulti` might allocate _more_ qubits than this as separable subsystems, requiring that no individual separable subsystem exceeds the qubit limit environment variables. (`QEngineOCL` limits are automatically maximal according to a query Qrack makes of maximum allocation segment on a given OpenCL device.)
-
-Note that this controls total direct Qrack OpenCL buffer allocation, not total Qrack library allocation. Total OpenCL buffer allocation is **not** fully indicative of total library allocation.
-
-## Approximation and noise options
-`QUnit` can optionally round qubit subsystems proactively or on-demand to the nearest single or double qubit eigenstate with the `QRACK_QUNIT_SEPARABILITY_THRESHOLD=[0.0 - 1.0]` environment variable, with a value between `0.0` and `1.0`. When trying to find separable subsystems, Qrack will start by making 3-axis (independent or conditional) probability measurements. Based on the probability measurements, under the assumption that the state _is_ separable, an inverse state preparation to |0> procedure is fixed. If inverse state preparation would bring any single qubit Bloch sphere projection within parameter range of the edge of the Bloch sphere, (with unit length, `1.0`,) then the subsystem will be rounded to that state, normalized, and then "uncomputed" with the corresponding (forward) state preparation, effectively "hyperpolarizing" one and two qubit separable substates by replacing entanglement with local qubit Bloch sphere extent. (If 3-axis probability is _not_ within rounding range, nothing is done directly to the substate.)
-
-Similarly functionality to above is available for `QBdt` with `QRACK_QBDT_SEPARABILITY_THRESHOLD=[0.0 - 0.5]`. In the case of this parameter, any branch with less than the parameter value for probability is rounded to 0, and its partner branch is renormalized to unit length. This same value is also used for branch equality comparison.
-
-Environment variable `QRACK_NONCLIFFORD_ROUNDING_THRESHOLD` sets the non-Clifford phase gate magnitude, as a fraction of `T` gate phase angle, (from the closest Clifford state Bloch sphere orientation,) that will be rounded to 0 in terminal measurement and sampling operations. (For `0`/default value, all non-Clifford phase gates are exactly preserved.)
-
-For single-qubit depolarizing noise channels, `QInterfaceNoisy` exposes environment variable `QRACK_GATE_DEPOLARIZATION`, which is a per-gate, single-qubit (applied to all qubits in gate) noise parameter for depolarizing noise, typically taking a floating-point value between `0` and `1`.
-
-When `QUnit` encounters a situation where acting a coupler gate would require exceeding user-specified maximum system memory resources, it will automatically resort to replacing this gate with a "classical shadow" that will not require additional allocation. In the process, `QUnit` will decrease its internal first-principles unitary fidelity estimation under assumption that the classical shadow replacement effect is worst-case. If the fidelity estimate drops below floating-point rounding epsilon, `QUnit` will automatically `throw` to exit simulation early. However, particularly in cases of "anti-concentration," such as with universal random circuit sampling, this first-principles worst-case fidelity estimate might be very overly severe. In these cases, the worst-case fidelity estimate cannot necessarily be trusted not to be overly pessimistic, but the `throw` condition on low fidelity estimate can be disabled by assigning any value to environment variable `QRACK_DISABLE_QUNIT_FIDELITY_GUARD`.
+## Enable OpenCL device redistribution
+Setting the environment variable `QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE` to any value except a null string enables reactive load redistribution or balancing, in `QUnitMulti`. Otherwise, `QUnitMulti` only tries to balance load as opportunity arises when new separable `QEngineShard` instances are created.
 
 ## Vectorization optimization
 
@@ -331,26 +270,6 @@ $ cmake [-DFPPOW=n] ..
 ```
 Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to 2^n. By default, n=5, for 2^5=32 bit floating point precision per real or imaginary part. "half," "double," and "quad," availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels. "quad" is supported on CPU only, if available.
 
-## Precompiled OpenCL kernels
-
-```sh
-$ qrack_cl_compile [path]
-```
-Precompile the OpenCL programs for all available devices, and save them to the optional "path" parameter location. By default, programs will be saved to a folder in the "home" directory, such as `~/.qrack/` on most Linux systems. (The default path can also be specified as an environment variable, `QRACK_OCL_PATH`.) Also by default, Qrack will attempt to load precompiled binaries from the same path, but the library will fall back to JIT compilation if program binaries are not available or are corrupt. To turn off default loading of binaries, one can simply delete the programs from this folder.
-
-The option to load and save precompiled binaries, and where to load them from, can be controlled with the initializing method of `Qrack::OCLEngine`:
-
-```cpp
-Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath());
-```
-To use this method directly, _it needs to be called before any OpenCL simulators are created in the program,_ as initialization happens automatically upon creating any OpenCL simulator instance. Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
-
-```cpp
-/// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home".
-static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
-```
-The `home` argument default indicates that the default home directory path should be used.
-
 ## Turn on/off optional API components
 
 ```sh
@@ -367,7 +286,7 @@ Prior to the Qrack v7 API, a larger set of convenience methods were included in 
 
 ## Copyright, License, and Acknowledgements
 
-Copyright (c) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
+Copyright (c) Daniel Strano and the Qrack contributors 2017-2024. All rights reserved.
 
 Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of `QUnit` and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Special thanks go to Aryan Blaauw for his extensive systematic benchmark program, leading to much debugging and design feedback, while he spreads general good will about our community discussion space. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. For unit tests and benchmarks, Qrack uses Catch v2.13.7 under the Boost Software License, Version 1.0. The `QStabilizer` partial simulator "engine" is adapted from CHP by Scott Aaronson, for non-commercial use. `QBdt` is Qrack's "hand-rolled" take on "quantum binary decision diagrams" ("QBDD," or "quantum binary decision trees") inspired largely by a talk Dan attended from Jülich Supercomputing Center at IEEE Quantum Week, in 2021, and later followed up with reading into work of authors including Robert Wille. The half precision floating point header is provided by [http://half.sourceforge.net/](http://half.sourceforge.net/), and the fixed-point header is provided by [https://github.com/eteran/cpp-utilities](https://github.com/eteran/cpp-utilities), with our thanks and appreciation. GitHub user [paniash](https://github.com/paniash) has kindly contributed `README.md` styling and standardization. Some commits might be written with the assistance of OpenAI's ChatGPT, though the commit messages should note all such specific cases, and 0 commits used direct ChatGPT assistance or any direct AI assistance for authorship before April 15, 2023. Thank you to all our PR contributors, tracked in GitHub, and thank you to the OSS community in general for supporting code, including [Adam Kelly](https://github.com/libtangle/qcgpu) and the [qulacs team](https://github.com/qulacs/qulacs), for Qiskit and Cirq interfaces. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).)
 
