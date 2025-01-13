@@ -179,12 +179,6 @@ jobs:
           - win-amd64
         dependencies: [vcpkg]
     steps:
-      - name: Mount vcpkg cache
-        uses: actions/cache@v4
-        with:
-          path: "~/.cache/vcpkg/archives"
-          key: vcpkg-${{ matrix.os }}
-
       - name: Install vcpkg dependencies
         run: |
           vcpkg install opencl
