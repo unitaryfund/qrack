@@ -103,14 +103,16 @@ void QStabilizer::SetPermutation(const bitCapInt& perm, const complex& phaseFac)
     std::fill(r.begin(), r.end(), 0U);
 
     for (bitLenInt i = 0; i < rowCount; ++i) {
-        std::fill(x[i].begin(), x[i].end(), false);
-        std::fill(z[i].begin(), z[i].end(), false);
+        BoolVector& xi = x[i];
+        BoolVector& zi = z[i];
+        std::fill(xi.begin(), xi.end(), false);
+        std::fill(zi.begin(), zi.end(), false);
 
         if (i < qubitCount) {
-            x[i][i] = true;
+            xi[i] = true;
         } else {
             const bitLenInt j = i - qubitCount;
-            z[i][j] = true;
+            zi[j] = true;
         }
     }
 
@@ -242,7 +244,8 @@ void QStabilizer::seed(const bitLenInt& g)
     // Wipe the scratch space clean
     r[elemCount] = 0U;
 
-    std::fill(x[elemCount].begin(), x[elemCount].end(), false);
+    BoolVector& xec = x[elemCount];
+    std::fill(xec.begin(), xec.end(), false);
     std::fill(z[elemCount].begin(), z[elemCount].end(), false);
 
     for (int i = elemCount - 1; i >= (int)(qubitCount + g); i--) {
@@ -250,7 +253,7 @@ void QStabilizer::seed(const bitLenInt& g)
         for (int j = qubitCount - 1; j >= 0; j--) {
             if (z[i][j]) {
                 min = j;
-                if (x[elemCount][j]) {
+                if (xec[j]) {
                     f = (f + 2) & 0x3;
                 }
             }
@@ -259,7 +262,7 @@ void QStabilizer::seed(const bitLenInt& g)
         if (f == 2) {
             const int j = min;
             // Make the seed consistent with the ith equation
-            x[elemCount][j] = !x[elemCount][j];
+            xec[j] = !xec[j];
         }
     }
 }
@@ -859,14 +862,17 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            if (x[i][c]) {
-                x[i][t] = !x[i][t];
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
+
+            if (xi[c]) {
+                xi[t] = !xi[t];
             }
 
-            if (z[i][t]) {
-                z[i][c] = !z[i][c];
+            if (zi[t]) {
+                zi[c] = !zi[c];
 
-                if (x[i][c] && (x[i][t] == z[i][c])) {
+                if (xi[c] && (xi[t] == zi[c])) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
             }
@@ -887,14 +893,17 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            if (x[i][c]) {
-                x[i][t] = !x[i][t];
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
+
+            if (xi[c]) {
+                xi[t] = !xi[t];
             }
 
-            if (z[i][t]) {
-                z[i][c] = !z[i][c];
+            if (zi[t]) {
+                zi[c] = !zi[c];
 
-                if (!x[i][c] || (x[i][t] != z[i][c])) {
+                if (!xi[c] || (xi[t] != zi[c])) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
             }
@@ -915,21 +924,24 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            z[i][t] = z[i][t] ^ x[i][t];
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
 
-            if (x[i][c]) {
-                x[i][t] = !x[i][t];
+            zi[t] = zi[t] ^ xi[t];
+
+            if (xi[c]) {
+                xi[t] = !xi[t];
             }
 
-            if (z[i][t]) {
-                if (x[i][c] && (x[i][t] == z[i][c])) {
+            if (zi[t]) {
+                if (xi[c] && (xi[t] == zi[c])) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
 
-                z[i][c] = !z[i][c];
+                zi[c] = !zi[c];
             }
 
-            z[i][t] = z[i][t] ^ x[i][t];
+            zi[t] = zi[t] ^ xi[t];
         },
         { c, t });
 }
@@ -947,21 +959,24 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            z[i][t] = z[i][t] ^ x[i][t];
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
 
-            if (x[i][c]) {
-                x[i][t] = !x[i][t];
+            zi[t] = zi[t] ^ xi[t];
+
+            if (xi[c]) {
+                xi[t] = !xi[t];
             }
 
-            if (z[i][t]) {
-                if (!x[i][c] || (x[i][t] != z[i][c])) {
+            if (zi[t]) {
+                if (!xi[c] || (xi[t] != zi[c])) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
 
-                z[i][c] = !z[i][c];
+                zi[c] = !zi[c];
             }
 
-            z[i][t] = z[i][t] ^ x[i][t];
+            zi[t] = zi[t] ^ xi[t];
         },
         { c, t });
 }
@@ -982,16 +997,19 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            if (x[i][t]) {
-                z[i][c] = !z[i][c];
+            const BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
 
-                if (x[i][c] && (z[i][t] == z[i][c])) {
+            if (xi[t]) {
+                zi[c] = !zi[c];
+
+                if (xi[c] && (zi[t] == zi[c])) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
             }
 
-            if (x[i][c]) {
-                z[i][t] = !z[i][t];
+            if (xi[c]) {
+                zi[t] = !zi[t];
             }
         },
         { c, t });
@@ -1016,16 +1034,19 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            if (x[i][t]) {
-                z[i][c] = !z[i][c];
+            const BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
 
-                if (!x[i][c] || (z[i][t] != z[i][c])) {
+            if (xi[t]) {
+                zi[c] = !zi[c];
+
+                if (!xi[c] || (zi[t] != zi[c])) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
             }
 
-            if (x[i][c]) {
-                z[i][t] = !z[i][t];
+            if (xi[c]) {
+                zi[t] = !zi[t];
             }
         },
         { c, t });
@@ -1069,27 +1090,30 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            BoolVector::swap(x[i][c], x[i][t]);
-            BoolVector::swap(z[i][c], z[i][t]);
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
 
-            if (x[i][t]) {
-                z[i][c] = !z[i][c];
+            BoolVector::swap(xi[c], xi[t]);
+            BoolVector::swap(zi[c], zi[t]);
 
-                if (!x[i][c] && z[i][t]) {
+            if (xi[t]) {
+                zi[c] = !zi[c];
+
+                if (!xi[c] && zi[t]) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
             }
 
-            if (x[i][c]) {
-                z[i][t] = !z[i][t];
+            if (xi[c]) {
+                zi[t] = !zi[t];
 
-                if (z[i][c] && !x[i][t]) {
+                if (zi[c] && !xi[t]) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
             }
 
-            z[i][c] = z[i][c] ^ x[i][c];
-            z[i][t] = z[i][t] ^ x[i][t];
+            zi[c] = zi[c] ^ xi[c];
+            zi[t] = zi[t] ^ xi[t];
         },
         { c, t });
 }
@@ -1108,27 +1132,30 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            z[i][c] = z[i][c] ^ x[i][c];
-            z[i][t] = z[i][t] ^ x[i][t];
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
 
-            if (x[i][c]) {
-                z[i][t] = !z[i][t];
+            zi[c] = zi[c] ^ xi[c];
+            zi[t] = zi[t] ^ xi[t];
 
-                if (z[i][c] && !x[i][t]) {
+            if (xi[c]) {
+                zi[t] = !zi[t];
+
+                if (zi[c] && !xi[t]) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
             }
 
-            if (x[i][t]) {
-                z[i][c] = !z[i][c];
+            if (xi[t]) {
+                zi[c] = !zi[c];
 
-                if (!x[i][c] && z[i][t]) {
+                if (!xi[c] && zi[t]) {
                     r[i] = (r[i] + 2U) & 0x3U;
                 }
             }
 
-            BoolVector::swap(x[i][c], x[i][t]);
-            BoolVector::swap(z[i][c], z[i][t]);
+            BoolVector::swap(xi[c], xi[t]);
+            BoolVector::swap(zi[c], zi[t]);
         },
         { c, t });
 }
@@ -1270,10 +1297,12 @@ void QStabilizer::S(bitLenInt t)
 
     ParFor(
         [this, t](const bitLenInt& i) {
-            if (x[i][t] && z[i][t]) {
+            const BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
+            if (xi[t] && zi[t]) {
                 r[i] = (r[i] + 2U) & 0x3U;
             }
-            z[i][t] = z[i][t] ^ x[i][t];
+            zi[t] = zi[t] ^ xi[t];
         },
         { t });
 
@@ -1301,8 +1330,10 @@ void QStabilizer::IS(bitLenInt t)
 
     ParFor(
         [this, t](const bitLenInt& i) {
-            z[i][t] = z[i][t] ^ x[i][t];
-            if (x[i][t] && z[i][t]) {
+            const BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
+            zi[t] = zi[t] ^ xi[t];
+            if (xi[t] && zi[t]) {
                 r[i] = (r[i] + 2U) & 0x3U;
             }
         },
@@ -1543,8 +1574,10 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const BoolVector row(length, false);
 
     for (bitLenInt i = 0U; i < rowCount; ++i) {
-        x[i].insert(x[i].begin() + start, row.begin(), row.end());
-        z[i].insert(z[i].begin() + start, row.begin(), row.end());
+        BoolVector& xi = x[i];
+        BoolVector& zi = z[i];
+        xi.insert(xi.begin() + start, row.begin(), row.end());
+        zi.insert(zi.begin() + start, row.begin(), row.end());
     }
 
     x.insert(x.begin() + secondStart, toCopy->x.begin() + length, toCopy->x.begin() + dLen);
@@ -1552,10 +1585,12 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     r.insert(r.begin() + secondStart, toCopy->r.begin() + length, toCopy->r.begin() + dLen);
     for (bitLenInt i = 0U; i < length; ++i) {
         const bitLenInt offset = secondStart + i;
-        x[offset].insert(x[offset].begin(), start, false);
-        x[offset].insert(x[offset].end(), endLength, false);
-        z[offset].insert(z[offset].begin(), start, false);
-        z[offset].insert(z[offset].end(), endLength, false);
+        BoolVector& xo = x[offset];
+        BoolVector& zo = z[offset];
+        xo.insert(xo.begin(), start, false);
+        xo.insert(xo.end(), endLength, false);
+        zo.insert(zo.begin(), start, false);
+        zo.insert(zo.end(), endLength, false);
     }
 
     x.insert(x.begin() + start, toCopy->x.begin(), toCopy->x.begin() + length);
@@ -1563,10 +1598,12 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
     for (bitLenInt i = 0U; i < length; ++i) {
         const bitLenInt offset = start + i;
-        x[offset].insert(x[offset].begin(), start, false);
-        x[offset].insert(x[offset].end(), endLength, false);
-        z[offset].insert(z[offset].begin(), start, false);
-        z[offset].insert(z[offset].end(), endLength, false);
+        BoolVector& xo = x[offset];
+        BoolVector& zo = z[offset];
+        xo.insert(xo.begin(), start, false);
+        xo.insert(xo.end(), endLength, false);
+        zo.insert(zo.begin(), start, false);
+        zo.insert(zo.end(), endLength, false);
     }
 
     SetQubitCount(nQubitCount);
@@ -1601,8 +1638,12 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     for (bitLenInt i = 0U; i < start; ++i) {
         const bitLenInt i2 = i + qubitCount;
+        const BoolVector& xi = x[i];
+        const BoolVector& zi = z[i];
+        const BoolVector& xi2 = x[i2];
+        const BoolVector& zi2 = z[i2];
         for (bitLenInt j = start; j < end; ++j) {
-            if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
+            if (xi[j] || zi[j] || xi2[j] || zi2[j]) {
                 return false;
             }
         }
@@ -1610,8 +1651,12 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     for (bitLenInt i = end; i < qubitCount; ++i) {
         const bitLenInt i2 = i + qubitCount;
+        const BoolVector& xi = x[i];
+        const BoolVector& zi = z[i];
+        const BoolVector& xi2 = x[i2];
+        const BoolVector& zi2 = z[i2];
         for (bitLenInt j = start; j < end; ++j) {
-            if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
+            if (xi[j] || zi[j] || xi2[j] || zi2[j]) {
                 return false;
             }
         }
@@ -1619,13 +1664,17 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     for (bitLenInt i = start; i < end; ++i) {
         const bitLenInt i2 = i + qubitCount;
+        const BoolVector& xi = x[i];
+        const BoolVector& zi = z[i];
+        const BoolVector& xi2 = x[i2];
+        const BoolVector& zi2 = z[i2];
         for (bitLenInt j = 0U; j < start; ++j) {
-            if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
+            if (xi[j] || zi[j] || xi2[j] || zi2[j]) {
                 return false;
             }
         }
         for (bitLenInt j = end; j < qubitCount; ++j) {
-            if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
+            if (xi[j] || zi[j] || xi2[j] || zi2[j]) {
                 return false;
             }
         }
@@ -1692,8 +1741,10 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
 
     for (bitLenInt i = 0U; i < rowCount; ++i) {
-        x[i].erase(x[i].begin() + start, x[i].begin() + end);
-        z[i].erase(z[i].begin() + start, z[i].begin() + end);
+        BoolVector& xi = x[i];
+        BoolVector& zi = z[i];
+        xi.erase(xi.begin() + start, xi.begin() + end);
+        zi.erase(zi.begin() + start, zi.begin() + end);
     }
 
     if (randGlobalPhase || dest) {
