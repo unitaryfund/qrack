@@ -245,10 +245,12 @@ void QStabilizer::seed(const bitLenInt& g)
     r[elemCount] = 0U;
 
     BoolVector& xec = x[elemCount];
+    BoolVector& zec = x[elemCount];
     std::fill(xec.begin(), xec.end(), false);
-    std::fill(z[elemCount].begin(), z[elemCount].end(), false);
+    std::fill(zec.begin(), zec.end(), false);
 
-    for (int i = elemCount - 1; i >= (int)(qubitCount + g); i--) {
+    const int qcg = (int)(qubitCount + g);
+    for (int i = elemCount - 1; i >= qcg; i--) {
         int f = r[i];
         for (int j = qubitCount - 1; j >= 0; j--) {
             if (z[i][j]) {
@@ -873,7 +875,8 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
                 zi[c] = !zi[c];
 
                 if (xi[c] && (xi[t] == zi[c])) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
             }
         },
@@ -904,7 +907,8 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
                 zi[c] = !zi[c];
 
                 if (!xi[c] || (xi[t] != zi[c])) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
             }
         },
@@ -935,7 +939,8 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 
             if (zi[t]) {
                 if (xi[c] && (xi[t] == zi[c])) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
 
                 zi[c] = !zi[c];
@@ -970,7 +975,8 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 
             if (zi[t]) {
                 if (!xi[c] || (xi[t] != zi[c])) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
 
                 zi[c] = !zi[c];
@@ -1004,7 +1010,8 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
                 zi[c] = !zi[c];
 
                 if (xi[c] && (zi[t] == zi[c])) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
             }
 
@@ -1041,7 +1048,8 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
                 zi[c] = !zi[c];
 
                 if (!xi[c] || (zi[t] != zi[c])) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
             }
 
@@ -1100,7 +1108,8 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
                 zi[c] = !zi[c];
 
                 if (!xi[c] && zi[t]) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
             }
 
@@ -1108,7 +1117,8 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
                 zi[t] = !zi[t];
 
                 if (zi[c] && !xi[t]) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
             }
 
@@ -1142,7 +1152,8 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
                 zi[t] = !zi[t];
 
                 if (zi[c] && !xi[t]) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
             }
 
@@ -1150,7 +1161,8 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
                 zi[c] = !zi[c];
 
                 if (!xi[c] && zi[t]) {
-                    r[i] = (r[i] + 2U) & 0x3U;
+                    uint8_t& ri = r[i];
+                    ri = (ri + 2U) & 0x3U;
                 }
             }
 
@@ -1167,9 +1179,12 @@ void QStabilizer::H(bitLenInt t)
 
     ParFor(
         [this, t](const bitLenInt& i) {
-            BoolVector::swap(x[i][t], z[i][t]);
-            if (x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2U) & 0x3U;
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
+            BoolVector::swap(xi[t], zi[t]);
+            if (xi[t] && zi[t]) {
+                uint8_t& ri = r[i];
+                ri = (ri + 2U) & 0x3U;
             }
         },
         { t });
