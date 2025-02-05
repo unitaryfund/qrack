@@ -170,7 +170,7 @@ Particularly on older hardware, it is possible that you do not have OpenCL v2.0 
 To change the C++ language standard language with which Qrack is compiled, use `-DCPP_STD=n`, where "`n`" is the two-digit standard year:
 
 ```sh
-cmake -DCPP_SIM=11 ..
+cmake -DCPP_STD=11 ..
 ```
 
 Qrack is backwards compatible as far as C++11. By default, Qrack builds for C++14. For minimum support for all optional dependencies, C++14 or later might be required.
