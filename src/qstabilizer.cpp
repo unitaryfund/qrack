@@ -245,7 +245,7 @@ void QStabilizer::seed(const bitLenInt& g)
     r[elemCount] = 0U;
 
     BoolVector& xec = x[elemCount];
-    BoolVector& zec = x[elemCount];
+    BoolVector& zec = z[elemCount];
     std::fill(xec.begin(), xec.end(), false);
     std::fill(zec.begin(), zec.end(), false);
 
