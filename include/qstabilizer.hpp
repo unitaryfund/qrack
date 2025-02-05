@@ -177,15 +177,17 @@ protected:
     /// Sets row i equal to the bth observable (X_1,...X_n,Z_1,...,Z_n)
     void rowset(const bitLenInt& i, bitLenInt b)
     {
-        std::fill(x[i].begin(), x[i].end(), false);
-        std::fill(z[i].begin(), z[i].end(), false);
+        BoolVector& xi = x[i];
+        BoolVector& zi = z[i];
+        std::fill(xi.begin(), xi.end(), false);
+        std::fill(zi.begin(), zi.end(), false);
         r[i] = 0;
 
         if (b < qubitCount) {
-            x[i][b] = true;
+            xi[b] = true;
         } else {
             b -= qubitCount;
-            z[i][b] = true;
+            zi[b] = true;
         }
     }
     /// Left-multiply row i by row k - does not change the logical state
@@ -193,8 +195,10 @@ protected:
     {
         r[i] = clifford(i, k);
         for (bitLenInt j = 0U; j < qubitCount; ++j) {
-            x[i][j] = x[i][j] ^ x[k][j];
-            z[i][j] = z[i][j] ^ z[k][j];
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
+            xi[j] = xi[j] ^ x[k][j];
+            zi[j] = zi[j] ^ z[k][j];
         }
     }
     /// Return the phase (0,1,2,3) when row i is LEFT-multiplied by row k
