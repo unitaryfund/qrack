@@ -1486,7 +1486,7 @@ public:
      * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
      * bits, there are therefore 2^k real components in "angles."
      */
-    virtual void UniformlyControlledRY(const std::vector<bitLenInt>& controls, bitLenInt qubit, real1 const* angles);
+    virtual void UniformlyControlledRY(const std::vector<bitLenInt>& controls, bitLenInt qubit, const real1* angles);
 
     /**
      * Apply a "uniformly controlled" rotation of a bit around the Pauli Z axis. (See
@@ -1498,7 +1498,7 @@ public:
      * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
      * bits, there are therefore 2^k real components in "angles."
      */
-    virtual void UniformlyControlledRZ(const std::vector<bitLenInt>& controls, bitLenInt qubit, real1 const* angles);
+    virtual void UniformlyControlledRZ(const std::vector<bitLenInt>& controls, bitLenInt qubit, const real1* angles);
 
     /**
      * Phase shift gate
