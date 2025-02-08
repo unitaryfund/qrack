@@ -1586,13 +1586,12 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const bitLenInt endLength = qubitCount - start;
     const bitLenInt secondStart = qubitCount + start;
     const bitLenInt dLen = length << 1U;
-    const BoolVector row(length, false);
 
     for (bitLenInt i = 0U; i < rowCount; ++i) {
         BoolVector& xi = x[i];
         BoolVector& zi = z[i];
-        xi.insert(xi.begin() + start, row.begin(), row.end());
-        zi.insert(zi.begin() + start, row.begin(), row.end());
+        xi.insert(xi.begin() + start, length, false);
+        zi.insert(zi.begin() + start, length, false);
     }
 
     x.insert(x.begin() + secondStart, toCopy->x.begin() + length, toCopy->x.begin() + dLen);
