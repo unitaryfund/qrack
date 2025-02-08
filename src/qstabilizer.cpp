@@ -1078,8 +1078,10 @@ void QStabilizer::Swap(bitLenInt c, bitLenInt t)
 
     ParFor(
         [this, c, t](const bitLenInt& i) {
-            BoolVector::swap(x[i][c], x[i][t]);
-            BoolVector::swap(z[i][c], z[i][t]);
+            BoolVector& xi = x[i];
+            BoolVector& zi = z[i];
+            BoolVector::swap(xi[c], xi[t]);
+            BoolVector::swap(zi[c], zi[t]);
         },
         { c, t });
 }
