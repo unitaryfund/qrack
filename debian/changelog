@@ -1,3 +1,27 @@
+libqrack (9.13.28) bionic; urgency=medium
+
+  * Fix uniformly controlled gate signatures; stabilizer micro-optimizations (Bionic 4/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Sat, 08 Feb 2025 10:36:46 -0500
+
+libqrack (9.13.27) focal; urgency=medium
+
+  * Fix uniformly controlled gate signatures; stabilizer micro-optimizations (Focal 3/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Sat, 08 Feb 2025 10:34:18 -0500
+
+libqrack (9.13.26) jammy; urgency=medium
+
+  * Fix uniformly controlled gate signatures; stabilizer micro-optimizations (Jammy 2/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Sat, 08 Feb 2025 10:30:25 -0500
+
+libqrack (9.13.25) noble; urgency=medium
+
+  * Fix uniformly controlled gate signatures; stabilizer micro-optimizations (Noble 1/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Sat, 08 Feb 2025 10:24:25 -0500
+
 libqrack (9.13.4) bionic; urgency=medium
 
   * Shared library improvements and safety (Bionic 4/4)
