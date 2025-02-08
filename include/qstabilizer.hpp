@@ -194,9 +194,9 @@ protected:
     void rowmult(const bitLenInt& i, const bitLenInt& k)
     {
         r[i] = clifford(i, k);
+        BoolVector& xi = x[i];
+        BoolVector& zi = z[i];
         for (bitLenInt j = 0U; j < qubitCount; ++j) {
-            BoolVector& xi = x[i];
-            BoolVector& zi = z[i];
             xi[j] = xi[j] ^ x[k][j];
             zi[j] = zi[j] ^ z[k][j];
         }
