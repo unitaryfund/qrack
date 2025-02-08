@@ -1730,12 +1730,17 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     if (dest) {
         for (bitLenInt i = 0U; i < length; ++i) {
             bitLenInt j = start + i;
-            std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i].begin());
-            std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[i].begin());
+            const BoolVector& xj = x[j];
+            const BoolVector& zj = z[j];
+            std::copy(xj.begin() + start, xj.begin() + end, dest->x[i].begin());
+            std::copy(zj.begin() + start, zj.begin() + end, dest->z[i].begin());
 
             j = qubitCount + start + i;
-            std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[(i + length)].begin());
-            std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[(i + length)].begin());
+            const bitLenInt i2 = i + length;
+            const BoolVector& xj2 = x[j];
+            const BoolVector& zj2 = z[j];
+            std::copy(xj2.begin() + start, xj2.begin() + end, dest->x[i2].begin());
+            std::copy(zj2.begin() + start, zj2.begin() + end, dest->z[i2].begin());
         }
         bitLenInt j = start;
         std::copy(r.begin() + j, r.begin() + j + length, dest->r.begin());
