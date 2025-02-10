@@ -26,6 +26,10 @@
 
 #include "qinterface.hpp"
 
+#if BOOST_AVAILABLE
+#include <boost/dynamic_bitset.hpp>
+#endif
+
 namespace Qrack {
 
 struct AmplitudeEntry {
@@ -52,7 +56,16 @@ protected:
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
     std::vector<uint8_t> r;
     // Typedef for special type std::vector<bool> compatibility
+#if BOOST_AVAILABLE
+    typedef boost::dynamic_bitset<size_t> BoolVector;
+    void swapBits(BoolVector& bv, const size_t& c, const size_t& t) {
+        bool temp = bv[c];
+        bv[c] = bv[t];
+        bv[t] = temp;
+    }
+#else
     typedef std::vector<bool> BoolVector;
+#endif
     // (2n+1)*n matrix for stabilizer/destabilizer x bits (there's one "scratch row" at the bottom)
     std::vector<BoolVector> x;
     // (2n+1)*n matrix for z bits
@@ -179,8 +192,13 @@ protected:
     {
         BoolVector& xi = x[i];
         BoolVector& zi = z[i];
+#if BOOST_AVAILABLE
+        xi.reset();
+        zi.reset();
+#else
         std::fill(xi.begin(), xi.end(), false);
         std::fill(zi.begin(), zi.end(), false);
+#endif
         r[i] = 0;
 
         if (b < qubitCount) {
@@ -194,12 +212,17 @@ protected:
     void rowmult(const bitLenInt& i, const bitLenInt& k)
     {
         r[i] = clifford(i, k);
+#if BOOST_AVAILABLE
+        x[i] ^= x[k];
+        z[i] ^= z[k];
+#else
         BoolVector& xi = x[i];
         BoolVector& zi = z[i];
         for (bitLenInt j = 0U; j < qubitCount; ++j) {
             xi[j] = xi[j] ^ x[k][j];
             zi[j] = zi[j] ^ z[k][j];
         }
+#endif
     }
     /// Return the phase (0,1,2,3) when row i is LEFT-multiplied by row k
     uint8_t clifford(const bitLenInt& i, const bitLenInt& k);

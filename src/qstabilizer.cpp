@@ -105,8 +105,13 @@ void QStabilizer::SetPermutation(const bitCapInt& perm, const complex& phaseFac)
     for (bitLenInt i = 0; i < rowCount; ++i) {
         BoolVector& xi = x[i];
         BoolVector& zi = z[i];
+#if BOOST_AVAILABLE
+        xi.reset();
+        zi.reset();
+#else
         std::fill(xi.begin(), xi.end(), false);
         std::fill(zi.begin(), zi.end(), false);
+#endif
 
         if (i < qubitCount) {
             xi[i] = true;
@@ -191,6 +196,7 @@ bitLenInt QStabilizer::gaussian()
 
             rowswap(i, k);
             rowswap(i - n, k - n);
+
             for (bitLenInt k2 = i + 1U; k2 < maxLcv; ++k2) {
                 if (x[k2][j]) {
                     // Gaussian elimination step:
@@ -216,6 +222,7 @@ bitLenInt QStabilizer::gaussian()
 
             rowswap(i, k);
             rowswap(i - n, k - n);
+
             for (bitLenInt k2 = i + 1U; k2 < maxLcv; ++k2) {
                 if (z[k2][j]) {
                     rowmult(k2, i);
@@ -246,8 +253,13 @@ void QStabilizer::seed(const bitLenInt& g)
 
     BoolVector& xec = x[elemCount];
     BoolVector& zec = z[elemCount];
+#if BOOST_AVAILABLE
+    xec.reset();
+    zec.reset();
+#else
     std::fill(xec.begin(), xec.end(), false);
     std::fill(zec.begin(), zec.end(), false);
+#endif
 
     const int qcg = (int)(qubitCount + g);
     for (int i = elemCount - 1; i >= qcg; i--) {
@@ -1080,8 +1092,13 @@ void QStabilizer::Swap(bitLenInt c, bitLenInt t)
         [this, c, t](const bitLenInt& i) {
             BoolVector& xi = x[i];
             BoolVector& zi = z[i];
+#if BOOST_AVAILABLE
+            swapBits(xi, c, t);
+            swapBits(zi, c, t);
+#else
             BoolVector::swap(xi[c], xi[t]);
             BoolVector::swap(zi[c], zi[t]);
+#endif
         },
         { c, t });
 }
@@ -1102,9 +1119,13 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
         [this, c, t](const bitLenInt& i) {
             BoolVector& xi = x[i];
             BoolVector& zi = z[i];
-
+#if BOOST_AVAILABLE
+            swapBits(xi, c, t);
+            swapBits(zi, c, t);
+#else
             BoolVector::swap(xi[c], xi[t]);
             BoolVector::swap(zi[c], zi[t]);
+#endif
 
             if (xi[t]) {
                 zi[c] = !zi[c];
@@ -1168,8 +1189,13 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
                 }
             }
 
+#if BOOST_AVAILABLE
+            swapBits(xi, c, t);
+            swapBits(zi, c, t);
+#else
             BoolVector::swap(xi[c], xi[t]);
             BoolVector::swap(zi[c], zi[t]);
+#endif
         },
         { c, t });
 }
@@ -1183,7 +1209,13 @@ void QStabilizer::H(bitLenInt t)
         [this, t](const bitLenInt& i) {
             BoolVector& xi = x[i];
             BoolVector& zi = z[i];
+#if BOOST_AVAILABLE
+            const bool temp = xi[t];
+            xi[t] = zi[t];
+            zi[t] = temp;
+#else
             BoolVector::swap(xi[t], zi[t]);
+#endif
             if (xi[t] && zi[t]) {
                 uint8_t& ri = r[i];
                 ri = (ri + 2U) & 0x3U;
@@ -1585,15 +1617,28 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
     const bitLenInt length = toCopy->qubitCount;
     const bitLenInt nQubitCount = qubitCount + length;
-    const bitLenInt endLength = qubitCount - start;
     const bitLenInt secondStart = qubitCount + start;
     const bitLenInt dLen = length << 1U;
+#if BOOST_AVAILABLE
+    const bitCapInt startMask = pow2Mask(start);
+    const BoolVector startMaskBitSet(nQubitCount, startMask);
+    const BoolVector endMaskBitSet(nQubitCount, ~startMask);
+#else
+    const bitLenInt endLength = qubitCount - start;
+#endif
 
     for (bitLenInt i = 0U; i < rowCount; ++i) {
         BoolVector& xi = x[i];
         BoolVector& zi = z[i];
+#if BOOST_AVAILABLE
+        xi.resize(nQubitCount);
+        zi.resize(nQubitCount);
+        xi = (xi & startMaskBitSet) | ((xi & endMaskBitSet) << length);
+        zi = (zi & startMaskBitSet) | ((zi & endMaskBitSet) << length);
+#else
         xi.insert(xi.begin() + start, length, false);
         zi.insert(zi.begin() + start, length, false);
+#endif
     }
 
     x.insert(x.begin() + secondStart, toCopy->x.begin() + length, toCopy->x.begin() + dLen);
@@ -1603,10 +1648,17 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
         const bitLenInt offset = secondStart + i;
         BoolVector& xo = x[offset];
         BoolVector& zo = z[offset];
+#if BOOST_AVAILABLE
+        xo.resize(nQubitCount);
+        zo.resize(nQubitCount);
+        xo <<= start;
+        zo <<= start;
+#else
         xo.insert(xo.begin(), start, false);
         xo.insert(xo.end(), endLength, false);
         zo.insert(zo.begin(), start, false);
         zo.insert(zo.end(), endLength, false);
+#endif
     }
 
     x.insert(x.begin() + start, toCopy->x.begin(), toCopy->x.begin() + length);
@@ -1616,10 +1668,17 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
         const bitLenInt offset = start + i;
         BoolVector& xo = x[offset];
         BoolVector& zo = z[offset];
+#if BOOST_AVAILABLE
+        xo.resize(nQubitCount);
+        zo.resize(nQubitCount);
+        xo <<= start;
+        zo <<= start;
+#else
         xo.insert(xo.begin(), start, false);
         xo.insert(xo.end(), endLength, false);
         zo.insert(zo.begin(), start, false);
         zo.insert(zo.end(), endLength, false);
+#endif
     }
 
     SetQubitCount(nQubitCount);
@@ -1724,25 +1783,47 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     // qubit.)
 
     const bitCapInt oMaxQMask = pow2Mask(qubitCount);
+    const bitCapInt midMask = pow2Mask(length) << start;
     const bitLenInt end = start + length;
     const bitLenInt nQubitCount = qubitCount - length;
     const bitLenInt secondStart = qubitCount + start;
     const bitLenInt secondEnd = qubitCount + end;
+    const BoolVector startMaskBitSet(qubitCount, pow2Mask(start));
+    const BoolVector midMaskBitSet(qubitCount, midMask);
+    const BoolVector endMaskBitSet(qubitCount, pow2Mask(qubitCount - end) << end);
 
     if (dest) {
         for (bitLenInt i = 0U; i < length; ++i) {
             bitLenInt j = start + i;
             const BoolVector& xj = x[j];
             const BoolVector& zj = z[j];
+#if BOOST_AVAILABLE
+            BoolVector& dxi = dest->x[i];
+            BoolVector& dzi = dest->z[i];
+            dxi = (xj & midMaskBitSet) >> start;
+            dzi = (zj & midMaskBitSet) >> start;
+            dxi.resize(length);
+            dzi.resize(length);
+#else
             std::copy(xj.begin() + start, xj.begin() + end, dest->x[i].begin());
             std::copy(zj.begin() + start, zj.begin() + end, dest->z[i].begin());
+#endif
 
             j = qubitCount + start + i;
             const bitLenInt i2 = i + length;
             const BoolVector& xj2 = x[j];
             const BoolVector& zj2 = z[j];
+#if BOOST_AVAILABLE
+            BoolVector& dxi2 = dest->x[i2];
+            BoolVector& dzi2 = dest->z[i2];
+            dxi2 = (xj2 & midMaskBitSet) >> start;
+            dzi2 = (zj2 & midMaskBitSet) >> start;
+            dxi2.resize(length);
+            dzi2.resize(length);
+#else
             std::copy(xj2.begin() + start, xj2.begin() + end, dest->x[i2].begin());
             std::copy(zj2.begin() + start, zj2.begin() + end, dest->z[i2].begin());
+#endif
         }
         bitLenInt j = start;
         std::copy(r.begin() + j, r.begin() + j + length, dest->r.begin());
@@ -1764,8 +1845,15 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     for (bitLenInt i = 0U; i < rowCount; ++i) {
         BoolVector& xi = x[i];
         BoolVector& zi = z[i];
+#if BOOST_AVAILABLE
+        xi = (xi & startMaskBitSet) | ((xi & endMaskBitSet) >> length);
+        zi = (zi & startMaskBitSet) | ((zi & endMaskBitSet) >> length);
+        xi.resize(nQubitCount);
+        zi.resize(nQubitCount);
+#else
         xi.erase(xi.begin() + start, xi.begin() + end);
         zi.erase(zi.begin() + start, zi.begin() + end);
+#endif
     }
 
     if (randGlobalPhase || dest) {
@@ -2438,12 +2526,20 @@ std::ostream& operator<<(std::ostream& os, const QStabilizerPtr s)
 
     const size_t rows = qubitCount << 1U;
     for (size_t row = 0U; row < rows; ++row) {
+#if BOOST_AVAILABLE
+        const boost::dynamic_bitset<size_t>& xRow = s->x[row];
+#else
         const std::vector<bool>& xRow = s->x[row];
+#endif
         for (size_t i = 0U; i < xRow.size(); ++i) {
             os << xRow[i] << " ";
         }
 
-        const std::vector<bool>& zRow = s->z[row];
+#if BOOST_AVAILABLE
+        const boost::dynamic_bitset<size_t>& zRow = s->z[row];
+#else
+        const std::vector<size_t>& zRow = s->z[row];
+#endif
         for (size_t i = 0U; i < zRow.size(); ++i) {
             os << zRow[i] << " ";
         }
@@ -2461,18 +2557,31 @@ std::istream& operator>>(std::istream& is, const QStabilizerPtr s)
 
     const size_t rows = n << 1U;
     s->r = std::vector<uint8_t>(rows + 1U);
+#if BOOST_AVAILABLE
+    s->x = std::vector<boost::dynamic_bitset<size_t>>(rows + 1U, boost::dynamic_bitset<size_t>(n, 0U));
+    s->z = std::vector<boost::dynamic_bitset<size_t>>(rows + 1U, boost::dynamic_bitset<size_t>(n, 0U));
+#else
     s->x = std::vector<std::vector<bool>>(rows + 1U, std::vector<bool>(n));
     s->z = std::vector<std::vector<bool>>(rows + 1U, std::vector<bool>(n));
+#endif
 
     for (size_t row = 0U; row < rows; ++row) {
+#if BOOST_AVAILABLE
+        boost::dynamic_bitset<size_t>& xRow = s->x[row];
+#else
         std::vector<bool>& xRow = s->x[row];
+#endif
         for (size_t i = 0U; i < n; ++i) {
             bool x;
             is >> x;
             xRow[i] = x;
         }
 
+#if BOOST_AVAILABLE
+        boost::dynamic_bitset<size_t>& zRow = s->z[row];
+#else
         std::vector<bool>& zRow = s->z[row];
+#endif
         for (size_t i = 0U; i < n; ++i) {
             bool y;
             is >> y;
