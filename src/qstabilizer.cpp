@@ -2538,7 +2538,7 @@ std::ostream& operator<<(std::ostream& os, const QStabilizerPtr s)
 #if BOOST_AVAILABLE
         const boost::dynamic_bitset<size_t>& zRow = s->z[row];
 #else
-        const std::vector<size_t>& zRow = s->z[row];
+        const std::vector<bool>& zRow = s->z[row];
 #endif
         for (size_t i = 0U; i < zRow.size(); ++i) {
             os << zRow[i] << " ";
