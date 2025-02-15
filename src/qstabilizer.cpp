@@ -1910,147 +1910,152 @@ real1_f QStabilizer::Prob(bitLenInt qubit)
 
 void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 {
-    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-        Phase(mtrx[0U], mtrx[3U], target);
+    const complex& mtrx0 = mtrx[0U];
+    const complex& mtrx1 = mtrx[1U];
+    const complex& mtrx2 = mtrx[2U];
+    const complex& mtrx3 = mtrx[3U];
+
+    if (IS_NORM_0(mtrx1) && IS_NORM_0(mtrx2)) {
+        Phase(mtrx0, mtrx3, target);
         return;
     }
 
-    if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-        Invert(mtrx[1U], mtrx[2U], target);
+    if (IS_NORM_0(mtrx0) && IS_NORM_0(mtrx3)) {
+        Invert(mtrx1, mtrx2, target);
         return;
     }
 
-    if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) && IS_SAME(mtrx[0U], -mtrx[3U])) {
+    if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, mtrx2) && IS_SAME(mtrx0, -mtrx3)) {
         H(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) && IS_SAME(mtrx[0U], mtrx[3U])) {
+    if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, -mtrx2) && IS_SAME(mtrx0, mtrx3)) {
         X(target);
         H(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) && IS_SAME(mtrx[0U], mtrx[3U])) {
+    if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, mtrx2) && IS_SAME(mtrx0, mtrx3)) {
         H(target);
         X(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) && IS_SAME(mtrx[0U], -mtrx[3U])) {
+    if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, -mtrx2) && IS_SAME(mtrx0, -mtrx3)) {
         X(target);
         H(target);
         X(target);
         // Reverses sign
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]) + PI_R1);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0) + PI_R1);
         return;
     }
 
-    if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U]) &&
-        IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
+    if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) &&
+        IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         H(target);
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) &&
-        IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
+    if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) &&
+        IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         H(target);
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) &&
-        IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
+    if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) &&
+        IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         H(target);
         X(target);
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U]) &&
-        IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
+    if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) &&
+        IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         H(target);
         X(target);
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) &&
-        IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
+    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, mtrx2) &&
+        IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         IS(target);
         H(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) &&
-        IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
+    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, mtrx2) &&
+        IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         S(target);
         H(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) &&
-        IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
+    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, -mtrx2) &&
+        IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         IS(target);
-        H(target);
-        X(target);
-        Z(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
-        return;
-    }
-
-    if (IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) &&
-        IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
-        S(target);
         H(target);
         X(target);
         Z(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) && IS_SAME(mtrx[0U], mtrx[3U])) {
-        IS(target);
+    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, -mtrx2) &&
+        IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
+        S(target);
         H(target);
-        IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        X(target);
+        Z(target);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U]) &&
-        IS_SAME(mtrx[0U], mtrx[3U])) {
-        S(target);
+    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) && IS_SAME(mtrx0, mtrx3)) {
+        IS(target);
         H(target);
-        S(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        IS(target);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U]) &&
-        IS_SAME(mtrx[0U], -mtrx[3U])) {
-        IS(target);
+    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) &&
+        IS_SAME(mtrx0, mtrx3)) {
+        S(target);
         H(target);
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) &&
-        IS_SAME(mtrx[0U], -mtrx[3U])) {
+    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) &&
+        IS_SAME(mtrx0, -mtrx3)) {
+        IS(target);
+        H(target);
+        S(target);
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
+        return;
+    }
+
+    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) &&
+        IS_SAME(mtrx0, -mtrx3)) {
         S(target);
         H(target);
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx[0U]));
+        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
