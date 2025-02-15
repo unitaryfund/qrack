@@ -205,8 +205,8 @@ void ParallelFor::par_for_inc(
         }));
     }
 
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        futures[cpu].get();
+    for (std::future<void>& future : futures) {
+        future.get();
     }
 }
 
@@ -263,8 +263,8 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     }
 
     real1_f nrmSqr = ZERO_R1_F;
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        nrmSqr += futures[cpu].get();
+    for (std::future<real1_f>& future : futures) {
+        nrmSqr += future.get();
     }
 
     return nrmSqr;
@@ -310,8 +310,8 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
     }
 
     real1_f nrmSqr = ZERO_R1_F;
-    for (unsigned cpu = 0U; cpu != threads; ++cpu) {
-        nrmSqr += futures[cpu].get();
+    for (std::future<real1_f>& future : futures) {
+        nrmSqr += future.get();
     }
 
     return nrmSqr;

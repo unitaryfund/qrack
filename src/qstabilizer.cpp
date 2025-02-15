@@ -1954,24 +1954,21 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) &&
-        IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
+    if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) && IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         H(target);
         S(target);
         SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) &&
-        IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
+    if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) && IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         H(target);
         IS(target);
         SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) &&
-        IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
+    if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) && IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         H(target);
         X(target);
         IS(target);
@@ -1979,8 +1976,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) &&
-        IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
+    if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) && IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         H(target);
         X(target);
         S(target);
@@ -1988,24 +1984,21 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, mtrx2) &&
-        IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
+    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, mtrx2) && IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         IS(target);
         H(target);
         SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, mtrx2) &&
-        IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
+    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, mtrx2) && IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         S(target);
         H(target);
         SetPhaseOffset(phaseOffset + std::arg(mtrx0));
         return;
     }
 
-    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, -mtrx2) &&
-        IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
+    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, -mtrx2) && IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         IS(target);
         H(target);
         X(target);
@@ -2014,8 +2007,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, -mtrx2) &&
-        IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
+    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, -mtrx2) && IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         S(target);
         H(target);
         X(target);
@@ -2032,8 +2024,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) &&
-        IS_SAME(mtrx0, mtrx3)) {
+    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) && IS_SAME(mtrx0, mtrx3)) {
         S(target);
         H(target);
         S(target);
@@ -2041,8 +2032,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) &&
-        IS_SAME(mtrx0, -mtrx3)) {
+    if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) && IS_SAME(mtrx0, -mtrx3)) {
         IS(target);
         H(target);
         S(target);
@@ -2050,8 +2040,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) &&
-        IS_SAME(mtrx0, -mtrx3)) {
+    if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) && IS_SAME(mtrx0, -mtrx3)) {
         S(target);
         H(target);
         IS(target);
