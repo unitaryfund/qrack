@@ -309,11 +309,11 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
 
     // Start the output address value at 0.
     b = ZERO_BCI;
-    for (size_t i = 0; i < input.size(); ++i) {
+    for (const char& i : input) {
         // Left shift by 1 base-10 digit.
         b = b * 10U;
         // Add the next lowest base-10 digit.
-        bi_increment(&b, (input[i] - 48U));
+        bi_increment(&b, (i - 48U));
     }
 
     return is;
