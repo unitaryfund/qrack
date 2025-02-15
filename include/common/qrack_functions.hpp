@@ -179,13 +179,13 @@ inline void ThrowIfQbIdArrayIsBad(
     const std::vector<bitLenInt>& controls, const bitLenInt& qubitCount, std::string message)
 {
     std::set<bitLenInt> dupes;
-    for (size_t i = 0U; i < controls.size(); ++i) {
-        if (controls[i] >= qubitCount) {
+    for (const bitLenInt& control : controls) {
+        if (control >= qubitCount) {
             throw std::invalid_argument(message);
         }
 
-        if (dupes.find(controls[i]) == dupes.end()) {
-            dupes.insert(controls[i]);
+        if (dupes.find(control) == dupes.end()) {
+            dupes.insert(control);
         } else {
             throw std::invalid_argument(message + " (Found duplicate qubit indices!)");
         }
