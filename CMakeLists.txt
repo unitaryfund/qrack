@@ -202,32 +202,10 @@ if (ENABLE_GVIRTUS)
 endif (ENABLE_GVIRTUS)
 
 
-if (MSVC)
-    if (CMAKE_BUILD_TYPE MATCHES Debug)
-        set(QRACK_COMPILE_OPTS /Od ${QRACK_CPP_STD_OPT} /Wall)
-        set(TEST_COMPILE_OPTS /Od ${QRACK_CPP_STD_OPT} /Wall)
-    else() # Release or other non-Debug
-        set(QRACK_COMPILE_OPTS /O2 ${QRACK_CPP_STD_OPT} /Wall)
-        set(TEST_COMPILE_OPTS /O2 ${QRACK_CPP_STD_OPT} /Wall)
-    endif()
-else() # Not MSVC
-    if (EMSCRIPTEN)
-        message ("Compiling for WebAssembly.")
-        if (ENABLE_PTHREAD)
-            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -pthread -Wall -Werror)
-        else()
-            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
-        endif()
-        set(TEST_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
-    else() # Not EMSCRIPTEN
-        if (APPLE AND ENABLE_OPENCL)
-            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall)
-            set(TEST_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall)
-        else()
-            set(QRACK_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
-            set(TEST_COMPILE_OPTS -O3 ${QRACK_CPP_STD_OPT} -Wall -Werror)
-        endif()
-    endif()
+set(COMPILE_OPTS ${QRACK_CPP_STD_OPT} -Wall -Werror) # Always add -Wall and -Werror
+
+if (ENABLE_PTHREAD) # Check ENABLE_PTHREAD *outside* the platform checks
+    set(COMPILE_OPTS ${COMPILE_OPTS} -pthread) # Add -pthread if enabled
 endif()
 
 include(CheckCXXCompilerFlag)
