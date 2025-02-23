@@ -2730,13 +2730,13 @@ void QUnit::ApplyEitherControlled(
 {
     // If we've made it this far, we have to form the entangled representation and apply the gate.
 
-    for (size_t i = 0U; i < controlVec.size(); ++i) {
-        ToPermBasisProb(controlVec[i]);
+    for (const bitLenInt& c : controlVec) {
+        ToPermBasisProb(c);
     }
 
     if (targets.size() > 1U) {
-        for (size_t i = 0U; i < targets.size(); ++i) {
-            ToPermBasis(targets[i]);
+        for (const bitLenInt& t : targets) {
+            ToPermBasis(t);
         }
     } else if (isPhase) {
         RevertBasis2Qb(targets[0U], ONLY_INVERT, ONLY_TARGETS);
@@ -2766,11 +2766,11 @@ void QUnit::ApplyEitherControlled(
 
         // If this over-allocates again, it will throw to a higher level
         // (which is what we want).
-        unit = Entangle(targets);
+        unit = (targets.size() == 1U) ? shards[targets[0]].unit : Entangle(targets);
 
         real1_f p = ONE_R1_F;
-        for (size_t i = 0U; i < controlVec.size(); ++i) {
-            p *= Prob(controlVec[i]);
+        for (const bitLenInt& c : controlVec) {
+            p *= Prob(c);
         }
 
         QEngineShard& shard = shards[targets[0]];
@@ -2789,13 +2789,12 @@ void QUnit::ApplyEitherControlled(
         return;
     }
 
-    for (size_t i = 0U; i < controlVec.size(); ++i) {
-        bitLenInt& c = controlVec[i];
+    for (bitLenInt& c : controlVec) {
         shards[c].isPhaseDirty = true;
         c = shards[c].mapped;
     }
-    for (size_t i = 0U; i < targets.size(); ++i) {
-        QEngineShard& shard = shards[targets[i]];
+    for (const bitLenInt& t : targets) {
+        QEngineShard& shard = shards[t];
         shard.isPhaseDirty = true;
         shard.isProbDirty |= (shard.pauliBasis != PauliZ) || !isPhase;
     }
