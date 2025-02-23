@@ -2766,7 +2766,13 @@ void QUnit::ApplyEitherControlled(
 
         // If this over-allocates again, it will throw to a higher level
         // (which is what we want).
-        unit = (targets.size() == 1U) ? shards[targets[0]].unit : Entangle(targets);
+        if (targets.size() == 1U) {
+            const bitLenInt& t = targets[0];
+            EndEmulation(t);
+            unit = shards[t].unit;
+        } else {
+            unit = Entangle(targets);
+        }
 
         real1_f p = ONE_R1_F;
         for (const bitLenInt& c : controlVec) {
