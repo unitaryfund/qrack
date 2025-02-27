@@ -499,8 +499,8 @@ public:
     virtual bool isFinished();
     virtual void Dump()
     {
-        for (size_t i = 0U; i < shards.size(); ++i) {
-            shards[i].unit = NULL;
+        for (QEngineShard& shard : shards) {
+            shard = NULL;
         }
     }
     using QInterface::isClifford;
@@ -1056,8 +1056,8 @@ protected:
 
     void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
     {
-        for (bitLenInt i = 0U; i < (bitLenInt)bitIndices.size(); ++i) {
-            shards[bitIndices[i]].MakeDirty();
+        for (const bitLenInt& bitIndex : bitIndices) {
+            shards[bitIndex].MakeDirty();
         }
     }
 
