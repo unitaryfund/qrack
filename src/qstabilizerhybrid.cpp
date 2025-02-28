@@ -65,6 +65,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , cloneEngineTypes(eng)
     , shards(qubitCount)
     , stateMapCache(NULL)
+    , rndDevice()
 {
 #if ENABLE_OPENCL || ENABLE_CUDA
     const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
@@ -1770,8 +1771,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
             shotsArray[shot + (shots - rng.size())] = _d;                                                              \
         }                                                                                                              \
     }                                                                                                                  \
-    unsigned int seed = (unsigned int)std::chrono::system_clock::now().time_since_epoch().count();                     \
-    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));                                    \
+    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(rndDevice()));                             \
     stateMapCache = NULL;
 #else
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
@@ -1781,8 +1781,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
             shotsArray[shot + (shots - rng.size())] = _d;                                                              \
         }                                                                                                              \
     }                                                                                                                  \
-    unsigned int seed = (unsigned int)std::chrono::system_clock::now().time_since_epoch().count();                     \
-    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(seed));                                    \
+    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(rndDevice()));                             \
     stateMapCache = NULL;
 #endif
 
