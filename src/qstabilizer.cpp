@@ -176,7 +176,7 @@ uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
 bitLenInt QStabilizer::gaussian()
 {
     // For brevity:
-    const bitLenInt n = qubitCount;
+    const bitLenInt& n = qubitCount;
     const bitLenInt maxLcv = n << 1U;
     bitLenInt i = n;
     bitLenInt k;
@@ -1377,7 +1377,7 @@ bool QStabilizer::IsSeparableZ(const bitLenInt& t)
     Finish();
 
     // for brevity
-    const bitLenInt n = qubitCount;
+    const bitLenInt& n = qubitCount;
 
     // loop over stabilizer generators
     for (bitLenInt p = 0U; p < n; ++p) {
@@ -1453,7 +1453,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
     const bitLenInt elemCount = qubitCount << 1U;
     // for brevity
-    const bitLenInt n = qubitCount;
+    const bitLenInt& n = qubitCount;
 
     // pivot row in stabilizer
     bitLenInt p;

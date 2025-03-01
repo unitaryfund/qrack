@@ -65,7 +65,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , cloneEngineTypes(eng)
     , shards(qubitCount)
     , stateMapCache(NULL)
-    , rndDevice()
+    , rng(std::random_device{}())
 {
 #if ENABLE_OPENCL || ENABLE_CUDA
     const size_t devCount = QRACK_GPU_SINGLETON.GetDeviceCount();
@@ -1771,7 +1771,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
             shotsArray[shot + (shots - rng.size())] = _d;                                                              \
         }                                                                                                              \
     }                                                                                                                  \
-    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(rndDevice()));                             \
+    std::shuffle(shotsArray, shotsArray + shots, rng);                             \
     stateMapCache = NULL;
 #else
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
@@ -1781,7 +1781,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
             shotsArray[shot + (shots - rng.size())] = _d;                                                              \
         }                                                                                                              \
     }                                                                                                                  \
-    std::shuffle(shotsArray, shotsArray + shots, std::default_random_engine(rndDevice()));                             \
+    std::shuffle(shotsArray, shotsArray + shots, rng);                             \
     stateMapCache = NULL;
 #endif
 
