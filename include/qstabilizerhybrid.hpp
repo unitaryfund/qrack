@@ -67,7 +67,7 @@ protected:
     std::vector<QInterfaceEngine> cloneEngineTypes;
     std::vector<MpsShardPtr> shards;
     QUnitStateVectorPtr stateMapCache;
-    std::default_random_engine rng;
+    std::default_random_engine prng;
 
     QUnitCliffordPtr MakeStabilizer(const bitCapInt& perm = ZERO_BCI);
     QInterfacePtr MakeEngine(const bitCapInt& perm = ZERO_BCI);
