@@ -500,7 +500,10 @@ public:
     virtual void Dump()
     {
         for (QEngineShard& shard : shards) {
-            shard = NULL;
+            // Setting shard to NULL seems theoretically memory-safe, as previously used here,
+            // but it's safer (in the intent of dumping remaining QInterface work)
+            // to set shard.unit to nullptr.
+            shard.unit = nullptr;
         }
     }
     using QInterface::isClifford;
