@@ -24,7 +24,7 @@ struct CliffordShard {
     bitLenInt mapped;
     QStabilizerPtr unit;
 
-    CliffordShard(bitLenInt m = 0U, QStabilizerPtr u = NULL)
+    CliffordShard(bitLenInt m = 0U, QStabilizerPtr u = nullptr)
         : mapped(m)
         , unit(u)
     {
@@ -297,7 +297,7 @@ public:
         }
         H(t);
         CGate(
-            c, t, NULL,
+            c, t, nullptr,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
                 unit->CNOT(c, t);
             },
@@ -307,7 +307,7 @@ public:
     void CY(bitLenInt c, bitLenInt t)
     {
         CGate(
-            c, t, NULL,
+            c, t, nullptr,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) { unit->CY(c, t); },
             [](QStabilizerPtr unit, const bitLenInt& t, const complex* unused) { unit->Y(t); }, false);
     }
@@ -320,7 +320,7 @@ public:
             return;
         }
         CGate(
-            c, t, NULL,
+            c, t, nullptr,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) { unit->CZ(c, t); },
             [](QStabilizerPtr unit, const bitLenInt& t, const complex* unused) { unit->Z(t); }, false);
     }
@@ -335,7 +335,7 @@ public:
         }
         H(t);
         CGate(
-            c, t, NULL,
+            c, t, nullptr,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
                 unit->AntiCNOT(c, t);
             },
@@ -345,7 +345,7 @@ public:
     void AntiCY(bitLenInt c, bitLenInt t)
     {
         CGate(
-            c, t, NULL,
+            c, t, nullptr,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
                 unit->AntiCY(c, t);
             },
@@ -360,7 +360,7 @@ public:
             return;
         }
         CGate(
-            c, t, NULL,
+            c, t, nullptr,
             [](QStabilizerPtr unit, const bitLenInt& c, const bitLenInt& t, const complex* unused) {
                 unit->AntiCZ(c, t);
             },
@@ -580,7 +580,7 @@ public:
         }
 
         QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
-            false, randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+            false, randGlobalPhase, false, -1, hardware_rand_generator != nullptr);
         return Compose(nQubits, start);
     }
 

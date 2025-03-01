@@ -125,7 +125,7 @@ protected:
         } else {
             MakeLayerStack(qubits);
             QInterfacePtr ls = layerStack;
-            layerStack = NULL;
+            layerStack = nullptr;
             return fn(ls);
         }
     }
@@ -217,7 +217,7 @@ public:
     {
         circuit.clear();
         measurements.clear();
-        layerStack = NULL;
+        layerStack = nullptr;
 
         circuit.push_back(std::make_shared<QCircuit>());
 
@@ -443,13 +443,13 @@ public:
     void Mtrx(const complex* mtrx, bitLenInt target)
     {
         CheckQubitCount(target);
-        layerStack = NULL;
+        layerStack = nullptr;
         GetCircuit(target)->AppendGate(std::make_shared<QCircuitGate>(target, mtrx));
     }
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         CheckQubitCount(target, controls);
-        layerStack = NULL;
+        layerStack = nullptr;
         bitCapInt m = pow2(controls.size());
         bi_decrement(&m, 1U);
         GetCircuit(target, controls)
@@ -459,7 +459,7 @@ public:
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         CheckQubitCount(target, controls);
-        layerStack = NULL;
+        layerStack = nullptr;
         GetCircuit(target, controls)
             ->AppendGate(std::make_shared<QCircuitGate>(
                 target, mtrx, std::set<bitLenInt>{ controls.begin(), controls.end() }, ZERO_BCI));
@@ -468,7 +468,7 @@ public:
         const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
     {
         CheckQubitCount(target, controls);
-        layerStack = NULL;
+        layerStack = nullptr;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = topLeft;
         lMtrx.get()[1U] = ZERO_CMPLX;
@@ -484,7 +484,7 @@ public:
         const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
     {
         CheckQubitCount(target, controls);
-        layerStack = NULL;
+        layerStack = nullptr;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = topLeft;
         lMtrx.get()[1U] = ZERO_CMPLX;
@@ -498,7 +498,7 @@ public:
         const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
     {
         CheckQubitCount(target, controls);
-        layerStack = NULL;
+        layerStack = nullptr;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
         lMtrx.get()[1U] = topRight;
@@ -514,7 +514,7 @@ public:
         const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
     {
         CheckQubitCount(target, controls);
-        layerStack = NULL;
+        layerStack = nullptr;
         std::shared_ptr<complex> lMtrx(new complex[4U], std::default_delete<complex[]>());
         lMtrx.get()[0U] = ZERO_CMPLX;
         lMtrx.get()[1U] = topRight;

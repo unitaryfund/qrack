@@ -36,7 +36,7 @@ struct HamiltonianOp {
         : targetBit(0U)
         , anti(false)
         , uniform(false)
-        , matrix(NULL)
+        , matrix(nullptr)
         , controls()
         , toggles()
     {

@@ -61,9 +61,9 @@ protected:
         nEngine->SetQuantumState(sv.get());
         if (useBdt) {
             qbdt = std::dynamic_pointer_cast<QBdt>(nEngine);
-            engine = NULL;
+            engine = nullptr;
         } else {
-            qbdt = NULL;
+            qbdt = nullptr;
             engine = std::dynamic_pointer_cast<QEngine>(nEngine);
         }
     }
@@ -209,8 +209,8 @@ public:
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length)
     {
         SetQubitCount(qubitCount - length);
-        QBdtPtr q = NULL;
-        QEnginePtr e = NULL;
+        QBdtPtr q = nullptr;
+        QEnginePtr e = nullptr;
         if (qbdt) {
             q = std::dynamic_pointer_cast<QBdt>(qbdt->Decompose(start, length));
             CheckThreshold();
@@ -334,7 +334,7 @@ public:
             qbdt->SetPermutation(perm, phaseFac);
         } else {
             qbdt = std::dynamic_pointer_cast<QBdt>(MakeSimulator(true, perm, phaseFac));
-            engine = NULL;
+            engine = nullptr;
         }
     }
 
@@ -515,7 +515,7 @@ public:
 
         const bitCapInt toRet = engine->MAll();
         qbdt = std::dynamic_pointer_cast<QBdt>(MakeSimulator(true, toRet));
-        engine = NULL;
+        engine = nullptr;
 
         return toRet;
     }

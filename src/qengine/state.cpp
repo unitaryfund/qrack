@@ -1145,7 +1145,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         if (destination) {
             destination->stateVec = stateVec;
         }
-        stateVec = NULL;
+        stateVec = nullptr;
         SetQubitCount(0U);
 
         return;
@@ -1273,7 +1273,10 @@ void QEngineCPU::Decompose(bitLenInt start, QInterfacePtr destination)
     DecomposeDispose(start, destination->GetQubitCount(), std::dynamic_pointer_cast<QEngineCPU>(destination));
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineCPUPtr)NULL); }
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
+{
+    DecomposeDispose(start, length, (QEngineCPUPtr) nullptr);
+}
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm)
 {

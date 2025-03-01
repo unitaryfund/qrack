@@ -83,7 +83,7 @@ protected:
     void DumpBuffers()
     {
         for (size_t i = 0U; i < shards.size(); ++i) {
-            shards[i] = NULL;
+            shards[i] = nullptr;
         }
     }
     bool EitherIsBuffered(bool logical)
@@ -249,7 +249,7 @@ protected:
             }
             const real1 angle = (real1)(FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
             if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
-                shards[i] = NULL;
+                shards[i] = nullptr;
                 continue;
             }
             const real1 angleCos = cos(angle);

@@ -28,8 +28,8 @@
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
-// SIMULATOR_LOCK_GUARD variants will lock simulatorMutexes[NULL], if the requested simulator doesn't exist.
-// This is CORRECT behavior. This will effectively emplace a mutex for NULL key.
+// SIMULATOR_LOCK_GUARD variants will lock simulatorMutexes[nullptr], if the requested simulator doesn't exist.
+// This is CORRECT behavior. This will effectively emplace a mutex for nullptr key.
 #if CPP_STD > 13
 #define SIMULATOR_LOCK_GUARD(simulator)                                                                                \
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
@@ -697,7 +697,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     std::reverse(simulatorType.begin(), simulatorType.end());
 
     bool isSuccess = true;
-    QInterfacePtr simulator = NULL;
+    QInterfacePtr simulator = nullptr;
     if (q) {
         try {
             simulator =
@@ -751,7 +751,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
     const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK };
 
     bool isSuccess = true;
-    QInterfacePtr simulator = NULL;
+    QInterfacePtr simulator = nullptr;
     if (q) {
         try {
             simulator =
@@ -822,7 +822,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
 #endif
 
     bool isSuccess = true;
-    QInterfacePtr simulator = NULL;
+    QInterfacePtr simulator = nullptr;
     if (q) {
         try {
             simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true,
@@ -971,7 +971,7 @@ MICROSOFT_QUANTUM_DECL void destroy(_In_ uintq sid)
 
     shards.erase(simulators[sid].get());
     simulatorMutexes.erase(simulators[sid].get());
-    simulators[sid] = NULL;
+    simulators[sid] = nullptr;
     simulatorErrors[sid] = 0;
     simulatorReservations[sid] = false;
 }
@@ -1303,7 +1303,7 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ uintq sid, _In_ uintq qid)
     QInterfacePtr nQubit = CreateQuantumInterface(
         simulatorTypes[sid], 1U, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
 
-    if (simulators[sid] == NULL) {
+    if (simulators[sid] == nullptr) {
         simulators[sid] = nQubit;
         shards[nQubit.get()] = {};
         shards[nQubit.get()][qid] = 0;
@@ -1348,7 +1348,7 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ uintq sid, _In_ uintq q)
 
     if (simulator->GetQubitCount() == 1U) {
         shards.erase(simulator.get());
-        simulators[sid] = NULL;
+        simulators[sid] = nullptr;
     } else {
         std::map<uintq, bitLenInt>& simShards = shards[simulator.get()];
         bitLenInt oIndex = simShards[q];
@@ -2731,7 +2731,7 @@ double _FactorizedExpVar(uintq sid, uintq n, uintq* q, uintq m, uintq* c, real1_
 MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c)
 {
-    return _FactorizedExpVar(sid, n, q, m, c, NULL, false, false, true);
+    return _FactorizedExpVar(sid, n, q, m, c, nullptr, false, false, true);
 }
 
 /**
@@ -2741,7 +2741,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectation(
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r)
 {
-    return _FactorizedExpVar(sid, n, q, m, c, NULL, r, true, true);
+    return _FactorizedExpVar(sid, n, q, m, c, nullptr, r, true, true);
 }
 
 /**
@@ -2750,7 +2750,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationRdm(
 MICROSOFT_QUANTUM_DECL double FactorizedVariance(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c)
 {
-    return _FactorizedExpVar(sid, n, q, m, c, NULL, false, false, false);
+    return _FactorizedExpVar(sid, n, q, m, c, nullptr, false, false, false);
 }
 
 /**
@@ -2760,7 +2760,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedVariance(
 MICROSOFT_QUANTUM_DECL double FactorizedVarianceRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, _In_ uintq m, uintq* c, _In_ bool r)
 {
-    return _FactorizedExpVar(sid, n, q, m, c, NULL, r, true, false);
+    return _FactorizedExpVar(sid, n, q, m, c, nullptr, r, true, false);
 }
 
 /**
@@ -2768,7 +2768,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedVarianceRdm(
  */
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_s* c)
 {
-    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, false, false, true);
+    return _FactorizedExpVar(sid, n, q, 0U, nullptr, c, false, false, true);
 }
 
 /**
@@ -2778,7 +2778,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationFp(_In_ uintq sid, _In_ uintq
 MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_s* c, _In_ bool r)
 {
-    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, r, true, true);
+    return _FactorizedExpVar(sid, n, q, 0U, nullptr, c, r, true, true);
 }
 
 /**
@@ -2786,7 +2786,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedExpectationFpRdm(
  */
 MICROSOFT_QUANTUM_DECL double FactorizedVarianceFp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_s* c)
 {
-    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, false, false, false);
+    return _FactorizedExpVar(sid, n, q, 0U, nullptr, c, false, false, false);
 }
 
 /**
@@ -2796,7 +2796,7 @@ MICROSOFT_QUANTUM_DECL double FactorizedVarianceFp(_In_ uintq sid, _In_ uintq n,
 MICROSOFT_QUANTUM_DECL double FactorizedVarianceFpRdm(
     _In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* q, real1_s* c, _In_ bool r)
 {
-    return _FactorizedExpVar(sid, n, q, 0U, NULL, c, r, true, false);
+    return _FactorizedExpVar(sid, n, q, 0U, nullptr, c, r, true, false);
 }
 
 double UnitaryExpVar(bool isExp, uintq sid, uintq n, uintq* q, real1_s* b)
@@ -3631,7 +3631,7 @@ MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid)
     META_LOCK_GUARD()
 
     neuronMutexes.erase(neurons[nid].get());
-    neurons[nid] = NULL;
+    neurons[nid] = nullptr;
     neuronErrors[nid] = 0;
     neuronReservations[nid] = false;
 }
@@ -3832,7 +3832,7 @@ MICROSOFT_QUANTUM_DECL void destroy_qcircuit(_In_ uintq cid)
     META_LOCK_GUARD()
 
     circuitMutexes.erase(circuits[cid].get());
-    circuits[cid] = NULL;
+    circuits[cid] = nullptr;
     circuitReservations[cid] = false;
 }
 

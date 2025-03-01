@@ -27,7 +27,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapI
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , devID(deviceId)
-    , root(NULL)
+    , root(nullptr)
     , deviceIDs(devIds)
     , engines(eng)
     , shards(qubitCount)
@@ -58,8 +58,9 @@ void QBdt::Init()
 
 QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, const bitCapInt& perm)
 {
-    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX,
-        doNormalize, false, false, devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs));
+    return std::dynamic_pointer_cast<QEngine>(
+        CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, false, false, devID,
+            hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor, deviceIDs));
 }
 
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch)
@@ -144,9 +145,9 @@ void QBdt::SetPermutation(const bitCapInt& initState, const complex& _phaseFac)
 QInterfacePtr QBdt::Clone()
 {
     QBdtPtr c = std::make_shared<QBdt>(engines, 0U, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+        false, -1, (hardware_rand_generator == nullptr) ? false : true, false, (real1_f)amplitudeFloor);
 
-    c->root = root ? root->ShallowClone() : NULL;
+    c->root = root ? root->ShallowClone() : nullptr;
     c->shards.resize(shards.size());
     c->SetQubitCount(qubitCount);
     for (size_t i = 0U; i < shards.size(); ++i) {
@@ -251,8 +252,9 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
 QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 {
-    QBdtPtr dest = std::make_shared<QBdt>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+    QBdtPtr dest =
+        std::make_shared<QBdt>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+            false, -1, (hardware_rand_generator == nullptr) ? false : true, false, (real1_f)amplitudeFloor);
 
     Decompose(start, dest);
 
@@ -299,7 +301,7 @@ bool QBdt::IsSeparable(bitLenInt start)
 
     // If the tree has been fully reduced, this should ALWAYS be the same for ALL branches
     // (that have nonzero amplitude), if-and-only-if the state is separable.
-    QBdtNodeInterfacePtr subsystemPtr = NULL;
+    QBdtNodeInterfacePtr subsystemPtr = nullptr;
 
     const bitCapInt qPower = pow2(start);
     bool result = true;
@@ -350,8 +352,9 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
         return start;
     }
 
-    QBdtPtr nQubits = std::make_shared<QBdt>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+    QBdtPtr nQubits =
+        std::make_shared<QBdt>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+            false, -1, (hardware_rand_generator == nullptr) ? false : true, false, (real1_f)amplitudeFloor);
     nQubits->root->InsertAtDepth(root, length, qubitCount);
     root = nQubits->root;
     shards.insert(shards.begin() + start, nQubits->shards.begin(), nQubits->shards.end());
@@ -369,7 +372,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
     const MpsShardPtr shard = shards[qubit];
     if (shard && !shard->IsPhase()) {
-        shards[qubit] = NULL;
+        shards[qubit] = nullptr;
         ApplySingle(shard->gate, qubit);
     }
 
@@ -441,7 +444,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         return result;
     }
 
-    shards[qubit] = NULL;
+    shards[qubit] = nullptr;
 
     const bitCapInt qPower = pow2(qubit);
     root->scale = GetNonunitaryPhase();
@@ -508,7 +511,7 @@ bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
         if (shard && !shard->IsPhase()) {
             ApplySingle(shard->gate, i);
         }
-        shards[i] = NULL;
+        shards[i] = nullptr;
     }
 
     for (bitLenInt i = 0U; i < qubitCount; ++i) {

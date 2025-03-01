@@ -97,8 +97,8 @@ void QEngineCUDA::FreeAll()
 {
     ZeroAmplitudes();
 
-    nrmBuffer = NULL;
-    nrmArray = NULL;
+    nrmBuffer = nullptr;
+    nrmArray = nullptr;
 
     SubtractAlloc(totalOclAllocSize);
 }
@@ -112,7 +112,7 @@ void QEngineCUDA::ZeroAmplitudes()
         return;
     }
 
-    ResetStateBuffer(NULL);
+    ResetStateBuffer(nullptr);
     FreeStateVec();
 
     SubtractAlloc(sizeof(complex) * maxQPowerOcl);
@@ -343,8 +343,8 @@ void QEngineCUDA::PopQueue()
     std::lock_guard<std::mutex> lock(queue_mutex);
 
     if (poolItems.size()) {
-        poolItems.front()->probArray = NULL;
-        poolItems.front()->angleArray = NULL;
+        poolItems.front()->probArray = nullptr;
+        poolItems.front()->angleArray = nullptr;
 
         if (poolItems.size() > 1) {
             rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
@@ -675,9 +675,9 @@ void QEngineCUDA::SetDevice(int64_t dID)
 
     const bool doResize = nNrmVecAlignSize != oldNrmVecAlignSize;
 
-    nrmBuffer = NULL;
+    nrmBuffer = nullptr;
     if (didInit && doResize) {
-        nrmArray = NULL;
+        nrmArray = nullptr;
         SubtractAlloc(oldNrmVecAlignSize);
     }
 
@@ -1425,11 +1425,11 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
     const bitLenInt nLength = qubitCount - length;
 
     if (!nLength) {
-        if (destination != NULL) {
+        if (destination != nullptr) {
             destination->stateVec = stateVec;
             destination->stateBuffer = stateBuffer;
-            stateBuffer = NULL;
-            stateVec = NULL;
+            stateBuffer = nullptr;
+            stateVec = nullptr;
         }
         SetQubitCount(0U);
         // This will be cleared by the destructor:
@@ -1509,7 +1509,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
             oNStateVecSize <= destination->device_context->GetMaxAlloc() &&
             (2 * oNStateVecSize) <= destination->device_context->GetGlobalSize()) {
 
-            BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
+            BufferPtr nSB = destination->MakeStateVecBuffer(nullptr);
 
             destination->clFinish();
             clFinish();
@@ -1520,7 +1520,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
             });
 
             destination->stateBuffer = nSB;
-            destination->stateVec = NULL;
+            destination->stateVec = nullptr;
         }
     }
 
@@ -1536,7 +1536,7 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
         FreeStateVec();
     }
     // Drop references to state vector buffer, which we're done with.
-    ResetStateBuffer(NULL);
+    ResetStateBuffer(nullptr);
     SubtractAlloc(sizeof(complex) * oMaxQPower);
 
     std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
@@ -1555,7 +1555,10 @@ void QEngineCUDA::Decompose(bitLenInt start, QInterfacePtr destination)
     DecomposeDispose(start, destination->GetQubitCount(), std::dynamic_pointer_cast<QEngineCUDA>(destination));
 }
 
-void QEngineCUDA::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineCUDAPtr)NULL); }
+void QEngineCUDA::Dispose(bitLenInt start, bitLenInt length)
+{
+    DecomposeDispose(start, length, (QEngineCUDAPtr) nullptr);
+}
 
 void QEngineCUDA::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm)
 {
@@ -1570,8 +1573,8 @@ void QEngineCUDA::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& di
 
     if (length == qubitCount) {
         // This will be cleared by the destructor:
-        stateVec = NULL;
-        stateBuffer = NULL;
+        stateVec = nullptr;
+        stateBuffer = nullptr;
         SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
         SetQubitCount(0U);
         return;
@@ -1617,7 +1620,7 @@ bitLenInt QEngineCUDA::Allocate(bitLenInt start, bitLenInt length)
     }
 
     QEngineCUDAPtr nQubits = std::make_shared<QEngineCUDA>(length, 0U, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
     return Compose(nQubits, start);
 }
 
@@ -1996,7 +1999,7 @@ real1_f QEngineCUDA::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 void QEngineCUDA::ArithmeticCall(
     OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], const unsigned char* values, bitCapIntOcl valuesPower)
 {
-    CArithmeticCall(api_call, bciArgs, NULL, 0U, values, valuesPower);
+    CArithmeticCall(api_call, bciArgs, nullptr, 0U, values, valuesPower);
 }
 void QEngineCUDA::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN],
     bitCapIntOcl* controlPowers, bitLenInt controlLen, const unsigned char* values, bitCapIntOcl valuesPower)
@@ -2624,7 +2627,7 @@ void QEngineCUDA::MULx(
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> length, toMod, inOutMask, carryMask, otherMask, length,
         inOutStart, carryStart, skipMask, 0U };
 
-    xMULx(api_call, bciArgs, NULL);
+    xMULx(api_call, bciArgs, nullptr);
 }
 
 void QEngineCUDA::MULModx(
@@ -2651,7 +2654,7 @@ void QEngineCUDA::MULModx(
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> length, toMod, inMask, outMask, otherMask, length, inStart,
         outStart, skipMask, modN };
 
-    xMULx(api_call, bciArgs, NULL);
+    xMULx(api_call, bciArgs, nullptr);
 }
 
 void QEngineCUDA::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt carryStart,
@@ -3087,7 +3090,7 @@ QInterfacePtr QEngineCUDA::Clone()
     }
 
     QEngineCUDAPtr copyPtr = std::make_shared<QEngineCUDA>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
 
     copyPtr->clFinish();
     clFinish();
@@ -3105,7 +3108,7 @@ QInterfacePtr QEngineCUDA::Clone()
 QEnginePtr QEngineCUDA::CloneEmpty()
 {
     QEngineCUDAPtr copyPtr = std::make_shared<QEngineCUDA>(0U, 0U, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
 
     copyPtr->SetQubitCount(qubitCount);
 
@@ -3217,7 +3220,7 @@ std::shared_ptr<complex> QEngineCUDA::AllocStateVec(bitCapIntOcl elemCount, bool
 {
     // If we're not using host ram, there's no reason to allocate.
     if (!elemCount || (!doForceAlloc && !stateVec)) {
-        return NULL;
+        return nullptr;
     }
 
 #if defined(__ANDROID__)
@@ -3242,7 +3245,7 @@ std::shared_ptr<complex> QEngineCUDA::AllocStateVec(bitCapIntOcl elemCount, bool
 BufferPtr QEngineCUDA::MakeStateVecBuffer(std::shared_ptr<complex> nStateVec)
 {
     if (!maxQPowerOcl) {
-        return NULL;
+        return nullptr;
     }
 
     if (nStateVec) {

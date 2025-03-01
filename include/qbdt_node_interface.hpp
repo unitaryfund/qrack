@@ -71,15 +71,15 @@ public:
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
     {
-        branches[0U] = NULL;
-        branches[1U] = NULL;
+        branches[0U] = nullptr;
+        branches[1U] = nullptr;
     }
 
     QBdtNodeInterface(const complex& scl)
         : scale(scl)
     {
-        branches[0U] = NULL;
-        branches[1U] = NULL;
+        branches[0U] = nullptr;
+        branches[1U] = nullptr;
     }
 
     QBdtNodeInterface(const complex& scl, QBdtNodeInterfacePtr* b)
@@ -119,17 +119,17 @@ public:
         if (branches[0U]) {
             QBdtNodeInterfacePtr b0 = branches[0U];
             std::lock_guard<std::mutex> lock(b0->mtx);
-            branches[0U] = NULL;
+            branches[0U] = nullptr;
         }
 
         if (branches[1U]) {
             QBdtNodeInterfacePtr b1 = branches[1U];
             std::lock_guard<std::mutex> lock(b1->mtx);
-            branches[1U] = NULL;
+            branches[1U] = nullptr;
         }
 #else
-        branches[0U] = NULL;
-        branches[1U] = NULL;
+        branches[0U] = nullptr;
+        branches[1U] = nullptr;
 #endif
     }
 

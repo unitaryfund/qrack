@@ -70,7 +70,7 @@ void QBdtNode::Prune(bitLenInt depth)
         std::lock_guard<std::mutex> lock1(b1->mtx, std::adopt_lock);
 
         bitCapInt _t;
-        bi_div_mod(pow2(depth), pStride, &_t, NULL);
+        bi_div_mod(pow2(depth), pStride, &_t, nullptr);
         unsigned underThreads = (bitCapIntOcl)_t;
 
         if (underThreads == 1U) {
@@ -356,8 +356,8 @@ void QBdtNode::PopStateVector(bitLenInt depth)
 
         if (nrm <= _qrack_qbdt_sep_thresh) {
             scale = ZERO_CMPLX;
-            branches[0U] = NULL;
-            branches[1U] = NULL;
+            branches[0U] = nullptr;
+            branches[1U] = nullptr;
             return;
         }
 
@@ -389,8 +389,8 @@ void QBdtNode::PopStateVector(bitLenInt depth)
 
     if (isB0Eigen && isB1Eigen) {
         scale = ZERO_CMPLX;
-        branches[0U] = NULL;
-        branches[1U] = NULL;
+        branches[0U] = nullptr;
+        branches[1U] = nullptr;
 
         return;
     }

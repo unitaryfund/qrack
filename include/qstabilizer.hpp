@@ -119,7 +119,7 @@ public:
 
     void SetRandomSeed(uint32_t seed)
     {
-        if (rand_generator != NULL) {
+        if (rand_generator != nullptr) {
             rand_generator->seed(seed);
         }
     }
@@ -128,7 +128,7 @@ public:
 
     bool Rand()
     {
-        if (hardware_rand_generator != NULL) {
+        if (hardware_rand_generator != nullptr) {
             if (!rawRandBoolsRemaining) {
                 rawRandBools = hardware_rand_generator->NextRaw();
                 rawRandBoolsRemaining = sizeof(unsigned) * bitsInByte;
@@ -376,10 +376,10 @@ public:
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QStabilizer>(dest));
     }
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QStabilizerPtr)NULL); }
+    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QStabilizerPtr) nullptr); }
     void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& ignored)
     {
-        DecomposeDispose(start, length, (QStabilizerPtr)NULL);
+        DecomposeDispose(start, length, (QStabilizerPtr) nullptr);
     }
     bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
     using QInterface::Allocate;
@@ -400,7 +400,7 @@ public:
         }
 
         QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
-            false, randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+            false, randGlobalPhase, false, -1, hardware_rand_generator != nullptr);
         return Compose(nQubits, start);
     }
 

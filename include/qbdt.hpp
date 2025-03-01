@@ -47,14 +47,14 @@ protected:
     void DumpBuffers()
     {
         for (size_t i = 0; i < shards.size(); ++i) {
-            shards[i] = NULL;
+            shards[i] = nullptr;
         }
     }
     void FlushBuffer(bitLenInt t)
     {
         const MpsShardPtr shard = shards[t];
         if (shard) {
-            shards[t] = NULL;
+            shards[t] = nullptr;
             ApplySingle(shard->gate, t);
         }
     }
@@ -74,7 +74,7 @@ protected:
         for (const bitLenInt& control : controls) {
             const MpsShardPtr shard = shards[control];
             if (shard && !shard->IsPhase()) {
-                shards[control] = NULL;
+                shards[control] = nullptr;
                 ApplySingle(shard->gate, control);
             }
         }
@@ -84,7 +84,7 @@ protected:
         for (size_t i = 0U; i < shards.size(); ++i) {
             const MpsShardPtr shard = shards[i];
             if (shard && !shard->IsPhase()) {
-                shards[i] = NULL;
+                shards[i] = nullptr;
                 ApplySingle(shard->gate, i);
             }
         }
@@ -376,12 +376,12 @@ public:
         DecomposeDispose(start, dest->GetQubitCount(), d);
     }
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
+    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, nullptr); }
 
     void Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm)
     {
         ForceMReg(start, length, disposedPerm);
-        DecomposeDispose(start, length, NULL);
+        DecomposeDispose(start, length, nullptr);
     }
 
     using QInterface::Allocate;

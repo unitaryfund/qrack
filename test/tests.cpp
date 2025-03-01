@@ -2549,27 +2549,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_shunts")
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-    qftReg->CSwap(NULL, 0, 0, 0);
+    qftReg->CSwap(nullptr, 0, 0, 0);
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-    qftReg->CSqrtSwap(NULL, 0, 0, 0);
+    qftReg->CSqrtSwap(nullptr, 0, 0, 0);
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-    qftReg->CISqrtSwap(NULL, 0, 0, 0);
+    qftReg->CISqrtSwap(nullptr, 0, 0, 0);
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-    qftReg->AntiCSwap(NULL, 0, 0, 0);
+    qftReg->AntiCSwap(nullptr, 0, 0, 0);
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-    qftReg->AntiCSqrtSwap(NULL, 0, 0, 0);
+    qftReg->AntiCSqrtSwap(nullptr, 0, 0, 0);
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-    qftReg->AntiCISqrtSwap(NULL, 0, 0, 0);
+    qftReg->AntiCISqrtSwap(nullptr, 0, 0, 0);
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }

@@ -22,8 +22,8 @@
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
-// SIMULATOR_LOCK_GUARD variants will lock simulatorMutexes[NULL], if the requested simulator doesn't exist.
-// This is CORRECT behavior. This will effectively emplace a mutex for NULL key.
+// SIMULATOR_LOCK_GUARD variants will lock simulatorMutexes[nullptr], if the requested simulator doesn't exist.
+// This is CORRECT behavior. This will effectively emplace a mutex for nullptr key.
 #if CPP_STD > 13
 #define SIMULATOR_LOCK_GUARD(simulator)                                                                                \
     std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
@@ -611,7 +611,7 @@ quid init_count_type(
     // (...then reverse:)
     std::reverse(simulatorType.begin(), simulatorType.end());
 
-    QInterfacePtr simulator = NULL;
+    QInterfacePtr simulator = nullptr;
     if (q) {
         simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
     }
@@ -658,7 +658,7 @@ quid init_count(bitLenInt q, bool hp)
 
     const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_QUNIT, QINTERFACE_HYBRID };
 
-    QInterfacePtr simulator = NULL;
+    QInterfacePtr simulator = nullptr;
     if (q) {
         simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
     }
@@ -788,7 +788,7 @@ quid init_qbdd_count(bitLenInt q)
     const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_QUNIT,
         QINTERFACE_STABILIZER_HYBRID, QINTERFACE_BDT };
 
-    QInterfacePtr simulator = NULL;
+    QInterfacePtr simulator = nullptr;
     if (q) {
         simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen);
     }
@@ -823,7 +823,7 @@ void destroy(quid sid)
 
     shards.erase(simulators[sid].get());
     simulatorMutexes.erase(simulators[sid].get());
-    simulators[sid] = NULL;
+    simulators[sid] = nullptr;
     simulatorReservations[sid] = false;
 }
 
@@ -966,7 +966,7 @@ void allocateQubit(quid sid, bitLenInt qid)
     QInterfacePtr nQubit = CreateQuantumInterface(
         simulatorTypes[sid], 1U, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
 
-    if (simulators[sid] == NULL) {
+    if (simulators[sid] == nullptr) {
         simulators[sid] = nQubit;
         shards[nQubit.get()] = {};
         shards[nQubit.get()][qid] = 0;
@@ -1001,7 +1001,7 @@ bool release(quid sid, bitLenInt q)
 
     if (simulator->GetQubitCount() == 1U) {
         shards.erase(simulator.get());
-        simulators[sid] = NULL;
+        simulators[sid] = nullptr;
     } else {
         std::map<quid, bitLenInt>& simShards = shards[simulator.get()];
         bitLenInt oIndex = simShards[q];
@@ -2542,7 +2542,7 @@ void destroy_qneuron(quid nid)
     META_LOCK_GUARD()
 
     neuronMutexes.erase(neurons[nid].get());
-    neurons[nid] = NULL;
+    neurons[nid] = nullptr;
     neuronErrors[nid] = 0;
     neuronReservations[nid] = false;
 }
@@ -2732,7 +2732,7 @@ void destroy_qcircuit(quid cid)
     META_LOCK_GUARD()
 
     circuitMutexes.erase(circuits[cid].get());
-    circuits[cid] = NULL;
+    circuits[cid] = nullptr;
     circuitReservations[cid] = false;
 }
 

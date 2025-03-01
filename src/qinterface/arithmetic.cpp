@@ -132,7 +132,7 @@ void QInterface::MULModNOut(
     for (bitLenInt i = 0U; i < length; ++i) {
         controls[0] = inStart + i;
         bitCapInt partMul;
-        bi_div_mod(toMul * pow2(i), modN, NULL, &partMul);
+        bi_div_mod(toMul * pow2(i), modN, nullptr, &partMul);
         if (bi_compare_0(partMul) == 0) {
             continue;
         }
@@ -144,7 +144,7 @@ void QInterface::MULModNOut(
     }
 
     bitCapInt diffPow;
-    bi_div_mod(pow2(length), modN, &diffPow, NULL);
+    bi_div_mod(pow2(length), modN, &diffPow, nullptr);
     const bitLenInt lDiff = log2(diffPow);
     controls[0] = inStart + length - (lDiff + 1U);
     for (bitCapInt i = ZERO_BCI; bi_compare(i, diffPow) < 0; bi_increment(&i, 1U)) {
@@ -167,7 +167,7 @@ void QInterface::IMULModNOut(
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
     bitCapInt diffPow;
-    bi_div_mod(pow2(length), modN, &diffPow, NULL);
+    bi_div_mod(pow2(length), modN, &diffPow, nullptr);
     const bitLenInt lDiff = log2(diffPow);
     std::vector<bitLenInt> controls{ (bitLenInt)(inStart + length - (lDiff + 1U)) };
 
@@ -186,7 +186,7 @@ void QInterface::IMULModNOut(
     for (bitLenInt i = 0U; i < length; ++i) {
         controls[0] = inStart + i;
         bitCapInt partMul;
-        bi_div_mod(toMul * pow2(i), modN, NULL, &partMul);
+        bi_div_mod(toMul * pow2(i), modN, nullptr, &partMul);
         if (bi_compare_0(partMul) == 0) {
             continue;
         }
@@ -207,7 +207,7 @@ void QInterface::CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitL
     for (bitLenInt i = 0U; i < length; ++i) {
         lControls[controls.size()] = inStart + i;
         bitCapInt partMul;
-        bi_div_mod(toMul * pow2(i), modN, NULL, &partMul);
+        bi_div_mod(toMul * pow2(i), modN, nullptr, &partMul);
         if (bi_compare_0(partMul) == 0) {
             continue;
         }
@@ -219,7 +219,7 @@ void QInterface::CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitL
     }
 
     bitCapInt diffPow;
-    bi_div_mod(pow2(length), modN, &diffPow, NULL);
+    bi_div_mod(pow2(length), modN, &diffPow, nullptr);
     const bitLenInt lDiff = log2(diffPow);
     lControls[controls.size()] = inStart + length - (lDiff + 1U);
     for (bitCapInt i = ZERO_BCI; bi_compare(i, diffPow) < 0; bi_increment(&i, 1U)) {
@@ -244,7 +244,7 @@ void QInterface::CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bit
     std::vector<bitLenInt> lControls(controls.size() + 1U);
     std::copy(controls.begin(), controls.end(), lControls.begin());
     bitCapInt diffPow;
-    bi_div_mod(pow2(length), modN, &diffPow, NULL);
+    bi_div_mod(pow2(length), modN, &diffPow, nullptr);
     const bitLenInt lDiff = log2(diffPow);
     lControls[controls.size()] = inStart + length - (lDiff + 1U);
 
@@ -263,7 +263,7 @@ void QInterface::CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bit
     for (bitLenInt i = 0U; i < length; ++i) {
         lControls[controls.size()] = inStart + i;
         bitCapInt partMul;
-        bi_div_mod(toMul * pow2(i), modN, NULL, &partMul);
+        bi_div_mod(toMul * pow2(i), modN, nullptr, &partMul);
         if (bi_compare_0(partMul) == 0) {
             continue;
         }

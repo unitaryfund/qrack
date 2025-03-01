@@ -113,8 +113,8 @@ public:
     std::shared_ptr<real1> angleArray;
 
     PoolItem(cl::Context& context)
-        : probArray(NULL)
-        , angleArray(NULL)
+        : probArray(nullptr)
+        , angleArray(nullptr)
     {
         cmplxBuffer = MakeBuffer(context, sizeof(complex) * CMPLX_NORM_LEN);
         realBuffer = MakeBuffer(context, sizeof(real1) * REAL_ARG_LEN);
@@ -127,7 +127,7 @@ protected:
     BufferPtr MakeBuffer(const cl::Context& context, size_t size)
     {
         cl_int error;
-        BufferPtr toRet = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, size, (void*)NULL, &error);
+        BufferPtr toRet = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, size, (void*)nullptr, &error);
         if (error != CL_SUCCESS) {
             if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
                 throw bad_alloc("CL_MEM_OBJECT_ALLOCATION_FAILURE in PoolItem::MakeBuffer()");
@@ -463,7 +463,7 @@ protected:
         totalOclAllocSize -= size;
     }
 
-    BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = nullptr)
     {
         checkCallbackError();
 
@@ -516,7 +516,7 @@ protected:
             stateVec = copyVec;
             stateBuffer = MakeStateVecBuffer(stateVec);
         } else {
-            stateVec = NULL;
+            stateVec = nullptr;
             stateBuffer = MakeStateVecBuffer(stateVec);
             tryOcl("Failed to write buffer", [&] {
                 return queue.enqueueWriteBuffer(
@@ -559,7 +559,7 @@ protected:
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     std::shared_ptr<complex> AllocStateVec(bitCapIntOcl elemCount, bool doForceAlloc = false);
-    void FreeStateVec() { stateVec = NULL; }
+    void FreeStateVec() { stateVec = nullptr; }
     void FreeAll();
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
@@ -652,10 +652,10 @@ protected:
     void ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, const complex& nrm);
     real1_f Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs);
 
-    void ArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], const unsigned char* values = NULL,
-        bitCapIntOcl valuesLength = 0U);
+    void ArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN],
+        const unsigned char* values = nullptr, bitCapIntOcl valuesLength = 0U);
     void CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], bitCapIntOcl* controlPowers,
-        bitLenInt controlLen, const unsigned char* values = NULL, bitCapIntOcl valuesLength = 0U);
+        bitLenInt controlLen, const unsigned char* values = nullptr, bitCapIntOcl valuesLength = 0U);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
 
 #if ENABLE_ALU

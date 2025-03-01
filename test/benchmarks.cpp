@@ -220,7 +220,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
             } catch (const std::exception& e) {
                 // Release before re-alloc:
-                qftReg = NULL;
+                qftReg = nullptr;
 
                 // Re-alloc:
                 qftReg =

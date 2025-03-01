@@ -722,7 +722,7 @@ void QUnitClifford::MultiShotMeasureMask(
                         "allocated qubit bounds!");
                 }
                 if (unit != shards[qubit].unit) {
-                    unit = NULL;
+                    unit = nullptr;
                     break;
                 }
                 for (bitLenInt j = 0U; j < qubitCount; ++j) {

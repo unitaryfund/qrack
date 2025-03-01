@@ -126,8 +126,8 @@ public:
     std::shared_ptr<real1> angleArray;
 
     PoolItem()
-        : probArray(NULL)
-        , angleArray(NULL)
+        : probArray(nullptr)
+        , angleArray(nullptr)
     {
         cmplxBuffer = MakeBuffer(sizeof(complex) * CMPLX_NORM_LEN);
         realBuffer = MakeBuffer(sizeof(real1) * REAL_ARG_LEN);
@@ -445,7 +445,7 @@ protected:
         totalOclAllocSize -= size;
     }
 
-    BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    BufferPtr MakeBuffer(cl_mem_flags flags, size_t size, void* host_ptr = nullptr)
     {
         cudaError_t error;
 
@@ -515,7 +515,7 @@ protected:
             stateVec = copyVec;
             stateBuffer = MakeStateVecBuffer(stateVec);
         } else {
-            stateVec = NULL;
+            stateVec = nullptr;
             stateBuffer = MakeStateVecBuffer(stateVec);
             clFinish();
             tryCuda("Failed to write buffer", [&] {
@@ -554,7 +554,7 @@ protected:
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     std::shared_ptr<complex> AllocStateVec(bitCapIntOcl elemCount, bool doForceAlloc = false);
-    void FreeStateVec() { stateVec = NULL; }
+    void FreeStateVec() { stateVec = nullptr; }
     void FreeAll();
     void ResetStateBuffer(BufferPtr nStateBuffer);
     BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
@@ -647,10 +647,10 @@ protected:
     void ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, const complex& nrm);
     real1_f Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs);
 
-    void ArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], const unsigned char* values = NULL,
-        bitCapIntOcl valuesLength = 0U);
+    void ArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN],
+        const unsigned char* values = nullptr, bitCapIntOcl valuesLength = 0U);
     void CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], bitCapIntOcl* controlPowers,
-        bitLenInt controlLen, const unsigned char* values = NULL, bitCapIntOcl valuesLength = 0U);
+        bitLenInt controlLen, const unsigned char* values = nullptr, bitCapIntOcl valuesLength = 0U);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
 
 #if ENABLE_ALU

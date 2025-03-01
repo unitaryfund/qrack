@@ -33,7 +33,7 @@ QInterface::QInterface(
     , maxQPower(pow2(qubitCount))
     , rand_generator(rgp)
     , rand_distribution(ZERO_R1_F, ONE_R1_F)
-    , hardware_rand_generator(NULL)
+    , hardware_rand_generator(nullptr)
 {
     if (qubitCount > QRACK_MAX_QUBITS) {
         throw std::invalid_argument(
@@ -46,7 +46,7 @@ QInterface::QInterface(
 #if !ENABLE_RNDFILE && !ENABLE_DEVRAND
         useRDRAND = hardware_rand_generator->SupportsRDRAND();
         if (!useRDRAND) {
-            hardware_rand_generator = NULL;
+            hardware_rand_generator = nullptr;
         }
 #endif
     } else if (!rand_generator) {

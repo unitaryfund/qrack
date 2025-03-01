@@ -83,7 +83,7 @@ protected:
 
 public:
     QEngineShard()
-        : unit(NULL)
+        : unit(nullptr)
         , mapped(0)
         , isProbDirty(false)
         , isPhaseDirty(false)
@@ -99,7 +99,7 @@ public:
     }
 
     QEngineShard(const bool& set, const complex& rand_phase = ONE_CMPLX)
-        : unit(NULL)
+        : unit(nullptr)
         , mapped(0)
         , isProbDirty(false)
         , isPhaseDirty(false)

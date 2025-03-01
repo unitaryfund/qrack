@@ -152,7 +152,7 @@ void QUnit::SetQuantumState(const complex* inputState)
 
     if (qubitCount == 1U) {
         QEngineShard& shard = shards[0U];
-        shard.unit = NULL;
+        shard.unit = nullptr;
         shard.mapped = 0U;
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
@@ -309,7 +309,7 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry,
         }
     }
 
-    const QUnitPtr copy = isTry ? std::dynamic_pointer_cast<QUnit>(Copy()) : NULL;
+    const QUnitPtr copy = isTry ? std::dynamic_pointer_cast<QUnit>(Copy()) : nullptr;
 
     // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
     // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
@@ -319,7 +319,7 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry,
         QEngineShard& shard = shards[start + i];
         QInterfacePtr unit = shard.unit;
 
-        if (unit == NULL) {
+        if (unit == nullptr) {
             continue;
         }
 
@@ -350,7 +350,7 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry,
                     shard.amp1 = amps[1U];
                     shard.isProbDirty = false;
                     shard.isPhaseDirty = false;
-                    shard.unit = NULL;
+                    shard.unit = nullptr;
                     shard.mapped = 0U;
                     shard.ClampAmps();
                 }
@@ -373,7 +373,7 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry,
                         shard.amp1 = amps[1U];
                         shard.isProbDirty = false;
                         shard.isPhaseDirty = false;
-                        shard.unit = NULL;
+                        shard.unit = nullptr;
                         shard.mapped = 0U;
                         shard.ClampAmps();
 
@@ -990,7 +990,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         shard.amp1 = amps[1U];
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
-        shard.unit = NULL;
+        shard.unit = nullptr;
         shard.mapped = 0U;
         shard.ClampAmps();
 
@@ -1339,7 +1339,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         return false;
     }
 
-    shard.unit = NULL;
+    shard.unit = nullptr;
     shard.mapped = 0U;
     shard.isProbDirty = false;
     shard.isPhaseDirty = false;
@@ -1426,7 +1426,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     shard.amp1 = result ? GetNonunitaryPhase() : ZERO_CMPLX;
 
     if (shard.GetQubitCount() == 1U) {
-        shard.unit = NULL;
+        shard.unit = nullptr;
         shard.mapped = 0U;
         if (result) {
             Flush1Eigenstate(qubit);
@@ -1735,7 +1735,7 @@ void QUnit::MultiShotMeasureMask(const std::vector<bitCapInt>& qPowers, unsigned
                         "allocated qubit bounds!");
                 }
                 if (unit != shards[qubit].unit) {
-                    unit = NULL;
+                    unit = nullptr;
                     break;
                 }
                 for (bitLenInt j = 0U; j < qubitCount; ++j) {
@@ -3398,7 +3398,7 @@ void QUnit::POWModNOut(
     // Keep the bits separate, if cheap to do so:
     if (CheckBitsPermutation(inStart, length)) {
         bitCapInt res;
-        bi_div_mod(intPow(toMod, GetCachedPermutation(inStart, length)), modN, NULL, &res);
+        bi_div_mod(intPow(toMod, GetCachedPermutation(inStart, length)), modN, nullptr, &res);
         SetReg(outStart, length, res);
         return;
     }

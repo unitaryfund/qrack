@@ -116,7 +116,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
 {
     if (IS_NODE_0(scale)) {
         SetZero();
-        return NULL;
+        return nullptr;
     }
 
     Branch();
@@ -161,8 +161,8 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
     toRet->scale /= abs(toRet->scale);
 
     if (!size) {
-        branches[0U] = NULL;
-        branches[1U] = NULL;
+        branches[0U] = nullptr;
+        branches[1U] = nullptr;
 
         return toRet;
     }

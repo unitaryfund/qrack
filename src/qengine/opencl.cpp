@@ -40,7 +40,7 @@ namespace Qrack {
 
 #define DISPATCH_LOC_WRITE(buff, size, array, clEvent)                                                                 \
     tryOcl("Failed to enqueue buffer write",                                                                           \
-        [&] { return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array, NULL, &clEvent); });
+        [&] { return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array, nullptr, &clEvent); });
 
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
     device_context->EmplaceEvent([&](cl::Event& event) {                                                               \
@@ -55,8 +55,9 @@ namespace Qrack {
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
     clFinish();                                                                                                        \
-    tryOcl("Failed to enqueue buffer read",                                                                            \
-        [&] { return queue.enqueueReadBuffer(buff, CL_TRUE, 0U, sizeof(real1) * size, array.get(), NULL, NULL); });    \
+    tryOcl("Failed to enqueue buffer read", [&] {                                                                      \
+        return queue.enqueueReadBuffer(buff, CL_TRUE, 0U, sizeof(real1) * size, array.get(), nullptr, nullptr);        \
+    });                                                                                                                \
     *(sumPtr) = ParSum(array.get(), size);
 
 #define CHECK_ZERO_SKIP()                                                                                              \
@@ -90,8 +91,8 @@ void QEngineOCL::FreeAll()
 {
     ZeroAmplitudes();
 
-    nrmBuffer = NULL;
-    nrmArray = NULL;
+    nrmBuffer = nullptr;
+    nrmArray = nullptr;
 
     SubtractAlloc(totalOclAllocSize);
 }
@@ -105,7 +106,7 @@ void QEngineOCL::ZeroAmplitudes()
         return;
     }
 
-    ResetStateBuffer(NULL);
+    ResetStateBuffer(nullptr);
     FreeStateVec();
 
     SubtractAlloc(sizeof(complex) * maxQPowerOcl);
@@ -294,7 +295,7 @@ void QEngineOCL::LockSync(cl_map_flags flags)
         tryOcl("Failed to map buffer", [&] {
             cl_int error;
             queue.enqueueMapBuffer(
-                *stateBuffer, CL_TRUE, flags, 0U, sizeof(complex) * maxQPowerOcl, waitVec.get(), NULL, &error);
+                *stateBuffer, CL_TRUE, flags, 0U, sizeof(complex) * maxQPowerOcl, waitVec.get(), nullptr, &error);
             return error;
         });
         wait_refs.clear();
@@ -417,8 +418,8 @@ void QEngineOCL::PopQueue(bool isDispatch)
         std::lock_guard<std::mutex> lock(queue_mutex);
 
         if (poolItems.size()) {
-            poolItems.front()->probArray = NULL;
-            poolItems.front()->angleArray = NULL;
+            poolItems.front()->probArray = nullptr;
+            poolItems.front()->angleArray = nullptr;
 
             if (poolItems.size() > 1) {
                 rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
@@ -538,7 +539,7 @@ void QEngineOCL::SetDevice(int64_t dID)
     const DeviceContextPtr nDeviceContext = OCLEngine::Instance().GetDeviceContextPtr(dID);
     const int64_t defDevId = (int)OCLEngine::Instance().GetDefaultDeviceID();
 
-    std::shared_ptr<complex> copyVec = NULL;
+    std::shared_ptr<complex> copyVec = nullptr;
 
     if (!didInit) {
         AddAlloc(sizeof(complex) * maxQPowerOcl);
@@ -584,9 +585,9 @@ void QEngineOCL::SetDevice(int64_t dID)
 
     const bool doResize = nNrmVecAlignSize != oldNrmVecAlignSize;
 
-    nrmBuffer = NULL;
+    nrmBuffer = nullptr;
     if (didInit && doResize) {
-        nrmArray = NULL;
+        nrmArray = nullptr;
         SubtractAlloc(oldNrmVecAlignSize);
     }
 
@@ -1302,7 +1303,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
         cl::Event copyEvent;
         tryOcl("Failed to enqueue buffer copy", [&] {
             return queue.enqueueCopyBuffer(
-                *(toCopy->stateBuffer), *stateBuffer, 0U, 0U, sizeof(complex) * maxQPowerOcl, NULL, &copyEvent);
+                *(toCopy->stateBuffer), *stateBuffer, 0U, 0U, sizeof(complex) * maxQPowerOcl, nullptr, &copyEvent);
         });
         copyEvent.wait();
 
@@ -1446,11 +1447,11 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     const bitLenInt nLength = qubitCount - length;
 
     if (!nLength) {
-        if (destination != NULL) {
+        if (destination != nullptr) {
             destination->stateVec = stateVec;
             destination->stateBuffer = stateBuffer;
-            stateBuffer = NULL;
-            stateVec = NULL;
+            stateBuffer = nullptr;
+            stateVec = nullptr;
         }
         SetQubitCount(0U);
         // This will be cleared by the destructor:
@@ -1539,17 +1540,17 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             oNStateVecSize <= destination->device_context->GetMaxAlloc() &&
             (2 * oNStateVecSize) <= destination->device_context->GetGlobalSize()) {
 
-            BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
+            BufferPtr nSB = destination->MakeStateVecBuffer(nullptr);
 
             cl::Event copyEvent;
             tryOcl("Failed to enqueue buffer copy", [&] {
                 return destination->queue.enqueueCopyBuffer(*(destination->stateBuffer), *nSB, 0U, 0U,
-                    sizeof(complex) * destination->maxQPowerOcl, NULL, &copyEvent);
+                    sizeof(complex) * destination->maxQPowerOcl, nullptr, &copyEvent);
             });
             copyEvent.wait();
 
             destination->stateBuffer = nSB;
-            destination->stateVec = NULL;
+            destination->stateVec = nullptr;
         }
 
         if (isMigrate) {
@@ -1570,7 +1571,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         FreeStateVec();
     }
     // Drop references to state vector buffer, which we're done with.
-    ResetStateBuffer(NULL);
+    ResetStateBuffer(nullptr);
     SubtractAlloc(sizeof(complex) * oMaxQPower);
 
     std::shared_ptr<complex> nStateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
@@ -1589,7 +1590,10 @@ void QEngineOCL::Decompose(bitLenInt start, QInterfacePtr destination)
     DecomposeDispose(start, destination->GetQubitCount(), std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineOCLPtr)NULL); }
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
+{
+    DecomposeDispose(start, length, (QEngineOCLPtr) nullptr);
+}
 
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& disposedPerm)
 {
@@ -1604,8 +1608,8 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& dis
 
     if (length == qubitCount) {
         // This will be cleared by the destructor:
-        stateVec = NULL;
-        stateBuffer = NULL;
+        stateVec = nullptr;
+        stateBuffer = nullptr;
         SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
         SetQubitCount(0U);
         return;
@@ -1652,7 +1656,7 @@ bitLenInt QEngineOCL::Allocate(bitLenInt start, bitLenInt length)
     }
 
     QEngineOCLPtr nQubits = std::make_shared<QEngineOCL>(length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
     return Compose(nQubits, start);
 }
 
@@ -2040,7 +2044,7 @@ real1_f QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 void QEngineOCL::ArithmeticCall(
     OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], const unsigned char* values, bitCapIntOcl valuesPower)
 {
-    CArithmeticCall(api_call, bciArgs, NULL, 0U, values, valuesPower);
+    CArithmeticCall(api_call, bciArgs, nullptr, 0U, values, valuesPower);
 }
 void QEngineOCL::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN],
     bitCapIntOcl* controlPowers, bitLenInt controlLen, const unsigned char* values, bitCapIntOcl valuesPower)
@@ -2682,7 +2686,7 @@ void QEngineOCL::MULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart,
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> length, toMod, inOutMask, carryMask, otherMask, length,
         inOutStart, carryStart, skipMask, 0U };
 
-    xMULx(api_call, bciArgs, NULL);
+    xMULx(api_call, bciArgs, nullptr);
 }
 
 void QEngineOCL::MULModx(
@@ -2709,7 +2713,7 @@ void QEngineOCL::MULModx(
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl >> length, toMod, inMask, outMask, otherMask, length, inStart,
         outStart, skipMask, modN };
 
-    xMULx(api_call, bciArgs, NULL);
+    xMULx(api_call, bciArgs, nullptr);
 }
 
 void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt carryStart,
@@ -3159,7 +3163,7 @@ QInterfacePtr QEngineOCL::Clone()
     }
 
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
 
     cl::Event copyEvent;
 
@@ -3168,7 +3172,7 @@ QInterfacePtr QEngineOCL::Clone()
 
     tryOcl("Failed to enqueue buffer copy", [&] {
         return queue.enqueueCopyBuffer(
-            *stateBuffer, *(copyPtr->stateBuffer), 0U, 0U, sizeof(complex) * maxQPowerOcl, NULL, &copyEvent);
+            *stateBuffer, *(copyPtr->stateBuffer), 0U, 0U, sizeof(complex) * maxQPowerOcl, nullptr, &copyEvent);
     });
     copyEvent.wait();
 
@@ -3180,7 +3184,7 @@ QInterfacePtr QEngineOCL::Clone()
 QEnginePtr QEngineOCL::CloneEmpty()
 {
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(0U, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
 
     copyPtr->SetQubitCount(qubitCount);
 
@@ -3307,7 +3311,7 @@ std::shared_ptr<complex> QEngineOCL::AllocStateVec(bitCapIntOcl elemCount, bool 
 {
     // If we're not using host ram, there's no reason to allocate.
     if (!elemCount || (!doForceAlloc && !stateVec)) {
-        return NULL;
+        return nullptr;
     }
 
 #if defined(__ANDROID__)
@@ -3332,7 +3336,7 @@ std::shared_ptr<complex> QEngineOCL::AllocStateVec(bitCapIntOcl elemCount, bool 
 BufferPtr QEngineOCL::MakeStateVecBuffer(std::shared_ptr<complex> nStateVec)
 {
     if (!maxQPowerOcl) {
-        return NULL;
+        return nullptr;
     }
 
     if (nStateVec) {

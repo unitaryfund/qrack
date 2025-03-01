@@ -75,7 +75,7 @@ QInterfacePtr QStabilizer::Clone()
     Finish();
 
     QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
-        randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+        randGlobalPhase, false, -1, hardware_rand_generator != nullptr);
     clone->Finish();
 
     clone->x = x;
@@ -1177,7 +1177,7 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
 /// Apply a Hadamard gate to target
 void QStabilizer::H(bitLenInt t)
 {
-    const QStabilizerPtr clone = randGlobalPhase ? NULL : std::dynamic_pointer_cast<QStabilizer>(Clone());
+    const QStabilizerPtr clone = randGlobalPhase ? nullptr : std::dynamic_pointer_cast<QStabilizer>(Clone());
 
     ParFor(
         [this, t](const bitLenInt& i) {
@@ -1477,7 +1477,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
             return result;
         }
 
-        const QStabilizerPtr clone = randGlobalPhase ? NULL : std::dynamic_pointer_cast<QStabilizer>(Clone());
+        const QStabilizerPtr clone = randGlobalPhase ? nullptr : std::dynamic_pointer_cast<QStabilizer>(Clone());
 
         // Set Xbar_p := Zbar_p
         rowcopy(p, p + n);
@@ -1629,7 +1629,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
 {
     QStabilizerPtr dest = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
-        randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+        randGlobalPhase, false, -1, hardware_rand_generator != nullptr);
     Decompose(start, dest);
 
     return dest;

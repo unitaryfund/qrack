@@ -106,7 +106,7 @@ protected:
 #endif
     }
 
-    virtual void Free() { amplitudes = NULL; }
+    virtual void Free() { amplitudes = nullptr; }
 
 public:
     StateVectorArray(bitCapIntOcl cap)

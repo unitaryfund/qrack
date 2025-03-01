@@ -237,7 +237,7 @@ protected:
 
     StateVectorPtr AllocStateVec(bitCapIntOcl elemCount);
     void ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
-    void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
+    void FreeStateVec(complex* sv = nullptr) { stateVec = nullptr; }
 
     void Dispatch(bitCapIntOcl workItemCount, DispatchFn fn)
     {

@@ -661,5 +661,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = NULL;
+    qftReg = nullptr;
 }

@@ -59,12 +59,12 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , logFidelity(0.0)
-    , engine(NULL)
+    , engine(nullptr)
     , deviceIDs(devList)
     , engineTypes(eng)
     , cloneEngineTypes(eng)
     , shards(qubitCount)
-    , stateMapCache(NULL)
+    , stateMapCache(nullptr)
     , prng(std::random_device{}())
 {
 #if ENABLE_OPENCL || ENABLE_CUDA
@@ -140,7 +140,7 @@ void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
     QRACK_CONST complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
     pauliShard->Compose(shards[qubit]->gate);
-    shards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
+    shards[qubit] = pauliShard->IsIdentity() ? nullptr : pauliShard;
     stabilizer->X(qubit);
 }
 
@@ -149,7 +149,7 @@ void QStabilizerHybrid::FlushH(bitLenInt qubit)
     QRACK_CONST complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     MpsShardPtr shard = std::make_shared<MpsShard>(h);
     shard->Compose(shards[qubit]->gate);
-    shards[qubit] = shard->IsIdentity() ? NULL : shard;
+    shards[qubit] = shard->IsIdentity() ? nullptr : shard;
     stabilizer->H(qubit);
 }
 
@@ -182,7 +182,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     if (!tshard) {
         return;
     }
-    // Shard is definitely non-NULL.
+    // Shard is definitely non-nullptr.
 
     if (!(tshard->IsPhase())) {
         SwitchToEngine();
@@ -206,7 +206,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     }
 
     const MpsShardPtr shard = shards[target];
-    shards[target] = NULL;
+    shards[target] = nullptr;
 
     const real1 angle = (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
     if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
@@ -223,7 +223,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         : stabilizer->Compose(std::make_shared<QUnitClifford>(
               1U, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
     ++ancillaCount;
-    shards.push_back(NULL);
+    shards.push_back(nullptr);
     if (deadAncillaCount) {
         --deadAncillaCount;
     }
@@ -242,7 +242,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
 bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
 {
     MpsShardPtr shard = shards[qubit];
-    shards[qubit] = NULL;
+    shards[qubit] = nullptr;
 
     const bool isZ1 = stabilizer->M(qubit);
     const real1_f prob = (real1_f)(isZ1 ? norm(shard->gate[3U]) : norm(shard->gate[2U]));
@@ -276,7 +276,7 @@ void QStabilizerHybrid::FlushBuffers()
     for (size_t i = 0U; i < shards.size(); ++i) {
         const MpsShardPtr shard = shards[i];
         if (shard) {
-            shards[i] = NULL;
+            shards[i] = nullptr;
             engine->Mtrx(shard->gate, i);
         }
     }
@@ -328,7 +328,7 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
         return;
     }
 
-    MpsShardPtr toRet = NULL;
+    MpsShardPtr toRet = nullptr;
     // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
     stabilizer->H(target);
     if (stabilizer->IsSeparableZ(target)) {
@@ -371,12 +371,12 @@ QInterfacePtr QStabilizerHybrid::CloneBody(bool isCopy)
     if (engine) {
         // Clone and set engine directly.
         c->engine = isCopy ? engine->Copy() : engine->Clone();
-        c->stabilizer = NULL;
+        c->stabilizer = nullptr;
         return c;
     }
 
     // Otherwise, stabilizer
-    c->engine = NULL;
+    c->engine = nullptr;
     c->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
@@ -457,7 +457,7 @@ void QStabilizerHybrid::SwitchToEngine()
         }
 #endif
 
-        stabilizer = NULL;
+        stabilizer = nullptr;
         engine = e;
 
         engine->UpdateRunningNorm();
@@ -475,7 +475,7 @@ void QStabilizerHybrid::SwitchToEngine()
 
     engine = MakeEngine(ZERO_BCI, stabilizer->GetQubitCount());
     stabilizer->GetQuantumState(engine);
-    stabilizer = NULL;
+    stabilizer = nullptr;
     FlushBuffers();
 
     if (!ancillaCount && !deadAncillaCount) {
@@ -712,7 +712,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(const bitCapInt& perm, bool isProb
 #endif
     const bool isRounded = roundingThreshold > FP_NORM_EPSILON;
     const QUnitCliffordPtr origStabilizer =
-        isRounded ? std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()) : NULL;
+        isRounded ? std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()) : nullptr;
     const bitLenInt origAncillaCount = ancillaCount;
     const bitLenInt origDeadAncillaCount = deadAncillaCount;
     std::vector<MpsShardPtr> origShards = isRounded ? shards : std::vector<MpsShardPtr>();
@@ -896,7 +896,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
         shards.resize(qubitCount);
         if (stabilizer) {
             engine = MakeEngine();
-            stabilizer = NULL;
+            stabilizer = nullptr;
         }
         engine->SetQuantumState(inputState);
 
@@ -904,7 +904,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     }
 
     // Otherwise, we're preparing 1 qubit.
-    engine = NULL;
+    engine = nullptr;
 
     if (stabilizer && !ancillaCount && !deadAncillaCount) {
         stabilizer->SetPermutation(ZERO_BCI);
@@ -929,7 +929,7 @@ void QStabilizerHybrid::SetPermutation(const bitCapInt& perm, const complex& pha
 {
     DumpBuffers();
 
-    engine = NULL;
+    engine = nullptr;
 
     if (stabilizer && !ancillaCount && !deadAncillaCount) {
         stabilizer->SetPermutation(perm);
@@ -1086,7 +1086,7 @@ void QStabilizerHybrid::ZMask(const bitCapInt& _mask)
 void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     MpsShardPtr shard = shards[target];
-    shards[target] = NULL;
+    shards[target] = nullptr;
     const bool wasCached = (bool)shard;
     complex mtrx[4U];
     if (!wasCached) {
@@ -1098,7 +1098,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             complex hGate[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
             MpsShardPtr hShard = std::make_shared<MpsShard>(hGate);
             hShard->Compose(shard->gate);
-            shard = hShard->IsIdentity() ? NULL : hShard;
+            shard = hShard->IsIdentity() ? nullptr : hShard;
             stabilizer->H(target);
         }
 
@@ -1106,7 +1106,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             complex pauliX[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
             MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
             pauliShard->Compose(shard->gate);
-            shard = pauliShard->IsIdentity() ? NULL : pauliShard;
+            shard = pauliShard->IsIdentity() ? nullptr : pauliShard;
             stabilizer->X(target);
         }
 
@@ -1125,7 +1125,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
                     : stabilizer->Compose(std::make_shared<QUnitClifford>(1U, ZERO_BCI, rand_generator,
                           CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
                 ++ancillaCount;
-                shards.push_back(NULL);
+                shards.push_back(nullptr);
                 if (deadAncillaCount) {
                     --deadAncillaCount;
                 }
@@ -1451,14 +1451,14 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
                 partProb += futures[j].get();
             }
         }
-        stateMapCache = NULL;
+        stateMapCache = nullptr;
 #else
         for (bitCapInt i = 0U; bi_compare(i, maxLcv) < 0; bi_increment(&i, 1U)) {
             bitCapInt j = i & (qPower - 1U);
             bi_or_ip(&j, (i ^ j) << 1U);
             partProb += norm(GetAmplitude(j | qPower));
         }
-        stateMapCache = NULL;
+        stateMapCache = nullptr;
 #endif
         return partProb;
     }
@@ -1515,7 +1515,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
                         throw std::invalid_argument(
                             "QStabilizerHybrid::ForceM() forced a measurement result with 0 probability!");
                     }
-                    shard = NULL;
+                    shard = nullptr;
                 }
 
                 return result;
@@ -1528,7 +1528,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         SwitchToEngine();
         return engine->ForceM(qubit, result, doForce, doApply);
     }
-    shard = NULL;
+    shard = nullptr;
 
     if (stabilizer->IsSeparable(qubit)) {
         return stabilizer->ForceM(qubit, result, doForce, doApply);
@@ -1574,7 +1574,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         m = d;                                                                                                         \
     }                                                                                                                  \
     SetPermutation(m);                                                                                                 \
-    stateMapCache = NULL;
+    stateMapCache = nullptr;
 bitCapInt QStabilizerHybrid::MAll()
 {
     if (engine) {
@@ -1666,7 +1666,7 @@ void QStabilizerHybrid::UniformlyControlledSingleBit(
     if (rng.size()) {                                                                                                  \
         results[d] += shots - rng.size();                                                                              \
     }                                                                                                                  \
-    stateMapCache = NULL;
+    stateMapCache = nullptr;
 
 #define ADD_SHOTS_PROB(m)                                                                                              \
     if (rng.empty()) {                                                                                                 \
@@ -1772,7 +1772,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         }                                                                                                              \
     }                                                                                                                  \
     std::shuffle(shotsArray, shotsArray + shots, prng);                                                                \
-    stateMapCache = NULL;
+    stateMapCache = nullptr;
 #else
 #define FILL_REMAINING_ARRAY_SHOTS()                                                                                   \
     if (rng.size()) {                                                                                                  \
@@ -1782,7 +1782,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
         }                                                                                                              \
     }                                                                                                                  \
     std::shuffle(shotsArray, shotsArray + shots, prng);                                                                \
-    stateMapCache = NULL;
+    stateMapCache = nullptr;
 #endif
 
 void QStabilizerHybrid::MultiShotMeasureMask(
@@ -1978,9 +1978,9 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         return ONE_R1_F;
     }
 
-    QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+    QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : nullptr;
     QStabilizerHybridPtr thatClone =
-        toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare->Clone()) : NULL;
+        toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare->Clone()) : nullptr;
 
     if (thisClone) {
         thisClone->FlushBuffers();
@@ -2029,7 +2029,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         ancillaCount = toCompare->ancillaCount;
         deadAncillaCount = toCompare->deadAncillaCount;
         for (size_t i = 0U; i < shards.size(); ++i) {
-            shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
+            shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : nullptr;
         }
     } else if (stabilizer && !toCompare->stabilizer) {
         toCompare->SetPermutation(ZERO_BCI);
@@ -2038,7 +2038,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         toCompare->ancillaCount = ancillaCount;
         toCompare->deadAncillaCount = deadAncillaCount;
         for (size_t i = 0U; i < shards.size(); ++i) {
-            toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
+            toCompare->shards[i] = shards[i] ? shards[i]->Clone() : nullptr;
         }
     }
 

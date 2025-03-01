@@ -60,7 +60,7 @@ protected:
     bitCapIntOcl pageMaxQPower()
     {
         bitCapInt toRet;
-        bi_div_mod_small(maxQPower, qPages.size(), &toRet, NULL);
+        bi_div_mod_small(maxQPower, qPages.size(), &toRet, nullptr);
         return (bitCapIntOcl)toRet;
     }
     bitLenInt pagedQubitCount() { return log2Ocl(qPages.size()); }
@@ -215,11 +215,11 @@ public:
     }
     void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
-        GetSetAmplitudePage(pagePtr, NULL, offset, length);
+        GetSetAmplitudePage(pagePtr, nullptr, offset, length);
     }
     void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
-        GetSetAmplitudePage(NULL, pagePtr, offset, length);
+        GetSetAmplitudePage(nullptr, pagePtr, offset, length);
     }
     void SetAmplitudePage(QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
     {
