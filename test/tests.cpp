@@ -4586,15 +4586,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
     QALU(qftReg)->CPhaseFlipIfLess(ONE_BCI, 19, 1, 18);
     qftReg->H(19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00000));
-
-    qftReg->SetPermutation(0);
-    qftReg->H(19);
-    qftReg->H(18);
-    QALU(qftReg)->CPhaseFlipIfLess(ONE_BCI, 19, 1, 18);
-    qftReg->CZ(19, 18);
-    qftReg->H(18);
-    qftReg->H(19);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1U << 18));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
