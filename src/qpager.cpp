@@ -734,14 +734,14 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
     dest->CombineEngines();
 
     bool isDecomposed = false;
-    for (size_t i = 0U; i < qPages.size(); ++i) {
-        if (!isDecomposed && !qPages[i]->IsZeroAmplitude()) {
-            qPages[i]->Decompose(start, dest->qPages[0U]);
+    for (QEnginePtr& qPage : qPages) {
+        if (!isDecomposed && !qPage->IsZeroAmplitude()) {
+            qPage->Decompose(start, dest->qPages[0U]);
             dest->qPages[0U]->UpdateRunningNorm();
             dest->qPages[0U]->NormalizeState();
             isDecomposed = true;
         } else {
-            qPages[i]->Dispose(start, length);
+            qPage->Dispose(start, length);
         }
     }
 
