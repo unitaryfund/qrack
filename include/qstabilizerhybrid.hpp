@@ -82,8 +82,8 @@ protected:
     void FlushBuffers();
     void DumpBuffers()
     {
-        for (size_t i = 0U; i < shards.size(); ++i) {
-            shards[i] = nullptr;
+        for (MpsShardPtr& shard : shards) {
+            shard = nullptr;
         }
     }
     bool EitherIsBuffered(bool logical)

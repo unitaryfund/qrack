@@ -291,7 +291,6 @@ bool QStabilizerHybrid::TrimControls(const std::vector<bitLenInt>& lControls, st
 
     for (size_t i = 0U; i < lControls.size(); ++i) {
         bitLenInt bit = lControls[i];
-
         if (!stabilizer->IsSeparableZ(bit)) {
             output.push_back(bit);
             continue;
@@ -717,9 +716,9 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(const bitCapInt& perm, bool isProb
     const bitLenInt origDeadAncillaCount = deadAncillaCount;
     std::vector<MpsShardPtr> origShards = isRounded ? shards : std::vector<MpsShardPtr>();
     if (isRounded) {
-        for (size_t i = 0U; i < origShards.size(); ++i) {
-            if (origShards[i]) {
-                origShards[i] = origShards[i]->Clone();
+        for (MpsShardPtr& origShard : origShards) {
+            if (origShard) {
+                origShard = origShard->Clone();
             }
         }
         RdmCloneFlush(roundingThreshold);
@@ -1447,8 +1446,8 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
                     break;
                 }
             }
-            for (size_t j = 0U; j < futures.size(); ++j) {
-                partProb += futures[j].get();
+            for (std::future<real1>& future : futures) {
+                partProb += future.get();
             }
         }
         stateMapCache = nullptr;
