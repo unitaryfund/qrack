@@ -630,8 +630,8 @@ public:
         , isNearClifford(clifford)
         , qubitCount(qbCount)
     {
-        for (const QCircuitGatePtr& gate : g) {
-            gates.push_back(gate->Clone());
+        for (auto gIt = g.begin(); gIt != g.end(); ++gIt) {
+            gates.push_back((*gIt)->Clone());
         }
     }
 
@@ -640,8 +640,8 @@ public:
     QCircuitPtr Inverse()
     {
         QCircuitPtr clone = Clone();
-        for (QCircuitGatePtr& gate : clone->gates) {
-            for (auto& p : gate->payloads) {
+        for (auto gIt = clone->gates.begin(); gIt != clone->gates.end(); ++gIt) {
+            for (auto& p : (*gIt)->payloads) {
                 const complex* m = p.second.get();
                 complex inv[4U]{ conj(m[0U]), conj(m[2U]), conj(m[1U]), conj(m[3U]) };
                 std::copy(inv, inv + 4U, p.second.get());
@@ -715,8 +715,8 @@ public:
         if (circuit->qubitCount > qubitCount) {
             qubitCount = circuit->qubitCount;
         }
-        for (const QCircuitGatePtr& g : circuit->gates) {
-            AppendGate(g);
+        for (auto gIt = circuit->gates.begin(); gIt != circuit->gates.end(); ++gIt) {
+            AppendGate(*gIt);
         }
     }
 
@@ -770,7 +770,8 @@ public:
         gates.reverse();
 
         std::list<QCircuitGatePtr> nGates;
-        for (const QCircuitGatePtr& gate : gates) {
+        for (auto gIt = gates.begin(); gIt != gates.end(); ++gIt) {
+            QCircuitGatePtr& gate = *gIt;
             // Is the target qubit on the light cone?
             if (qubits.find(gate->target) == qubits.end()) {
                 // The target isn't on the light cone, but the controls might be.

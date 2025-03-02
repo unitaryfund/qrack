@@ -158,15 +158,15 @@ public:
     void SetConcurrency(uint32_t threadsPerEngine)
     {
         QInterface::SetConcurrency(threadsPerEngine);
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            qPages[i]->SetConcurrency(threadsPerEngine);
+        for (QEnginePtr& qPage : qPages) {
+            qPage->SetConcurrency(threadsPerEngine);
         }
     }
     void SetTInjection(bool useGadget)
     {
         useTGadget = useGadget;
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            qPages[i]->SetTInjection(useTGadget);
+        for (QEnginePtr& qPage : qPages) {
+            qPage->SetTInjection(useTGadget);
         }
     }
     bool GetTInjection() { return useTGadget; }
@@ -188,8 +188,8 @@ public:
 
     void ZeroAmplitudes()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            qPages[i]->ZeroAmplitudes();
+        for (QEnginePtr& qPage : qPages) {
+            qPage->ZeroAmplitudes();
         }
     }
     void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QPager>(src)); }
@@ -199,13 +199,13 @@ public:
         src->CombineEngines(qpp);
         src->SeparateEngines(qpp, true);
 
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
+        for (size_t i = 0U; i < qPages.size(); ++i) {
             qPages[i]->CopyStateVec(src->qPages[i]);
         }
     }
     bool IsZeroAmplitude()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
+        for (size_t i = 0U; i < qPages.size(); ++i) {
             if (!qPages[i]->IsZeroAmplitude()) {
                 return false;
             }
@@ -244,8 +244,8 @@ public:
             return;
         }
 
-        const bitCapIntOcl offset = qPages.size() >> 1U;
-        for (bitCapIntOcl i = 0U; i < offset; ++i) {
+        const size_t offset = qPages.size() >> 1U;
+        for (size_t i = 0U; i < offset; ++i) {
             qPages[offset + i].swap(engine->qPages[i]);
         }
     }
@@ -285,8 +285,8 @@ public:
     real1_f GetRunningNorm()
     {
         real1_f toRet = ZERO_R1_F;
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            toRet += qPages[i]->GetRunningNorm();
+        for (QEnginePtr& qPage : qPages) {
+            toRet += qPage->GetRunningNorm();
         }
 
         return toRet;
@@ -294,7 +294,7 @@ public:
 
     real1_f FirstNonzeroPhase()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
+        for (size_t i = 0U; i < qPages.size(); ++i) {
             if (!qPages[i]->IsZeroAmplitude()) {
                 return qPages[i]->FirstNonzeroPhase();
             }
@@ -456,15 +456,15 @@ public:
 
     void Finish()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            qPages[i]->Finish();
+        for (QEnginePtr& qPage : qPages) {
+            qPage->Finish();
         }
     };
 
     bool isFinished()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            if (!qPages[i]->isFinished()) {
+        for (QEnginePtr& qPage : qPages) {
+            if (!qPage->isFinished()) {
                 return false;
             }
         }
@@ -474,8 +474,8 @@ public:
 
     void Dump()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            qPages[i]->Dump();
+        for (QEnginePtr& qPage : qPages) {
+            qPage->Dump();
         }
     };
 
@@ -487,8 +487,8 @@ public:
         deviceIDs.clear();
         deviceIDs.push_back(dID);
 
-        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
-            qPages[i]->SetDevice(dID);
+        for (QEnginePtr& qPage : qPages) {
+            qPage->SetDevice(dID);
         }
 
 #if ENABLE_OPENCL || ENABLE_CUDA

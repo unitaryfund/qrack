@@ -56,8 +56,8 @@ QStabilizer::QStabilizer(bitLenInt n, const bitCapInt& perm, qrack_rand_gen_ptr 
 
 void QStabilizer::ParFor(StabilizerParallelFunc fn, std::vector<bitLenInt> qubits)
 {
-    for (size_t i = 0U; i < qubits.size(); ++i) {
-        if (qubits[i] >= qubitCount) {
+    for (const bitLenInt& qubit : qubits) {
+        if (qubit >= qubitCount) {
             throw std::domain_error("QStabilizer gate qubit indices are out-of-bounds!");
         }
     }

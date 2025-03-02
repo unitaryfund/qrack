@@ -639,8 +639,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
     const bitCapInt qPower = pow2(target);
     bitCapInt controlMask = ZERO_BCI;
-    for (size_t c = 0U; c < controls.size(); ++c) {
-        const bitLenInt control = controls[c];
+    for (const bitLenInt& control : controls) {
         bi_or_ip(&controlMask, pow2(target - (control + 1U)));
     }
     const bitCapInt controlPerm = isAnti ? ZERO_BCI : controlMask;

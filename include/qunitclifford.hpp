@@ -211,8 +211,8 @@ public:
 
     void SetRandGlobalPhase(bool isRand)
     {
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            shards[i].unit->SetRandGlobalPhase(isRand);
+        for (CliffordShard& shard : shards) {
+            shard.unit->SetRandGlobalPhase(isRand);
         }
     }
 
@@ -223,8 +223,8 @@ public:
     {
         std::map<QStabilizerPtr, QStabilizerPtr> engines;
         bitCapInt permCount = ONE_BCI;
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            QStabilizerPtr unit = shards[i].unit;
+        for (CliffordShard& shard : shards) {
+            QStabilizerPtr& unit = shard.unit;
             if (engines.find(unit) == engines.end()) {
                 const bitCapInt pg = pow2(unit->gaussian());
                 // This would be "*", but Schmidt decomposition makes it "+".
@@ -809,8 +809,8 @@ public:
 
     bool TrySeparate(const std::vector<bitLenInt>& qubits, real1_f ignored)
     {
-        for (size_t i = 0U; i < qubits.size(); ++i) {
-            if (!TrySeparate(qubits[i])) {
+        for (const bitLenInt& qubit : qubits) {
+            if (!TrySeparate(qubit)) {
                 return false;
             }
         }

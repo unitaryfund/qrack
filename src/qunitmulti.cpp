@@ -227,18 +227,18 @@ void QUnitMulti::RedistributeQEngines()
 
     std::vector<bitCapIntOcl> devSizes(deviceList.size(), 0U);
 
-    for (size_t i = 0U; i < qinfos.size(); ++i) {
+    for (QEngineInfo& qinfo : qinfos) {
         // We want to proactively set OpenCL devices for the event they cross threshold.
-        const bitLenInt qbc = qinfos[i].unit->GetQubitCount();
-        const bitLenInt dqb = deviceQbList[qinfos[i].deviceIndex % deviceQbList.size()];
-        if (!isRedistributing && (qbc <= dqb) && (bi_compare(qinfos[i].unit->GetMaxQPower(), 2U) > 0) &&
-            !qinfos[i].unit->isClifford() && (isQEngineOCL || (qbc > thresholdQubits))) {
+        const bitLenInt qbc = qinfo.unit->GetQubitCount();
+        const bitLenInt dqb = deviceQbList[qinfo.deviceIndex % deviceQbList.size()];
+        if (!isRedistributing && (qbc <= dqb) && (bi_compare(qinfo.unit->GetMaxQPower(), 2U) > 0) &&
+            !qinfo.unit->isClifford() && (isQEngineOCL || (qbc > thresholdQubits))) {
             continue;
         }
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
-        int64_t deviceID = qinfos[i].unit->GetDevice();
-        int64_t devIndex = qinfos[i].deviceIndex;
+        int64_t deviceID = qinfo.unit->GetDevice();
+        int64_t devIndex = qinfo.deviceIndex;
         bitCapIntOcl sz = devSizes[devIndex];
 
         // If the original device has 0 determined load, don't switch the unit.
@@ -253,7 +253,7 @@ void QUnitMulti::RedistributeQEngines()
             // Find the device with the lowest load.
             for (size_t j = 0U; j < deviceList.size(); ++j) {
                 const bitLenInt dq = deviceQbList[j % deviceQbList.size()];
-                const bitCapInt mqp = devSizes[j] + qinfos[i].unit->GetMaxQPower();
+                const bitCapInt mqp = devSizes[j] + qinfo.unit->GetMaxQPower();
                 if ((devSizes[j] < sz) && (bi_compare(mqp, deviceList[j].maxSize) <= 0) && (qbc <= dq)) {
                     deviceID = deviceList[j].id;
                     devIndex = j;
@@ -262,14 +262,14 @@ void QUnitMulti::RedistributeQEngines()
             }
 
             // Add this unit to the device with the lowest load.
-            qinfos[i].unit->SetDevice(deviceID);
+            qinfo.unit->SetDevice(deviceID);
         }
 
         // Update the size of buffers handles by this device.
-        if (bi_compare(deviceList[devIndex].maxSize, devSizes[devIndex] + qinfos[i].unit->GetMaxQPower()) < 0) {
+        if (bi_compare(deviceList[devIndex].maxSize, devSizes[devIndex] + qinfo.unit->GetMaxQPower()) < 0) {
             throw bad_alloc("QUnitMulti: device allocation limits exceeded.");
         }
-        devSizes[devIndex] += (bitCapIntOcl)qinfos[i].unit->GetMaxQPower();
+        devSizes[devIndex] += (bitCapIntOcl)qinfo.unit->GetMaxQPower();
     }
 }
 } // namespace Qrack

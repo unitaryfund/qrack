@@ -258,7 +258,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const std::vector<bitCapInt>& ski
 
     bitCapInt iHigh = perm;
     bitCapInt i = ZERO_BCI;
-    for (bitCapIntOcl p = 0U; p < skipPowers.size(); ++p) {
+    for (size_t p = 0U; p < skipPowers.size(); ++p) {
         bitCapInt iLow = iHigh & (skipPowers[p] - ONE_BCI);
         bi_or_ip(&i, iLow);
         iHigh = (iHigh ^ iLow) << 1U;

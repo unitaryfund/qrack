@@ -115,8 +115,8 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
             "QInterface::ForceM() boolean values vector length does not match bit vector length!");
     }
 
-    for (size_t i = 0U; i < bits.size(); ++i) {
-        if (bits[i] >= qubitCount) {
+    for (const bitLenInt& bit : bits) {
+        if (bit >= qubitCount) {
             throw std::invalid_argument(
                 "QEngine::ForceM qubit index parameter array values must be within allocated qubit bounds!");
         }

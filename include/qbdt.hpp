@@ -46,8 +46,8 @@ protected:
 
     void DumpBuffers()
     {
-        for (size_t i = 0; i < shards.size(); ++i) {
-            shards[i] = nullptr;
+        for (MpsShardPtr& shard : shards) {
+            shard = nullptr;
         }
     }
     void FlushBuffer(bitLenInt t)
@@ -82,9 +82,9 @@ protected:
     void FlushNonPhaseBuffers()
     {
         for (size_t i = 0U; i < shards.size(); ++i) {
-            const MpsShardPtr shard = shards[i];
+            MpsShardPtr& shard = shards[i];
             if (shard && !shard->IsPhase()) {
-                shards[i] = nullptr;
+                shard = nullptr;
                 ApplySingle(shard->gate, i);
             }
         }

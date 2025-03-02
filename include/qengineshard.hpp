@@ -367,9 +367,9 @@ public:
             bitLenInt offset = swapMap[index];
             shards.erase(shards.begin() + offset);
 
-            for (bitLenInt lcv = 0U; lcv < (bitLenInt)swapMap.size(); ++lcv) {
-                if (swapMap[lcv] >= offset) {
-                    --(swapMap[lcv]);
+            for (bitLenInt& item : swapMap) {
+                if (item >= offset) {
+                    --item;
                 }
             }
         }
@@ -382,7 +382,7 @@ public:
     void reindex()
     {
         std::map<QInterfacePtr, bitLenInt> indices;
-        for (auto&& shard : shards) {
+        for (QEngineShard& shard : shards) {
             if (!shard.unit) {
                 shard.mapped = 0U;
                 continue;

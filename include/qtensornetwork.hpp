@@ -63,8 +63,8 @@ protected:
                 return circuit[l];
             }
 
-            for (size_t j = 0U; j < controls.size(); ++j) {
-                if (m.find(controls[j]) != m.end()) {
+            for (const bitLenInt& control : controls) {
+                if (m.find(control) != m.end()) {
                     if (circuit.size() == l) {
                         circuit.push_back(std::make_shared<QCircuit>());
                     }
