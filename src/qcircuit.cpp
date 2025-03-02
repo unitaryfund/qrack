@@ -72,8 +72,8 @@ std::ostream& operator<<(std::ostream& os, const QCircuitPtr c)
 
     std::list<QCircuitGatePtr> gates = c->GetGateList();
     os << gates.size() << " ";
-    for (const QCircuitGatePtr& g : gates) {
-        os << g;
+    for (auto g = gates.begin(); g != gates.end(); ++g) {
+        os << *g;
     }
 
     return os;
@@ -209,7 +209,8 @@ void QCircuit::Run(QInterfacePtr qsim)
         }
     }
 
-    for (const QCircuitGatePtr& gate : nGates) {
+    for (auto gIt = nGates.begin(); gIt != nGates.end(); ++gIt) {
+        const QCircuitGatePtr& gate = *gIt;
         const bitLenInt& t = gate->target;
 
         if (gate->controls.empty()) {
