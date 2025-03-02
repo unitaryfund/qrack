@@ -66,7 +66,8 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
 #endif
     }
 
-    for (const QInterfaceEngine& et : engines) {
+    for (size_t i = 0U; i < engines.size(); ++i) {
+        const QInterfaceEngine& et = engines[i];
         if (et == QINTERFACE_STABILIZER_HYBRID) {
             break;
         }
@@ -79,7 +80,8 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
     }
 
 #if ENABLE_OPENCL || ENABLE_CUDA
-    for (const QInterfaceEngine& et : engines) {
+    for (size_t i = 0U; i < engines.size(); ++i) {
+        const QInterfaceEngine& et = engines[i];
         if ((et == QINTERFACE_HYBRID) || (et == QINTERFACE_OPENCL) || (et == QINTERFACE_CUDA)) {
             break;
         }
@@ -91,7 +93,8 @@ QTensorNetwork::QTensorNetwork(std::vector<QInterfaceEngine> eng, bitLenInt qBit
 #endif
 
 #if ENABLE_QBDT
-    for (const QInterfaceEngine& et : engines) {
+    for (size_t i = 0U; i < engines.size(); ++i) {
+        const QInterfaceEngine& et = engines[i];
         if ((et == QINTERFACE_BDT_HYBRID) || (et == QINTERFACE_BDT)) {
             isQBdt = true;
             break;
@@ -201,8 +204,8 @@ QInterfacePtr QTensorNetwork::Clone()
         (real1_f)amplitudeFloor, deviceIDs);
 
     clone->circuit.clear();
-    for (const QCircuitPtr& c : circuit) {
-        clone->circuit.push_back(c->Clone());
+    for (size_t i = 0U; i < circuit.size(); ++i) {
+        clone->circuit.push_back(circuit[i]->Clone());
     }
     clone->measurements = measurements;
     if (layerStack) {
