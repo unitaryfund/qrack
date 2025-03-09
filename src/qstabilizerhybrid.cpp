@@ -191,6 +191,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         return;
     }
     // The gate payload is definitely not a phase gate.
+    // Since the blocked gate does not commute, we must flush.
     // This is the new case we can handle with the "reverse gadget" for t-injection in this PRX Quantum article, in
     // Appendix A: https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.3.020361
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
