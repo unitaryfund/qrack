@@ -214,7 +214,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     shard->gate[0U] = complex(angleCos, -angleSin);
     shard->gate[3U] = complex(angleCos, angleSin);
 
-    // Form potentially entangled representation, with this.
+    // Form a representation of state that can entangle a new (or reused) ancilla.
     bitLenInt ancillaIndex = deadAncillaCount
         ? (qubitCount + ancillaCount)
         : stabilizer->Compose(std::make_shared<QUnitClifford>(
@@ -230,7 +230,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     Mtrx(shard->gate, ancillaIndex);
     H(ancillaIndex);
 
-    // When we measure, we act postselection, but not yet.
+    // When we eventually measure, we act postselection, but not yet.
     // ForceM(ancillaIndex, false, true, true);
     // Ancilla is separable after measurement.
     // Dispose(ancillaIndex, 1U);
