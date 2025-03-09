@@ -597,7 +597,7 @@ public:
         const real1_f ld2 = lambda / 2;
 
         QInterface::RZ(ld2, qubit);
-        QInterface::RX(theta, qubit);
+        RX(theta, qubit);
         QInterface::RZ(phi - ld2, qubit);
     }
 
