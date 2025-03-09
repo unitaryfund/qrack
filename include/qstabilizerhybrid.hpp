@@ -588,6 +588,21 @@ public:
         QInterface::IS(qubit);
     }
 
+    void U(bitLenInt qubit, real1_f theta, real1_f phi, real1_f lambda)
+    {
+        if (!stabilizer) {
+            return QInterface::U(qubit, theta, phi, lambda);
+        }
+
+        QInterface::H(qubit);
+        QInterface::RZ(phi, qubit);
+        QInterface::H(qubit);
+        QInterface::RZ(theta, qubit);
+        QInterface::H(qubit);
+        QInterface::RZ(lambda, qubit);
+        QInterface::H(qubit);
+    }
+
 #if ENABLE_ALU
     using QInterface::M;
     bool M(bitLenInt q) { return QInterface::M(q); }
