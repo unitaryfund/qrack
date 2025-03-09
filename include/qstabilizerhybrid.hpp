@@ -564,42 +564,6 @@ public:
         QINTERFACE_TO_QPARITY(engine)->CUniformParityRZ(controls, mask, angle);
     }
 
-    void RY(real1_f radians, bitLenInt qubit)
-    {
-        if (engine) {
-            return engine->RY(radians, qubit);
-        }
-
-        QInterface::H(qubit);
-        QInterface::RZ(radians, qubit);
-        QInterface::H(qubit);
-    }
-
-    void RX(real1_f radians, bitLenInt qubit)
-    {
-        if (engine) {
-            return engine->RX(radians, qubit);
-        }
-
-        QInterface::S(qubit);
-        QInterface::H(qubit);
-        QInterface::RZ(radians, qubit);
-        QInterface::H(qubit);
-        QInterface::IS(qubit);
-    }
-
-    void U(bitLenInt qubit, real1_f theta, real1_f phi, real1_f lambda)
-    {
-        if (engine) {
-            return engine->U(qubit, theta, phi, lambda);
-        }
-
-        const real1_f ld2 = lambda / 2;
-        RZ(ld2, qubit);
-        RX(theta, qubit);
-        RZ(phi - ld2, qubit);
-    }
-
 #if ENABLE_ALU
     using QInterface::M;
     bool M(bitLenInt q) { return QInterface::M(q); }
