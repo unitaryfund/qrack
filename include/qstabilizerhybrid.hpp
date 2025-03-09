@@ -595,10 +595,9 @@ public:
         }
 
         const real1_f ld2 = lambda / 2;
-
-        QInterface::RZ(ld2, qubit);
+        RZ(ld2, qubit);
         RX(theta, qubit);
-        QInterface::RZ(phi - ld2, qubit);
+        RZ(phi - ld2, qubit);
     }
 
 #if ENABLE_ALU
