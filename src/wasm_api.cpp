@@ -359,6 +359,7 @@ void MCRHelper(quid sid, real1_f phi, std::vector<bitLenInt> c, QubitPauliBasis 
     if (qb.b == PauliI) {
         complex phaseFac = exp(complex(ZERO_R1, (real1)(phi / 4)));
         simulator->MCPhase(c, phaseFac, phaseFac, GetSimShardId(simulator, qb.qid));
+
         return;
     }
 
@@ -393,8 +394,9 @@ void MCRHelper(quid sid, real1_f phi, std::vector<bitLenInt> c, QubitPauliBasis 
 inline size_t make_mask(std::vector<QubitPauliBasis> const& qs)
 {
     size_t mask = 0U;
-    for (const QubitPauliBasis& q : qs)
+    for (const QubitPauliBasis& q : qs) {
         mask = mask | pow2Ocl(q.qid);
+    }
     return mask;
 }
 
@@ -431,7 +433,6 @@ bitLenInt MapArithmetic(QInterfacePtr simulator, std::vector<bitLenInt> q)
         simulator->Swap(start + i, bitArray[i]);
         SwapShardValues(start + i, bitArray[i], shards[simulator.get()]);
     }
-
     return start;
 }
 
@@ -463,32 +464,25 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, std::vector<bitLenI
             start2 = bitArray2[i];
         }
     }
-
     bool isReversed = (start2 < start1);
-
     if (isReversed) {
         std::swap(start1, start2);
         bitArray1.swap(bitArray2);
     }
-
     for (size_t i = 0U; i < q1.size(); ++i) {
         simulator->Swap(start1 + i, bitArray1[i]);
         SwapShardValues(start1 + i, bitArray1[i], shards[simulator.get()]);
     }
-
     if ((start1 + q1.size()) > start2) {
         start2 = start1 + q1.size();
     }
-
     for (size_t i = 0U; i < q1.size(); ++i) {
         simulator->Swap(start2 + i, bitArray2[i]);
         SwapShardValues(start2 + i, bitArray2[i], shards[simulator.get()]);
     }
-
     if (isReversed) {
         std::swap(start1, start2);
     }
-
     return MapArithmeticResult2(start1, start2);
 }
 
@@ -888,12 +882,10 @@ size_t random_choice(quid sid, std::vector<real1> p)
 void _PhaseMask(quid sid, real1_f lambda, bitLenInt p, std::vector<bitLenInt> q, bool isParity)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
     bitCapInt mask = ZERO_BCI;
     for (size_t i = 0U; i < q.size(); ++i) {
         bi_or_ip(&mask, pow2(GetSimShardId(simulator, q[i])));
     }
-
     if (isParity) {
         simulator->PhaseParity(lambda, mask);
     } else {
@@ -1656,13 +1648,11 @@ quid Decompose(quid sid, std::vector<bitLenInt> q)
 void Dispose(quid sid, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
     const bitLenInt nQubitIndex = simulator->GetQubitCount() - q.size();
     for (size_t i = 0U; i < q.size(); ++i) {
         simulator->Swap(GetSimShardId(simulator, q[i]), i + nQubitIndex);
     }
     simulator->Dispose(nQubitIndex, q.size());
-
     for (size_t j = 0U; j < q.size(); ++j) {
         std::map<quid, bitLenInt>& simShards = shards[simulator.get()];
         bitLenInt oIndex = simShards[q[j]];
@@ -2154,7 +2144,6 @@ real1_f PauliVariance(quid sid, std::vector<QubitPauliBasis> q) { return PauliEx
 void QFT(quid sid, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
 #if QBCAPPOW < 32
     for (size_t i = 0U; i < q.size(); ++i) {
         q[i] = GetSimShardId(simulator, q[i]);
@@ -2165,7 +2154,6 @@ void QFT(quid sid, std::vector<bitLenInt> q)
 void IQFT(quid sid, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
 #if QBCAPPOW < 32
     for (size_t i = 0U; i < q.size(); ++i) {
         q[i] = GetSimShardId(simulator, q[i]);
@@ -2199,21 +2187,17 @@ void SUBS(quid sid, bitCapInt a, bitLenInt s, std::vector<bitLenInt> q)
 void MCADD(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
     for (size_t i = 0; i < c.size(); ++i) {
         c[i] = GetSimShardId(simulator, c[i]);
     }
-
     simulator->CINC(a, MapArithmetic(simulator, q), q.size(), c);
 }
 void MCSUB(quid sid, bitCapInt a, std::vector<bitLenInt> c, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
     for (size_t i = 0; i < c.size(); ++i) {
         c[i] = GetSimShardId(simulator, c[i]);
     }
-
     simulator->CDEC(a, MapArithmetic(simulator, q), q.size(), c);
 }
 
@@ -2385,24 +2369,20 @@ bool TrySeparateTol(quid sid, std::vector<bitLenInt> q, real1_f tol)
 void Separate(quid sid, std::vector<bitLenInt> q)
 {
     SIMULATOR_LOCK_GUARD_VOID(sid)
-
     std::vector<bitLenInt> bitArray(q.size());
     for (size_t i = 0U; i < q.size(); ++i) {
         bitArray[i] = GetSimShardId(simulator, q[i]);
     }
-
     const bitLenInt end = simulator->GetQubitCount() - 1U;
     for (size_t i = 0U; i < q.size(); ++i) {
         simulator->Swap(end - i, bitArray[i]);
     }
-
     QInterfacePtr partSim = simulator->Decompose(end - q.size(), q.size());
     simulator->UpdateRunningNorm();
     simulator->NormalizeState();
     partSim->UpdateRunningNorm();
     partSim->NormalizeState();
     simulator->Compose(partSim);
-
     for (size_t i = 0U; i < q.size(); ++i) {
         simulator->Swap(end - i, bitArray[i]);
     }

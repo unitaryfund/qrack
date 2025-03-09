@@ -366,6 +366,7 @@ void QUnitClifford::SortUnit(QStabilizerPtr unit, std::vector<QSortEntry>& bits,
             std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); /* Change the global mapping. */
             std::swap(bits[i].mapped, bits[j].mapped); /* Change the contents of the sorting array. */
         }
+
         return;
     }
     QSortEntry pivot = bits[(low + high) >> 1U];
@@ -437,7 +438,6 @@ QUnitStateVectorPtr QUnitClifford::GetDecomposedQuantumState()
         }
         idMap[i] = IdOffset(shard.mapped, qis[shard.unit]);
     }
-
     return std::make_shared<QUnitStateVector>(phaseOffset, idMap, amps);
 }
 
@@ -537,6 +537,7 @@ bool QUnitClifford::SeparateBit(bool value, bitLenInt qubit)
 
     if (unit->GetQubitCount() <= 1U) {
         unit->SetBit(0, value);
+
         return true;
     }
 

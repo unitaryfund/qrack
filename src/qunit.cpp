@@ -127,7 +127,6 @@ QInterfacePtr QUnit::MakeEngine(bitLenInt length, const bitCapInt& perm)
         separabilityThreshold);
     toRet->SetTInjection(useTGadget);
     toRet->SetNcrp(roundingThreshold);
-
     return toRet;
 }
 
@@ -4284,6 +4283,7 @@ void QUnit::OptimizePairBuffers(bitLenInt control, bitLenInt target, bool anti)
 
     ShardToPhaseMap& targets = anti ? tShard.antiTargetOfShards : tShard.targetOfShards;
     ShardToPhaseMap::iterator phaseShard = targets.find(&cShard);
+
     if (phaseShard == targets.end()) {
         return;
     }
@@ -4295,6 +4295,7 @@ void QUnit::OptimizePairBuffers(bitLenInt control, bitLenInt target, bool anti)
             if (IS_1_CMPLX(buffer->cmplxDiff) && IS_1_CMPLX(buffer->cmplxSame)) {
                 return tShard.RemoveAntiControl(&cShard);
             }
+
             if (IS_SAME_UNIT(cShard, tShard)) {
                 tShard.RemoveAntiControl(&cShard);
                 return ApplyBuffer(buffer, control, target, true);
@@ -4303,6 +4304,7 @@ void QUnit::OptimizePairBuffers(bitLenInt control, bitLenInt target, bool anti)
             if (IS_1_CMPLX(buffer->cmplxDiff) && IS_1_CMPLX(buffer->cmplxSame)) {
                 return tShard.RemoveControl(&cShard);
             }
+
             if (IS_SAME_UNIT(cShard, tShard)) {
                 tShard.RemoveControl(&cShard);
                 return ApplyBuffer(buffer, control, target, false);
@@ -4312,6 +4314,7 @@ void QUnit::OptimizePairBuffers(bitLenInt control, bitLenInt target, bool anti)
 
     ShardToPhaseMap& antiTargets = anti ? tShard.targetOfShards : tShard.antiTargetOfShards;
     ShardToPhaseMap::iterator antiShard = antiTargets.find(&cShard);
+
     if (antiShard == antiTargets.end()) {
         return;
     }

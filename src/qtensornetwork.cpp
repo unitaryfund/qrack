@@ -148,6 +148,7 @@ bitLenInt QTensorNetwork::GetThresholdQb()
 
     return (perPage + log2Ocl(devCount)) - 1U;
 #endif
+
 #else
     return QRACK_QRACK_QTENSORNETWORK_THRESHOLD_CPU_QB;
 #endif
@@ -350,12 +351,14 @@ void QTensorNetwork::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenIn
     const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
     if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
         ISwap(qubit1, qubit2);
+
         return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
     const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
     if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
         IISwap(qubit1, qubit2);
+
         return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
