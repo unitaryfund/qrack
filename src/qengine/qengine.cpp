@@ -124,9 +124,9 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
     if (bits.size() == 1U) {
         if (ForceM(bits[0U], values.empty() ? false : values[0U], false, doApply)) {
             return pow2(bits[0U]);
-        } else {
-            return ZERO_BCI;
         }
+
+        return ZERO_BCI;
     }
 
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[bits.size()]);
@@ -473,7 +473,6 @@ real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt 
     } else {
         CNOT(control, target);
     }
-
     return prob;
 }
 

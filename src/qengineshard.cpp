@@ -33,6 +33,7 @@ bool QEngineShard::ClampAmps()
         amp0 = ZERO_R1;
         amp1 /= abs(amp1);
         isPhaseDirty = false;
+
         return true;
     }
 
@@ -40,6 +41,7 @@ bool QEngineShard::ClampAmps()
         amp1 = ZERO_R1;
         amp0 /= abs(amp0);
         isPhaseDirty = false;
+
         return true;
     }
 
@@ -131,6 +133,7 @@ void QEngineShard::AddAngles(QEngineShardPtr control, const complex& cmplxDiff, 
     if (!targetOfShard->isInvert && IS_ARG_0(ncmplxDiff) && IS_ARG_0(ncmplxSame)) {
         /* The buffer is equal to the identity operator, and it can be removed. */
         ((*this).*remoteFn)(control);
+
         return;
     }
 

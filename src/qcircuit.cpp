@@ -102,6 +102,7 @@ bool QCircuit::AppendGate(QCircuitGatePtr nGate)
 {
     if (!isCollapsed) {
         gates.push_back(nGate);
+
         return false;
     }
 
@@ -148,12 +149,16 @@ bool QCircuit::AppendGate(QCircuitGatePtr nGate)
                 }
                 gates.insert(gates.end(), head.begin(), head.end());
             }
+
             return true;
         }
+
         if (!(*gate)->CanPass(nGate)) {
             gates.insert(gate.base(), { nGate });
+
             return didCommute;
         }
+
         std::set<bitLenInt> gQubits((*gate)->controls);
         gQubits.insert((*gate)->target);
         didCommute |= std::any_of(

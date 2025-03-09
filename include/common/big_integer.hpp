@@ -123,6 +123,7 @@ inline int bi_compare(const BigInteger& left, const BigInteger& right)
         if (left.bits[i] > right.bits[i]) {
             return 1;
         }
+
         if (left.bits[i] < right.bits[i]) {
             return -1;
         }
@@ -149,9 +150,11 @@ inline int bi_compare_1(const BigInteger& left)
             return 1;
         }
     }
+
     if (left.bits[0] > 1U) {
         return 1;
     }
+
     if (left.bits[0] < 1U) {
         return -1;
     }
@@ -168,7 +171,6 @@ inline BigInteger operator+(const BigInteger& left, const BigInteger& right)
         result.bits[i + 1] = (result.bits[i] < left.bits[i]) ? 1 : 0;
     }
     result.bits[BIG_INTEGER_MAX_WORD_INDEX] += right.bits[BIG_INTEGER_MAX_WORD_INDEX];
-
     return result;
 }
 
@@ -194,7 +196,6 @@ inline BigInteger operator-(const BigInteger& left, const BigInteger& right)
         result.bits[i + 1] = (result.bits[i] > left.bits[i]) ? -1 : 0;
     }
     result.bits[BIG_INTEGER_MAX_WORD_INDEX] -= right.bits[BIG_INTEGER_MAX_WORD_INDEX];
-
     return result;
 }
 
@@ -215,9 +216,11 @@ inline void bi_increment(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 {
     BIG_INTEGER_WORD temp = pBigInt->bits[0];
     pBigInt->bits[0] += value;
+
     if (temp <= pBigInt->bits[0]) {
         return;
     }
+
     for (int i = 1; i < BIG_INTEGER_WORD_SIZE; i++) {
         temp = pBigInt->bits[i]++;
         if (temp <= pBigInt->bits[i]) {
@@ -230,9 +233,11 @@ inline void bi_decrement(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 {
     BIG_INTEGER_WORD temp = pBigInt->bits[0];
     pBigInt->bits[0] -= value;
+
     if (temp >= pBigInt->bits[0]) {
         return;
     }
+
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; i++) {
         temp = pBigInt->bits[i]--;
         if (temp >= pBigInt->bits[i]) {
@@ -268,9 +273,11 @@ inline BigInteger bi_lshift_word(const BigInteger& left, BIG_INTEGER_WORD rightM
 inline void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
 {
     rightMult &= 63U;
+
     if (!rightMult) {
         return;
     }
+
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         left->bits[i] = left->bits[i - rightMult];
     }
@@ -298,6 +305,7 @@ inline void bi_rshift_word_ip(BigInteger* left, const BIG_INTEGER_WORD& rightMul
     if (!rightMult) {
         return;
     }
+
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         left->bits[i - rightMult] = left->bits[i];
     }
@@ -333,6 +341,7 @@ inline void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
 
     bi_lshift_word_ip(left, rShift64);
+
     if (!rMod) {
         return;
     }
@@ -352,6 +361,7 @@ inline BigInteger operator>>(const BigInteger& left, BIG_INTEGER_WORD right)
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
 
     BigInteger result = bi_rshift_word(left, rShift64);
+
     if (!rMod) {
         return result;
     }
@@ -373,6 +383,7 @@ inline void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
 
     bi_rshift_word_ip(left, rShift64);
+
     if (!rMod) {
         return;
     }
@@ -405,7 +416,6 @@ inline BigInteger operator&(const BigInteger& left, const BigInteger& right)
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] = left.bits[i] & right.bits[i];
     }
-
     return result;
 }
 
@@ -422,7 +432,6 @@ inline BigInteger operator|(const BigInteger& left, const BigInteger& right)
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] = left.bits[i] | right.bits[i];
     }
-
     return result;
 }
 
@@ -439,7 +448,6 @@ inline BigInteger operator^(const BigInteger& left, const BigInteger& right)
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] = left.bits[i] ^ right.bits[i];
     }
-
     return result;
 }
 
@@ -456,7 +464,6 @@ inline BigInteger operator~(const BigInteger& left)
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] = ~(left.bits[i]);
     }
-
     return result;
 }
 
@@ -475,7 +482,6 @@ inline double bi_to_double(const BigInteger& in)
             toRet += in.bits[i] * pow(2.0, BIG_INTEGER_WORD_BITS * i);
         }
     }
-
     return toRet;
 }
 

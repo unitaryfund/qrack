@@ -293,7 +293,6 @@ public:
         QEnginePtr dest = CloneEmpty();
         dest->SetQubitCount(length);
         Decompose(start, dest);
-
         return dest;
     }
 

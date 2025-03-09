@@ -27,6 +27,7 @@ void QInterface::INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length)
         if (bi_and_1(toAdd) != 0) {
             X(start);
         }
+
         return;
     }
 
@@ -89,6 +90,7 @@ void QInterface::CINC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length,
         if (bi_and_1(toAdd) != 0) {
             MCInvert(controls, ONE_CMPLX, ONE_CMPLX, start);
         }
+
         return;
     }
 
@@ -353,6 +355,7 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
 
     if (length == 1U) {
         Swap(carry, output);
+
         return IFullAdd(input1, input2, carry, output);
     }
 
@@ -395,6 +398,7 @@ void QInterface::CIADC(const std::vector<bitLenInt>& controls, bitLenInt input1,
 
     if (length == 1U) {
         CSwap(controls, carry, output);
+
         return CIFullAdd(controls, input1, input2, carry, output);
     }
 

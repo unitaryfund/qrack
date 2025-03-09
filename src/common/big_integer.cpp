@@ -52,7 +52,6 @@ BigInteger operator*(const BigInteger& left, BIG_INTEGER_HALF_WORD right)
             result.bits[i2] |= temp & BIG_INTEGER_HALF_WORD_MASK;
         }
     }
-
     return result;
 }
 
@@ -62,10 +61,12 @@ BigInteger operator*(const BigInteger& left, BIG_INTEGER_HALF_WORD right)
 BigInteger operator*(const BigInteger& left, const BigInteger& right)
 {
     int rightLog2 = bi_log2(right);
+
     if (rightLog2 == 0) {
         // right == 1
         return left;
     }
+
     int maxI = BIG_INTEGER_BITS - rightLog2;
 
     BigInteger result;
@@ -102,6 +103,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
                 break;
             }
         }
+
         if (wordSize == BIG_INTEGER_WORD_SIZE) {
             return left * (BIG_INTEGER_HALF_WORD)(right->bits[0]);
         }
@@ -114,6 +116,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right)
                 break;
             }
         }
+
         if (wordSize == BIG_INTEGER_WORD_SIZE) {
             return right & (BIG_INTEGER_HALF_WORD)(left.bits[0]);
         }
@@ -229,6 +232,7 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
             // rmndr = left
             bi_copy_ip(left, rmndr);
         }
+
         return;
     }
 
@@ -243,6 +247,7 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
             // rmndr = 0
             bi_set_0(rmndr);
         }
+
         return;
     }
 
@@ -267,6 +272,7 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
             } else {
                 bi_div_mod_small(left, (BIG_INTEGER_HALF_WORD)(right.bits[0]), quotient, 0);
             }
+
             return;
         }
     }

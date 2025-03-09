@@ -61,6 +61,7 @@ bitCapInt intPow(const bitCapInt& base, const bitCapInt& power)
     if (bi_compare_0(power) == 0U) {
         return ONE_BCI;
     }
+
     if (bi_compare_1(power) == 0U) {
         return base;
     }
@@ -78,6 +79,7 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
     if (power == 0U) {
         return 1U;
     }
+
     if (power == 1U) {
         return base;
     }
@@ -216,6 +218,7 @@ bool isOverflowAdd(
     if (inOutInt & inInt & signMask) {
         inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
         inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+
         if ((inOutInt + inInt) > signMask) {
             return true;
         }
@@ -237,14 +240,18 @@ bool isOverflowSub(
     // First negative:
     if (inOutInt & (~inInt) & (signMask)) {
         inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-        if ((inOutInt + inInt) > signMask)
+
+        if ((inOutInt + inInt) > signMask) {
             return true;
+        }
     }
     // First positive:
     else if ((~inOutInt) & inInt & (signMask)) {
         inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
-        if ((inOutInt + inInt) >= signMask)
+
+        if ((inOutInt + inInt) >= signMask) {
             return true;
+        }
     }
 
     return false;
@@ -273,6 +280,7 @@ std::ostream& operator<<(std::ostream& os, const bitCapInt& b)
 {
     if (bi_compare_0(b) == 0) {
         os << "0";
+
         return os;
     }
 

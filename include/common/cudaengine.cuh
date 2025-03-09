@@ -176,6 +176,7 @@ public:
         if (dev > ((int64_t)activeAllocSizes.size())) {
             return 0U;
         }
+
         return (dev < 0) ? activeAllocSizes[GetDefaultDeviceID()] : activeAllocSizes[(size_t)dev];
     }
     size_t AddToActiveAllocSize(const int64_t& dev, size_t size)
@@ -213,6 +214,7 @@ public:
         } else {
             activeAllocSizes[lDev] = 0;
         }
+
         return activeAllocSizes[lDev];
     }
     void ResetActiveAllocSize(const int64_t& dev)

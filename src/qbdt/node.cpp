@@ -47,9 +47,11 @@ void QBdtNode::Prune(bitLenInt depth)
     }
 
     QBdtNodeInterfacePtr b0 = branches[0U];
+
     if (!b0) {
         return SetZero();
     }
+
     QBdtNodeInterfacePtr b1 = branches[1U];
 
     // Prune recursively to depth.
@@ -265,6 +267,7 @@ void QBdtNode::Branch(bitLenInt depth)
             std::lock_guard<std::mutex> lock(b1->mtx);
             b1->Branch(depth, parDepth);
         }
+
         return;
     }
 
@@ -292,9 +295,11 @@ void QBdtNode::Normalize(bitLenInt depth)
     }
 
     QBdtNodeInterfacePtr b0 = branches[0U];
+
     if (!b0) {
         return SetZero();
     }
+
     QBdtNodeInterfacePtr b1 = branches[1U];
 
     --depth;
@@ -333,9 +338,11 @@ void QBdtNode::PopStateVector(bitLenInt depth)
     }
 
     QBdtNodeInterfacePtr b0 = branches[0U];
+
     if (!b0) {
         return SetZero();
     }
+
     QBdtNodeInterfacePtr b1 = branches[1U];
 
     // Depth-first
@@ -354,6 +361,7 @@ void QBdtNode::PopStateVector(bitLenInt depth)
             scale = ZERO_CMPLX;
             branches[0U] = nullptr;
             branches[1U] = nullptr;
+
             return;
         }
 
@@ -397,6 +405,7 @@ void QBdtNode::PopStateVector(bitLenInt depth)
         scale = std::polar(sqrtNrm, std::arg(b1->scale));
         b0->SetZero();
         b1->scale = ONE_CMPLX;
+
         return;
     }
 
@@ -405,6 +414,7 @@ void QBdtNode::PopStateVector(bitLenInt depth)
     if (isB1Eigen) {
         b0->scale = ONE_CMPLX;
         b1->SetZero();
+
         return;
     }
 

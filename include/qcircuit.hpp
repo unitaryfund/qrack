@@ -342,6 +342,7 @@ struct QCircuitGate {
             if (norm(refP[0U] - refP[3U]) > FP_NORM_EPSILON) {
                 return false;
             }
+
             const complex phaseFac = refP[0U];
             for (const auto& payload : payloads) {
                 complex* p = payload.second.get();
@@ -350,6 +351,7 @@ struct QCircuitGate {
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -418,6 +420,7 @@ struct QCircuitGate {
         if ((controls.size() != 1U) || (payloads.size() != 1U) || (payloads.find(ONE_BCI) == payloads.end())) {
             return false;
         }
+
         complex* p = payloads[ONE_BCI].get();
         if ((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON) ||
             (norm(ONE_CMPLX - p[1]) > FP_NORM_EPSILON) || (norm(ONE_CMPLX - p[2]) > FP_NORM_EPSILON)) {
@@ -435,6 +438,7 @@ struct QCircuitGate {
         if ((controls.size() != 1U) || (payloads.size() != 1U) || (payloads.find(ZERO_BCI) == payloads.end())) {
             return false;
         }
+
         complex* p = payloads[ZERO_BCI].get();
         if ((norm(p[0]) > FP_NORM_EPSILON) || (norm(p[3]) > FP_NORM_EPSILON) ||
             (norm(ONE_CMPLX - p[1]) > FP_NORM_EPSILON) || (norm(ONE_CMPLX - p[2]) > FP_NORM_EPSILON)) {
@@ -499,9 +503,11 @@ struct QCircuitGate {
         if (controls.find(other->target) != controls.end()) {
             return IsPhase() && other->IsPhase();
         }
+
         if (IsPhase()) {
             return true;
         }
+
         if (!IsPhaseInvert() ||
             !std::includes(other->controls.begin(), other->controls.end(), controls.begin(), controls.end())) {
             return false;

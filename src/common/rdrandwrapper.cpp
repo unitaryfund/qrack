@@ -56,6 +56,7 @@ std::string _getDefaultRandomNumberFilePath()
             toRet += "/";
 #endif
         }
+
         return toRet;
     }
 #endif

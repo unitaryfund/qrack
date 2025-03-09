@@ -55,11 +55,13 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t& dev)
 {
     if ((dev >= GetDeviceCount()) || (dev < -1) || (dev >= ((int64_t)all_device_contexts.size()))) {
         throw std::invalid_argument("Invalid OpenCL device selection");
-    } else if (dev == -1) {
-        return default_device_context;
-    } else {
-        return all_device_contexts[dev];
     }
+
+    if (dev == -1) {
+        return default_device_context;
+    }
+
+    return all_device_contexts[dev];
 }
 
 // clang-format off
@@ -296,6 +298,7 @@ InitOClResult OCLEngine::InitOCL(
 
     if (all_platforms.empty()) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
+
         return InitOClResult();
     }
 
@@ -349,6 +352,7 @@ InitOClResult OCLEngine::InitOCL(
     }
     if (all_devices.empty()) {
         std::cout << " No devices found. Check OpenCL installation!\n";
+
         return InitOClResult();
     }
 

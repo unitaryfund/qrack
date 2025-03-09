@@ -237,6 +237,7 @@ bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vect
                 bi_or_ip(&result, pow2(bits[bit]));
             }
         }
+
         return result;
     }
 
@@ -247,6 +248,7 @@ bitCapInt QInterface::ForceM(const std::vector<bitLenInt>& bits, const std::vect
                 bi_or_ip(&result, pow2(bits[bit]));
             }
         }
+
         return result;
     }
 
@@ -297,6 +299,7 @@ void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 
     shift %= length;
+
     if (!shift) {
         return;
     }
@@ -315,6 +318,7 @@ void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 
     shift %= length;
+
     if (!shift) {
         return;
     }
@@ -408,11 +412,9 @@ bitLenInt QInterface::Compose(QInterfacePtr toCopy, bitLenInt start)
 std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr> toCopy)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
-
     for (auto&& q : toCopy) {
         ret[q] = Compose(q);
     }
-
     return ret;
 }
 
@@ -593,6 +595,7 @@ real1_f QInterface::VarianceBitsFactorized(
         const real1_f prob = Prob(bits[0]);
         const real1_f diff0 = bi_to_double(perms[0U] + offset) - mean;
         const real1_f diff1 = bi_to_double(perms[1U] + offset) - mean;
+
         return diff0 * diff0 * (ONE_R1_F - prob) + diff1 * diff1 * prob;
     }
 
@@ -632,6 +635,7 @@ real1_f QInterface::VarianceFloatsFactorized(const std::vector<bitLenInt>& bits,
         const real1_f prob = Prob(bits[0]);
         const real1_f var0 = weights[0U] - mean;
         const real1_f var1 = weights[1U] - mean;
+
         return var0 * var0 * (ONE_R1_F - prob) + var1 * var1 * prob;
     }
 
@@ -779,6 +783,7 @@ real1_f QInterface::ExpectationFloatsFactorized(const std::vector<bitLenInt>& bi
 
     if (bits.size() == 1U) {
         const real1_f prob = Prob(bits[0]);
+
         return weights[0U] * (ONE_R1_F - prob) + weights[1U] * prob;
     }
 
@@ -1107,6 +1112,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, b
     if (!n) {
         return;
     }
+
     if (n == 1) {
         return CZ(control, target, length);
     }
@@ -1122,6 +1128,7 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, 
     if (!n) {
         return;
     }
+
     if (n == 1) {
         return CZ(control, target, length);
     }

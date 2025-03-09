@@ -265,9 +265,11 @@ public:
                 toRet += "/";
 #endif
             }
+
             return toRet;
         }
 #endif
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
         return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
             std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\";
@@ -302,6 +304,7 @@ public:
         if (dev > ((int64_t)activeAllocSizes.size())) {
             throw std::invalid_argument("OCLEngine::GetActiveAllocSize device ID is too high!");
         }
+
         return (dev < 0) ? activeAllocSizes[GetDefaultDeviceID()] : activeAllocSizes[(size_t)dev];
     }
     size_t AddToActiveAllocSize(const int64_t& dev, size_t size)
@@ -339,6 +342,7 @@ public:
         } else {
             activeAllocSizes[lDev] = 0;
         }
+
         return activeAllocSizes[lDev];
     }
     void ResetActiveAllocSize(const int64_t& dev)

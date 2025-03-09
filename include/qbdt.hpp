@@ -150,7 +150,6 @@ protected:
         GetQuantumState(qReg);
         const bitCapInt toRet = operation(qReg);
         SetQuantumState(qReg);
-
         return toRet;
     }
 
@@ -184,7 +183,6 @@ protected:
                 bi_or_ip(&sample, pow2(i));
             }
         }
-
         return sample;
     }
 

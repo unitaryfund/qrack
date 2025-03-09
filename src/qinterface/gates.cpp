@@ -112,6 +112,7 @@ void QInterface::XMask(const bitCapInt& _mask)
 void QInterface::YMask(const bitCapInt& _mask)
 {
     bitLenInt bit = log2(_mask);
+
     if (bi_compare(pow2(bit), _mask) == 0) {
         return Y(bit);
     }

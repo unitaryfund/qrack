@@ -288,7 +288,6 @@ QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapIntOcl pageId)
             GetPageHostPointer(pageId), GetPageDevice(pageId), useRDRAND, isSparse, (real1_f)amplitudeFloor));
     toRet->SetQubitCount(length);
     toRet->SetTInjection(useTGadget);
-
     return toRet;
 }
 
@@ -617,6 +616,7 @@ void QPager::CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, const std
 bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
 {
     const bitLenInt toRet = qubitCount;
+
     if (!toCopy->qubitCount) {
         return toRet;
     }
@@ -631,6 +631,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
         CombineEngines();
         toCopy->CombineEngines();
         SetQubitCount(nQubitCount);
+
         return qPages[0U]->Compose(toCopy->qPages[0U]);
     }
 
@@ -639,6 +640,7 @@ bitLenInt QPager::ComposeEither(QPagerPtr toCopy, bool willDestroy)
         toCopyClone->Compose(shared_from_this(), 0U);
         qPages = toCopyClone->qPages;
         SetQubitCount(nQubitCount);
+
         return toRet;
     }
 
@@ -727,6 +729,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
     if ((start + length) > qubitsPerPage()) {
         ROR(start, 0, qubitCount);
         Decompose(0, dest);
+
         return ROL(start, 0, qubitCount);
     }
 
@@ -757,6 +760,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
     if ((start + length) > qubitsPerPage()) {
         ROR(start, 0, qubitCount);
         Dispose(0, length);
+
         return ROL(start, 0, qubitCount);
     }
 
@@ -777,6 +781,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& dispose
     if ((start + length) > qubitsPerPage()) {
         ROR(start, 0, qubitCount);
         Dispose(0, length, disposedPerm);
+
         return ROL(start, 0, qubitCount);
     }
 
@@ -799,6 +804,7 @@ bitLenInt QPager::Allocate(bitLenInt start, bitLenInt length)
     QPagerPtr nQubits = std::make_shared<QPager>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, 0, (hardware_rand_generator == nullptr) ? false : true, isSparse,
         (real1_f)amplitudeFloor, deviceIDs, thresholdQubitsPerPage);
+
     return Compose(nQubits, start);
 }
 
@@ -934,6 +940,7 @@ void QPager::Mtrx(const complex* mtrx, bitLenInt target)
     if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
         return Phase(mtrx[0U], mtrx[3U], target);
     }
+
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
         return Invert(mtrx[1U], mtrx[2U], target);
     }
@@ -1334,12 +1341,16 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
     const bool isQubit1Meta = qubit1 >= baseQubitsPerPage;
     const bool isQubit2Meta = qubit2 >= baseQubitsPerPage;
+
     if (isQubit1Meta && isQubit2Meta) {
         SeparateEngines();
+
         return MetaSwap(qubit1, qubit2, false, false);
     }
+
     if (isQubit1Meta || isQubit2Meta) {
         SeparateEngines();
+
         return QInterface::Swap(qubit1, qubit2);
     }
 
@@ -1355,14 +1366,17 @@ void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 
     const bool isQubit1Meta = qubit1 >= baseQubitsPerPage;
     const bool isQubit2Meta = qubit2 >= baseQubitsPerPage;
+
     if (isQubit1Meta && isQubit2Meta) {
         SeparateEngines();
         return MetaSwap(qubit1, qubit2, true, isInverse);
     }
+
     if (isQubit1Meta || isQubit2Meta) {
         SeparateEngines();
         QInterface::Swap(qubit1, qubit2);
     }
+
     if (isQubit1Meta) {
         qubit1 -= baseQubitsPerPage;
         const complex phaseFac = isInverse ? -I_CMPLX : I_CMPLX;
@@ -1373,8 +1387,10 @@ void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
                 qPages[i]->Phase(ONE_CMPLX, phaseFac, qubit2);
             }
         }
+
         return;
     }
+
     if (isQubit2Meta) {
         qubit2 -= baseQubitsPerPage;
         const complex phaseFac = isInverse ? -I_CMPLX : I_CMPLX;
@@ -1385,6 +1401,7 @@ void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
                 qPages[i]->Phase(ONE_CMPLX, phaseFac, qubit1);
             }
         }
+
         return;
     }
 
@@ -1416,12 +1433,14 @@ void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2
     const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
     if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
         ISwap(qubit1, qubit2);
+
         return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
     const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
     if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
         IISwap(qubit1, qubit2);
+
         return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
@@ -1481,6 +1500,7 @@ real1_f QPager::Prob(bitLenInt qubit)
             }
             futures[iF] = std::async(std::launch::async, [engine]() {
                 engine->UpdateRunningNorm();
+
                 return engine->GetRunningNorm();
             });
 #else
@@ -1502,7 +1522,6 @@ real1_f QPager::Prob(bitLenInt qubit)
 real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     CombineEngines(log2(mask) + 1U);
-
     real1_f maskChance = ZERO_R1_F;
     for (const QEnginePtr& qPage : qPages) {
         maskChance += qPage->ProbMask(mask, permutation);
@@ -1583,45 +1602,36 @@ void QPager::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 QInterfacePtr QPager::Clone()
 {
     SeparateEngines();
-
     QPagerPtr clone = std::make_shared<QPager>(engines, qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, 0, (hardware_rand_generator == nullptr) ? false : true, isSparse,
         (real1_f)amplitudeFloor, deviceIDs, thresholdQubitsPerPage);
-
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());
     }
-
     return clone;
 }
 
 QEnginePtr QPager::CloneEmpty()
 {
     SeparateEngines();
-
     QPagerPtr clone = std::make_shared<QPager>(engines, qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, 0, (hardware_rand_generator == nullptr) ? false : true, isSparse,
         (real1_f)amplitudeFloor, deviceIDs, thresholdQubitsPerPage);
-
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
         clone->qPages[i] = qPages[i]->CloneEmpty();
     }
-
     return clone;
 }
 
 QInterfacePtr QPager::Copy()
 {
     SeparateEngines();
-
     QPagerPtr clone = std::make_shared<QPager>(engines, qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, 0, (hardware_rand_generator == nullptr) ? false : true, isSparse,
         (real1_f)amplitudeFloor, deviceIDs, thresholdQubitsPerPage);
-
     for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Copy());
     }
-
     return clone;
 }
 

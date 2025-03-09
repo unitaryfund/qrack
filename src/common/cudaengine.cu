@@ -26,11 +26,13 @@ DeviceContextPtr CUDAEngine::GetDeviceContextPtr(const int64_t& dev)
 {
     if ((dev >= GetDeviceCount()) || (dev < -1) || (dev >= ((int64_t)all_device_contexts.size()))) {
         throw std::runtime_error("Invalid CUDA device selection");
-    } else if (dev == -1) {
-        return default_device_context;
-    } else {
-        return all_device_contexts[dev];
     }
+
+    if (dev == -1) {
+        return default_device_context;
+    }
+
+    return all_device_contexts[dev];
 }
 
 std::vector<DeviceContextPtr> CUDAEngine::GetDeviceContextPtrVector() { return all_device_contexts; }
@@ -50,6 +52,7 @@ InitCUDAResult CUDAEngine::InitCUDA(std::vector<int64_t> maxAllocVec)
     cudaGetDeviceCount(&deviceCount);
     if (!deviceCount) {
         std::cout << " No devices found. Check CUDA installation!\n";
+
         return InitCUDAResult();
     }
 

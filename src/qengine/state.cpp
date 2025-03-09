@@ -44,6 +44,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, const bitCapInt& initState, qrack_ra
 
     if (!qubitCount) {
         ZeroAmplitudes();
+
         return;
     }
 
@@ -734,6 +735,7 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, const bitCapInt& mask)
     if (!n || (bi_compare_0(mask) == 0)) {
         return;
     }
+
     if (n == 1U) {
         return ZMask(mask);
     }
@@ -960,6 +962,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
         // Compose will have a wider but 0 stateVec
         ZeroAmplitudes();
         SetQubitCount(nQubitCount);
+
         return result;
     }
 
@@ -1002,6 +1005,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 
     if (!qubitCount) {
         Compose(toCopy);
+
         return 0U;
     }
 
@@ -1020,6 +1024,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
         // Compose will have a wider but 0 stateVec
         ZeroAmplitudes();
         SetQubitCount(nQubitCount);
+
         return start;
     }
 
@@ -1132,6 +1137,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         if (destination) {
             destination->ZeroAmplitudes();
         }
+
         return;
     }
 
@@ -1140,6 +1146,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             destination->stateVec = stateVec;
         }
         stateVec = nullptr;
+
         return SetQubitCount(0U);
     }
 
@@ -1385,9 +1392,11 @@ real1_f QEngineCPU::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenI
     if (!controlState) {
         controlProb = ONE_R1 - controlProb;
     }
+
     if (controlProb <= FP_NORM_EPSILON) {
         return ZERO_R1;
     }
+
     if ((ONE_R1 - controlProb) <= FP_NORM_EPSILON) {
         return Prob(target);
     }
@@ -1532,6 +1541,7 @@ bitCapInt QEngineCPU::MAll()
             totProb += partProb;
             if ((totProb > rnd) || ((ONE_R1_F - totProb) <= FP_NORM_EPSILON)) {
                 SetPermutation(perm);
+
                 return perm;
             }
             lastNonzero = perm;
@@ -1540,6 +1550,7 @@ bitCapInt QEngineCPU::MAll()
     }
 
     SetPermutation(lastNonzero);
+
     return lastNonzero;
 }
 
@@ -1620,11 +1631,13 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
 
     if (!stateVec) {
         toCompare->UpdateRunningNorm();
+
         return (real1_f)(toCompare->runningNorm);
     }
 
     if (!toCompare->stateVec) {
         UpdateRunningNorm();
+
         return (real1_f)runningNorm;
     }
 
@@ -1679,13 +1692,16 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
         Finish();
         nrm = runningNorm;
     }
+
     // We might avoid the clFinish().
     if (nrm <= FP_NORM_EPSILON) {
         return ZeroAmplitudes();
     }
+
     if ((abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) && ((phaseArg * phaseArg) <= FP_NORM_EPSILON)) {
         return;
     }
+
     // We might have async execution of gates still happening.
     Finish();
 
@@ -1718,6 +1734,7 @@ void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
 
     if (!stateVec) {
         runningNorm = ZERO_R1;
+
         return;
     }
 

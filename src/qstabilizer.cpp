@@ -2169,6 +2169,7 @@ void QStabilizer::MACPhase(
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             return;
         }
+
         if (IS_SAME(bottomRight, -ONE_CMPLX)) {
             return AntiCZ(control, target);
         }
@@ -2176,32 +2177,41 @@ void QStabilizer::MACPhase(
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             AntiCNOT(control, target);
             AntiCZ(control, target);
+
             return AntiCNOT(control, target);
         }
+
         if (IS_SAME(bottomRight, -ONE_CMPLX)) {
             AntiCZ(control, target);
             AntiCNOT(control, target);
             AntiCZ(control, target);
+
             return AntiCNOT(control, target);
         }
     } else if (IS_SAME(topLeft, I_CMPLX)) {
         if (IS_SAME(bottomRight, I_CMPLX)) {
             AntiCZ(control, target);
             AntiCY(control, target);
+
             return AntiCNOT(control, target);
         }
+
         if (IS_SAME(bottomRight, -I_CMPLX)) {
             AntiCY(control, target);
+
             return AntiCNOT(control, target);
         }
     } else if (IS_SAME(topLeft, -I_CMPLX)) {
         if (IS_SAME(bottomRight, I_CMPLX)) {
             AntiCNOT(control, target);
+
             return AntiCY(control, target);
         }
+
         if (IS_SAME(bottomRight, -I_CMPLX)) {
             AntiCY(control, target);
             AntiCZ(control, target);
+
             return AntiCNOT(control, target);
         }
     }
@@ -2228,36 +2238,46 @@ void QStabilizer::MCInvert(
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             return CNOT(control, target);
         }
+
         if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             CNOT(control, target);
+
             return CZ(control, target);
         }
     } else if (IS_SAME(topRight, -ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             CZ(control, target);
+
             return CNOT(control, target);
         }
+
         if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             CZ(control, target);
             CNOT(control, target);
+
             return CZ(control, target);
         }
     } else if (IS_SAME(topRight, I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
             CZ(control, target);
+
             return CY(control, target);
         }
+
         if (IS_SAME(bottomLeft, -I_CMPLX)) {
             CZ(control, target);
             CY(control, target);
+
             return CZ(control, target);
         }
     } else if (IS_SAME(topRight, -I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
             return CY(control, target);
         }
+
         if (IS_SAME(bottomLeft, -I_CMPLX)) {
             CY(control, target);
+
             return CZ(control, target);
         }
     }
@@ -2284,36 +2304,46 @@ void QStabilizer::MACInvert(
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             return AntiCNOT(control, target);
         }
+
         if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             AntiCNOT(control, target);
+
             return AntiCZ(control, target);
         }
     } else if (IS_SAME(topRight, -ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             AntiCZ(control, target);
+
             return AntiCNOT(control, target);
         }
+
         if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             AntiCZ(control, target);
             AntiCNOT(control, target);
+
             return AntiCZ(control, target);
         }
     } else if (IS_SAME(topRight, I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
             AntiCZ(control, target);
+
             return AntiCY(control, target);
         }
+
         if (IS_SAME(bottomLeft, -I_CMPLX)) {
             AntiCZ(control, target);
             AntiCY(control, target);
+
             return AntiCZ(control, target);
         }
     } else if (IS_SAME(topRight, -I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
             return AntiCY(control, target);
         }
+
         if (IS_SAME(bottomLeft, -I_CMPLX)) {
             AntiCY(control, target);
+
             return AntiCZ(control, target);
         }
     }

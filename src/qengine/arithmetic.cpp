@@ -33,6 +33,7 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 
     shift %= length;
+
     if (!shift) {
         return;
     }
@@ -72,6 +73,7 @@ void QEngineCPU::INC(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt len
 
     const bitCapIntOcl lengthMask = pow2MaskOcl(length);
     const bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd & lengthMask;
+
     if (!toAddOcl) {
         return;
     }
@@ -116,6 +118,7 @@ void QEngineCPU::CINC(
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl lengthMask = lengthPower - 1U;
     const bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd & lengthMask;
+
     if (!toAddOcl) {
         return;
     }
@@ -166,6 +169,7 @@ void QEngineCPU::INCDECC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenInt
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl lengthMask = lengthPower - 1U;
     const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod & lengthMask;
+
     if (!toModOcl) {
         return;
     }
@@ -217,6 +221,7 @@ void QEngineCPU::INCS(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt le
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl lengthMask = lengthPower - 1U;
     const bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd & lengthMask;
+
     if (!toAddOcl) {
         return;
     }
@@ -267,6 +272,7 @@ void QEngineCPU::INCDECSC(const bitCapInt& toMod, bitLenInt inOutStart, bitLenIn
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl lengthMask = lengthPower - 1U;
     const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod & lengthMask;
+
     if (!toModOcl) {
         return;
     }
@@ -323,6 +329,7 @@ void QEngineCPU::INCDECSC(
     const bitCapIntOcl lengthPower = pow2Ocl(length);
     const bitCapIntOcl lengthMask = lengthPower - 1U;
     const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod & lengthMask;
+
     if (!toModOcl) {
         return;
     }
@@ -399,6 +406,7 @@ void QEngineCPU::MUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt car
     if (bi_compare_0(toMul) == 0) {
         return SetReg(inOutStart, length, ZERO_BCI);
     }
+
     if (bi_compare_1(toMul) == 0) {
         return;
     }
@@ -412,6 +420,7 @@ void QEngineCPU::DIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt car
     if (bi_compare_0(toDiv) == 0) {
         throw std::invalid_argument("DIV by zero");
     }
+
     if (bi_compare_1(toDiv) == 0) {
         return;
     }
@@ -497,6 +506,7 @@ void QEngineCPU::CMUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt ca
     if (bi_compare_0(toMul) == 0) {
         return SetReg(inOutStart, length, ZERO_BCI);
     }
+
     if (bi_compare_1(toMul) == 0) {
         return;
     }
@@ -516,6 +526,7 @@ void QEngineCPU::CDIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt ca
     if (bi_compare_0(toDiv) == 0) {
         throw std::invalid_argument("CDIV by zero");
     }
+
     if (bi_compare_1(toDiv) == 0) {
         return;
     }
@@ -726,6 +737,7 @@ void QEngineCPU::INCBCD(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt 
 
     bitCapIntOcl maxPow = intPowOcl(10U, nibbleCount);
     toAdd %= maxPow;
+
     if (!toAdd) {
         return;
     }
@@ -799,6 +811,7 @@ void QEngineCPU::INCDECBCDC(const bitCapInt& toMod, bitLenInt inOutStart, bitLen
 
     const bitCapIntOcl maxPow = intPowOcl(10U, nibbleCount);
     toMod %= maxPow;
+
     if (!toMod) {
         return;
     }

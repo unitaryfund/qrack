@@ -101,9 +101,11 @@ size_t QBdt::CountBranches()
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < maxQubitIndex; ++j) {
                 leaf = leaf->branches[SelectBit(i, maxQubitIndex - (j + 1U))];
+
                 if (!leaf) {
                     return (bitCapInt)(pow2(maxQubitIndex - j) - ONE_BCI);
                 }
+
                 std::lock_guard<std::mutex> lock(mtx);
                 nodes.insert(leaf.get());
             }
@@ -312,6 +314,7 @@ bool QBdt::IsSeparable(bitLenInt start)
             QBdtNodeInterfacePtr leaf = root;
             for (bitLenInt j = 0U; j < start; ++j) {
                 leaf = leaf->branches[SelectBit(i, start - (j + 1U))];
+
                 if (!leaf) {
                     // The immediate parent of "leaf" has 0 amplitude.
                     return (bitCapInt)(pow2(start - j) - ONE_BCI);
@@ -336,6 +339,7 @@ bool QBdt::IsSeparable(bitLenInt start)
                 // There are at least two distinct possible subsystem states for the "high-index" subsystem,
                 // depending specifically on which dimension of the "low-index" subsystem we're inspecting.
                 result = false;
+
                 return (bitCapInt)(pow2(start) - ONE_BCI);
             }
 
@@ -473,6 +477,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
         if (!leaf->branches[0U] || !leaf->branches[1U]) {
             leaf->SetZero();
+
             return;
         }
 
@@ -482,15 +487,19 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         if (result) {
             if (IS_NODE_0(b1->scale)) {
                 b1->SetZero();
+
                 return;
             }
+
             b0->SetZero();
             b1->scale /= abs(b1->scale);
         } else {
             if (IS_NODE_0(b0->scale)) {
                 b0->SetZero();
+
                 return;
             }
+
             b0->scale /= abs(b0->scale);
             b1->SetZero();
         }
@@ -583,6 +592,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < target; ++j) {
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
+
                 if (!leaf) {
                     return (bitCapInt)(pow2(target - j) - ONE_BCI);
                 }
@@ -594,6 +604,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 
             if (!leaf->branches[0U] || !leaf->branches[1U]) {
                 leaf->SetZero();
+
                 return ZERO_BCI;
             }
 
@@ -630,9 +641,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             // We need the target at back, for QBdt, if this isn't symmetric.
             Swap(target, controls.back());
             ApplyControlledSingle(mtrx, controls, target, isAnti);
-            Swap(target, controls.back());
-
-            return;
+            return Swap(target, controls.back());
         }
         // Otherwise, the gate is symmetric in target and controls, so we can continue.
     }
@@ -667,6 +676,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
             // Iterate to qubit depth.
             for (bitLenInt j = 0U; j < target; ++j) {
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
+
                 if (!leaf) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(target - j) - ONE_BCI);
@@ -679,6 +689,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, std::vector<bitLenInt> con
 
             if (!leaf->branches[0U] || !leaf->branches[1U]) {
                 leaf->SetZero();
+
                 return ZERO_BCI;
             }
 
@@ -743,6 +754,7 @@ void QBdt::MCPhase(
     const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
         FlushNonPhaseBuffers();
+
         return ApplyControlledSingle(mtrx, controls, target, false);
     }
 
@@ -771,6 +783,7 @@ void QBdt::MCInvert(
     if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
         FlushNonPhaseBuffers();
         FlushIfBlocked(target, controls);
+
         return ApplyControlledSingle(mtrx, controls, target, false);
     }
 
@@ -780,6 +793,7 @@ void QBdt::MCInvert(
     if (lControls.back() < target) {
         FlushNonPhaseBuffers();
         FlushIfBlocked(target, lControls);
+
         return ApplyControlledSingle(mtrx, lControls, target, false);
     }
 
@@ -804,12 +818,14 @@ void QBdt::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     const real1_f sinThetaDiffNeg = ONE_R1_F + sinTheta;
     if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON_F) {
         ISwap(qubit1, qubit2);
+
         return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
     const real1_f sinThetaDiffPos = ONE_R1_F - sinTheta;
     if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON_F) {
         IISwap(qubit1, qubit2);
+
         return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 

@@ -150,6 +150,7 @@ public:
         if (qbdt) {
             return qbdt->ProbReg(start, length, permutation);
         }
+
         return engine->ProbReg(start, length, permutation);
     }
 
@@ -214,7 +215,6 @@ public:
         } else {
             e = std::dynamic_pointer_cast<QEngine>(engine->Decompose(start, length));
         }
-
         return std::make_shared<QBdtHybrid>(q, e, engines, qubitCount, ZERO_BCI, rand_generator, phaseFactor,
             doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
             thresholdQubits, separabilityThreshold);
@@ -233,8 +233,10 @@ public:
         dest->SwitchMode(false);
         if (engine->TryDecompose(start, dest->engine, error_tol)) {
             SetQubitCount(qubitCount - dest->qubitCount);
+
             return true;
         }
+
         return false;
     }
     void Decompose(bitLenInt start, QBdtHybridPtr dest)
@@ -315,6 +317,7 @@ public:
         if (qbdt) {
             return qbdt->GetAmplitude(perm);
         }
+
         return engine->GetAmplitude(perm);
     }
     void SetAmplitude(const bitCapInt& perm, const complex& amp)
@@ -412,6 +415,7 @@ public:
         if (qbdt) {
             return qbdt->CProb(control, target);
         }
+
         return engine->CProb(control, target);
     }
     real1_f ACProb(bitLenInt control, bitLenInt target)
@@ -419,6 +423,7 @@ public:
         if (qbdt) {
             return qbdt->ACProb(control, target);
         }
+
         return engine->ACProb(control, target);
     }
 
@@ -501,6 +506,7 @@ public:
         if (qbdt) {
             return qbdt->ForceM(qubit, result, doForce, doApply);
         }
+
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
@@ -524,6 +530,7 @@ public:
         if (qbdt) {
             return qbdt->M(q);
         }
+
         return engine->M(q);
     }
     using QInterface::X;
@@ -843,6 +850,7 @@ public:
         if (qbdt) {
             return qbdt->Prob(qubitIndex);
         }
+
         return engine->Prob(qubitIndex);
     }
     real1_f ProbAll(const bitCapInt& fullRegister)
@@ -851,7 +859,6 @@ public:
         if (toRet >= (ONE_R1_F - FP_NORM_EPSILON)) {
             SetPermutation(fullRegister);
         }
-
         return toRet;
     }
     real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
@@ -859,6 +866,7 @@ public:
         if (qbdt) {
             return qbdt->ProbMask(mask, permutation);
         }
+
         return engine->ProbMask(mask, permutation);
     }
     real1_f ProbParity(const bitCapInt& mask)
@@ -866,6 +874,7 @@ public:
         if (qbdt) {
             return qbdt->ProbParity(mask);
         }
+
         return engine->ProbParity(mask);
     }
     bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
@@ -873,6 +882,7 @@ public:
         if (qbdt) {
             return qbdt->ForceMParity(mask, result, doForce);
         }
+
         return engine->ForceMParity(mask, result, doForce);
     }
 
@@ -883,6 +893,7 @@ public:
         if (qbdt) {
             return qbdt->SumSqrDiff(toCompare->qbdt);
         }
+
         return engine->SumSqrDiff(toCompare->engine);
     }
 
@@ -909,6 +920,7 @@ public:
         if (qbdt) {
             return qbdt->ExpectationBitsAll(bits, offset);
         }
+
         return engine->ExpectationBitsAll(bits, offset);
     }
     real1_f VarianceBitsAll(const std::vector<bitLenInt>& bits, const bitCapInt& offset = ZERO_BCI)
@@ -916,6 +928,7 @@ public:
         if (qbdt) {
             return qbdt->VarianceBitsAll(bits, offset);
         }
+
         return engine->VarianceBitsAll(bits, offset);
     }
 
@@ -933,6 +946,7 @@ public:
         if (qbdt) {
             return qbdt->isFinished();
         }
+
         return engine->isFinished();
     }
 
@@ -978,6 +992,7 @@ public:
         if (qbdt) {
             return qbdt->GetMaxSize();
         }
+
         return engine->GetMaxSize();
     };
 };

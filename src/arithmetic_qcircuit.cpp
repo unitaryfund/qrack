@@ -32,6 +32,7 @@ void QCircuit::INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length)
         if (bi_and_1(toAdd)) {
             AppendGate(std::make_shared<QCircuitGate>(start, x));
         }
+
         return;
     }
 

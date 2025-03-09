@@ -267,6 +267,7 @@ void QStabilizerHybrid::FlushBuffers()
             // This will call FlushBuffers() again after no longer stabilizer.
             SwitchToEngine();
         }
+
         return;
     }
 
@@ -283,6 +284,7 @@ bool QStabilizerHybrid::TrimControls(const std::vector<bitLenInt>& lControls, st
 {
     if (engine) {
         output.insert(output.begin(), lControls.begin(), lControls.end());
+
         return false;
     }
 
@@ -299,6 +301,7 @@ bool QStabilizerHybrid::TrimControls(const std::vector<bitLenInt>& lControls, st
                 if (anti != stabilizer->M(bit)) {
                     return true;
                 }
+
                 continue;
             }
 
@@ -306,6 +309,7 @@ bool QStabilizerHybrid::TrimControls(const std::vector<bitLenInt>& lControls, st
                 if (anti == stabilizer->M(bit)) {
                     return true;
                 }
+
                 continue;
             }
 
@@ -368,6 +372,7 @@ QInterfacePtr QStabilizerHybrid::CloneBody(bool isCopy)
         // Clone and set engine directly.
         c->engine = isCopy ? engine->Copy() : engine->Clone();
         c->stabilizer = nullptr;
+
         return c;
     }
 
@@ -590,9 +595,7 @@ QInterfacePtr QStabilizerHybrid::Decompose(bitLenInt start, bitLenInt length)
     QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, length, ZERO_BCI, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, false, (real1_f)amplitudeFloor,
         std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
-
     Decompose(start, dest);
-
     return dest;
 }
 
@@ -609,6 +612,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     if (engine) {
         dest->SwitchToEngine();
         engine->Decompose(start, dest->engine);
+
         return SetQubitCount(qubitCount - length);
     }
 
@@ -660,6 +664,7 @@ bitLenInt QStabilizerHybrid::Allocate(bitLenInt start, bitLenInt length)
     QStabilizerHybridPtr nQubits = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, length, ZERO_BCI,
         rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, false,
         (real1_f)amplitudeFloor, std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
+
     return Compose(nQubits, start);
 }
 
@@ -888,6 +893,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             engine = MakeEngine();
             stabilizer = nullptr;
         }
+
         return engine->SetQuantumState(inputState);
     }
 
@@ -953,13 +959,17 @@ void QStabilizerHybrid::CSwap(const std::vector<bitLenInt>& lControls, bitLenInt
 
     if (stabilizer) {
         std::vector<bitLenInt> controls;
+
         if (TrimControls(lControls, controls, false)) {
             return;
         }
+
         if (controls.empty()) {
             rdmClone = nullptr;
+
             return stabilizer->Swap(qubit1, qubit2);
         }
+
         SwitchToEngine();
     }
 
@@ -969,12 +979,15 @@ void QStabilizerHybrid::CSqrtSwap(const std::vector<bitLenInt>& lControls, bitLe
 {
     if (stabilizer) {
         std::vector<bitLenInt> controls;
+
         if (TrimControls(lControls, controls, false)) {
             return;
         }
+
         if (controls.empty()) {
             return QInterface::SqrtSwap(qubit1, qubit2);
         }
+
         SwitchToEngine();
     }
 
@@ -984,12 +997,15 @@ void QStabilizerHybrid::AntiCSqrtSwap(const std::vector<bitLenInt>& lControls, b
 {
     if (stabilizer) {
         std::vector<bitLenInt> controls;
+
         if (TrimControls(lControls, controls, true)) {
             return;
         }
+
         if (controls.empty()) {
             return QInterface::SqrtSwap(qubit1, qubit2);
         }
+
         SwitchToEngine();
     }
 
@@ -999,12 +1015,15 @@ void QStabilizerHybrid::CISqrtSwap(const std::vector<bitLenInt>& lControls, bitL
 {
     if (stabilizer) {
         std::vector<bitLenInt> controls;
+
         if (TrimControls(lControls, controls, false)) {
             return;
         }
+
         if (controls.empty()) {
             return QInterface::ISqrtSwap(qubit1, qubit2);
         }
+
         SwitchToEngine();
     }
 
@@ -1014,12 +1033,15 @@ void QStabilizerHybrid::AntiCISqrtSwap(const std::vector<bitLenInt>& lControls, 
 {
     if (stabilizer) {
         std::vector<bitLenInt> controls;
+
         if (TrimControls(lControls, controls, true)) {
             return;
         }
+
         if (controls.empty()) {
             return QInterface::ISqrtSwap(qubit1, qubit2);
         }
+
         SwitchToEngine();
     }
 
@@ -1140,6 +1162,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 
     if (IS_CLIFFORD(mtrx) || ((IS_PHASE(mtrx) || IS_INVERT(mtrx)) && stabilizer->IsSeparableZ(target))) {
         rdmClone = nullptr;
+
         return stabilizer->Mtrx(mtrx, target);
     }
 
@@ -1160,6 +1183,7 @@ void QStabilizerHybrid::MCMtrx(const std::vector<bitLenInt>& lControls, const co
     }
 
     std::vector<bitLenInt> controls;
+
     if (TrimControls(lControls, controls)) {
         return;
     }
@@ -1184,6 +1208,7 @@ void QStabilizerHybrid::MCPhase(
     }
 
     std::vector<bitLenInt> controls;
+
     if (TrimControls(lControls, controls)) {
         return;
     }
@@ -1194,9 +1219,11 @@ void QStabilizerHybrid::MCPhase(
 
     if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
         real1_f prob = ProbRdm(target);
+
         if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob <= FP_NORM_EPSILON)) {
             return;
         }
+
         if (IS_NORM_0(bottomRight - ONE_CMPLX) && ((ONE_R1 - prob) <= FP_NORM_EPSILON)) {
             return;
         }
@@ -1231,6 +1258,7 @@ void QStabilizerHybrid::MCInvert(
     }
 
     std::vector<bitLenInt> controls;
+
     if (TrimControls(lControls, controls)) {
         return;
     }
@@ -1243,6 +1271,7 @@ void QStabilizerHybrid::MCInvert(
         H(target);
         const real1_f prob = ProbRdm(target);
         H(target);
+
         if (prob <= FP_NORM_EPSILON) {
             return;
         }
@@ -1280,6 +1309,7 @@ void QStabilizerHybrid::MACMtrx(const std::vector<bitLenInt>& lControls, const c
     }
 
     std::vector<bitLenInt> controls;
+
     if (TrimControls(lControls, controls, true)) {
         return;
     }
@@ -1300,6 +1330,7 @@ void QStabilizerHybrid::MACPhase(
     }
 
     std::vector<bitLenInt> controls;
+
     if (TrimControls(lControls, controls, true)) {
         return;
     }
@@ -1310,9 +1341,11 @@ void QStabilizerHybrid::MACPhase(
 
     if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
         real1_f prob = ProbRdm(target);
+
         if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob <= FP_NORM_EPSILON)) {
             return;
         }
+
         if (IS_NORM_0(bottomRight - ONE_CMPLX) && ((ONE_R1 - prob) <= FP_NORM_EPSILON)) {
             return;
         }
@@ -1347,6 +1380,7 @@ void QStabilizerHybrid::MACInvert(
     }
 
     std::vector<bitLenInt> controls;
+
     if (TrimControls(lControls, controls, true)) {
         return;
     }
@@ -1359,6 +1393,7 @@ void QStabilizerHybrid::MACInvert(
         H(target);
         const real1_f prob = ProbRdm(target);
         H(target);
+
         if (prob <= FP_NORM_EPSILON) {
             return;
         }
@@ -1391,6 +1426,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         if (qubitCount <= maxEngineQubitCount) {
             QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
             clone->SwitchToEngine();
+
             return clone->Prob(qubit);
         }
 
@@ -1436,6 +1472,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         }
         stateMapCache = nullptr;
 #endif
+
         return partProb;
     }
 
@@ -1455,6 +1492,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
             if (stabilizer->M(qubit)) {
                 return (real1_f)norm(shard->gate[3U]);
             }
+
             return (real1_f)norm(shard->gate[2U]);
         }
 
@@ -1496,12 +1534,14 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
                 return result;
             }
+
             // Bit was already rotated to Z basis, if separable.
             return CollapseSeparableShard(qubit);
         }
 
         // Otherwise, we have non-Clifford measurement.
         SwitchToEngine();
+
         return engine->ForceM(qubit, result, doForce, doApply);
     }
     shard = nullptr;
@@ -1514,6 +1554,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
     if (ancillaCount) {
         SwitchToEngine();
+
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
@@ -1674,6 +1715,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
     if (!isRoundingFlushed && (roundingThreshold > FP_NORM_EPSILON)) {
         QStabilizerHybridPtr roundedClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         roundedClone->RdmCloneFlush(roundingThreshold);
+
         return roundedClone->MultiShotMeasureMask(qPowers, shots);
     }
 
@@ -1779,6 +1821,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     if (!isRoundingFlushed && (roundingThreshold > FP_NORM_EPSILON)) {
         QStabilizerHybridPtr roundedClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         roundedClone->RdmCloneFlush(roundingThreshold);
+
         return roundedClone->MultiShotMeasureMask(qPowers, shots, shotsArray);
     }
 
@@ -1846,6 +1889,7 @@ real1_f QStabilizerHybrid::ProbParity(const bitCapInt& mask)
     }
 
     SwitchToEngine();
+
     return QINTERFACE_TO_QPARITY(engine)->ProbParity(mask);
 }
 bool QStabilizerHybrid::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
@@ -1861,6 +1905,7 @@ bool QStabilizerHybrid::ForceMParity(const bitCapInt& mask, bool result, bool do
     }
 
     SwitchToEngine();
+
     return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
 }
 
@@ -1971,11 +2016,12 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         if (toCompare->randGlobalPhase) {
             thatClone->stabilizer->ResetPhaseOffset();
         }
+
         if (isDiscreteBool) {
             return thisClone->stabilizer->ApproxCompare(thatClone->stabilizer, error_tol) ? ZERO_R1_F : ONE_R1_F;
-        } else {
-            return thisClone->stabilizer->SumSqrDiff(thatClone->stabilizer);
         }
+
+        return thisClone->stabilizer->SumSqrDiff(thatClone->stabilizer);
     }
 
     if (thisClone) {
@@ -2091,6 +2137,7 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
 
     if (stabilizer) {
         rdmClone = nullptr;
+
         return stabilizer->TrySeparate(qubit);
     }
 

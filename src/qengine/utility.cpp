@@ -64,6 +64,7 @@ bitLenInt QEngineCPU::Allocate(bitLenInt start, bitLenInt length)
     QEngineCPUPtr nQubits =
         std::make_shared<QEngineCPU>(length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
             -1, (hardware_rand_generator == nullptr) ? false : true, false, (real1_f)amplitudeFloor);
+
     return Compose(nQubits, start);
 }
 
@@ -81,7 +82,6 @@ real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
     if (totProb > ZERO_R1) {
         average /= totProb;
     }
-
     return (real1_f)average;
 }
 

@@ -175,11 +175,13 @@ void ParallelFor::par_for_inc(
     if (threads > numCores) {
         threads = numCores;
     }
+
     if (threads <= 1U) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; ++j) {
             fn(inc(j), 0U);
         }
+
         return;
     }
 

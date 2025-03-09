@@ -51,13 +51,11 @@ private:
 #if _MSC_VER
         int ex[4];
         __cpuid(ex, 1);
-
         return ((ex[2] & flag_RDRAND) == flag_RDRAND);
 #else
         unsigned eax, ebx, ecx, edx;
         ecx = 0;
         __get_cpuid(1, &eax, &ebx, &ecx, &edx);
-
         return ((ecx & flag_RDRAND) == flag_RDRAND);
 #endif
 
@@ -100,7 +98,6 @@ public:
                 _readNextRandDataFile();
             }
         }
-
         return v;
     }
 
@@ -138,6 +135,7 @@ private:
                 return true;
         }
 #endif
+
         return false;
     }
 
@@ -160,9 +158,8 @@ public:
 
     real1_f Next()
     {
-        constexpr double inc = 1.0 / (double)(1ULL << 32U);
-
         // NextRaw() has 32 bits; double has >= 53 bits of precision
+        constexpr double inc = 1.0 / (double)(1ULL << 32U);
 #if FPPOW < 6
         return (real1_f)(((double)NextRaw()) * inc);
 #else
