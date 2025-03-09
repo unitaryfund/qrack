@@ -594,13 +594,11 @@ public:
             return QInterface::U(qubit, theta, phi, lambda);
         }
 
-        QInterface::H(qubit);
-        QInterface::RZ(phi, qubit);
-        QInterface::H(qubit);
-        QInterface::RZ(theta, qubit);
-        QInterface::H(qubit);
-        QInterface::RZ(lambda, qubit);
-        QInterface::H(qubit);
+        const real1_f ld2 = lambda / 2;
+
+        QInterface::RZ(ld2, qubit);
+        QInterface::RX(theta, qubit);
+        QInterface::RZ(phi - ld2, qubit);
     }
 
 #if ENABLE_ALU
