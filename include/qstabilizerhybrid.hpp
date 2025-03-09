@@ -590,8 +590,8 @@ public:
 
     void U(bitLenInt qubit, real1_f theta, real1_f phi, real1_f lambda)
     {
-        if (!stabilizer) {
-            return QInterface::U(qubit, theta, phi, lambda);
+        if (engine) {
+            return engine->U(qubit, theta, phi, lambda);
         }
 
         const real1_f ld2 = lambda / 2;
