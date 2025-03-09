@@ -141,7 +141,7 @@ protected:
             roundingThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
         }
 #endif
-        if (maxAncillaCount != -1) {
+        if (maxAncillaCount != (bitLenInt)(-1)) {
             origMaxAncillaCount = maxAncillaCount;
         }
         if ((ONE_R1_F - roundingThreshold) <= FP_NORM_EPSILON) {
