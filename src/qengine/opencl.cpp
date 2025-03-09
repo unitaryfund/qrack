@@ -209,9 +209,7 @@ void QEngineOCL::SetAmplitudePage(
         // Cross-platform - can't automatically migrate buffers.
         pageEngineOclPtr->LockSync(CL_MAP_READ);
         SetAmplitudePage(pageEngineOclPtr->stateVec.get() + srcOffset, dstOffset, length);
-        pageEngineOclPtr->UnlockSync();
-
-        return;
+        return pageEngineOclPtr->UnlockSync();
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -258,9 +256,7 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
             engineOcl->stateVec.get(), engineOcl->stateVec.get() + halfMaxQPower, stateVec.get() + halfMaxQPower);
 
         engineOcl->UnlockSync();
-        UnlockSync();
-
-        return;
+        return UnlockSync();
     }
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ halfMaxQPower, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
@@ -1284,9 +1280,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
             EventVecPtr waitVec = ResetWaitEvents();
             DISPATCH_BLOCK_WRITE(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, toCopy->stateVec.get());
 
-            toCopy->UnlockSync();
-
-            return;
+            return toCopy->UnlockSync();
         }
 
         cl::Event copyEvent;
