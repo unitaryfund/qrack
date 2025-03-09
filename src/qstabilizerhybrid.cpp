@@ -54,12 +54,14 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , deadAncillaCount(0U)
     , maxEngineQubitCount(27U)
     , maxAncillaCount(28U)
+    , origMaxAncillaCount(28U)
     , separabilityThreshold(sep_thresh)
     , roundingThreshold(FP_NORM_EPSILON_F)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , logFidelity(0.0)
     , engine(nullptr)
+    , rdmClone(nullptr)
     , deviceIDs(devList)
     , engineTypes(eng)
     , cloneEngineTypes(eng)
@@ -102,13 +104,9 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         maxEngineQubitCount = QRACK_MAX_CPU_QB_DEFAULT;
         maxAncillaCount = maxEngineQubitCount;
     }
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
-        maxAncillaCount = -1;
-    }
-#endif
 #endif
 
+    UpdateRoundingThreshold();
     maxStateMapCacheQubitCount = QRACK_MAX_CPU_QB_DEFAULT - ((QBCAPPOW < FPPOW) ? 1U : (1U + QBCAPPOW - FPPOW));
     stabilizer = MakeStabilizer(initState);
 }
@@ -377,6 +375,7 @@ QInterfacePtr QStabilizerHybrid::CloneBody(bool isCopy)
     // Otherwise, stabilizer
     c->engine = nullptr;
     c->stabilizer = std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone());
+    c->rdmClone = rdmClone ? std::dynamic_pointer_cast<QStabilizerHybrid>(rdmClone->Clone()) : nullptr;
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
     c->deadAncillaCount = deadAncillaCount;
@@ -424,6 +423,8 @@ void QStabilizerHybrid::SwitchToEngine()
     if (engine) {
         return;
     }
+
+    rdmClone = nullptr;
 
     if ((qubitCount + ancillaCount + deadAncillaCount) > maxEngineQubitCount) {
         QInterfacePtr e = MakeEngine(ZERO_BCI);
@@ -704,11 +705,7 @@ complex QStabilizerHybrid::GetAmplitudeOrProb(const bitCapInt& perm, bool isProb
         return engine->GetAmplitude(perm);
     }
 
-#if ENABLE_ENV_VARS
-    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
-        roundingThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
-    }
-#endif
+    UpdateRoundingThreshold();
     const bool isRounded = roundingThreshold > FP_NORM_EPSILON;
     const QUnitCliffordPtr origStabilizer =
         isRounded ? std::dynamic_pointer_cast<QUnitClifford>(stabilizer->Clone()) : nullptr;
@@ -939,6 +936,8 @@ void QStabilizerHybrid::SetPermutation(const bitCapInt& perm, const complex& pha
         shards.clear();
         shards.resize(qubitCount);
     }
+
+    isRoundingFlushed = false;
 }
 
 void QStabilizerHybrid::Swap(bitLenInt qubit1, bitLenInt qubit2)
@@ -950,6 +949,7 @@ void QStabilizerHybrid::Swap(bitLenInt qubit1, bitLenInt qubit2)
     std::swap(shards[qubit1], shards[qubit2]);
 
     if (stabilizer) {
+        rdmClone = nullptr;
         stabilizer->Swap(qubit1, qubit2);
     } else {
         engine->Swap(qubit1, qubit2);
@@ -957,12 +957,15 @@ void QStabilizerHybrid::Swap(bitLenInt qubit1, bitLenInt qubit2)
 }
 void QStabilizerHybrid::CSwap(const std::vector<bitLenInt>& lControls, bitLenInt qubit1, bitLenInt qubit2)
 {
+    rdmClone = nullptr;
+
     if (stabilizer) {
         std::vector<bitLenInt> controls;
         if (TrimControls(lControls, controls, false)) {
             return;
         }
         if (controls.empty()) {
+            rdmClone = nullptr;
             stabilizer->Swap(qubit1, qubit2);
             return;
         }
@@ -1098,6 +1101,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             MpsShardPtr hShard = std::make_shared<MpsShard>(hGate);
             hShard->Compose(shard->gate);
             shard = hShard->IsIdentity() ? nullptr : hShard;
+            rdmClone = nullptr;
             stabilizer->H(target);
         }
 
@@ -1106,6 +1110,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
             pauliShard->Compose(shard->gate);
             shard = pauliShard->IsIdentity() ? nullptr : pauliShard;
+            rdmClone = nullptr;
             stabilizer->X(target);
         }
 
@@ -1113,6 +1118,9 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
             const real1 angle =
                 (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
             if ((2 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
+                // We're adding an ancilla, so drop any rdmClone.
+                rdmClone = nullptr;
+
                 const real1 angleCos = cos(angle);
                 const real1 angleSin = sin(angle);
                 shard->gate[0U] = complex(angleCos, -angleSin);
@@ -1148,6 +1156,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     }
 
     if (IS_CLIFFORD(mtrx) || ((IS_PHASE(mtrx) || IS_INVERT(mtrx)) && stabilizer->IsSeparableZ(target))) {
+        rdmClone = nullptr;
         stabilizer->Mtrx(mtrx, target);
         return;
     }
@@ -1228,6 +1237,7 @@ void QStabilizerHybrid::MCPhase(
     }
 
     const bitLenInt control = controls[0U];
+    rdmClone = nullptr;
     stabilizer->MCPhase(controls, topLeft, bottomRight, target);
     if (shards[control]) {
         CacheEigenstate(control);
@@ -1276,6 +1286,7 @@ void QStabilizerHybrid::MCInvert(
     }
 
     const bitLenInt control = controls[0U];
+    rdmClone = nullptr;
     stabilizer->MCInvert(controls, topRight, bottomLeft, target);
     if (shards[control]) {
         CacheEigenstate(control);
@@ -1351,6 +1362,7 @@ void QStabilizerHybrid::MACPhase(
     }
 
     const bitLenInt control = controls[0U];
+    rdmClone = nullptr;
     stabilizer->MACPhase(controls, topLeft, bottomRight, target);
     if (shards[control]) {
         CacheEigenstate(control);
@@ -1399,6 +1411,7 @@ void QStabilizerHybrid::MACInvert(
     }
 
     const bitLenInt control = controls[0U];
+    rdmClone = nullptr;
     stabilizer->MACInvert(controls, topRight, bottomLeft, target);
     if (shards[control]) {
         CacheEigenstate(control);
@@ -1583,15 +1596,15 @@ bitCapInt QStabilizerHybrid::MAll()
         return toRet;
     }
 
-    if (getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
-        RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
-        isRoundingFlushed = true;
+    UpdateRoundingThreshold();
+
+    if (roundingThreshold > FP_NORM_EPSILON) {
+        RdmCloneFlush(roundingThreshold);
     }
 
     if (!IsProbBuffered()) {
         const bitCapInt toRet = stabilizer->MAll();
         SetPermutation(toRet);
-        isRoundingFlushed = false;
 
         return toRet;
     }
@@ -1693,10 +1706,11 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(const std::vect
 
     FlushCliffordFromBuffers();
 
-    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+    UpdateRoundingThreshold();
+
+    if (!isRoundingFlushed && (roundingThreshold > FP_NORM_EPSILON)) {
         QStabilizerHybridPtr roundedClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        roundedClone->RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
-        roundedClone->isRoundingFlushed = true;
+        roundedClone->RdmCloneFlush(roundingThreshold);
         return roundedClone->MultiShotMeasureMask(qPowers, shots);
     }
 
@@ -1798,10 +1812,11 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
     FlushCliffordFromBuffers();
 
-    if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+    UpdateRoundingThreshold();
+
+    if (!isRoundingFlushed && (roundingThreshold > FP_NORM_EPSILON)) {
         QStabilizerHybridPtr roundedClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        roundedClone->RdmCloneFlush((real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD"))));
-        roundedClone->isRoundingFlushed = true;
+        roundedClone->RdmCloneFlush(roundingThreshold);
         roundedClone->MultiShotMeasureMask(qPowers, shots, shotsArray);
 
         return;
@@ -1959,6 +1974,8 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             break;
         }
     }
+
+    isRoundingFlushed = true;
 }
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
@@ -2073,6 +2090,7 @@ void QStabilizerHybrid::ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inv
     std::swap(shard1, shard2);
 
     if (stabilizer) {
+        rdmClone = nullptr;
         if (inverse) {
             stabilizer->IISwap(qubit1, qubit2);
         } else {
@@ -2094,6 +2112,7 @@ void QStabilizerHybrid::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f
     }
 
     if (stabilizer) {
+        rdmClone = nullptr;
         stabilizer->NormalizeState(REAL1_DEFAULT_ARG, norm_thresh, phaseArg);
     } else {
         engine->NormalizeState(nrm, norm_thresh, phaseArg);
@@ -2113,6 +2132,7 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
     }
 
     if (stabilizer) {
+        rdmClone = nullptr;
         return stabilizer->TrySeparate(qubit);
     }
 
@@ -2128,6 +2148,8 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return engine->TrySeparate(qubit1, qubit2);
     }
 
+    rdmClone = nullptr;
+
     const bool toRet = stabilizer->TrySeparate(qubit1, qubit2);
 
     return toRet;
@@ -2137,6 +2159,8 @@ bool QStabilizerHybrid::TrySeparate(const std::vector<bitLenInt>& qubits, real1_
     if (engine) {
         return engine->TrySeparate(qubits, error_tol);
     }
+
+    rdmClone = nullptr;
 
     return stabilizer->TrySeparate(qubits, error_tol);
 }

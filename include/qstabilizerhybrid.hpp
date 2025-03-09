@@ -54,6 +54,7 @@ protected:
     bitLenInt deadAncillaCount;
     bitLenInt maxEngineQubitCount;
     bitLenInt maxAncillaCount;
+    bitLenInt origMaxAncillaCount;
     bitLenInt maxStateMapCacheQubitCount;
     real1_f separabilityThreshold;
     real1_f roundingThreshold;
@@ -62,6 +63,7 @@ protected:
     double logFidelity;
     QInterfacePtr engine;
     QUnitCliffordPtr stabilizer;
+    QStabilizerHybridPtr rdmClone;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engineTypes;
     std::vector<QInterfaceEngine> cloneEngineTypes;
@@ -73,6 +75,12 @@ protected:
     QInterfacePtr MakeEngine(const bitCapInt& perm = ZERO_BCI);
     QInterfacePtr MakeEngine(const bitCapInt& perm, bitLenInt qbCount);
 
+    void SetQubitCount(bitLenInt qb)
+    {
+        rdmClone = nullptr;
+        QInterface::SetQubitCount(qb);
+    }
+
     void InvertBuffer(bitLenInt qubit);
     void FlushH(bitLenInt qubit);
     void FlushIfBlocked(bitLenInt control, bitLenInt target, bool isPhase = false);
@@ -82,6 +90,7 @@ protected:
     void FlushBuffers();
     void DumpBuffers()
     {
+        rdmClone = nullptr;
         for (MpsShardPtr& shard : shards) {
             shard = nullptr;
         }
@@ -124,6 +133,23 @@ protected:
     }
     bool IsProbBuffered() { return EitherIsProbBuffered(false); }
     bool IsLogicalProbBuffered() { return EitherIsProbBuffered(true); }
+
+    void UpdateRoundingThreshold()
+    {
+#if ENABLE_ENV_VARS
+        if (!isRoundingFlushed && getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")) {
+            roundingThreshold = (real1_f)std::stof(std::string(getenv("QRACK_NONCLIFFORD_ROUNDING_THRESHOLD")));
+        }
+#endif
+        if (maxAncillaCount != -1) {
+            origMaxAncillaCount = maxAncillaCount;
+        }
+        if ((ONE_R1_F - roundingThreshold) <= FP_NORM_EPSILON) {
+            maxAncillaCount = -1;
+        } else {
+            maxAncillaCount = origMaxAncillaCount;
+        }
+    }
 
     std::unique_ptr<complex[]> GetQubitReducedDensityMatrix(bitLenInt qubit)
     {
@@ -263,10 +289,14 @@ protected:
 
     QStabilizerHybridPtr RdmCloneHelper()
     {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->RdmCloneFlush(HALF_R1);
+        if (rdmClone) {
+            return rdmClone;
+        }
 
-        return clone;
+        rdmClone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        rdmClone->RdmCloneFlush(HALF_R1);
+
+        return rdmClone;
     }
     void RdmCloneFlush(real1_f threshold = FP_NORM_EPSILON);
 
@@ -287,11 +317,12 @@ protected:
                           : stabilizer->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset);
         }
 
-        return isExp  ? isFloat
-                 ? RdmCloneHelper()->stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
-                 : RdmCloneHelper()->stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
-             : isFloat ? RdmCloneHelper()->stabilizer->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
-                      : RdmCloneHelper()->stabilizer->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset);
+        QStabilizerHybridPtr clone = RdmCloneHelper();
+
+        return isExp  ? isFloat ? clone->stabilizer->ExpectationFloatsFactorizedRdm(roundRz, bits, weights)
+                                : clone->stabilizer->ExpectationBitsFactorizedRdm(roundRz, bits, perms, offset)
+             : isFloat ? clone->stabilizer->VarianceFloatsFactorizedRdm(roundRz, bits, weights)
+                      : clone->stabilizer->VarianceBitsFactorizedRdm(roundRz, bits, perms, offset);
     }
 
     void ClearAncilla(bitLenInt i)
@@ -366,7 +397,12 @@ public:
     {
     }
 
-    void SetNcrp(real1_f ncrp) { roundingThreshold = ncrp; };
+    void SetNcrp(real1_f ncrp)
+    {
+        roundingThreshold = ncrp;
+        // Environment variable always overrides:
+        UpdateRoundingThreshold();
+    };
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
     double GetUnitaryFidelity() { return exp(logFidelity); }
@@ -710,6 +746,7 @@ public:
 
     void PhaseFlip()
     {
+        rdmClone = nullptr;
         if (stabilizer) {
             stabilizer->PhaseFlip();
         } else {
