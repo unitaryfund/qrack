@@ -566,8 +566,8 @@ public:
 
     void RY(real1_f radians, bitLenInt qubit)
     {
-        if (!stabilizer) {
-            return QInterface::RY(radians, qubit);
+        if (engine) {
+            return engine->RY(radians, qubit);
         }
 
         QInterface::H(qubit);
@@ -577,8 +577,8 @@ public:
 
     void RX(real1_f radians, bitLenInt qubit)
     {
-        if (!stabilizer) {
-            return QInterface::RX(radians, qubit);
+        if (engine) {
+            return engine->RX(radians, qubit);
         }
 
         QInterface::S(qubit);
