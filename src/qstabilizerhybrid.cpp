@@ -187,6 +187,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Shard is definitely a phase gate.
 
     if (isPhase) {
+        // The previously potentially blocked gate commutes.
         return;
     }
     // The gate payload is definitely not a phase gate.
