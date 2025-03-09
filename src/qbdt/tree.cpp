@@ -737,15 +737,13 @@ void QBdt::MCPhase(
     const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt target)
 {
     if (controls.empty()) {
-        Phase(topLeft, bottomRight, target);
-        return;
+        return Phase(topLeft, bottomRight, target);
     }
 
     const complex mtrx[4U]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
         FlushNonPhaseBuffers();
-        ApplyControlledSingle(mtrx, controls, target, false);
-        return;
+        return ApplyControlledSingle(mtrx, controls, target, false);
     }
 
     if (IS_NORM_0(ONE_CMPLX - bottomRight)) {
@@ -766,16 +764,14 @@ void QBdt::MCInvert(
     const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
 {
     if (controls.empty()) {
-        Invert(topRight, bottomLeft, target);
-        return;
+        return Invert(topRight, bottomLeft, target);
     }
 
     const complex mtrx[4U]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
         FlushNonPhaseBuffers();
         FlushIfBlocked(target, controls);
-        ApplyControlledSingle(mtrx, controls, target, false);
-        return;
+        return ApplyControlledSingle(mtrx, controls, target, false);
     }
 
     std::vector<bitLenInt> lControls(controls);
@@ -784,8 +780,7 @@ void QBdt::MCInvert(
     if (lControls.back() < target) {
         FlushNonPhaseBuffers();
         FlushIfBlocked(target, lControls);
-        ApplyControlledSingle(mtrx, lControls, target, false);
-        return;
+        return ApplyControlledSingle(mtrx, lControls, target, false);
     }
 
     H(target);
@@ -802,23 +797,20 @@ void QBdt::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     const std::vector<bitLenInt> controls{ qubit1 };
     const real1_f sinTheta = sin(theta);
     if ((sinTheta * sinTheta) <= FP_NORM_EPSILON_F) {
-        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-        return;
+        return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
     }
 
     const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
     const real1_f sinThetaDiffNeg = ONE_R1_F + sinTheta;
     if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON_F) {
         ISwap(qubit1, qubit2);
-        MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
-        return;
+        return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
     const real1_f sinThetaDiffPos = ONE_R1_F - sinTheta;
     if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON_F) {
         IISwap(qubit1, qubit2);
-        MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
-        return;
+        return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
     ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubit1, qubit2); });

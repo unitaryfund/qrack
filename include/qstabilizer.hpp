@@ -464,13 +464,11 @@ public:
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-            MCPhase(controls, mtrx[0U], mtrx[3U], target);
-            return;
+            return MCPhase(controls, mtrx[0U], mtrx[3U], target);
         }
 
         if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-            MCInvert(controls, mtrx[1U], mtrx[2U], target);
-            return;
+            return MCInvert(controls, mtrx[1U], mtrx[2U], target);
         }
 
         throw std::domain_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
@@ -478,13 +476,11 @@ public:
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
-            MACPhase(controls, mtrx[0U], mtrx[3U], target);
-            return;
+            return MACPhase(controls, mtrx[0U], mtrx[3U], target);
         }
 
         if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
-            MACInvert(controls, mtrx[1U], mtrx[2U], target);
-            return;
+            return MACInvert(controls, mtrx[1U], mtrx[2U], target);
         }
 
         throw std::domain_error("QStabilizer::MACMtrx() not implemented for non-Clifford/Pauli cases!");

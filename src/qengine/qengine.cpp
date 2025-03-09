@@ -29,8 +29,7 @@ void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
 void QEngine::EitherMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, bool isAnti)
 {
     if (controls.empty()) {
-        Mtrx(mtrx, target);
-        return;
+        return Mtrx(mtrx, target);
     }
 
     if (IsIdentity(mtrx, true)) {
@@ -52,8 +51,7 @@ void QEngine::UCMtrx(
     const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target, const bitCapInt& controlPerm)
 {
     if (controls.empty()) {
-        Mtrx(mtrx, target);
-        return;
+        return Mtrx(mtrx, target);
     }
 
     if (IsIdentity(mtrx, true)) {
@@ -214,8 +212,7 @@ bitCapInt QEngine::ForceM(const std::vector<bitLenInt>& bits, const std::vector<
 void QEngine::CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controls.empty()) {
-        Swap(qubit1, qubit2);
-        return;
+        return Swap(qubit1, qubit2);
     }
 
     if (qubit1 == qubit2) {
@@ -243,8 +240,7 @@ void QEngine::CSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bi
 void QEngine::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controls.empty()) {
-        Swap(qubit1, qubit2);
-        return;
+        return Swap(qubit1, qubit2);
     }
 
     if (qubit1 == qubit2) {
@@ -269,8 +265,7 @@ void QEngine::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1
 void QEngine::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controls.empty()) {
-        SqrtSwap(qubit1, qubit2);
-        return;
+        return SqrtSwap(qubit1, qubit2);
     }
 
     if (qubit1 == qubit2) {
@@ -298,8 +293,7 @@ void QEngine::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1
 void QEngine::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controls.empty()) {
-        SqrtSwap(qubit1, qubit2);
-        return;
+        return SqrtSwap(qubit1, qubit2);
     }
 
     if (qubit1 == qubit2) {
@@ -324,8 +318,7 @@ void QEngine::AntiCSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qu
 void QEngine::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controls.empty()) {
-        ISqrtSwap(qubit1, qubit2);
-        return;
+        return ISqrtSwap(qubit1, qubit2);
     }
 
     if (qubit1 == qubit2) {
@@ -353,8 +346,7 @@ void QEngine::CISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit
 void QEngine::AntiCISqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controls.empty()) {
-        ISqrtSwap(qubit1, qubit2);
-        return;
+        return ISqrtSwap(qubit1, qubit2);
     }
 
     if (qubit1 == qubit2) {

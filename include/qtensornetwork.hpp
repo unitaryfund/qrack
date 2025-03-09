@@ -414,7 +414,7 @@ public:
             }
 #if ENABLE_QBDT && !ENABLE_QBDT_CPU_PARALLEL
             if (isQBdt) {
-                par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& ignored) {
+                return par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& ignored) {
                     QInterfacePtr clone = Clone();
                     bitCapInt result = ZERO_BCI;
                     for (size_t i = 0U; i < qubits.size(); ++i) {
@@ -424,7 +424,6 @@ public:
                     }
                     shotsArray[shot] = (bitCapIntOcl)result;
                 });
-                return;
             }
 #endif
             for (unsigned shot = 0U; shot < shots; ++shot) {

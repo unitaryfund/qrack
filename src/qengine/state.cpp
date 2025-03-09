@@ -46,6 +46,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, const bitCapInt& initState, qrack_ra
         ZeroAmplitudes();
         return;
     }
+
     stateVec = AllocStateVec(maxQPowerOcl);
     stateVec->clear();
 
@@ -109,8 +110,7 @@ void QEngineCPU::SetAmplitudePage(
     }
 
     if (!oStateVec && (length == maxQPowerOcl)) {
-        ZeroAmplitudes();
-        return;
+        return ZeroAmplitudes();
     }
 
     if (!stateVec) {
@@ -163,8 +163,7 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
     }
 
     if (src->IsZeroAmplitude()) {
-        ZeroAmplitudes();
-        return;
+        return ZeroAmplitudes();
     }
 
     if (stateVec) {
@@ -263,8 +262,8 @@ void QEngineCPU::SetQuantumState(const complex* inputState)
 void QEngineCPU::GetQuantumState(complex* outputState)
 {
     if (!stateVec) {
-        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputState[lcv] = ZERO_CMPLX; });
-        return;
+        return par_for(
+            0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputState[lcv] = ZERO_CMPLX; });
     }
 
     if (doNormalize) {
@@ -279,8 +278,8 @@ void QEngineCPU::GetQuantumState(complex* outputState)
 void QEngineCPU::GetProbs(real1* outputProbs)
 {
     if (!stateVec) {
-        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputProbs[lcv] = ZERO_R1; });
-        return;
+        return par_for(
+            0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputProbs[lcv] = ZERO_R1; });
     }
 
     if (doNormalize) {
@@ -654,8 +653,7 @@ void QEngineCPU::XMask(const bitCapInt& mask)
     }
 
     if (isPowerOfTwo(mask)) {
-        X(log2(mask));
-        return;
+        return X(log2(mask));
     }
 
     Dispatch(maxQPowerOcl, [this, mask] {
@@ -696,8 +694,7 @@ void QEngineCPU::PhaseParity(real1_f radians, const bitCapInt& mask)
 
     if (isPowerOfTwo(mask)) {
         const complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
-        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
-        return;
+        return Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
     }
 
     Dispatch(maxQPowerOcl, [this, mask, radians] {
@@ -738,15 +735,13 @@ void QEngineCPU::PhaseRootNMask(bitLenInt n, const bitCapInt& mask)
         return;
     }
     if (n == 1U) {
-        ZMask(mask);
-        return;
+        return ZMask(mask);
     }
 
     const real1_f radians = -PI_R1 / pow2Ocl(n - 1U);
 
     if (isPowerOfTwo(mask)) {
-        Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)radians), log2(mask));
-        return;
+        return Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)radians), log2(mask));
     }
 
     Dispatch(maxQPowerOcl, [this, n, mask, radians] {
@@ -768,8 +763,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controls.empty()) {
-        Mtrx(mtrxs + ((bitCapIntOcl)mtrxSkipValueMask * 4U), qubitIndex);
-        return;
+        return Mtrx(mtrxs + ((bitCapIntOcl)mtrxSkipValueMask * 4U), qubitIndex);
     }
 
     if (qubitIndex >= qubitCount) {
@@ -1146,9 +1140,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             destination->stateVec = stateVec;
         }
         stateVec = nullptr;
-        SetQubitCount(0U);
-
-        return;
+        return SetQubitCount(0U);
     }
 
     if (destination && !destination->stateVec) {
@@ -1291,8 +1283,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& dis
     const bitLenInt nLength = qubitCount - length;
 
     if (!stateVec) {
-        SetQubitCount(nLength);
-        return;
+        return SetQubitCount(nLength);
     }
 
     const bitCapIntOcl disposedPermOcl = (bitCapIntOcl)disposedPerm;
@@ -1690,8 +1681,7 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
     }
     // We might avoid the clFinish().
     if (nrm <= FP_NORM_EPSILON) {
-        ZeroAmplitudes();
-        return;
+        return ZeroAmplitudes();
     }
     if ((abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) && ((phaseArg * phaseArg) <= FP_NORM_EPSILON)) {
         return;

@@ -857,9 +857,7 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
     if (!randGlobalPhase) {
         H(t);
         CZ(c, t);
-        H(t);
-
-        return;
+        return H(t);
     }
 
     ParFor(
@@ -889,9 +887,7 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
     if (!randGlobalPhase) {
         H(t);
         AntiCZ(c, t);
-        H(t);
-
-        return;
+        return H(t);
     }
 
     ParFor(
@@ -921,9 +917,7 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
     if (!randGlobalPhase) {
         IS(t);
         CNOT(c, t);
-        S(t);
-
-        return;
+        return S(t);
     }
 
     ParFor(
@@ -957,9 +951,7 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
     if (!randGlobalPhase) {
         IS(t);
         AntiCNOT(c, t);
-        S(t);
-
-        return;
+        return S(t);
     }
 
     ParFor(
@@ -1071,9 +1063,7 @@ void QStabilizer::Swap(bitLenInt c, bitLenInt t)
     }
 
     if (!randGlobalPhase) {
-        QInterface::Swap(c, t);
-
-        return;
+        return QInterface::Swap(c, t);
     }
 
     ParFor(
@@ -1093,9 +1083,7 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
     }
 
     if (!randGlobalPhase) {
-        QInterface::ISwap(c, t);
-
-        return;
+        return QInterface::ISwap(c, t);
     }
 
     ParFor(
@@ -1137,9 +1125,7 @@ void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
     }
 
     if (!randGlobalPhase) {
-        QInterface::IISwap(c, t);
-
-        return;
+        return QInterface::IISwap(c, t);
     }
 
     ParFor(
@@ -1210,8 +1196,7 @@ void QStabilizer::H(bitLenInt t)
     if (nIsSepZ || (bi_compare_0(entry.permutation & tPow) == 0)) {
         const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
         if (norm(oAmp) > FP_NORM_EPSILON) {
-            SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
-            return;
+            return SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
         }
     }
     for (bitCapInt t = ZERO_BCI; bi_compare(t, permCountMinus1) < 0; bi_increment(&t, 1U)) {
@@ -1225,8 +1210,7 @@ void QStabilizer::H(bitLenInt t)
         if (nIsSepZ || (bi_compare_0(entry.permutation & tPow) == 0)) {
             const complex oAmp = clone->GetAmplitude(oIsSepZ ? entry.permutation : (entry.permutation & ~tPow));
             if (norm(oAmp) > FP_NORM_EPSILON) {
-                SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
-                return;
+                return SetPhaseOffset(phaseOffset + std::arg(oAmp) - std::arg(entry.amplitude));
             }
         }
     }
@@ -1238,9 +1222,7 @@ void QStabilizer::X(bitLenInt t)
     if (!randGlobalPhase) {
         H(t);
         Z(t);
-        H(t);
-
-        return;
+        return H(t);
     }
 
     ParFor(
@@ -1259,9 +1241,7 @@ void QStabilizer::Y(bitLenInt t)
     if (!randGlobalPhase && IsSeparableZ(t)) {
         IS(t);
         X(t);
-        S(t);
-
-        return;
+        return S(t);
     }
 
     ParFor(
@@ -1916,33 +1896,28 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     const complex& mtrx3 = mtrx[3U];
 
     if (IS_NORM_0(mtrx1) && IS_NORM_0(mtrx2)) {
-        Phase(mtrx0, mtrx3, target);
-        return;
+        return Phase(mtrx0, mtrx3, target);
     }
 
     if (IS_NORM_0(mtrx0) && IS_NORM_0(mtrx3)) {
-        Invert(mtrx1, mtrx2, target);
-        return;
+        return Invert(mtrx1, mtrx2, target);
     }
 
     if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, mtrx2) && IS_SAME(mtrx0, -mtrx3)) {
         H(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, -mtrx2) && IS_SAME(mtrx0, mtrx3)) {
         X(target);
         H(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, mtrx2) && IS_SAME(mtrx0, mtrx3)) {
         H(target);
         X(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, -mtrx2) && IS_SAME(mtrx0, -mtrx3)) {
@@ -1950,52 +1925,45 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         X(target);
         // Reverses sign
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0) + PI_R1);
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0) + PI_R1);
     }
 
     if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) && IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         H(target);
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) && IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         H(target);
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) && IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         H(target);
         X(target);
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, -mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) && IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         H(target);
         X(target);
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, mtrx2) && IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
         IS(target);
         H(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, mtrx2) && IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
         S(target);
         H(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, -mtrx2) && IS_SAME(mtrx0, -I_CMPLX * mtrx3)) {
@@ -2003,8 +1971,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         X(target);
         Z(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, -mtrx2) && IS_SAME(mtrx0, I_CMPLX * mtrx3)) {
@@ -2012,40 +1979,35 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         X(target);
         Z(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) && IS_SAME(mtrx0, mtrx3)) {
         IS(target);
         H(target);
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) && IS_SAME(mtrx0, mtrx3)) {
         S(target);
         H(target);
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, I_CMPLX * mtrx1) && IS_SAME(mtrx0, -I_CMPLX * mtrx2) && IS_SAME(mtrx0, -mtrx3)) {
         IS(target);
         H(target);
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     if (IS_SAME(mtrx0, -I_CMPLX * mtrx1) && IS_SAME(mtrx0, I_CMPLX * mtrx2) && IS_SAME(mtrx0, -mtrx3)) {
         S(target);
         H(target);
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(mtrx0));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(mtrx0));
     }
 
     throw std::domain_error("QStabilizer::Mtrx() not implemented for non-Clifford/Pauli cases!");
@@ -2054,26 +2016,22 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 void QStabilizer::Phase(const complex& topLeft, const complex& bottomRight, bitLenInt target)
 {
     if (IS_SAME(topLeft, bottomRight)) {
-        SetPhaseOffset(phaseOffset + std::arg(topLeft));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(topLeft));
     }
 
     if (IS_SAME(topLeft, -bottomRight)) {
         Z(target);
-        SetPhaseOffset(phaseOffset + std::arg(topLeft));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(topLeft));
     }
 
     if (IS_SAME(topLeft, -I_CMPLX * bottomRight)) {
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(topLeft));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(topLeft));
     }
 
     if (IS_SAME(topLeft, I_CMPLX * bottomRight)) {
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(topLeft));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(topLeft));
     }
 
     if (IsSeparableZ(target)) {
@@ -2093,29 +2051,25 @@ void QStabilizer::Invert(const complex& topRight, const complex& bottomLeft, bit
 {
     if (IS_SAME(topRight, bottomLeft)) {
         X(target);
-        SetPhaseOffset(phaseOffset + std::arg(topRight));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(topRight));
     }
 
     if (IS_SAME(topRight, -bottomLeft)) {
         Y(target);
         // Y is composed as IS, X, S, with overall -i phase
-        SetPhaseOffset(phaseOffset + std::arg(topRight) + PI_R1 / 2);
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(topRight) + PI_R1 / 2);
     }
 
     if (IS_SAME(topRight, -I_CMPLX * bottomLeft)) {
         X(target);
         S(target);
-        SetPhaseOffset(phaseOffset + std::arg(topRight));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(topRight));
     }
 
     if (IS_SAME(topRight, I_CMPLX * bottomLeft)) {
         X(target);
         IS(target);
-        SetPhaseOffset(phaseOffset + std::arg(topRight));
-        return;
+        return SetPhaseOffset(phaseOffset + std::arg(topRight));
     }
 
     if (IsSeparableZ(target)) {
@@ -2138,8 +2092,7 @@ void QStabilizer::MCPhase(
     }
 
     if (controls.empty()) {
-        Phase(topLeft, bottomRight, target);
-        return;
+        return Phase(topLeft, bottomRight, target);
     }
 
     if (controls.size() > 1U) {
@@ -2152,44 +2105,41 @@ void QStabilizer::MCPhase(
     if (IS_SAME(topLeft, ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             return;
-        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-            CZ(control, target);
-            return;
+        }
+        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            return CZ(control, target);
         }
     } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             CNOT(control, target);
             CZ(control, target);
-            CNOT(control, target);
-            return;
-        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            return CNOT(control, target);
+        }
+        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
             CZ(control, target);
             CNOT(control, target);
             CZ(control, target);
-            CNOT(control, target);
-            return;
+            return CNOT(control, target);
         }
     } else if (IS_SAME(topLeft, I_CMPLX)) {
         if (IS_SAME(bottomRight, I_CMPLX)) {
             CZ(control, target);
             CY(control, target);
-            CNOT(control, target);
-            return;
-        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            return CNOT(control, target);
+        }
+        if (IS_SAME(bottomRight, -I_CMPLX)) {
             CY(control, target);
-            CNOT(control, target);
-            return;
+            return CNOT(control, target);
         }
     } else if (IS_SAME(topLeft, -I_CMPLX)) {
         if (IS_SAME(bottomRight, I_CMPLX)) {
             CNOT(control, target);
-            CY(control, target);
-            return;
-        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            return CY(control, target);
+        }
+        if (IS_SAME(bottomRight, -I_CMPLX)) {
             CY(control, target);
             CZ(control, target);
-            CNOT(control, target);
-            return;
+            return CNOT(control, target);
         }
     }
 
@@ -2205,8 +2155,7 @@ void QStabilizer::MACPhase(
     }
 
     if (controls.empty()) {
-        Phase(topLeft, bottomRight, target);
-        return;
+        return Phase(topLeft, bottomRight, target);
     }
 
     if (controls.size() > 1U) {
@@ -2219,44 +2168,41 @@ void QStabilizer::MACPhase(
     if (IS_SAME(topLeft, ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             return;
-        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-            AntiCZ(control, target);
-            return;
+        }
+        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            return AntiCZ(control, target);
         }
     } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             AntiCNOT(control, target);
             AntiCZ(control, target);
-            AntiCNOT(control, target);
-            return;
-        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            return AntiCNOT(control, target);
+        }
+        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
             AntiCZ(control, target);
             AntiCNOT(control, target);
             AntiCZ(control, target);
-            AntiCNOT(control, target);
-            return;
+            return AntiCNOT(control, target);
         }
     } else if (IS_SAME(topLeft, I_CMPLX)) {
         if (IS_SAME(bottomRight, I_CMPLX)) {
             AntiCZ(control, target);
             AntiCY(control, target);
-            AntiCNOT(control, target);
-            return;
-        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            return AntiCNOT(control, target);
+        }
+        if (IS_SAME(bottomRight, -I_CMPLX)) {
             AntiCY(control, target);
-            AntiCNOT(control, target);
-            return;
+            return AntiCNOT(control, target);
         }
     } else if (IS_SAME(topLeft, -I_CMPLX)) {
         if (IS_SAME(bottomRight, I_CMPLX)) {
             AntiCNOT(control, target);
-            AntiCY(control, target);
-            return;
-        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            return AntiCY(control, target);
+        }
+        if (IS_SAME(bottomRight, -I_CMPLX)) {
             AntiCY(control, target);
             AntiCZ(control, target);
-            AntiCNOT(control, target);
-            return;
+            return AntiCNOT(control, target);
         }
     }
 
@@ -2268,8 +2214,7 @@ void QStabilizer::MCInvert(
     const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
 {
     if (controls.empty()) {
-        Invert(topRight, bottomLeft, target);
-        return;
+        return Invert(topRight, bottomLeft, target);
     }
 
     if (controls.size() > 1U) {
@@ -2281,43 +2226,39 @@ void QStabilizer::MCInvert(
 
     if (IS_SAME(topRight, ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            return CNOT(control, target);
+        }
+        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             CNOT(control, target);
-            return;
-        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
-            CNOT(control, target);
-            CZ(control, target);
-            return;
+            return CZ(control, target);
         }
     } else if (IS_SAME(topRight, -ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             CZ(control, target);
-            CNOT(control, target);
-            return;
-        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            return CNOT(control, target);
+        }
+        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             CZ(control, target);
             CNOT(control, target);
-            CZ(control, target);
-            return;
+            return CZ(control, target);
         }
     } else if (IS_SAME(topRight, I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
             CZ(control, target);
-            CY(control, target);
-            return;
-        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            return CY(control, target);
+        }
+        if (IS_SAME(bottomLeft, -I_CMPLX)) {
             CZ(control, target);
             CY(control, target);
-            CZ(control, target);
-            return;
+            return CZ(control, target);
         }
     } else if (IS_SAME(topRight, -I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
+            return CY(control, target);
+        }
+        if (IS_SAME(bottomLeft, -I_CMPLX)) {
             CY(control, target);
-            return;
-        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
-            CY(control, target);
-            CZ(control, target);
-            return;
+            return CZ(control, target);
         }
     }
 
@@ -2329,8 +2270,7 @@ void QStabilizer::MACInvert(
     const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt target)
 {
     if (controls.empty()) {
-        Invert(topRight, bottomLeft, target);
-        return;
+        return Invert(topRight, bottomLeft, target);
     }
 
     if (controls.size() > 1U) {
@@ -2342,43 +2282,39 @@ void QStabilizer::MACInvert(
 
     if (IS_SAME(topRight, ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            return AntiCNOT(control, target);
+        }
+        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             AntiCNOT(control, target);
-            return;
-        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
-            AntiCNOT(control, target);
-            AntiCZ(control, target);
-            return;
+            return AntiCZ(control, target);
         }
     } else if (IS_SAME(topRight, -ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             AntiCZ(control, target);
-            AntiCNOT(control, target);
-            return;
-        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            return AntiCNOT(control, target);
+        }
+        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             AntiCZ(control, target);
             AntiCNOT(control, target);
-            AntiCZ(control, target);
-            return;
+            return AntiCZ(control, target);
         }
     } else if (IS_SAME(topRight, I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
             AntiCZ(control, target);
-            AntiCY(control, target);
-            return;
-        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            return AntiCY(control, target);
+        }
+        if (IS_SAME(bottomLeft, -I_CMPLX)) {
             AntiCZ(control, target);
             AntiCY(control, target);
-            AntiCZ(control, target);
-            return;
+            return AntiCZ(control, target);
         }
     } else if (IS_SAME(topRight, -I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
+            return AntiCY(control, target);
+        }
+        if (IS_SAME(bottomLeft, -I_CMPLX)) {
             AntiCY(control, target);
-            return;
-        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
-            AntiCY(control, target);
-            AntiCZ(control, target);
-            return;
+            return AntiCZ(control, target);
         }
     }
 
@@ -2392,14 +2328,12 @@ void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt q
     real1 sinTheta = (real1)sin(theta);
 
     if (IS_0_R1(sinTheta)) {
-        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-        return;
+        return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
     }
 
     if (IS_1_R1(-sinTheta)) {
         ISwap(qubit1, qubit2);
-        MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-        return;
+        return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
     }
 
     throw std::domain_error("QStabilizer::FSim() not implemented for non-Clifford/Pauli cases!");

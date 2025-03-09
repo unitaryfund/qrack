@@ -78,8 +78,7 @@ void QInterface::INCDECC(const bitCapInt& toAdd, bitLenInt start, bitLenInt leng
 void QInterface::CINC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (!controls.size()) {
-        INC(toAdd, start, length);
-        return;
+        return INC(toAdd, start, length);
     }
 
     if (!length) {
@@ -335,8 +334,7 @@ void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLe
     FullAdd(input1, input2, carry, output);
 
     if (length == 1U) {
-        Swap(carry, output);
-        return;
+        return Swap(carry, output);
     }
 
     // Otherwise, length > 1.
@@ -355,8 +353,7 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
 
     if (length == 1U) {
         Swap(carry, output);
-        IFullAdd(input1, input2, carry, output);
-        return;
+        return IFullAdd(input1, input2, carry, output);
     }
 
     // Otherwise, length > 1.
@@ -378,8 +375,7 @@ void QInterface::CADC(const std::vector<bitLenInt>& controls, bitLenInt input1, 
     CFullAdd(controls, input1, input2, carry, output);
 
     if (length == 1) {
-        CSwap(controls, carry, output);
-        return;
+        return CSwap(controls, carry, output);
     }
 
     // Otherwise, length > 1.
@@ -399,8 +395,7 @@ void QInterface::CIADC(const std::vector<bitLenInt>& controls, bitLenInt input1,
 
     if (length == 1U) {
         CSwap(controls, carry, output);
-        CIFullAdd(controls, input1, input2, carry, output);
-        return;
+        return CIFullAdd(controls, input1, input2, carry, output);
     }
 
     // Otherwise, length > 1.

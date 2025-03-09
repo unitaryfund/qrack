@@ -48,8 +48,7 @@ void QBdtNode::Prune(bitLenInt depth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
-        SetZero();
-        return;
+        return SetZero();
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
 
@@ -226,8 +225,7 @@ void QBdtNode::Branch(bitLenInt depth)
     }
 
     if (IS_NODE_0(scale)) {
-        SetZero();
-        return;
+        return SetZero();
     }
 
     if (!branches[0U] || !branches[1U]) {
@@ -295,8 +293,7 @@ void QBdtNode::Normalize(bitLenInt depth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
-        SetZero();
-        return;
+        return SetZero();
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
 
@@ -337,8 +334,7 @@ void QBdtNode::PopStateVector(bitLenInt depth)
 
     QBdtNodeInterfacePtr b0 = branches[0U];
     if (!b0) {
-        SetZero();
-        return;
+        return SetZero();
     }
     QBdtNodeInterfacePtr b1 = branches[1U];
 
@@ -423,8 +419,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 #endif
 {
     if (IS_NODE_0(scale)) {
-        SetZero();
-        return;
+        return SetZero();
     }
 
     QBdtNodeInterfacePtr b0 = branches[0U];
@@ -616,9 +611,8 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, cons
         b0->scale *= mtrxCol1.c(0U);
         b1->scale *= mtrxCol2.c(1U);
 #endif
-        Prune();
 
-        return;
+        return Prune();
     }
 
     if (IS_NORM_0(mtrxCol1.c(0U)) && IS_NORM_0(mtrxCol2.c(1U))) {
@@ -637,9 +631,8 @@ void QBdtNode::Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, cons
         b1->scale *= mtrxCol2.c(0U);
         b0->scale *= mtrxCol1.c(1U);
 #endif
-        Prune();
 
-        return;
+        return Prune();
     }
 
     PushStateVector(mtrxCol1, mtrxCol2, mtrxColShuff1, mtrxColShuff2, branches[0U], branches[1U], depth);
@@ -785,9 +778,8 @@ void QBdtNode::Apply2x2(const complex* mtrx, bitLenInt depth)
         b0->scale *= mtrx[0U];
         b1->scale *= mtrx[3U];
 #endif
-        Prune();
 
-        return;
+        return Prune();
     }
 
     if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
@@ -806,9 +798,8 @@ void QBdtNode::Apply2x2(const complex* mtrx, bitLenInt depth)
         b1->scale *= mtrx[1U];
         b0->scale *= mtrx[2U];
 #endif
-        Prune();
 
-        return;
+        return Prune();
     }
 
     PushStateVector(mtrx, branches[0U], branches[1U], depth);

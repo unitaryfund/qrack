@@ -564,6 +564,30 @@ public:
         QINTERFACE_TO_QPARITY(engine)->CUniformParityRZ(controls, mask, angle);
     }
 
+    void RY(real1_f radians, bitLenInt qubit)
+    {
+        if (!stabilizer) {
+            return QInterface::RY(radians, qubit);
+        }
+
+        QInterface::H(qubit);
+        QInterface::RZ(radians, qubit);
+        QInterface::H(qubit);
+    }
+
+    void RX(real1_f radians, bitLenInt qubit)
+    {
+        if (!stabilizer) {
+            return QInterface::RX(radians, qubit);
+        }
+
+        QInterface::S(qubit);
+        QInterface::H(qubit);
+        QInterface::RZ(radians, qubit);
+        QInterface::H(qubit);
+        QInterface::IS(qubit);
+    }
+
 #if ENABLE_ALU
     using QInterface::M;
     bool M(bitLenInt q) { return QInterface::M(q); }
@@ -583,8 +607,7 @@ public:
     void INC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length)
     {
         if (stabilizer) {
-            QInterface::INC(toAdd, start, length);
-            return;
+            return QInterface::INC(toAdd, start, length);
         }
 
         engine->INC(toAdd, start, length);
@@ -592,8 +615,7 @@ public:
     void DEC(const bitCapInt& toSub, bitLenInt start, bitLenInt length)
     {
         if (stabilizer) {
-            QInterface::DEC(toSub, start, length);
-            return;
+            return QInterface::DEC(toSub, start, length);
         }
 
         engine->DEC(toSub, start, length);
@@ -601,8 +623,7 @@ public:
     void DECS(const bitCapInt& toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         if (stabilizer) {
-            QInterface::DECS(toSub, start, length, overflowIndex);
-            return;
+            return QInterface::DECS(toSub, start, length, overflowIndex);
         }
 
         engine->DECS(toSub, start, length, overflowIndex);
@@ -610,8 +631,7 @@ public:
     void CINC(const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
     {
         if (stabilizer) {
-            QInterface::CINC(toAdd, inOutStart, length, controls);
-            return;
+            return QInterface::CINC(toAdd, inOutStart, length, controls);
         }
 
         engine->CINC(toAdd, inOutStart, length, controls);
@@ -619,8 +639,7 @@ public:
     void INCS(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         if (stabilizer) {
-            QInterface::INCS(toAdd, start, length, overflowIndex);
-            return;
+            return QInterface::INCS(toAdd, start, length, overflowIndex);
         }
 
         engine->INCS(toAdd, start, length, overflowIndex);
@@ -628,8 +647,7 @@ public:
     void INCDECC(const bitCapInt& toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         if (stabilizer) {
-            QInterface::INCDECC(toAdd, start, length, carryIndex);
-            return;
+            return QInterface::INCDECC(toAdd, start, length, carryIndex);
         }
 
         engine->INCDECC(toAdd, start, length, carryIndex);
@@ -762,8 +780,7 @@ public:
     void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         if (stabilizer) {
-            QInterface::SqrtSwap(qubitIndex1, qubitIndex2);
-            return;
+            return QInterface::SqrtSwap(qubitIndex1, qubitIndex2);
         }
 
         SwitchToEngine();
@@ -772,8 +789,7 @@ public:
     void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         if (stabilizer) {
-            QInterface::ISqrtSwap(qubitIndex1, qubitIndex2);
-            return;
+            return QInterface::ISqrtSwap(qubitIndex1, qubitIndex2);
         }
 
         SwitchToEngine();
@@ -785,22 +801,19 @@ public:
         const real1 sinTheta = (real1)sin(theta);
 
         if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
-            MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-            return;
+            return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         }
 
         const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
         if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
             ISwap(qubit1, qubit2);
-            MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-            return;
+            return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         }
 
         const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
         if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
             IISwap(qubit1, qubit2);
-            MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-            return;
+            return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         }
 
         SwitchToEngine();

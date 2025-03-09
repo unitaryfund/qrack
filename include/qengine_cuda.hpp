@@ -522,7 +522,7 @@ protected:
                 return cudaMemcpy(
                     stateBuffer.get(), (void*)(copyVec.get()), sizeof(complex) * maxQPowerOcl, cudaMemcpyHostToDevice);
             });
-            copyVec.reset();
+            copyVec = nullptr;
         }
 
         usingHostRam = useHostMem;

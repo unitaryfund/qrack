@@ -55,8 +55,7 @@ void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBi
 void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
-        SetBit(outputBit, false);
-        return;
+        return SetBit(outputBit, false);
     }
 
     if (inputBit1 == outputBit) {

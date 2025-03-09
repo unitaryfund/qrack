@@ -310,8 +310,7 @@ struct QCircuitGate {
         }
 
         if (payloads.empty()) {
-            Clear();
-            return;
+            return Clear();
         }
 
         for (const bitLenInt& c : ctrlsToTest) {

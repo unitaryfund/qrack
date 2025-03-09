@@ -88,8 +88,7 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     }
 
     if (length == 1U) {
-        Phase(-ONE_CMPLX, ONE_CMPLX, start);
-        return;
+        return Phase(-ONE_CMPLX, ONE_CMPLX, start);
     }
 
     std::vector<bitLenInt> controls(length - 1U);
@@ -114,8 +113,7 @@ void QInterface::YMask(const bitCapInt& _mask)
 {
     bitLenInt bit = log2(_mask);
     if (bi_compare(pow2(bit), _mask) == 0) {
-        Y(bit);
-        return;
+        return Y(bit);
     }
 
     ZMask(_mask);
@@ -248,8 +246,7 @@ void QInterface::ISqrtSwap(bitLenInt q1, bitLenInt q2)
 void QInterface::CSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     if (!controls.size()) {
-        Swap(q1, q2);
-        return;
+        return Swap(q1, q2);
     }
 
     if (q1 == q2) {
@@ -284,8 +281,7 @@ void QInterface::AntiCSwap(const std::vector<bitLenInt>& controls, bitLenInt q1,
 void QInterface::CSqrtSwap(const std::vector<bitLenInt>& controls, bitLenInt q1, bitLenInt q2)
 {
     if (!controls.size()) {
-        SqrtSwap(q1, q2);
-        return;
+        return SqrtSwap(q1, q2);
     }
 
     if (q1 == q2) {

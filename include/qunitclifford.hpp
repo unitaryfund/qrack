@@ -131,8 +131,7 @@ protected:
         if (((pc < (ONE_R1_F / 4)) && (pt > (3 * ONE_R1_F / 4))) ||
             ((pt < (ONE_R1_F / 4)) && (pc > (3 * ONE_R1_F / 4)))) {
             Swap(control, target);
-            Phase(phaseFac, phaseFac, target);
-            return;
+            return Phase(phaseFac, phaseFac, target);
         }
         std::vector<bitLenInt> bits{ control, target };
         std::vector<bitLenInt*> ebits{ &bits[0U], &bits[1U] };
@@ -292,8 +291,7 @@ public:
         H(t);
         if (IsSeparableZ(t)) {
             CZ(c, t);
-            H(t);
-            return;
+            return H(t);
         }
         H(t);
         CGate(
@@ -316,8 +314,7 @@ public:
     {
         const real1_f p = Prob(t);
         if (p > (3 * ONE_R1_F / 4)) {
-            Z(c);
-            return;
+            return Z(c);
         }
         CGate(
             c, t, nullptr,
@@ -330,8 +327,7 @@ public:
         H(t);
         if (IsSeparableZ(t)) {
             AntiCZ(c, t);
-            H(t);
-            return;
+            return H(t);
         }
         H(t);
         CGate(
@@ -356,8 +352,7 @@ public:
     {
         const real1_f p = Prob(t);
         if (p > (3 * ONE_R1_F / 4)) {
-            Phase(-ONE_CMPLX, ONE_CMPLX, c);
-            return;
+            return Phase(-ONE_CMPLX, ONE_CMPLX, c);
         }
         CGate(
             c, t, nullptr,
@@ -651,15 +646,13 @@ public:
         const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt t)
     {
         if (controls.empty()) {
-            Phase(topLeft, bottomRight, t);
-            return;
+            return Phase(topLeft, bottomRight, t);
         }
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCPhase"));
 
         if (IS_SAME(topLeft, ONE_CMPLX) && IS_SAME(bottomRight, -ONE_CMPLX)) {
-            CZ(c, t);
-            return;
+            return CZ(c, t);
         }
 
         const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
@@ -675,15 +668,13 @@ public:
         const std::vector<bitLenInt>& controls, const complex& topLeft, const complex& bottomRight, bitLenInt t)
     {
         if (controls.empty()) {
-            Phase(topLeft, bottomRight, t);
-            return;
+            return Phase(topLeft, bottomRight, t);
         }
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACPhase"));
 
         if (IS_SAME(topLeft, ONE_CMPLX) && IS_SAME(bottomRight, -ONE_CMPLX)) {
-            AntiCZ(c, t);
-            return;
+            return AntiCZ(c, t);
         }
 
         const complex mtrx[4]{ topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
@@ -699,15 +690,13 @@ public:
         const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt t)
     {
         if (controls.empty()) {
-            Invert(topRight, bottomLeft, t);
-            return;
+            return Invert(topRight, bottomLeft, t);
         }
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCInvert"));
 
         if (IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
-            CNOT(c, t);
-            return;
+            return CNOT(c, t);
         }
 
         const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
@@ -723,15 +712,13 @@ public:
         const std::vector<bitLenInt>& controls, const complex& topRight, const complex& bottomLeft, bitLenInt t)
     {
         if (controls.empty()) {
-            Invert(topRight, bottomLeft, t);
-            return;
+            return Invert(topRight, bottomLeft, t);
         }
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACInvert"));
 
         if (IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
-            AntiCNOT(c, t);
-            return;
+            return AntiCNOT(c, t);
         }
 
         const complex mtrx[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
@@ -746,17 +733,14 @@ public:
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
         if ((norm(mtrx[1U]) <= FP_NORM_EPSILON) && (norm(mtrx[2U]) <= FP_NORM_EPSILON)) {
-            MCPhase(controls, mtrx[0U], mtrx[3U], t);
-            return;
+            return MCPhase(controls, mtrx[0U], mtrx[3U], t);
         }
         if ((norm(mtrx[0U]) <= FP_NORM_EPSILON) && (norm(mtrx[3U]) <= FP_NORM_EPSILON)) {
-            MCInvert(controls, mtrx[1U], mtrx[2U], t);
-            return;
+            return MCInvert(controls, mtrx[1U], mtrx[2U], t);
         }
 
         if (controls.empty()) {
-            Mtrx(mtrx, t);
-            return;
+            return Mtrx(mtrx, t);
         }
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MCMtrx"));
@@ -771,17 +755,14 @@ public:
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt t)
     {
         if ((norm(mtrx[1U]) <= FP_NORM_EPSILON) && (norm(mtrx[2U]) <= FP_NORM_EPSILON)) {
-            MACPhase(controls, mtrx[0U], mtrx[3U], t);
-            return;
+            return MACPhase(controls, mtrx[0U], mtrx[3U], t);
         }
         if ((norm(mtrx[0U]) <= FP_NORM_EPSILON) && (norm(mtrx[3U]) <= FP_NORM_EPSILON)) {
-            MACInvert(controls, mtrx[1U], mtrx[2U], t);
-            return;
+            return MACInvert(controls, mtrx[1U], mtrx[2U], t);
         }
 
         if (controls.empty()) {
-            Mtrx(mtrx, t);
-            return;
+            return Mtrx(mtrx, t);
         }
 
         const bitLenInt c = ThrowIfQubitSetInvalid(controls, t, std::string("QUnitClifford::MACMtrx"));

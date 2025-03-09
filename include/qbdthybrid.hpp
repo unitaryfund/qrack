@@ -72,8 +72,7 @@ protected:
     {
         if (qubitCount < 2U) {
             // Don't check QBdt below qubit threshold.
-            SwitchMode(true);
-            return;
+            return SwitchMode(true);
         }
 
 #if ENABLE_ENV_VARS
@@ -86,8 +85,7 @@ protected:
 
         if (qubitCount <= strideBits) {
             // Don't check QBdt below qubit threshold.
-            SwitchMode(true);
-            return;
+            return SwitchMode(true);
         }
 
 #if ENABLE_ENV_VARS
@@ -100,8 +98,7 @@ protected:
 
         if ((2.0 - threshold) <= FP_NORM_EPSILON) {
             // This definitely won't switch to state vector.
-            SwitchMode(true);
-            return;
+            return SwitchMode(true);
         }
 
         const size_t count = qbdt->CountBranches();

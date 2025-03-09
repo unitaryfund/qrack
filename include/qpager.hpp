@@ -240,8 +240,7 @@ public:
         SeparateEngines(tcqpp, true);
 
         if (qPages.size() == 1U) {
-            qPages[0U]->ShuffleBuffers(engine->qPages[0U]);
-            return;
+            return qPages[0U]->ShuffleBuffers(engine->qPages[0U]);
         }
 
         const size_t offset = qPages.size() >> 1U;
@@ -353,8 +352,7 @@ public:
     void MCMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         if (qPages.size() == 1U) {
-            qPages[0U]->MCMtrx(controls, mtrx, target);
-            return;
+            return qPages[0U]->MCMtrx(controls, mtrx, target);
         }
         bitCapInt p = pow2(controls.size());
         bi_decrement(&p, 1U);
@@ -363,8 +361,7 @@ public:
     void MACMtrx(const std::vector<bitLenInt>& controls, const complex* mtrx, bitLenInt target)
     {
         if (qPages.size() == 1U) {
-            qPages[0U]->MACMtrx(controls, mtrx, target);
-            return;
+            return qPages[0U]->MACMtrx(controls, mtrx, target);
         }
         ApplyEitherControlledSingleBit(ZERO_BCI, controls, target, mtrx);
     }

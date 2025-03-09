@@ -734,8 +734,7 @@ void QUnitClifford::MultiShotMeasureMask(
             }
 
             if (unit) {
-                unit->MultiShotMeasureMask(mappedIndices, shots, shotsArray);
-                return;
+                return unit->MultiShotMeasureMask(mappedIndices, shots, shotsArray);
             }
         }
     }

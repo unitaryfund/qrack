@@ -111,8 +111,7 @@ void ParallelFor::par_for_skip(const bitCapIntOcl begin, const bitCapIntOcl end,
 
     if ((skipMask << maskWidth) >= end) {
         // If we're skipping trailing bits, this is much cheaper:
-        par_for(begin, skipMask, fn);
-        return;
+        return par_for(begin, skipMask, fn);
     }
 
     const bitCapIntOcl lowMask = skipMask - 1U;

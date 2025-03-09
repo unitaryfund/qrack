@@ -523,7 +523,7 @@ protected:
                     *stateBuffer, CL_TRUE, 0U, sizeof(complex) * maxQPowerOcl, copyVec.get(), ResetWaitEvents().get());
             });
             wait_refs.clear();
-            copyVec.reset();
+            copyVec = nullptr;
         }
 
         usingHostRam = useHostMem;

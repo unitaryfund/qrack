@@ -194,13 +194,11 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, const bitCapInt& valu
 {
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
-        SetBit(start, (bool)(bi_and_1(value)));
-        return;
+        return SetBit(start, (bool)(bi_and_1(value)));
     }
 
     if (!start && (length == qubitCount)) {
-        SetPermutation(value);
-        return;
+        return SetPermutation(value);
     }
 
     const bitCapInt regVal = MReg(start, length);
@@ -453,8 +451,7 @@ void QInterface::ProbBitsAll(const std::vector<bitLenInt>& bits, real1* probsArr
         }
 
         if (isOrdered) {
-            GetProbs(probsArray);
-            return;
+            return GetProbs(probsArray);
         }
     }
 
@@ -1111,8 +1108,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, b
         return;
     }
     if (n == 1) {
-        CZ(control, target, length);
-        return;
+        return CZ(control, target, length);
     }
 
     for (bitLenInt bit = 0U; bit < length; ++bit) {
@@ -1127,8 +1123,7 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, 
         return;
     }
     if (n == 1) {
-        CZ(control, target, length);
-        return;
+        return CZ(control, target, length);
     }
 
     for (bitLenInt bit = 0U; bit < length; ++bit) {

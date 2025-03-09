@@ -119,8 +119,7 @@ void QEngineOCL::CopyStateVec(QEnginePtr src)
     }
 
     if (src->IsZeroAmplitude()) {
-        ZeroAmplitudes();
-        return;
+        return ZeroAmplitudes();
     }
 
     if (stateBuffer) {
@@ -143,8 +142,7 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapI
     }
 
     if (!stateBuffer) {
-        par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { pagePtr[lcv] = ZERO_CMPLX; });
-        return;
+        return par_for(0, length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { pagePtr[lcv] = ZERO_CMPLX; });
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -704,8 +702,7 @@ void QEngineOCL::Z(bitLenInt target)
 void QEngineOCL::Invert(const complex& topRight, const complex& bottomLeft, bitLenInt qubitIndex)
 {
     if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topRight)) && IS_NORM_0(topRight - bottomLeft)) {
-        X(qubitIndex);
-        return;
+        return X(qubitIndex);
     }
 
     const complex pauliX[4]{ ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
@@ -721,8 +718,7 @@ void QEngineOCL::Phase(const complex& topLeft, const complex& bottomRight, bitLe
         }
 
         if (IS_NORM_0(topLeft + bottomRight)) {
-            Z(qubitIndex);
-            return;
+            return Z(qubitIndex);
         }
     }
 
@@ -737,8 +733,7 @@ void QEngineOCL::XMask(const bitCapInt& mask)
     }
 
     if (isPowerOfTwo(mask)) {
-        X(log2(mask));
-        return;
+        return X(log2(mask));
     }
 
     BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
@@ -751,8 +746,7 @@ void QEngineOCL::PhaseParity(real1_f radians, const bitCapInt& mask)
 
     if (isPowerOfTwo(mask)) {
         const complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
-        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
-        return;
+        return Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
     }
 
     BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
@@ -771,16 +765,14 @@ void QEngineOCL::PhaseRootNMask(bitLenInt n, const bitCapInt& mask)
     }
 
     if (n == 1) {
-        ZMask(mask);
-        return;
+        return ZMask(mask);
     }
 
     const bitCapIntOcl nPhases = pow2Ocl(n);
     const real1 radians = (real1)(-PI_R1 / pow2Ocl(n - 1U));
 
     if (isPowerOfTwo(mask)) {
-        Phase(ONE_CMPLX, std::polar(ONE_R1, radians), log2(mask));
-        return;
+        return Phase(ONE_CMPLX, std::polar(ONE_R1, radians), log2(mask));
     }
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ maxQPowerOcl, (bitCapIntOcl)mask, nPhases, pow2Ocl(n - 1U), 0U, 0U, 0U, 0U,
@@ -1074,8 +1066,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const std::vector<bitLenInt>& cont
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controls.empty()) {
-        Mtrx(mtrxs + ((bitCapIntOcl)mtrxSkipValueMask << 2U), qubitIndex);
-        return;
+        return Mtrx(mtrxs + ((bitCapIntOcl)mtrxSkipValueMask << 2U), qubitIndex);
     }
 
     if (qubitIndex >= qubitCount) {
@@ -1173,8 +1164,7 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, real1_f angle)
 void QEngineOCL::CUniformParityRZ(const std::vector<bitLenInt>& controls, const bitCapInt& mask, real1_f angle)
 {
     if (controls.empty()) {
-        UniformParityRZ(mask, angle);
-        return;
+        return UniformParityRZ(mask, angle);
     }
 
     if (mask >= maxQPower) {
@@ -1277,8 +1267,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     if (!stateBuffer || !toCopy->stateBuffer) {
         // Compose will have a wider but 0 stateVec
         ZeroAmplitudes();
-        SetQubitCount(qubitCount + toCopy->qubitCount);
-        return;
+        return SetQubitCount(qubitCount + toCopy->qubitCount);
     }
 
     if (!qubitCount) {
@@ -1602,8 +1591,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& dis
     }
 
     if (!stateBuffer) {
-        SetQubitCount(qubitCount - length);
-        return;
+        return SetQubitCount(qubitCount - length);
     }
 
     if (length == qubitCount) {
@@ -1611,8 +1599,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, const bitCapInt& dis
         stateVec = nullptr;
         stateBuffer = nullptr;
         SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
-        SetQubitCount(0U);
-        return;
+        return SetQubitCount(0U);
     }
 
     if (doNormalize) {
@@ -1768,8 +1755,8 @@ void QEngineOCL::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray
     }
 
     if (!stateBuffer) {
-        par_for(0, lengthPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { probsArray[lcv] = ZERO_R1; });
-        return;
+        return par_for(
+            0, lengthPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { probsArray[lcv] = ZERO_R1; });
     }
 
     const bitCapIntOcl bciArgs[BCI_ARG_LEN]{ lengthPower, maxJ, start, length, 0U, 0U, 0U, 0U, 0U, 0U };
@@ -1869,15 +1856,14 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     const bitCapIntOcl maxJ = maxQPowerOcl >> length;
 
     if (!stateBuffer) {
-        par_for(0, lengthPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { probsArray[lcv] = ZERO_R1; });
-        return;
+        return par_for(
+            0, lengthPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { probsArray[lcv] = ZERO_R1; });
     }
 
     if ((lengthPower * lengthPower) < nrmGroupCount) {
         // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
         // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
-        QEngine::ProbMaskAll(mask, probsArray);
-        return;
+        return QEngine::ProbMaskAll(mask, probsArray);
     }
 
     v = ~((bitCapIntOcl)mask) & (maxQPowerOcl - 1U); // count the number of bits set in v
@@ -2213,8 +2199,7 @@ void QEngineOCL::CINC(
     const bitCapInt& toAdd, bitLenInt inOutStart, bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
-        INC(toAdd, inOutStart, length);
-        return;
+        return INC(toAdd, inOutStart, length);
     }
 
     CINT(OCL_API_CINC, (bitCapIntOcl)toAdd, inOutStart, length, controls);
@@ -2454,8 +2439,7 @@ void QEngineOCL::MUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt car
     const bitCapIntOcl lowPower = pow2Ocl(length);
     const bitCapIntOcl toMulOcl = (bitCapIntOcl)toMul & (lowPower - 1U);
     if (!toMulOcl) {
-        SetReg(inOutStart, length, ZERO_BCI);
-        return;
+        return SetReg(inOutStart, length, ZERO_BCI);
     }
 
     MULx(OCL_API_MUL, toMulOcl, inOutStart, carryStart, length);
@@ -2499,8 +2483,7 @@ void QEngineOCL::POWModNOut(
 
     const bitCapIntOcl baseOcl = (bitCapIntOcl)base;
     if (baseOcl == 1U) {
-        SetReg(outStart, length, ONE_BCI);
-        return;
+        return SetReg(outStart, length, ONE_BCI);
     }
 
     MULModx(OCL_API_POWMODN_OUT, baseOcl, (bitCapIntOcl)modN, inStart, outStart, length);
@@ -2549,8 +2532,7 @@ void QEngineOCL::CMUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt ca
     CHECK_ZERO_SKIP();
 
     if (controls.empty()) {
-        MUL(toMul, inOutStart, carryStart, length);
-        return;
+        return MUL(toMul, inOutStart, carryStart, length);
     }
 
     SetReg(carryStart, length, ZERO_BCI);
@@ -2569,8 +2551,7 @@ void QEngineOCL::CDIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt ca
     const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
-        DIV(toDiv, inOutStart, carryStart, length);
-        return;
+        return DIV(toDiv, inOutStart, carryStart, length);
     }
 
     const bitCapIntOcl toDivOcl = (bitCapIntOcl)toDiv;
@@ -2592,8 +2573,7 @@ void QEngineOCL::CMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bitL
     CHECK_ZERO_SKIP();
 
     if (controls.empty()) {
-        MULModNOut(toMul, modN, inStart, outStart, length);
-        return;
+        return MULModNOut(toMul, modN, inStart, outStart, length);
     }
 
     SetReg(outStart, length, ZERO_BCI);
@@ -2611,8 +2591,7 @@ void QEngineOCL::CIMULModNOut(const bitCapInt& toMul, const bitCapInt& modN, bit
     bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
-        IMULModNOut(toMul, modN, inStart, outStart, length);
-        return;
+        return IMULModNOut(toMul, modN, inStart, outStart, length);
     }
 
     const bitCapIntOcl lowPower = pow2Ocl(length);
@@ -2631,8 +2610,7 @@ void QEngineOCL::CPOWModNOut(const bitCapInt& base, const bitCapInt& modN, bitLe
     CHECK_ZERO_SKIP();
 
     if (controls.empty()) {
-        POWModNOut(base, modN, inStart, outStart, length);
-        return;
+        return POWModNOut(base, modN, inStart, outStart, length);
     }
 
     SetReg(outStart, length, ZERO_BCI);
@@ -3060,8 +3038,8 @@ void QEngineOCL::GetQuantumState(complex* outputState)
     }
 
     if (!stateBuffer) {
-        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputState[lcv] = ZERO_R1; });
-        return;
+        return par_for(
+            0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) { outputState[lcv] = ZERO_R1; });
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -3217,8 +3195,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
     }
     // We might avoid the clFinish().
     if (nrm <= FP_NORM_EPSILON) {
-        ZeroAmplitudes();
-        return;
+        return ZeroAmplitudes();
     }
     if ((abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) && ((phaseArg * phaseArg) <= FP_NORM_EPSILON)) {
         return;

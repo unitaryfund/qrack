@@ -100,8 +100,7 @@ void QEngineCPU::CINC(
     CHECK_ZERO_SKIP();
 
     if (controls.empty()) {
-        INC(toAdd, inOutStart, length);
-        return;
+        return INC(toAdd, inOutStart, length);
     }
 
     if (isBadBitRange(inOutStart, length, qubitCount)) {
@@ -398,8 +397,7 @@ void QEngineCPU::MUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt car
     SetReg(carryStart, length, ZERO_BCI);
 
     if (bi_compare_0(toMul) == 0) {
-        SetReg(inOutStart, length, ZERO_BCI);
-        return;
+        return SetReg(inOutStart, length, ZERO_BCI);
     }
     if (bi_compare_1(toMul) == 0) {
         return;
@@ -491,15 +489,13 @@ void QEngineCPU::CMUL(const bitCapInt& toMul, bitLenInt inOutStart, bitLenInt ca
     const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
-        MUL(toMul, inOutStart, carryStart, length);
-        return;
+        return MUL(toMul, inOutStart, carryStart, length);
     }
 
     SetReg(carryStart, length, ZERO_BCI);
 
     if (bi_compare_0(toMul) == 0) {
-        SetReg(inOutStart, length, ZERO_BCI);
-        return;
+        return SetReg(inOutStart, length, ZERO_BCI);
     }
     if (bi_compare_1(toMul) == 0) {
         return;
@@ -514,8 +510,7 @@ void QEngineCPU::CDIV(const bitCapInt& toDiv, bitLenInt inOutStart, bitLenInt ca
     const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
-        DIV(toDiv, inOutStart, carryStart, length);
-        return;
+        return DIV(toDiv, inOutStart, carryStart, length);
     }
 
     if (bi_compare_0(toDiv) == 0) {
@@ -597,8 +592,7 @@ void QEngineCPU::POWModNOut(
     const bitCapInt& toMod, const bitCapInt& modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     if (bi_compare_1(toMod) == 0) {
-        SetReg(outStart, length, ONE_BCI);
-        return;
+        return SetReg(outStart, length, ONE_BCI);
     }
 
     const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
@@ -677,8 +671,7 @@ void QEngineCPU::CMULModNOut(const bitCapInt& toMod, const bitCapInt& modN, bitL
     bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (!controls.size()) {
-        MULModNOut(toMod, modN, inStart, outStart, length);
-        return;
+        return MULModNOut(toMod, modN, inStart, outStart, length);
     }
 
     SetReg(outStart, length, ZERO_BCI);
@@ -692,8 +685,7 @@ void QEngineCPU::CIMULModNOut(const bitCapInt& toMod, const bitCapInt& modN, bit
     bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
-        IMULModNOut(toMod, modN, inStart, outStart, length);
-        return;
+        return IMULModNOut(toMod, modN, inStart, outStart, length);
     }
 
     const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
@@ -705,8 +697,7 @@ void QEngineCPU::CPOWModNOut(const bitCapInt& toMod, const bitCapInt& modN, bitL
     bitLenInt length, const std::vector<bitLenInt>& controls)
 {
     if (controls.empty()) {
-        POWModNOut(toMod, modN, inStart, outStart, length);
-        return;
+        return POWModNOut(toMod, modN, inStart, outStart, length);
     }
 
     const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
