@@ -320,6 +320,7 @@ inline BigInteger operator<<(const BigInteger& left, BIG_INTEGER_WORD right)
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
 
     BigInteger result = bi_lshift_word(left, rShift64);
+
     if (!rMod) {
         return result;
     }
