@@ -31,7 +31,7 @@ std::vector<std::string> _readDirectoryFileNames(const std::string& path)
         while (true) {
             errno = 0;
             dirent* de = readdir(dp);
-            if (de == nullptr) {
+            if (!de) {
                 break;
             }
             if (std::string(de->d_name) != "." && std::string(de->d_name) != "..") {

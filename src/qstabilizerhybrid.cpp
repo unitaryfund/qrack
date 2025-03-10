@@ -328,7 +328,7 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
         return;
     }
 
-    MpsShardPtr toRet = nullptr;
+    MpsShardPtr toRet{ nullptr };
     // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
     stabilizer->H(target);
     if (stabilizer->IsSeparableZ(target)) {

@@ -104,7 +104,7 @@ public:
      */
     void SwitchGpuMode(bool useGpu)
     {
-        QEnginePtr nEngine = nullptr;
+        QEnginePtr nEngine{ nullptr };
         if (!isGpu && useGpu) {
             nEngine = MakeEngine(true);
         } else if (isGpu && !useGpu) {

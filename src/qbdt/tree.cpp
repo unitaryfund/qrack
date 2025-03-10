@@ -147,7 +147,7 @@ void QBdt::SetPermutation(const bitCapInt& initState, const complex& _phaseFac)
 QInterfacePtr QBdt::Clone()
 {
     QBdtPtr c = std::make_shared<QBdt>(engines, 0U, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, -1, (hardware_rand_generator == nullptr) ? false : true, false, (real1_f)amplitudeFloor);
+        false, -1, !hardware_rand_generator ? false : true, false, (real1_f)amplitudeFloor);
 
     c->root = root ? root->ShallowClone() : nullptr;
     c->shards.resize(shards.size());
@@ -254,9 +254,8 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
 QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 {
-    QBdtPtr dest =
-        std::make_shared<QBdt>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-            false, -1, (hardware_rand_generator == nullptr) ? false : true, false, (real1_f)amplitudeFloor);
+    QBdtPtr dest = std::make_shared<QBdt>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, -1, !hardware_rand_generator ? false : true, false, (real1_f)amplitudeFloor);
 
     Decompose(start, dest);
 
@@ -303,7 +302,7 @@ bool QBdt::IsSeparable(bitLenInt start)
 
     // If the tree has been fully reduced, this should ALWAYS be the same for ALL branches
     // (that have nonzero amplitude), if-and-only-if the state is separable.
-    QBdtNodeInterfacePtr subsystemPtr = nullptr;
+    QBdtNodeInterfacePtr subsystemPtr{ nullptr };
 
     const bitCapInt qPower = pow2(start);
     bool result = true;
@@ -356,9 +355,8 @@ bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
         return start;
     }
 
-    QBdtPtr nQubits =
-        std::make_shared<QBdt>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-            false, -1, (hardware_rand_generator == nullptr) ? false : true, false, (real1_f)amplitudeFloor);
+    QBdtPtr nQubits = std::make_shared<QBdt>(engines, length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, -1, !hardware_rand_generator ? false : true, false, (real1_f)amplitudeFloor);
     nQubits->root->InsertAtDepth(root, length, qubitCount);
     root = nQubits->root;
     shards.insert(shards.begin() + start, nQubits->shards.begin(), nQubits->shards.end());

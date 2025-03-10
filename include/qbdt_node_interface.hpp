@@ -70,23 +70,23 @@ public:
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
+        , branches{ nullptr, nullptr }
     {
-        branches[0U] = nullptr;
-        branches[1U] = nullptr;
+        // Intentionally left blank
     }
 
     QBdtNodeInterface(const complex& scl)
         : scale(scl)
+        , branches{ nullptr, nullptr }
     {
-        branches[0U] = nullptr;
-        branches[1U] = nullptr;
+        // Intentionally left blank
     }
 
     QBdtNodeInterface(const complex& scl, QBdtNodeInterfacePtr* b)
         : scale(scl)
+        , branches{ b[0U], b[1U] }
     {
-        branches[0U] = b[0U];
-        branches[1U] = b[1U];
+        // Intentionally left blank
     }
 
     virtual ~QBdtNodeInterface()

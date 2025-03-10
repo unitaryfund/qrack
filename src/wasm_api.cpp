@@ -605,7 +605,7 @@ quid init_count_type(
     // (...then reverse:)
     std::reverse(simulatorType.begin(), simulatorType.end());
 
-    QInterfacePtr simulator = nullptr;
+    QInterfacePtr simulator{ nullptr };
     if (q) {
         simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
     }
@@ -652,7 +652,7 @@ quid init_count(bitLenInt q, bool hp)
 
     const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_QUNIT, QINTERFACE_HYBRID };
 
-    QInterfacePtr simulator = nullptr;
+    QInterfacePtr simulator{ nullptr };
     if (q) {
         simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp);
     }
@@ -782,7 +782,7 @@ quid init_qbdd_count(bitLenInt q)
     const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK, QINTERFACE_QUNIT,
         QINTERFACE_STABILIZER_HYBRID, QINTERFACE_BDT };
 
-    QInterfacePtr simulator = nullptr;
+    QInterfacePtr simulator{ nullptr };
     if (q) {
         simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen);
     }

@@ -540,7 +540,7 @@ void QEngineOCL::SetDevice(int64_t dID)
     const DeviceContextPtr nDeviceContext = OCLEngine::Instance().GetDeviceContextPtr(dID);
     const int64_t defDevId = (int)OCLEngine::Instance().GetDefaultDeviceID();
 
-    std::shared_ptr<complex> copyVec = nullptr;
+    std::shared_ptr<complex> copyVec{ nullptr };
 
     if (!didInit) {
         AddAlloc(sizeof(complex) * maxQPowerOcl);

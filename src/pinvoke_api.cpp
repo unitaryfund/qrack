@@ -685,7 +685,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool tn, _In_ bo
     std::reverse(simulatorType.begin(), simulatorType.end());
 
     bool isSuccess = true;
-    QInterfacePtr simulator = nullptr;
+    QInterfacePtr simulator{ nullptr };
     if (q) {
         try {
             simulator =
@@ -739,7 +739,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
     const std::vector<QInterfaceEngine> simulatorType{ QINTERFACE_TENSOR_NETWORK };
 
     bool isSuccess = true;
-    QInterfacePtr simulator = nullptr;
+    QInterfacePtr simulator{ nullptr };
     if (q) {
         try {
             simulator =
@@ -810,7 +810,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
 #endif
 
     bool isSuccess = true;
-    QInterfacePtr simulator = nullptr;
+    QInterfacePtr simulator{ nullptr };
     if (q) {
         try {
             simulator = CreateQuantumInterface(simulatorType, q, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true,
@@ -960,7 +960,6 @@ uintq init_clone_size(uintq sid, uintq n)
 MICROSOFT_QUANTUM_DECL void destroy(_In_ uintq sid)
 {
     META_LOCK_GUARD()
-
     shards.erase(simulators[sid].get());
     simulatorMutexes.erase(simulators[sid].get());
     simulators[sid] = nullptr;
@@ -3568,7 +3567,6 @@ MICROSOFT_QUANTUM_DECL uintq clone_qneuron(_In_ uintq nid)
 MICROSOFT_QUANTUM_DECL void destroy_qneuron(_In_ uintq nid)
 {
     META_LOCK_GUARD()
-
     neuronMutexes.erase(neurons[nid].get());
     neurons[nid] = nullptr;
     neuronErrors[nid] = 0;
@@ -3770,7 +3768,6 @@ MICROSOFT_QUANTUM_DECL uintq qcircuit_past_light_cone(_In_ uintq cid, _In_ uintq
 MICROSOFT_QUANTUM_DECL void destroy_qcircuit(_In_ uintq cid)
 {
     META_LOCK_GUARD()
-
     circuitMutexes.erase(circuits[cid].get());
     circuits[cid] = nullptr;
     circuitReservations[cid] = false;
