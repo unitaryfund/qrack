@@ -27,7 +27,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, const bitCapI
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , devID(deviceId)
-    , root(nullptr)
+    , root{ nullptr }
     , deviceIDs(devIds)
     , engines(eng)
     , shards(qubitCount)
@@ -58,9 +58,8 @@ void QBdt::Init()
 
 QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, const bitCapInt& perm)
 {
-    return std::dynamic_pointer_cast<QEngine>(
-        CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, false, false, devID,
-            hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor, deviceIDs));
+    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX,
+        doNormalize, false, false, devID, !!hardware_rand_generator, false, (real1_f)amplitudeFloor, deviceIDs));
 }
 
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch)

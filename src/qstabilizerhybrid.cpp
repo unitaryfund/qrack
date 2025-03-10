@@ -60,13 +60,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , logFidelity(0.0)
-    , engine(nullptr)
-    , rdmClone(nullptr)
+    , engine{ nullptr }
+    , rdmClone{ nullptr }
     , deviceIDs(devList)
     , engineTypes(eng)
     , cloneEngineTypes(eng)
     , shards(qubitCount)
-    , stateMapCache(nullptr)
+    , stateMapCache{ nullptr }
     , prng(std::random_device{}())
 {
 #if ENABLE_OPENCL || ENABLE_CUDA
@@ -220,7 +220,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         : stabilizer->Compose(std::make_shared<QUnitClifford>(
               1U, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
     ++ancillaCount;
-    shards.push_back(nullptr);
+    shards.emplace_back(nullptr);
     if (deadAncillaCount) {
         --deadAncillaCount;
     }
@@ -1138,7 +1138,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
                     : stabilizer->Compose(std::make_shared<QUnitClifford>(1U, ZERO_BCI, rand_generator,
                           CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND));
                 ++ancillaCount;
-                shards.push_back(nullptr);
+                shards.emplace_back(nullptr);
                 if (deadAncillaCount) {
                     --deadAncillaCount;
                 }
@@ -1997,9 +1997,10 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         return ONE_R1_F;
     }
 
-    QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : nullptr;
-    QStabilizerHybridPtr thatClone =
-        toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare->Clone()) : nullptr;
+    QStabilizerHybridPtr thisClone{ stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : nullptr };
+    QStabilizerHybridPtr thatClone{
+        toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare->Clone()) : nullptr
+    };
 
     if (thisClone) {
         thisClone->FlushBuffers();

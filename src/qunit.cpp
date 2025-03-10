@@ -307,7 +307,7 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry,
         }
     }
 
-    const QUnitPtr copy = isTry ? std::dynamic_pointer_cast<QUnit>(Copy()) : nullptr;
+    const QUnitPtr copy{ isTry ? std::dynamic_pointer_cast<QUnit>(Copy()) : nullptr };
 
     // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
     // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
@@ -317,7 +317,7 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest, bool isTry,
         QEngineShard& shard = shards[start + i];
         QInterfacePtr unit = shard.unit;
 
-        if (unit == nullptr) {
+        if (!unit) {
             continue;
         }
 

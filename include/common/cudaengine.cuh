@@ -128,7 +128,7 @@ struct InitCUDAResult {
 
     InitCUDAResult()
         : all_dev_contexts()
-        , default_dev_context(nullptr)
+        , default_dev_context{ nullptr }
     {
         // Intentionally left blank
     }

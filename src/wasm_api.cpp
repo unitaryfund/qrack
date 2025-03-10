@@ -958,7 +958,7 @@ void allocateQubit(quid sid, bitLenInt qid)
     QInterfacePtr nQubit = CreateQuantumInterface(
         simulatorTypes[sid], 1U, ZERO_BCI, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorHostPointer[sid]);
 
-    if (simulators[sid] == nullptr) {
+    if (!simulators[sid]) {
         simulators[sid] = nQubit;
         shards[nQubit.get()] = {};
         shards[nQubit.get()][qid] = 0;

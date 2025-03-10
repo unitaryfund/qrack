@@ -119,7 +119,7 @@ public:
 
     void SetRandomSeed(uint32_t seed)
     {
-        if (rand_generator != nullptr) {
+        if (!!rand_generator) {
             rand_generator->seed(seed);
         }
     }
@@ -128,7 +128,7 @@ public:
 
     bool Rand()
     {
-        if (hardware_rand_generator != nullptr) {
+        if (!!hardware_rand_generator) {
             if (!rawRandBoolsRemaining) {
                 rawRandBools = hardware_rand_generator->NextRaw();
                 rawRandBoolsRemaining = sizeof(unsigned) * bitsInByte;
@@ -400,7 +400,7 @@ public:
         }
 
         QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
-            false, randGlobalPhase, false, -1, hardware_rand_generator != nullptr);
+            false, randGlobalPhase, false, -1, !!hardware_rand_generator);
         return Compose(nQubits, start);
     }
 

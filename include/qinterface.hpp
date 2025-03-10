@@ -248,7 +248,7 @@ public:
         , amplitudeFloor(REAL1_EPSILON)
         , maxQPower(ONE_BCI)
         , rand_distribution(0.0, 1.0)
-        , hardware_rand_generator(nullptr)
+        , hardware_rand_generator{ nullptr }
     {
         // Intentionally left blank
     }
@@ -260,7 +260,7 @@ public:
 
     void SetRandomSeed(uint32_t seed)
     {
-        if (rand_generator != nullptr) {
+        if (!!rand_generator) {
             rand_generator->seed(seed);
         }
     }
@@ -285,7 +285,7 @@ public:
     /** Generate a random real number between 0 and 1 */
     real1_f Rand()
     {
-        if (hardware_rand_generator != nullptr) {
+        if (!!hardware_rand_generator) {
             return hardware_rand_generator->Next();
         } else {
             return rand_distribution(*rand_generator);

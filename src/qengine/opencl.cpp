@@ -1441,7 +1441,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     const bitLenInt nLength = qubitCount - length;
 
     if (!nLength) {
-        if (destination != nullptr) {
+        if (!!destination) {
             destination->stateVec = stateVec;
             destination->stateBuffer = stateBuffer;
             stateBuffer = nullptr;
@@ -1649,7 +1649,7 @@ bitLenInt QEngineOCL::Allocate(bitLenInt start, bitLenInt length)
     }
 
     QEngineOCLPtr nQubits = std::make_shared<QEngineOCL>(length, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, !!hardware_rand_generator, false, (real1_f)amplitudeFloor);
 
     return Compose(nQubits, start);
 }
@@ -3164,7 +3164,7 @@ QInterfacePtr QEngineOCL::Clone()
     }
 
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, !!hardware_rand_generator, false, (real1_f)amplitudeFloor);
 
     cl::Event copyEvent;
 
@@ -3185,7 +3185,7 @@ QInterfacePtr QEngineOCL::Clone()
 QEnginePtr QEngineOCL::CloneEmpty()
 {
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(0U, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, !!hardware_rand_generator, false, (real1_f)amplitudeFloor);
 
     copyPtr->SetQubitCount(qubitCount);
 

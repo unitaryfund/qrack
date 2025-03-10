@@ -154,7 +154,7 @@ std::vector<DeviceContextPtr> OCLEngine::GetDeviceContextPtrVector() { return al
 void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp)
 {
     all_device_contexts = vec;
-    if (dcp != nullptr) {
+    if (!!dcp) {
         default_device_context = dcp;
     }
 }

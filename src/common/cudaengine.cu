@@ -39,7 +39,7 @@ std::vector<DeviceContextPtr> CUDAEngine::GetDeviceContextPtrVector() { return a
 void CUDAEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp)
 {
     all_device_contexts = vec;
-    if (dcp != nullptr) {
+    if (!!dcp) {
         default_device_context = dcp;
     }
 }

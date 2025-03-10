@@ -25,7 +25,7 @@ QBdtHybrid::QBdtHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, c
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
-    , engine(nullptr)
+    , engine{ nullptr }
     , phaseFactor(phaseFac)
     , deviceIDs(devList)
     , engines(eng)

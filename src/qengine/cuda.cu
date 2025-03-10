@@ -1608,7 +1608,7 @@ bitLenInt QEngineCUDA::Allocate(bitLenInt start, bitLenInt length)
     }
 
     QEngineCUDAPtr nQubits = std::make_shared<QEngineCUDA>(length, 0U, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, !!hardware_rand_generator, false, (real1_f)amplitudeFloor);
 
     return Compose(nQubits, start);
 }
@@ -3083,7 +3083,7 @@ QInterfacePtr QEngineCUDA::Clone()
     }
 
     QEngineCUDAPtr copyPtr = std::make_shared<QEngineCUDA>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, !!hardware_rand_generator, false, (real1_f)amplitudeFloor);
 
     copyPtr->clFinish();
     clFinish();
@@ -3101,7 +3101,7 @@ QInterfacePtr QEngineCUDA::Clone()
 QEnginePtr QEngineCUDA::CloneEmpty()
 {
     QEngineCUDAPtr copyPtr = std::make_shared<QEngineCUDA>(0U, 0U, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != nullptr, false, (real1_f)amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, !!hardware_rand_generator, false, (real1_f)amplitudeFloor);
 
     copyPtr->SetQubitCount(qubitCount);
 

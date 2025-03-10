@@ -75,7 +75,7 @@ QInterfacePtr QStabilizer::Clone()
     Finish();
 
     QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
-        randGlobalPhase, false, -1, hardware_rand_generator != nullptr);
+        randGlobalPhase, false, -1, !!hardware_rand_generator);
     clone->Finish();
 
     clone->x = x;
@@ -1609,7 +1609,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
 {
     QStabilizerPtr dest = std::make_shared<QStabilizer>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG, false,
-        randGlobalPhase, false, -1, hardware_rand_generator != nullptr);
+        randGlobalPhase, false, -1, !!hardware_rand_generator);
     Decompose(start, dest);
 
     return dest;

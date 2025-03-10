@@ -126,8 +126,8 @@ public:
     std::shared_ptr<real1> angleArray;
 
     PoolItem()
-        : probArray(nullptr)
-        , angleArray(nullptr)
+        : probArray{ nullptr }
+        , angleArray{ nullptr }
     {
         cmplxBuffer = MakeBuffer(sizeof(complex) * CMPLX_NORM_LEN);
         realBuffer = MakeBuffer(sizeof(real1) * REAL_ARG_LEN);

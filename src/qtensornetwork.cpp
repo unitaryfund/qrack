@@ -162,9 +162,8 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
     }
 
     // We need to prepare the layer stack (and cache it).
-    layerStack =
-        CreateQuantumInterface(engines, qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-            useHostRam, devID, hardware_rand_generator != nullptr, isSparse, (real1_f)amplitudeFloor, deviceIDs);
+    layerStack = CreateQuantumInterface(engines, qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, useHostRam, devID, !!hardware_rand_generator, isSparse, (real1_f)amplitudeFloor, deviceIDs);
     layerStack->SetReactiveSeparate(isReactiveSeparate);
     layerStack->SetTInjection(useTGadget);
 
@@ -207,8 +206,8 @@ void QTensorNetwork::MakeLayerStack(std::set<bitLenInt> qubits)
 QInterfacePtr QTensorNetwork::Clone()
 {
     QTensorNetworkPtr clone = std::make_shared<QTensorNetwork>(engines, qubitCount, ZERO_BCI, rand_generator, ONE_CMPLX,
-        doNormalize, randGlobalPhase, useHostRam, devID, hardware_rand_generator != nullptr, isSparse,
-        (real1_f)amplitudeFloor, deviceIDs);
+        doNormalize, randGlobalPhase, useHostRam, devID, !!hardware_rand_generator, isSparse, (real1_f)amplitudeFloor,
+        deviceIDs);
 
     clone->circuit.clear();
     for (size_t i = 0U; i < circuit.size(); ++i) {

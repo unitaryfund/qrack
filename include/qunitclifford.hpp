@@ -575,7 +575,7 @@ public:
         }
 
         QUnitCliffordPtr nQubits = std::make_shared<QUnitClifford>(length, ZERO_BCI, rand_generator, CMPLX_DEFAULT_ARG,
-            false, randGlobalPhase, false, -1, hardware_rand_generator != nullptr);
+            false, randGlobalPhase, false, -1, !!hardware_rand_generator);
         return Compose(nQubits, start);
     }
 

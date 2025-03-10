@@ -28,7 +28,7 @@ struct QEngineInfo {
     size_t deviceIndex;
 
     QEngineInfo()
-        : unit(nullptr)
+        : unit{ nullptr }
         , deviceIndex(0U)
     {
     }
