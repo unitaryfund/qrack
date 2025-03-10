@@ -2734,7 +2734,7 @@ void qcircuit_append_1qb(quid cid, std::vector<real1_f> m, bitLenInt q)
     }
 
     CIRCUIT_LOCK_GUARD_VOID(cid)
-    complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
+    const complex mtrx[4]{ complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
     circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx));
 }
@@ -2759,7 +2759,7 @@ void qcircuit_append_mc(quid cid, std::vector<real1_f> m, std::vector<bitLenInt>
         ctrls.insert(c[i]);
     }
 
-    complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
+    const complex mtrx[4]{ complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
     circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx, ctrls, _p));
 }

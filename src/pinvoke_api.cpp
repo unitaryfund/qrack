@@ -3786,7 +3786,7 @@ MICROSOFT_QUANTUM_DECL void qcircuit_swap(_In_ uintq cid, _In_ uintq q1, _In_ ui
 MICROSOFT_QUANTUM_DECL void qcircuit_append_1qb(_In_ uintq cid, _In_reads_(8) double* m, _In_ uintq q)
 {
     CIRCUIT_LOCK_GUARD_VOID(cid)
-    complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
+    const complex mtrx[4]{ complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
     circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx));
 }
@@ -3807,7 +3807,7 @@ MICROSOFT_QUANTUM_DECL void qcircuit_append_mc(
         ctrls.insert(c[i]);
     }
 
-    complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
+    const complex mtrx[4]{ complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
     circuit->AppendGate(std::make_shared<QCircuitGate>(q, mtrx, ctrls, _p));
 }

@@ -546,7 +546,7 @@ struct QCircuitGate {
     {
         const bitCapIntOcl maxQPower = pow2Ocl(controls.size());
         std::unique_ptr<complex[]> toRet(new complex[maxQPower << 2U]);
-        QRACK_CONST complex identity[4U] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
+        QRACK_CONST complex identity[4U]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
             complex* mtrx = toRet.get() + (i << 2U);
             const auto& p = payloads.find(i);
@@ -692,9 +692,9 @@ public:
             std::swap(q1, q2);
         }
 
-        QRACK_CONST complex m[4U] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-        const std::set<bitLenInt> s1 = { q1 };
-        const std::set<bitLenInt> s2 = { q2 };
+        QRACK_CONST complex m[4U]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        const std::set<bitLenInt> s1{ q1 };
+        const std::set<bitLenInt> s2{ q2 };
         AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, ONE_BCI));
         AppendGate(std::make_shared<QCircuitGate>(q2, m, s1, ONE_BCI));
         AppendGate(std::make_shared<QCircuitGate>(q1, m, s2, ONE_BCI));

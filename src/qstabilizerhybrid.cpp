@@ -144,7 +144,7 @@ void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
 
 void QStabilizerHybrid::FlushH(bitLenInt qubit)
 {
-    QRACK_CONST complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    QRACK_CONST complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     MpsShardPtr shard = std::make_shared<MpsShard>(h);
     shard->Compose(shards[qubit]->gate);
     shards[qubit] = shard->IsIdentity() ? nullptr : shard;
@@ -1912,7 +1912,7 @@ bool QStabilizerHybrid::ForceMParity(const bitCapInt& mask, bool result, bool do
 /// Flush non-Clifford phase gate gadgets with angle below a threshold.
 void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
 {
-    QRACK_CONST complex h[4U] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    QRACK_CONST complex h[4U]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
     for (size_t i = shards.size() - 1U; i >= qubitCount; --i) {
         // We're going to start by non-destructively "simulating" measurement collapse.
         MpsShardPtr nShard = shards[i]->Clone();
@@ -2181,7 +2181,7 @@ std::ostream& operator<<(std::ostream& os, const QStabilizerHybridPtr s)
 
     os << s->stabilizer;
 
-    const complex id[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
+    const complex id[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
     const std::vector<MpsShardPtr>& shards = s->shards;
     for (size_t i = 0U; i < shards.size(); ++i) {
         const complex* mtrx = !shards[i] ? id : shards[i]->gate;

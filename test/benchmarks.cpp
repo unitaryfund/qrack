@@ -1034,7 +1034,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of "Sycamore circuits."
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -1227,7 +1227,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of "Sycamore circuits."
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -1474,7 +1474,7 @@ TEST_CASE("test_stabilizer_rz_nn", "[supreme]")
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of "Sycamore circuits."
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -1650,7 +1650,7 @@ TEST_CASE("test_dense", "[supreme]")
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of "Sycamore circuits."
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -1759,7 +1759,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to
         // the paper.
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -1987,19 +1987,19 @@ TEST_CASE("test_circuit_t_nn", "[supreme]")
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
-    const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex h[4]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of "Sycamore circuits."
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -2049,7 +2049,7 @@ TEST_CASE("test_circuit_t_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
-                const complex p[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, (real1)gateRand) };
+                const complex p[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, (real1)gateRand) };
                 circuit->AppendGate(std::make_shared<QCircuitGate>(i, p));
             }
 
@@ -2140,12 +2140,12 @@ TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
-    const complex h[4] = { SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex h[4]{ SQRT1_2_R1, SQRT1_2_R1, SQRT1_2_R1, -SQRT1_2_R1 };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     int iter = 0;
 
@@ -2165,7 +2165,7 @@ TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of "Sycamore circuits."
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -2215,7 +2215,7 @@ TEST_CASE("test_circuit_t_nn_generate_and_load", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = (real1_f)(4 * PI_R1 * qReg->Rand());
-                const complex p[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, (real1)gateRand) };
+                const complex p[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::polar(ONE_R1, (real1)gateRand) };
                 circuit->AppendGate(std::make_shared<QCircuitGate>(i, p));
             }
 
@@ -2379,7 +2379,7 @@ TEST_CASE("test_noisy_stabilizer_t_cc_nn", "[supreme]")
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to
         // the paper.
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -2649,7 +2649,7 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to
         // the paper.
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -2869,7 +2869,7 @@ TEST_CASE("test_noisy_dense_cc_nn", "[supreme]")
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to
         // the paper.
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -3092,7 +3092,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to
         // the paper.
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -3653,7 +3653,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
         // paper.
         const bitLenInt deadQubit = 3U;
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -3811,7 +3811,7 @@ TEST_CASE("test_quantum_supremacy_patch", "[supreme]")
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
         // paper.
         const bitLenInt deadQubit = 3U;
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -3973,7 +3973,7 @@ TEST_CASE("test_quantum_supremacy_elided", "[supreme]")
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
         // paper.
         const bitLenInt deadQubit = 3U;
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
         int colLen = std::sqrt(n);
@@ -4187,7 +4187,7 @@ TEST_CASE("test_random_circuit_sampling_nn", "[speed]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-        std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::vector<int> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
         const int rowLen = std::ceil(std::sqrt(n));
         const int GateCount2Qb = 12;
 
@@ -4265,7 +4265,7 @@ TEST_CASE("test_random_circuit_sampling_nn_orbifold", "[speed]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         const bitLenInt depth = (benchmarkDepth <= 0) ? n : benchmarkDepth;
-        std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+        std::vector<int> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
         const int rowLen = std::ceil(std::sqrt(n));
         const int GateCount2Qb = 12;
 
@@ -5597,7 +5597,7 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -5611,11 +5611,11 @@ TEST_CASE("test_noisy_fidelity_nn", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
@@ -5846,7 +5846,7 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -5860,11 +5860,11 @@ TEST_CASE("test_noisy_fidelity_nn_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
@@ -6073,7 +6073,7 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -6087,11 +6087,11 @@ TEST_CASE("test_noisy_fidelity_nn_mirror", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
@@ -6275,7 +6275,7 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -6289,11 +6289,11 @@ TEST_CASE("test_noisy_fidelity_nn_validation", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
@@ -6520,7 +6520,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -6534,11 +6534,11 @@ TEST_CASE("test_noisy_fidelity_2qb_nn", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
@@ -6713,7 +6713,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -6727,11 +6727,11 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_estimate", "[supreme_estimate]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
@@ -6884,7 +6884,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -6898,11 +6898,11 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_validation", "[supreme]")
 
     const std::vector<QInterfaceEngine> engineStack = BuildEngineStack();
 
-    const complex x[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    const complex y[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    const complex z[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
-    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    const complex x[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex y[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+    const complex z[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+    const complex s[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    const complex is[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
 
     QCircuitPtr circuit = std::make_shared<QCircuit>();
 
@@ -7074,7 +7074,7 @@ TEST_CASE("test_noisy_fidelity_2qb_nn_comparison", "[supreme]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -7424,7 +7424,7 @@ TEST_CASE("test_noisy_rcs_nn", "[speed]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::vector<int> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
     const int rowLen = std::ceil(std::sqrt(n));
     const int GateCount2Qb = 12;
 
@@ -7558,7 +7558,7 @@ TEST_CASE("test_noisy_rcs_u3_nn", "[speed]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::vector<int> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::vector<int> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
     const int rowLen = std::ceil(std::sqrt(n));
     const int GateCount2Qb = 12;
 
@@ -7689,7 +7689,7 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
     const bitLenInt deadQubit = 3U;
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -7967,7 +7967,7 @@ TEST_CASE("test_noisy_sycamore_estimate", "[supreme_estimate]")
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
     const bitLenInt deadQubit = 3U;
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -8176,7 +8176,7 @@ TEST_CASE("test_noisy_sycamore_validation", "[supreme]")
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
     const bitLenInt deadQubit = 3U;
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -8516,7 +8516,7 @@ TEST_CASE("test_stabilizer_rz_nn_mirror", "[supreme]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
     int colLen = std::sqrt(w);
@@ -8674,7 +8674,7 @@ TEST_CASE("test_stabilizer_rz_hard_nn_mirror", "[supreme]")
     // The 2 bit indicates +/- row offset.
     // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
     // paper.
-    std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+    std::list<bitLenInt> gateSequence{ 0, 3, 2, 1, 2, 1, 0, 3 };
     const bitLenInt deadQubit = 3U;
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.

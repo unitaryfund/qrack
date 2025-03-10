@@ -270,7 +270,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
 TEST_CASE("test_exp2x2_log2x2")
 {
-    complex mtrx1[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
+    complex mtrx1[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
     complex mtrx2[4];
 
     exp2x2(mtrx1, mtrx2);
@@ -500,7 +500,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticy")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ucmtrx")
 {
-    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    const complex pauliX[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     const std::vector<bitLenInt> controls{ 0, 1 };
 
     qftReg->SetPermutation(0x00);
@@ -1232,11 +1232,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zmask")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaserootnmask")
 {
     const bitCapInt ket = 14062U;
-    const bitCapInt masks[6U] = { 8U, 3097U, 22225U, 16051U, 62894U, 49134U };
+    const bitCapInt masks[6U]{ 8U, 3097U, 22225U, 16051U, 62894U, 49134U };
     const bitLenInt n = 3U;
     const bitCapIntOcl modulus = pow2Ocl(n);
     // phaseCounts[ii] = popcount(ket & masks[ii])
-    constexpr bitCapIntOcl phaseCounts[6U] = { 1U, 2U, 5U, 7U, 8U, 10U };
+    constexpr bitCapIntOcl phaseCounts[6U]{ 1U, 2U, 5U, 7U, 8U, 10U };
 
     qftReg->SetPermutation(ket);
     REQUIRE_THAT(qftReg, HasProbability(0U, 20U, ket));
@@ -1535,7 +1535,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_rz")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 {
     std::vector<bitLenInt> controls{ 4, 5 };
-    real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
+    real1 angles[4]{ PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
@@ -1590,7 +1590,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
 {
     std::vector<bitLenInt> controls{ 4, 5 };
-    real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
+    real1 angles[4]{ PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
 
     qftReg->SetReg(0, 8, 0x01);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
@@ -1646,7 +1646,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
 {
     std::vector<bitLenInt> controls{ 4, 5 };
-    real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
+    real1 angles[4]{ PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
     complex pauliRYs[16];
 
     real1 cosine, sine;
@@ -2444,7 +2444,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcy_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcz_reg")
 {
-    bitLenInt controls[2] = { 0, 1 };
+    bitLenInt controls[2]{ 0, 1 };
 
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 3);
@@ -3383,7 +3383,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
     qftReg->X(2);
     qftReg->H(3);
 
-    const std::set<bitCapInt> possibleResults = { 2, 3, 6, 7 };
+    const std::set<bitCapInt> possibleResults{ 2, 3, 6, 7 };
 
     std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 1000);
     std::map<bitCapInt, int>::iterator it = results.begin();
@@ -3461,7 +3461,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate", "[sd_xfail]")
     }
     qftReg->SetQuantumState(state);
 
-    complex state2[2] = { ZERO_CMPLX, ONE_CMPLX };
+    complex state2[2]{ ZERO_CMPLX, ONE_CMPLX };
     QInterfacePtr qftReg2 = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType, testSubSubSubEngineType }, 1, ZERO_BCI, rng);
     qftReg2->SetQuantumState(state2);
@@ -5083,7 +5083,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron", "[sd_xfail]")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_bell_m")
 {
     const std::vector<bitCapInt> qPowers{ 1, 2 };
-    const std::set<bitCapInt> possibleResults = { 0, 3 };
+    const std::set<bitCapInt> possibleResults{ 0, 3 };
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 2);
@@ -6910,51 +6910,51 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                     circuit->Swap(multiGate.b1, multiGate.b2);
                 } else if (multiGate.gate == 1) {
                     // testCase->CNOT(multiGate.b1, multiGate.b2);
-                    complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    const complex mtrx[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, ONE_BCI));
                 } else if (multiGate.gate == 2) {
                     // testCase->CY(multiGate.b1, multiGate.b2);
-                    complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    const complex mtrx[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, ONE_BCI));
                 } else if (multiGate.gate == 3) {
                     // testCase->CZ(multiGate.b1, multiGate.b2);
-                    complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    const complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, ONE_BCI));
                 } else if (multiGate.gate == 4) {
                     // testCase->AntiCNOT(multiGate.b1, multiGate.b2);
-                    complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    const complex mtrx[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, ZERO_BCI));
                 } else if (multiGate.gate == 5) {
                     // testCase->AntiCY(multiGate.b1, multiGate.b2);
-                    complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    const complex mtrx[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, ZERO_BCI));
                 } else if (multiGate.gate == 6) {
                     // testCase->AntiCZ(multiGate.b1, multiGate.b2);
-                    complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    const complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b2, mtrx, control, ZERO_BCI));
                 } else if (multiGate.gate == 7) {
                     // testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    const complex mtrx[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 3U));
                 } else if (multiGate.gate == 8) {
                     // testCase->CCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    const complex mtrx[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 3U));
                 } else if (multiGate.gate == 9) {
                     // testCase->CCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    const complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, 3U));
                 } else if (multiGate.gate == 10) {
                     // testCase->AntiCCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    const complex mtrx[4]{ ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, ZERO_BCI));
                 } else if (multiGate.gate == 11) {
                     // testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
-                    complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+                    const complex mtrx[4]{ ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, ZERO_BCI));
                 } else {
                     // testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
-                    complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+                    const complex mtrx[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
                     circuit->AppendGate(std::make_shared<QCircuitGate>(multiGate.b3, mtrx, controls, ZERO_BCI));
                 }
             }

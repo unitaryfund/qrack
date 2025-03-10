@@ -117,7 +117,7 @@ __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.
     stateVec[i | OFFSET2_ARG] = make_qCudaCmplx(mulRes.z, mulRes.w);
 #else
 #define APPLY_AND_OUT()                                                                                                \
-    __half2 mulIn[2] = { stateVec[i | OFFSET1_ARG], stateVec[i | OFFSET2_ARG] };                                       \
+    __half2 mulIn[2]{ stateVec[i | OFFSET1_ARG], stateVec[i | OFFSET2_ARG] };                                          \
                                                                                                                        \
     __half2 mulRes[2];                                                                                                 \
     zmatrixmul(nrm, mtrx, mulIn, mulRes);                                                                              \
@@ -177,7 +177,7 @@ __device__ inline qCudaCmplx qCudaConj(qCudaCmplx a) { return make_qCudaCmplx(a.
 #define NORM_BODY_2X2()                                                                                                \
     qCudaCmplx mulResLo = stateVec[i | OFFSET1_ARG];                                                                   \
     qCudaCmplx mulResHi = stateVec[i | OFFSET2_ARG];                                                                   \
-    __half2 mulIn[2] = { mulResLo, mulResHi };                                                                         \
+    __half2 mulIn[2]{ mulResLo, mulResHi };                                                                            \
                                                                                                                        \
     __half2 mulRes[2];                                                                                                 \
     zmatrixmul(nrm, mtrx, mulIn, mulRes);                                                                              \
@@ -529,7 +529,7 @@ __global__ void uniformlycontrolled(
         qCudaCmplx2 qubit = make_qCudaCmplx2(qubitLo.x, qubitLo.y, qubitHi.x, qubitHi.y);
         qubit = zmatrixmul(nrm, mtrxs + (offset * 8U), qubit);
 #else
-        __half2 qubitIn[2] = { qubitLo, qubitHi };
+        __half2 qubitIn[2]{ qubitLo, qubitHi };
         __half2 qubit[2];
         zmatrixmul(nrm, mtrxs + (offset * 8U), qubitIn, qubit);
 #endif
