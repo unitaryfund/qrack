@@ -798,12 +798,12 @@ public:
 
         // Near-Clifford decomposition
         CNOT(qubit1, qubit2);
-        RZ(phi, qubit2);
         IS(qubit2);
         H(qubit2);
         RZ(-theta, qubit2);
         H(qubit2);
         S(qubit2);
+        RZ(phi, qubit2);
         CNOT(qubit1, qubit2);
     }
 

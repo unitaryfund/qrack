@@ -2405,8 +2405,8 @@ public:
         }
 
         CNOT(qubit1, qubit2);
-        RZ(phi, qubit2);
         RX(-theta, qubit2);
+        RZ(phi, qubit2);
         CNOT(qubit1, qubit2);
     }
 
