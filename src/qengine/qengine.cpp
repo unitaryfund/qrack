@@ -457,7 +457,7 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
     }
 
     const std::vector<bitLenInt> controls{ qubit1 };
-    MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+    MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, -(real1)phi)), qubit2);
 }
 
 real1_f QEngine::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
