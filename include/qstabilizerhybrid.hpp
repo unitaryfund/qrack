@@ -274,7 +274,7 @@ protected:
                 continue;
             }
             const real1 angle = (real1)(FractionalRzAngleWithFlush(i, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-            if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+            if ((2 * abs(angle)) <= (FP_NORM_EPSILON * PI_R1)) {
                 shards[i] = nullptr;
                 continue;
             }

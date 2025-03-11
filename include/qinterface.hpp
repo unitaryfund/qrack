@@ -2385,23 +2385,24 @@ public:
         const real1 sinTheta = (real1)sin(theta);
         const complex expIPhi = exp(complex(ZERO_R1, -(real1)phi));
 
-        if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
-            return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
+        MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
+
+        if ((2 * abs(sinTheta)) <= (FP_NORM_EPSILON * PI_R1)) {
+            // ISWAP power is 0.
+            return;
         }
 
         const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
-        if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
-            ISwap(qubit1, qubit2);
-
-            return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
+        if ((2 * abs(sinThetaDiffNeg)) <= (FP_NORM_EPSILON * PI_R1)) {
+            return ISwap(qubit1, qubit2);
         }
 
         const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
-        if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
-            IISwap(qubit1, qubit2);
-
-            return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
+        if ((2 * abs(sinThetaDiffPos)) <= (FP_NORM_EPSILON * PI_R1)) {
+            return IISwap(qubit1, qubit2);
         }
+
+        // Decompose root of ISWAP gate:
 
         // RXX
         H(qubit1);
@@ -2424,8 +2425,6 @@ public:
         H(qubit1);
         IS(qubit2);
         IS(qubit1);
-
-        return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
     /** Reverse all of the bits in a sequence. */

@@ -206,7 +206,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     shards[target] = nullptr;
 
     const real1 angle = (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-    if ((2 * abs(angle) / PI_R1) <= FP_NORM_EPSILON) {
+    if ((2 * abs(angle)) <= (FP_NORM_EPSILON * PI_R1)) {
         return;
     }
     const real1 angleCos = (real1)cos(angle);
@@ -1123,7 +1123,7 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         if (shard) {
             const real1 angle =
                 (real1)(FractionalRzAngleWithFlush(target, std::arg(shard->gate[3U] / shard->gate[0U])) / 2);
-            if ((2 * abs(angle) / PI_R1) > FP_NORM_EPSILON) {
+            if ((2 * abs(angle)) > (FP_NORM_EPSILON * PI_R1)) {
                 // We're adding an ancilla, so drop any rdmClone.
                 rdmClone = nullptr;
 
@@ -1946,7 +1946,7 @@ void QStabilizerHybrid::RdmCloneFlush(real1_f threshold)
             // Calculate the near-Clifford gate phase angle, but don't change the state:
             const real1 angle =
                 (real1)FractionalRzAngleWithFlush(i, std::arg(nShard->gate[3U] / nShard->gate[0U]), true);
-            if ((2 * abs(angle) / PI_R1) > threshold) {
+            if ((2 * abs(angle)) > (threshold * PI_R1)) {
                 // The gate phase angle is too significant to flush.
                 continue;
             }
