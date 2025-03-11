@@ -2383,12 +2383,11 @@ public:
     {
         const std::vector<bitLenInt> controls{ qubit1 };
         const real1 sinTheta = (real1)sin(theta);
+        const complex expIPhi = exp(complex(ZERO_R1, -(real1)phi));
 
         if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
-            return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+            return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         }
-
-        const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
 
         const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
         if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
@@ -2404,10 +2403,29 @@ public:
             return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
         }
 
+        // RXX
+        H(qubit1);
+        H(qubit2);
         CNOT(qubit1, qubit2);
-        RX(-theta, qubit2);
-        RZ(phi, qubit2);
+        RZ(2 * theta, qubit2);
         CNOT(qubit1, qubit2);
+        H(qubit2);
+        H(qubit1);
+
+        // RYY
+        S(qubit1);
+        S(qubit2);
+        H(qubit1);
+        H(qubit2);
+        CNOT(qubit1, qubit2);
+        RZ(2 * theta, qubit2);
+        CNOT(qubit1, qubit2);
+        H(qubit2);
+        H(qubit1);
+        IS(qubit2);
+        IS(qubit1);
+
+        return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
     }
 
     /** Reverse all of the bits in a sequence. */

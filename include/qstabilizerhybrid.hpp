@@ -771,41 +771,6 @@ public:
         SwitchToEngine();
         engine->ISqrtSwap(qubitIndex1, qubitIndex2);
     }
-    void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (engine) {
-            return engine->FSim(theta, phi, qubit1, qubit2);
-        }
-
-        const std::vector<bitLenInt> controls{ qubit1 };
-        const real1 sinTheta = (real1)sin(theta);
-
-        if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
-            return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-        }
-
-        const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
-        if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
-            ISwap(qubit1, qubit2);
-            return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-        }
-
-        const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
-        if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
-            IISwap(qubit1, qubit2);
-            return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-        }
-
-        // Near-Clifford decomposition
-        CNOT(qubit1, qubit2);
-        IS(qubit2);
-        H(qubit2);
-        RZ(-theta, qubit2);
-        H(qubit2);
-        S(qubit2);
-        RZ(phi, qubit2);
-        CNOT(qubit1, qubit2);
-    }
 
     real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     {
