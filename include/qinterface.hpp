@@ -2379,7 +2379,36 @@ public:
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
 
     /** The 2-qubit "fSim" gate, (useful in the simulation of particles with fermionic statistics) */
-    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
+    {
+        const std::vector<bitLenInt> controls{ qubit1 };
+        const real1 sinTheta = (real1)sin(theta);
+
+        if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
+            return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        }
+
+        const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
+
+        const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
+        if ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON) {
+            ISwap(qubit1, qubit2);
+
+            return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
+        }
+
+        const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
+        if ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON) {
+            IISwap(qubit1, qubit2);
+
+            return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
+        }
+
+        CNOT(qubit1, qubit2);
+        RZ(phi, qubit2);
+        RX(-theta, qubit2);
+        CNOT(qubit1, qubit2);
+    }
 
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)

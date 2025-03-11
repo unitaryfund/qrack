@@ -283,7 +283,6 @@ protected:
             shard->gate[0U] = complex(angleCos, -angleSin);
             shard->gate[3U] = complex(angleCos, angleSin);
         }
-
         RdmCloneFlush();
     }
 
@@ -447,6 +446,7 @@ public:
         QRACK_CONST complex pauliZ[4]{ ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX_NEG };
         complex pMtrx[4];
         mul2x2(dMtrx.get(), pauliZ, pMtrx);
+
         return (ONE_R1 - std::real(pMtrx[0]) + std::real(pMtrx[1])) / 2;
     }
 
@@ -773,6 +773,10 @@ public:
     }
     void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     {
+        if (engine) {
+            return engine->FSim(theta, phi, qubit1, qubit2);
+        }
+
         const std::vector<bitLenInt> controls{ qubit1 };
         const real1 sinTheta = (real1)sin(theta);
 
@@ -792,8 +796,15 @@ public:
             return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         }
 
-        SwitchToEngine();
-        engine->FSim(theta, phi, qubit1, qubit2);
+        // Near-Clifford decomposition
+        CNOT(qubit1, qubit2);
+        RZ(phi, qubit2);
+        IS(qubit2);
+        H(qubit2);
+        RZ(-theta, qubit2);
+        H(qubit2);
+        S(qubit2);
+        CNOT(qubit1, qubit2);
     }
 
     real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation)

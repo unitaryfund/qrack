@@ -1919,59 +1919,6 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     }
 }
 
-void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
-{
-    const std::vector<bitLenInt> controls{ qubit1 };
-    real1 sinTheta = (real1)sin(theta);
-
-    if ((sinTheta * sinTheta) <= FP_NORM_EPSILON) {
-        return MCPhase(controls, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-    }
-
-    const complex expIPhi = exp(complex(ZERO_R1, (real1)phi));
-    const bool wasSameUnit = IS_SAME_UNIT(shards[qubit1], shards[qubit2]) &&
-        (!ARE_CLIFFORD(shards[qubit1], shards[qubit2]) || !(IS_1_CMPLX(expIPhi) || IS_1_CMPLX(-expIPhi)));
-
-    const real1 sinThetaDiffNeg = ONE_R1 + sinTheta;
-    if (!wasSameUnit && ((sinThetaDiffNeg * sinThetaDiffNeg) <= FP_NORM_EPSILON)) {
-        ISwap(qubit1, qubit2);
-        return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
-    }
-
-    const real1 sinThetaDiffPos = ONE_R1 - sinTheta;
-    if (!wasSameUnit && ((sinThetaDiffPos * sinThetaDiffPos) <= FP_NORM_EPSILON)) {
-        IISwap(qubit1, qubit2);
-        return MCPhase(controls, ONE_CMPLX, expIPhi, qubit2);
-    }
-
-    if (qubit1 >= qubitCount) {
-        throw std::invalid_argument("QUnit::FSim qubit index parameter must be within allocated qubit bounds!");
-    }
-
-    if (qubit2 >= qubitCount) {
-        throw std::invalid_argument("QUnit::FSim qubit index parameter must be within allocated qubit bounds!");
-    }
-
-    RevertBasis2Qb(qubit1, ONLY_INVERT);
-    RevertBasis2Qb(qubit2, ONLY_INVERT);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
-
-    const bool isSameUnit = IS_SAME_UNIT(shard1, shard2);
-    Entangle({ qubit1, qubit2 })->FSim(theta, phi, shard1.mapped, shard2.mapped);
-
-    // TODO: If we multiply out cached amplitudes, we can optimize this.
-
-    shard1.MakeDirty();
-    shard2.MakeDirty();
-
-    if (isReactiveSeparate && !freezeBasis2Qb && isSameUnit && !ARE_CLIFFORD(shard1, shard2)) {
-        TrySeparate(qubit1);
-        TrySeparate(qubit2);
-    }
-}
-
 void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls, bitLenInt qubitIndex,
     const complex* mtrxs, const std::vector<bitCapInt>& mtrxSkipPowers, const bitCapInt& mtrxSkipValueMask)
 {

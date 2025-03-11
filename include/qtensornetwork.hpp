@@ -524,8 +524,6 @@ public:
                 target, lMtrx.get(), std::set<bitLenInt>{ controls.begin(), controls.end() }, ZERO_BCI));
     }
 
-    void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
-
     void DepolarizingChannelWeak1Qb(bitLenInt qubit, real1_f lambda)
     {
         if (lambda <= ZERO_R1) {

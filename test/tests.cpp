@@ -793,6 +793,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fsim")
     qftReg->FSim(ZERO_R1_F, phi, 0, 1);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0);
+    qftReg->FSim(theta, phi, 0, 1);
+    qftReg->FSim(-theta, -phi, 0, 1);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
