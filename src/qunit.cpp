@@ -2497,7 +2497,7 @@ void QUnit::UCMtrx(
     }
 
     if (target >= qubitCount) {
-        throw std::invalid_argument("QUnit::MCMtrx qubit index parameter must be within allocated qubit bounds!");
+        throw std::invalid_argument("QUnit::UCMtrx qubit index parameter must be within allocated qubit bounds!");
     }
 
     CTRLED_GEN_WRAP(UCMtrx(CTRL_GEN_ARGS));
