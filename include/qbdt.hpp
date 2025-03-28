@@ -54,8 +54,8 @@ protected:
     {
         const MpsShardPtr shard = shards[t];
         if (shard) {
-            shards[t] = nullptr;
             ApplySingle(shard->gate, t);
+            shards[t] = nullptr;
         }
     }
     void FlushBuffers()
@@ -74,8 +74,8 @@ protected:
         for (const bitLenInt& control : controls) {
             const MpsShardPtr shard = shards[control];
             if (shard && !shard->IsPhase()) {
-                shards[control] = nullptr;
                 ApplySingle(shard->gate, control);
+                shards[control] = nullptr;
             }
         }
     }
