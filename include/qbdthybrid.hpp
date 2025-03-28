@@ -95,7 +95,7 @@ protected:
             return SwitchMode(true);
         }
 
-        const size_t count = qbdt->CountBranches();
+        const size_t count = sizeof(QBdtHybrid) * qbdt->CountBranches() / sizeof(complex);
         if (count > (threshold * bi_to_double(maxQPower))) {
             SwitchMode(false);
         }
