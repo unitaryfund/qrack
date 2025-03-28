@@ -434,9 +434,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             found[shards[**bit].unit] = true;
             units.push_back(shards[**bit].unit);
 
-            logMem += isBdt ? std::log2((sizeof(QBdtNode) *
-                                  std::dynamic_pointer_cast<QBdt>(units.back())->CountBranches()) / sizeof(complex))
-                            : units.back()->GetQubitCount();
+            logMem += units.back()->GetQubitCount();
 
             bool isThrow = false;
             if (isCpu || isBdt) {
