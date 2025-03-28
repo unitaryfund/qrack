@@ -65,6 +65,9 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, const bitCapInt& perm)
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch)
 {
     if (branch) {
+        if (maxQubit > QRACK_MAX_CPU_QB_DEFAULT) {
+            throw bad_alloc("RAM limits exceeded in QBdt::par_for_qbdt()");
+        }
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(root->mtx);
 #endif
@@ -443,6 +446,10 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     if (!doApply) {
         return result;
+    }
+
+    if ((qubit + 1U) > QRACK_MAX_CPU_QB_DEFAULT) {
+        throw bad_alloc("RAM limits exceeded in QBdt::ForceM()");
     }
 
     shards[qubit] = nullptr;

@@ -19,6 +19,7 @@
 #include "mpsshard.hpp"
 #include "qbdt_node.hpp"
 #include "qengine.hpp"
+#include "qengine_gpu_util.hpp"
 
 #include <algorithm>
 
@@ -112,6 +113,10 @@ protected:
     }
     template <typename Fn> void SetTraversal(Fn setLambda)
     {
+        if (qubitCount > QRACK_MAX_CPU_QB_DEFAULT) {
+            throw bad_alloc("RAM limits exceeded in QBdt::SetTraversal()");
+        }
+
         DumpBuffers();
 
         root = std::make_shared<QBdtNode>();

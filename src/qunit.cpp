@@ -437,7 +437,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             logMem += units.back()->GetQubitCount();
 
             bool isThrow = false;
-            if (isCpu || isBdt) {
+            if (isCpu) {
                 isThrow = logMem > QRACK_MAX_CPU_QB_DEFAULT;
             } else if (isSinglePage) {
                 isThrow = logMem > QRACK_MAX_PAGE_QB_DEFAULT;
