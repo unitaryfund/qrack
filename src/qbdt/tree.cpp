@@ -373,8 +373,8 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
     const MpsShardPtr shard = shards[qubit];
     if (shard && !shard->IsPhase()) {
-        shards[qubit] = nullptr;
         ApplySingle(shard->gate, qubit);
+        shards[qubit] = nullptr;
     }
 
     const bitCapInt qPower = pow2(qubit);
