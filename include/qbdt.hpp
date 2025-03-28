@@ -84,8 +84,8 @@ protected:
         for (size_t i = 0U; i < shards.size(); ++i) {
             MpsShardPtr& shard = shards[i];
             if (shard && !shard->IsPhase()) {
-                shard = nullptr;
                 ApplySingle(shard->gate, i);
+                shard = nullptr;
             }
         }
     }

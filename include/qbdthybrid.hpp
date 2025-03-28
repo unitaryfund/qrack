@@ -75,13 +75,7 @@ protected:
             return SwitchMode(true);
         }
 
-#if ENABLE_ENV_VARS
-        const bitLenInt pStridePow =
-            (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
-#else
-        const bitLenInt pStridePow = PSTRIDEPOW;
-#endif
-        const bitLenInt strideBits = log2Ocl(GetConcurrencyLevel() * pow2Ocl(pStridePow));
+        const bitLenInt strideBits = log2Ocl(GetConcurrencyLevel() * pow2Ocl(PSTRIDEPOW_DEFAULT));
 
         if (qubitCount <= strideBits) {
             // Don't check QBdt below qubit threshold.

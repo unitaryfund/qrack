@@ -434,14 +434,11 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             found[shards[**bit].unit] = true;
             units.push_back(shards[**bit].unit);
 
-            if (isBdt) {
-                continue;
-            }
-
-            logMem += units.back()->GetQubitCount();
+            logMem += isBdt ? std::log2(std::dynamic_pointer_cast<QBdt>(units.back())->CountBranches())
+                            : units.back()->GetQubitCount();
 
             bool isThrow = false;
-            if (isCpu) {
+            if (isCpu || isBdt) {
                 isThrow = logMem > QRACK_MAX_CPU_QB_DEFAULT;
             } else if (isSinglePage) {
                 isThrow = logMem > QRACK_MAX_PAGE_QB_DEFAULT;
