@@ -1,3 +1,51 @@
+libqrack (9.15.7) bionic; urgency=medium
+
+  * Don't use ENABLE_RDRAND build option (Bionic 4/4)
+
+ -- Daniel <dan@unitary.foundation>  Fri, 28 Mar 2025 20:44:08 -0400
+
+libqrack (9.15.6) focal; urgency=medium
+
+  * Don't use ENABLE_RDRAND build option (Focal 3/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Fri, 28 Mar 2025 20:41:56 -0400
+
+libqrack (9.15.5) jammy; urgency=medium
+
+  * Don't use ENABLE_RDRAND build option (Jammy 2/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Fri, 28 Mar 2025 20:39:08 -0400
+
+libqrack (9.15.4) noble; urgency=medium
+
+  * Don't use ENABLE_RDRAND build option (Noble 1/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Fri, 28 Mar 2025 20:36:34 -0400
+
+libqrack (9.15.3) bionic; urgency=medium
+
+  * Experimental QBdt ACE capability and fix QBdt regression (Bionic 4/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Fri, 28 Mar 2025 20:32:41 -0400
+
+libqrack (9.15.2) focal; urgency=medium
+
+  * Experimental QBdt ACE capability and fix QBdt regression (Focal 3/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Fri, 28 Mar 2025 20:30:09 -0400
+
+libqrack (9.15.1) jammy; urgency=medium
+
+  * Experimental QBdt ACE capability and fix QBdt regression (Jammy 2/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Fri, 28 Mar 2025 20:27:55 -0400
+
+libqrack (9.15.0) noble; urgency=medium
+
+  * Experimental QBdt ACE capability and fix QBdt regression (Noble 1/4)
+
+ -- Dan Strano <dan@unitary.foundation>  Fri, 28 Mar 2025 20:24:56 -0400
+
 libqrack (9.13.36) bionic; urgency=medium
 
   * QUnit micro-optimization (Bionic 4/4)
