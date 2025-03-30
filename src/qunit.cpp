@@ -1792,6 +1792,12 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
         QInterfacePtr unit;
         try {
             unit = Entangle({ qubit1, qubit2 });
+
+            if (isInverse) {
+                unit->IISwap(shard1.mapped, shard2.mapped);
+            } else {
+                unit->ISwap(shard1.mapped, shard2.mapped);
+            }
         } catch (const bad_alloc& e) {
             // We failed to allocate; use a classical shadow.
             const real1_f p1 = Prob(qubit1);
@@ -1824,11 +1830,6 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
             return;
         }
 
-        if (isInverse) {
-            unit->IISwap(shard1.mapped, shard2.mapped);
-        } else {
-            unit->ISwap(shard1.mapped, shard2.mapped);
-        }
         shard1.MakeDirty();
         shard2.MakeDirty();
 
@@ -1967,6 +1968,14 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
     QInterfacePtr unit;
     try {
         unit = Entangle(ebits);
+
+        std::vector<bitLenInt> mappedControls(trimmedControls.size());
+        for (size_t i = 0U; i < trimmedControls.size(); ++i) {
+            const bitLenInt& trimmedControl = trimmedControls[i];
+            mappedControls[i] = shards[trimmedControl].mapped;
+        }
+
+        unit->UniformlyControlledSingleBit(mappedControls, shards[qubitIndex].mapped, mtrxs, skipPowers, skipValueMask);
     } catch (const bad_alloc& e) {
         // We over allocated; try a classical shadow.
         return QInterface::UniformlyControlledSingleBit(controls, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipValueMask);
@@ -1975,14 +1984,9 @@ void QUnit::UniformlyControlledSingleBit(const std::vector<bitLenInt>& controls,
         // and optimize.)
     }
 
-    std::vector<bitLenInt> mappedControls(trimmedControls.size());
-    for (size_t i = 0U; i < trimmedControls.size(); ++i) {
-        const bitLenInt& trimmedControl = trimmedControls[i];
-        mappedControls[i] = shards[trimmedControl].mapped;
-        shards[trimmedControl].isPhaseDirty = true;
+    for (const bitLenInt& tc : trimmedControls) {
+        shards[tc].isPhaseDirty = true;
     }
-
-    unit->UniformlyControlledSingleBit(mappedControls, shards[qubitIndex].mapped, mtrxs, skipPowers, skipValueMask);
 
     shards[qubitIndex].MakeDirty();
 
@@ -2679,6 +2683,21 @@ void QUnit::ApplyEitherControlled(
     QInterfacePtr unit;
     try {
         unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
+
+        for (bitLenInt& c : controlVec) {
+            QEngineShard& shard = shards[c];
+            shard.isPhaseDirty = true;
+            c = shard.mapped;
+        }
+        for (const bitLenInt& t : targets) {
+            QEngineShard& shard = shards[t];
+            shard.isPhaseDirty = true;
+            shard.isProbDirty |= (shard.pauliBasis != PauliZ) || !isPhase;
+        }
+
+        // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
+        // target bit in X or Y basis and acting as if Z basis by commutation).
+        cfn(unit, controlVec);
     } catch (const bad_alloc& e) {
         // We overallocated; use a really primitive classical shadow, at least.
         if (freezeBasis2Qb) {
@@ -2714,21 +2733,6 @@ void QUnit::ApplyEitherControlled(
 
         return CheckFidelity();
     }
-
-    for (bitLenInt& c : controlVec) {
-        QEngineShard& shard = shards[c];
-        shard.isPhaseDirty = true;
-        c = shard.mapped;
-    }
-    for (const bitLenInt& t : targets) {
-        QEngineShard& shard = shards[t];
-        shard.isPhaseDirty = true;
-        shard.isProbDirty |= (shard.pauliBasis != PauliZ) || !isPhase;
-    }
-
-    // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
-    // target bit in X or Y basis and acting as if Z basis by commutation).
-    cfn(unit, controlVec);
 
     if (!isReactiveSeparate || freezeBasis2Qb) {
         return;
