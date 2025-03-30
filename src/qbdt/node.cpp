@@ -231,8 +231,15 @@ void QBdtNode::Branch(bitLenInt depth)
     }
 
     if (!branches[0U] || !branches[1U]) {
-        branches[0U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
-        branches[1U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
+        try {
+            branches[0U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
+            branches[1U] = std::make_shared<QBdtNode>(SQRT1_2_R1);
+        } catch (const std::bad_alloc& e) {
+            branches[0U] = nullptr;
+            branches[1U] = nullptr;
+
+            throw e;
+        }
     } else {
         // Split all clones.
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -257,35 +264,42 @@ void QBdtNode::Branch(bitLenInt depth)
     QBdtNodeInterfacePtr& b0 = branches[0U];
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
+    try {
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
-    if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), numThreads) > 0)) {
-        if (true) {
+        if ((depth <= pStridePow) || (bi_compare(pow2(parDepth), numThreads) > 0)) {
+            if (true) {
+                std::lock_guard<std::mutex> lock(b0->mtx);
+                b0->Branch(depth, parDepth);
+            }
+            if (true) {
+                std::lock_guard<std::mutex> lock(b1->mtx);
+                b1->Branch(depth, parDepth);
+            }
+
+            return;
+        }
+
+        ++parDepth;
+
+        std::future<void> future0 = std::async(std::launch::async, [&] {
             std::lock_guard<std::mutex> lock(b0->mtx);
             b0->Branch(depth, parDepth);
-        }
+        });
         if (true) {
             std::lock_guard<std::mutex> lock(b1->mtx);
             b1->Branch(depth, parDepth);
         }
-
-        return;
-    }
-
-    ++parDepth;
-
-    std::future<void> future0 = std::async(std::launch::async, [&] {
-        std::lock_guard<std::mutex> lock(b0->mtx);
-        b0->Branch(depth, parDepth);
-    });
-    if (true) {
-        std::lock_guard<std::mutex> lock(b1->mtx);
-        b1->Branch(depth, parDepth);
-    }
-    future0.get();
+        future0.get();
 #else
-    b0->Branch(depth);
-    b1->Branch(depth);
+        b0->Branch(depth);
+        b1->Branch(depth);
 #endif
+    } catch (const std::bad_alloc& e) {
+        b0->Prune();
+        b1->Prune();
+
+        throw e;
+    }
 }
 
 void QBdtNode::Normalize(bitLenInt depth)
