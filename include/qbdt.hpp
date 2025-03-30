@@ -43,60 +43,11 @@ protected:
     bitCapInt bdtMaxQPower;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
-    std::vector<MpsShardPtr> shards;
-
-    void DumpBuffers()
-    {
-        for (MpsShardPtr& shard : shards) {
-            shard = nullptr;
-        }
-    }
-    void FlushBuffer(bitLenInt t)
-    {
-        const MpsShardPtr shard = shards[t];
-        if (shard) {
-            ApplySingle(shard->gate, t);
-            shards[t] = nullptr;
-        }
-    }
-    void FlushBuffers()
-    {
-        for (size_t i = 0U; i < shards.size(); ++i) {
-            FlushBuffer(i);
-        }
-    }
-    void FlushIfBlocked(bitLenInt target, const std::vector<bitLenInt>& controls = std::vector<bitLenInt>())
-    {
-        FlushIfBlocked(controls);
-        FlushBuffer(target);
-    }
-    void FlushIfBlocked(const std::vector<bitLenInt>& controls)
-    {
-        for (const bitLenInt& control : controls) {
-            const MpsShardPtr shard = shards[control];
-            if (shard && !shard->IsPhase()) {
-                ApplySingle(shard->gate, control);
-                shards[control] = nullptr;
-            }
-        }
-    }
-    void FlushNonPhaseBuffers()
-    {
-        for (size_t i = 0U; i < shards.size(); ++i) {
-            MpsShardPtr& shard = shards[i];
-            if (shard && !shard->IsPhase()) {
-                ApplySingle(shard->gate, i);
-                shard = nullptr;
-            }
-        }
-    }
 
     QEnginePtr MakeQEngine(bitLenInt qbCount, const bitCapInt& perm = ZERO_BCI);
 
     template <typename Fn> void GetTraversal(Fn getLambda)
     {
-        FlushBuffers();
-
         _par_for(maxQPower, [&](const bitCapInt& i, const unsigned& cpu) {
             QBdtNodeInterfacePtr leaf = root;
             complex scale = leaf->scale;
@@ -116,8 +67,6 @@ protected:
         if (qubitCount > QRACK_MAX_CPU_QB_DEFAULT) {
             throw bad_alloc("RAM limits exceeded in QBdt::SetTraversal()");
         }
-
-        DumpBuffers();
 
         root = std::make_shared<QBdtNode>();
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -202,7 +151,6 @@ protected:
         bdtMaxQPower = orig->bdtMaxQPower;
         deviceIDs = orig->deviceIDs;
         engines = orig->engines;
-        shards = orig->shards;
     }
 
 public:

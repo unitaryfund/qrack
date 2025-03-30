@@ -104,7 +104,7 @@ public:
 #endif
 };
 
-const bitCapIntOcl QRACK_QBDT_NODE_LIMIT = (QRACK_MAX_CPU_QB_DEFAULT == ((bitCapIntOcl)-1))
+const bitCapIntOcl QRACK_QBDT_NODE_LIMIT = (QRACK_MAX_CPU_QB_DEFAULT == ((bitLenInt)-1))
     ? (bitCapIntOcl)-1
     : ((sizeof(complex) * pow2Ocl(QRACK_MAX_CPU_QB_DEFAULT)) / sizeof(QBdtNode));
 
