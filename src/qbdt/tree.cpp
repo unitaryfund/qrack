@@ -67,7 +67,13 @@ void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bo
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(root->mtx);
 #endif
-        root->Branch(maxQubit);
+        try {
+            root->Branch(maxQubit);
+        } catch (const std::bad_alloc&) {
+            root->Prune();
+
+            throw bad_alloc("RAM limits exceeded in QBdt::par_for_qbdt()");
+        }
     }
 
     for (bitCapInt j = 0U; bi_compare(j, end) < 0; bi_increment(&j, 1U)) {
@@ -416,10 +422,22 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
     if (true) {
         std::lock_guard<std::mutex> lock(root->mtx);
-        root->Branch(qubit + 1U);
+        try {
+            root->Branch(qubit + 1U);
+        } catch (const std::bad_alloc&) {
+            root->Prune();
+
+            throw bad_alloc("RAM limits exceeded in QBdt::ForceM()");
+        }
     }
 #else
-    root->Branch(qubit + 1U);
+    try {
+        root->Branch(qubit + 1U);
+    } catch (const std::bad_alloc&) {
+        root->Prune();
+
+        throw bad_alloc("RAM limits exceeded in QBdt::ForceM()");
+    }
 #endif
 
     _par_for(qPower, [&](const bitCapInt& i, const unsigned& cpu) {
