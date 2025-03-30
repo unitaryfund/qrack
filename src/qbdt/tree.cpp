@@ -65,7 +65,7 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, const bitCapInt& perm)
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch)
 {
     if (branch) {
-        if (maxQubit > QRACK_MAX_CPU_QB_DEFAULT) {
+        if ((pow2(maxQubit) << 1U) > QRACK_QBDT_NODE_LIMIT) {
             throw bad_alloc("RAM limits exceeded in QBdt::par_for_qbdt()");
         }
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -448,7 +448,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         return result;
     }
 
-    if ((qubit + 1U) > QRACK_MAX_CPU_QB_DEFAULT) {
+    if ((pow2(qubit + 1U) << 1U) > QRACK_QBDT_NODE_LIMIT) {
         throw bad_alloc("RAM limits exceeded in QBdt::ForceM()");
     }
 
@@ -516,6 +516,10 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
 bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
 {
+    if ((pow2(qubitCount) << 1U) > QRACK_QBDT_NODE_LIMIT) {
+        throw bad_alloc("RAM limits exceeded in QBdt::ForceM()");
+    }
+
     bitCapInt result = ZERO_BCI;
     QBdtNodeInterfacePtr leaf = root;
 
