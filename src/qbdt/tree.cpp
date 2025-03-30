@@ -516,7 +516,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
 bitCapInt QBdt::MAllOptionalCollapse(bool isCollapsing)
 {
-    if ((pow2(qubitCount) << 1U) > QRACK_QBDT_NODE_LIMIT) {
+    if (isCollapsing && ((pow2(qubitCount) << 1U) > QRACK_QBDT_NODE_LIMIT)) {
         throw bad_alloc("RAM limits exceeded in QBdt::ForceM()");
     }
 
