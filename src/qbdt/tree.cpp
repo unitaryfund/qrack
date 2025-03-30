@@ -64,9 +64,6 @@ QEnginePtr QBdt::MakeQEngine(bitLenInt qbCount, const bitCapInt& perm)
 void QBdt::par_for_qbdt(const bitCapInt& end, bitLenInt maxQubit, BdtFunc fn, bool branch)
 {
     if (branch) {
-        if ((pow2(maxQubit) << 1U) > QRACK_QBDT_NODE_LIMIT) {
-            throw bad_alloc("RAM limits exceeded in QBdt::par_for_qbdt()");
-        }
 #if ENABLE_QBDT_CPU_PARALLEL && ENABLE_PTHREAD
         std::lock_guard<std::mutex> lock(root->mtx);
 #endif
@@ -411,10 +408,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     if (!doApply) {
         return result;
-    }
-
-    if ((pow2(qubit + 1U) << 1U) > QRACK_QBDT_NODE_LIMIT) {
-        throw bad_alloc("RAM limits exceeded in QBdt::ForceM()");
     }
 
     const bitCapInt qPower = pow2(qubit);
