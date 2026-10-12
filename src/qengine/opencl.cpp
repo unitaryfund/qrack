@@ -79,6 +79,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, const bitCapInt& initState, qrack_ra
     , deviceID(devID)
     , wait_refs()
     , nrmArray(new real1[0], [](real1* r) { delete[] r; })
+    , isSyncDispatch(getenv("QRACK_OCL_SYNC") != nullptr)
 {
     InitOCL(devID);
     clFinish();

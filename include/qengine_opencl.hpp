@@ -190,6 +190,7 @@ protected:
     std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1[], void (*)(real1*)> nrmArray;
+    bool isSyncDispatch;
 
 #if defined(__APPLE__)
     real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)
@@ -542,6 +543,13 @@ protected:
             throw bad_alloc("Local memory limits exceeded in QEngineOCL::QueueCall()");
         }
         AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
+#if ENABLE_ENV_VARS
+        // QRACK_OCL_SYNC=1: finish every kernel before returning. Works around the asynchronous dispatch queue
+        // producing NaN/garbage or segfaults on drivers that break minimum v1.1 OpenCL specification (see PoCL).
+        if (isSyncDispatch) {
+            clFinish();
+        }
+#endif
     }
 
     void QueueSetDoNormalize(bool doNorm) { AddQueueItem(QueueItem(doNorm)); }
