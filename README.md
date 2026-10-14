@@ -10,7 +10,7 @@ Using the C++11 standard, at base, Qrack has an external-dependency-free CPU sim
 
 A `QInterface` can be thought of as like simply a one-dimensional array of qubits, within which any qubit has the capacity to directly and fully entangle with any and all others. Bits can be manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on arbitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
 
-Qrack was originally integrated with a [MOS 6502 emulator](https://github.com/vm6502q/vm6502q), demonstrating its originally intended user for developing chip-like quantum computer emulators. (The base 6502 emulator to which Qrack was added for that project is by Marek Karcz, many thanks to Marek! See https://github.com/makarcz/vm6502.)
+Qrack was originally integrated with a [MOS 6502 emulator](https://github.com/vm6502q/vm6502q), demonstrating its originally intended use for developing chip-like quantum computer emulators. (The base 6502 emulator to which Qrack was added for that project is by Marek Karcz, many thanks to Marek! See https://github.com/makarcz/vm6502.)
 
 Qrack compiles like a library. To include in your project:
 
